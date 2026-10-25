@@ -22,7 +22,7 @@ describe('FR21 · I signed in from another tab', () => {
         cy.restore();
         // A customer's own cart may hold lines already; start empty so a line is only there
         // because this story put it there.
-        cy.apiAs('user', 'DELETE', '/cart/all');
+        cy.apiAs('user', 'DELETE', '/cart/items');
     });
 
     it('this tab becomes the customer and the guest line is merged once', () => {

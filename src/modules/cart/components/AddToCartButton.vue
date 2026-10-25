@@ -18,6 +18,7 @@ import type { Product } from '@types';
 import { shelfStateOf } from '@/modules/products';
 import { formatDate } from '@/infrastructure/utils/formatters.ts';
 import { useCartStore } from '../store';
+import { backorderPromiseDays } from '@/infrastructure/shop.ts';
 
 /**
  * The product the button adds a unit of.
@@ -65,7 +66,8 @@ const { loading } = storeToRefs(cartStore);
  * The shelf as the shopper reads it, from the flags every reader gets (`purchasable`, `inStock`;
  * the exact counters are for stock readers only). Off sale and sold out both hold the button back;
  * a preorder does not, it is bought now and ships from its release date, and a backorder is bought
- * now and ships by its restock date (or within 30 days), which the button states under itself.
+ * now and ships by its restock date (or within the shop's promised days), which the button states
+ * under itself. Whether the button works at all is the server's `buyable`.
  */
 const shelf = computed(() => shelfStateOf(product));
 
@@ -87,7 +89,7 @@ const label = computed(() => {
 const promise = computed(() =>
     product.restockDate
         ? t('add-to-cart-button.backorder-ships-by', { date: formatDate(product.restockDate) })
-        : t('add-to-cart-button.backorder-ships-undated')
+        : t('add-to-cart-button.backorder-ships-undated', { days: backorderPromiseDays.value })
 );
 
 /**
@@ -105,7 +107,7 @@ const addToGuestCart = () => {
 };
 
 /**
- * Adds one unit to the cart. `POST /cart` is "add": the server grows a line the shopper already
+ * Adds one unit to the cart. `POST /cart/items` is "add": the server grows a line the shopper already
  * has, so no read-then-increment happens here: the quantity added is never computed from a local
  * copy of the cart. A guest's list grows the same way, locally.
  *
@@ -129,9 +131,7 @@ const handleAddToCart = () => {
         <v-btn
             color="primary"
             data-test="add-to-cart"
-            :disabled="
-                (shelf !== 'in-stock' && shelf !== 'preorder' && shelf !== 'backorder') || loading
-            "
+            :disabled="!product.buyable || loading"
             @click="handleAddToCart"
         >
             <ShoppingCart :size="18" class="mr-1" aria-hidden="true" />

@@ -5,7 +5,7 @@
  * that wants a provider to nudge the server (a duplicate event id, a stale signature) has to sign
  * it itself. The event is thin: it names an intent, and the server asks the provider what became
  * of it, so a delivery cannot carry an outcome. The format is the backend's
- * `payments/providers/webhook-signature.ts`: `x-payment-signature: t=<unix seconds>,v1=<hex
+ * `payments/providers/webhook-signature.ts`: `payment-signature: t=<unix seconds>,v1=<hex
  * HMAC-SHA256 of "<t>.<raw body>">`.
  *
  * Pure of Cypress, and outside `tests/support/e2e/`, so the unit suite can pin it. The `cy.task`
@@ -38,7 +38,7 @@ export interface PaymentWebhookRequest {
 }
 
 /**
- * The `x-payment-signature` header value for `body`.
+ * The `payment-signature` header value for `body`.
  *
  * @param body - the exact bytes that will be sent
  * @param timestamp - unix seconds
@@ -69,7 +69,7 @@ export const postPaymentWebhook = ({
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'x-payment-signature': signPaymentWebhook(body, timestamp, secret)
+            'payment-signature': signPaymentWebhook(body, timestamp, secret)
         },
         body
     }).then((response) => response.status);

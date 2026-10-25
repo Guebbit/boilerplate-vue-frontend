@@ -80,6 +80,11 @@ The confirm can come back three ways, and only one of them is finished:
 | `requires_action` | The bank wants a 3-D Secure challenge answered. | Show the challenge step, then `finishAtProvider`. |
 | `processing`      | The provider is settling asynchronously.        | Say so, offer a re-check.                         |
 
+Every answer carries the payment's `actions`, so the panel never decides the next step itself:
+`actions.pay` is the card form, `actions.sync` the "finish at your bank" button (the payer's, never
+staff's, and never a hand-paid transfer's). A decline or a payment that was never confirmable on
+the sync re-reads the payment, so a stale "finish" does not stay on screen.
+
 A decline is a rejection with its own message, not an error toast. The two in-flight answers are
 **successes** on the wire: a 4xx would tell the browser to stop, and the browser is the only thing
 that can finish. The server's webhook settles all of these eventually whatever the browser does —
@@ -111,8 +116,16 @@ only to a caller holding `display:Payment`; the page renders them when present a
 is looking. `failureReason` is a closed set (declined, insufficient funds, expired or cancelled
 card, lost or stolen card, provider unavailable, unknown), each worded in the locale files — the
 raw provider text stays in the server's logs. The drawer's refund button is the existing
-`POST /payments/order/{orderId}/refund`, shown only while `actions.refund` is true; a partial refund
+`POST /payments/{id}/refunds`, shown only while `actions.refund` is true; a partial refund
 and recording an offline payment stay on the order's page.
+
+**Hand-paid refunds are confirmed, not guessed.** Cash and transfers have no provider to ask, so a
+refund on them only opens a `pending` record (the panel says an operator has to hand the money back).
+`actions.settleByHand` names the records the caller may confirm; the drawer and the order's edit page
+show one "Mark returned" button per id, after a question naming the amount — nothing is sent anywhere,
+the click is the operator's word (`POST /payments/{id}/refunds/{refundId}/settle`). A refund another
+operator confirmed first answers 409 and the payment is re-read. The needs-attention list opens the
+drawer from a refund owed by hand.
 
 **What the page does not show** is an amount mismatch: the order is cancelled and refunded
 automatically and the only trace is an audit row, so the tab points at the audit log.
@@ -121,11 +134,11 @@ automatically and the only trace is an audit row, so the tab points at the audit
 
 Store `payments`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                                                                                                      | What it is                                                       |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `payment` · `paymentsPage` · `paymentsTotal` · `refundsPage` · `refundsTotal` · `attention`                                                  | The refs the setup function returns — the only writable surface. |
-| **Getters** | `loading`                                                                                                                                    | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `fetchPaymentForOrder` · `payForOrder` · `finishAtProvider` · `refundForOrder` · `fetchPaymentsPage` · `fetchRefundsPage` · `fetchAttention` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                                                                                                                     | What it is                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **State**   | `payment` · `paymentsPage` · `paymentsTotal` · `refundsPage` · `refundsTotal` · `attention`                                                                                                 | The refs the setup function returns — the only writable surface. |
+| **Getters** | `loading`                                                                                                                                                                                   | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `fetchPaymentForOrder` · `readPaymentForOrder` · `payForOrder` · `finishAtProvider` · `refundForOrder` · `settleRefundByHand` · `fetchPaymentsPage` · `fetchRefundsPage` · `fetchAttention` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
@@ -141,16 +154,19 @@ The rest of the module is components, schemas and a store contributed to the mod
 
 #### Endpoints called
 
-| Call                               | Response envelope              |
-| ---------------------------------- | ------------------------------ |
-| `POST /payments/{id}/confirm`      | `ConfirmPaymentResponse`       |
-| `POST /payments/{id}/sync`         | `SyncPaymentResponse`          |
-| `POST /payments/intent`            | `CreatePaymentIntentResponse`  |
-| `GET /payments/order/{id}`         | `GetPaymentByOrderResponse`    |
-| `POST /payments/order/{id}/refund` | `RefundPaymentByOrderResponse` |
-| `POST /payments/search`            | `SearchPaymentsResponse`       |
-| `GET /payments/refunds`            | `ListRefundsResponse`          |
-| `GET /payments/attention`          | `ListPaymentAttentionResponse` |
+| Call                                            | Response envelope              |
+| ----------------------------------------------- | ------------------------------ |
+| `POST /payments/{id}/confirm`                   | `ConfirmPaymentResponse`       |
+| `POST /payments/{id}/sync`                      | `SyncPaymentResponse`          |
+| `POST /payments`                                | `CreatePaymentResponse`        |
+| `GET /payments/orders/{id}`                     | `GetPaymentByOrderResponse`    |
+| `GET /payments/{id}`                            | `GetPaymentResponse`           |
+| `GET /payments/{id}/refunds/{refundId}`         | `GetRefundResponse`            |
+| `POST /payments/{id}/refunds`                   | `RefundPaymentByOrderResponse` |
+| `POST /payments/{id}/refunds/{refundId}/settle` | `SettleRefundByHandResponse`   |
+| `POST /payments/search`                         | `SearchPaymentsResponse`       |
+| `GET /payments/refunds`                         | `ListRefundsResponse`          |
+| `GET /payments/attention`                       | `ListPaymentAttentionResponse` |
 
 #### Navigation entries
 

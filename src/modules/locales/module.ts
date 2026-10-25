@@ -24,6 +24,8 @@ import routes from './routes';
  * of them differ. The modelling effort lives server-side, where the rows are.
  *
  * Context map: `docs/modules/locales.md` § "The map".
+ *
+ * Subdomain: `generic`.
  */
 export default {
     name: 'locales',

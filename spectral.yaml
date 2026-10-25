@@ -93,7 +93,7 @@ rules:
 
     # --- Parameter naming ---
     # Header parameters are excluded: their `name` is the literal wire header
-    # (e.g. `x-antibot-challenge-token`), conventionally kebab-case, not an
+    # (e.g. `antibot-challenge-token`), conventionally kebab-case, not an
     # identifier this rule's camelCase check was ever meant to police.
     parameter-name-camel-case:
         description: 'Parameter names must be camelCase (query/path only — header names are the wire header itself).'

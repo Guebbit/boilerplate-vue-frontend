@@ -18,7 +18,7 @@ export default {
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { StatsInterval } from '@/types/enums.ts';
-import type { StatsInterval as TStatsInterval } from '@types';
+import type { StatsInterval as TStatsInterval, StatsLimits } from '@types';
 import {
     PERIOD_PRESETS,
     autoInterval,
@@ -34,6 +34,8 @@ import {
 const props = defineProps<{
     /** What the page shows right now. */
     modelValue: StatsPeriodChoice;
+    /** The API's period ceilings, once read. */
+    limits?: StatsLimits;
 }>();
 
 /**
@@ -64,7 +66,7 @@ const intervalChosen = ref(false);
 /**
  * Why the draft cannot be applied, if it cannot.
  */
-const problem = computed(() => periodProblem(draft.value));
+const problem = computed(() => periodProblem(draft.value, props.limits));
 
 /**
  * The bucket sizes to offer, translated.
@@ -161,7 +163,7 @@ const apply = () => {
                 role="alert"
                 data-test="stats-period-problem"
             >
-                {{ t(`stats-page.problem-${problem}`) }}
+                {{ t(`stats-page.problem-${problem}`, { days: limits?.maxRangeDays }) }}
             </p>
             <div class="mt-4 flex flex-wrap gap-2">
                 <v-btn

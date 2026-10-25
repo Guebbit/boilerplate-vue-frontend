@@ -72,7 +72,7 @@ concerns, and between them they cover four of the client's nine context edges.
 
 An order is not one parcel. When it is paid the backend splits it into **fulfillment orders** (lines
 that leave together), and each one is shipped in one or more **shipments** (what actually left, with
-its own tracking code). `GET /delivery/order/{id}` answers both lists, each record with its own
+its own tracking code). `GET /delivery/orders/{id}` answers both lists, each record with its own
 `actions`; the panel is a card per fulfillment order and the shipments inside it.
 
 ```mermaid
@@ -147,8 +147,8 @@ This module routes to nothing. It contributes components, schemas or a store to 
 
 | Call                                               | Response envelope                 |
 | -------------------------------------------------- | --------------------------------- |
-| `POST /delivery/order/{id}/start`                  | `StartFulfilmentResponse`         |
-| `GET /delivery/order/{id}`                         | `GetFulfillmentByOrderResponse`   |
+| `POST /delivery/orders/{id}/start`                 | `StartFulfilmentResponse`         |
+| `GET /delivery/orders/{id}`                        | `GetFulfillmentByOrderResponse`   |
 | `POST /delivery/fulfillment-orders/{id}/shipments` | `ShipFulfillmentOrderResponse`    |
 | `POST /delivery/fulfillment-orders/{id}/fulfill`   | `FulfillFulfillmentOrderResponse` |
 | `POST /delivery/fulfillment-orders/{id}/hold`      | `HoldFulfillmentOrderResponse`    |

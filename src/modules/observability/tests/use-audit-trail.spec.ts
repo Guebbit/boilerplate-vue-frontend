@@ -87,13 +87,17 @@ describe('useAuditTrail — platform endpoint', () => {
         });
     });
 
-    it('never sends a target filter — the contract declares none', () => {
-        const { fetchPage } = useAuditTrail('platform', 'some-user-id');
+    it('never sends target or ownOrder — the contract declares neither', () => {
+        const { fetchPage } = useAuditTrail('platform');
 
-        return fetchPage().then(() => {
+        return fetchPage({ target: 'some-user-id', ownOrder: true }).then(() => {
             expect(listObservabilityAuditEntries).toHaveBeenCalledWith(
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest types `expect.anything()` as `any`, since it is a placeholder matcher usable against anything
                 expect.not.objectContaining({ target: expect.anything() })
+            );
+            expect(listObservabilityAuditEntries).toHaveBeenCalledWith(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- same placeholder matcher
+                expect.not.objectContaining({ ownOrder: expect.anything() })
             );
         });
     });
@@ -160,23 +164,41 @@ describe('useAuditTrail — shop endpoint', () => {
         });
     });
 
-    it("merges the fixed target into every request, for one record's history", () => {
-        const { fetchPage } = useAuditTrail('shop', 'o1');
+    it("sends the target filter, for one record's history", () => {
+        const { fetchPage } = useAuditTrail('shop');
 
-        return fetchPage({ actor: 'ada@example.com' }).then(() => {
+        return fetchPage({ target: 'o1', actor: 'ada@example.com' }).then(() => {
             expect(listAuditEntries).toHaveBeenCalledWith(
                 expect.objectContaining({ target: 'o1', actor: 'ada@example.com' })
             );
         });
     });
 
-    it('asks for the whole shop trail when no target is fixed', () => {
+    it('asks for the whole shop trail when no target is set, an emptied one included', () => {
         const { fetchPage } = useAuditTrail('shop');
 
-        return fetchPage().then(() => {
+        return fetchPage({ target: '' }).then(() => {
             expect(listAuditEntries).toHaveBeenCalledWith(
                 expect.objectContaining({ target: undefined })
             );
         });
+    });
+
+    it('sends ownOrder=true for a ticked box, and nothing at all for an unticked one', () => {
+        const { fetchPage } = useAuditTrail('shop');
+
+        return fetchPage({ ownOrder: true })
+            .then(() => {
+                expect(listAuditEntries).toHaveBeenLastCalledWith(
+                    expect.objectContaining({ ownOrder: true })
+                );
+                return fetchPage({ ownOrder: false });
+            })
+            .then(() => {
+                // `false` would hide the flagged rows; the filter's "off" is absence.
+                expect(listAuditEntries).toHaveBeenLastCalledWith(
+                    expect.objectContaining({ ownOrder: undefined })
+                );
+            });
     });
 });

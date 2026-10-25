@@ -73,15 +73,19 @@ beforeEach(() => {
             version: 36,
             subjects: ['Order', 'Product']
         }),
-        'DELETE /account': orvalEnvelope(),
-        'DELETE /account/delete-confirm': orvalEnvelope(),
+        // `202`: the account is locked now and erased at `purgeAt` unless restored first.
+        'DELETE /account': orvalEnvelope({
+            requestedAt: '2026-10-24T10:00:00.000Z',
+            purgeAt: '2026-11-23T10:00:00.000Z'
+        }),
+        'POST /account/restore': orvalEnvelope(),
         // PATCH, not PUT — `updateProfile` sends only the fields it was given.
         'PATCH /account': orvalEnvelope({ ...USER, username: 'ada2' }),
         // The envelope the real endpoint answers: a fresh access token for this session.
         'POST /account/password': orvalEnvelope({ token: 'rotated-jwt' }),
-        'POST /account/verify-confirm': orvalEnvelope(),
-        'POST /account/email-change-confirm': orvalEnvelope(),
-        'POST /account/email-change-undo': orvalEnvelope(),
+        'POST /account/email-verification/confirm': orvalEnvelope(),
+        'POST /account/email-change/confirm': orvalEnvelope(),
+        'POST /account/email-change/undo': orvalEnvelope(),
         // The request answers `202` with the export's id and status; the data comes later, by link.
         'POST /account/export': orvalEnvelope({ id: 'e1', status: 'building' }),
         // The download body IS the export document, not an envelope. Every collection is an array
@@ -223,43 +227,36 @@ describe('locale preference', () => {
 });
 
 describe('the account deletion flow', () => {
-    it('requests deletion without touching the session', () => {
+    it('ends the local session and answers the erasure date once the account is locked', () => {
         const profile = useProfileStore();
 
         return useAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => profile.requestAccountDelete())
-            .then(() => {
-                // Only a token has been emailed at this point. Signing the visitor out here would
-                // strand them holding a confirmation link they can no longer use.
-                // The record, then the rules that go with it — a role change is only real once
-                // the shell has both.
-                // Sorted: the rules are fetched without being awaited — a shell that blocked on
-                // learning what to hide would be worse than one that hides too much for a moment
-                // — so which of the two lands first is not a fact worth pinning. The idle
-                // clock is read once the viewer is set.
-                expect(requestedUrls().slice(-3).toSorted()).toEqual([
-                    '/account',
-                    '/account/abilities',
-                    '/account/session/touch'
-                ]);
-                expect(useSessionStore().isAuth).toBe(true);
-            });
-    });
-
-    it('clears the session once deletion is confirmed', () => {
-        const profile = useProfileStore();
-
-        return useAuthStore()
-            .login('ada@example.com', 'hunter2hunter2')
-            .then(() => profile.confirmAccountDelete('delete-token'))
-            .then(() => {
+            .then((schedule) => {
                 const session = useSessionStore();
 
-                expect(requestedUrls().at(-1)).toBe('/account/delete-confirm');
+                // The server ended every session in the same write: keeping this one would hold
+                // a token the next request finds dead.
+                expect(requestedUrls().at(-1)).toBe('/account');
+                expect(schedule).toEqual({
+                    requestedAt: '2026-10-24T10:00:00.000Z',
+                    purgeAt: '2026-11-23T10:00:00.000Z'
+                });
                 expect(session.accessToken).toBeUndefined();
                 expect(session.isAuth).toBe(false);
                 expect(profile.profile).toBeUndefined();
+            });
+    });
+
+    it('restores with the mailed token and signs nobody in', () => {
+        const session = useSessionStore();
+
+        return useProfileStore()
+            .restoreAccount('restore-token')
+            .then(() => {
+                expect(requestedUrls().at(-1)).toBe('/account/restore');
+                expect(session.isAuth).toBe(false);
             });
     });
 });
@@ -311,7 +308,7 @@ describe('the self-service actions', () => {
         return profile
             .confirmEmailVerification('a-token')
             .then(() => {
-                expect(requestedUrls()).toEqual(['/account/verify-confirm']);
+                expect(requestedUrls()).toEqual(['/account/email-verification/confirm']);
             })
             .then(() => useAuthStore().login('ada@example.com', 'hunter2hunter2'))
             .then(() => profile.confirmEmailVerification('a-token'))
@@ -338,7 +335,7 @@ describe('the self-service actions', () => {
                 return profile.undoEmailChange('a-token').then(() => before);
             })
             .then((before) => {
-                expect(requestedUrls().slice(before)).toEqual(['/account/email-change-undo']);
+                expect(requestedUrls().slice(before)).toEqual(['/account/email-change/undo']);
                 expect(useSessionStore().isAuth).toBe(false);
                 expect(useSessionStore().accessToken).toBeUndefined();
                 expect(profile.profile).toBeUndefined();
@@ -352,7 +349,7 @@ describe('the self-service actions', () => {
         return profile
             .confirmEmailChange('a-token')
             .then(() => {
-                expect(requestedUrls()).toEqual(['/account/email-change-confirm']);
+                expect(requestedUrls()).toEqual(['/account/email-change/confirm']);
             })
             .then(() => useAuthStore().login('ada@example.com', 'hunter2hunter2'))
             .then(() => profile.confirmEmailChange('a-token'))

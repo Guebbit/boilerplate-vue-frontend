@@ -2,7 +2,7 @@
  * @module
  * Mounts the real admin user-edit page against a real, memory-history router: the trap this form
  * exists to avoid — an unchanged `role` riding along in the `PATCH` and re-running the backend's
- * grant check — and the confirm gate role/active changes go through first. `UserAccessDialog`
+ * grant check — and the confirm gate a role change or a deactivation goes through first. `UserAccessDialog`
  * itself is stubbed; its own picker/confirm behaviour is `user-access-dialog.spec.ts`'s job.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
@@ -20,7 +20,12 @@ import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { emitOn, nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { aUser } from '../../../../tests/support/unit/fixtures.ts';
+import {
+    aUser,
+    ALL_USER_ACTIONS,
+    NO_USER_ACTIONS,
+    userActionsOf
+} from '../../../../tests/support/unit/fixtures.ts';
 import {
     contractRequest,
     orvalEnvelope,
@@ -52,7 +57,7 @@ const LOADED_USER = aUser({
     role: 'customer',
     active: true,
     // The server's answer for the signed-in admin on this account.
-    actions: { update: true, ban: true, delete: true }
+    actions: ALL_USER_ACTIONS
 });
 
 /** The record the clearing cases load: all three optional fields set. */
@@ -115,7 +120,7 @@ beforeEach(() => {
 });
 
 describe('UserEdit', () => {
-    it('saves an unrelated field change with no role/active in the body, and no dialog', () => {
+    it('saves an unrelated field change with no role in the body, and no dialog', () => {
         const wrapper = mountPage();
 
         return flushPromises()
@@ -243,7 +248,13 @@ describe('UserEdit', () => {
         const wrapper = mountPage();
 
         return flushPromises()
-            .then(() => wrapper.get('[data-test=user-edit-active] input').setValue(false))
+            .then(() => {
+                const roleSelect = wrapper
+                    .findAllComponents(VSelect)
+                    .find((select) => select.attributes('data-test') === 'user-edit-role');
+                if (roleSelect) emitOn(roleSelect, 'update:modelValue', 'manager');
+                return nextRenderTick(wrapper);
+            })
             .then(() => wrapper.get('form').trigger('submit'))
             .then(flushPromises)
             .then(() => emitOn(wrapper.findComponent(UserAccessDialog), 'cancel'))
@@ -322,9 +333,9 @@ const isDisabled = (wrapper: ReturnType<typeof mountPage>, test: string) =>
     wrapper.get(`[data-test=${test}]`).classes().includes('v-input--disabled');
 
 /**
- * Every control follows the row's `actions`: with no `update` the profile fields and the role are
- * disabled, with no `ban` the active switch is, and one's own role is never offered. A credential
- * is the owner's alone, so there is no email field and no password field at all.
+ * Every control follows the row's `actions`: with no `update` the profile fields are disabled, with
+ * no `assignRole` the role is, and the status buttons show only when the move is allowed. A
+ * credential is the owner's alone, so there is no email field and no password field at all.
  */
 describe('UserEdit — what each row allows', () => {
     it('has no email field and no password field', () => {
@@ -336,16 +347,11 @@ describe('UserEdit — what each row allows', () => {
         });
     });
 
-    it('enables every control, the role included, when the row allows update and ban', () => {
+    it('enables every control, the role included, when the row allows them', () => {
         const wrapper = mountPage();
 
         return flushPromises().then(() => {
-            for (const test of [
-                'user-edit-username',
-                'user-edit-phone',
-                'user-edit-role',
-                'user-edit-active'
-            ])
+            for (const test of ['user-edit-username', 'user-edit-phone', 'user-edit-role'])
                 expect(isDisabled(wrapper, test)).toBe(false);
         });
     });
@@ -353,27 +359,33 @@ describe('UserEdit — what each row allows', () => {
     it('disables the profile fields and the role when the row allows no update', () => {
         loadedUser = aUser({
             ...LOADED_USER,
-            actions: { update: false, ban: true, delete: false }
+            actions: userActionsOf({
+                setPurchaseHold: true,
+                liftPurchaseHold: true,
+                activate: true,
+                deactivate: true
+            })
         });
         const wrapper = mountPage();
 
         return flushPromises().then(() => {
             expect(isDisabled(wrapper, 'user-edit-username')).toBe(true);
             expect(isDisabled(wrapper, 'user-edit-role')).toBe(true);
-            expect(isDisabled(wrapper, 'user-edit-active')).toBe(false);
+            expect(wrapper.find('[data-test=user-edit-deactivate]').exists()).toBe(true);
         });
     });
 
     // Support: may correct a profile and may not lock someone out.
-    it('disables the active switch when the row allows no ban', () => {
+    it('shows no status button when the row allows no status move', () => {
         loadedUser = aUser({
             ...LOADED_USER,
-            actions: { update: true, ban: false, delete: false }
+            actions: userActionsOf({ update: true, assignRole: true })
         });
         const wrapper = mountPage();
 
         return flushPromises().then(() => {
-            expect(isDisabled(wrapper, 'user-edit-active')).toBe(true);
+            expect(wrapper.find('[data-test=user-edit-deactivate]').exists()).toBe(false);
+            expect(wrapper.find('[data-test=user-edit-activate]').exists()).toBe(false);
             expect(isDisabled(wrapper, 'user-edit-username')).toBe(false);
         });
     });
@@ -381,7 +393,7 @@ describe('UserEdit — what each row allows', () => {
     it('disables the whole form on an account that allows nothing', () => {
         loadedUser = aUser({
             ...LOADED_USER,
-            actions: { update: false, ban: false, delete: false }
+            actions: NO_USER_ACTIONS
         });
         const wrapper = mountPage();
 
@@ -393,13 +405,13 @@ describe('UserEdit — what each row allows', () => {
         });
     });
 
-    it('never offers the signed-in admin their own role', () => {
+    it('offers the signed-in admin their own role when the server allows it', () => {
         const session = useSessionStore();
         session.viewer = { id: 'u1', email: 'ada@example.com', role: 'admin' };
         const wrapper = mountPage();
 
         return flushPromises().then(() => {
-            expect(isDisabled(wrapper, 'user-edit-role')).toBe(true);
+            expect(isDisabled(wrapper, 'user-edit-role')).toBe(false);
             expect(isDisabled(wrapper, 'user-edit-username')).toBe(false);
         });
     });
@@ -429,5 +441,64 @@ describe('UserEdit — what each row allows', () => {
                 { value: 'manager', title: 'manager' }
             ]);
         });
+    });
+});
+
+/** The requests of one method and url, in call order. */
+const callsTo = (method: string, url: string) =>
+    vi
+        .mocked(orvalMutator)
+        .mock.calls.filter(([config]) => config.method === method && config.url === url);
+
+/**
+ * Status is an action, not a field of the `PATCH`: Deactivate asks the access dialog first (it
+ * ends every session), Activate calls straight away, and neither sends a `PATCH`.
+ */
+describe('UserEdit — activating and deactivating', () => {
+    it('asks the access dialog to confirm a deactivation, and calls the endpoint once confirmed', () => {
+        const wrapper = mountPage();
+
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=user-edit-deactivate]').trigger('click'))
+            .then(flushPromises)
+            .then(() => {
+                const dialog = wrapper.findComponent(UserAccessDialog);
+                expect(dialog.props('options')).toMatchObject({
+                    skipPicker: true,
+                    chosenActive: false
+                });
+                expect(callsTo('POST', '/users/u1/deactivate')).toHaveLength(0);
+                emitOn(dialog, 'confirm', { active: false });
+            })
+            .then(flushPromises)
+            .then(() => {
+                expect(callsTo('POST', '/users/u1/deactivate')).toHaveLength(1);
+                expect(lastPatchBody()).toBeUndefined();
+            });
+    });
+
+    it('sends nothing when the deactivation is cancelled', () => {
+        const wrapper = mountPage();
+
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=user-edit-deactivate]').trigger('click'))
+            .then(flushPromises)
+            .then(() => emitOn(wrapper.findComponent(UserAccessDialog), 'cancel'))
+            .then(flushPromises)
+            .then(() => {
+                expect(callsTo('POST', '/users/u1/deactivate')).toHaveLength(0);
+            });
+    });
+
+    it('activates straight away, with no dialog', () => {
+        const wrapper = mountPage();
+
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=user-edit-activate]').trigger('click'))
+            .then(flushPromises)
+            .then(() => {
+                expect(callsTo('POST', '/users/u1/activate')).toHaveLength(1);
+                expect(wrapper.findComponent(UserAccessDialog).props('target')).toBeUndefined();
+            });
     });
 });

@@ -47,19 +47,19 @@ describe('BO2 · An expired hold serves the buyer who waits', () => {
             cy.apiAs('admin', 'PUT', `/inventory/levels/${id}/backorder-limit`, {
                 backorderLimit: 1
             });
-            cy.apiAs('admin', 'POST', '/inventory/receipts', { productId: id, quantity: 1 });
+            cy.apiAs('admin', 'POST', `/inventory/levels/${id}/receive`, { quantity: 1 });
 
             cy.step('the customer holds the last unit and does not pay');
-            cy.apiAs('user', 'POST', '/cart', { productId: id, quantity: 1 });
+            cy.apiAs('user', 'POST', '/cart/items', { productId: id, quantity: 1 });
             cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
             checkoutAs<OrderLike>('user');
 
             cy.step('the admin backorders the same product and pays, so the claim waits');
-            cy.apiAs('admin', 'POST', '/cart', { productId: id, quantity: 1 });
+            cy.apiAs('admin', 'POST', '/cart/items', { productId: id, quantity: 1 });
             cy.apiAs('admin', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
             checkoutAs<OrderLike>('admin').then((waiting) => {
                 const waitingId = String(waiting?.id);
-                cy.apiAs('admin', 'POST', `/payments/order/${waitingId}/offline`, {
+                cy.apiAs('admin', 'POST', `/payments/orders/${waitingId}/offline`, {
                     method: 'cash'
                 });
 
@@ -69,7 +69,7 @@ describe('BO2 · An expired hold serves the buyer who waits', () => {
 
                 cy.step('the paid buyer’s wait is released, not left for a stranger');
                 eventually(
-                    () => cy.apiAs<DeliveryLike>('admin', 'GET', `/delivery/order/${waitingId}`),
+                    () => cy.apiAs<DeliveryLike>('admin', 'GET', `/delivery/orders/${waitingId}`),
                     (view) =>
                         (view?.fulfillmentOrders.length ?? 0) > 0 &&
                         (view?.fulfillmentOrders.every(({ status }) => status !== 'on_hold') ??

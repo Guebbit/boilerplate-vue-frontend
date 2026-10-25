@@ -33,15 +33,8 @@ import { rethrowUnlessAbsent, isRetryableFailure } from '@/infrastructure/utils/
 import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
 import { createRequestTickets } from '@/infrastructure/utils/request-ticket.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { currencyDigits } from '@/infrastructure/utils/formatters.ts';
 import { invalidateProductsCache } from '@/modules/products';
-import {
-    changedMergeLines,
-    classifyCheckoutError,
-    emptyCart,
-    expectedTotalOf,
-    subtractGuestLines
-} from './domain';
+import { changedMergeLines, classifyCheckoutError, emptyCart, subtractGuestLines } from './domain';
 import type { GuestCartLine, MergeReportLine } from './domain';
 import { checkoutKeyFor, endCheckoutAttempt } from './composables/checkout-attempt-storage';
 import {
@@ -285,24 +278,39 @@ export const useCartStore = defineStore('cart', () => {
      * A call that replaces `cart` with the server's answer: tracked for `loading` and for the
      * background poll, and ordered by ticket so a slow older answer never lands over a newer one.
      *
-     * @param call - The generated client call, answering with the whole cart.
+     * @param call - The generated client call.
+     * @param cartOf - Picks the cart out of the answer.
      * @param invalidateProducts - Whether the write makes cached products stale: the shopper's own
      *  write does, a shipping pick or a read does not.
-     * @returns A promise resolving with the answer's cart, as `fetchAny` does.
+     * @returns A promise resolving with the answer, as `fetchAny` does.
      */
-    const replaceCart = (
-        call: () => Promise<{ data: CartResponse }>,
-        invalidateProducts = true
-    ): Promise<CartResponse | undefined> =>
+    const replaceCartFrom = <T>(
+        call: () => Promise<{ data: T }>,
+        cartOf: (data: T) => CartResponse,
+        invalidateProducts: boolean
+    ): Promise<T | undefined> =>
         fetchTracked(() => {
             const store = takeCartSlot();
             return call().then(({ data }) => {
-                store(data);
+                store(cartOf(data));
                 // The shopper's own write: cached products are stale now, not in five minutes.
                 if (invalidateProducts) invalidateProductsCache();
                 return data;
             });
         });
+
+    /**
+     * {@link replaceCartFrom} for a call whose whole answer is the cart.
+     *
+     * @param call - The generated client call, answering with the whole cart.
+     * @param invalidateProducts - As in {@link replaceCartFrom}.
+     * @returns A promise resolving with the answer's cart.
+     */
+    const replaceCart = (
+        call: () => Promise<{ data: CartResponse }>,
+        invalidateProducts = true
+    ): Promise<CartResponse | undefined> =>
+        replaceCartFrom(call, (data) => data, invalidateProducts);
 
     /**
      * Fetches the full cart (items + summary) and stores it.
@@ -390,8 +398,8 @@ export const useCartStore = defineStore('cart', () => {
         replaceCart(() => removeCartItem(productId));
 
     /**
-     * Empties the cart entirely. `DELETE /cart/all` — its own URL, not what `removeCartItem`
-     * falls back to when a product id goes missing.
+     * Empties the cart entirely. `DELETE /cart/items` — the line collection's own URL, apart from
+     * `DELETE /cart/items/{productId}`, so a missing id can never mean "clear everything".
      *
      * @returns A promise resolving with the updated (empty) cart response.
      */
@@ -460,7 +468,7 @@ export const useCartStore = defineStore('cart', () => {
                 );
             const body: CheckoutRequest = {
                 ...checkoutData,
-                expectedTotal: expectedTotalOf(shown, currencyDigits(shown.currency))
+                expectedTotal: shown.expectedTotal
             };
             const key = checkoutKeyFor(body, cart.value, useSessionStore().viewer?.id ?? '');
             return sendCheckout(body, key)
@@ -488,14 +496,18 @@ export const useCartStore = defineStore('cart', () => {
         });
 
     /**
-     * Copies one of the caller's own orders back into the cart. The response is the updated
-     * cart — products that left the catalogue were skipped server-side, so replacing the local
-     * copy with it is also what makes the skip visible.
+     * Copies one of the caller's own orders back into the cart. The answer holds the updated cart,
+     * which replaces the local copy, and one result per order line (what each became).
      *
      * @param orderId - One of the caller's own orders.
-     * @returns A promise resolving with the updated cart response.
+     * @returns A promise resolving with the updated cart and the per-line results.
      */
-    const reorder = (orderId: string) => replaceCart(() => apiReorder(orderId));
+    const reorder = (orderId: string) =>
+        replaceCartFrom(
+            () => apiReorder(orderId),
+            ({ cart: updated }) => updated,
+            true
+        );
 
     /**
      * One `POST /cart/merge` of these lines under this key: the cart takes the answer, exactly the
@@ -542,7 +554,7 @@ export const useCartStore = defineStore('cart', () => {
     };
 
     /**
-     * Sends the guest cart to the server, which adds every line by the rule of `POST /cart` and
+     * Sends the guest cart to the server, which adds every line by the rule of `POST /cart/items` and
      * answers with the merged cart and one result per line.
      *
      * A merge whose answer was lost, followed by an edit of the guest cart, is replayed first

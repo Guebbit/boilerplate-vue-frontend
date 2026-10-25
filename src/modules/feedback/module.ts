@@ -18,6 +18,8 @@ import routes from './routes';
  * references no other domain’s records.
  *
  * Context map: `docs/modules/feedback.md` § "The map".
+ *
+ * Subdomain: `generic`.
  */
 export default {
     name: 'feedback',

@@ -11,7 +11,7 @@
 import type { AxiosRequestConfig } from 'axios';
 
 /** The header the paired backend's session guard reads (`kernel/middlewares/authorizations.ts`). */
-export const SESSION_PASSIVE_HEADER = 'X-Session-Passive';
+export const SESSION_PASSIVE_HEADER = 'Session-Passive';
 
 /**
  * Merges the passive marker into a per-call config.

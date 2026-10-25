@@ -69,7 +69,7 @@ describe('CU16 · A whole purchase in Italian', () => {
             // A second line, through the API: one line is capped at ten units, which alone stays
             // under a thousand.
             cy.subjectProduct('product.inStock').then((bed) => {
-                cy.apiAs('user', 'POST', '/cart', { productId: bed.id, quantity: UNITS });
+                cy.apiAs('user', 'POST', '/cart/items', { productId: bed.id, quantity: UNITS });
                 cy.goToCart();
                 cy.contains('Riepilogo').should('exist');
                 cy.get('[data-test=cart-item]').should('have.length', 2);

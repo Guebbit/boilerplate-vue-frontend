@@ -11,66 +11,67 @@ Every screen the enabled modules contribute, generated from their route records 
 
 <!-- sitemap:start -->
 
-| Module                                                 | Path                                   | Route name              | Access   | Permission                   | View                              |
-| ------------------------------------------------------ | -------------------------------------- | ----------------------- | -------- | ---------------------------- | --------------------------------- |
-| [`account`](../modules/account.md)                     | `login`                                | `Login`                 | `guest`  | —                            | `views/Login.vue`                 |
-| [`account`](../modules/account.md)                     | `signup`                               | `Signup`                | `guest`  | —                            | `views/Signup.vue`                |
-| [`account`](../modules/account.md)                     | `login/2fa`                            | `TwoFactorChallenge`    | `guest`  | —                            | `views/TwoFactorChallenge.vue`    |
-| [`account`](../modules/account.md)                     | `password-reset`                       | `PasswordResetRequest`  | `guest`  | —                            | `views/PasswordResetRequest.vue`  |
-| [`account`](../modules/account.md)                     | `password-reset/confirm`               | `PasswordResetConfirm`  | `public` | —                            | `views/PasswordResetConfirm.vue`  |
-| [`account`](../modules/account.md)                     | `account-delete/confirm`               | `AccountDeleteConfirm`  | `public` | —                            | `views/AccountDeleteConfirm.vue`  |
-| [`account`](../modules/account.md)                     | `verify-email/confirm`                 | `VerifyEmailConfirm`    | `public` | —                            | `views/VerifyEmailConfirm.vue`    |
-| [`account`](../modules/account.md)                     | `email-change/confirm`                 | `EmailChangeConfirm`    | `public` | —                            | `views/EmailChangeConfirm.vue`    |
-| [`account`](../modules/account.md)                     | `email-change/undo`                    | `EmailChangeUndo`       | `public` | —                            | `views/EmailChangeUndo.vue`       |
-| [`account`](../modules/account.md)                     | `oauth/callback`                       | `OAuthCallback`         | `public` | —                            | `views/OAuthCallback.vue`         |
-| [`account`](../modules/account.md)                     | `account-export/:id`                   | `AccountExportDownload` | `auth`   | —                            | `views/AccountExportDownload.vue` |
-| [`account`](../modules/account.md)                     | `profile`                              | `Profile`               | `auth`   | —                            | `views/Profile.vue`               |
-| [`account`](../modules/account.md)                     | `logout`                               | `Logout`                | `public` | —                            | `—`                               |
-| [`api-keys`](../modules/api-keys.md)                   | `api-keys`                             | `ApiKeysList`           | `auth`   | `read ApiKey`                | `views/ApiKeysList.vue`           |
-| [`api-keys`](../modules/api-keys.md)                   | `api-keys/create`                      | `ApiKeyCreate`          | `auth`   | `create ApiKey`              | `views/ApiKeyCreate.vue`          |
-| [`cart`](../modules/cart.md)                           | `cart`                                 | `Cart`                  | `open`   | `update Cart`                | `views/CartEntry.vue`             |
-| [`example`](./modules.md#adding-and-deleting-a-domain) | `examples`                             | `ExamplesList`          | `auth`   | `read Example`               | `views/ExamplesList.vue`          |
-| [`example`](./modules.md#adding-and-deleting-a-domain) | `examples/create`                      | `ExampleCreate`         | `auth`   | `create Example`             | `views/ExampleCreate.vue`         |
-| [`example`](./modules.md#adding-and-deleting-a-domain) | `examples/published/:id`               | `ExamplePublished`      | `public` | —                            | `views/ExamplePublished.vue`      |
-| [`example`](./modules.md#adding-and-deleting-a-domain) | `examples/:id`                         | `ExampleTarget`         | `auth`   | `read Example`               | `views/ExampleTarget.vue`         |
-| [`example`](./modules.md#adding-and-deleting-a-domain) | `examples/:id/edit`                    | `ExampleEdit`           | `auth`   | `update Example`             | `views/ExampleEdit.vue`           |
-| [`feedback`](../modules/feedback.md)                   | `contact`                              | `Contact`               | `public` | —                            | `views/Contact.vue`               |
-| [`feedback`](../modules/feedback.md)                   | `feedback`                             | `FeedbackInbox`         | `auth`   | `read Feedback`              | `views/FeedbackInbox.vue`         |
-| [`inventory`](../modules/inventory.md)                 | `inventory`                            | `InventoryLedger`       | `auth`   | `read StockLevel`            | `views/InventoryLedger.vue`       |
-| [`inventory`](../modules/inventory.md)                 | `sales/preorders`                      | `PreordersBoard`        | `auth`   | `display Order`              | `views/PreordersBoard.vue`        |
-| [`locales`](../modules/locales.md)                     | `locales`                              | `LocalesList`           | `auth`   | `update Locale`              | `views/LocalesList.vue`           |
-| [`locales`](../modules/locales.md)                     | `locales/dictionary`                   | `LocalesDictionary`     | `auth`   | `update Locale`              | `views/LocalesDictionary.vue`     |
-| [`locales`](../modules/locales.md)                     | `locales/:tag`                         | `LocaleEntries`         | `auth`   | `update Locale`              | `views/LocaleEntries.vue`         |
-| [`locales`](../modules/locales.md)                     | `locales/translations/:entityType/:id` | `EntityTranslations`    | `auth`   | `read Translation`           | `views/EntityTranslations.vue`    |
-| [`observability`](../modules/observability.md)         | `admin`                                | `Admin`                 | `auth`   | `read ObservabilitySnapshot` | `views/Admin.vue`                 |
-| [`observability`](../modules/observability.md)         | `audit`                                | `AuditLog`              | `auth`   | `read AuditLog`              | `views/AuditLog.vue`              |
-| [`observability`](../modules/observability.md)         | `playground/realtime`                  | `RealtimePlayground`    | `auth`   | `read ObservabilitySnapshot` | `views/RealtimePlayground.vue`    |
-| [`orders`](../modules/orders.md)                       | `orders`                               | `OrdersList`            | `auth`   | —                            | `views/OrdersList.vue`            |
-| [`orders`](../modules/orders.md)                       | `sales/orders`                         | `SalesOrders`           | `auth`   | `display Order`              | `views/OrdersList.vue`            |
-| [`orders`](../modules/orders.md)                       | `orders/:id`                           | `OrderTarget`           | `auth`   | —                            | `views/Order.vue`                 |
-| [`orders`](../modules/orders.md)                       | `orders/:id/edit`                      | `OrderEdit`             | `auth`   | `update Order`               | `views/OrderEdit.vue`             |
-| [`payments`](../modules/payments.md)                   | `sales/payments`                       | `PaymentsList`          | `auth`   | `display Payment`            | `views/PaymentsList.vue`          |
-| [`products`](../modules/products.md)                   | `products`                             | `ProductsList`          | `public` | —                            | `views/ProductsList.vue`          |
-| [`products`](../modules/products.md)                   | `products/create`                      | `ProductCreate`         | `auth`   | `create Product`             | `views/ProductCreate.vue`         |
-| [`products`](../modules/products.md)                   | `products/:id`                         | `ProductTarget`         | `public` | —                            | `views/Product.vue`               |
-| [`products`](../modules/products.md)                   | `products/:id/edit`                    | `ProductEdit`           | `auth`   | `update Product`             | `views/ProductEdit.vue`           |
-| [`returns`](../modules/returns.md)                     | `returns`                              | `ReturnsList`           | `auth`   | —                            | `views/ReturnsList.vue`           |
-| [`returns`](../modules/returns.md)                     | `returns/:id`                          | `ReturnTarget`          | `auth`   | —                            | `views/Return.vue`                |
-| [`stats`](../modules/stats.md)                         | `sales/stats`                          | `StatsDashboard`        | `auth`   | `read Stats`                 | `views/StatsDashboard.vue`        |
-| [`stats`](../modules/stats.md)                         | `sales/stats/products/:productId`      | `StatsProductSales`     | `auth`   | `read Stats`                 | `views/ProductSales.vue`          |
-| [`stock-alerts`](../modules/stock-alerts.md)           | `stock-alerts`                         | `StockAlerts`           | `auth`   | —                            | `views/StockAlerts.vue`           |
-| [`users`](../modules/users.md)                         | `users`                                | `UsersList`             | `auth`   | `read User`                  | `views/UsersList.vue`             |
-| [`users`](../modules/users.md)                         | `users/create`                         | `UserCreate`            | `auth`   | `create User`                | `views/UserCreate.vue`            |
-| [`users`](../modules/users.md)                         | `users/:id`                            | `UserTarget`            | `auth`   | `read User`                  | `views/User.vue`                  |
-| [`users`](../modules/users.md)                         | `users/:id/edit`                       | `UserEdit`              | `auth`   | `update User`                | `views/UserEdit.vue`              |
-| [`webhooks`](../modules/webhooks.md)                   | `webhooks/subscriptions`               | `WebhooksList`          | `auth`   | `read WebhookSubscription`   | `views/WebhooksList.vue`          |
-| [`webhooks`](../modules/webhooks.md)                   | `webhooks/subscriptions/create`        | `WebhookCreate`         | `auth`   | `create WebhookSubscription` | `views/WebhookCreate.vue`         |
-| [`webhooks`](../modules/webhooks.md)                   | `webhooks/subscriptions/:id`           | `WebhookTarget`         | `auth`   | `read WebhookSubscription`   | `views/WebhookTarget.vue`         |
-| [`webhooks`](../modules/webhooks.md)                   | `webhooks/subscriptions/:id/edit`      | `WebhookEdit`           | `auth`   | `update WebhookSubscription` | `views/WebhookEdit.vue`           |
-| [`webhooks`](../modules/webhooks.md)                   | `webhooks/deliveries`                  | `WebhookDeliveries`     | `auth`   | `read WebhookSubscription`   | `views/WebhookDeliveries.vue`     |
-| [`wishlist`](../modules/wishlist.md)                   | `wishlist`                             | `Wishlist`              | `auth`   | —                            | `views/Wishlist.vue`              |
+| Module                                                 | Path                                   | Route name                | Access   | Permission                   | View                                |
+| ------------------------------------------------------ | -------------------------------------- | ------------------------- | -------- | ---------------------------- | ----------------------------------- |
+| [`account`](../modules/account.md)                     | `login`                                | `Login`                   | `guest`  | —                            | `views/Login.vue`                   |
+| [`account`](../modules/account.md)                     | `signup`                               | `Signup`                  | `guest`  | —                            | `views/Signup.vue`                  |
+| [`account`](../modules/account.md)                     | `login/2fa`                            | `TwoFactorChallenge`      | `guest`  | —                            | `views/TwoFactorChallenge.vue`      |
+| [`account`](../modules/account.md)                     | `login/restore`                        | `AccountRestoreChallenge` | `guest`  | —                            | `views/AccountRestoreChallenge.vue` |
+| [`account`](../modules/account.md)                     | `password-reset`                       | `PasswordResetRequest`    | `guest`  | —                            | `views/PasswordResetRequest.vue`    |
+| [`account`](../modules/account.md)                     | `password-reset/confirm`               | `PasswordResetConfirm`    | `public` | —                            | `views/PasswordResetConfirm.vue`    |
+| [`account`](../modules/account.md)                     | `account-restore`                      | `AccountRestore`          | `public` | —                            | `views/AccountRestore.vue`          |
+| [`account`](../modules/account.md)                     | `verify-email/confirm`                 | `VerifyEmailConfirm`      | `public` | —                            | `views/VerifyEmailConfirm.vue`      |
+| [`account`](../modules/account.md)                     | `email-change/confirm`                 | `EmailChangeConfirm`      | `public` | —                            | `views/EmailChangeConfirm.vue`      |
+| [`account`](../modules/account.md)                     | `email-change/undo`                    | `EmailChangeUndo`         | `public` | —                            | `views/EmailChangeUndo.vue`         |
+| [`account`](../modules/account.md)                     | `oauth/callback`                       | `OAuthCallback`           | `public` | —                            | `views/OAuthCallback.vue`           |
+| [`account`](../modules/account.md)                     | `account-export/:id`                   | `AccountExportDownload`   | `auth`   | —                            | `views/AccountExportDownload.vue`   |
+| [`account`](../modules/account.md)                     | `profile`                              | `Profile`                 | `auth`   | —                            | `views/Profile.vue`                 |
+| [`account`](../modules/account.md)                     | `logout`                               | `Logout`                  | `public` | —                            | `—`                                 |
+| [`api-keys`](../modules/api-keys.md)                   | `api-keys`                             | `ApiKeysList`             | `auth`   | `read ApiKey`                | `views/ApiKeysList.vue`             |
+| [`api-keys`](../modules/api-keys.md)                   | `api-keys/create`                      | `ApiKeyCreate`            | `auth`   | `create ApiKey`              | `views/ApiKeyCreate.vue`            |
+| [`cart`](../modules/cart.md)                           | `cart`                                 | `Cart`                    | `open`   | `update Cart`                | `views/CartEntry.vue`               |
+| [`example`](./modules.md#adding-and-deleting-a-domain) | `examples`                             | `ExamplesList`            | `auth`   | `read Example`               | `views/ExamplesList.vue`            |
+| [`example`](./modules.md#adding-and-deleting-a-domain) | `examples/create`                      | `ExampleCreate`           | `auth`   | `create Example`             | `views/ExampleCreate.vue`           |
+| [`example`](./modules.md#adding-and-deleting-a-domain) | `examples/published/:id`               | `ExamplePublished`        | `public` | —                            | `views/ExamplePublished.vue`        |
+| [`example`](./modules.md#adding-and-deleting-a-domain) | `examples/:id`                         | `ExampleTarget`           | `auth`   | `read Example`               | `views/ExampleTarget.vue`           |
+| [`example`](./modules.md#adding-and-deleting-a-domain) | `examples/:id/edit`                    | `ExampleEdit`             | `auth`   | `update Example`             | `views/ExampleEdit.vue`             |
+| [`feedback`](../modules/feedback.md)                   | `contact`                              | `Contact`                 | `public` | —                            | `views/Contact.vue`                 |
+| [`feedback`](../modules/feedback.md)                   | `feedback`                             | `FeedbackInbox`           | `auth`   | `read Feedback`              | `views/FeedbackInbox.vue`           |
+| [`inventory`](../modules/inventory.md)                 | `inventory`                            | `InventoryLedger`         | `auth`   | `read StockLevel`            | `views/InventoryLedger.vue`         |
+| [`inventory`](../modules/inventory.md)                 | `sales/preorders`                      | `PreordersBoard`          | `auth`   | `display Order`              | `views/PreordersBoard.vue`          |
+| [`locales`](../modules/locales.md)                     | `locales`                              | `LocalesList`             | `auth`   | `update Locale`              | `views/LocalesList.vue`             |
+| [`locales`](../modules/locales.md)                     | `locales/dictionary`                   | `LocalesDictionary`       | `auth`   | `update Locale`              | `views/LocalesDictionary.vue`       |
+| [`locales`](../modules/locales.md)                     | `locales/:tag`                         | `LocaleEntries`           | `auth`   | `update Locale`              | `views/LocaleEntries.vue`           |
+| [`locales`](../modules/locales.md)                     | `locales/translations/:entityType/:id` | `EntityTranslations`      | `auth`   | `read Translation`           | `views/EntityTranslations.vue`      |
+| [`observability`](../modules/observability.md)         | `admin`                                | `Admin`                   | `auth`   | `read ObservabilitySnapshot` | `views/Admin.vue`                   |
+| [`observability`](../modules/observability.md)         | `audit`                                | `AuditLog`                | `auth`   | `read AuditLog`              | `views/AuditLog.vue`                |
+| [`observability`](../modules/observability.md)         | `playground/realtime`                  | `RealtimePlayground`      | `auth`   | `read ObservabilitySnapshot` | `views/RealtimePlayground.vue`      |
+| [`orders`](../modules/orders.md)                       | `orders`                               | `OrdersList`              | `auth`   | —                            | `views/OrdersList.vue`              |
+| [`orders`](../modules/orders.md)                       | `sales/orders`                         | `SalesOrders`             | `auth`   | `display Order`              | `views/OrdersList.vue`              |
+| [`orders`](../modules/orders.md)                       | `orders/:id`                           | `OrderTarget`             | `auth`   | —                            | `views/Order.vue`                   |
+| [`orders`](../modules/orders.md)                       | `orders/:id/edit`                      | `OrderEdit`               | `auth`   | `update Order`               | `views/OrderEdit.vue`               |
+| [`payments`](../modules/payments.md)                   | `sales/payments`                       | `PaymentsList`            | `auth`   | `display Payment`            | `views/PaymentsList.vue`            |
+| [`products`](../modules/products.md)                   | `products`                             | `ProductsList`            | `public` | —                            | `views/ProductsList.vue`            |
+| [`products`](../modules/products.md)                   | `products/create`                      | `ProductCreate`           | `auth`   | `create Product`             | `views/ProductCreate.vue`           |
+| [`products`](../modules/products.md)                   | `products/:id`                         | `ProductTarget`           | `public` | —                            | `views/Product.vue`                 |
+| [`products`](../modules/products.md)                   | `products/:id/edit`                    | `ProductEdit`             | `auth`   | `update Product`             | `views/ProductEdit.vue`             |
+| [`returns`](../modules/returns.md)                     | `returns`                              | `ReturnsList`             | `auth`   | —                            | `views/ReturnsList.vue`             |
+| [`returns`](../modules/returns.md)                     | `returns/:id`                          | `ReturnTarget`            | `auth`   | —                            | `views/Return.vue`                  |
+| [`stats`](../modules/stats.md)                         | `sales/stats`                          | `StatsDashboard`          | `auth`   | `read Stats`                 | `views/StatsDashboard.vue`          |
+| [`stats`](../modules/stats.md)                         | `sales/stats/products/:productId`      | `StatsProductSales`       | `auth`   | `read Stats`                 | `views/ProductSales.vue`            |
+| [`stock-alerts`](../modules/stock-alerts.md)           | `stock-alerts`                         | `StockAlerts`             | `auth`   | —                            | `views/StockAlerts.vue`             |
+| [`users`](../modules/users.md)                         | `users`                                | `UsersList`               | `auth`   | `read User`                  | `views/UsersList.vue`               |
+| [`users`](../modules/users.md)                         | `users/create`                         | `UserCreate`              | `auth`   | `create User`                | `views/UserCreate.vue`              |
+| [`users`](../modules/users.md)                         | `users/:id`                            | `UserTarget`              | `auth`   | `read User`                  | `views/User.vue`                    |
+| [`users`](../modules/users.md)                         | `users/:id/edit`                       | `UserEdit`                | `auth`   | `update User`                | `views/UserEdit.vue`                |
+| [`webhooks`](../modules/webhooks.md)                   | `webhooks/subscriptions`               | `WebhooksList`            | `auth`   | `read WebhookSubscription`   | `views/WebhooksList.vue`            |
+| [`webhooks`](../modules/webhooks.md)                   | `webhooks/subscriptions/create`        | `WebhookCreate`           | `auth`   | `create WebhookSubscription` | `views/WebhookCreate.vue`           |
+| [`webhooks`](../modules/webhooks.md)                   | `webhooks/subscriptions/:id`           | `WebhookTarget`           | `auth`   | `read WebhookSubscription`   | `views/WebhookTarget.vue`           |
+| [`webhooks`](../modules/webhooks.md)                   | `webhooks/subscriptions/:id/edit`      | `WebhookEdit`             | `auth`   | `update WebhookSubscription` | `views/WebhookEdit.vue`             |
+| [`webhooks`](../modules/webhooks.md)                   | `webhooks/deliveries`                  | `WebhookDeliveries`       | `auth`   | `read WebhookSubscription`   | `views/WebhookDeliveries.vue`       |
+| [`wishlist`](../modules/wishlist.md)                   | `wishlist`                             | `Wishlist`                | `auth`   | —                            | `views/Wishlist.vue`                |
 
-56 screens across 17 modules.
+57 screens across 17 modules.
 
 <!-- sitemap:end -->
 
@@ -156,15 +157,25 @@ flowchart TD
 
 ## Where guards live
 
-| Guard                | File                                | Registered on                  | Effect                                                                                                                                                                          |
-| -------------------- | ----------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tryRestoreAuth`     | `src/app/guards/authentications.ts` | `beforeEach` (first)           | Silently restores the access token from the refresh endpoint, then the viewer, then the rules that go with them, so `isAuth` and `can()` are settled before anything reads them |
-| `enforceRouteAccess` | `src/app/guards/authentications.ts` | `beforeEach` (second)          | Applies `canAccess` to `meta.access`; redirects and notifies the visitor when it refuses                                                                                        |
-| `localeChoice`       | `src/app/guards/locale-choice.ts`   | `beforeResolve`                | Loads and activates the `:locale` dictionary; redirects with the default locale injected when the param is missing or unsupported                                               |
-| `exampleEditGuard`   | `src/modules/example/guards.ts`     | `beforeEnter` on `ExampleEdit` | Teaching-only: loads the record before the edit form mounts, and shows what a guard can and cannot reach. Scoped to one route, never app-wide                                   |
+| Guard                | File                                | Registered on         | Effect                                                                                                                                                                          |
+| -------------------- | ----------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tryRestoreAuth`     | `src/app/guards/authentications.ts` | `beforeEach` (first)  | Silently restores the access token from the refresh endpoint, then the viewer, then the rules that go with them, so `isAuth` and `can()` are settled before anything reads them |
+| `enforceRouteAccess` | `src/app/guards/authentications.ts` | `beforeEach` (second) | Applies `canAccess` to `meta.access`; redirects and notifies the visitor when it refuses                                                                                        |
+| `localeChoice`       | `src/app/guards/locale-choice.ts`   | `beforeResolve`       | Loads and activates the `:locale` dictionary; redirects with the default locale injected when the param is missing or unsupported                                               |
 
 `canAccess` in the same file is not a guard — it is the shared predicate both `enforceRouteAccess`
 and `AppNavigation` call.
+
+### What a guard can reach
+
+A module does not register a data-loading guard: a detail or edit view loads its own record with the
+store's `watch*` call and renders its placeholder until the record arrives (`example/views/ExampleEdit.vue`).
+Why: a `beforeEnter` runs before the router's `beforeResolve`, so what a guard can use is narrow.
+
+- A Pinia store: yes, anywhere.
+- Translations: not yet. The locale dictionary loads in `beforeResolve`, after every `beforeEnter`, so `t()` in a guard returns the raw key.
+- Injected variables: never. A guard has no component scope.
+- A returned value: Vue Router reads ANY return as a navigation instruction, so a guard that only observes returns nothing.
 
 ## Auth persistence
 

@@ -42,7 +42,7 @@ const { orderId, shippingMethodId, canStart } = defineProps<{
      */
     shippingMethodId?: string;
     /**
-     * The order's own `actions.start` — whether `POST /delivery/order/{id}/start` would be
+     * The order's own `actions.start` — whether `POST /delivery/orders/{id}/start` would be
      * accepted right now. Who may start fulfilment (`start:Shipment`) is a different key
      * than who may write a shipment, so it stays the order's flag.
      */

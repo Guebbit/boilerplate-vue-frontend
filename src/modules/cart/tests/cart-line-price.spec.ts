@@ -32,7 +32,8 @@ vi.mock('@api', async (importOriginal) => ({
                         price: 9.99,
                         currency: 'GBP',
                         inStock: true,
-                        lowStock: false
+                        lowStock: false,
+                        buyable: true
                     }
                 ],
                 meta: { totalItems: 1, page: 1, pageSize: 1, totalPages: 1 }
@@ -43,16 +44,18 @@ vi.mock('@api', async (importOriginal) => ({
 
 /** One line of three units — enough to tell the unit price and the line total apart. */
 const CART: CartResponse = {
-    items: [{ productId: 'p1', quantity: 3, availability: 'in_stock' }],
+    items: [{ productId: 'p1', quantity: 3, availability: 'in_stock', canIncrease: true }],
     summary: {
         itemsCount: 1,
         totalQuantity: 3,
         itemsTotal: 29.97,
         shippingCost: 0,
         totalPrice: 29.97,
-        currency: 'GBP'
+        currency: 'GBP',
+        expectedTotal: { amount: 2997, currency: 'GBP' }
     },
-    shipping: { required: false, selected: null, options: [] }
+    shipping: { required: false, selected: null, options: [] },
+    checkoutable: true
 };
 
 /** Mounts the cart page over a preloaded cart, with the cart fetch stubbed. */

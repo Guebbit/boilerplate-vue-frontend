@@ -12,7 +12,7 @@ export default {
 /**
  * @module
  * The admin's own way in when a bank statement line, not an order, is what they are holding: paste
- * the RF creditor reference and find the order it belongs to. Published only to an operator who
+ * the RF creditor reference and find the order it belongs to (the payments list, filtered by it). Published only to an operator who
  * could act on what it finds — `create:Payment`, the same key that gates recording the
  * payment itself.
  *
@@ -33,13 +33,12 @@ import { useI18n } from 'vue-i18n';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { usePaymentsStore } from '../store.ts';
-import type { Order } from '@types';
 
 /**
- * Fires once a reference search actually lands on an order — the host decides what "found" means
- * for it (`OrdersList.vue` jumps to `OrderEdit`); this component names no route at all.
+ * Fires once a reference search actually lands on an order, carrying that order's id — the host
+ * decides what "found" means for it (`OrdersList.vue` jumps to `OrderEdit`); this component names no route at all.
  */
-const emit = defineEmits<{ found: [order: Order] }>();
+const emit = defineEmits<{ found: [orderId: string] }>();
 
 /**
  * Translation function.
@@ -69,7 +68,7 @@ const {
 } = useBlockingError();
 
 /**
- * Looks the reference up and emits the order it pays, for the host to act on. A blank field or an
+ * Looks the reference up and emits the id of the order it pays, for the host to act on. A blank field or an
  * in-flight search is a no-op; a miss or any other failure blocks the search in place
  * ({@link searchError}) rather than emitting nothing.
  *
@@ -82,14 +81,14 @@ const search = () => {
     clearSearchError();
 
     return paymentsStore
-        .findOrderByReference(typed)
-        .then((order) => {
-            if (!order) {
+        .findOrderIdByReference(typed)
+        .then((orderId) => {
+            if (!orderId) {
                 warnSearchNotFound(t('order-reference-search.error-not-found'));
                 return;
             }
             reference.value = '';
-            emit('found', order);
+            emit('found', orderId);
         })
         .catch((error: unknown) => reportSearchError(error));
 };

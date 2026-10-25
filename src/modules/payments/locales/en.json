@@ -16,8 +16,9 @@
         "method-offline-other": "Paid another way",
         "label-reference": "reference {reference}",
         "partially-refunded": "{refunded} of {total} has been refunded.",
-        "refunded-by-hand": "Refunded — the money was returned to the customer outside this application.",
-        "refund-pending": "Refund pending — this order was cancelled, but only an operator can confirm the money was actually returned outside this application.",
+        "refunded-by-hand": "Refunded by hand — the money was returned to the customer outside this application.",
+        "refund-pending": "Refund pending — the money has not been confirmed back yet. An operator hands it back outside this application, then marks it returned.",
+        "refund-card-pending": "Refund pending — the payment provider has not confirmed the refund yet. It is retried automatically.",
         "none": "No payment yet."
     },
     "payment-method-selector": {
@@ -113,6 +114,7 @@
         "refund-reason-cancellation": "Cancellation",
         "refund-reason-goodwill": "Goodwill",
         "refund-reason-return": "Return",
+        "refund-reason-late_payment": "Late payment",
         "failure-reason-declined": "The bank declined the refund",
         "failure-reason-insufficient_funds": "Insufficient funds",
         "failure-reason-expired_or_canceled_card": "The card has expired or was cancelled",
@@ -136,6 +138,10 @@
         "label-received": "Received",
         "button-close": "Close",
         "button-refund": "Refund the rest",
+        "button-mark-returned": "Mark returned",
+        "confirm-mark-returned": "Confirm you returned {amount} to the customer outside the app? Nothing is sent.",
+        "mark-returned-done": "Marked as returned",
+        "button-open-payment": "Open payment",
         "button-open-order": "Open the order",
         "confirm-refund": "Refund everything still refundable on order {order}? The money goes back to the customer.",
         "refund-done": "Refund requested"

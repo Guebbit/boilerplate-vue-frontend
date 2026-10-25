@@ -12,13 +12,19 @@ import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import UsersList from '../views/UsersList.vue';
 import { useUsersStore } from '../store.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { asStub } from '../../../../tests/support/stub.ts';
-import { aUser } from '../../../../tests/support/unit/fixtures.ts';
+import {
+    aUser,
+    ALL_USER_ACTIONS,
+    NO_USER_ACTIONS,
+    userActionsOf
+} from '../../../../tests/support/unit/fixtures.ts';
 import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import * as schemas from '@api/schemas';
 
@@ -187,6 +193,16 @@ describe('UsersList — the needs-review filter', () => {
     });
 });
 
+/** A soft-deleted account scheduled for erasure by its owner, restorable by this admin. */
+const scheduledRow = () =>
+    aUser({
+        id: 'u1',
+        username: 'leaving',
+        deletedAt: '2026-10-01T00:00:00.000Z',
+        purgeAt: '2026-10-31T00:00:00.000Z',
+        actions: { ...ALL_USER_ACTIONS, delete: false }
+    });
+
 /**
  * The row actions are the server's answer for THIS admin on THIS account (the route's key and the
  * rank rule together), not the session's: a moderator may edit, ban and erase a customer and none
@@ -198,12 +214,12 @@ describe('UsersList — the row actions follow each row’s own `actions`', () =
             aUser({
                 id: 'u1',
                 username: 'customer',
-                actions: { update: true, ban: true, delete: true }
+                actions: { ...ALL_USER_ACTIONS, restore: false }
             }),
             aUser({
                 id: 'u2',
                 username: 'support',
-                actions: { update: false, ban: false, delete: false }
+                actions: NO_USER_ACTIONS
             })
         ]);
 
@@ -225,12 +241,95 @@ describe('UsersList — the row actions follow each row’s own `actions`', () =
         expect(rows[1].find('[data-test=row-view]').exists()).toBe(true);
     });
 
+    it('offers restore, not delete, on a row the server says is restorable', async () => {
+        const wrapper = await mountWithRows([
+            aUser({
+                id: 'u1',
+                username: 'gone',
+                deletedAt: '2026-10-01T00:00:00.000Z',
+                actions: { ...ALL_USER_ACTIONS, delete: false }
+            })
+        ]);
+
+        const row = wrapper.get('tbody tr');
+
+        expect(row.find('[data-test=row-restore]').exists()).toBe(true);
+        expect(row.find('[data-test=row-delete]').exists()).toBe(false);
+    });
+
+    describe('a row its owner asked to delete', () => {
+        it('shows when it is erased', async () => {
+            const wrapper = await mountWithRows([scheduledRow()]);
+
+            expect(wrapper.get('[data-test=row-erases-on]').text()).toContain('Erases on');
+        });
+
+        it('shows no such chip on an account an admin soft-deleted', async () => {
+            const wrapper = await mountWithRows([
+                aUser({
+                    id: 'u1',
+                    deletedAt: '2026-10-01T00:00:00.000Z',
+                    actions: { ...ALL_USER_ACTIONS, delete: false }
+                })
+            ]);
+
+            expect(wrapper.find('[data-test=row-erases-on]').exists()).toBe(false);
+        });
+
+        it('asks first, naming the owner’s right, and restores nothing when declined', async () => {
+            const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(false);
+            const restore = vi.spyOn(useUsersStore(), 'restoreUser');
+            const wrapper = await mountWithRows([scheduledRow()]);
+
+            await wrapper.get('[data-test=row-restore]').trigger('click');
+            await flushPromises();
+
+            expect(confirm).toHaveBeenCalledExactlyOnceWith(
+                expect.objectContaining({
+                    message: expect.stringContaining(
+                        'leaving asked for this account to be erased'
+                    ) as string
+                })
+            );
+            expect(restore).not.toHaveBeenCalled();
+        });
+
+        it('restores once the admin says restore anyway', async () => {
+            vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+            const restore = vi.spyOn(useUsersStore(), 'restoreUser').mockResolvedValue(undefined);
+            const wrapper = await mountWithRows([scheduledRow()]);
+
+            await wrapper.get('[data-test=row-restore]').trigger('click');
+            await flushPromises();
+
+            expect(restore).toHaveBeenCalledExactlyOnceWith('u1');
+        });
+
+        it('restores an admin’s own soft delete with no question', async () => {
+            const confirm = vi.spyOn(useDialogStore(), 'confirm');
+            const restore = vi.spyOn(useUsersStore(), 'restoreUser').mockResolvedValue(undefined);
+            const wrapper = await mountWithRows([
+                aUser({
+                    id: 'u2',
+                    deletedAt: '2026-10-01T00:00:00.000Z',
+                    actions: { ...ALL_USER_ACTIONS, delete: false }
+                })
+            ]);
+
+            await wrapper.get('[data-test=row-restore]').trigger('click');
+            await flushPromises();
+
+            expect(confirm).not.toHaveBeenCalled();
+            expect(restore).toHaveBeenCalledExactlyOnceWith('u2');
+        });
+    });
+
     it('offers edit and access, but no delete, on a row that allows only the profile edit', async () => {
         const wrapper = await mountWithRows([
             aUser({
                 id: 'u1',
                 username: 'customer',
-                actions: { update: true, ban: false, delete: false }
+                actions: userActionsOf({ update: true, assignRole: true })
             })
         ]);
 
@@ -247,7 +346,12 @@ describe('UsersList — the row actions follow each row’s own `actions`', () =
             aUser({
                 id: 'u1',
                 username: 'customer',
-                actions: { update: false, ban: true, delete: false }
+                actions: userActionsOf({
+                    setPurchaseHold: true,
+                    liftPurchaseHold: true,
+                    activate: true,
+                    deactivate: true
+                })
             })
         ]);
 

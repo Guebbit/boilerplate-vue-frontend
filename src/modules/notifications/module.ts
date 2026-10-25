@@ -19,6 +19,8 @@ import type { AppModule } from '@/kernel/registry';
  * A courtesy surface. Deleting it costs the reader a message, never a capability.
  *
  * Context map: `docs/modules/notifications.md` § "The map".
+ *
+ * Subdomain: `supporting`.
  */
 export default {
     name: 'notifications',

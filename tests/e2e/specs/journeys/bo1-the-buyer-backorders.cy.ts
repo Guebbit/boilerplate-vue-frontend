@@ -52,11 +52,11 @@ describe('BO1 · The buyer backorders', () => {
             cy.apiAs('admin', 'PUT', `/inventory/levels/${id}/backorder-limit`, {
                 backorderLimit: 5
             });
-            cy.apiAs('admin', 'POST', '/inventory/receipts', { productId: id, quantity: 1 });
+            cy.apiAs('admin', 'POST', `/inventory/levels/${id}/receive`, { quantity: 1 });
 
             cy.step('the customer wants two: one is on the shelf, one is owed');
             cy.switchUser('user');
-            cy.apiAs('user', 'POST', '/cart', { productId: id, quantity: 2 });
+            cy.apiAs('user', 'POST', '/cart/items', { productId: id, quantity: 2 });
             cy.visit('/en/cart');
             cy.get('[data-test=cart-line-availability]').should('contain.text', 'Backorder');
 
@@ -70,9 +70,11 @@ describe('BO1 · The buyer backorders', () => {
                 cy.get('[data-test=order-item-owed]').should('contain.text', 'backorder');
 
                 cy.step('the order is paid; the owed part waits for stock on its own');
-                cy.apiAs('admin', 'POST', `/payments/order/${orderId}/offline`, { method: 'cash' });
+                cy.apiAs('admin', 'POST', `/payments/orders/${orderId}/offline`, {
+                    method: 'cash'
+                });
                 eventually(
-                    () => cy.apiAs<DeliveryLike>('admin', 'GET', `/delivery/order/${orderId}`),
+                    () => cy.apiAs<DeliveryLike>('admin', 'GET', `/delivery/orders/${orderId}`),
                     (view) => (view?.fulfillmentOrders.length ?? 0) === 2
                 ).then((view) => {
                     const held = view?.fulfillmentOrders.filter(
@@ -82,9 +84,9 @@ describe('BO1 · The buyer backorders', () => {
                 });
 
                 cy.step('stock arrives: the wait is released, and everything ships');
-                cy.apiAs('admin', 'POST', '/inventory/receipts', { productId: id, quantity: 1 });
+                cy.apiAs('admin', 'POST', `/inventory/levels/${id}/receive`, { quantity: 1 });
                 eventually(
-                    () => cy.apiAs<DeliveryLike>('admin', 'GET', `/delivery/order/${orderId}`),
+                    () => cy.apiAs<DeliveryLike>('admin', 'GET', `/delivery/orders/${orderId}`),
                     (view) =>
                         view?.fulfillmentOrders.every(({ status }) => status !== 'on_hold') ?? false
                 );

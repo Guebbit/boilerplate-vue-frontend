@@ -44,10 +44,10 @@ interface PaymentLike {
  */
 const aPaidDigitalOrder = (): Cypress.Chainable<string> =>
     cy.subjectId('product.digital').then((productId) => {
-        cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
+        cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 1 });
         return checkoutAs('user').then((order) => {
             const orderId = String(order?.id);
-            cy.apiAs('admin', 'POST', `/payments/order/${orderId}/offline`, { method: 'cash' });
+            cy.apiAs('admin', 'POST', `/payments/orders/${orderId}/offline`, { method: 'cash' });
             return cy.wrap(orderId, { log: false });
         });
     });
@@ -100,7 +100,7 @@ describe('OP17 · A warehouse shift', () => {
             cy.get('[role=listbox] [role=option]').contains(title).click();
             cy.get('[data-test=receipt-quantity] input').clear();
             cy.get('[data-test=receipt-quantity] input').type('4');
-            cy.intercept('POST', '**/inventory/receipts').as('receipt');
+            cy.intercept('POST', '**/inventory/levels/*/receive').as('receipt');
             cy.get('[data-test=receipt-submit]').click();
             cy.wait('@receipt').its('response.statusCode').should('be.within', 200, 299);
             cy.get('[data-test=receipt-error]').should('not.exist');
@@ -170,7 +170,7 @@ describe('OP17 · A warehouse shift', () => {
                 cy.apiAs<PaymentLike>(
                     'admin',
                     'GET',
-                    `/payments/order/${String(received?.orderId)}`
+                    `/payments/orders/${String(received?.orderId)}`
                 ).then((payment) => {
                     const paidCents = Math.round(Number(payment?.amount) * 100);
                     centsOf('[data-test=return-refund]').should((refund) => {

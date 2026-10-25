@@ -121,6 +121,22 @@ export const keepsIdempotencyKey = (error: unknown): boolean => {
 };
 
 /**
+ * Whether a rejected API call carries one of the given error codes in its reject envelope.
+ *
+ * For a refusal that means "the record is not as you read it" (another operator settled the same
+ * refund, a payment already moved on): the caller re-reads instead of showing a stale screen.
+ *
+ * @param error - Unknown rejected value, normally the envelope from `onResponseReject`.
+ * @param codes - The `errors[].code` values that count.
+ * @returns `true` when the API answered with at least one of them.
+ */
+export const hasErrorCode = (error: unknown, ...codes: string[]): boolean => {
+    if (isTransportFailure(error)) return false;
+    const { errors } = error as { errors?: { code?: unknown }[] };
+    return (errors ?? []).some(({ code }) => typeof code === 'string' && codes.includes(code));
+};
+
+/**
  * Lets an "absent" answer through and rethrows everything else.
  *
  * The rule three stores share: an absence is a value, any other failure is still a failure.

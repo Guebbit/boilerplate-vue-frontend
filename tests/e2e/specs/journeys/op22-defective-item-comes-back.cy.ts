@@ -153,7 +153,7 @@ describe('OP22 · A defective item comes back', () => {
                     (received) => {
                         expect(received?.status).to.equal('closed');
                         const orderId = String(received?.orderId);
-                        cy.apiAs<PaymentLike>('admin', 'GET', `/payments/order/${orderId}`).then(
+                        cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`).then(
                             (payment) => {
                                 const paidCents = Math.round(Number(payment?.amount) * 100);
                                 centsOf('[data-test=return-refund]').should((refund) => {

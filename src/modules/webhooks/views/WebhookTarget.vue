@@ -11,9 +11,10 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Webhook subscription detail (read-only) page. Hydrates from the store's cache by route id —
- * there is no `GET .../subscriptions/{id}`, see `store.ts`'s `watchSubscription` — and renders
- * its fields plus the secret-ring actions (rotate/remove) and delete.
+ * Webhook subscription detail (read-only) page. Loads its own record by route id (`store.ts`'s
+ * `watchSubscription`, a 404 or 403 leaves for the Error page) and renders its fields, its status
+ * with the enable/disable action, the secret-ring actions (rotate/remove) and delete. Every button
+ * shows only when the record's own `actions` flag says the server would accept it.
  */
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -22,6 +23,9 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useWebhooksStore } from '../store';
+import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
+import { subscriptionStatusOf } from '../domain/subscription-status.ts';
+import SubscriptionStatusChip from '../components/SubscriptionStatusChip.vue';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -36,12 +40,7 @@ import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import { vFocusableScroll } from '@/ui/directives/focusable-scroll';
-import {
-    formatText,
-    formatDateTime,
-    formatFlag,
-    EMPTY_VALUE
-} from '@/infrastructure/utils/formatters.ts';
+import { formatText, formatDateTime, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 
 /**
  * Translations helper.
@@ -63,7 +62,14 @@ const { id } = defineProps<{
 /**
  * Webhooks store actions.
  */
-const { watchSubscription, rotateSecret, removeSecret, deleteSubscription } = useWebhooksStore();
+const {
+    watchSubscription,
+    rotateSecret,
+    removeSecret,
+    deleteSubscription,
+    enableSubscription,
+    disableSubscription
+} = useWebhooksStore();
 
 /**
  * The subscription being displayed.
@@ -71,9 +77,10 @@ const { watchSubscription, rotateSecret, removeSecret, deleteSubscription } = us
 const { currentSubscription } = storeToRefs(useWebhooksStore());
 
 /**
- * Selects and hydrates the subscription whenever the route id changes.
+ * Selects and loads the subscription whenever the route id changes; a missing or forbidden one
+ * leaves for the Error page instead of sitting on placeholders.
  */
-watchSubscription(() => id);
+watchSubscription(() => id, { onError: useMissingRecord() });
 
 /**
  * Toast dispatcher, used to report every outcome to the visitor.
@@ -98,17 +105,27 @@ const heroTitle = computed(
 const heroDescription = computed(() => formatText(currentSubscription.value?.description));
 
 /**
- * Label of the status chip.
+ * Label of the status stat.
  *
- * @returns The localized enabled/disabled wording, or the empty-value glyph while the
+ * @returns The localized enabled/paused/auto-disabled wording, or the empty-value glyph while the
  *  subscription is unknown.
  */
 const subscriptionStatus = computed(() =>
-    formatFlag(
-        currentSubscription.value?.enabled,
-        t('webhooks-list-page.status-enabled'),
-        t('webhooks-list-page.status-disabled')
-    )
+    currentSubscription.value
+        ? t(`webhook-status.${subscriptionStatusOf(currentSubscription.value)}`)
+        : EMPTY_VALUE
+);
+
+/**
+ * When a superseded secret stops signing, by secret id; a secret absent here is the current one.
+ */
+const retiresAtBySecret = computed(
+    () =>
+        new Map(
+            (currentSubscription.value?.retiringSecrets ?? []).map(
+                ({ id: secretId, retiresAt }) => [secretId, retiresAt]
+            )
+        )
 );
 
 /**
@@ -119,10 +136,60 @@ const subscriptionStatus = computed(() =>
 const revealedSecret = ref<string>();
 
 /**
- * Whether a rotate/remove/delete call is in flight, disabling the secret-ring buttons while one
+ * Whether an enable/disable/rotate/remove call is in flight, disabling the secret-ring buttons while one
  * settles.
  */
 const busy = ref(false);
+
+/**
+ * The status action's own blocked state — enable and disable share one control area, so they
+ * share one alert beside it.
+ */
+const {
+    message: statusError,
+    report: reportStatusError,
+    clear: clearStatusError
+} = useBlockingError();
+
+/**
+ * Switches the subscription back on and toasts the outcome.
+ */
+const handleEnable = () => {
+    if (!id) return;
+    clearStatusError();
+    busy.value = true;
+    return enableSubscription(id)
+        .then(() => addMessage(t('webhook-target-page.success-enable')))
+        .catch((error: unknown) => reportStatusError(error))
+        .finally(() => {
+            busy.value = false;
+        });
+};
+
+/**
+ * Pauses the subscription after a confirmation: nothing is sent to it, and events that fire
+ * meanwhile are not queued for it, until it is enabled again.
+ */
+const handleDisable = singleFlight(() => {
+    if (!id) return;
+    return useDialogStore()
+        .confirm({
+            message: t('webhook-target-page.confirm-disable', {
+                url: currentSubscription.value?.url ?? id
+            })
+        })
+        .then((accepted) => {
+            if (!accepted) return;
+            clearStatusError();
+            busy.value = true;
+            return disableSubscription(id)
+                .then(() => addMessage(t('webhook-target-page.success-disable')))
+                .catch((error: unknown) => reportStatusError(error))
+                .finally(() => {
+                    busy.value = false;
+                });
+        });
+});
 
 /**
  * The rotate-secret button's own blocked state — its own dedicated control, so a failure blocks
@@ -314,8 +381,61 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                         :value="formatDateTime(currentSubscription.disabledAt)"
                         :icon="Ban"
                     />
+                    <ItemDetailField
+                        v-if="currentSubscription.autoDisabledAt"
+                        :label="t('webhook-target-page.label-auto-disabled-at')"
+                        :value="formatDateTime(currentSubscription.autoDisabledAt)"
+                        :icon="Ban"
+                    />
                 </div>
                 <p v-else class="m-0 opacity-75">{{ t('generic.loading-state') }}</p>
+
+                <div v-if="currentSubscription" class="mt-8" data-test="webhook-status-section">
+                    <h3 class="text-lg font-semibold">
+                        {{ t('webhook-target-page.section-status') }}
+                    </h3>
+                    <p class="mt-1 mb-3 flex items-center gap-2">
+                        <SubscriptionStatusChip :subscription="currentSubscription" />
+                    </p>
+                    <p
+                        v-if="!currentSubscription.enabled"
+                        class="mt-1 mb-3 opacity-75"
+                        data-test="webhook-status-intro"
+                    >
+                        {{
+                            t(
+                                currentSubscription.autoDisabledAt
+                                    ? 'webhook-target-page.status-intro-auto-disabled'
+                                    : 'webhook-target-page.status-intro-paused'
+                            )
+                        }}
+                    </p>
+                    <v-btn
+                        v-if="currentSubscription.actions.enable"
+                        variant="tonal"
+                        color="success"
+                        :disabled="busy"
+                        data-test="webhook-enable"
+                        @click="handleEnable"
+                    >
+                        {{ t('webhook-target-page.button-enable') }}
+                    </v-btn>
+                    <v-btn
+                        v-if="currentSubscription.actions.disable"
+                        variant="tonal"
+                        color="secondary"
+                        :disabled="busy"
+                        data-test="webhook-disable"
+                        @click="handleDisable"
+                    >
+                        {{ t('webhook-target-page.button-disable') }}
+                    </v-btn>
+                    <InlineErrorAlert
+                        :message="statusError"
+                        class="mt-3"
+                        data-test="webhook-target-status-error"
+                    />
+                </div>
 
                 <div v-if="currentSubscription" class="mt-8">
                     <h3 class="text-lg font-semibold">
@@ -336,6 +456,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                         <thead>
                             <tr>
                                 <th>{{ t('webhook-target-page.column-secret-id') }}</th>
+                                <th>{{ t('webhook-target-page.column-secret-retires') }}</th>
                                 <th>{{ t('webhook-target-page.column-secret-actions') }}</th>
                             </tr>
                         </thead>
@@ -346,8 +467,16 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                                 data-test="webhook-secret-row"
                             >
                                 <td class="font-mono text-sm">{{ secretId }}</td>
+                                <td data-test="webhook-secret-retires">
+                                    {{
+                                        retiresAtBySecret.has(secretId)
+                                            ? formatDateTime(retiresAtBySecret.get(secretId))
+                                            : t('webhook-target-page.secret-current')
+                                    }}
+                                </td>
                                 <td>
                                     <v-btn
+                                        v-if="currentSubscription.actions.removeSecret"
                                         size="small"
                                         variant="tonal"
                                         color="error"
@@ -368,6 +497,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                     </v-table>
 
                     <v-btn
+                        v-if="currentSubscription.actions.rotateSecret"
                         class="mt-4"
                         variant="tonal"
                         color="secondary"
@@ -399,7 +529,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
 
             <template #actions>
                 <v-btn
-                    v-if="currentSubscription"
+                    v-if="currentSubscription?.actions.update"
                     color="secondary"
                     :to="routerLinkI18n({ name: 'WebhookEdit', params: { id } })"
                 >
@@ -418,7 +548,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                     {{ t('webhook-target-page.button-go-to-list') }}
                 </v-btn>
                 <v-btn
-                    v-if="currentSubscription"
+                    v-if="currentSubscription?.actions.delete"
                     variant="text"
                     color="error"
                     data-test="webhook-delete"

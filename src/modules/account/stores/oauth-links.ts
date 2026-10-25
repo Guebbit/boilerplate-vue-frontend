@@ -61,28 +61,33 @@ export const useOAuthLinksStore = defineStore('accountOAuthLinks', () => {
     const links = ref<OAuthLink[]>([]);
 
     /**
+     * Takes the links out of an answer that carries them (the list read, or an unlink).
+     *
+     * @param data - The links envelope the server answered.
+     * @returns The links now held.
+     */
+    const applyLinks = (data: Awaited<ReturnType<typeof apiListOAuthLinks>>) => {
+        links.value = getPayloadFromResponse<OAuthLinks>(data)?.links ?? [];
+        return links.value;
+    };
+
+    /**
      * Loads the connected providers.
      *
      * @returns A promise resolving with the links.
      */
-    const fetchLinks = () =>
-        fetchAny(() =>
-            apiListOAuthLinks().then((data) => {
-                links.value = getPayloadFromResponse<OAuthLinks>(data)?.links ?? [];
-                return links.value;
-            })
-        );
+    const fetchLinks = () => fetchAny(() => apiListOAuthLinks().then(applyLinks));
 
     /**
-     * Disconnects one provider and reloads the list, because the answer worth rendering after a
-     * removal is the list without it. The server asks for a fresh session; the shared step-up
+     * Disconnects one provider. The answer is the links the account still has, so the list is
+     * taken from it with no second read. The server asks for a fresh session; the shared step-up
      * prompt answers that, so nothing here handles it.
      *
      * @param provider - Registry key from {@link fetchLinks}, e.g. `'google'`.
-     * @returns A promise resolving with the refreshed links.
+     * @returns A promise resolving with the links left.
      */
     const unlinkProvider = (provider: string) =>
-        fetchAny(() => apiUnlinkOAuthProvider(provider).then(() => fetchLinks()));
+        fetchAny(() => apiUnlinkOAuthProvider(provider).then(applyLinks));
 
     return { links, loading, fetchLinks, unlinkProvider };
 });

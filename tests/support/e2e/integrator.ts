@@ -73,23 +73,28 @@ export const sinkEndpoint = (path: string): Cypress.Chainable<string> =>
     seededSubscription().then((seeded) => `${new URL(seeded.url).origin}${path}`);
 
 /**
- * Switches a subscription on or off in its edit form, and waits for the saved notice.
+ * Switches a subscription on or off from its detail page, and waits for the notice. Switching off
+ * asks first (nothing is sent while it is paused); switching on does not.
  *
  * @param subscriptionId - which subscription
- * @param url - the address the form must show, so the right record is open
+ * @param url - the address the page must show, so the right record is open
  * @param enabled - the state to leave it in
  */
-export const setEnabledInTheForm = (
+export const setEnabledOnTheDetailPage = (
     subscriptionId: string,
     url: string,
     enabled: boolean
 ): void => {
-    cy.visit(`/en/webhooks/subscriptions/${subscriptionId}/edit`);
-    cy.get('[data-test=webhook-url] input').should('have.value', url);
-    if (enabled) cy.get('[data-test=webhook-enabled] input').check({ force: true });
-    else cy.get('[data-test=webhook-enabled] input').uncheck({ force: true });
-    cy.get('form').submit();
-    cy.contains('Subscription updated').should('exist');
+    cy.visit(`/en/webhooks/subscriptions/${subscriptionId}`);
+    cy.contains(url).should('exist');
+    if (enabled) {
+        cy.get('[data-test=webhook-enable]').click();
+        cy.contains('Subscription enabled').should('exist');
+        return;
+    }
+    cy.get('[data-test=webhook-disable]').click();
+    cy.get('[data-test=app-dialog-confirm]').click();
+    cy.contains('Subscription paused').should('exist');
 };
 
 /**
@@ -124,7 +129,7 @@ const freeTheOpenOrderSlots = (): Cypress.Chainable =>
 export const placeOrderAsCustomer = (): Cypress.Chainable<string> =>
     freeTheOpenOrderSlots().then(() =>
         cy.subjectId('product.inStock').then((productId) => {
-            cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
+            cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 1 });
             cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
             return checkoutAs('user').then((order) => {
                 if (!order) throw new Error('placeOrderAsCustomer: the checkout answered no order');

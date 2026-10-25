@@ -11,11 +11,11 @@
  * Writes one stock movement as the admin.
  *
  * @param productId - the product
- * @param path - `/inventory/receipts` or `/inventory/adjustments`
+ * @param verb - `receive` or `adjust`
  * @param body - the movement
  */
-const movement = (productId: string, path: string, body: Record<string, unknown>) =>
-    cy.apiAs('admin', 'POST', path, { productId, ...body });
+const movement = (productId: string, verb: string, body: Record<string, unknown>) =>
+    cy.apiAs('admin', 'POST', `/inventory/levels/${productId}/${verb}`, body);
 
 /**
  * Waits until every movement on show carries `reason`: the list is refetched on each pick, so a
@@ -38,8 +38,8 @@ describe('AT5 · Stock ledger filters', () => {
 
     it('reason and product narrow the ledger, and low-stock narrows the board', () => {
         cy.subjectId('product.inStock').then((productId) => {
-            movement(productId, '/inventory/receipts', { quantity: 7, note: 'AT5 receipt' });
-            movement(productId, '/inventory/adjustments', { delta: -2, note: 'AT5 damaged' });
+            movement(productId, 'receive', { quantity: 7, note: 'AT5 receipt' });
+            movement(productId, 'adjust', { delta: -2, note: 'AT5 damaged' });
 
             cy.loginAs('admin');
             cy.visit('/en/inventory');

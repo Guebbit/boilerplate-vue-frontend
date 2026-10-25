@@ -118,7 +118,7 @@ There is no `track()` here. Pageviews are Umami's own script, automatic; everyth
 behind it is reported by the backend handler that decided it happened, not by a client-side call
 this repo would have to remember to make. This repo's own part is consent: `analytics-consent.ts`
 persists the visitor's choice, and `http/interceptors.ts`'s `onRequest` forwards it as
-`X-Analytics-Consent` on every request that qualifies.
+`Analytics-Consent` on every request that qualifies.
 
 ### Conditional writes
 

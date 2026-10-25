@@ -15,7 +15,7 @@ import { shipTheOpenGroup } from '../../support/e2e/steps';
 
 /**
  * Corrects the order on the edit page to `label` via the `override:Order` door. It is one
- * way onto `processing` — the ordinary one is `POST /delivery/order/{id}/start` — and the one
+ * way onto `processing` — the ordinary one is `POST /delivery/orders/{id}/start` — and the one
  * this walk takes, since it is about shipping and the ledger, not the start. `PUT /orders/:id`
  * carries no `status` field, and shipping itself only ever moves `processing → shipped`.
  *
@@ -124,7 +124,7 @@ describe('Commerce', () => {
         // Interact only once the form has hydrated — the email field carries the record.
         cy.get('#order-edit-page [type=email]').should('not.have.value', '');
         // This walk takes the override correction to `processing`, because it is about shipping
-        // and the ledger. The ordinary door — `POST /delivery/order/{id}/start`, the
+        // and the ledger. The ordinary door — `POST /delivery/orders/{id}/start`, the
         // `mark-started` button — is a different arc; `processing → shipped` is the shipment
         // panel's own move, below.
         correctStatusTo(/processing/i);

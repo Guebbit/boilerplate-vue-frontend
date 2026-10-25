@@ -87,7 +87,7 @@ describe('CU11 · I cancel a paid order and get my money back', () => {
                 cy.step('the whole payment goes back to the card');
                 // The refund is the payments module answering the cancel, so it may land a beat later.
                 eventually(
-                    () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/order/${orderId}`),
+                    () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`),
                     (payment) => payment?.displayStatus === 'refunded'
                 ).should((payment) => {
                     expect(payment?.displayStatus).to.equal('refunded');

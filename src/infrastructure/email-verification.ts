@@ -10,8 +10,8 @@ import type { EmailVerificationRequested } from '@types';
 
 /**
  * The server's own resend cooldown from a verification-mail 429, or `undefined` when the rejection
- * was something else. Both `POST /account/verify-request` (the banner) and `POST
- * /account/pending-email/resend` (the profile page) answer it under the one code
+ * was something else. Both `POST /account/email-verification/resend` (the banner) and `POST
+ * /account/email-change/resend` (the profile page) answer it under the one code
  * (`EMAIL_VERIFY_RESEND_TOO_SOON`), so it lives here beside the first call.
  *
  * @param error - The rejected value a verification-mail send threw.

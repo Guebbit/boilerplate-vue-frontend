@@ -103,11 +103,6 @@ const FILE_SHAPES: readonly FileShape[] = [
         what: 'This domain’s translation dictionary for one language, loaded as its own chunk.'
     },
     {
-        match: /^guards\.ts$/,
-        what: '`example` only. The teaching route guard: what a `beforeEnter` can and cannot reach.',
-        onlyIn: 'example'
-    },
-    {
         match: /^provided\.ts$/,
         what: '`example` only. The typed provide/inject pair a screen hands to a descendant.',
         onlyIn: 'example'

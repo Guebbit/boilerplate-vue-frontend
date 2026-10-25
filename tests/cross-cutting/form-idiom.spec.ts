@@ -14,7 +14,7 @@
  * field to fix. That is invisible to every other test in this suite, which is what this file is
  * for.
  *
- * Three rules, and the third is what makes the first two stick:
+ * Four rules, and the third is what makes the first two stick:
  *
  *   1. Every `useStructureFormValidation(...)` call supplies `revalidateOn` and `onInvalid` — the two
  *      answers a call site would otherwise have to re-decide. The field to focus is found by
@@ -23,6 +23,8 @@
  *      `showFormErrors`; a second one beside it can only disagree with it.
  *   3. A page form (not a dialog) hands it a `formElement`, so a failed submit has something to
  *      focus into.
+ *   4. A routed page that creates or edits a lasting record for a signed-in viewer calls
+ *      `useLeaveGuard`, unless it is a one-shot form listed in {@link NO_LEAVE_GUARD}.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -126,6 +128,28 @@ const optionKeysOf = (call: string): string[] => {
     return options && ts.isObjectLiteralExpression(options) ? propertyNamesOf(options) : [];
 };
 
+/**
+ * Routed views that build a form but hold nothing worth a leave prompt, each with the reason.
+ * Every other view in the form population must call `useLeaveGuard`.
+ */
+const NO_LEAVE_GUARD: Record<string, string> = {
+    'src/modules/account/views/Login.vue': 'one-shot sign-in',
+    'src/modules/account/views/Signup.vue': 'one-shot sign-up, the visitor is not signed in',
+    'src/modules/account/views/PasswordResetRequest.vue': 'one-shot request, nothing to lose',
+    'src/modules/account/views/PasswordResetConfirm.vue': 'one-shot reset reached by a mailed link',
+    'src/modules/feedback/views/Contact.vue': 'one-shot contact message'
+};
+
+/** Routed views that build a form: they use the toolkit's validation, the translated-entity form or the tabs. */
+const formViews = (): string[] =>
+    componentFiles()
+        .filter((file) => file.split(path.sep).includes('views'))
+        .filter((file) =>
+            /useStructureFormValidation|useTranslatedEntityForm|<TranslationTabs/.test(
+                sourceOf(file)
+            )
+        );
+
 describe('one form idiom', () => {
     it('gives every form the same two toolkit answers', () => {
         const incomplete = formComponents().filter((file) =>
@@ -172,6 +196,29 @@ describe('one form idiom', () => {
      */
     it('is checking the forms it is meant to be checking', () => {
         expect(formComponents().length).toBeGreaterThan(0);
+    });
+});
+
+describe('leave guard on record-editing pages', () => {
+    it('guards every form view that is not a listed one-shot form', () => {
+        const unguarded = formViews()
+            .filter((file) => !(file in NO_LEAVE_GUARD))
+            .filter((file) => !sourceOf(file).includes('useLeaveGuard('));
+
+        expect(unguarded).toEqual([]);
+    });
+
+    it('lists no one-shot form that is gone or that guards itself anyway', () => {
+        const views = formViews();
+        const stale = Object.keys(NO_LEAVE_GUARD).filter(
+            (file) => !views.includes(file) || sourceOf(file).includes('useLeaveGuard(')
+        );
+
+        expect(stale).toEqual([]);
+    });
+
+    it('has a population to check', () => {
+        expect(formViews().length).toBeGreaterThan(Object.keys(NO_LEAVE_GUARD).length);
     });
 });
 

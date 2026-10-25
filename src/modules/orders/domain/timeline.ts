@@ -1,60 +1,13 @@
 /**
  * @module
- * What an order's timeline row says, and who may read it. Pure: the caller hands in `t`, the money
+ * What an order's timeline row says. Pure: the caller hands in `t`, the money
  * and date formatters, so the same function serves the component and a plain unit test.
  *
- * Two tables, both checked by the compiler against the contract's `OrderTimelineType`: the audience
- * (mirrors the API, which is the one that enforces it) and the detail each type derives from
- * `data`. A type added to the contract fails to compile until it has a row in both.
+ * One table, checked by the compiler against the contract's `OrderTimelineType`: the detail each
+ * type derives from `data`. A type added to the contract fails to compile until it has a row. Who
+ * may read a row is the server's call, sent as `entry.audience`.
  */
 import type { OrderTimelineEntry, OrderTimelineType } from '@types';
-
-/**
- * Who a row is for. `staff` rows never reach a buyer, so the staff view flags them: the reader
- * must know what the customer cannot see.
- */
-export type TimelineAudience = 'buyer' | 'staff';
-
-/**
- * The audience of every type — the API's own table, read here only to label the staff view.
- */
-export const TIMELINE_AUDIENCE: Readonly<Record<OrderTimelineType, TimelineAudience>> = {
-    created: 'buyer',
-    paid: 'buyer',
-    processing: 'buyer',
-    shipped: 'buyer',
-    delivered: 'buyer',
-    cancelled: 'buyer',
-    status_overridden: 'staff',
-    payment_declined: 'buyer',
-    refund_issued: 'buyer',
-    refund_settled: 'buyer',
-    refund_failed: 'staff',
-    shipment_shipped: 'buyer',
-    shipment_delivered: 'buyer',
-    fulfillment_held: 'staff',
-    fulfillment_released: 'staff',
-    remainder_cancelled: 'buyer',
-    return_requested: 'buyer',
-    return_approved: 'buyer',
-    return_declined: 'buyer',
-    return_received: 'buyer',
-    return_closed: 'buyer',
-    invoice_issued: 'buyer',
-    credit_note_issued: 'buyer',
-    release_date_moved: 'buyer',
-    delay_notice_sent: 'buyer',
-    address_corrected: 'staff'
-};
-
-/**
- * Whether the buyer never sees a row of this type.
- *
- * @param type - The row's type.
- * @returns `true` for the staff-only types.
- */
-export const isStaffOnly = (type: OrderTimelineType): boolean =>
-    TIMELINE_AUDIENCE[type] === 'staff';
 
 /**
  * What the line builder needs from the app, injected so this file stays free of Vue and i18n.

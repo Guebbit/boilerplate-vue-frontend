@@ -67,7 +67,7 @@ describe('what a poll does', () => {
         await store.pollCart();
 
         expect(store.cartItems).toEqual([
-            { productId: 'p1', quantity: 2, availability: 'insufficient_stock' }
+            { productId: 'p1', quantity: 2, availability: 'insufficient_stock', canIncrease: true }
         ]);
     });
 

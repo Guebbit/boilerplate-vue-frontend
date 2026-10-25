@@ -126,7 +126,7 @@ describe('OrdersList — the RF-reference lookup it mounts', () => {
         signInAsPaymentRecorder();
         const wrapper = mountList('all');
 
-        emitOn(wrapper.findComponent({ name: 'OrderReferenceSearch' }), 'found', anOrder());
+        emitOn(wrapper.findComponent({ name: 'OrderReferenceSearch' }), 'found', 'o1');
 
         return vi
             .waitFor(() => {
@@ -164,14 +164,14 @@ const order = (id: string, deletedAt?: string) =>
  * one-way on the API.
  */
 /**
- * The server's answer for the delete controls (`OrderActions.delete` / `hardDelete`): the list
+ * The server's answer for the delete controls (`OrderActions.delete` / `hardDelete` / `restore`): the list
  * offers exactly what these say and decides nothing from the order's status.
  *
  * @param remove - whether `DELETE /orders/{id}` would be accepted
  * @param permanent - whether `?hardDelete=true` would
+ * @param restorable - whether `POST /orders/{id}/restore` would
  */
-const deleteFlags = (remove: boolean, permanent: boolean) => ({
-    transitions: [],
+const deleteFlags = (remove: boolean, permanent: boolean, restorable = false) => ({
     cancel: false,
     pay: false,
     recordPayment: false,
@@ -181,7 +181,8 @@ const deleteFlags = (remove: boolean, permanent: boolean) => ({
     invoice: false,
     withdraw: false,
     delete: remove,
-    hardDelete: permanent
+    hardDelete: permanent,
+    restore: restorable
 });
 
 describe('OrdersList — a soft-deleted row', () => {
@@ -196,7 +197,10 @@ describe('OrdersList — a soft-deleted row', () => {
                             status: 'cancelled',
                             actions: deleteFlags(true, false)
                         },
-                        order('gone', '2026-02-01T00:00:00Z')
+                        {
+                            ...order('gone', '2026-02-01T00:00:00Z'),
+                            actions: deleteFlags(false, false, true)
+                        }
                     ],
                     meta: { page: 1, pageSize: 10, totalItems: 2, totalPages: 1 }
                 })

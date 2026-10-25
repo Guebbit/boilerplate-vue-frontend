@@ -17,6 +17,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 import { useUsersStore } from '../store';
+import { aUser } from '../../../../tests/support/unit/fixtures.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
@@ -211,7 +212,7 @@ describe('useUsersStore', () => {
 
         it('never parks the uploaded Blob in store state', () => {
             const store = useUsersStore();
-            store.addUser({ id: 'u1', username: 'ada', email: 'ada@example.com' });
+            store.addUser(aUser({ id: 'u1', username: 'ada', email: 'ada@example.com' }));
 
             return store
                 .updateUser('u1', { username: 'ada2', imageUpload: new Blob(['x']) })
@@ -227,12 +228,14 @@ describe('useUsersStore', () => {
          */
         it('leaves a cached imageUrl alone while a clearing update is in flight', () => {
             const store = useUsersStore();
-            store.addUser({
-                id: 'u1',
-                username: 'ada',
-                email: 'ada@example.com',
-                imageUrl: 'https://cdn.example.com/avatars/ada.png'
-            });
+            store.addUser(
+                aUser({
+                    id: 'u1',
+                    username: 'ada',
+                    email: 'ada@example.com',
+                    imageUrl: 'https://cdn.example.com/avatars/ada.png'
+                })
+            );
 
             // `Once`, deliberately: the suite's `beforeEach` calls `vi.clearAllMocks()`, which
             // clears recorded calls but NOT an implementation set with `mockReturnValue`. A

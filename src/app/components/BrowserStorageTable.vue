@@ -30,6 +30,7 @@ import { readFaroConfig } from '@/infrastructure/observability/config.ts';
 import { fetchAntibotConfig } from '@/infrastructure/http/antibot.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import { vFocusableScroll } from '@/ui/directives/focusable-scroll';
+import { useSessionStore } from '@/infrastructure/session.ts';
 
 /**
  * Translation function for the column labels, the cell wording and the rows' own keys.
@@ -51,7 +52,14 @@ const items: BrowserStorageItem[] = browserStorageFor({
  */
 const usesTurnstile = ref(false);
 
+/**
+ * The session store: the deployment's stated session lifetimes come from its public config.
+ */
+const session = useSessionStore();
+
 onMounted(() => {
+    // The lifetimes fill in once the session config answers; a failed read leaves them blank.
+    void session.loadSessionMode();
     fetchAntibotConfig()
         .then((envelope) => {
             usesTurnstile.value = envelope.data.provider === 'turnstile';
@@ -70,6 +78,27 @@ onMounted(() => {
  */
 const rowKey = (item: BrowserStorageItem, cell: 'purpose' | 'lifetime'): string =>
     `browser-storage.rows.${item.id}.${cell}`;
+
+/**
+ * The lifetime cell. Two rows follow the "remember me" tier the server states; until the session
+ * config has answered they show a dash rather than a number of the page's own.
+ *
+ * @param item - The item.
+ * @returns The text of its lifetime cell.
+ */
+const lifetimeOf = (item: BrowserStorageItem): string => {
+    if (item.id !== 'session' && item.id !== 'rememberMe') return t(rowKey(item, 'lifetime'));
+    const { lifetimes } = session;
+    if (!lifetimes) return '—';
+    const days = Math.ceil(lifetimes.lifetimeSeconds.long / 86_400);
+    const staffSeconds = lifetimes.staffLifetimeSeconds;
+    if (item.id === 'session' && staffSeconds !== undefined)
+        return t('browser-storage.rows.session.lifetimeStaff', {
+            days,
+            hours: Math.ceil(staffSeconds / 3600)
+        });
+    return t(rowKey(item, 'lifetime'), { days });
+};
 </script>
 
 <template>
@@ -102,7 +131,7 @@ const rowKey = (item: BrowserStorageItem, cell: 'purpose' | 'lifetime'): string 
                         <td>{{ t(`browser-storage.setter.${item.setter}`) }}</td>
                         <td>{{ t(`browser-storage.party.${item.party}`) }}</td>
                         <td>{{ t(rowKey(item, 'purpose')) }}</td>
-                        <td>{{ t(rowKey(item, 'lifetime')) }}</td>
+                        <td>{{ lifetimeOf(item) }}</td>
                         <td>{{ t(`browser-storage.necessity.${item.necessity}`) }}</td>
                     </tr>
                 </tbody>

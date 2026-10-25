@@ -94,8 +94,8 @@ beforeEach(() => {
             meta: { totalItems: 1, totalPages: 1 }
         }),
         'PUT /inventory/levels/p1/backorder-limit': orvalEnvelope({ ...LEVEL, backorderLimit: 10 }),
-        'POST /inventory/receipts': orvalEnvelope(LEVEL),
-        'POST /inventory/adjustments': orvalEnvelope(LEVEL)
+        'POST /inventory/levels/p1/receive': orvalEnvelope(LEVEL),
+        'POST /inventory/levels/p1/adjust': orvalEnvelope(LEVEL)
     };
 });
 
@@ -231,19 +231,18 @@ describe('receive', () => {
             expect(level).toEqual(LEVEL);
             // The reload is the point, and so is its order: the ledger explains the board.
             expect(requestedUrls()).toEqual([
-                '/inventory/receipts',
+                '/inventory/levels/p1/receive',
                 '/inventory/movements',
                 '/inventory/levels'
             ]);
         });
     });
 
-    it('sends the quantity as a receipt body rather than a query param', () => {
+    it('sends the quantity as a receipt body, the product riding in the path', () => {
         const store = useInventoryStore();
         return store.receive('p1', 20).then(() => {
             const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
             expect(contractRequest(schemas.ReceiveStockBody, call.data)).toEqual({
-                productId: 'p1',
                 quantity: 20
             });
         });
@@ -254,7 +253,6 @@ describe('receive', () => {
         return store.receive('p1', 20, 'pallet 7, DHL').then(() => {
             const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
             expect(contractRequest(schemas.ReceiveStockBody, call.data)).toEqual({
-                productId: 'p1',
                 quantity: 20,
                 note: 'pallet 7, DHL'
             });
@@ -289,7 +287,7 @@ describe('the Idempotency-Key on a stock write', () => {
     });
 
     it('is reused when the first attempt failed retryably, so the API replays instead of double-counting', () => {
-        responses['POST /inventory/receipts'] = undefined;
+        responses['POST /inventory/levels/p1/receive'] = undefined;
         vi.mocked(orvalMutator).mockRejectedValueOnce(new Error('network down'));
         const store = useInventoryStore();
         return store
@@ -298,7 +296,7 @@ describe('the Idempotency-Key on a stock write', () => {
             .then(() => {
                 const first = keyOfFirstCall();
                 vi.mocked(orvalMutator).mockClear();
-                responses['POST /inventory/receipts'] = orvalEnvelope(LEVEL);
+                responses['POST /inventory/levels/p1/receive'] = orvalEnvelope(LEVEL);
                 return store.receive('p1', 20).then(() => first);
             })
             .then((first) => {
@@ -328,7 +326,6 @@ describe('adjust', () => {
         return store.adjust('p1', -3).then(() => {
             const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
             expect(contractRequest(schemas.AdjustStockBody, call.data)).toEqual({
-                productId: 'p1',
                 delta: -3
             });
         });
@@ -338,7 +335,7 @@ describe('adjust', () => {
         const store = useInventoryStore();
         return store.adjust('p1', -3).then(() => {
             expect(requestedUrls()).toEqual([
-                '/inventory/adjustments',
+                '/inventory/levels/p1/adjust',
                 '/inventory/movements',
                 '/inventory/levels'
             ]);

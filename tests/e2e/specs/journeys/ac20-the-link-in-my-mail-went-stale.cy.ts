@@ -99,18 +99,19 @@ describe('AC20 · The link in my mail went stale', () => {
             });
         });
 
-        cy.step('a deletion link used once is dead the second time');
+        cy.step('a restore link used once is dead the second time');
         signUp(DOOMED_EMAIL, PASSWORD);
         cy.visit('/en/profile');
         cy.get('[data-test=profile-delete-account] button').click();
         cy.get('[data-test=app-dialog-confirm]').click();
-        cy.emailTo(DOOMED_EMAIL, (mail) => mail.template === 'account.delete-request').then(
+        cy.emailTo(DOOMED_EMAIL, (mail) => mail.template === 'account.deletion-scheduled').then(
             (mail) => {
                 const link = mailedLinkUrl(mail);
-                followAndConfirm(link, '#account-delete-confirm-page button[type=submit]');
-                cy.get('#home-page').should('exist');
-                followAndConfirm(link, '#account-delete-confirm-page button[type=submit]');
-                cy.get('[data-test=account-delete-confirm-error]').should('not.be.empty');
+                followAndConfirm(link, '#account-restore-page button[type=submit]');
+                // Restoring signs nobody in: the page lands on the login screen.
+                cy.get('#login-page').should('exist');
+                followAndConfirm(link, '#account-restore-page button[type=submit]');
+                cy.get('[data-test=account-restore-error]').should('not.be.empty');
             }
         );
 

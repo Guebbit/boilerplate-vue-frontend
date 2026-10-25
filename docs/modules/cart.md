@@ -131,7 +131,7 @@ sequenceDiagram
 
 | Piece                               | What it does                                                                                                                                                                              |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `domain/guest-cart.ts`              | The rules: a line already there grows (the `POST /cart` rule), a line stops at 999, a cart holds at most 100 products, storage is never trusted.                                          |
+| `domain/guest-cart.ts`              | The rules: a line already there grows (the `POST /cart/items` rule), a line stops at 999, a cart holds at most 100 products, storage is never trusted.                                    |
 | `composables/guest-cart-storage.ts` | Reads and writes the two `localStorage` keys (the list and the pending merge), guarded: blocked or full storage costs the next visit, never this one.                                     |
 | `composables/use-guest-cart.ts`     | `guestLines` and its actions, saved on every change and re-read when another tab changes the key; the cart store sends it (`mergeGuestCart`) and `badgeQuantity` falls back to its total. |
 | `components/MergeReportAlert.vue`   | The cart page's merge alert: reads the store's report, renders nothing while it is empty.                                                                                                 |
@@ -145,7 +145,7 @@ visitors only, so staff, who hold no basket, are still turned away.
 
 When a session that may shop appears, the shell's badge accessor calls `seedAfterSignIn`. With a
 guest cart it sends every line in one `POST /cart/merge`, which adds each by the rule of
-`POST /cart`: a product already in the cart **grows** by the line's quantity. The answer is the
+`POST /cart/items`: a product already in the cart **grows** by the line's quantity. The answer is the
 merged cart and **one result per submitted line**:
 `{ productId, requested, resulting, reason?, availability }`. `reason` is absent when the line
 landed as chosen, and otherwise one of `summed`, `capped` or `removed`. A line the cart cannot
@@ -243,9 +243,10 @@ page prints one marker beside the quantity of any line that is not `in_stock`:
 
 The marker is text, and it sits inside the quantity's own live region, so a line turning short is
 announced without a live region per row. The quantity on screen is never changed for it: lowering
-the line, or removing it, is the shopper's call. "Place order" stays disabled while any line is
-neither `in_stock` nor `preorder`, matching checkout, which refuses those four: a preorder is
-bought now and ships from its release date. The date comes from the product record; until it
+the line, or removing it, is the shopper's call. "Place order" stays disabled while any line is not
+buyable by the server's word (`checkoutable` on the cart; a line's `canIncrease` likewise
+gates its "+"), matching checkout, which refuses the short, sold-out, off-sale and removed lines: a
+preorder is bought now and ships from its release date. The date comes from the product record; until it
 loads the marker just says "Preorder". It is a name, never the number left.
 
 ### The stock poll
@@ -375,9 +376,9 @@ flowchart TD
 ### The total the buyer was shown
 
 `POST /cart/checkout` requires `expectedTotal`: the total on screen right before "Place order"
-(`summary.totalPrice`, shipping included, with its currency), in integer minor units. The store
-builds it from the cart it holds, never the page (`domain/expected-total.ts`; the decimals come from
-the currency, so JPY has none and KWD has three), and refuses to run before a cart was read.
+(`summary.totalPrice`, shipping included, with its currency), in integer minor units. The cart
+already carries it as `summary.expectedTotal`; the store echoes that from the cart it holds, never
+the page, converts nothing, and refuses to run before a cart was read.
 
 If the server would charge anything else (a price moved, shipping changed, the basket changed) it
 answers 409 `CART_TOTAL_CHANGED` with `details.expected` and `details.actual`, and writes nothing.
@@ -416,24 +417,19 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 #### Endpoints called
 
-| Call                      | Response envelope              |
-| ------------------------- | ------------------------------ |
-| `DELETE /cart`            | `RemoveCartItemByBodyResponse` |
-| `GET /cart`               | `GetCartResponse`              |
-| `POST /cart`              | `AddCartItemResponse`          |
-| `DELETE /cart/all`        | `ClearCartResponse`            |
-| `POST /cart/checkout`     | `CheckoutResponse`             |
-| `POST /cart/merge`        | `MergeCartResponse`            |
-| `POST /cart/reorder/{id}` | `ReorderResponse`              |
-| `GET /cart/summary`       | `GetCartSummaryResponse`       |
-| `DELETE /cart/{id}`       | `RemoveCartItemResponse`       |
-| `PUT /cart/{id}`          | `UpdateCartItemByIdResponse`   |
+| Call                      | Response envelope            |
+| ------------------------- | ---------------------------- |
+| `GET /cart`               | `GetCartResponse`            |
+| `POST /cart/items`        | `AddCartItemResponse`        |
+| `DELETE /cart/items`      | `ClearCartResponse`          |
+| `PATCH /cart/items/{id}`  | `UpdateCartItemByIdResponse` |
+| `DELETE /cart/items/{id}` | `RemoveCartItemResponse`     |
+| `POST /cart/checkout`     | `CheckoutResponse`           |
+| `POST /cart/merge`        | `MergeCartResponse`          |
+| `POST /cart/reorder/{id}` | `ReorderResponse`            |
+| `GET /cart/summary`       | `GetCartSummaryResponse`     |
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
-
-`DELETE /cart` (`removeCartItemByBody`, a body-addressed alternative to `DELETE /cart/{id}`) is
-registered for contract validation but not called from any store action — a generated operation
-this module has not adopted, not a hidden second removal path.
 
 #### Navigation entries
 

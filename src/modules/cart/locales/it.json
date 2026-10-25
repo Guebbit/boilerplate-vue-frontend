@@ -8,7 +8,7 @@
         "preorder": "Preordina",
         "backorder": "Ordina",
         "backorder-ships-by": "Esaurito al momento. Spedizione entro il {date}.",
-        "backorder-ships-undated": "Esaurito al momento. Spedizione entro 30 giorni."
+        "backorder-ships-undated": "Esaurito al momento. Spedizione entro {days} giorni."
     },
     "cart-page": {
         "page-title": "Il mio carrello",

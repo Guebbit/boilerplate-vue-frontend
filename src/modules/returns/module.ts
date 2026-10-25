@@ -17,6 +17,8 @@ import routes from './routes';
  * its order by route name.
  *
  * Context map: `docs/modules/returns.md` § "The map".
+ *
+ * Subdomain: `supporting`.
  */
 export default {
     name: 'returns',

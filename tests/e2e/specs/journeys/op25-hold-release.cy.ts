@@ -110,7 +110,7 @@ describe('OP25 · Hold a group back, then let it go', () => {
 
             cy.step('a stale dialog: someone else held it first, and the refusal shows in place');
             cy.get('[data-test=open-hold]').click();
-            cy.apiAs<FulfilmentLike>('admin', 'GET', `/delivery/order/${orderId}`).then(
+            cy.apiAs<FulfilmentLike>('admin', 'GET', `/delivery/orders/${orderId}`).then(
                 (fulfilment) => {
                     cy.apiAs(
                         'admin',

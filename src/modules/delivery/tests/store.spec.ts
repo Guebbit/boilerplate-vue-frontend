@@ -70,7 +70,7 @@ beforeEach(() => {
     responses = {
         'GET /delivery/methods': orvalEnvelope({ methods: METHODS }),
         'GET /shop': orvalEnvelope(aShop({ shipToCountries: ['IT'] })),
-        'GET /delivery/order/o1': orvalEnvelope({
+        'GET /delivery/orders/o1': orvalEnvelope({
             fulfillmentOrders: [aFulfillmentOrder()],
             shipments: [aShipment({ trackingCode: 'TRK-1' })]
         }),
@@ -88,7 +88,7 @@ beforeEach(() => {
         'POST /delivery/fulfillment-orders/fo1/release': orvalEnvelope(aFulfillmentOrder()),
         'PATCH /delivery/shipments/s1': orvalEnvelope(aShipment({ trackingCode: 'TRK-9' })),
         'POST /delivery/shipments/s1/deliver': orvalEnvelope(aShipment({ status: 'delivered' })),
-        'POST /delivery/order/order-3/start': orvalEnvelope({
+        'POST /delivery/orders/order-3/start': orvalEnvelope({
             id: 'order-3',
             userId: 'u1',
             email: 'shopper@example.com',
@@ -166,7 +166,7 @@ describe('fetchFulfillmentForOrder', () => {
      * An order not paid yet answers 200 with two empty lists: absence is the answer.
      */
     it('reads two empty lists as "nothing to ship yet"', () => {
-        responses['GET /delivery/order/o1'] = orvalEnvelope({
+        responses['GET /delivery/orders/o1'] = orvalEnvelope({
             fulfillmentOrders: [],
             shipments: []
         });
@@ -182,7 +182,7 @@ describe('fetchFulfillmentForOrder', () => {
      * transit, the one wrong answer this panel can give.
      */
     it('lets a failure through instead of calling it "nothing to ship"', () => {
-        responses['GET /delivery/order/o1'] = new Error('Internal Server Error');
+        responses['GET /delivery/orders/o1'] = new Error('Internal Server Error');
         const store = useDeliveryStore();
         return expect(store.fetchFulfillmentForOrder('o1')).rejects.toMatchObject({ status: 500 });
     });

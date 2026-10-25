@@ -3,9 +3,8 @@
  * @module
  * One shipment inside its fulfillment order's card: its lines, status, tracking code and dates,
  * and the two staff controls the shipment's own `actions` offer — correct the tracking code inline,
- * mark it delivered (with the forced door for an `override:Order` holder). Controls come from
- * `actions`, never from a rule re-derived here; the forced door is `actions.deliver` plus the
- * caller's `override:Order` permission.
+ * mark it delivered (with the forced door when `actions.forceDeliver` says so). Controls come
+ * from `actions`, never from a rule re-derived here.
  */
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -14,7 +13,6 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDeliveryStore } from '../store.ts';
 import type { Shipment } from '@types';
 
@@ -44,11 +42,6 @@ const { t } = useI18n();
  * Toast dispatcher, used to report each outcome.
  */
 const { addMessage } = useNotificationsStore();
-
-/**
- * The caller's permissions, read for the forced arrival.
- */
-const session = useSessionStore();
 
 /**
  * The store's writes and its in-flight flag.
@@ -81,11 +74,9 @@ const forceReason = ref('');
 const { message: rowError, report: reportRowError, clear: clearRowError } = useBlockingError();
 
 /**
- * Whether the forced arrival is offered: the server accepts an arrival and the caller holds `override`.
+ * Whether the forced arrival is offered: the server says a forced arrival would be accepted.
  */
-const offerForce = computed(
-    () => props.shipment.actions.deliver && session.can('override', 'Order')
-);
+const offerForce = computed(() => props.shipment.actions.forceDeliver);
 
 /**
  * Whether the arrival button shows at all.
@@ -181,7 +172,7 @@ const markDelivered = () =>
         </p>
 
         <form
-            v-if="shipment.actions.editTracking"
+            v-if="shipment.actions.update"
             class="flex flex-wrap items-start gap-2"
             novalidate
             @submit.prevent="saveTracking"

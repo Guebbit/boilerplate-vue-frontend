@@ -72,6 +72,38 @@ export type Locale = string;
 export type CountryCode = string;
 
 /**
+ * The name the parcel is addressed to.
+ * @minLength 1
+ * @maxLength 100
+ */
+export type AddressFullName = string;
+
+/**
+ * @minLength 1
+ * @maxLength 200
+ */
+export type AddressStreet = string;
+
+/**
+ * @minLength 1
+ * @maxLength 100
+ */
+export type AddressCity = string;
+
+/**
+ * Postal code, free-form (formats differ per country).
+ * @minLength 1
+ * @maxLength 20
+ */
+export type AddressZip = string;
+
+/**
+ * @minLength 1
+ * @maxLength 32
+ */
+export type AddressPhone = string;
+
+/**
  * Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1`: `''` is never a synonym for "no image" — only `null` is, on a field that allows it.
  * @minLength 1
  */
@@ -147,18 +179,6 @@ export interface ValidationErrorResponse {
     errors: ErrorItem[];
 }
 
-/**
- * What the requesting caller may do to this account. Each is the route's permission key AND the protection of staff accounts: an account that holds a staff role is `false` for all three unless the caller holds `assign:Role`; the caller's own account is judged by the keys alone.
- */
-export interface UserActions {
-    /** Whether `PUT`/`PATCH /users/{id}` would be accepted for the profile fields — `update:User`, and the account is not a staff account the caller may not manage. Never covers a credential: no caller changes another person's email, password or second factor. */
-    update: boolean;
-    /** Whether the account may be deactivated or reactivated — `ban:User`, and the account is not a staff account the caller may not manage. */
-    ban: boolean;
-    /** Whether `DELETE /users/{id}` (soft or hard) and `POST /users/{id}/restore` would be accepted — `delete:User`, and the account is not a staff account the caller may not manage. */
-    delete: boolean;
-}
-
 export type PurchaseHoldReason = (typeof PurchaseHoldReason)[keyof typeof PurchaseHoldReason];
 
 export const PurchaseHoldReason = {
@@ -176,6 +196,30 @@ export interface PurchaseHold {
      */
     note?: string;
     setAt: string;
+}
+
+/**
+ * What the requesting caller may do to this account, one flag per endpoint. Each is the route's permission key AND the protection of staff accounts: an account that holds a staff role is `false` for all of them unless the caller holds `assign:Role`; the caller's own account is judged by the keys alone. A flag also reads the account's state, so a control never offers a move the server would refuse with a 409.
+ */
+export interface UserActions {
+    /** Whether `PUT`/`PATCH /users/{id}` would be accepted for the profile fields — `update:User`, and the account is not a staff account the caller may not manage. Never covers a credential: no caller changes another person's email, password or second factor. */
+    update: boolean;
+    /** Whether the `role` field of `PUT`/`PATCH /users/{id}` would be accepted — `update` AND the caller holds `assign:Role`. No rule refuses the caller's own account. */
+    assignRole: boolean;
+    /** Whether `DELETE /users/{id}` would soft-delete the account — `delete:User`, the account is not a staff account the caller may not manage, and it is not deleted already. */
+    delete: boolean;
+    /** Whether `DELETE /users/{id}/hard` would erase the account for good — `delete:User`, and the account is not a staff account the caller may not manage. A soft-deleted account can be erased. */
+    hardDelete: boolean;
+    /** Whether `POST /users/{id}/restore` would be accepted — `delete:User`, the account is not a staff account the caller may not manage, and it is soft-deleted. */
+    restore: boolean;
+    /** Whether `PUT /users/{id}/purchase-hold` would be accepted — `ban:User`, and the account is not a staff account the caller may not manage. A hold can be placed again to extend it. */
+    setPurchaseHold: boolean;
+    /** Whether `DELETE /users/{id}/purchase-hold` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and there is a hold or a review flag to clear. */
+    liftPurchaseHold: boolean;
+    /** Whether `POST /users/{id}/activate` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and it is deactivated. */
+    activate: boolean;
+    /** Whether `POST /users/{id}/deactivate` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and it is active. Deactivating ends every session of the account. */
+    deactivate: boolean;
 }
 
 export interface User {
@@ -200,8 +244,10 @@ export interface User {
     createdAt?: string;
     updatedAt?: string;
     deletedAt?: string;
-    actions?: UserActions;
     purchaseHold?: PurchaseHold;
+    actions: UserActions;
+    /** When the account is erased, after its owner asked to delete it. Present only on such a row, and `deletedAt` is then the request time. Staff may restore it until then (`POST /users/{id}/restore`). */
+    purgeAt?: string;
     /** When the shop's rule flagged this account for staff review after repeated cancellations. Staff view only (`/users` reads). Cleared when staff set or lift a hold. */
     purchaseHoldFlaggedAt?: string;
 }
@@ -213,8 +259,36 @@ export interface UserEnvelope {
     data: User;
 }
 
-export interface HardDeleteRequest {
-    hardDelete?: boolean;
+export interface Account {
+    id: Id;
+    email: Email;
+    username: string;
+    role?: string;
+    active?: boolean;
+    /** @nullable */
+    verifiedAt?: string | null;
+    readonly pendingEmail?: string;
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+    locale?: Locale;
+    phone?: string;
+    website?: string;
+    analyticsConsent?: boolean;
+    analyticsConsentAt?: string;
+    termsAcceptedAt?: string;
+    termsVersion?: string;
+    twoFactorEnabledAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
+    purchaseHold?: PurchaseHold;
+}
+
+export interface AccountEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Account;
 }
 
 /**
@@ -944,6 +1018,19 @@ export const AuditEntryItemOutcome = {
     failure: 'failure'
 } as const;
 
+/**
+ * What the action carried. Open on purpose: each action adds its own keys, and a
+ * declared-properties object would be validated closed by the generated schema.
+ * Keys with a fixed meaning across actions:
+ *
+ * - `ownOrder` (boolean): `true` when staff acted on an order they placed
+ *   themselves; absent otherwise. Filter with `GET /audit?ownOrder=`.
+ * - `changes` (object): an `*.updated` action's non-personal fields that moved,
+ *   `{ <field>: { from, to } }`, `null` meaning unset.
+ * - `changedFields` (string[]): an `*.updated` action's free-text and personal
+ *   fields that moved, by NAME only. The trail is never scrubbed on erasure, so
+ *   their values never enter it.
+ */
 export type AuditEntryItemMetadata = { [key: string]: unknown };
 
 export type AuditEntryItemLevel = (typeof AuditEntryItemLevel)[keyof typeof AuditEntryItemLevel];
@@ -972,6 +1059,19 @@ export interface AuditEntryItem {
     traceId?: string;
     targetType?: string;
     targetId?: string;
+    /**
+     * What the action carried. Open on purpose: each action adds its own keys, and a
+     * declared-properties object would be validated closed by the generated schema.
+     * Keys with a fixed meaning across actions:
+     *
+     * - `ownOrder` (boolean): `true` when staff acted on an order they placed
+     *   themselves; absent otherwise. Filter with `GET /audit?ownOrder=`.
+     * - `changes` (object): an `*.updated` action's non-personal fields that moved,
+     *   `{ <field>: { from, to } }`, `null` meaning unset.
+     * - `changedFields` (string[]): an `*.updated` action's free-text and personal
+     *   fields that moved, by NAME only. The trail is never scrubbed on erasure, so
+     *   their values never enter it.
+     */
     metadata?: AuditEntryItemMetadata;
     timestamp: string;
     level: AuditEntryItemLevel;
@@ -1158,6 +1258,20 @@ export interface ReplaceAccountRequestMultipart {
      */
     website?: string;
     analyticsConsent: boolean;
+}
+
+export interface AccountDeletion {
+    /** When the deletion was asked for, and the account locked. */
+    requestedAt: string;
+    /** When the account is erased unless restored before. At most one calendar month after `requestedAt`, at 00:00 UTC at the latest. */
+    purgeAt: string;
+}
+
+export interface AccountDeletionEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AccountDeletion;
 }
 
 export interface UpdateAccountRequest {
@@ -1466,16 +1580,23 @@ export interface SessionsEnvelope {
     data: SessionsResponse;
 }
 
+export interface SessionEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Session;
+}
+
 export interface Address {
     id: Id;
     /** The caller's own name for the entry — "home", "office". */
     label?: string;
-    fullName: string;
-    street: string;
-    city: string;
-    zip: string;
+    fullName: AddressFullName;
+    street: AddressStreet;
+    city: AddressCity;
+    zip: AddressZip;
     country: CountryCode;
-    phone?: string;
+    phone?: AddressPhone;
     default: boolean;
 }
 
@@ -1496,32 +1617,12 @@ export interface AddressInput {
      * @maxLength 50
      */
     label?: string;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    fullName: string;
-    /**
-     * @minLength 1
-     * @maxLength 200
-     */
-    street: string;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    city: string;
-    /**
-     * @minLength 1
-     * @maxLength 20
-     */
-    zip: string;
+    fullName: AddressFullName;
+    street: AddressStreet;
+    city: AddressCity;
+    zip: AddressZip;
     country: CountryCode;
-    /**
-     * @minLength 1
-     * @maxLength 32
-     */
-    phone?: string;
+    phone?: AddressPhone;
     default?: boolean;
 }
 
@@ -1539,33 +1640,12 @@ export interface ReplaceAddressRequest {
      * @nullable
      */
     label?: string | null;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    fullName: string;
-    /**
-     * @minLength 1
-     * @maxLength 200
-     */
-    street: string;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    city: string;
-    /**
-     * @minLength 1
-     * @maxLength 20
-     */
-    zip: string;
+    fullName: AddressFullName;
+    street: AddressStreet;
+    city: AddressCity;
+    zip: AddressZip;
     country: CountryCode;
-    /**
-     * @minLength 1
-     * @maxLength 32
-     * @nullable
-     */
-    phone?: string | null;
+    phone?: AddressPhone | null;
 }
 
 export interface UpdateAddressRequest {
@@ -1575,33 +1655,12 @@ export interface UpdateAddressRequest {
      * @nullable
      */
     label?: string | null;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    fullName?: string;
-    /**
-     * @minLength 1
-     * @maxLength 200
-     */
-    street?: string;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    city?: string;
-    /**
-     * @minLength 1
-     * @maxLength 20
-     */
-    zip?: string;
+    fullName?: AddressFullName;
+    street?: AddressStreet;
+    city?: AddressCity;
+    zip?: AddressZip;
     country?: CountryCode;
-    /**
-     * @minLength 1
-     * @maxLength 32
-     * @nullable
-     */
-    phone?: string | null;
+    phone?: AddressPhone | null;
 }
 
 export interface VerifyEmailConfirmRequest {
@@ -1613,9 +1672,9 @@ export interface VerifyEmailConfirmRequest {
     token: string;
 }
 
-export interface AccountDeleteConfirmRequest {
+export interface AccountRestoreRequest {
     /**
-     * One-time account deletion token (NOT a JWT).
+     * One-time account restore token (NOT a JWT).
      * @minLength 1
      * @maxLength 128
      */
@@ -1680,16 +1739,38 @@ export interface MfaChallenge {
     defaultMethod?: string;
 }
 
+export interface DeletionPending {
+    /** Always true. The credentials checked out, but the account is inside the grace of its own deletion, so no session is issued until the owner chooses to restore it. */
+    deletionPending: true;
+    /** A claim check recording how the sign-in was proven (password, and the second factor when armed). Submit it to `POST /account/login/restore`. */
+    challenge: string;
+    /** When the challenge stops being accepted. Signing in again earns a new one. */
+    expiresAt: string;
+    /** When the account is erased unless restored before. */
+    purgeAt: string;
+}
+
 /**
- * Either a full session (AuthTokens) or a step-up challenge (MfaChallenge) when the account has two-factor authentication enabled.
+ * A full session (AuthTokens), a step-up challenge (MfaChallenge) when the account has two-factor authentication enabled, or the offer to restore an account inside the grace of its own deletion (DeletionPending).
  */
-export type LoginOutcome = AuthTokens | MfaChallenge;
+export type LoginOutcome = AuthTokens | MfaChallenge | DeletionPending;
 
 export interface LoginResponseEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: LoginOutcome;
+}
+
+export interface LoginRestoreRequest {
+    /**
+     * The `DeletionPending` challenge. Omit it for an OAuth-originated sign-in — that challenge was never sent to the client, and this endpoint reads it from the httpOnly cookie the callback set instead.
+     * @minLength 1
+     * @maxLength 128
+     */
+    challenge?: string;
+    remember?: RememberTier;
+    transport?: SessionTransport;
 }
 
 export interface SignupRequest {
@@ -1772,6 +1853,18 @@ export interface LoginTwoFactorRequest {
     transport?: SessionTransport;
 }
 
+/**
+ * A full session (AuthTokens), or the offer to restore an account inside the grace of its own deletion (DeletionPending) once its second factor passed.
+ */
+export type LoginTwoFactorOutcome = AuthTokens | DeletionPending;
+
+export interface LoginTwoFactorResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LoginTwoFactorOutcome;
+}
+
 export interface TwoFactorSendRequest {
     /**
      * The challenge token from POST /account/login. Omit it for an OAuth-originated login — see LoginTwoFactorRequest.challenge.
@@ -1820,15 +1913,6 @@ export interface TwoFactorStatusEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: TwoFactorStatus;
-}
-
-export interface TwoFactorCodeRequest {
-    /**
-     * A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.
-     * @minLength 1
-     * @maxLength 64
-     */
-    code: string;
 }
 
 export interface TwoFactorSetupRequest {
@@ -1889,6 +1973,15 @@ export interface TwoFactorConfirmEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: TwoFactorConfirmed;
+}
+
+export interface TwoFactorCodeRequest {
+    /**
+     * A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.
+     * @minLength 1
+     * @maxLength 64
+     */
+    code: string;
 }
 
 export interface TwoFactorBackupCodesRegenerated {
@@ -2031,7 +2124,6 @@ export interface ReplaceUserByIdRequest {
      * @nullable
      */
     role: string | null;
-    active: boolean;
     imageUrl?: ImageRemoval;
     locale?: Locale | null;
     /**
@@ -2059,7 +2151,6 @@ export interface ReplaceUserByIdRequestMultipart {
      * @maxLength 64
      */
     role: string;
-    active: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
     locale?: string;
@@ -2087,7 +2178,6 @@ export interface UpdateUserByIdRequest {
      * @nullable
      */
     role?: string | null;
-    active?: boolean;
     imageUrl?: ImageRemoval;
     locale?: Locale | null;
     /**
@@ -2115,7 +2205,6 @@ export interface UpdateUserByIdRequestMultipart {
      * @maxLength 64
      */
     role?: string;
-    active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
     locale?: string;
@@ -2266,16 +2355,6 @@ export interface SearchFeedbackRequestsRequest {
     email?: Email;
 }
 
-export interface ReplaceFeedbackRequestStatusRequest {
-    status: FeedbackRequestStatus;
-    /**
-     * @minLength 1
-     * @maxLength 5000
-     * @nullable
-     */
-    adminNotes?: string | null;
-}
-
 export interface UpdateFeedbackRequestStatusRequest {
     status?: FeedbackRequestStatus;
     /**
@@ -2379,6 +2458,8 @@ export interface Product {
     releaseDate?: ReleaseDate;
     allowBackorder?: boolean;
     restockDate?: RestockDate;
+    /** A shopper can order it right now: visible, on sale, and something to order (shelf units, room in a preorder's allowance, or an open backorder). The one answer behind the add-to-cart button and "notify me", so a client never re-derives it from the other flags. */
+    readonly buyable: boolean;
     /** The product is on sale before its release date: buyers can order it now and it ships from `releaseDate`. */
     readonly preorder?: boolean;
     /** The product may be ordered while its shelf is empty: the units arrive by `restockDate`, or within 30 days when there is none. Always shown with that promise. */
@@ -2747,6 +2828,8 @@ export interface ProductAdmin {
     releaseDate?: ReleaseDate;
     allowBackorder?: boolean;
     restockDate?: RestockDate;
+    /** A shopper can order it right now: visible, on sale, and something to order (shelf units, room in a preorder's allowance, or an open backorder). The one answer behind the add-to-cart button and "notify me", so a client never re-derives it from the other flags. */
+    readonly buyable: boolean;
     /** The product is on sale before its release date: buyers can order it now and it ships from `releaseDate`. */
     readonly preorder?: boolean;
     /** The product may be ordered while its shelf is empty: the units arrive by `restockDate`, or within 30 days when there is none. Always shown with that promise. */
@@ -2786,9 +2869,9 @@ export interface SearchProductsRequest {
      */
     id?: Id[];
     /** @minimum 0 */
-    minPrice?: number;
+    priceMin?: number;
     /** @minimum 0 */
-    maxPrice?: number;
+    priceMax?: number;
     /** @maxLength 200 */
     category?: string;
     /** @maxLength 200 */
@@ -2835,6 +2918,25 @@ export interface CartResponseItem {
     /** @minimum 1 */
     quantity: number;
     availability: LineAvailability;
+    /** Whether the line can hold one more unit: `quantity` is below the shop's per-line ceiling (`NODE_CART_LINE_MAX`). Stock plays no part, as for `POST /cart/items`. A client disables its "+" on `false` instead of copying the ceiling. */
+    canIncrease: boolean;
+}
+
+/**
+ * An order total as the buyer saw it, or as the checkout would charge it. The amount is in minor units (cents), so two totals compare as integers and never as floats.
+ */
+export interface ExpectedTotal {
+    /**
+     * The total in minor units of `currency` (EUR 71.00 is 7100).
+     * @minimum 0
+     */
+    amount: number;
+    /**
+     * The ISO-4217 code the total is priced in.
+     * @minLength 3
+     * @maxLength 3
+     */
+    currency: string;
 }
 
 export interface CartSummaryResponse {
@@ -2865,6 +2967,8 @@ export interface CartSummaryResponse {
     totalPrice: number;
     /** ISO-4217 currency code (e.g. USD) */
     currency: string;
+    /** `totalPrice` in minor units, exactly as `POST /cart/checkout` compares it: send it back unchanged as the checkout's `expectedTotal`. A client never converts the decimal itself, so it needs no table of currency exponents. */
+    expectedTotal: ExpectedTotal;
 }
 
 /**
@@ -2903,6 +3007,8 @@ export interface CartResponse {
     items: CartResponseItem[];
     summary: CartSummaryResponse;
     shipping: CartShipping;
+    /** Whether every line can be bought as it stands (each line's `availability` is `in_stock`, `preorder` or `backorder`) and the cart is not empty. Checkout refuses the others (`CART_INSUFFICIENT_STOCK`, `CART_PRODUCT_UNAVAILABLE`); a shipping method and an address are separate steps and not part of this. */
+    checkoutable: boolean;
 }
 
 export interface CartResponseEnvelope {
@@ -2913,7 +3019,7 @@ export interface CartResponseEnvelope {
 }
 
 /**
- * Bounded at both ends, and this bound is on the STORED line, not only the request: `PUT /cart/{productId}` sets a line to exactly this value, which already fits; a caller that instead adds to an existing line (`POST /cart`, the wishlist's move-to-cart) is refused past it with 422 `CART_QUANTITY_LIMIT` rather than silently overflowing. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over.
+ * Bounded at both ends, and this bound is on the STORED line, not only the request: `PATCH /cart/items/{productId}` sets a line to exactly this value, which already fits; a caller that instead adds to an existing line (`POST /cart/items`, the wishlist's move-to-cart) is refused past it with 422 `CART_QUANTITY_LIMIT` rather than silently overflowing. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over.
  * @minimum 1
  * @maximum 999
  */
@@ -2922,10 +3028,6 @@ export type CartQuantity = number;
 export interface AddCartItemRequest {
     productId: Id;
     quantity: CartQuantity;
-}
-
-export interface RemoveCartItemRequest {
-    productId: Id;
 }
 
 export interface UpdateCartItemByIdRequest {
@@ -2947,23 +3049,6 @@ export interface CartSummaryResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: CartSummaryResponse;
-}
-
-/**
- * An order total as the buyer saw it, or as the checkout would charge it. The amount is in minor units (cents), so two totals compare as integers and never as floats.
- */
-export interface ExpectedTotal {
-    /**
-     * The total in minor units of `currency` (EUR 71.00 is 7100).
-     * @minimum 0
-     */
-    amount: number;
-    /**
-     * The ISO-4217 code the total is priced in.
-     * @minLength 3
-     * @maxLength 3
-     */
-    currency: string;
 }
 
 /**
@@ -3074,17 +3159,12 @@ export interface OrderTaxSummaryRow {
 }
 
 export interface OrderAddress {
-    /** @maxLength 100 */
-    fullName: string;
-    /** @maxLength 200 */
-    street: string;
-    /** @maxLength 100 */
-    city: string;
-    /** @maxLength 20 */
-    zip: string;
+    fullName: AddressFullName;
+    street: AddressStreet;
+    city: AddressCity;
+    zip: AddressZip;
     country: CountryCode;
-    /** @maxLength 32 */
-    phone?: string;
+    phone?: AddressPhone;
 }
 
 /**
@@ -3157,15 +3237,13 @@ export const WithdrawBlockedReason = {
  * What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree. Pay is the BUYER's (reading an order is not owning it); an operator who holds the key moves any order, a staff member's own included.
  */
 export interface OrderActions {
-    /** The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status. */
-    transitions: OrderStatus[];
     /** Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further — and only while nothing has shipped: once any shipment left, what remains is cancelled one fulfillment order at a time (`POST /returns`, `kind: cancellation`). */
     cancel: boolean;
-    /** Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not in `transitions`, because no request may make that move: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest. */
+    /** Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not a status move any request makes: a client starts the flow with `POST /payments` and the provider's yes does the rest. */
     pay: boolean;
-    /** Whether `POST /payments/order/{orderId}/offline` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment and the caller holds the key that records one. A buyer's own step is `pay`; a buyer who is staff may also record. */
+    /** Whether `POST /payments/orders/{orderId}/offline` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment and the caller holds the key that records one. A buyer's own step is `pay`; a buyer who is staff may also record. */
     recordPayment: boolean;
-    /** Whether `POST /delivery/order/{id}/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door. */
+    /** Whether `POST /delivery/orders/{id}/start` would be accepted for this caller. `paid → processing` is `system`-only in the lifecycle, reached only by reporting the fact through `delivery`'s own door. */
     start: boolean;
     /** The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `override:Order`, or once the order has left every overridable status. */
     override: OrderStatus[];
@@ -3175,12 +3253,12 @@ export interface OrderActions {
     withdraw: boolean;
     /** Why `withdraw` is `false`, for the order's own buyer on an order that is otherwise withdrawable. Absent when `withdraw` is `true`, for anyone who is not the buyer, and for an order whose status offers no withdrawal (cancelled). A client shows the button disabled with this reason rather than hiding it. */
     withdrawBlocked?: WithdrawBlockedReason;
-    /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
-    withdrawUntil?: string;
     /** Whether `DELETE /orders/{id}` would be accepted for this caller: the caller holds `delete:Order`, the order is `cancelled` and not already hidden. */
     delete: boolean;
-    /** Whether `DELETE /orders/{id}?hardDelete=true` would be accepted for this caller: the caller holds `delete:Order`, and the order is `cancelled` and was never paid (a paid order's invoice must survive it). */
+    /** Whether `DELETE /orders/{id}?hardDelete=true` would be accepted for this caller: the caller holds `delete:Order`, and the order is `cancelled`, was never paid (a paid order's invoice must survive it) and holds no money recorded after the cancel (a late payment and its refund still point at it). */
     hardDelete: boolean;
+    /** Whether `POST /orders/{id}/restore` would be accepted for this caller: the caller holds `delete:Order` and the order is soft-deleted (`deletedAt` is set). */
+    restore: boolean;
     /** Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`. */
     invoice: boolean;
 }
@@ -3247,7 +3325,9 @@ export interface Order {
     paymentStatus: OrderPaymentStatus;
     fulfillmentStatus: OrderFulfillmentStatus;
     returnStatus: OrderReturnStatus;
-    actions?: OrderActions;
+    actions: OrderActions;
+    /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
+    readonly withdrawUntil?: string;
     paidAt?: string;
     createdAt?: string;
     updatedAt?: string;
@@ -3259,6 +3339,50 @@ export interface CheckoutResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: Order;
+}
+
+/**
+ * Why a merged guest line or a reordered order line did not land exactly as asked. Absent when it did.
+ * - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX`); `resulting` is the cap. - `removed`: the product is not publicly visible any more (deleted or hidden);
+ *   nothing was added, `resulting` is what the cart already held (often 0). A product
+ *   that is merely sold out, or taken off sale, is NOT removed: it is added and
+ *   flagged through `availability`.
+ */
+export type MergeLineReason = (typeof MergeLineReason)[keyof typeof MergeLineReason];
+
+export const MergeLineReason = {
+    summed: 'summed',
+    capped: 'capped',
+    removed: 'removed'
+} as const;
+
+export interface MergeLineResult {
+    productId: Id;
+    /**
+     * What the guest line (or the order line) asked for.
+     * @minimum 1
+     */
+    requested: number;
+    /**
+     * What the cart holds for this product after the merge or reorder.
+     * @minimum 0
+     */
+    resulting: number;
+    reason?: MergeLineReason;
+    availability: LineAvailability;
+}
+
+export interface ReorderResponse {
+    cart: CartResponse;
+    /** One result per order line, in the order's own order. */
+    lines: MergeLineResult[];
+}
+
+export interface ReorderResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ReorderResponse;
 }
 
 export interface WishlistItem {
@@ -3275,6 +3399,10 @@ export interface WishlistResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: WishlistResponse;
+}
+
+export interface CreateWishlistItemRequest {
+    productId: Id;
 }
 
 export type OrderSortItem = (typeof OrderSortItem)[keyof typeof OrderSortItem];
@@ -3380,7 +3508,7 @@ export interface UpdateOrderByIdRequest {
  * The operator's choice of whether the money goes back with the cancellation. Ignored for a customer, who is always refunded. Omit the body entirely for the default.
  */
 export interface CancelOrderRequest {
-    /** `false` cancels and releases the stock without returning the money — a replacement going out, a correction, or a refund handled separately through `POST /payments/order/{orderId}/refund`. */
+    /** `false` cancels and releases the stock without returning the money — a replacement going out, a correction, or a refund handled separately through `POST /payments/{id}/refunds`. */
     refund?: boolean;
 }
 
@@ -3437,10 +3565,6 @@ export interface PaymentMethodsResponseEnvelope {
     data: PaymentMethodsResponse;
 }
 
-export interface CreatePaymentIntentRequest {
-    orderId: Id;
-}
-
 export type RefundStatus = (typeof RefundStatus)[keyof typeof RefundStatus];
 
 export const RefundStatus = {
@@ -3450,14 +3574,15 @@ export const RefundStatus = {
 } as const;
 
 /**
- * Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to.
+ * Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to; `late_payment` — the money arrived after the order could no longer be paid (its stock reservation had expired or it was cancelled), so the sale was lost and the money went back. The buyer is mailed it like a cancellation's refund.
  */
 export type RefundReason = (typeof RefundReason)[keyof typeof RefundReason];
 
 export const RefundReason = {
     cancellation: 'cancellation',
     goodwill: 'goodwill',
-    return: 'return'
+    return: 'return',
+    late_payment: 'late_payment'
 } as const;
 
 /**
@@ -3528,7 +3653,7 @@ export interface PaymentBankTransferAction {
     iban: string;
     /** Absent when the deployment has not configured one. */
     bic?: string;
-    /** The ISO 11649 "RF" creditor reference of this payment — what the buyer writes into the transfer's description, so an operator can match the incoming money back via `GET /payments/order-by-reference`. A malformed or unmatched reference answers 404; a raw order id is not a reference. */
+    /** The ISO 11649 "RF" creditor reference of this payment — what the buyer writes into the transfer's description, so an operator can match the incoming money back via `GET /payments?transferReference=`. A malformed or unmatched reference finds nothing; a raw order id is not a reference. */
     reference: string;
     /** When the order's stock hold ends. Past it, with no money received, the order is cancelled. */
     payBy: string;
@@ -3537,13 +3662,17 @@ export interface PaymentBankTransferAction {
 export type PaymentNextAction = PaymentBankTransferAction;
 
 /**
- * What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself.
+ * What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself. Every response that carries a payment carries these, including the answer to each write, so a client never has to re-read to learn the next step.
  */
 export interface PaymentActions {
-    /** Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`, AND the caller is the payer and holds `checkout:Cart` (staff reading the payment are never offered it). */
+    /** Whether the buyer may start or retry paying — the payment is awaiting confirmation or retryable after a decline (then `POST /payments/{id}/confirm`), or it is a bank transfer still waiting for its money and a card provider is configured (then `POST /payments` takes it over with a card), AND the order can still reach `paid`, AND the caller is the payer and holds `checkout:Cart` (staff reading the payment are never offered it). An in-flight payment is deliberately not payable: its next step is `sync`. */
     pay: boolean;
-    /** Whether `POST /payments/order/{orderId}/refund` would be accepted. False once nothing is left to refund (fully refunded, or the rest already asked back), which is what greys the control out rather than letting the operator discover it by clicking. */
+    /** Whether the buyer may finish at the provider with `POST /payments/{id}/sync` — the payment is `requires_action` or `processing`, it went through the provider, and the caller is the payer holding `checkout:Cart`. Narrower than the route on purpose: the route also accepts a payment that is awaiting confirmation or was declined, whose next step is `pay`. Never true together with `pay`. */
+    sync: boolean;
+    /** Whether `POST /payments/{id}/refunds` would be accepted: the caller holds `create:Refund`, the payment is `succeeded` and something is left to refund. False once nothing is left (fully refunded, or the rest already asked back, a refund still open included), which is what greys the control out rather than letting the operator discover it by clicking. On a hand-paid payment the refund only opens a record; `settleByHand` confirms it. */
     refund: boolean;
+    /** The ids of the refunds this caller may mark as returned with `POST /payments/{id}/refunds/{refundId}/settle`: the caller holds `create:Refund`, the payment is `succeeded` and hand-paid, and the refund is `pending`. An array because the route takes a target; empty when there is none. */
+    settleByHand: Id[];
 }
 
 /**
@@ -3561,7 +3690,7 @@ export const PaymentStatus = {
 } as const;
 
 /**
- * How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /payments/order/{orderId}/offline`, from what the admin chose there.
+ * How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /payments/orders/{orderId}/offline`, from what the admin chose there.
  */
 export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod];
 
@@ -3600,24 +3729,24 @@ export interface Payment {
     orderNumber?: string;
     /** The order's customer email. Present on `GET /payments` rows only. */
     email?: string;
-    /** Which provider implementation handled it — the name the deployment registered (`NODE_PAYMENT_PROVIDER`), or `manual` for a payment recorded by hand (`POST /payments/order/{orderId}/offline`). */
+    /** Which provider implementation handled it — the name the deployment registered (`NODE_PAYMENT_PROVIDER`), or `manual` for a payment recorded by hand (`POST /payments/orders/{orderId}/offline`). */
     provider: string;
-    /** How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /payments/order/{orderId}/offline`, from what the admin chose there. */
+    /** How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /payments/orders/{orderId}/offline`, from what the admin chose there. */
     method: PaymentMethod;
     /**
-     * Free text identifying an offline payment — a bank transaction id, a receipt number. Set only by `POST /payments/order/{orderId}/offline`; absent from a card payment.
+     * Free text identifying an offline payment — a bank transaction id, a receipt number. Set only by `POST /payments/orders/{orderId}/offline`; absent from a card payment.
      * @maxLength 120
      */
     reference?: string;
-    /** When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST /payments/order/{orderId}/offline`; absent from a card payment. */
+    /** When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST /payments/orders/{orderId}/offline`; absent from a card payment. */
     receivedAt?: string;
-    /** `true` once a refunded `manual` payment has had its money returned to the customer outside this application — there is no provider to ask, so this is the admin's own record that it was done. Absent otherwise. */
+    /** `true` once a refunded `manual` payment has had its money returned to the customer outside this application — there is no provider to ask, so this is the operator's own record that it was done (`POST /payments/{id}/refunds/{refundId}/settle`). Set by that route alone. Absent otherwise. */
     refundedByHand?: boolean;
-    /** Returned by `POST /payments/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response. */
+    /** Returned by `POST /payments` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response. */
     clientSecret?: string;
     /** The only card digits a payment system may remember. Survives a refund — refunding does not clear it. */
     cardLast4?: string;
-    actions?: PaymentActions;
+    actions: PaymentActions;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -3627,13 +3756,6 @@ export interface PaymentEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: Payment;
-}
-
-export interface OrderByReferenceResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Order;
 }
 
 export interface RefundPaymentRequest {
@@ -3649,8 +3771,15 @@ export interface RefundPaymentRequest {
     currency?: string;
 }
 
+export interface RefundEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Refund;
+}
+
 /**
- * How the money arrived. `card` is not offered here — that path is `POST /payments/intent`.
+ * How the money arrived. `card` is not offered here — that path is `POST /payments`.
  */
 export type RecordOfflinePaymentRequestMethod =
     (typeof RecordOfflinePaymentRequestMethod)[keyof typeof RecordOfflinePaymentRequestMethod];
@@ -3662,7 +3791,7 @@ export const RecordOfflinePaymentRequestMethod = {
 } as const;
 
 export interface RecordOfflinePaymentRequest {
-    /** How the money arrived. `card` is not offered here — that path is `POST /payments/intent`. */
+    /** How the money arrived. `card` is not offered here — that path is `POST /payments`. */
     method: RecordOfflinePaymentRequestMethod;
     /**
      * A bank transaction id, a receipt number — whatever ties this record to the money.
@@ -3875,7 +4004,7 @@ export interface FulfillmentOrder {
     agreedAt?: string;
     /** When it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected. */
     expectedAt?: string;
-    /** When the buyer was last told the date had moved or passed. */
+    /** When the buyer was last told the date had moved or would be missed. */
     lastNoticeAt?: string;
     cancelReason?: FulfillmentCancelReason;
     actions: FulfillmentOrderActions;
@@ -3899,8 +4028,10 @@ export interface ShipmentLine {
 export interface ShipmentActions {
     /** Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`. */
     deliver: boolean;
-    /** Whether `PATCH /delivery/shipments/{id}` would be accepted — still `shipped`. */
-    editTracking: boolean;
+    /** Whether `POST /delivery/shipments/{id}/deliver` with `forced: true` would be accepted: the arrival is open (as for `deliver`) and the caller also holds `override:Order`. True beside `deliver`, not instead of it: forcing records the arrival without a carrier confirmation and needs a `reason`. */
+    forceDeliver: boolean;
+    /** Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — still `shipped`. */
+    update: boolean;
 }
 
 /**
@@ -4169,6 +4300,21 @@ export const ReturnReason = {
     wrong_item: 'wrong_item',
     other: 'other'
 } as const;
+
+export type ReturnSortItem = (typeof ReturnSortItem)[keyof typeof ReturnSortItem];
+
+export const ReturnSortItem = {
+    createdAt: 'createdAt',
+    '-createdAt': '-createdAt',
+    status: 'status',
+    '-status': '-status'
+} as const;
+
+/**
+ * @minItems 1
+ * @maxItems 2
+ */
+export type ReturnSort = ReturnSortItem[];
 
 /**
  * What the record is: `return` — goods that left coming back; `cancellation` — the unshipped remainder of one fulfillment order, cancelled and refunded, closed when made.
@@ -4536,7 +4682,6 @@ export interface StockMovementsResponseEnvelope {
 }
 
 export interface ReceiptRequest {
-    productId: Id;
     /**
      * How many units arrived. Strictly positive — a delivery that removes units is an adjustment.
      * @minimum 1
@@ -4551,7 +4696,6 @@ export interface ReceiptRequest {
 }
 
 export interface AdjustmentRequest {
-    productId: Id;
     /** Signed. Negative is shrinkage or damage; positive is a miscount found in your favour. */
     delta: number;
     /**
@@ -4577,6 +4721,44 @@ export interface ReservationSweepEnvelope {
     data: ReservationSweepResponse;
 }
 
+export type WebhookSubscriptionSortItem =
+    (typeof WebhookSubscriptionSortItem)[keyof typeof WebhookSubscriptionSortItem];
+
+export const WebhookSubscriptionSortItem = {
+    createdAt: 'createdAt',
+    '-createdAt': '-createdAt',
+    url: 'url',
+    '-url': '-url'
+} as const;
+
+/**
+ * @minItems 1
+ * @maxItems 2
+ */
+export type WebhookSubscriptionSort = WebhookSubscriptionSortItem[];
+
+export interface WebhookRetiringSecret {
+    /** A ring entry's id, one of `secretIds`. */
+    id: string;
+    /** When this secret stops signing deliveries — the end of its overlap window (`NODE_WEBHOOK_SECRET_OVERLAP_HOURS` after its successor was minted), unless it is dropped sooner. */
+    retiresAt: string;
+}
+
+export interface WebhookSubscriptionActions {
+    /** Whether `PUT` or `PATCH /webhooks/subscriptions/{id}` would be accepted. */
+    update: boolean;
+    /** Whether `DELETE /webhooks/subscriptions/{id}` would be accepted. */
+    delete: boolean;
+    /** Whether `POST /webhooks/subscriptions/{id}/enable` would be accepted — false while it is already enabled. */
+    enable: boolean;
+    /** Whether `POST /webhooks/subscriptions/{id}/disable` would be accepted — false while it is already disabled. */
+    disable: boolean;
+    /** Whether `POST /webhooks/subscriptions/{id}/rotate-secret` would be accepted. */
+    rotateSecret: boolean;
+    /** Whether `DELETE /webhooks/subscriptions/{id}/secrets/{secretId}` would be accepted — false while the ring holds a single secret. */
+    removeSecret: boolean;
+}
+
 export interface WebhookSubscription {
     id: Id;
     /** @pattern (?:^https://) */
@@ -4587,13 +4769,19 @@ export interface WebhookSubscription {
      * @minItems 1
      */
     eventTypes: string[];
+    /** Read-only, derived — true while `disabledAt` is absent. Change it with `POST .../enable` or `POST .../disable`. */
     enabled: boolean;
     /** @minimum 0 */
     consecutiveFailures: number;
-    /** Set once `consecutiveFailures` crosses the auto-disable threshold. */
+    /** When the subscription was switched off, by hand or by the auto-disable guard. Absent while it is enabled. */
     disabledAt?: string;
+    /** Set (together with `disabledAt`) only when the auto-disable guard switched it off after sustained failures; absent for a pause by hand. */
+    autoDisabledAt?: string;
     /** The ring's secret ids, oldest first — never the plaintext. */
     secretIds: string[];
+    /** The ring entries that are still signing but have been superseded, with when each stops. Empty when the ring holds one secret. */
+    retiringSecrets: WebhookRetiringSecret[];
+    actions: WebhookSubscriptionActions;
     createdAt: string;
     updatedAt: string;
 }
@@ -4642,7 +4830,10 @@ export interface WebhookSubscriptionCreated {
     /** @minimum 0 */
     consecutiveFailures: number;
     disabledAt?: string;
+    autoDisabledAt?: string;
     secretIds: string[];
+    retiringSecrets: WebhookRetiringSecret[];
+    actions: WebhookSubscriptionActions;
     createdAt: string;
     updatedAt: string;
     /** The newly minted secret, in plaintext. Shown here once, on creation, and never again. */
@@ -4656,6 +4847,13 @@ export interface WebhookSubscriptionCreatedEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: WebhookSubscriptionCreated;
+}
+
+export interface WebhookSubscriptionEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: WebhookSubscription;
 }
 
 export interface ReplaceWebhookSubscriptionRequest {
@@ -4678,15 +4876,6 @@ export interface ReplaceWebhookSubscriptionRequest {
      * @items.maxLength 100
      */
     eventTypes: string[];
-    /** Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`. */
-    enabled: boolean;
-}
-
-export interface WebhookSubscriptionEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: WebhookSubscription;
 }
 
 export interface UpdateWebhookSubscriptionRequest {
@@ -4709,8 +4898,6 @@ export interface UpdateWebhookSubscriptionRequest {
      * @items.maxLength 100
      */
     eventTypes?: string[];
-    /** Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`. */
-    enabled?: boolean;
 }
 
 export type WebhookDeliveryStatus =
@@ -4722,6 +4909,11 @@ export const WebhookDeliveryStatus = {
     succeeded: 'succeeded',
     exhausted: 'exhausted'
 } as const;
+
+export interface WebhookDeliveryActions {
+    /** Whether `POST /webhooks/deliveries/{id}/replay` would be accepted — false while the delivery's subscription is disabled or gone. */
+    replay: boolean;
+}
 
 export interface WebhookDelivery {
     id: Id;
@@ -4735,6 +4927,7 @@ export interface WebhookDelivery {
     durationMs?: number;
     error?: string;
     nextAttemptAt?: string;
+    actions: WebhookDeliveryActions;
     createdAt: string;
     updatedAt: string;
 }
@@ -4770,11 +4963,41 @@ export interface WebhookEventCatalogueResponseEnvelope {
     data: WebhookEventCatalogueEntry[];
 }
 
+export type ApiKeySortItem = (typeof ApiKeySortItem)[keyof typeof ApiKeySortItem];
+
+export const ApiKeySortItem = {
+    createdAt: 'createdAt',
+    '-createdAt': '-createdAt',
+    expiresAt: 'expiresAt',
+    '-expiresAt': '-expiresAt',
+    lastUsedAt: 'lastUsedAt',
+    '-lastUsedAt': '-lastUsedAt'
+} as const;
+
+/**
+ * @minItems 1
+ * @maxItems 3
+ */
+export type ApiKeySort = ApiKeySortItem[];
+
+/**
+ * Whether the credential works right now, decided by the server. `revoked` and `expired` are final. `suspended` means the person who minted it can no longer sign in (banned, soft-deleted or erased): the key is refused with 401 and comes back by itself if they do. Checked in that order, so a revoked key never reads as `suspended`.
+ */
+export type ApiKeyStatus = (typeof ApiKeyStatus)[keyof typeof ApiKeyStatus];
+
+export const ApiKeyStatus = {
+    active: 'active',
+    expired: 'expired',
+    revoked: 'revoked',
+    suspended: 'suspended'
+} as const;
+
 export interface ApiKey {
     id: Id;
     name: string;
     /** The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which. */
     publicPrefix: string;
+    status: ApiKeyStatus;
     /**
      * The permission rules this credential was minted with, each spelled `<action>:<Subject>` (`display:Order`). Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
      * @minItems 1
@@ -4790,6 +5013,8 @@ export interface ApiKey {
 export interface ApiKeysResponse {
     items: ApiKey[];
     meta: PaginationMeta;
+    /** The latest `expiresAt` a mint accepts right now (one calendar year from this response). A later one is refused with 422, so a form can bound its date picker without copying the rule. */
+    maxExpiresAt: string;
 }
 
 export interface ApiKeysResponseEnvelope {
@@ -4838,6 +5063,13 @@ export interface ApiKeyCreatedEnvelope {
     data: ApiKeyCreated;
 }
 
+export interface ApiKeyEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ApiKey;
+}
+
 export interface SessionActivity {
     /** When the session last saw a real request — now, for a touch. */
     lastActiveAt: string;
@@ -4865,9 +5097,28 @@ export const SessionConfigMode = {
     cookie: 'cookie'
 } as const;
 
+/**
+ * How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own.
+ */
+export type SessionConfigLifetimeSeconds = {
+    /** @minimum 1 */
+    short: number;
+    /** @minimum 1 */
+    medium: number;
+    /** @minimum 1 */
+    long: number;
+};
+
 export interface SessionConfig {
     /** The deployment's `NODE_SESSION_MODE`. */
     mode: SessionConfigMode;
+    /** How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own. */
+    lifetimeSeconds: SessionConfigLifetimeSeconds;
+    /**
+     * The longest a staff or admin session lives from sign-in, whatever the tier (`NODE_SESSION_LIFETIME_STAFF`). Absent when the cap is off.
+     * @minimum 1
+     */
+    staffLifetimeSeconds?: number;
 }
 
 export interface SessionConfigEnvelope {
@@ -4931,6 +5182,76 @@ export interface WishlistExportItem {
     productId: Id;
 }
 
+export interface ExportOrder {
+    id: Id;
+    userId?: Id;
+    email: Email;
+    items: OrderItem[];
+    /**
+     * Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
+     * @minimum 0
+     */
+    totalItems: number;
+    /**
+     * Sum of `quantity` across every line item.
+     * @minimum 0
+     */
+    totalQuantity: number;
+    /**
+     * Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
+     * @minimum 0
+     */
+    totalPrice: number;
+    /** ISO-4217 currency code this order was priced in (e.g. EUR). */
+    readonly currency: string;
+    /**
+     * Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
+     * @minimum 0
+     */
+    readonly netTotal: number;
+    /**
+     * Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers.
+     * @minimum 0
+     */
+    readonly taxTotal: number;
+    /**
+     * Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
+     * @minimum 0
+     */
+    readonly shippingNetAmount: number;
+    /**
+     * Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
+     * @minimum 0
+     */
+    readonly shippingTaxAmount: number;
+    /** One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines. */
+    readonly taxSummary: readonly OrderTaxSummaryRow[];
+    /** Optional order notes */
+    notes?: string;
+    /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
+    shippingMethod?: string;
+    /**
+     * What that method cost at checkout time — a later rate change cannot re-price history.
+     * @minimum 0
+     */
+    shippingCost?: number;
+    shippingAddress?: OrderAddress;
+    billingAddress?: OrderAddress;
+    paymentMethod?: PaymentMethodId;
+    payBy?: string;
+    readonly orderNumber: string;
+    status: OrderStatus;
+    paymentStatus: OrderPaymentStatus;
+    fulfillmentStatus: OrderFulfillmentStatus;
+    returnStatus: OrderReturnStatus;
+    /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
+    readonly withdrawUntil?: string;
+    paidAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
+}
+
 /**
  * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`.
  */
@@ -4966,25 +5287,35 @@ export const OrderTimelineType = {
 } as const;
 
 /**
+ * Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both.
+ */
+export type OrderTimelineExportEntryAudience =
+    (typeof OrderTimelineExportEntryAudience)[keyof typeof OrderTimelineExportEntryAudience];
+
+export const OrderTimelineExportEntryAudience = {
+    buyer: 'buyer',
+    staff: 'staff'
+} as const;
+
+/**
  * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
  */
-export type OrderTimelineEntryData = { [key: string]: unknown };
+export type OrderTimelineExportEntryData = { [key: string]: unknown };
 
-export interface OrderTimelineEntry {
+export interface OrderTimelineExportEntry {
+    orderId: Id;
     id: Id;
     at: string;
     type: OrderTimelineType;
+    /** Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both. */
+    audience: OrderTimelineExportEntryAudience;
     /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
     actor?: Id;
     /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
     text?: string;
     /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
-    data: OrderTimelineEntryData;
+    data: OrderTimelineExportEntryData;
 }
-
-export type OrderTimelineExportEntry = OrderTimelineEntry & {
-    orderId: Id;
-};
 
 export type ExportPaymentStatus = (typeof ExportPaymentStatus)[keyof typeof ExportPaymentStatus];
 
@@ -5067,7 +5398,7 @@ export interface ExportFulfillmentOrder {
     holdNote?: string;
     agreedAt?: string;
     expectedAt?: string;
-    /** When the buyer was last told the date had moved or passed. */
+    /** When the buyer was last told the date had moved or would be missed. */
     lastNoticeAt?: string;
     cancelReason?: FulfillmentCancelReason;
 }
@@ -5345,7 +5676,7 @@ export type AccountExportResponseRolesItem = {
 
 export interface AccountExportResponse {
     exportedAt: string;
-    profile: User;
+    profile: Account;
     auditLog: AuditEntryItem[];
     sessions: ExportSession[];
     addresses: Address[];
@@ -5354,7 +5685,7 @@ export interface AccountExportResponse {
     feedback?: ExportFeedbackTicket[];
     cart: CartItem[];
     wishlist: WishlistExportItem[];
-    orders: Order[];
+    orders: ExportOrder[];
     orderTimeline: OrderTimelineExportEntry[];
     payments: ExportPayment[];
     invoicing: AccountExportResponseInvoicing;
@@ -5380,42 +5711,11 @@ export interface SetPurchaseHoldRequest {
 
 export interface MergeCartRequest {
     /**
-     * The guest cart's lines. A product listed twice is two lines, summed like two `POST /cart`s.
+     * The guest cart's lines. A product listed twice is two lines, summed like two `POST /cart/items`s.
      * @minItems 1
      * @maxItems 100
      */
     lines: AddCartItemRequest[];
-}
-
-/**
- * Why a guest line did not land exactly as asked. Absent when it did.
- * - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX`); `resulting` is the cap. - `removed`: the product is not publicly visible any more (deleted or hidden);
- *   nothing was added, `resulting` is what the cart already held (often 0). A product
- *   that is merely sold out, or taken off sale, is NOT removed: it is added and
- *   flagged through `availability`.
- */
-export type MergeLineReason = (typeof MergeLineReason)[keyof typeof MergeLineReason];
-
-export const MergeLineReason = {
-    summed: 'summed',
-    capped: 'capped',
-    removed: 'removed'
-} as const;
-
-export interface MergeLineResult {
-    productId: Id;
-    /**
-     * What the guest line asked for.
-     * @minimum 1
-     */
-    requested: number;
-    /**
-     * What the cart holds for this product after the merge.
-     * @minimum 0
-     */
-    resulting: number;
-    reason?: MergeLineReason;
-    availability: LineAvailability;
 }
 
 export interface MergeCartResponse {
@@ -5429,6 +5729,36 @@ export interface MergeCartResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: MergeCartResponse;
+}
+
+/**
+ * Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both.
+ */
+export type OrderTimelineEntryAudience =
+    (typeof OrderTimelineEntryAudience)[keyof typeof OrderTimelineEntryAudience];
+
+export const OrderTimelineEntryAudience = {
+    buyer: 'buyer',
+    staff: 'staff'
+} as const;
+
+/**
+ * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
+ */
+export type OrderTimelineEntryData = { [key: string]: unknown };
+
+export interface OrderTimelineEntry {
+    id: Id;
+    at: string;
+    type: OrderTimelineType;
+    /** Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both. */
+    audience: OrderTimelineEntryAudience;
+    /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
+    actor?: Id;
+    /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
+    text?: string;
+    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
+    data: OrderTimelineEntryData;
 }
 
 export interface OrderTimelineEnvelope {
@@ -5482,6 +5812,10 @@ export interface PaymentsResponseEnvelope {
     data: PaymentsResponse;
 }
 
+export interface CreatePaymentRequest {
+    orderId: Id;
+}
+
 export interface SearchPaymentsRequest {
     page?: Page;
     pageSize?: PageSize;
@@ -5501,6 +5835,11 @@ export interface SearchPaymentsRequest {
     orderId?: Id;
     /** @maxLength 120 */
     reference?: string;
+    /**
+     * The RF creditor reference of a bank transfer, in any spacing and case; a code that is not a valid reference finds nothing.
+     * @maxLength 64
+     */
+    transferReference?: string;
 }
 
 export interface RefundListItem {
@@ -5836,6 +6175,20 @@ export interface PipelineStatsEnvelope {
     data: PipelineStats;
 }
 
+export interface StatsLimits {
+    /** The most calendar days one period may cover, both ends counted. */
+    maxRangeDays: number;
+    /** The most buckets one series may hold, the first possibly starting before `from`. */
+    maxBuckets: number;
+}
+
+export interface StatsLimitsEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: StatsLimits;
+}
+
 export interface ExampleEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
@@ -5939,6 +6292,13 @@ export interface NotificationsResponseEnvelope {
     data: NotificationsResponse;
 }
 
+export interface NotificationEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Notification;
+}
+
 /**
  * Where returned goods are sent: the configured return address (`NODE_RETURN_ADDRESS_*`), or the shop's legal address when none is fully set.
  */
@@ -5972,6 +6332,13 @@ export interface Shop {
     shipToCountries: CountryCode[];
     returnAddress: ShopAddress;
     returnPostagePayer: ReturnPostagePayer;
+    /** Which text of the Terms is in force (`NODE_TERMS_VERSION`, `1` by default). An account stores the version it accepted beside the date (`User.termsVersion`). */
+    termsVersion: string;
+    /**
+     * Days a buyer is promised when a backorder names no restock date: "ships within N days". A legal value the server fixes (CRD Art. 18(1)), not a setting.
+     * @minimum 1
+     */
+    backorderPromiseDays: number;
 }
 
 export interface ShopEnvelope {
@@ -5995,6 +6362,10 @@ export interface StockAlertsResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: StockAlertsResponse;
+}
+
+export interface CreateStockAlertRequest {
+    productId: Id;
 }
 
 /**
@@ -6038,7 +6409,7 @@ export type PreconditionFailedResponse = ErrorResponse;
 export type PayloadTooLargeResponse = ErrorResponse;
 
 /**
- * The request body declares a character set or a content encoding the body parser cannot read. Refused before any route runs, like `413` above — a body whose content-type simply matches no parser is NOT this: it reaches the route, which answers whatever it says about a request missing every field.
+ * The body's media type is not one the operation declares (`details.accepted` lists them), or its charset or encoding cannot be read. Refused before any route runs, like `413` above. A request with no body is never judged. A `DELETE` that declares no body refuses any body, and `details.accepted` is then empty.
  */
 export type UnsupportedMediaTypeResponse = ErrorResponse;
 
@@ -6236,6 +6607,10 @@ export type ListAuditEntriesParams = {
      */
     since?: string;
     /**
+     * Filter by whether the action was taken on the caller's own order. `true` keeps only the entries flagged `metadata.ownOrder`; `false` keeps the rest. Absent keeps both.
+     */
+    ownOrder?: boolean;
+    /**
      * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
      * @minimum 1
      * @maximum 10000
@@ -6419,11 +6794,11 @@ export type ListProductsParams = {
     /**
      * @minimum 0
      */
-    minPrice?: number;
+    priceMin?: number;
     /**
      * @minimum 0
      */
-    maxPrice?: number;
+    priceMax?: number;
     /**
      * @maxLength 200
      */
@@ -6525,15 +6900,6 @@ export type DeleteOrderByIdParams = {
     hardDelete?: HardDeleteParamParameter;
 };
 
-export type GetOrderByReferenceParams = {
-    /**
-     * The RF reference, spaces and case tolerated exactly as a customer might type it — e.g. `RF13 2EY8 H44V JAVZ KX80 JRL`.
-     * @minLength 1
-     * @maxLength 64
-     */
-    ref: string;
-};
-
 export type ListPreorderFulfillmentOrdersParams = {
     /**
      * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
@@ -6612,6 +6978,7 @@ export type ListReturnsParams = {
     orderId?: Id;
     status?: ReturnStatus;
     reason?: ReturnReason;
+    sort?: ReturnSort;
 };
 
 export type GetReturnOptionsParams = {
@@ -6688,10 +7055,15 @@ export type ListWebhookSubscriptionsParams = {
      * @maximum 100
      */
     pageSize?: PageSizeParamParameter;
+    sort?: WebhookSubscriptionSort;
     /**
-     * Filter by whether the subscription is currently active.
+     * Filter by whether the subscription is currently enabled (`true`) or switched off for any reason (`false`).
      */
     enabled?: boolean;
+    /**
+     * Filter by who switched it off. `true` keeps only the subscriptions the failure guard disabled (`autoDisabledAt` set); `false` keeps the rest, enabled ones and pauses by hand. Combine with `enabled=false` to list the pauses by hand.
+     */
+    autoDisabled?: boolean;
 };
 
 export type ListWebhookDeliveriesParams = {
@@ -6724,6 +7096,7 @@ export type ListApiKeysParams = {
      * @maximum 100
      */
     pageSize?: PageSizeParamParameter;
+    sort?: ApiKeySort;
 };
 
 export type ExportOrdersParams = {
@@ -6800,6 +7173,11 @@ export type ListPaymentsParams = {
      * @maxLength 120
      */
     reference?: string;
+    /**
+     * The RF creditor reference of a bank transfer, spaces and case tolerated exactly as a customer might type it (`RF13 2EY8 H44V JAVZ KX80 JRL`). Matched in its canonical form; a code that is not a valid RF reference finds nothing, so the page is empty rather than an error and nothing says an almost-right code was close. Answers with the payment, whose `orderId` is the order it pays.
+     * @maxLength 64
+     */
+    transferReference?: string;
 };
 
 export type ListRefundsParams = {
@@ -7393,6 +7771,25 @@ export const updateLocaleEntriesWithMergePatchJson = (
 };
 
 /**
+ * One entry of one app's slice of a language, at the address the single-entry writes
+ * target. Guarded like the list it comes from (`update:Locale`, the editing screen's
+ * key). An entry of another app or language, an unknown id and a malformed one are
+ * the same 404.
+ * @summary Get one translation entry
+ */
+export const getLocaleEntry = (
+    locale: string,
+    app: string,
+    entryId: string,
+    options?: SecondParameter<typeof orvalMutator<LocaleEntryEnvelope>>
+) => {
+    return orvalMutator<LocaleEntryEnvelope>(
+        { url: `/locales/${locale}/apps/${app}/entries/${entryId}`, method: 'GET' },
+        options
+    );
+};
+
+/**
  * Updates the value of one entry. The key is not editable — a key is the identity a
  * client looks the string up by, so changing it is a delete plus an add, and the two
  * collision checks that go with them.
@@ -7660,7 +8057,7 @@ export const listObservabilityAuditEntries = (
  * Newest first. `meta.totalItems` counts every entry matching the filters, not just
  * the page.
  *
- * Requires `read:AuditLog` — held by `manager`, `support` and `moderator` in the demo.
+ * Requires `read:AuditLog` — held by `admin` in the demo.
  * @summary The shop's own action history
  */
 export const listAuditEntries = (
@@ -7719,19 +8116,19 @@ export const createAnalyticsEvent = (
  * Returns the full profile of the currently authenticated user
  * @summary Current user info
  */
-export const getAccount = (options?: SecondParameter<typeof orvalMutator<UserEnvelope>>) => {
-    return orvalMutator<UserEnvelope>({ url: `/account`, method: 'GET' }, options);
+export const getAccount = (options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>) => {
+    return orvalMutator<AccountEnvelope>({ url: `/account`, method: 'GET' }, options);
 };
 
 /**
- * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change-undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change/confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change/undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/email-change`, or have its link mailed again with `POST /account/email-change/resend`.
  * @summary Replace own profile
  */
 export const replaceAccount = (
     replaceAccountRequest: ReplaceAccountRequest,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
 ) => {
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<AccountEnvelope>(
         {
             url: `/account`,
             method: 'PUT',
@@ -7743,12 +8140,12 @@ export const replaceAccount = (
 };
 
 /**
- * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change-undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change/confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change/undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/email-change`, or have its link mailed again with `POST /account/email-change/resend`.
  * @summary Replace own profile
  */
 export const replaceAccountWithMultipart = (
     replaceAccountRequestMultipart: ReplaceAccountRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
 ) => {
     const formData = new FormData();
     formData.append(`email`, replaceAccountRequestMultipart.email);
@@ -7767,7 +8164,7 @@ export const replaceAccountWithMultipart = (
     }
     formData.append(`analyticsConsent`, replaceAccountRequestMultipart.analyticsConsent.toString());
 
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<AccountEnvelope>(
         {
             url: `/account`,
             method: 'PUT',
@@ -7779,14 +8176,14 @@ export const replaceAccountWithMultipart = (
 };
 
 /**
- * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change-undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change/confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change/undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/email-change`, or have its link mailed again with `POST /account/email-change/resend`.
  * @summary Update own profile
  */
 export const updateAccount = (
     updateAccountRequest: UpdateAccountRequest,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
 ) => {
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<AccountEnvelope>(
         {
             url: `/account`,
             method: 'PATCH',
@@ -7798,14 +8195,14 @@ export const updateAccount = (
 };
 
 /**
- * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change-undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change/confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change/undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/email-change`, or have its link mailed again with `POST /account/email-change/resend`.
  * @summary Update own profile
  */
 export const updateAccountWithMergePatchJson = (
     updateAccountRequest: UpdateAccountRequest,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
 ) => {
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<AccountEnvelope>(
         {
             url: `/account`,
             method: 'PATCH',
@@ -7817,12 +8214,12 @@ export const updateAccountWithMergePatchJson = (
 };
 
 /**
- * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change-undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change/confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change/undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/email-change`, or have its link mailed again with `POST /account/email-change/resend`.
  * @summary Update own profile
  */
 export const updateAccountWithMultipart = (
     updateAccountRequestMultipart: UpdateAccountRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
 ) => {
     const formData = new FormData();
     if (updateAccountRequestMultipart.email !== undefined) {
@@ -7850,7 +8247,7 @@ export const updateAccountWithMultipart = (
         );
     }
 
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<AccountEnvelope>(
         {
             url: `/account`,
             method: 'PATCH',
@@ -7862,13 +8259,13 @@ export const updateAccountWithMultipart = (
 };
 
 /**
- * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion. Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
- * @summary Request account deletion
+ * Locks the authenticated user's account at once and schedules its erasure. Every session dies with the call (the session cookie is cleared) and the account can no longer sign in, so the answer is the last thing the caller sees. The account is erased `NODE_ACCOUNT_DELETION_GRACE_DAYS` days later (30 by default, never more than one calendar month: GDPR Art. 12(3)), at `purgeAt`. Until then it can be brought back by the link in the mail this call sends (`POST /account/restore`), by signing in (`POST /account/login` offers the restore), or by staff (`POST /users/{id}/restore`). Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
+ * @summary Delete the account (locked at once, erased after a grace)
  */
 export const requestAccountDelete = (
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<AccountDeletionEnvelope>>
 ) => {
-    return orvalMutator<SuccessResponse>({ url: `/account`, method: 'DELETE' }, options);
+    return orvalMutator<AccountDeletionEnvelope>({ url: `/account`, method: 'DELETE' }, options);
 };
 
 /**
@@ -7879,20 +8276,20 @@ export const cancelPendingEmailChange = (
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
-        { url: `/account/pending-email`, method: 'DELETE' },
+        { url: `/account/email-change`, method: 'DELETE' },
         options
     );
 };
 
 /**
- * Mails the NEW (pending) address a fresh confirmation link — and only that address; the old one is not told again. The previous link stops working, since only the newest one counts. Answers 200 with `resendAfter`, the seconds a client counts down before offering the button again — the same shape as `POST /account/verify-request`. A no-op, answering 200 with `resendAfter` 0 and mailing nothing, when nothing is pending, so a client does not need to check `GET /account` first. Sending the pending address again through `PUT`/`PATCH /account` does nothing, which is why this route exists. Answers 429 inside the previous send's cooldown (the same 60 seconds as `POST /account/verify-request`, with `details.retryAfter` naming the wait) and spends the same per-account budget on a failure, so a client that waits never sees one. No fresh-auth guard — it mails an address the caller already asked for and changes nothing about the account.
+ * Mails the NEW (pending) address a fresh confirmation link — and only that address; the old one is not told again. The previous link stops working, since only the newest one counts. Answers 200 with `resendAfter`, the seconds a client counts down before offering the button again — the same shape as `POST /account/email-verification/resend`. A no-op, answering 200 with `resendAfter` 0 and mailing nothing, when nothing is pending, so a client does not need to check `GET /account` first. Sending the pending address again through `PUT`/`PATCH /account` does nothing, which is why this route exists. Answers 429 inside the previous send's cooldown (the same 60 seconds as `POST /account/email-verification/resend`, with `details.retryAfter` naming the wait) and spends the same per-account budget on a failure, so a client that waits never sees one. No fresh-auth guard — it mails an address the caller already asked for and changes nothing about the account.
  * @summary Resend the pending email confirmation
  */
 export const resendPendingEmail = (
     options?: SecondParameter<typeof orvalMutator<EmailVerificationRequestedEnvelope>>
 ) => {
     return orvalMutator<EmailVerificationRequestedEnvelope>(
-        { url: `/account/pending-email/resend`, method: 'POST' },
+        { url: `/account/email-change/resend`, method: 'POST' },
         options
     );
 };
@@ -7996,7 +8393,7 @@ export const reauth = (
 };
 
 /**
- * Logs out the CURRENT session only — deletes the session the `__Host-session` cookie (or, in `cookie` mode, a `ses_…` bearer) names, and clears the authentication cookies. Refused with 403 when the request names an `Origin` that is not an allowed frontend origin. Other devices stay signed in; `POST /account/logout-all` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
+ * Logs out the CURRENT session only — deletes the session the `__Host-session` cookie (or, in `cookie` mode, a `ses_…` bearer) names, and clears the authentication cookies. Refused with 403 when the request names an `Origin` that is not an allowed frontend origin. Other devices stay signed in; `DELETE /account/sessions` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
  * @summary Logout this session
  */
 export const logout = (options?: SecondParameter<typeof orvalMutator<SuccessResponse>>) => {
@@ -8009,6 +8406,28 @@ export const logout = (options?: SecondParameter<typeof orvalMutator<SuccessResp
  */
 export const listSessions = (options?: SecondParameter<typeof orvalMutator<SessionsEnvelope>>) => {
     return orvalMutator<SessionsEnvelope>({ url: `/account/sessions`, method: 'GET' }, options);
+};
+
+/**
+ * Logs out the authenticated user from ALL devices by deleting every session the account holds and clearing authentication cookies. Needs a fresh session (sensitive tier, `401 REAUTH_REQUIRED` when stale).
+ * @summary Logout from all devices
+ */
+export const logoutAll = (options?: SecondParameter<typeof orvalMutator<SuccessResponse>>) => {
+    return orvalMutator<SuccessResponse>({ url: `/account/sessions`, method: 'DELETE' }, options);
+};
+
+/**
+ * One of the caller's own live sessions, by the id `GET /account/sessions` gave out. Scoped like the list: another account's session, a session that has ended, an invented id and a malformed one are the same 404. The `current` marker is judged against the credential this request carries.
+ * @summary Get one session
+ */
+export const getSession = (
+    sessionId: Id,
+    options?: SecondParameter<typeof orvalMutator<SessionEnvelope>>
+) => {
+    return orvalMutator<SessionEnvelope>(
+        { url: `/account/sessions/${sessionId}`, method: 'GET' },
+        options
+    );
 };
 
 /**
@@ -8050,6 +8469,20 @@ export const addAddress = (
             headers: { 'Content-Type': 'application/json' },
             data: addressInput
         },
+        options
+    );
+};
+
+/**
+ * One entry of the caller's own book. Someone else's entry, an unknown id and a malformed one are the same 404.
+ * @summary Get an address
+ */
+export const getAddress = (
+    addressId: Id,
+    options?: SecondParameter<typeof orvalMutator<AddressEnvelope>>
+) => {
+    return orvalMutator<AddressEnvelope>(
+        { url: `/account/addresses/${addressId}`, method: 'GET' },
         options
     );
 };
@@ -8143,20 +8576,20 @@ export const setDefaultAddress = (
 };
 
 /**
- * Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/verify-confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived. Answers 429 inside the previous send's cooldown, so a client that respects `resendAfter` never sees one — unlike a login guess, a SUCCESSFUL call here is the expensive one, since each publishes mail.
+ * Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/email-verification/confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived. Answers 429 inside the previous send's cooldown, so a client that respects `resendAfter` never sees one — unlike a login guess, a SUCCESSFUL call here is the expensive one, since each publishes mail.
  * @summary Request email verification
  */
 export const requestEmailVerification = (
     options?: SecondParameter<typeof orvalMutator<EmailVerificationRequestedEnvelope>>
 ) => {
     return orvalMutator<EmailVerificationRequestedEnvelope>(
-        { url: `/account/verify-request`, method: 'POST' },
+        { url: `/account/email-verification/resend`, method: 'POST' },
         options
     );
 };
 
 /**
- * Completes the email-verification flow. Validates the one-time token issued at signup or by `/account/verify-request` and, if valid, marks the account's email address as verified.
+ * Completes the email-verification flow. Validates the one-time token issued at signup or by `/account/email-verification/resend` and, if valid, marks the account's email address as verified.
  * @summary Confirm email verification
  */
 export const confirmEmailVerification = (
@@ -8165,7 +8598,7 @@ export const confirmEmailVerification = (
 ) => {
     return orvalMutator<SuccessResponse>(
         {
-            url: `/account/verify-confirm`,
+            url: `/account/email-verification/confirm`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: verifyEmailConfirmRequest
@@ -8175,7 +8608,7 @@ export const confirmEmailVerification = (
 };
 
 /**
- * Completes the email-change flow started by `PUT /account`. Validates the one-time `email-change` token sent to the NEW address and, if valid, swaps `pendingEmail` into `email`, marks the account verified, and revokes every refresh token — the same treatment `POST /account/password` gives a password change, since an email change is the stronger takeover primitive of the two. A `verify` token from the signup flow is refused here, and this token is refused by `/account/verify-confirm` — the two prove different things.
+ * Completes the email-change flow started by `PUT /account`. Validates the one-time `email-change` token sent to the NEW address and, if valid, swaps `pendingEmail` into `email`, marks the account verified, and revokes every refresh token — the same treatment `POST /account/password` gives a password change, since an email change is the stronger takeover primitive of the two. A `verify` token from the signup flow is refused here, and this token is refused by `/account/email-verification/confirm` — the two prove different things.
  * @summary Confirm a pending email change
  */
 export const confirmEmailChange = (
@@ -8184,7 +8617,7 @@ export const confirmEmailChange = (
 ) => {
     return orvalMutator<SuccessResponse>(
         {
-            url: `/account/email-change-confirm`,
+            url: `/account/email-change/confirm`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: verifyEmailConfirmRequest
@@ -8194,7 +8627,7 @@ export const confirmEmailChange = (
 };
 
 /**
- * Reverts an email change from the one-time link in the notice mailed to the OLD address when the change was requested. Valid for 7 days from that request, and untouched by a password change, so a person who reads mail weekly can still use it. While the change is only pending it is cancelled; once the new address was confirmed the previous one is restored, and every session is ended (a refresh token cannot outlive the address it was issued under). Public, like `POST /account/email-change-confirm`, the token in the body is the credential. Answers 409 when the previous address was meanwhile claimed by another account.
+ * Reverts an email change from the one-time link in the notice mailed to the OLD address when the change was requested. Valid for 7 days from that request, and untouched by a password change, so a person who reads mail weekly can still use it. While the change is only pending it is cancelled; once the new address was confirmed the previous one is restored, and every session is ended (a refresh token cannot outlive the address it was issued under). Public, like `POST /account/email-change/confirm`, the token in the body is the credential. Answers 409 when the previous address was meanwhile claimed by another account.
  * @summary Undo an email change
  */
 export const undoEmailChange = (
@@ -8203,7 +8636,7 @@ export const undoEmailChange = (
 ) => {
     return orvalMutator<SuccessResponse>(
         {
-            url: `/account/email-change-undo`,
+            url: `/account/email-change/undo`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: verifyEmailConfirmRequest
@@ -8213,26 +8646,26 @@ export const undoEmailChange = (
 };
 
 /**
- * Completes the account-deletion flow. Validates the one-time token issued by `DELETE /account` and, if valid, permanently removes the user account. Answers 429 once an address (or its network block) has sent too many wrong tokens, like the other one-time-token confirms.
- * @summary Confirm account deletion
+ * Spends the one-time restore token mailed by `DELETE /account` and brings the account back, provided its `purgeAt` has not passed. Public: the token is the credential. Restoring does NOT sign the person in: holding the mailbox is not a login, the same rule as a password reset. Unknown, expired and already-spent tokens answer alike (`422`). Answers 429 once an address (or its network block) has sent too many wrong tokens, like the other one-time-token confirms.
+ * @summary Cancel a scheduled account deletion with the mailed link
  */
-export const confirmAccountDelete = (
-    accountDeleteConfirmRequest: AccountDeleteConfirmRequest,
+export const restoreAccount = (
+    accountRestoreRequest: AccountRestoreRequest,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
         {
-            url: `/account/delete-confirm`,
-            method: 'DELETE',
+            url: `/account/restore`,
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: accountDeleteConfirmRequest
+            data: accountRestoreRequest
         },
         options
     );
 };
 
 /**
- * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead.
+ * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
  * @summary Login
  */
 export const login = (
@@ -8251,14 +8684,33 @@ export const login = (
 };
 
 /**
- * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account is an `unverified` audience until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `checkout:Cart`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards.
+ * The last step of a sign-in by an account whose owner asked to delete it (`DELETE /account`) and whose `purgeAt` has not passed. Submits the `DeletionPending` claim check that `POST /account/login` (or `POST /account/login/2fa`) answered: it cancels the deletion, then starts the session exactly as `POST /account/login` does, `remember` and `transport` included. A client that does not want the account back simply never calls it, and the account is erased at `purgeAt`. Omit `challenge` for an OAuth-originated sign-in: that claim check never reached the client and is read from the httpOnly cookie the callback set. An unknown, expired or spent challenge answers 401.
+ * @summary Restore an account in its deletion grace and sign in
+ */
+export const loginRestore = (
+    loginRestoreRequest: LoginRestoreRequest,
+    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+) => {
+    return orvalMutator<AuthTokensEnvelope>(
+        {
+            url: `/account/login/restore`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: loginRestoreRequest
+        },
+        options
+    );
+};
+
+/**
+ * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account is an `unverified` audience until `POST /account/email-verification/confirm` proves the address — it browses freely and is stopped only at `checkout:Cart`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards.
  * @summary Signup
  */
 export const signup = (
     signupRequest: SignupRequest,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
 ) => {
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<AccountEnvelope>(
         {
             url: `/account/signup`,
             method: 'POST',
@@ -8270,7 +8722,7 @@ export const signup = (
 };
 
 /**
- * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
+ * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/password/reset/confirm`.
  * @summary Request password reset
  */
 export const requestPasswordReset = (
@@ -8279,7 +8731,7 @@ export const requestPasswordReset = (
 ) => {
     return orvalMutator<SuccessResponse>(
         {
-            url: `/account/reset`,
+            url: `/account/password/reset`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: passwordResetRequest
@@ -8289,7 +8741,7 @@ export const requestPasswordReset = (
 };
 
 /**
- * Completes the password-reset flow. Validates the one-time reset token issued by `/account/reset` and, if valid, updates the user's password to the supplied value.
+ * Completes the password-reset flow. Validates the one-time reset token issued by `/account/password/reset` and, if valid, updates the user's password to the supplied value.
  * @summary Confirm password reset
  */
 export const confirmPasswordReset = (
@@ -8298,7 +8750,7 @@ export const confirmPasswordReset = (
 ) => {
     return orvalMutator<SuccessResponse>(
         {
-            url: `/account/reset-confirm`,
+            url: `/account/password/reset/confirm`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: passwordResetConfirmRequest
@@ -8315,14 +8767,6 @@ export const refreshToken = (
     options?: SecondParameter<typeof orvalMutator<RefreshTokenEnvelope>>
 ) => {
     return orvalMutator<RefreshTokenEnvelope>({ url: `/account/refresh`, method: 'POST' }, options);
-};
-
-/**
- * Logs out the authenticated user from ALL devices by deleting every session the account holds and clearing authentication cookies. Needs a fresh session (sensitive tier, `401 REAUTH_REQUIRED` when stale).
- * @summary Logout from all devices
- */
-export const logoutAll = (options?: SecondParameter<typeof orvalMutator<SuccessResponse>>) => {
-    return orvalMutator<SuccessResponse>({ url: `/account/logout-all`, method: 'POST' }, options);
 };
 
 /**
@@ -8343,14 +8787,14 @@ export const requestAccountExport = (
 };
 
 /**
- * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, starts the session exactly as `POST /account/login` does for an account with no second factor, `transport` included.
+ * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, starts the session exactly as `POST /account/login` does for an account with no second factor, `transport` included. For an account inside the grace of its own deletion the second factor passing answers a `DeletionPending` claim check instead of a session, so two-factor is asked once and `POST /account/login/restore` finishes.
  * @summary Complete a two-factor login
  */
 export const loginTwoFactor = (
     loginTwoFactorRequest: LoginTwoFactorRequest,
-    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<LoginTwoFactorResponseEnvelope>>
 ) => {
-    return orvalMutator<AuthTokensEnvelope>(
+    return orvalMutator<LoginTwoFactorResponseEnvelope>(
         {
             url: `/account/login/2fa`,
             method: 'POST',
@@ -8388,45 +8832,6 @@ export const getTwoFactorStatus = (
     options?: SecondParameter<typeof orvalMutator<TwoFactorStatusEnvelope>>
 ) => {
     return orvalMutator<TwoFactorStatusEnvelope>({ url: `/account/2fa`, method: 'GET' }, options);
-};
-
-/**
- * Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is DELETE /account/2fa/methods/{method}.
- * @summary Disable two-factor authentication
- */
-export const disableTwoFactor = (
-    twoFactorCodeRequest: TwoFactorCodeRequest,
-    options?: SecondParameter<typeof orvalMutator<SessionRenewedEnvelope>>
-) => {
-    return orvalMutator<SessionRenewedEnvelope>(
-        {
-            url: `/account/2fa`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: twoFactorCodeRequest
-        },
-        options
-    );
-};
-
-/**
- * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as DELETE /account/2fa would.
- * @summary Remove one second factor
- */
-export const removeTwoFactorMethod = (
-    method: string,
-    twoFactorCodeRequest: TwoFactorCodeRequest,
-    options?: SecondParameter<typeof orvalMutator<SessionRenewedEnvelope>>
-) => {
-    return orvalMutator<SessionRenewedEnvelope>(
-        {
-            url: `/account/2fa/methods/${method}`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: twoFactorCodeRequest
-        },
-        options
-    );
 };
 
 /**
@@ -8478,6 +8883,45 @@ export const confirmTwoFactorMethod = (
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: twoFactorConfirmRequest
+        },
+        options
+    );
+};
+
+/**
+ * Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is POST /account/2fa/methods/{method}/remove.
+ * @summary Disable two-factor authentication
+ */
+export const disableTwoFactor = (
+    twoFactorCodeRequest: TwoFactorCodeRequest,
+    options?: SecondParameter<typeof orvalMutator<SessionRenewedEnvelope>>
+) => {
+    return orvalMutator<SessionRenewedEnvelope>(
+        {
+            url: `/account/2fa/disable`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorCodeRequest
+        },
+        options
+    );
+};
+
+/**
+ * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as POST /account/2fa/disable would.
+ * @summary Remove one second factor
+ */
+export const removeTwoFactorMethod = (
+    method: string,
+    twoFactorCodeRequest: TwoFactorCodeRequest,
+    options?: SecondParameter<typeof orvalMutator<SessionRenewedEnvelope>>
+) => {
+    return orvalMutator<SessionRenewedEnvelope>(
+        {
+            url: `/account/2fa/methods/${method}/remove`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorCodeRequest
         },
         options
     );
@@ -8544,14 +8988,14 @@ export const startOAuthLink = (
 };
 
 /**
- * Removes the link between the account and `provider`, so that provider can no longer sign in to it, and mails the owner that a sign-in method was removed. Nothing re-links it by email match, so reconnecting is `POST /account/oauth/links/{provider}` from a signed-in session. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked.
+ * Removes the link between the account and `provider`, so that provider can no longer sign in to it, and mails the owner that a sign-in method was removed. Nothing re-links it by email match, so reconnecting is `POST /account/oauth/links/{provider}` from a signed-in session. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked. A link is a line of the caller's links list, so the answer is that list as it now stands (200 + the links left).
  * @summary Disconnect a linked sign-in provider
  */
 export const unlinkOAuthProvider = (
     provider: string,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<OAuthLinksEnvelope>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<OAuthLinksEnvelope>(
         { url: `/account/oauth/links/${provider}`, method: 'DELETE' },
         options
     );
@@ -8573,7 +9017,7 @@ export const startOAuthLogin = (
 };
 
 /**
- * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise. A provider whose verified email matches an existing account links nothing and signs nobody in: the redirect carries `?error=account_exists`, and the owner connects the provider from a signed-in session (`POST /account/oauth/links/{provider}`). When that existing account never proved its own address, the redirect carries `?error=account_unverified` instead: the owner resets the password, which proves the mailbox, and signs in the way the account allows. That signed-in connect round trip comes back to this same callback, mints no session and redirects with `?linked=<provider>`, or `?error=already_linked` (the provider account belongs to another account) or `?error=link_expired` (the minutes the attempt lives ran out).
+ * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. When the account is inside the grace of its own deletion and has no second factor, no session is minted either: the redirect carries `?deletionPending=1&purgeAt=...&expiresAt=...` and the claim check travels in a short-lived httpOnly cookie that `POST /account/login/restore` reads when its body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise. A provider whose verified email matches an existing account links nothing and signs nobody in: the redirect carries `?error=account_exists`, and the owner connects the provider from a signed-in session (`POST /account/oauth/links/{provider}`). When that existing account never proved its own address, the redirect carries `?error=account_unverified` instead: the owner resets the password, which proves the mailbox, and signs in the way the account allows. That signed-in connect round trip comes back to this same callback, mints no session and redirects with `?linked=<provider>`, or `?error=already_linked` (the provider account belongs to another account) or `?error=link_expired` (the minutes the attempt lives ran out).
  * @summary Complete an OAuth login
  */
 export const completeOAuthLogin = (
@@ -8716,7 +9160,6 @@ export const replaceUserByIdWithMultipart = (
     const formData = new FormData();
     formData.append(`username`, replaceUserByIdRequestMultipart.username);
     formData.append(`role`, replaceUserByIdRequestMultipart.role);
-    formData.append(`active`, replaceUserByIdRequestMultipart.active.toString());
     if (replaceUserByIdRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, replaceUserByIdRequestMultipart.imageUpload);
     }
@@ -8797,9 +9240,6 @@ export const updateUserByIdWithMultipart = (
     if (updateUserByIdRequestMultipart.role !== undefined) {
         formData.append(`role`, updateUserByIdRequestMultipart.role);
     }
-    if (updateUserByIdRequestMultipart.active !== undefined) {
-        formData.append(`active`, updateUserByIdRequestMultipart.active.toString());
-    }
     if (updateUserByIdRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, updateUserByIdRequestMultipart.imageUpload);
     }
@@ -8830,24 +9270,17 @@ export const updateUserByIdWithMultipart = (
  */
 export const deleteUserById = (
     id: string,
-    hardDeleteRequest?: HardDeleteRequest,
     params?: DeleteUserByIdParams,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
-        {
-            url: `/users/${id}`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: hardDeleteRequest,
-            params
-        },
+        { url: `/users/${id}`, method: 'DELETE', params },
         options
     );
 };
 
 /**
- * Undoes the soft delete of the user identified by `{id}`. Answers 409 when the user is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+ * Undoes the soft delete of the user identified by `{id}`, which includes an account whose owner asked to delete it and whose `purgeAt` has not passed (the owner is told by mail; the account is then no longer scheduled for erasure). Answers 409 `USER_NOT_DELETED` when the user is not soft-deleted, so a restore can never be mistaken for an ordinary read, and 409 `USER_ERASURE_DUE` past `purgeAt`.
  * @summary Restore user
  */
 export const restoreUserById = (
@@ -8940,27 +9373,21 @@ export const searchFeedbackRequests = (
 };
 
 /**
- * Replaces the triage state of a feedback request (RFC 9110 §9.3.4, an omitted optional field is cleared). `status` is required — a PUT names the whole triage state, not one field of it.
- * @summary Replace feedback request status
+ * One feedback request of the admin queue, by id. The same rows `GET /feedback` lists, so anyone who may read the list reads any of them. An unknown or malformed id is a 404.
+ * @summary Get a feedback request
  */
-export const replaceFeedbackRequestStatus = (
+export const getFeedbackRequest = (
     id: string,
-    replaceFeedbackRequestStatusRequest: ReplaceFeedbackRequestStatusRequest,
     options?: SecondParameter<typeof orvalMutator<FeedbackRequestEnvelope>>
 ) => {
     return orvalMutator<FeedbackRequestEnvelope>(
-        {
-            url: `/feedback/${id}`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: replaceFeedbackRequestStatusRequest
-        },
+        { url: `/feedback/${id}`, method: 'GET' },
         options
     );
 };
 
 /**
- * Merges a status and/or notes change into a feedback request (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
+ * Merges a status and/or notes change into a feedback request. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
  * @summary Update feedback request status
  */
 export const updateFeedbackRequestStatus = (
@@ -8980,7 +9407,7 @@ export const updateFeedbackRequestStatus = (
 };
 
 /**
- * Merges a status and/or notes change into a feedback request (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
+ * Merges a status and/or notes change into a feedback request. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
  * @summary Update feedback request status
  */
 export const updateFeedbackRequestStatusWithMergePatchJson = (
@@ -9025,7 +9452,7 @@ export const listProducts = (
 };
 
 /**
- * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/receipts`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it.
+ * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/levels/{productId}/receive`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it.
  * @summary Create product
  */
 export const createProduct = (
@@ -9044,7 +9471,7 @@ export const createProduct = (
 };
 
 /**
- * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/receipts`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it.
+ * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/levels/{productId}/receive`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it.
  * @summary Create product
  */
 export const createProductWithMultipart = (
@@ -9419,18 +9846,11 @@ export const updateProductByIdWithMultipart = (
  */
 export const deleteProductById = (
     id: string,
-    hardDeleteRequest?: HardDeleteRequest,
     params?: DeleteProductByIdParams,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
-        {
-            url: `/products/${id}`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: hardDeleteRequest,
-            params
-        },
+        { url: `/products/${id}`, method: 'DELETE', params },
         options
     );
 };
@@ -9505,7 +9925,7 @@ export const getCart = (options?: SecondParameter<typeof orvalMutator<CartRespon
 };
 
 /**
- * "Add to cart": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). Answers 201 with the cart and the line's `Location` when a line was created, 200 when an existing one grew; the line may not pass the per-line cap (422). To SET a quantity, `PUT /cart/{productId}`.
+ * "Add to cart": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). A line is written through its parent, so the answer is always 200 with the whole cart: no `Location`, no read of a line. The line may not pass the per-line cap (422). To SET a quantity, `PATCH /cart/items/{productId}`.
  * @summary Add to cart
  */
 export const addCartItem = (
@@ -9514,7 +9934,7 @@ export const addCartItem = (
 ) => {
     return orvalMutator<CartResponseEnvelope>(
         {
-            url: `/cart`,
+            url: `/cart/items`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: addCartItemRequest
@@ -9524,34 +9944,15 @@ export const addCartItem = (
 };
 
 /**
- * Removes the cart line for the product identified by `productId` in the body from the authenticated user's cart. Alternate spelling of `DELETE /cart/{productId}`, for a caller that would rather carry the id in the body. To empty the cart entirely, use `DELETE /cart/all` instead — a stripped or malformed body here 422s rather than falling back to clearing everything. Returns the updated cart.
- * @summary Remove item from cart
- */
-export const removeCartItemByBody = (
-    removeCartItemRequest: RemoveCartItemRequest,
-    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
-) => {
-    return orvalMutator<CartResponseEnvelope>(
-        {
-            url: `/cart`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: removeCartItemRequest
-        },
-        options
-    );
-};
-
-/**
- * Empties the authenticated user's cart entirely. Bodyless on purpose — the destructive spelling gets its own URL instead of being what `DELETE /cart` falls back to when a body goes missing, so a body stripped in transit 422s there instead of silently landing here.
+ * Empties the authenticated user's cart entirely. Bodyless on purpose — the destructive spelling gets its own URL, and any body on it is refused (415), so a body can never turn a one-line delete into this. Returns the (empty) cart; clearing an already-empty cart is the state the caller asked for, so also 200.
  * @summary Clear cart
  */
 export const clearCart = (options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>) => {
-    return orvalMutator<CartResponseEnvelope>({ url: `/cart/all`, method: 'DELETE' }, options);
+    return orvalMutator<CartResponseEnvelope>({ url: `/cart/items`, method: 'DELETE' }, options);
 };
 
 /**
- * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart` is the door that adds. Answers 201 when it created the line (RFC 9110 §9.3.4) and 200 when it wrote one already there; repeating it changes nothing. Returns the updated cart.
+ * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart/items` is the door that adds. A change never creates, so a product the cart holds no line for is 404 `cart.item-not-found`, and a held line whose product the storefront no longer shows is 404 `products.not-found`. Repeating it changes nothing. Returns the updated cart.
  * @summary Set cart item quantity
  */
 export const updateCartItemById = (
@@ -9561,9 +9962,29 @@ export const updateCartItemById = (
 ) => {
     return orvalMutator<CartResponseEnvelope>(
         {
-            url: `/cart/${productId}`,
-            method: 'PUT',
+            url: `/cart/items/${productId}`,
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
+            data: updateCartItemByIdRequest
+        },
+        options
+    );
+};
+
+/**
+ * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart/items` is the door that adds. A change never creates, so a product the cart holds no line for is 404 `cart.item-not-found`, and a held line whose product the storefront no longer shows is 404 `products.not-found`. Repeating it changes nothing. Returns the updated cart.
+ * @summary Set cart item quantity
+ */
+export const updateCartItemByIdWithMergePatchJson = (
+    productId: string,
+    updateCartItemByIdRequest: UpdateCartItemByIdRequest,
+    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+) => {
+    return orvalMutator<CartResponseEnvelope>(
+        {
+            url: `/cart/items/${productId}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/merge-patch+json' },
             data: updateCartItemByIdRequest
         },
         options
@@ -9579,7 +10000,7 @@ export const removeCartItem = (
     options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
 ) => {
     return orvalMutator<CartResponseEnvelope>(
-        { url: `/cart/${productId}`, method: 'DELETE' },
+        { url: `/cart/items/${productId}`, method: 'DELETE' },
         options
     );
 };
@@ -9636,14 +10057,14 @@ export const checkout = (
 };
 
 /**
- * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX`) is clamped to what room is left instead, and skipped outright once there is none — the same best-effort treatment as an unavailable product. Any signed-in account, staff included, reorders only its own orders — the cart being filled is the caller's.
+ * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the answer holds the cart as it now stands and ONE RESULT PER ORDER LINE, in the order's own order, by the same rule and in the same shape as `POST /cart/merge` (`requested`, `resulting`, `reason`, `availability`). A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX`) is clamped to what room is left (`capped`), and adds nothing once there is none; an unavailable product is `removed`. Neither is a failure. Any signed-in account, staff included, reorders only its own orders — the cart being filled is the caller's.
  * @summary Reorder (refill cart from a past order)
  */
 export const reorder = (
     orderId: string,
-    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ReorderResponseEnvelope>>
 ) => {
-    return orvalMutator<CartResponseEnvelope>(
+    return orvalMutator<ReorderResponseEnvelope>(
         { url: `/cart/reorder/${orderId}`, method: 'POST' },
         options
     );
@@ -9660,15 +10081,20 @@ export const getWishlist = (
 };
 
 /**
- * Saves the product identified by `{productId}` to the authenticated user's wishlist. "This product is saved" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other.
+ * Saves the product named in the body to the authenticated user's wishlist. A saved product is a line of the wishlist, written through its parent: the answer is 200 with the whole wishlist, no `Location`, and no read of a line. Saving what is already saved answers the same 200 and fires nothing a second time, because a double-clicked heart icon is not an error. The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other.
  * @summary Save a product
  */
-export const addWishlistItem = (
-    productId: string,
+export const createWishlistItem = (
+    createWishlistItemRequest: CreateWishlistItemRequest,
     options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
 ) => {
     return orvalMutator<WishlistResponseEnvelope>(
-        { url: `/wishlist/${productId}`, method: 'PUT' },
+        {
+            url: `/wishlist/items`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createWishlistItemRequest
+        },
         options
     );
 };
@@ -9677,12 +10103,12 @@ export const addWishlistItem = (
  * Removes the line for the product identified by `{productId}` from the authenticated user's wishlist. A line the caller does not hold is a 404 — the client's view is stale and it needs to know.
  * @summary Remove a saved product
  */
-export const removeWishlistItem = (
+export const deleteWishlistItem = (
     productId: string,
     options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
 ) => {
     return orvalMutator<WishlistResponseEnvelope>(
-        { url: `/wishlist/${productId}`, method: 'DELETE' },
+        { url: `/wishlist/items/${productId}`, method: 'DELETE' },
         options
     );
 };
@@ -9696,7 +10122,7 @@ export const moveWishlistItemToCart = (
     options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
 ) => {
     return orvalMutator<WishlistResponseEnvelope>(
-        { url: `/wishlist/${productId}/move-to-cart`, method: 'POST' },
+        { url: `/wishlist/items/${productId}/move-to-cart`, method: 'POST' },
         options
     );
 };
@@ -9735,7 +10161,7 @@ export const createOrder = (
 };
 
 /**
- * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid); a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`.
+ * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel); a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`.
  * @summary Delete order
  */
 export const deleteOrder = (
@@ -9847,29 +10273,22 @@ export const updateOrderByIdWithMergePatchJson = (
 };
 
 /**
- * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid). A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`. Functionally equivalent to `DELETE /orders`.
+ * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel). A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`. Functionally equivalent to `DELETE /orders`.
  * @summary Delete order
  */
 export const deleteOrderById = (
     id: string,
-    hardDeleteRequest?: HardDeleteRequest,
     params?: DeleteOrderByIdParams,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
-        {
-            url: `/orders/${id}`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: hardDeleteRequest,
-            params
-        },
+        { url: `/orders/${id}`, method: 'DELETE', params },
         options
     );
 };
 
 /**
- * Undoes the soft delete of the order identified by `{id}`. Answers 409 when the order is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+ * Undoes the soft delete of the order identified by `{id}`. Answers 409 `ORDER_NOT_DELETED` when the order is not soft-deleted, so a restore can never be mistaken for an ordinary read.
  * @summary Restore order
  */
 export const restoreOrderById = (
@@ -9987,26 +10406,7 @@ export const listPaymentMethods = (
 };
 
 /**
- * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200, so a retry needs no `Idempotency-Key` (a stored replay would hand back the first answer's `clientSecret` for as long as the ledger keeps it). The caller's intents and syncs share one budget per hour (429) — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
- * @summary Create a payment intent
- */
-export const createPaymentIntent = (
-    createPaymentIntentRequest: CreatePaymentIntentRequest,
-    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
-) => {
-    return orvalMutator<PaymentEnvelope>(
-        {
-            url: `/payments/intent`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createPaymentIntentRequest
-        },
-        options
-    );
-};
-
-/**
- * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. A caller holding `display:Payment` reads anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments/intent`.
+ * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. A caller holding `display:Payment` reads anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments`.
  * @summary Get the payment behind an order
  */
 export const getPaymentByOrder = (
@@ -10014,41 +10414,43 @@ export const getPaymentByOrder = (
     options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
 ) => {
     return orvalMutator<PaymentEnvelope>(
-        { url: `/payments/order/${orderId}`, method: 'GET' },
+        { url: `/payments/orders/${orderId}`, method: 'GET' },
         options
     );
 };
 
 /**
- * The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website and get back the order it pays. Needs `create:Payment` (moderator, admin) — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. An raw order id is not a reference, so it answers 404 too — find an order by id through the normal order search instead. The reference lives on the bank-transfer payment, which is kept for a year after its order is cancelled, so a transfer that arrives late still finds its order. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
- * @summary Find the order behind an RF reference
- */
-export const getOrderByReference = (
-    params: GetOrderByReferenceParams,
-    options?: SecondParameter<typeof orvalMutator<OrderByReferenceResponseEnvelope>>
-) => {
-    return orvalMutator<OrderByReferenceResponseEnvelope>(
-        { url: `/payments/order-by-reference`, method: 'GET', params },
-        options
-    );
-};
-
-/**
- * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
- * @summary Refund an order's payment
+ * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 201 with the new `Refund` record and its address in `Location`; read the payment again (`GET /payments/{id}`) for the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left, which includes a refund still open: a card refund the provider has not confirmed belongs to the refund sweep) or 422 (asks for more than is left).
+ * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it. Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * @summary Refund a payment
  */
 export const refundPaymentByOrder = (
-    orderId: string,
+    id: string,
     refundPaymentRequest?: RefundPaymentRequest,
-    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<RefundEnvelope>>
 ) => {
-    return orvalMutator<PaymentEnvelope>(
+    return orvalMutator<RefundEnvelope>(
         {
-            url: `/payments/order/${orderId}/refund`,
+            url: `/payments/${id}/refunds`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: refundPaymentRequest
         },
+        options
+    );
+};
+
+/**
+ * One refund record of a payment, which is where `Location` points after `POST /payments/{id}/refunds`. Scoped like `GET /payments/{id}`: the payer's own, or any with `display:Payment`; another account's payment, or a record the payment does not hold, is the same 404. The provider's refund id and a failed refund's `failureReason` are sent to `display:Payment` callers only.
+ * @summary Get a refund
+ */
+export const getRefund = (
+    id: string,
+    refundId: Id,
+    options?: SecondParameter<typeof orvalMutator<RefundEnvelope>>
+) => {
+    return orvalMutator<RefundEnvelope>(
+        { url: `/payments/${id}/refunds/${refundId}`, method: 'GET' },
         options
     );
 };
@@ -10066,13 +10468,24 @@ export const recordOfflinePayment = (
 ) => {
     return orvalMutator<PaymentEnvelope>(
         {
-            url: `/payments/order/${orderId}/offline`,
+            url: `/payments/orders/${orderId}/offline`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: recordOfflinePaymentRequest
         },
         options
     );
+};
+
+/**
+ * One payment by its own id, which is where `Location` points after `POST /payments`. The payer reads their own; a caller holding `display:Payment` reads anyone's. Another account's payment is the same 404 as a missing one. The provider's `clientSecret` is never part of a read, only of the answer to `POST /payments`.
+ * @summary Get a payment
+ */
+export const getPayment = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>({ url: `/payments/${id}`, method: 'GET' }, options);
 };
 
 /**
@@ -10148,7 +10561,7 @@ export const getFulfillmentByOrder = (
     options?: SecondParameter<typeof orvalMutator<OrderFulfillmentEnvelope>>
 ) => {
     return orvalMutator<OrderFulfillmentEnvelope>(
-        { url: `/delivery/order/${orderId}`, method: 'GET' },
+        { url: `/delivery/orders/${orderId}`, method: 'GET' },
         options
     );
 };
@@ -10162,7 +10575,7 @@ export const startFulfilment = (
     options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
 ) => {
     return orvalMutator<OrderEnvelope>(
-        { url: `/delivery/order/${orderId}/start`, method: 'POST' },
+        { url: `/delivery/orders/${orderId}/start`, method: 'POST' },
         options
     );
 };
@@ -10271,6 +10684,20 @@ export const releaseFulfillmentOrder = (
 ) => {
     return orvalMutator<FulfillmentOrderEnvelope>(
         { url: `/delivery/fulfillment-orders/${id}/release`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * One shipment by its own id, at the address `PATCH` corrects it. Scoped like the order it belongs to (`read:Order`): a buyer reads their own, staff holding `display:Order` read any. Someone else's shipment, an unknown id and a malformed one are the same 404.
+ * @summary Get a shipment
+ */
+export const getShipment = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
+) => {
+    return orvalMutator<ShipmentEnvelope>(
+        { url: `/delivery/shipments/${id}`, method: 'GET' },
         options
     );
 };
@@ -10519,12 +10946,13 @@ export const listStockMovements = (
  * @summary Receive stock
  */
 export const receiveStock = (
+    productId: Id,
     receiptRequest: ReceiptRequest,
     options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>
 ) => {
     return orvalMutator<InventoryLevelEnvelope>(
         {
-            url: `/inventory/receipts`,
+            url: `/inventory/levels/${productId}/receive`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: receiptRequest
@@ -10538,12 +10966,13 @@ export const receiveStock = (
  * @summary Adjust stock
  */
 export const adjustStock = (
+    productId: Id,
     adjustmentRequest: AdjustmentRequest,
     options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>
 ) => {
     return orvalMutator<InventoryLevelEnvelope>(
         {
-            url: `/inventory/adjustments`,
+            url: `/inventory/levels/${productId}/adjust`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: adjustmentRequest
@@ -10568,8 +10997,9 @@ export const sweepReservations = (
 };
 
 /**
- * Never returns a secret — the ring's plaintext exists only in the response of the
- * call that minted it (`POST` here, or `POST .../{id}/rotate-secret`).
+ * Newest first unless `sort` says otherwise. Never returns a secret — the ring's
+ * plaintext exists only in the response of the call that minted it (`POST` here, or
+ * `POST .../{id}/rotate-secret`).
  * @summary List this shop's webhook subscriptions
  */
 export const listWebhookSubscriptions = (
@@ -10609,9 +11039,24 @@ export const createWebhookSubscription = (
 };
 
 /**
- * Full replace of url/description/eventTypes/enabled — an omitted `description` is
- * cleared. Never touches the secret ring; rotate or drop a secret through its own
- * action route below.
+ * The same shape the list rows carry (and never a secret). 404 for an id outside this
+ * shop's subscriptions, whether it never existed or belongs to another shop.
+ * @summary Get one webhook subscription
+ */
+export const getWebhookSubscription = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+) => {
+    return orvalMutator<WebhookSubscriptionEnvelope>(
+        { url: `/webhooks/subscriptions/${id}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Full replace of url/description/eventTypes — an omitted `description` is cleared.
+ * Never touches the secret ring or whether the subscription is on; rotate or drop a
+ * secret, enable or disable it, through its own action route below.
  * @summary Replace a webhook subscription
  */
 export const replaceWebhookSubscription = (
@@ -10631,8 +11076,9 @@ export const replaceWebhookSubscription = (
 };
 
 /**
- * Partial update of url/description/eventTypes/enabled. Never touches the secret
- * ring; rotate or drop a secret through its own action route below.
+ * Partial update of url/description/eventTypes. Never touches the secret ring or
+ * whether the subscription is on; rotate or drop a secret, enable or disable it,
+ * through its own action route below.
  * @summary Update a webhook subscription
  */
 export const updateWebhookSubscription = (
@@ -10652,8 +11098,9 @@ export const updateWebhookSubscription = (
 };
 
 /**
- * Partial update of url/description/eventTypes/enabled. Never touches the secret
- * ring; rotate or drop a secret through its own action route below.
+ * Partial update of url/description/eventTypes. Never touches the secret ring or
+ * whether the subscription is on; rotate or drop a secret, enable or disable it,
+ * through its own action route below.
  * @summary Update a webhook subscription
  */
 export const updateWebhookSubscriptionWithMergePatchJson = (
@@ -10691,11 +11138,11 @@ export const deleteWebhookSubscription = (
  * ring then carries two active secrets, and deliveries sign with both (two
  * space-separated `v1,` values in `webhook-signature`) until the old one is dropped
  * through `DELETE .../secrets/{secretId}` or its overlap window ends (24 hours by
- * default, `NODE_WEBHOOK_SECRET_OVERLAP_HOURS`), after which it stops signing and
- * disappears from `secretIds`. A ring holds at most two: rotating again drops the
- * oldest. Its own route rather than a flag on
+ * default, `NODE_WEBHOOK_SECRET_OVERLAP_HOURS`; `retiringSecrets` names the exact
+ * instant), after which it stops signing and disappears from `secretIds`. A ring holds at
+ * most two: rotating again drops the oldest. Its own route rather than a flag on
  * `PATCH`'s body: a command, not state, so it does not share a route with
- * url/description/eventTypes/enabled.
+ * url/description/eventTypes.
  * @summary Rotate a webhook subscription's secret
  */
 export const rotateWebhookSubscriptionSecret = (
@@ -10726,7 +11173,7 @@ export const removeWebhookSubscriptionSecret = (
 };
 
 /**
- * Every attempt, newest first, optionally filtered by subscription and status.
+ * Every attempt, newest first, optionally filtered by subscription and status. The order is fixed - this is a log.
  * @summary The delivery log
  */
 export const listWebhookDeliveries = (
@@ -10745,7 +11192,8 @@ export const listWebhookDeliveries = (
  * row: `attempt` advances exactly like a real queued attempt would (one step forward
  * on a failure with backoff tiers left, unchanged on success or exhaustion), and
  * `status`/`responseCode`/`durationMs`/`error` reflect this replay. The single
- * most-requested support action, per the design doc.
+ * most-requested support action, per the design doc. Refused while the subscription is
+ * disabled (`actions.replay` is false): enable it first.
  * @summary Re-send one delivery
  */
 export const replayWebhookDelivery = (
@@ -10775,7 +11223,7 @@ export const listWebhookEvents = (
 };
 
 /**
- * Never returns a credential's secret — that exists only in the response of the call that minted it.
+ * Newest first unless `sort` says otherwise. Never returns a credential's secret — that exists only in the response of the call that minted it.
  * @summary List this shop's machine-to-machine credentials
  */
 export const listApiKeys = (
@@ -10820,6 +11268,17 @@ export const mintApiKey = (
         },
         options
     );
+};
+
+/**
+ * One credential of this shop, with the same `status` the list gives it. Never its secret — that exists only in the response of the call that minted it. Another shop's credential, an unknown id and a malformed one are the same 404.
+ * @summary Get a machine-to-machine credential
+ */
+export const getApiKey = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<ApiKeyEnvelope>>
+) => {
+    return orvalMutator<ApiKeyEnvelope>({ url: `/api-keys/${id}`, method: 'GET' }, options);
 };
 
 /**
@@ -10892,14 +11351,14 @@ export const sendReauthCode = (
 };
 
 /**
- * Marks the session as having seen a real request now, and answers its idle clock. A staff or admin session that sees none for `idleTimeoutSeconds` ends (`401 SESSION_IDLE`); a client shows a "still there?" prompt before then and calls this when the person answers. A shopper's session never idles out, so the field is absent. Every other request counts as activity too, except one sent with the `X-Session-Passive: true` header: a poll or a keep-alive that is not the person acting.
+ * Marks the session as having seen a real request now, and answers its idle clock. A staff or admin session that sees none for `idleTimeoutSeconds` ends (`401 SESSION_IDLE`); a client shows a "still there?" prompt before then and calls this when the person answers. A shopper's session never idles out, so the field is absent. Every other request counts as activity too, except one sent with the `Session-Passive: true` header: a poll or a keep-alive that is not the person acting.
  * @summary Count the caller's own session as active, and read its idle clock
  */
 export const touchSession = (
     options?: SecondParameter<typeof orvalMutator<SessionActivityEnvelope>>
 ) => {
     return orvalMutator<SessionActivityEnvelope>(
-        { url: `/account/session/touch`, method: 'POST' },
+        { url: `/account/sessions/current/touch`, method: 'POST' },
         options
     );
 };
@@ -10952,7 +11411,7 @@ export const setUserPurchaseHold = (
 };
 
 /**
- * Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call, and it clears the account's review flag. Safe to repeat: lifting no hold answers 200 with the user. Audited as `admin.user.purchase_hold_lifted` when a hold or a review flag was there to clear (`inForce` says which); a repeat that finds neither writes no row.
+ * Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call, and it clears the account's review flag. An account with neither a hold nor a review flag answers 409 `USER_PURCHASE_HOLD_NOT_SET`. Audited as `admin.user.purchase_hold_lifted` (`inForce` says whether the hold was still running).
  * @summary Lift a user's purchase hold
  */
 export const liftUserPurchaseHold = (
@@ -10966,7 +11425,29 @@ export const liftUserPurchaseHold = (
 };
 
 /**
- * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
+ * Lets a deactivated account sign in again. Answers 409 `USER_ALREADY_ACTIVE` when it is active already. Needs `ban:User`, the key deactivating takes. Audited as `admin.user.unbanned`.
+ * @summary Activate user
+ */
+export const activateUserById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>({ url: `/users/${id}/activate`, method: 'POST' }, options);
+};
+
+/**
+ * Locks the account out and ends every session it holds in the same save, so activating it later does not bring the old tokens back. Answers 409 `USER_ALREADY_INACTIVE` when it is deactivated already. Needs `ban:User`. Audited as `admin.user.banned`.
+ * @summary Deactivate user
+ */
+export const deactivateUserById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>({ url: `/users/${id}/deactivate`, method: 'POST' }, options);
+};
+
+/**
+ * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart/items`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
  * @summary Merge a guest cart into the cart
  */
 export const mergeCart = (
@@ -11044,7 +11525,7 @@ export const correctOrderShippingAddress = (
 };
 
 /**
- * Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /payments/order/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. Each row carries `actions` for the caller, so a client never decides `refund` from the status; `actions.pay` is false on a list row (paying is the payer's own step, read on the order page). The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
+ * Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /payments/orders/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. Each row carries `actions` for the caller, so a client never decides `refund` from the status; `actions.pay` is false on a list row (paying is the payer's own step, read on the order page). The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
  * @summary List payments (staff)
  */
 export const listPayments = (
@@ -11053,6 +11534,25 @@ export const listPayments = (
 ) => {
     return orvalMutator<PaymentsResponseEnvelope>(
         { url: `/payments`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200, so a retry needs no `Idempotency-Key` (a stored replay would hand back the first answer's `clientSecret` for as long as the ledger keeps it). The caller's intents and syncs share one budget per hour (429) — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
+ * @summary Create a payment
+ */
+export const createPayment = (
+    createPaymentRequest: CreatePaymentRequest,
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        {
+            url: `/payments`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createPaymentRequest
+        },
         options
     );
 };
@@ -11077,7 +11577,7 @@ export const searchPayments = (
 };
 
 /**
- * One row per refund across every payment, newest first, for the Refunds tab. Read only: a refund is opened and settled through `POST /payments/order/{orderId}/refund` and the cancel path. Needs `display:Payment`.
+ * One row per refund across every payment, newest first, for the Refunds tab. Read only: a refund is opened and settled through `POST /payments/{id}/refunds` and the cancel path. Needs `display:Payment`.
  * @summary List refunds (staff)
  */
 export const listRefunds = (
@@ -11091,7 +11591,7 @@ export const listRefunds = (
 };
 
 /**
- * Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES`, refunds owed by hand on a `manual` payment (the sweep never finishes those, so they show at any age), payments whose stock commit is still owed, and orders whose refund is still owed after a cancel. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`.
+ * Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`), and refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age). A cancelled order's refund is one of them, because its record opens before the provider is asked. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`.
  * @summary Payments that need a person (staff)
  */
 export const listPaymentAttention = (
@@ -11099,6 +11599,21 @@ export const listPaymentAttention = (
 ) => {
     return orvalMutator<PaymentAttentionResponseEnvelope>(
         { url: `/payments/attention`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * An operator confirming that money already handed back outside the application (cash given back, a bank transfer sent) was returned, on a refund left `pending` by `POST /payments/{id}/refunds`, a cancellation, a received return or a withdrawal. Nothing is sent anywhere: the refund record settles with `refundedByHand`, `payment.refunded` fires as for any refund (the credit note is issued, a return waiting on it closes), and the audit row is `admin.payment.refund_settled_by_hand`. The refund is named by its own id, so one payment carrying several open refunds settles each separately. Only a hand-paid (`manual`) payment's refund can be settled this way; a card refund belongs to the provider and its sweep (409 `PAYMENT_REFUND_NOT_BY_HAND`). A refund two operators settle at once settles once, and the loser answers 409 `PAYMENT_REFUND_NOT_OPEN`. Needs `create:Refund`, which carries the same fresh-session requirement as the refund itself: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
+ * @summary Mark a hand-paid refund as returned
+ */
+export const settleRefundByHand = (
+    id: string,
+    refundId: Id,
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        { url: `/payments/${id}/refunds/${refundId}/settle`, method: 'POST' },
         options
     );
 };
@@ -11143,6 +11658,20 @@ export const previewRestockDateImpact = (
 ) => {
     return orvalMutator<ReleaseDateImpactEnvelope>(
         { url: `/delivery/fulfillment-orders/restock-date-impact`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * One fulfillment order by its own id, the record `ship`, `fulfill`, `hold` and `release` act on, with the same `actions` they answer. Scoped like the order it belongs to (`read:Order`): a buyer reads their own, staff holding `display:Order` read any. Someone else's, an unknown id and a malformed one are the same 404.
+ * @summary Get a fulfillment order
+ */
+export const getFulfillmentOrder = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<FulfillmentOrderEnvelope>>
+) => {
+    return orvalMutator<FulfillmentOrderEnvelope>(
+        { url: `/delivery/fulfillment-orders/${id}`, method: 'GET' },
         options
     );
 };
@@ -11254,6 +11783,79 @@ export const getPipelineStats = (
     options?: SecondParameter<typeof orvalMutator<PipelineStatsEnvelope>>
 ) => {
     return orvalMutator<PipelineStatsEnvelope>({ url: `/stats/pipeline`, method: 'GET' }, options);
+};
+
+/**
+ * The two ceilings every period read enforces, so a form can refuse a period before a round trip does: the most calendar days (inclusive) and the most buckets one request may cover. Needs `read:Stats`.
+ * @summary How big a period may be (staff)
+ */
+export const getStatsLimits = (
+    options?: SecondParameter<typeof orvalMutator<StatsLimitsEnvelope>>
+) => {
+    return orvalMutator<StatsLimitsEnvelope>({ url: `/stats/limits`, method: 'GET' }, options);
+};
+
+/**
+ * One row of the stock board by product, with its counters and availability — the record `receive`, `adjust` and `backorder-limit` act on. Same audience as the board (`read:StockLevel`). An unknown product, one with no level row and a malformed id are the same 404.
+ * @summary Get one product's stock level
+ */
+export const getInventoryLevel = (
+    productId: Id,
+    options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>
+) => {
+    return orvalMutator<InventoryLevelEnvelope>(
+        { url: `/inventory/levels/${productId}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Turns a subscription back on, whether it was switched off by hand or by the
+ * auto-disable guard: clears `disabledAt` and `autoDisabledAt` and resets the failure
+ * streak, so the guard starts counting from zero. Refused with 409
+ * `WEBHOOK_SUBSCRIPTION_ALREADY_ENABLED` when it is already on — the streak of a
+ * healthy subscription is never reset by a repeated call.
+ * @summary Enable a webhook subscription
+ */
+export const enableWebhookSubscription = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+) => {
+    return orvalMutator<WebhookSubscriptionEnvelope>(
+        { url: `/webhooks/subscriptions/${id}/enable`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * Pauses a subscription by hand: sets `disabledAt` (and leaves `autoDisabledAt`
+ * absent, which is how a pause is told from the guard's work). Nothing is sent to it
+ * while it is off, and an event that fires meanwhile is not queued for it. Refused with 409
+ * `WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED` when it is already off.
+ * @summary Disable a webhook subscription
+ */
+export const disableWebhookSubscription = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+) => {
+    return orvalMutator<WebhookSubscriptionEnvelope>(
+        { url: `/webhooks/subscriptions/${id}/disable`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * One row of this shop's delivery log, the same shape the list gives it, with `actions.replay`. Another shop's delivery, an unknown id and a malformed one are the same 404.
+ * @summary Get one delivery
+ */
+export const getWebhookDelivery = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<WebhookDeliveryEnvelope>>
+) => {
+    return orvalMutator<WebhookDeliveryEnvelope>(
+        { url: `/webhooks/deliveries/${id}`, method: 'GET' },
+        options
+    );
 };
 
 /**
@@ -11495,6 +12097,20 @@ export const dismissAllNotifications = (
 };
 
 /**
+ * One of the caller's own notifications, the same shape the list carries. Someone else's, an unknown id and a malformed one are the same 404, so a probe cannot tell them apart.
+ * @summary Get a notification
+ */
+export const getNotificationById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<NotificationEnvelope>>
+) => {
+    return orvalMutator<NotificationEnvelope>(
+        { url: `/notifications/${id}`, method: 'GET' },
+        options
+    );
+};
+
+/**
  * Permanently deletes the notification identified by `{id}`. Only the caller's own: an id that belongs to someone else answers the same 404 as one that does not exist, so a probe cannot tell the two apart.
  * @summary Delete a notification
  */
@@ -11509,7 +12125,7 @@ export const deleteNotificationById = (
 };
 
 /**
- * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, and where returned goods go. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order.
+ * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, where returned goods go, the version of the Terms in force and the backorder promise in days. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order.
  * @summary The shop's identity, currency, ship-to countries and return address
  */
 export const getShop = (options?: SecondParameter<typeof orvalMutator<ShopEnvelope>>) => {
@@ -11564,15 +12180,20 @@ export const listStockAlerts = (
 };
 
 /**
- * Records that the authenticated user wants one mail, and one inbox message, when the product can be ordered again (shelf units, an open backorder, a preorder with allowance left, or back on sale). The click is the consent for that single mail, so nothing else is ever sent on it and the request is deleted when it is answered. Asking twice is the same request and answers the same 200. Refused with `409 STOCK_ALERT_PRODUCT_BUYABLE` while the product can be ordered now; a hidden or deleted product answers 404.
+ * Records that the authenticated user wants one mail, and one inbox message, when the product named in the body can be ordered again (shelf units, an open backorder, a preorder with allowance left, or back on sale). The click is the consent for that single mail, so nothing else is ever sent on it and the request is deleted when it is answered. Asking twice is the same request and answers the same 200; the answer is always the whole list (the list is the parent, a request has no URL of its own). Refused with `409 STOCK_ALERT_PRODUCT_BUYABLE` while the product can be ordered now; a hidden or deleted product answers 404.
  * @summary Ask to be told when a product is back
  */
 export const createStockAlert = (
-    productId: string,
+    createStockAlertRequest: CreateStockAlertRequest,
     options?: SecondParameter<typeof orvalMutator<StockAlertsResponseEnvelope>>
 ) => {
     return orvalMutator<StockAlertsResponseEnvelope>(
-        { url: `/stock-alerts/${productId}`, method: 'POST' },
+        {
+            url: `/stock-alerts`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createStockAlertRequest
+        },
         options
     );
 };
@@ -11622,6 +12243,7 @@ export type UpdateLocaleEntriesResult = NonNullable<
 export type UpdateLocaleEntriesWithMergePatchJsonResult = NonNullable<
     Awaited<ReturnType<typeof updateLocaleEntriesWithMergePatchJson>>
 >;
+export type GetLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof getLocaleEntry>>>;
 export type ReplaceLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof replaceLocaleEntry>>>;
 export type DeleteLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof deleteLocaleEntry>>>;
 export type GetEntityTranslationsResult = NonNullable<
@@ -11687,9 +12309,12 @@ export type GetReauthMethodsResult = NonNullable<Awaited<ReturnType<typeof getRe
 export type ReauthResult = NonNullable<Awaited<ReturnType<typeof reauth>>>;
 export type LogoutResult = NonNullable<Awaited<ReturnType<typeof logout>>>;
 export type ListSessionsResult = NonNullable<Awaited<ReturnType<typeof listSessions>>>;
+export type LogoutAllResult = NonNullable<Awaited<ReturnType<typeof logoutAll>>>;
+export type GetSessionResult = NonNullable<Awaited<ReturnType<typeof getSession>>>;
 export type RevokeSessionResult = NonNullable<Awaited<ReturnType<typeof revokeSession>>>;
 export type ListAddressesResult = NonNullable<Awaited<ReturnType<typeof listAddresses>>>;
 export type AddAddressResult = NonNullable<Awaited<ReturnType<typeof addAddress>>>;
+export type GetAddressResult = NonNullable<Awaited<ReturnType<typeof getAddress>>>;
 export type ReplaceAddressResult = NonNullable<Awaited<ReturnType<typeof replaceAddress>>>;
 export type UpdateAddressResult = NonNullable<Awaited<ReturnType<typeof updateAddress>>>;
 export type UpdateAddressWithMergePatchJsonResult = NonNullable<
@@ -11705,10 +12330,9 @@ export type ConfirmEmailVerificationResult = NonNullable<
 >;
 export type ConfirmEmailChangeResult = NonNullable<Awaited<ReturnType<typeof confirmEmailChange>>>;
 export type UndoEmailChangeResult = NonNullable<Awaited<ReturnType<typeof undoEmailChange>>>;
-export type ConfirmAccountDeleteResult = NonNullable<
-    Awaited<ReturnType<typeof confirmAccountDelete>>
->;
+export type RestoreAccountResult = NonNullable<Awaited<ReturnType<typeof restoreAccount>>>;
 export type LoginResult = NonNullable<Awaited<ReturnType<typeof login>>>;
+export type LoginRestoreResult = NonNullable<Awaited<ReturnType<typeof loginRestore>>>;
 export type SignupResult = NonNullable<Awaited<ReturnType<typeof signup>>>;
 export type RequestPasswordResetResult = NonNullable<
     Awaited<ReturnType<typeof requestPasswordReset>>
@@ -11717,17 +12341,12 @@ export type ConfirmPasswordResetResult = NonNullable<
     Awaited<ReturnType<typeof confirmPasswordReset>>
 >;
 export type RefreshTokenResult = NonNullable<Awaited<ReturnType<typeof refreshToken>>>;
-export type LogoutAllResult = NonNullable<Awaited<ReturnType<typeof logoutAll>>>;
 export type RequestAccountExportResult = NonNullable<
     Awaited<ReturnType<typeof requestAccountExport>>
 >;
 export type LoginTwoFactorResult = NonNullable<Awaited<ReturnType<typeof loginTwoFactor>>>;
 export type SendTwoFactorCodeResult = NonNullable<Awaited<ReturnType<typeof sendTwoFactorCode>>>;
 export type GetTwoFactorStatusResult = NonNullable<Awaited<ReturnType<typeof getTwoFactorStatus>>>;
-export type DisableTwoFactorResult = NonNullable<Awaited<ReturnType<typeof disableTwoFactor>>>;
-export type RemoveTwoFactorMethodResult = NonNullable<
-    Awaited<ReturnType<typeof removeTwoFactorMethod>>
->;
 export type SetupTwoFactorMethodResult = NonNullable<
     Awaited<ReturnType<typeof setupTwoFactorMethod>>
 >;
@@ -11736,6 +12355,10 @@ export type SendTwoFactorMethodCodeResult = NonNullable<
 >;
 export type ConfirmTwoFactorMethodResult = NonNullable<
     Awaited<ReturnType<typeof confirmTwoFactorMethod>>
+>;
+export type DisableTwoFactorResult = NonNullable<Awaited<ReturnType<typeof disableTwoFactor>>>;
+export type RemoveTwoFactorMethodResult = NonNullable<
+    Awaited<ReturnType<typeof removeTwoFactorMethod>>
 >;
 export type RegenerateBackupCodesResult = NonNullable<
     Awaited<ReturnType<typeof regenerateBackupCodes>>
@@ -11779,9 +12402,7 @@ export type ListFeedbackRequestsResult = NonNullable<
 export type SearchFeedbackRequestsResult = NonNullable<
     Awaited<ReturnType<typeof searchFeedbackRequests>>
 >;
-export type ReplaceFeedbackRequestStatusResult = NonNullable<
-    Awaited<ReturnType<typeof replaceFeedbackRequestStatus>>
->;
+export type GetFeedbackRequestResult = NonNullable<Awaited<ReturnType<typeof getFeedbackRequest>>>;
 export type UpdateFeedbackRequestStatusResult = NonNullable<
     Awaited<ReturnType<typeof updateFeedbackRequestStatus>>
 >;
@@ -11819,11 +12440,11 @@ export type HardDeleteProductByIdResult = NonNullable<
 export type SearchProductsResult = NonNullable<Awaited<ReturnType<typeof searchProducts>>>;
 export type GetCartResult = NonNullable<Awaited<ReturnType<typeof getCart>>>;
 export type AddCartItemResult = NonNullable<Awaited<ReturnType<typeof addCartItem>>>;
-export type RemoveCartItemByBodyResult = NonNullable<
-    Awaited<ReturnType<typeof removeCartItemByBody>>
->;
 export type ClearCartResult = NonNullable<Awaited<ReturnType<typeof clearCart>>>;
 export type UpdateCartItemByIdResult = NonNullable<Awaited<ReturnType<typeof updateCartItemById>>>;
+export type UpdateCartItemByIdWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateCartItemByIdWithMergePatchJson>>
+>;
 export type RemoveCartItemResult = NonNullable<Awaited<ReturnType<typeof removeCartItem>>>;
 export type SetCartShippingMethodResult = NonNullable<
     Awaited<ReturnType<typeof setCartShippingMethod>>
@@ -11832,8 +12453,8 @@ export type GetCartSummaryResult = NonNullable<Awaited<ReturnType<typeof getCart
 export type CheckoutResult = NonNullable<Awaited<ReturnType<typeof checkout>>>;
 export type ReorderResult = NonNullable<Awaited<ReturnType<typeof reorder>>>;
 export type GetWishlistResult = NonNullable<Awaited<ReturnType<typeof getWishlist>>>;
-export type AddWishlistItemResult = NonNullable<Awaited<ReturnType<typeof addWishlistItem>>>;
-export type RemoveWishlistItemResult = NonNullable<Awaited<ReturnType<typeof removeWishlistItem>>>;
+export type CreateWishlistItemResult = NonNullable<Awaited<ReturnType<typeof createWishlistItem>>>;
+export type DeleteWishlistItemResult = NonNullable<Awaited<ReturnType<typeof deleteWishlistItem>>>;
 export type MoveWishlistItemToCartResult = NonNullable<
     Awaited<ReturnType<typeof moveWishlistItemToCart>>
 >;
@@ -11862,19 +12483,15 @@ export type ListOrderCreditNotesResult = NonNullable<
 >;
 export type GetOrderCreditNoteResult = NonNullable<Awaited<ReturnType<typeof getOrderCreditNote>>>;
 export type ListPaymentMethodsResult = NonNullable<Awaited<ReturnType<typeof listPaymentMethods>>>;
-export type CreatePaymentIntentResult = NonNullable<
-    Awaited<ReturnType<typeof createPaymentIntent>>
->;
 export type GetPaymentByOrderResult = NonNullable<Awaited<ReturnType<typeof getPaymentByOrder>>>;
-export type GetOrderByReferenceResult = NonNullable<
-    Awaited<ReturnType<typeof getOrderByReference>>
->;
 export type RefundPaymentByOrderResult = NonNullable<
     Awaited<ReturnType<typeof refundPaymentByOrder>>
 >;
+export type GetRefundResult = NonNullable<Awaited<ReturnType<typeof getRefund>>>;
 export type RecordOfflinePaymentResult = NonNullable<
     Awaited<ReturnType<typeof recordOfflinePayment>>
 >;
+export type GetPaymentResult = NonNullable<Awaited<ReturnType<typeof getPayment>>>;
 export type ConfirmPaymentResult = NonNullable<Awaited<ReturnType<typeof confirmPayment>>>;
 export type SyncPaymentResult = NonNullable<Awaited<ReturnType<typeof syncPayment>>>;
 export type ReceivePaymentWebhookResult = NonNullable<
@@ -11905,6 +12522,7 @@ export type HoldFulfillmentOrderResult = NonNullable<
 export type ReleaseFulfillmentOrderResult = NonNullable<
     Awaited<ReturnType<typeof releaseFulfillmentOrder>>
 >;
+export type GetShipmentResult = NonNullable<Awaited<ReturnType<typeof getShipment>>>;
 export type UpdateShipmentResult = NonNullable<Awaited<ReturnType<typeof updateShipment>>>;
 export type UpdateShipmentWithMergePatchJsonResult = NonNullable<
     Awaited<ReturnType<typeof updateShipmentWithMergePatchJson>>
@@ -11931,6 +12549,9 @@ export type ListWebhookSubscriptionsResult = NonNullable<
 >;
 export type CreateWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof createWebhookSubscription>>
+>;
+export type GetWebhookSubscriptionResult = NonNullable<
+    Awaited<ReturnType<typeof getWebhookSubscription>>
 >;
 export type ReplaceWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof replaceWebhookSubscription>>
@@ -11959,6 +12580,7 @@ export type ReplayWebhookDeliveryResult = NonNullable<
 export type ListWebhookEventsResult = NonNullable<Awaited<ReturnType<typeof listWebhookEvents>>>;
 export type ListApiKeysResult = NonNullable<Awaited<ReturnType<typeof listApiKeys>>>;
 export type MintApiKeyResult = NonNullable<Awaited<ReturnType<typeof mintApiKey>>>;
+export type GetApiKeyResult = NonNullable<Awaited<ReturnType<typeof getApiKey>>>;
 export type RevokeApiKeyResult = NonNullable<Awaited<ReturnType<typeof revokeApiKey>>>;
 export type ActivateLocaleResult = NonNullable<Awaited<ReturnType<typeof activateLocale>>>;
 export type DeactivateLocaleResult = NonNullable<Awaited<ReturnType<typeof deactivateLocale>>>;
@@ -11974,6 +12596,8 @@ export type SetUserPurchaseHoldResult = NonNullable<
 export type LiftUserPurchaseHoldResult = NonNullable<
     Awaited<ReturnType<typeof liftUserPurchaseHold>>
 >;
+export type ActivateUserByIdResult = NonNullable<Awaited<ReturnType<typeof activateUserById>>>;
+export type DeactivateUserByIdResult = NonNullable<Awaited<ReturnType<typeof deactivateUserById>>>;
 export type MergeCartResult = NonNullable<Awaited<ReturnType<typeof mergeCart>>>;
 export type ExportOrdersResult = NonNullable<Awaited<ReturnType<typeof exportOrders>>>;
 export type GetOrderTimelineResult = NonNullable<Awaited<ReturnType<typeof getOrderTimeline>>>;
@@ -11981,16 +12605,21 @@ export type CorrectOrderShippingAddressResult = NonNullable<
     Awaited<ReturnType<typeof correctOrderShippingAddress>>
 >;
 export type ListPaymentsResult = NonNullable<Awaited<ReturnType<typeof listPayments>>>;
+export type CreatePaymentResult = NonNullable<Awaited<ReturnType<typeof createPayment>>>;
 export type SearchPaymentsResult = NonNullable<Awaited<ReturnType<typeof searchPayments>>>;
 export type ListRefundsResult = NonNullable<Awaited<ReturnType<typeof listRefunds>>>;
 export type ListPaymentAttentionResult = NonNullable<
     Awaited<ReturnType<typeof listPaymentAttention>>
 >;
+export type SettleRefundByHandResult = NonNullable<Awaited<ReturnType<typeof settleRefundByHand>>>;
 export type PreviewReleaseDateImpactResult = NonNullable<
     Awaited<ReturnType<typeof previewReleaseDateImpact>>
 >;
 export type PreviewRestockDateImpactResult = NonNullable<
     Awaited<ReturnType<typeof previewRestockDateImpact>>
+>;
+export type GetFulfillmentOrderResult = NonNullable<
+    Awaited<ReturnType<typeof getFulfillmentOrder>>
 >;
 export type GetSalesStatsResult = NonNullable<Awaited<ReturnType<typeof getSalesStats>>>;
 export type GetProductStatsResult = NonNullable<Awaited<ReturnType<typeof getProductStats>>>;
@@ -12002,6 +12631,15 @@ export type GetPaymentMixStatsResult = NonNullable<Awaited<ReturnType<typeof get
 export type GetOperationsStatsResult = NonNullable<Awaited<ReturnType<typeof getOperationsStats>>>;
 export type GetCustomerStatsResult = NonNullable<Awaited<ReturnType<typeof getCustomerStats>>>;
 export type GetPipelineStatsResult = NonNullable<Awaited<ReturnType<typeof getPipelineStats>>>;
+export type GetStatsLimitsResult = NonNullable<Awaited<ReturnType<typeof getStatsLimits>>>;
+export type GetInventoryLevelResult = NonNullable<Awaited<ReturnType<typeof getInventoryLevel>>>;
+export type EnableWebhookSubscriptionResult = NonNullable<
+    Awaited<ReturnType<typeof enableWebhookSubscription>>
+>;
+export type DisableWebhookSubscriptionResult = NonNullable<
+    Awaited<ReturnType<typeof disableWebhookSubscription>>
+>;
+export type GetWebhookDeliveryResult = NonNullable<Awaited<ReturnType<typeof getWebhookDelivery>>>;
 export type GetPublishedExampleResult = NonNullable<
     Awaited<ReturnType<typeof getPublishedExample>>
 >;
@@ -12028,6 +12666,9 @@ export type ReadAllNotificationsResult = NonNullable<
 >;
 export type DismissAllNotificationsResult = NonNullable<
     Awaited<ReturnType<typeof dismissAllNotifications>>
+>;
+export type GetNotificationByIdResult = NonNullable<
+    Awaited<ReturnType<typeof getNotificationById>>
 >;
 export type DeleteNotificationByIdResult = NonNullable<
     Awaited<ReturnType<typeof deleteNotificationById>>

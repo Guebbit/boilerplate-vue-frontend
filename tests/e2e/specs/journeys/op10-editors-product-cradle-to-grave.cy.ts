@@ -171,8 +171,8 @@ describe("OP10 · An editor's product, cradle to grave", () => {
                     refusedWith(
                         device,
                         'POST',
-                        '/inventory/receipts',
-                        { productId, quantity: 3 },
+                        `/inventory/levels/${productId}/receive`,
+                        { quantity: 3 },
                         403,
                         'FORBIDDEN'
                     );

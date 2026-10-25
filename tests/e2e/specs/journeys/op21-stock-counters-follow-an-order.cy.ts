@@ -87,7 +87,7 @@ const adjustBy = (title: string, delta: number, note: string): void => {
  * @returns a chain yielding the order's id
  */
 const placeOrder = (productId: string, quantity: number): Cypress.Chainable<string> => {
-    cy.apiAs('user', 'POST', '/cart', { productId, quantity });
+    cy.apiAs('user', 'POST', '/cart/items', { productId, quantity });
     cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
     return checkoutAs<OrderLike>('user').then((order) => {
         if (!order) throw new Error('OP21: the checkout answered no order');
@@ -119,7 +119,7 @@ describe('OP21 · The stock counters follow an order', () => {
 
             cy.step('the order is paid: the units stay on the shelf, still reserved');
             cy.get<string>('@first').then((orderId) => {
-                cy.apiAs('admin', 'POST', `/payments/order/${orderId}/offline`, {
+                cy.apiAs('admin', 'POST', `/payments/orders/${orderId}/offline`, {
                     method: 'cash'
                 });
             });
@@ -140,7 +140,7 @@ describe('OP21 · The stock counters follow an order', () => {
             cy.step(
                 'a write-off that would leave less than is reserved is refused, and nothing moves'
             );
-            cy.intercept('POST', '**/inventory/adjustments').as('adjust');
+            cy.intercept('POST', '**/inventory/levels/*/adjust').as('adjust');
             adjustBy(title, -(SHELF - FIRST_ORDER + 1), 'OP21 too many');
             cy.wait('@adjust').its('response.statusCode').should('equal', 409);
             cy.get('[data-test=adjust-error]').should('not.be.empty');

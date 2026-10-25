@@ -16,6 +16,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import type { Ref } from 'vue';
 import * as schemas from '@api/schemas';
 import {
     contractRequest,
@@ -24,6 +25,18 @@ import {
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
+
+/**
+ * The arguments the page gave the leave guard, captured from the mocked composable.
+ */
+const guard = vi.hoisted(() => ({ isDirty: undefined as undefined | Ref<boolean> }));
+
+vi.mock('@/ui/composables/use-leave-guard.ts', () => ({
+    useLeaveGuard: (isDirty: Ref<boolean>) => {
+        guard.isDirty = isDirty;
+        return { markSaved: () => undefined };
+    }
+}));
 
 /**
  * The real app router — child panels (sessions, addresses) resolve links through it.
@@ -90,7 +103,7 @@ const callsTo = (method: string, url: string) =>
 /**
  * Whether `cancelPendingEmail` reached its own endpoint.
  */
-const calledCancelPendingEmail = () => callsTo('DELETE', '/account/pending-email').length > 0;
+const calledCancelPendingEmail = () => callsTo('DELETE', '/account/email-change').length > 0;
 
 /**
  * Mounts the real page, every decorative sibling panel stubbed out — each owns its own fetch and
@@ -125,8 +138,8 @@ beforeEach(() => {
             subjects: []
         }),
         'PATCH /account': orvalEnvelope(USER),
-        'DELETE /account/pending-email': orvalEnvelope(),
-        'POST /account/pending-email/resend': orvalEnvelope({ resendAfter: 60 })
+        'DELETE /account/email-change': orvalEnvelope(),
+        'POST /account/email-change/resend': orvalEnvelope({ resendAfter: 60 })
     };
     return loadLocale('en').then(() => router.push('/en/profile').then(() => router.isReady()));
 });
@@ -233,7 +246,7 @@ describe('the email field, and a pending change', () => {
             })
             .then(flushPromises)
             .then(() => {
-                expect(callsTo('POST', '/account/pending-email/resend')).toHaveLength(1);
+                expect(callsTo('POST', '/account/email-change/resend')).toHaveLength(1);
                 // Neither a cancel nor a fresh request: those would mail the OLD address again.
                 expect(calledCancelPendingEmail()).toBe(false);
                 expect(lastAccountPatch()).toBeUndefined();
@@ -304,7 +317,7 @@ describe('the email field, and a pending change', () => {
             });
     });
 
-    it('cancel calls DELETE /account/pending-email, its own dedicated endpoint', () => {
+    it('cancel calls DELETE /account/email-change, its own dedicated endpoint', () => {
         responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
         const wrapper = mountProfile();
 
@@ -330,7 +343,7 @@ describe('the email field, and a pending change', () => {
             })
             .then(flushPromises)
             .then(() => {
-                expect(callsTo('POST', '/account/pending-email/resend')).toHaveLength(1);
+                expect(callsTo('POST', '/account/email-change/resend')).toHaveLength(1);
             });
     });
 
@@ -345,7 +358,7 @@ describe('the email field, and a pending change', () => {
             })
             .then(flushPromises)
             .then(() => {
-                const deletes = callsTo('DELETE', '/account/pending-email');
+                const deletes = callsTo('DELETE', '/account/email-change');
                 expect(deletes).toHaveLength(1);
             });
     });
@@ -451,5 +464,25 @@ describe('the purchase-hold notice', () => {
         return flushPromises().then(() => {
             expect(wrapper.find('[data-test=purchase-hold-notice]').exists()).toBe(false);
         });
+    });
+});
+
+describe('the leave guard', () => {
+    it('reads clean after the load, dirty after an edit, and clean again after a save', () => {
+        const wrapper = mountProfile();
+
+        return flushPromises()
+            .then(() => {
+                expect(guard.isDirty?.value).toBe(false);
+                return wrapper.get('[data-test=profile-analytics-consent] input').setValue(true);
+            })
+            .then(() => {
+                expect(guard.isDirty?.value).toBe(true);
+                return wrapper.get('form').trigger('submit');
+            })
+            .then(flushPromises)
+            .then(() => {
+                expect(guard.isDirty?.value).toBe(false);
+            });
     });
 });

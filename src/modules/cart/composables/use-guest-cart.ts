@@ -61,7 +61,7 @@ export const useGuestCart = () => {
     onScopeDispose(() => globalThis.removeEventListener('storage', onStorage));
 
     /**
-     * Adds units to the guest cart; a product already there grows, as `POST /cart` would.
+     * Adds units to the guest cart; a product already there grows, as `POST /cart/items` would.
      *
      * @param productId - Product to add.
      * @param quantity - How many to add.

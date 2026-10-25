@@ -32,7 +32,7 @@ flowchart TD
     Views --> Store["store.ts"]
     Store --> Schemas["response-schemas.ts<br/><i>what the API promised</i>"]
     Store --> Domain["domain/<br/><i>pure rules</i>"]
-    Manifest -.-> Side["locales/ · guards.ts · composables/"]
+    Manifest -.-> Side["locales/ · composables/"]
 
     classDef dec fill:#fef3c7,stroke:#d97706,color:#111827;
     classDef layer fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -66,7 +66,6 @@ Present when the domain needs it. A module with none of these is not incomplete;
 | `src/modules/*/composables/*.ts` | Reusable reactive logic this domain needs and no other does.                                                                                                          | [State & Routing](../tools/state-and-routing.md)                           |
 | `src/modules/*/domain/*.ts`      | Pure rules over plain data — no store, no HTTP, no component. A rule returns a verdict and the caller decides what to render.                                         | [Domain Layer](../theory/domain-layer.md)                                  |
 | `src/modules/*/schemas.ts`       | Form and request schemas — what this module validates before sending, as opposed to the responses it validates on arrival.                                            | [OpenAPI Workflow](../api/openapi-workflow.md)                             |
-| `src/modules/*/guards.ts`        | Route guards specific to this domain, beyond the shared authentication ones.                                                                                          | [Sitemap & Access Control](../theory/sitemap.md)                           |
 | `src/modules/*/types.ts`         | View-model types this module needs that the contract does not supply.                                                                                                 | [App, Kernel & Types](./src-app.md)                                        |
 | `src/modules/*/dictionaries.ts`  | Lookup tables this domain renders from — status labels, enum captions.                                                                                                | [App, Kernel & Types](./src-app.md)                                        |
 
@@ -77,7 +76,6 @@ Shapes that exist in exactly one module. Each is a piece of a domain no other do
 | File                                                      | What it is                                                                                                                                                                                                                                      | Read next                                        |
 | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | `src/modules/example/provided.ts`                         | `example` only. The typed `InjectionKey` and the provide/inject pair behind it, replacing a magic string that would be spelled in two files. The consumer throws rather than falling back to a placeholder, so a missing provider fails loudly. | [State & Routing](../tools/state-and-routing.md) |
-| `src/modules/example/guards.ts`                           | `example` only. The teaching route guard: what a `beforeEnter` can and cannot reach.                                                                                                                                                            | [Sitemap & access control](../theory/sitemap.md) |
 | `src/modules/observability/use-realtime-observability.ts` | `observability` only. The composable a view binds to the SSE subscription with.                                                                                                                                                                 | [Realtime](../tools/realtime.md)                 |
 
 ::: tip Where the tests are

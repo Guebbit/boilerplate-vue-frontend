@@ -100,11 +100,6 @@ export const BROWSER_STORAGE_NAME = {
 export const SIX_MONTHS_DAYS = 183;
 
 /**
- * Thirty days: the "remember me" tier, and how long a guest cart is kept.
- */
-export const THIRTY_DAYS = 30;
-
-/**
  * The full inventory, in the order the privacy page shows it: what keeps a visitor signed in,
  * then their choices, then the cart and checkout, then what exists only after consent.
  */

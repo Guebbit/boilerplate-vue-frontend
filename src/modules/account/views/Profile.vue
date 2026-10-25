@@ -27,6 +27,8 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { supportedLanguages } from '@/i18n';
 import { useProfileStore } from '../stores/profile.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
+import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { usersSchema } from '@/modules/users';
 import ProfileAvatar from '../components/ProfileAvatar.vue';
 import PurchaseHoldNotice from '../components/PurchaseHoldNotice.vue';
@@ -135,6 +137,17 @@ const {
     revalidateOn: locale,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
+
+/**
+ * The session, read for the leave guard: a forced sign-out is not a choice to leave.
+ */
+const session = useSessionStore();
+
+/**
+ * Warns before typed profile values are lost to a navigation. No `markSaved`: a save re-baselines
+ * the form, so it reads clean again by itself.
+ */
+useLeaveGuard(isDirty, () => session.isAuth);
 
 /**
  * Hydrate, never clobber.
@@ -312,7 +325,7 @@ const startResendCooldown = (seconds: number) => {
 };
 
 /**
- * Asks for the pending-email confirmation link again — `POST /account/pending-email/resend`.
+ * Asks for the pending-email confirmation link again — `POST /account/email-change/resend`.
  *
  * The backend mails the NEW address only and revokes the link already delivered, so exactly one
  * stays live. The old address is not told again: it heard of the request once.
@@ -341,7 +354,7 @@ const resendPendingEmailLink = () => {
 };
 
 /**
- * Cancels the pending email change through its own endpoint — `DELETE /account/pending-email`.
+ * Cancels the pending email change through its own endpoint — `DELETE /account/email-change`.
  * Resending the current address is a no-op, not a cancel, so a routine save can never drop a
  * change in flight by accident.
  *

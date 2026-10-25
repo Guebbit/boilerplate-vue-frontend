@@ -17,6 +17,15 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import { asStub } from '../../../../tests/support/stub';
 import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
+// The shop states the backorder promise; these cases are about the wording around it.
+vi.mock('@/infrastructure/shop.ts', async (importOriginal) => {
+    const { ref } = await import('vue');
+    return {
+        ...(await importOriginal<typeof import('@/infrastructure/shop.ts')>()),
+        backorderPromiseDays: ref(30)
+    };
+});
+
 wireModulesIntoCore();
 
 vi.mock('@api', async (importOriginal) => ({
@@ -40,7 +49,8 @@ const answerWithVisibleIds = () =>
                         price: 1,
                         currency: 'EUR',
                         inStock: true,
-                        lowStock: false
+                        lowStock: false,
+                        buyable: true
                     })),
                     meta: { totalItems: ids.length, page: 1, pageSize: 100, totalPages: 1 }
                 })

@@ -43,16 +43,15 @@ how the extraction itself happens is not written down anywhere durable yet.
 ## A home for teaching code
 
 Everything that exists only to teach the framework lives in one module, `src/modules/example`: a
-small note domain (list, detail, create, edit and a public read) whose store, form, route guard and
+small note domain (list, detail, create, edit and a public read) whose store, form and
 provide/inject pair are the shape to copy. Deleting it is `rm -rf src/modules/example` plus its line
 in `src/modules.ts`, and nothing else in the app refers to it.
 
-| File                                        | What it teaches                                      |
-| ------------------------------------------- | ---------------------------------------------------- |
-| `src/modules/example/store.ts`              | a Pinia store over the generated client              |
-| `src/modules/example/guards.ts`             | a guard that shows what a guard can and cannot reach |
-| `src/modules/example/provided.ts`           | a typed provide/inject pair                          |
-| `src/modules/example/views/ExampleEdit.vue` | a validated form, a save that sends what changed     |
+| File                                        | What it teaches                                  |
+| ------------------------------------------- | ------------------------------------------------ |
+| `src/modules/example/store.ts`              | a Pinia store over the generated client          |
+| `src/modules/example/provided.ts`           | a typed provide/inject pair                      |
+| `src/modules/example/views/ExampleEdit.vue` | a validated form, a save that sends what changed |
 
 Teaching code is genuinely useful in a boilerplate and genuinely noise in an application, so the
 question is not "delete or keep" but _where does it live_: in a module the registry drops in one

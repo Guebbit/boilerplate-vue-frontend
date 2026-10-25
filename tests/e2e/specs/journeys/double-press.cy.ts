@@ -65,7 +65,7 @@ interface PaymentAmounts {
  */
 const refundState = (orderId: string): Cypress.Chainable<string> =>
     cy
-        .apiAs<PaymentAmounts>('admin', 'GET', `/payments/order/${orderId}`)
+        .apiAs<PaymentAmounts>('admin', 'GET', `/payments/orders/${orderId}`)
         .then<string>((payment) =>
             payment?.amountRefunded === payment?.amount ? 'refunded' : 'open'
         );
@@ -99,7 +99,7 @@ const ROWS: readonly PressRow[] = [
         subject: 'order.paid',
         page: (orderId) => `/en/orders/${orderId}/edit`,
         trigger: '[data-test=button-refund-only]',
-        operation: '**/payments/order/*/refund',
+        operation: '**/payments/*/refunds',
         confirms: false,
         effect: refundState,
         done: 'refunded'
@@ -129,7 +129,7 @@ const ROWS: readonly PressRow[] = [
             cy.get('[data-test=record-offline-reference] input').type('FR19-REF-001');
         },
         trigger: '[data-test=record-offline-submit]',
-        operation: '**/payments/order/*/offline',
+        operation: '**/payments/orders/*/offline',
         confirms: false,
         effect: (orderId) => statusOf('admin', orderId),
         done: 'paid'

@@ -7,6 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import BrowserStorageTable from '@/app/components/BrowserStorageTable.vue';
 import vuetify from '@/ui/vuetify';
+import { createPinia, setActivePinia } from 'pinia';
+import { useSessionStore } from '@/infrastructure/session.ts';
 
 const { provider, analytics, faro } = vi.hoisted(() => ({
     provider: { value: 'none' },
@@ -16,7 +18,13 @@ const { provider, analytics, faro } = vi.hoisted(() => ({
 
 vi.mock('vue-i18n', async (importOriginal) => {
     const actual = await importOriginal<typeof import('vue-i18n')>();
-    return { ...actual, useI18n: () => ({ t: (key: string) => key }) };
+    return {
+        ...actual,
+        useI18n: () => ({
+            t: (key: string, parameters?: Record<string, unknown>) =>
+                parameters ? `${key} ${JSON.stringify(parameters)}` : key
+        })
+    };
 });
 vi.mock('@/infrastructure/http/antibot.ts', () => ({
     fetchAntibotConfig: () => Promise.resolve({ data: { provider: provider.value } })
@@ -30,18 +38,42 @@ vi.mock('@/infrastructure/observability/config.ts', () => ({
 
 /** Mounts the section and waits for the human-check read to settle. */
 const mountTable = async () => {
+    // The session config read is the session store's own; these cases are about the table.
+    vi.spyOn(useSessionStore(), 'loadSessionMode').mockResolvedValue(undefined);
     const wrapper = mount(BrowserStorageTable, { global: { plugins: [vuetify] } });
     await flushPromises();
     return wrapper;
 };
 
 beforeEach(() => {
+    setActivePinia(createPinia());
     provider.value = 'none';
     analytics.value = false;
     faro.value = false;
 });
 
 describe('BrowserStorageTable', () => {
+    it('prints the session tier the server states, and the staff cap when there is one', async () => {
+        useSessionStore().lifetimes = {
+            lifetimeSeconds: { short: 86_400, medium: 604_800, long: 1_209_600 },
+            staffLifetimeSeconds: 7200
+        };
+        const wrapper = await mountTable();
+
+        expect(wrapper.find('[data-test="storage-row-session"]').text()).toContain(
+            'lifetimeStaff {"days":14,"hours":2}'
+        );
+        expect(wrapper.find('[data-test="storage-row-rememberMe"]').text()).toContain(
+            'rememberMe.lifetime {"days":14}'
+        );
+    });
+
+    it('shows no number of its own before the session config has answered', async () => {
+        const wrapper = await mountTable();
+
+        expect(wrapper.find('[data-test="storage-row-rememberMe"]').text()).toContain('—');
+    });
+
     it('is the #cookies section, with a row per item and the cell text as keys', async () => {
         const wrapper = await mountTable();
 

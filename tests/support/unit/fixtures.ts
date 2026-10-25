@@ -6,9 +6,11 @@
  * fails when something finally parses it.
  */
 import type {
+    Account,
     FulfillmentOrder,
     InventoryLevel,
     Order,
+    OrderActions,
     Payment,
     PreorderFulfillmentOrder,
     PreorderLevel,
@@ -17,8 +19,24 @@ import type {
     Return,
     Shipment,
     Shop,
-    User
+    User,
+    UserActions
 } from '@types';
+
+/** Every `OrderActions` flag off: an order the caller may do nothing to. */
+export const NO_ORDER_ACTIONS: OrderActions = {
+    cancel: false,
+    pay: false,
+    recordPayment: false,
+    start: false,
+    override: [],
+    correctAddress: false,
+    withdraw: false,
+    delete: false,
+    hardDelete: false,
+    restore: false,
+    invoice: false
+};
 
 /**
  * A valid, empty order — every required field the contract declares, all totals zero.
@@ -45,6 +63,7 @@ export const anOrder = (overrides: Partial<Order> = {}): Order => ({
     returnStatus: 'none',
     currency: 'EUR',
     orderNumber: '2026-000001',
+    actions: NO_ORDER_ACTIONS,
     ...overrides
 });
 
@@ -69,12 +88,64 @@ export const aPayment = (overrides: Partial<Payment> = {}): Payment => ({
     orderNumber: '2026-000001',
     email: 'ada@example.com',
     createdAt: '2026-03-04T10:00:00Z',
+    actions: { pay: false, sync: false, refund: false, settleByHand: [] },
     ...overrides
 });
 
 /**
- * A valid account as `GET /account` and `GET /users/{id}` answer it — the three required fields,
- * plus whatever a case sets.
+ * A valid account as `GET /account` answers it — the three required fields, plus whatever a case
+ * sets.
+ *
+ * @param overrides - the fields a case actually cares about
+ * @returns an `Account` that parses against the generated schema
+ */
+export const anAccount = (overrides: Partial<Account> = {}): Account => ({
+    id: '1',
+    email: 'ada@example.com',
+    username: 'ada',
+    ...overrides
+});
+
+/** Every `UserActions` flag `false`: a row the caller may do nothing to. */
+export const NO_USER_ACTIONS: UserActions = {
+    update: false,
+    assignRole: false,
+    delete: false,
+    hardDelete: false,
+    restore: false,
+    setPurchaseHold: false,
+    liftPurchaseHold: false,
+    activate: false,
+    deactivate: false
+};
+
+/** Every `UserActions` flag `true`: a row the caller may do anything to. */
+export const ALL_USER_ACTIONS: UserActions = {
+    update: true,
+    assignRole: true,
+    delete: true,
+    hardDelete: true,
+    restore: true,
+    setPurchaseHold: true,
+    liftPurchaseHold: true,
+    activate: true,
+    deactivate: true
+};
+
+/**
+ * `UserActions` with every flag `false` but the ones a case names.
+ *
+ * @param allowed - the flags that are `true`
+ * @returns a complete `UserActions`
+ */
+export const userActionsOf = (allowed: Partial<UserActions>): UserActions => ({
+    ...NO_USER_ACTIONS,
+    ...allowed
+});
+
+/**
+ * A valid user as `GET /users/{id}` answers it — the required fields (`actions` included, all
+ * `false`), plus whatever a case sets.
  *
  * @param overrides - the fields a case actually cares about
  * @returns a `User` that parses against the generated schema
@@ -83,6 +154,7 @@ export const aUser = (overrides: Partial<User> = {}): User => ({
     id: '1',
     email: 'ada@example.com',
     username: 'ada',
+    actions: NO_USER_ACTIONS,
     ...overrides
 });
 
@@ -113,16 +185,23 @@ export const aReturn = (overrides: Partial<Return> = {}): Return => ({
  * @param overrides - the fields a case actually cares about
  * @returns a `Product` that parses against the generated schema
  */
-export const aProduct = (overrides: Partial<Product> = {}): Product => ({
-    id: 'p1',
-    title: 'Walnut desk',
-    price: 120,
-    currency: 'EUR',
-    inStock: true,
-    lowStock: false,
-    active: true,
-    ...overrides
-});
+export const aProduct = (overrides: Partial<Product> = {}): Product => {
+    const product = {
+        id: 'p1',
+        title: 'Walnut desk',
+        price: 120,
+        currency: 'EUR',
+        inStock: true,
+        lowStock: false,
+        active: true,
+        ...overrides
+    };
+    // The server's rule, kept coarse: on sale and something to order (shelf or open backorder).
+    return {
+        buyable: product.purchasable !== false && (product.inStock || product.backorder === true),
+        ...product
+    };
+};
 
 /**
  * A valid stock-board row — some on the shelf, nothing backordered, preordering closed.
@@ -218,7 +297,7 @@ export const aPreorderFulfillmentOrder = (
 });
 
 /**
- * A valid fulfillment order as `GET /delivery/order/{id}` answers it — one physical line, open,
+ * A valid fulfillment order as `GET /delivery/orders/{id}` answers it — one physical line, open,
  * nothing shipped, and no action offered.
  *
  * @param overrides - the fields a case actually cares about
@@ -260,7 +339,7 @@ export const aShipment = (overrides: Partial<Shipment> = {}): Shipment => ({
     lines: [{ productId: 'p1', title: 'Shirt', quantity: 1 }],
     forced: false,
     shippedAt: '2026-09-02T10:00:00.000Z',
-    actions: { deliver: false, editTracking: false },
+    actions: { deliver: false, forceDeliver: false, update: false },
     ...overrides
 });
 
@@ -282,5 +361,7 @@ export const aShop = (overrides: Partial<Shop> = {}): Shop => ({
     shipToCountries: ['IT'],
     returnAddress: { street: 'Via Roma 1', city: 'Milano', zip: '20100', country: 'IT' },
     returnPostagePayer: 'consumer',
+    termsVersion: '1',
+    backorderPromiseDays: 30,
     ...overrides
 });

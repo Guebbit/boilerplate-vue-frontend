@@ -320,8 +320,7 @@ Cypress.Commands.add('createProduct', (overrides: Record<string, unknown> = {}) 
         }
     }).then((product) =>
         typeof onHand === 'number' && onHand > 0
-            ? adminApi('/inventory/receipts', 'POST', {
-                  productId: product.id,
+            ? adminApi(`/inventory/levels/${product.id}/receive`, 'POST', {
                   quantity: onHand,
                   note: 'Opening stock'
               }).then(() => product)

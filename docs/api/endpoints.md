@@ -82,16 +82,16 @@ Used by the Admin Dashboard. See [Observability Endpoints](./observability.md) f
 
 JWT-based authentication. Login returns an `accessToken` in the body and sets a `refreshToken` in an HttpOnly cookie. See [Security](../tools/security.md) for how the FE handles these.
 
-| Method | Endpoint                 | Auth | Description                                 |
-| ------ | ------------------------ | ---- | ------------------------------------------- |
-| POST   | `/account/login`         | none | Authenticate and get JWT                    |
-| POST   | `/account/signup`        | none | Register a new user                         |
-| GET    | `/account`               | user | Get current user profile                    |
-| POST   | `/account/refresh`       | none | Refresh access token (uses HttpOnly cookie) |
-| POST   | `/account/reset`         | none | Request password reset email                |
-| POST   | `/account/reset-confirm` | none | Confirm password reset                      |
-| POST   | `/account/logout-all`    | user | Revoke all refresh tokens                   |
-| DELETE | `/account`               | user | Delete own account                          |
+| Method | Endpoint                          | Auth | Description                                 |
+| ------ | --------------------------------- | ---- | ------------------------------------------- |
+| POST   | `/account/login`                  | none | Authenticate and get JWT                    |
+| POST   | `/account/signup`                 | none | Register a new user                         |
+| GET    | `/account`                        | user | Get current user profile                    |
+| POST   | `/account/refresh`                | none | Refresh access token (uses HttpOnly cookie) |
+| POST   | `/account/password/reset`         | none | Request password reset email                |
+| POST   | `/account/password/reset/confirm` | none | Confirm password reset                      |
+| DELETE | `/account/sessions`               | user | Revoke all refresh tokens                   |
+| DELETE | `/account`                        | user | Delete own account                          |
 
 ## Products
 
@@ -119,10 +119,10 @@ Per-user. Items are scoped to the authenticated user.
 | ------ | ------------------------ | ---- | --------------------------------------------- |
 | GET    | `/cart`                  | user | Get current cart, with its shipping options   |
 | GET    | `/cart/summary`          | user | Cart totals only                              |
-| POST   | `/cart`                  | user | Add item to cart (grows a line already there) |
-| PUT    | `/cart/:productId`       | user | Set an item's exact quantity                  |
-| DELETE | `/cart/:productId`       | user | Remove item from cart                         |
-| DELETE | `/cart/all`              | user | Clear the entire cart                         |
+| POST   | `/cart/items`            | user | Add item to cart (grows a line already there) |
+| PATCH  | `/cart/items/:productId` | user | Set an item's exact quantity                  |
+| DELETE | `/cart/items/:productId` | user | Remove item from cart                         |
+| DELETE | `/cart/items`            | user | Clear the entire cart                         |
 | PUT    | `/cart/shipping-method`  | user | Choose (or clear) the shipping method         |
 | POST   | `/cart/checkout`         | user | Checkout → create order                       |
 | POST   | `/cart/reorder/:orderId` | user | Copy a past order back into the cart          |

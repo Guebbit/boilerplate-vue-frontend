@@ -4,6 +4,9 @@
  * instances (subscriptions is full CRUD, deliveries is read + replay only), plus every
  * hand-written action that does not fit the generic shape.
  *
+ * `enableSubscription`/`disableSubscription` are the two status actions (their own routes, not a
+ * field in the update body); like `removeSecret` they cache the answer, which carries no secret.
+ *
  * `createSubscription`/`rotateSecret` are hand-written rather than the generic `createOne`/
  * `updateOne`: both responses carry a plaintext secret meant to be shown exactly once, and the
  * generic path (`createTarget`/`updateTarget`) caches whatever the API call resolves to verbatim
@@ -11,15 +14,19 @@
  * anything with `getRecord(id)`. `removeSecret` is hand-written too, for a different reason: it
  * calls its own action route, not `updateOne`'s target. See `docs/modules/webhooks.md`.
  */
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
 import { defineStore } from 'pinia';
+import { listWebhookSubscriptionsQueryPageSizeMax } from '@api/schemas';
 import { useAsyncAction, useStructureCrudApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import {
     listWebhookSubscriptions,
+    getWebhookSubscription,
     createWebhookSubscription,
     updateWebhookSubscription,
     deleteWebhookSubscription,
+    enableWebhookSubscription,
+    disableWebhookSubscription,
     rotateWebhookSubscriptionSecret,
     removeWebhookSubscriptionSecret,
     listWebhookDeliveries,
@@ -38,7 +45,10 @@ import type {
 
 /** Search criteria for the subscriptions list — everything but pagination. */
 interface SubscriptionFilters {
+    /** Switched on (`true`) or off for any reason (`false`). */
     enabled?: boolean;
+    /** Switched off by the failure guard (`true`) or not (`false`). */
+    autoDisabled?: boolean;
 }
 
 /** Search criteria for the delivery log — everything but pagination. */
@@ -51,9 +61,9 @@ interface DeliveryFilters {
  * The API's own page-size ceiling (`listWebhookSubscriptionsQueryPageSizeMax`), reused as the
  * "fetch everything this call can return" size for `fetchAllSubscriptions` — there is no true
  * unpaginated endpoint. A shop with more than this many subscriptions will not see the rest in the
- * deliveries filter dropdown or in Target/Edit hydration; acceptable, not worth a special case.
+ * deliveries filter dropdown; acceptable, not worth a special case.
  */
-const MAX_PAGE_SIZE = 100;
+const MAX_PAGE_SIZE = listWebhookSubscriptionsQueryPageSizeMax;
 
 /**
  * Webhook subscriptions, their delivery log, and the event catalogue that feeds both forms.
@@ -63,8 +73,9 @@ const MAX_PAGE_SIZE = 100;
  */
 export const useWebhooksStore = defineStore('webhooks', () => {
     /**
-     * Subscriptions: full CRUD except `get` (no `GET .../subscriptions/{id}` exists — see
-     * {@link watchSubscription}) and except `create` (see {@link createSubscription}).
+     * Subscriptions: full CRUD except `create` (see {@link createSubscription}). The detail and
+     * edit pages read their own record (`GET .../subscriptions/{id}`) through `watchOne`, so an
+     * id past the list's first page still resolves.
      */
     const {
         itemDictionary: subscriptions,
@@ -83,6 +94,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         pageItemList: subscriptionPageItemList,
 
         fetchList: fetchAllSubscriptions,
+        watchOne: watchSubscription,
         watchList: watchSubscriptionsSearch,
         updateOne: updateSubscription,
         deleteOne: deleteSubscription,
@@ -96,15 +108,20 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         AxiosRequestConfig
     >(
         {
-            // Backfills the cache for the deliveries filter dropdown and Target/Edit hydration —
-            // not the list screen's own search, which is paginated below.
+            // Backfills the cache for the deliveries filter dropdown — not the list screen's own
+            // search, which is paginated below.
             list: () =>
                 listWebhookSubscriptions({ pageSize: MAX_PAGE_SIZE }).then((r) => r.data.items),
 
             search: (filters, page, pageSize) =>
-                listWebhookSubscriptions({ page, pageSize, enabled: filters.enabled }).then(
-                    (r) => ({ items: r.data.items, totalItems: r.data.meta.totalItems })
-                ),
+                listWebhookSubscriptions({
+                    page,
+                    pageSize,
+                    enabled: filters.enabled,
+                    autoDisabled: filters.autoDisabled
+                }).then((r) => ({ items: r.data.items, totalItems: r.data.meta.totalItems })),
+
+            get: (id) => getWebhookSubscription(id).then((r) => r.data),
 
             update: (id, data, options) =>
                 updateWebhookSubscription(id, data, options).then((r) => r.data),
@@ -113,24 +130,6 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         },
         { resourceKey: 'webhooks-subscriptions', queryClient }
     );
-
-    /**
-     * Selects a subscription by id for the Target/Edit pages, hydrating from the cache rather
-     * than a fresh network call — there is no `GET .../subscriptions/{id}` endpoint to call one
-     * with. Backfills the whole cache once if the id is not already known.
-     *
-     * @param idSource - a reactive source for the id, e.g. a route param getter
-     * @returns A stop handle for the watcher
-     */
-    const watchSubscription = (idSource: () => string | undefined) =>
-        watch(
-            idSource,
-            (id) => {
-                selectedSubscriptionId.value = id;
-                if (id && !getSubscription(id)) void fetchAllSubscriptions();
-            },
-            { immediate: true }
-        );
 
     /**
      * Creates a subscription, minting its first secret.
@@ -191,6 +190,34 @@ export const useWebhooksStore = defineStore('webhooks', () => {
     const removeSecret = (id: string, secretId: string) =>
         fetchAnySubscriptions(() =>
             removeWebhookSubscriptionSecret(id, secretId).then(({ data: updated }) => {
+                editSubscriptionRecord(updated, id);
+                return updated;
+            })
+        );
+
+    /**
+     * Switches a subscription back on, from either kind of off. The answer carries no secret, so
+     * it is cached as it comes; hand-written like {@link removeSecret} because it calls its own
+     * action route, not the update path.
+     *
+     * @param id - the subscription to enable
+     */
+    const enableSubscription = (id: string) =>
+        fetchAnySubscriptions(() =>
+            enableWebhookSubscription(id).then(({ data: updated }) => {
+                editSubscriptionRecord(updated, id);
+                return updated;
+            })
+        );
+
+    /**
+     * Pauses a subscription by hand. See {@link enableSubscription}.
+     *
+     * @param id - the subscription to disable
+     */
+    const disableSubscription = (id: string) =>
+        fetchAnySubscriptions(() =>
+            disableWebhookSubscription(id).then(({ data: updated }) => {
                 editSubscriptionRecord(updated, id);
                 return updated;
             })
@@ -287,6 +314,8 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         createSubscription,
         updateSubscription,
         deleteSubscription,
+        enableSubscription,
+        disableSubscription,
         rotateSecret,
         removeSecret,
 

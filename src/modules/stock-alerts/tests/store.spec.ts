@@ -37,7 +37,7 @@ beforeEach(() => {
     const asked = { items: [{ productId: 'p1', createdAt: '2026-10-18T09:00:00Z' }] };
     responses = {
         'GET /stock-alerts': orvalEnvelope(asked),
-        'POST /stock-alerts/p1': orvalEnvelope(asked),
+        'POST /stock-alerts': orvalEnvelope(asked),
         'DELETE /stock-alerts/p1': orvalEnvelope({ items: [] })
     };
 });
@@ -61,7 +61,12 @@ describe('the stock-alerts store', () => {
         await store.cancel('p1');
 
         expect(store.isAsked('p1')).toBe(false);
-        expect(requestedUrls()).toEqual(['/stock-alerts/p1', '/stock-alerts/p1']);
+        expect(requestedUrls()).toEqual(['/stock-alerts', '/stock-alerts/p1']);
+        // The product rides in the body of the ask: the list is the parent, a request has no URL.
+        expect(vi.mocked(orvalMutator).mock.calls[0]?.[0]).toMatchObject({
+            method: 'POST',
+            data: { productId: 'p1' }
+        });
     });
 
     it('reads once for fifty buttons on a grid', async () => {

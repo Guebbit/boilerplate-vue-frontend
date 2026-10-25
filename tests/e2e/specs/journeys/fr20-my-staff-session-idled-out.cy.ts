@@ -51,7 +51,7 @@ describe('FR20 · My staff session idled out with a form open', () => {
 
             cy.step('Stay counts the session active, closes the dialog and keeps the value');
             const touched: number[] = [];
-            cy.intercept('POST', '**/account/session/touch', (request) => {
+            cy.intercept('POST', '**/account/sessions/current/touch', (request) => {
                 request.continue((response) => {
                     touched.push(response.statusCode);
                 });

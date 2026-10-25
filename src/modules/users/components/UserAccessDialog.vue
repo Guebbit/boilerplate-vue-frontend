@@ -87,19 +87,22 @@ watch(isOpen, (open) => {
 });
 
 /**
- * Whether the role may be changed here: the row's `update` action, never one's own — nobody
- * changes their own role, the server refuses it, so the picker does not offer it — and only when
- * the caller may assign at least one role.
+ * Whether the role may be changed here: the row's `assignRole` action (the server's answer, own
+ * account included), and only when the caller may assign at least one role.
  */
 const canPickRole = computed(
-    () => (props.target?.actions?.update ?? true) && !isSelf.value && grantableRoles().length > 0
+    () => (props.target?.actions?.assignRole ?? true) && grantableRoles().length > 0
 );
 
 /**
- * Whether the account may be deactivated or reactivated here: the row's `ban` action, which is a
- * different key from the edit.
+ * Whether the status may be switched here: the row's `deactivate` action while it is active, its
+ * `activate` action while it is not. Both are the ban key, not the edit's.
  */
-const canPickActive = computed(() => props.target?.actions?.ban ?? true);
+const canPickActive = computed(() =>
+    (props.target?.active ?? true)
+        ? (props.target?.actions?.deactivate ?? true)
+        : (props.target?.actions?.activate ?? true)
+);
 
 /**
  * Whether the role on screen differs from the target's loaded value.

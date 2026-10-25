@@ -8,7 +8,7 @@ import { asPassive } from '@/infrastructure/http/passive.ts';
 
 describe('asPassive', () => {
     it('adds the header to an empty config', () => {
-        expect(asPassive()).toEqual({ headers: { 'X-Session-Passive': 'true' } });
+        expect(asPassive()).toEqual({ headers: { 'Session-Passive': 'true' } });
     });
 
     it('keeps what the caller already set, headers included', () => {
@@ -16,7 +16,7 @@ describe('asPassive', () => {
 
         expect(merged).toEqual({
             timeout: 5,
-            headers: { 'X-Other': '1', 'X-Session-Passive': 'true' }
+            headers: { 'X-Other': '1', 'Session-Passive': 'true' }
         });
     });
 });

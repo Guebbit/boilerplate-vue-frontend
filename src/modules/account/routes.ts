@@ -33,6 +33,14 @@ export default [
         component: () => import('./views/TwoFactorChallenge.vue')
     },
     {
+        // Guest like the 2FA step: the claim check from the sign-in is the credential, and a
+        // visitor holding a live session has nothing to restore.
+        path: 'login/restore',
+        name: 'AccountRestoreChallenge',
+        meta: { access: 'guest', title: 'account-restore-challenge-page.page-title' },
+        component: () => import('./views/AccountRestoreChallenge.vue')
+    },
+    {
         path: 'password-reset',
         name: 'PasswordResetRequest',
         meta: { access: 'guest', title: 'password-reset-request-page.page-title' },
@@ -47,12 +55,13 @@ export default [
         component: () => import('./views/PasswordResetConfirm.vue')
     },
     {
-        // Public deliberately: the confirmation link arrives by email, and the visitor following
-        // it is by definition not logged in — the token in the URL is the credential.
-        path: 'account-delete/confirm',
-        name: 'AccountDeleteConfirm',
-        meta: { title: 'account-delete-confirm-page.page-title' },
-        component: () => import('./views/AccountDeleteConfirm.vue')
+        // Public deliberately: the restore link arrives by email, and the visitor following it is
+        // by definition not logged in (the deletion ended every session) — the token is the
+        // credential.
+        path: 'account-restore',
+        name: 'AccountRestore',
+        meta: { title: 'account-restore-page.page-title' },
+        component: () => import('./views/AccountRestore.vue')
     },
     {
         // Public for the same reason as the two confirms above: the token is the credential.

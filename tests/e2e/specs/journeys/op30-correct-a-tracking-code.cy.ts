@@ -36,7 +36,7 @@ interface AuditListLike {
  * @param orderId - the order
  */
 const fulfilmentOf = (orderId: string): Cypress.Chainable<FulfilmentLike> =>
-    cy.apiAs<FulfilmentLike>('admin', 'GET', `/delivery/order/${orderId}`).then((fulfilment) => {
+    cy.apiAs<FulfilmentLike>('admin', 'GET', `/delivery/orders/${orderId}`).then((fulfilment) => {
         if (!fulfilment) throw new Error('OP30: the delivery read answered nothing');
         return fulfilment;
     });

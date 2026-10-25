@@ -125,7 +125,7 @@ describe('sync', () => {
                     .mock.calls.find(
                         ([config]) => (config as { url: string }).url === '/notifications'
                     )!;
-                expect(options).toMatchObject({ headers: { 'X-Session-Passive': 'true' } });
+                expect(options).toMatchObject({ headers: { 'Session-Passive': 'true' } });
             });
     });
 

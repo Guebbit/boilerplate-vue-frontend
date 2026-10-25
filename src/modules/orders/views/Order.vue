@@ -26,9 +26,8 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '../store.ts';
-import { leftOutByReorder } from '../domain';
+import { reorderOutcome } from '../domain';
 import OrderTimeline from '../components/OrderTimeline.vue';
-import { useOrderActionsRefetch } from '../composables/use-order-actions-refetch.ts';
 import { useOrderDocuments } from '../composables/use-order-documents.ts';
 import { useOrderHero } from '../composables/use-order-hero.ts';
 import { useCartStore } from '@/modules/cart';
@@ -161,7 +160,7 @@ const timelineRefreshKey = computed(() =>
  *
  * @returns `true` while this order can still be cancelled by whoever is looking at it.
  */
-const cancellable = computed(() => currentOrder.value?.actions?.cancel === true);
+const cancellable = computed(() => currentOrder.value?.actions.cancel === true);
 
 /**
  * The order's own frozen currency — every price on this page is `currentOrder`'s own money,
@@ -213,8 +212,9 @@ const {
 } = useBlockingError();
 
 /**
- * Copies this order's lines back into the cart and goes there — products that have since left
- * the catalogue are skipped server-side, so the toast names what the cart did NOT get.
+ * Copies this order's lines back into the cart and goes there. The server reports what became of
+ * each line, so the toast names what the cart did NOT get whole: products that left the catalogue,
+ * and lines held back at the per-line cap.
  *
  * @returns Nothing; the outcome is reported as a toast and navigates to the cart, a failure blocks
  *  the button in place ({@link reorderError}).
@@ -224,15 +224,18 @@ const handleReorder = () => {
     if (!order) return;
     clearReorderError();
     reorder(order.id)
-        .then((cart) => {
-            const leftOut = leftOutByReorder(
-                order.items,
-                (cart?.items ?? []).map(({ productId }) => productId)
-            );
-            if (leftOut.length === 0) addMessage(t('order-target-page.success-reorder'));
-            else
+        .then((answer) => {
+            const { gone, capped } = reorderOutcome(order.items, answer?.lines ?? []);
+            if (gone.length === 0 && capped.length === 0)
+                addMessage(t('order-target-page.success-reorder'));
+            if (gone.length > 0)
                 addMessage(
-                    t('order-target-page.warning-reorder-left-out', { titles: leftOut.join(', ') }),
+                    t('order-target-page.warning-reorder-left-out', { titles: gone.join(', ') }),
+                    EToastType.WARNING
+                );
+            if (capped.length > 0)
+                addMessage(
+                    t('order-target-page.warning-reorder-capped', { titles: capped.join(', ') }),
                     EToastType.WARNING
                 );
             return router.push(routerLinkI18n({ name: 'Cart' }));
@@ -294,12 +297,6 @@ const onMissingRecord = useMissingRecord();
  * at all for anyone who arrived from the list, which looks like an order nothing may be done to.
  */
 watchOrder(() => id, { onError: onMissingRecord });
-
-/**
- * Forces the one re-fetch a list-cache arrival needs to gain `actions` — see the composable's
- * own docs for why a second forced fetch must not race it.
- */
-useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
 </script>
 
 <template>
@@ -429,7 +426,6 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         <PaymentPanel
                             :order-id="currentOrder.id"
                             :order-payable="currentOrder.actions?.pay"
-                            :order-status="currentOrder.status"
                             :pay-by="currentOrder.payBy"
                             @paid="fetchOrder(currentOrder.id, { forced: true })"
                         />
@@ -447,7 +443,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         :order-id="currentOrder.id"
                         :can-withdraw="currentOrder.actions?.withdraw ?? false"
                         :withdraw-blocked="currentOrder.actions?.withdrawBlocked"
-                        :withdraw-until="currentOrder.actions?.withdrawUntil"
+                        :withdraw-until="currentOrder.withdrawUntil"
                         :order-number="currentOrder.orderNumber"
                         @opened="fetchOrder(currentOrder.id, { forced: true })"
                     />
@@ -549,14 +545,10 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                             data-test="order-item-owed"
                                         >
                                             {{
-                                                item.promiseDated
-                                                    ? t('order-target-page.owed-line', {
-                                                          count: item.backorderedQuantity,
-                                                          date: formatDate(item.promisedAt)
-                                                      })
-                                                    : t('order-target-page.owed-line-undated', {
-                                                          count: item.backorderedQuantity
-                                                      })
+                                                t('order-target-page.owed-line', {
+                                                    count: item.backorderedQuantity,
+                                                    date: formatDate(item.promisedAt)
+                                                })
                                             }}
                                         </p>
                                         <p
@@ -603,7 +595,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                             <strong>
                                                 {{
                                                     formatCurrency(
-                                                        item.product.price * item.quantity,
+                                                        item.netAmount + item.taxAmount,
                                                         orderCurrency
                                                     )
                                                 }}

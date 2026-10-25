@@ -1,11 +1,10 @@
 /**
  * @module
  * Mounts the real edit page against a real, memory-history router, proving `OrderEdit.vue` gains
- * `actions` the same way `Order.vue` does: a list-cache arrival — the orders list seeds the store
- * with a summary row carrying no `actions` — must not leave the page offering no moves. Same
- * template as `product-view.spec.ts`/`wishlist-view.spec.ts`: a real router over
- * `collectModuleRoutes(enabledModules)`, the store's own watch stubbed, and the forced re-fetch
- * `useOrderActionsRefetch` performs is exercised for real rather than pre-seeded away.
+ * its controls from the order's `actions`, as `Order.vue` does: a list-cache arrival carries them
+ * already, so the page offers the moves without a second fetch. Same template as
+ * `product-view.spec.ts`/`wishlist-view.spec.ts`: a real router over
+ * `collectModuleRoutes(enabledModules)`, and the store's own watch stubbed.
  *
  * `@/modules/payments` is mocked rather than imported past its barrel — `useOrderRefund` would
  * otherwise fire a real, unmocked HTTP call this suite has nothing to answer, and reaching its
@@ -29,7 +28,8 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import { noopWatchHandle } from '../../../../tests/support/unit/watch-handle.ts';
 import { OrderStatus } from '@api';
-import type { Order, OrderActions } from '@types';
+import type { Order, OrderActions, Refund } from '@types';
+import { useDialogStore } from '@/ui/dialog.ts';
 
 wireModulesIntoCore();
 
@@ -45,10 +45,18 @@ const mockCanRefund = ref(false);
 /** Whether the mocked refund is in flight. */
 const mockRefundLoading = ref(false);
 
+/** Stub for the payments module's `settle`: confirms one hand-paid refund as returned. */
+const settle = vi.fn((_refundId: string) => Promise.resolve());
+
+/** The hand-paid refunds the mocked payment offers to mark as returned. */
+const mockSettleable = ref<Refund[]>([]);
+
 vi.mock('@/modules/payments', () => ({
     useOrderRefund: () => ({
         canRefund: mockCanRefund,
+        settleable: mockSettleable,
         refund,
+        settle,
         refreshPayment,
         refundLoading: mockRefundLoading
     }),
@@ -85,7 +93,6 @@ const signInAsAdmin = (abilities: [string, string][] = [['create', 'Payment']]) 
  * in "the correct-status door" below) at every call site.
  */
 const anAction = (overrides: Partial<OrderActions> = {}): OrderActions => ({
-    transitions: [],
     cancel: false,
     pay: false,
     recordPayment: false,
@@ -96,6 +103,7 @@ const anAction = (overrides: Partial<OrderActions> = {}): OrderActions => ({
     withdraw: false,
     delete: false,
     hardDelete: false,
+    restore: false,
     ...overrides
 });
 
@@ -121,27 +129,25 @@ const anOrder = (overrides: Partial<Order> = {}): Order => ({
     paymentStatus: 'unpaid',
     fulfillmentStatus: 'unfulfilled',
     returnStatus: 'none',
+    actions: anAction(),
     ...overrides
 });
 
 /**
- * Mounts the edit page exactly as a list-cache arrival would: the store already holds a SUMMARY
- * row for the id (no `actions`), and the stubbed `fetchOrder` answers what a real forced re-fetch
- * would — the DETAIL row `detailOrder` names. This exercises `useOrderActionsRefetch` for real
- * rather than seeding the answer directly, which is what would let the latch's own removal pass.
+ * Mounts the edit page exactly as a list-cache arrival would: the store already holds the row for
+ * the id, `actions` included, and the stubbed `fetchOrder` answers any later forced re-fetch.
  *
  * The `fetchOrder` spy is returned alongside the wrapper — spied BEFORE mounting, since the page
  * destructures its actions off the store at setup time (see the override test's own note) — so a
- * later action's own forced re-fetch (`runOverride`) can be asserted on too, not just the one
- * `useOrderActionsRefetch` fires on mount.
+ * later action's own forced re-fetch can be asserted on too.
  *
- * @param detailOrder - The shape the forced re-fetch resolves to (carrying `actions`).
+ * @param detailOrder - The order the store holds and a forced re-fetch resolves to.
  * @returns The mounted wrapper, and the `fetchOrder` spy driving it.
  */
 const mountFromListCache = (detailOrder: Order) => {
     const orders = useOrdersStore();
     vi.spyOn(orders, 'watchOrder').mockImplementation(() => noopWatchHandle());
-    orders.addOrder({ ...detailOrder, actions: undefined });
+    orders.addOrder(detailOrder);
     orders.selectedOrderId = detailOrder.id;
     const fetchOrder = vi.spyOn(orders, 'fetchOrder').mockImplementation(() => {
         orders.addOrder(detailOrder);
@@ -161,6 +167,8 @@ beforeEach(() => {
     setActivePinia(createPinia());
     refreshPayment.mockClear();
     refund.mockClear();
+    settle.mockClear();
+    mockSettleable.value = [];
     mockCanRefund.value = false;
     mockRefundLoading.value = false;
     return loadLocale('en').then(() =>
@@ -177,7 +185,6 @@ describe('a list-cache arrival gains actions', () => {
         const detail = anOrder({
             status: OrderStatus.shipped,
             actions: anAction({
-                transitions: [OrderStatus.delivered, OrderStatus.cancelled],
                 cancel: true,
                 pay: false
             })
@@ -200,7 +207,7 @@ describe('a list-cache arrival gains actions', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.delivered,
-            actions: anAction({ transitions: [], cancel: false, pay: false })
+            actions: anAction({ cancel: false, pay: false })
         });
 
         const { wrapper } = mountFromListCache(detail);
@@ -224,7 +231,7 @@ describe('refunding', () => {
         mockCanRefund.value = true;
         const detail = anOrder({
             status: OrderStatus.pending,
-            actions: anAction({ transitions: [], cancel: true, pay: false })
+            actions: anAction({ cancel: true, pay: false })
         });
         const { wrapper } = mountFromListCache(detail);
 
@@ -252,7 +259,7 @@ const mountRefundable = () => {
     mockCanRefund.value = true;
     const detail = anOrder({
         status: OrderStatus.pending,
-        actions: anAction({ transitions: [], cancel: true, pay: false })
+        actions: anAction({ cancel: true, pay: false })
     });
     const { wrapper } = mountFromListCache(detail);
     return nextTick()
@@ -295,12 +302,66 @@ describe('a partial refund', () => {
         ));
 });
 
+describe('marking a hand-paid refund as returned', () => {
+    /** An owed refund of 40 euro, as the payment names it. */
+    const owed: Refund = {
+        id: 'r-owed',
+        amount: 40,
+        currency: 'EUR',
+        status: 'pending',
+        reason: 'goodwill',
+        createdAt: '2026-03-05T10:00:00Z'
+    };
+
+    it('offers one button per record the server names, and none otherwise', () =>
+        mountRefundable()
+            .then((wrapper) => {
+                expect(wrapper.find('[data-test=button-mark-returned-r-owed]').exists()).toBe(
+                    false
+                );
+                mockSettleable.value = [owed];
+                return nextTick().then(() => wrapper);
+            })
+            .then((wrapper) => {
+                expect(wrapper.find('[data-test=button-mark-returned-r-owed]').exists()).toBe(true);
+            }));
+
+    it('settles that record once the operator confirms, with no amount field in play', () => {
+        mockSettleable.value = [owed];
+        const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+        return mountRefundable()
+            .then((wrapper) =>
+                wrapper.get('[data-test=button-mark-returned-r-owed]').trigger('click')
+            )
+            .then(() => nextTick())
+            .then(() => nextTick())
+            .then(() => {
+                expect(confirm.mock.calls[0][0].message).toContain('€40.00');
+                expect(settle).toHaveBeenCalledWith('r-owed');
+            });
+    });
+
+    it('settles nothing when the question is declined', () => {
+        mockSettleable.value = [owed];
+        vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(false);
+        return mountRefundable()
+            .then((wrapper) =>
+                wrapper.get('[data-test=button-mark-returned-r-owed]').trigger('click')
+            )
+            .then(() => nextTick())
+            .then(() => nextTick())
+            .then(() => {
+                expect(settle).not.toHaveBeenCalled();
+            });
+    });
+});
+
 describe('cancelling', () => {
     it('re-reads the payment once the order is cancelled', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.pending,
-            actions: anAction({ transitions: [OrderStatus.cancelled], cancel: true, pay: false })
+            actions: anAction({ cancel: true, pay: false })
         });
         // Spied BEFORE mounting, same reasoning as the override test above.
         const cancelOrder = vi
@@ -329,7 +390,7 @@ describe('the correct-status door', () => {
             status: OrderStatus.shipped,
             // `override` left at `anAction`'s empty default — no permission, or nothing left
             // overridable, read the same way here: the server already decided.
-            actions: anAction({ transitions: [OrderStatus.delivered], cancel: true, pay: false })
+            actions: anAction({ cancel: true, pay: false })
         });
 
         const { wrapper } = mountFromListCache(detail);
@@ -346,7 +407,6 @@ describe('the correct-status door', () => {
         const detail = anOrder({
             status: OrderStatus.shipped,
             actions: anAction({
-                transitions: [OrderStatus.delivered],
                 cancel: true,
                 pay: false,
                 override: [OrderStatus.delivered]
@@ -393,10 +453,9 @@ describe('the correct-status door', () => {
                     OrderStatus.delivered,
                     'carrier scan never arrived'
                 );
-                // Only the one forced re-fetch `useOrderActionsRefetch` already made on mount:
-                // `overrideStatus` writes through the store's own `updateTarget` now, so a second,
-                // per-view forced re-fetch would just repeat what the store already guarantees.
-                expect(fetchOrder).toHaveBeenCalledTimes(1);
+                // `overrideStatus` writes through the store's own `updateTarget`, so a per-view
+                // forced re-fetch would just repeat what the store already guarantees.
+                expect(fetchOrder).not.toHaveBeenCalled();
             });
     });
 });
@@ -450,7 +509,6 @@ describe('recording a payment by hand', () => {
         const detail = anOrder({
             status: OrderStatus.pending,
             actions: anAction({
-                transitions: [OrderStatus.cancelled],
                 cancel: true,
                 recordPayment: true
             })
@@ -471,7 +529,6 @@ describe('recording a payment by hand', () => {
         const detail = anOrder({
             status: OrderStatus.pending,
             actions: anAction({
-                transitions: [OrderStatus.cancelled],
                 cancel: true,
                 recordPayment: true
             })
@@ -493,7 +550,7 @@ describe('recording a payment by hand', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.pending,
-            actions: anAction({ transitions: [], cancel: false, pay: true, recordPayment: false })
+            actions: anAction({ cancel: false, pay: true, recordPayment: false })
         });
 
         const { wrapper } = mountFromListCache(detail);
@@ -512,7 +569,7 @@ describe('recording a payment by hand', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.paid,
-            actions: anAction({ transitions: [OrderStatus.processing], cancel: true, pay: false })
+            actions: anAction({ cancel: true, pay: false })
         });
 
         const { wrapper } = mountFromListCache(detail);
@@ -531,7 +588,6 @@ describe('recording a payment by hand', () => {
         const detail = anOrder({
             status: OrderStatus.pending,
             actions: anAction({
-                transitions: [OrderStatus.cancelled],
                 cancel: true,
                 recordPayment: true
             })
@@ -545,8 +601,7 @@ describe('recording a payment by hand', () => {
             )
             .then(() => nextTick())
             .then(() => {
-                // The mount-time forced re-fetch from `useOrderActionsRefetch` is the first call;
-                // this is the second, from the explicit refresh once the payment is recorded.
+                // The explicit refresh once the payment is recorded.
                 expect(fetchOrder).toHaveBeenLastCalledWith(detail.id, { forced: true });
             });
     });
@@ -556,14 +611,13 @@ describe('recording a payment by hand', () => {
         const detail = anOrder({
             status: OrderStatus.pending,
             actions: anAction({
-                transitions: [OrderStatus.cancelled],
                 cancel: true,
                 recordPayment: true
             })
         });
         const orders = useOrdersStore();
         vi.spyOn(orders, 'watchOrder').mockImplementation(() => noopWatchHandle());
-        orders.addOrder({ ...detail, actions: detail.actions });
+        orders.addOrder(detail);
         orders.selectedOrderId = detail.id;
         vi.spyOn(orders, 'fetchOrder').mockRejectedValue(new Error('network down'));
 

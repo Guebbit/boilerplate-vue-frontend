@@ -10,7 +10,7 @@
  * notice names the new address before anything is done.
  *
  * Resend is its own call (JB15): the backend ignores a PATCH carrying the address already parked,
- * so `POST /account/pending-email/resend` is what mails the link again. It mails the NEW address
+ * so `POST /account/email-change/resend` is what mails the link again. It mails the NEW address
  * only, one send a minute; the old address heard of the request once and is not told again. The
  * button counts down the server's own `resendAfter`, and a press that lands inside the cooldown
  * anyway (a reloaded page forgets the countdown) is refused in words and counts down the 429's

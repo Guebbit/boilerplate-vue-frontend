@@ -17,10 +17,12 @@ import { usePaymentsStore } from '../store';
  *
  * Whether a refund is possible is never decided here. `actions.refund` is the server's answer, and
  * it is what greys the control out; re-deriving it from a status would put half the rule in a
- * separately deployed client.
+ * separately deployed client. The same holds for the refunds an operator may mark as returned:
+ * `actions.settleByHand` names them.
  *
  * @param orderId - The order whose money is in question, reactive so a route change re-reads it.
- * @returns Whether a refund is open, and the call that performs one.
+ * @returns Whether a refund is open, the call that performs one, and the hand-paid refunds
+ *  waiting for the operator to confirm the money went back.
  */
 export const useOrderRefund = (orderId: Ref<string | undefined>) => {
     /**
@@ -50,7 +52,15 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
         /**
          * Whether `refund()` would be accepted — false once the money is already back.
          */
-        canRefund: computed(() => payment.value?.actions?.refund === true),
+        canRefund: computed(() => payment.value?.actions.refund === true),
+        /**
+         * The refunds the caller may mark as returned (hand-paid money opened but not yet
+         * confirmed), each with its amount for the confirmation. Empty when there is none.
+         */
+        settleable: computed(() => {
+            const ids = payment.value?.actions.settleByHand ?? [];
+            return (payment.value?.refunds ?? []).filter((refund) => ids.includes(refund.id));
+        }),
         /**
          * Whether a refund (or any other payments-store call for this order) is already in
          * flight — the flag a "Refund only" button must also disable on, since `refund()` runs
@@ -65,8 +75,19 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
          *  which is what withdraws `canRefund`.
          */
         refund: (amount?: number) =>
-            orderId.value
-                ? paymentsStore.refundForOrder(orderId.value, amount).then(() => undefined)
+            payment.value
+                ? paymentsStore.refundPayment(payment.value, amount).then(() => undefined)
+                : Promise.resolve(),
+        /**
+         * Confirms that one hand-paid refund's money was returned outside the application.
+         *
+         * @param refundId - A record from `settleable`.
+         * @returns A promise resolving once the answered payment has replaced the cached one,
+         *  which is what removes the record from `settleable`.
+         */
+        settle: (refundId: string) =>
+            payment.value
+                ? paymentsStore.settleRefundByHand(payment.value, refundId).then(() => undefined)
                 : Promise.resolve(),
         /**
          * Re-reads the payment against the current order id, forced past the cache.

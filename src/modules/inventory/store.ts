@@ -6,6 +6,7 @@
  */
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
+import { listPreorderLevelsQueryPageSizeMax } from '@api/schemas';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
@@ -27,9 +28,9 @@ import type {
 } from '@types';
 
 /**
- * The largest page the contract allows, for the read that wants every row of a short list.
+ * The largest page the contract allows (generated, never retyped), for the read that wants every row of a short list.
  */
-const MAX_PAGE_SIZE = 100;
+const MAX_PAGE_SIZE = listPreorderLevelsQueryPageSizeMax;
 
 /**
  * The stock board and the ledger behind it.
@@ -195,7 +196,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     const receive = (productId: string, quantity: number, note?: string) => {
         const keeper = receiptIdempotencyKeys.forSubject(productId);
         return fetchAny(() =>
-            receiveStock({ productId, quantity, note }, keeper.withKey())
+            receiveStock(productId, { quantity, note }, keeper.withKey())
                 .then((response) => {
                     keeper.settle();
                     return reloadAfterWrite(response.data);
@@ -218,7 +219,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     const adjust = (productId: string, delta: number, note?: string) => {
         const keeper = adjustmentIdempotencyKeys.forSubject(productId);
         return fetchAny(() =>
-            adjustStock({ productId, delta, note }, keeper.withKey())
+            adjustStock(productId, { delta, note }, keeper.withKey())
                 .then((response) => {
                     keeper.settle();
                     return reloadAfterWrite(response.data);

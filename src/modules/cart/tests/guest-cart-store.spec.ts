@@ -29,16 +29,18 @@ wireModulesIntoCore();
  * The cart the server holds after a merge: the guest's one line, added.
  */
 const MERGED_CART = {
-    items: [{ productId: 'p1', quantity: 3, availability: 'in_stock' }],
+    items: [{ productId: 'p1', quantity: 3, availability: 'in_stock', canIncrease: true }],
     summary: {
         itemsCount: 1,
         totalQuantity: 3,
         itemsTotal: 30,
         shippingCost: 0,
         totalPrice: 30,
-        currency: 'EUR'
+        currency: 'EUR',
+        expectedTotal: { amount: 3000, currency: 'EUR' }
     },
-    shipping: { required: false, selected: null, options: [] }
+    shipping: { required: false, selected: null, options: [] },
+    checkoutable: true
 };
 
 /**

@@ -2,9 +2,9 @@
  * @module
  * Mounts the real subscription-edit page against a real, memory-history router: what it sends
  * when a `description` the visitor clears has to become `null` (the PATCH rule: an empty string is
- * invalid, `null` clears), and what it sends when the field is left untouched. Hydration
- * comes from the store's own cache (there is no `GET .../subscriptions/{id}`), seeded by hand the
- * same way `store.spec.ts`'s `watchSubscription` cases are.
+ * invalid, `null` clears), and what it sends when the field is left untouched. The record
+ * comes from the store's own cache, seeded by hand; the page's own load (`watchSubscription`) is
+ * `store.spec.ts`'s business.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
@@ -52,19 +52,30 @@ const SUBSCRIPTION: WebhookSubscription = {
     enabled: true,
     consecutiveFailures: 0,
     secretIds: ['sec-1'],
+    retiringSecrets: [],
+    actions: {
+        update: true,
+        delete: true,
+        enable: false,
+        disable: true,
+        rotateSecret: true,
+        removeSecret: false
+    },
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z'
 };
 
 /**
- * Mounts the page for `sub-1`, seeding the store's cache by hand — the way a prior list load
- * would leave it, since there is no per-id GET this page could call instead.
+ * Mounts the page for `sub-1`, seeding the store's cache by hand — the way the page's own load
+ * would leave it.
  *
  * @returns The wrapper and the spied `updateSubscription`.
  */
 const mountPage = () => {
     const store = useWebhooksStore();
     store.addSubscriptionRecord({ ...SUBSCRIPTION });
+    vi.spyOn(store, 'watchSubscription').mockReturnValue(vi.fn() as never);
+    store.selectedSubscriptionId = SUBSCRIPTION.id;
     vi.spyOn(store, 'fetchEventCatalogue').mockResolvedValue(undefined);
     const update = vi.spyOn(store, 'updateSubscription').mockResolvedValue(SUBSCRIPTION);
 
@@ -119,6 +130,20 @@ describe('WebhookEdit', () => {
                 expect(
                     contractRequest(schemas.UpdateWebhookSubscriptionBody, update.mock.calls[0][1])
                 ).toEqual({});
+            });
+    });
+
+    it('has no on/off switch, and never sends `enabled`', () => {
+        const { wrapper, update } = mountPage();
+
+        expect(wrapper.find('[data-test=webhook-enabled]').exists()).toBe(false);
+        return wrapper
+            .get('[data-test=webhook-description] input')
+            .setValue('Renamed')
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                expect(update.mock.calls[0][1]).not.toHaveProperty('enabled');
             });
     });
 });

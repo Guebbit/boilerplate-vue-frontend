@@ -50,7 +50,7 @@ describe('AC4 · My laptop was stolen', () => {
 
         loginDevice('user').then((owner) => {
             cy.step('the owner logs out everywhere from their own device');
-            requestAsDevice(owner, 'POST', '/account/logout-all')
+            requestAsDevice(owner, 'DELETE', '/account/sessions')
                 .its('status')
                 .should('equal', 200);
 

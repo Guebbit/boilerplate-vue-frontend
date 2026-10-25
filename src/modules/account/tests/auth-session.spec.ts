@@ -74,10 +74,10 @@ beforeEach(() => {
             version: 36,
             subjects: ['Order', 'Product']
         }),
-        'POST /account/reset': orvalEnvelope(),
-        'POST /account/reset-confirm': orvalEnvelope(),
+        'POST /account/password/reset': orvalEnvelope(),
+        'POST /account/password/reset/confirm': orvalEnvelope(),
         'POST /account/logout': orvalEnvelope(),
-        'POST /account/logout-all': orvalEnvelope()
+        'DELETE /account/sessions': orvalEnvelope()
     };
 });
 
@@ -93,7 +93,7 @@ describe('login', () => {
                     '/account/login',
                     '/account',
                     '/account/abilities',
-                    '/account/session/touch'
+                    '/account/sessions/current/touch'
                 ]);
                 expect(useSessionStore().accessToken).toBe('jwt-token');
             }));
@@ -116,7 +116,7 @@ describe('login', () => {
                     '/account/login',
                     '/account',
                     '/account/abilities',
-                    '/account/session/touch'
+                    '/account/sessions/current/touch'
                 ]);
             });
     });
@@ -124,7 +124,10 @@ describe('login', () => {
     // The boot reads the mode once (`main.ts`); a fresh tab has no `isAuth` cookie to trigger it
     // anywhere else, and a login adopted before the answer would behave as `jwt` and hold nothing.
     it('signs in on a fresh tab whose deployment answered cookie mode at boot', () => {
-        responses['GET /account/session-config'] = orvalEnvelope({ mode: 'cookie' });
+        responses['GET /account/session-config'] = orvalEnvelope({
+            mode: 'cookie',
+            lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
+        });
         responses['POST /account/login'] = orvalEnvelope({});
 
         return useSessionStore()
@@ -302,7 +305,7 @@ describe('the password reset flow', () => {
         useAuthStore()
             .requestPasswordReset('ada@example.com')
             .then(() => {
-                expect(requestedUrls()).toEqual(['/account/reset']);
+                expect(requestedUrls()).toEqual(['/account/password/reset']);
             }));
 
     it('confirms with the token and the new password', () =>
@@ -314,7 +317,7 @@ describe('the password reset flow', () => {
                     data: Record<string, unknown>;
                 };
 
-                expect(last.url).toBe('/account/reset-confirm');
+                expect(last.url).toBe('/account/password/reset/confirm');
                 expect(contractRequest(schemas.ConfirmPasswordResetBody, last.data)).toMatchObject({
                     token: 'reset-token'
                 });
@@ -348,7 +351,7 @@ describe('logoutEverywhere', () => {
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => auth.logoutEverywhere())
             .then(() => {
-                expect(requestedUrls().at(-1)).toBe('/account/logout-all');
+                expect(requestedUrls().at(-1)).toBe('/account/sessions');
                 expect(useSessionStore().isAuth).toBe(false);
             });
     });
@@ -356,7 +359,10 @@ describe('logoutEverywhere', () => {
 
 describe('restoreFromCookies after a failed mode read', () => {
     it('asks for the mode again and opens a cookie session, instead of refreshing as jwt', () => {
-        responses['GET /account/session-config'] = orvalEnvelope({ mode: 'cookie' });
+        responses['GET /account/session-config'] = orvalEnvelope({
+            mode: 'cookie',
+            lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
+        });
         vi.mocked(orvalMutator).mockRejectedValueOnce(new Error('network down'));
 
         return useSessionStore()

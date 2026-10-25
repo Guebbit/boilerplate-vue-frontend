@@ -44,7 +44,7 @@ const { addMessage } = useNotificationsStore();
 const { requestPasswordReset } = useAuthStore();
 
 /**
- * The human-challenge widget. `POST /account/reset` is always guarded by `humanChallengeGate`, so
+ * The human-challenge widget. `POST /account/password/reset` is always guarded by `humanChallengeGate`, so
  * this attaches unconditionally rather than waiting for a first refusal.
  */
 const humanCheck = ref<InstanceType<typeof HumanCheck>>();

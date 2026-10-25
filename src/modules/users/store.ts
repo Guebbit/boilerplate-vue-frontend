@@ -4,7 +4,8 @@
  * search, with a multipart branch for create/update when an avatar is
  * attached, plus two hand-written actions: `hardDeleteUser` for the
  * irreversible delete and `restoreUser` for undoing a soft one, and the two purchase-hold
- * writes (`setPurchaseHold`, `liftPurchaseHold`).
+ * writes (`setPurchaseHold`, `liftPurchaseHold`), `activateUser` / `deactivateUser`, and
+ * `applyAccessChange`, which turns a confirmed role/status choice into the right calls.
  */
 import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
@@ -22,6 +23,8 @@ import {
     deleteUserById,
     hardDeleteUserById,
     restoreUserById,
+    activateUserById,
+    deactivateUserById,
     setUserPurchaseHold,
     liftUserPurchaseHold,
     UserSortItem
@@ -215,6 +218,54 @@ export const useUsersStore = defineStore('users', () => {
         );
 
     /**
+     * Lets a deactivated account sign in again — `POST /users/{id}/activate`. The answered user
+     * replaces the cached one.
+     *
+     * @param userId - Identifier of the account.
+     * @returns A promise resolving with the user.
+     */
+    const activateUser = (userId: string) =>
+        fetchAny(() =>
+            activateUserById(userId).then((response) => {
+                addUser(response.data);
+                return response.data;
+            })
+        );
+
+    /**
+     * Locks an account out and ends its sessions — `POST /users/{id}/deactivate`. The answered
+     * user replaces the cached one.
+     *
+     * @param userId - Identifier of the account.
+     * @returns A promise resolving with the user.
+     */
+    const deactivateUser = (userId: string) =>
+        fetchAny(() =>
+            deactivateUserById(userId).then((response) => {
+                addUser(response.data);
+                return response.data;
+            })
+        );
+
+    /**
+     * Applies what `UserAccessDialog` confirmed: a role change is a `PATCH`, a status change is
+     * the `activate` / `deactivate` action. Each goes only when it is in `change`, so an unchanged
+     * role never re-runs the backend's grant check.
+     *
+     * @param userId - Identifier of the account.
+     * @param change - The confirmed fields: a new `role`, a new `active` state, or both.
+     * @returns A promise resolving once every requested write has landed.
+     */
+    const applyAccessChange = (userId: string, change: { role?: string; active?: boolean }) =>
+        (change.role === undefined
+            ? Promise.resolve()
+            : updateUser(userId, { role: change.role })
+        ).then(() => {
+            if (change.active === undefined) return;
+            return change.active ? activateUser(userId) : deactivateUser(userId);
+        });
+
+    /**
      * Pauses checkout for one account — `PUT /users/{id}/purchase-hold`. The answered user
      * (hold included) replaces the cached one.
      *
@@ -232,7 +283,7 @@ export const useUsersStore = defineStore('users', () => {
 
     /**
      * Ends a purchase hold now — `DELETE /users/{id}/purchase-hold`. This is the staff review: it
-     * also restarts the count of cancellations. Safe to repeat.
+     * also restarts the count of cancellations. A 409 `USER_PURCHASE_HOLD_NOT_SET` when there is nothing to lift.
      *
      * @param userId - Identifier of the account.
      * @returns A promise resolving with the user.
@@ -269,6 +320,9 @@ export const useUsersStore = defineStore('users', () => {
         deleteUser,
         hardDeleteUser,
         restoreUser,
+        activateUser,
+        deactivateUser,
+        applyAccessChange,
         setPurchaseHold,
         liftPurchaseHold
     };

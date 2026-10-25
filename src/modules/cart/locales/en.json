@@ -8,7 +8,7 @@
         "preorder": "Preorder",
         "backorder": "Backorder",
         "backorder-ships-by": "Out of stock now. Ships by {date}.",
-        "backorder-ships-undated": "Out of stock now. Ships within 30 days."
+        "backorder-ships-undated": "Out of stock now. Ships within {days} days."
     },
     "cart-page": {
         "page-title": "My Cart",

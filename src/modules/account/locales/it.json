@@ -43,8 +43,8 @@
         "button-export-data": "Scarica i miei dati",
         "export-requested": "Stiamo preparando i tuoi dati. Ti invieremo un link via email quando saranno pronti.",
         "button-delete-account": "Elimina account",
-        "confirm-delete-account": "Sei sicuro di voler eliminare il tuo account? Questa azione è irreversibile.",
-        "success-delete-request": "Ti abbiamo inviato un'email di conferma. Controlla la tua casella per completare l'eliminazione.",
+        "confirm-delete-account": "Eliminare il tuo account? Viene bloccato subito e cancellato dopo un breve periodo di tolleranza, e vieni disconnesso. Scarica prima i tuoi dati se ne vuoi una copia. Fino alla cancellazione, il link nell'email, l'accesso o il nostro team possono ripristinarlo.",
+        "deletion-scheduled": "Il tuo account è bloccato e verrà cancellato il {date}. Il link nell'email che ti abbiamo inviato, o l'accesso, lo annulla.",
         "label-current-password": "Password attuale",
         "current-password-required": "La password attuale è obbligatoria",
         "button-submit-password": "Cambia password",
@@ -180,14 +180,20 @@
         "button-go-to-login": "Torna al login",
         "success": "Password aggiornata con successo. Ora puoi effettuare il login."
     },
-    "account-delete-confirm-page": {
-        "page-title": "Conferma eliminazione account",
-        "warning-message": "Pensaci bene. L'eliminazione del tuo account è permanente e non può essere annullata. Tutti i tuoi dati andranno persi.",
-        "label-token": "Token di eliminazione",
-        "token-required": "Il token di eliminazione è obbligatorio",
-        "button-submit": "Elimina il mio account definitivamente",
-        "button-go-back": "Annulla, mantieni il mio account",
-        "success": "Il tuo account è stato eliminato. Ci dispiace vederti andare via."
+    "account-restore-challenge-page": {
+        "page-title": "Ripristina il tuo account",
+        "title": "Il tuo account è in programma per l'eliminazione",
+        "intro": "Hai chiesto di eliminare questo account. Verrà cancellato il {date}. Ripristinalo ora per tenere tutto e accedere, oppure lascialo e verrà cancellato come previsto.",
+        "button-restore": "Ripristina il mio account",
+        "button-leave": "Lascialo eliminato"
+    },
+    "account-restore-page": {
+        "page-title": "Ripristina il tuo account",
+        "intro-message": "Il tuo account è in programma per l'eliminazione. Ripristinalo per tenere tutto esattamente com'era.",
+        "label-token": "Token di ripristino",
+        "token-required": "Il token di ripristino è obbligatorio",
+        "button-submit": "Ripristina il mio account",
+        "success": "Il tuo account è stato ripristinato. Accedi per usarlo di nuovo."
     },
     "navigation": {
         "label-profile": "Profilo",

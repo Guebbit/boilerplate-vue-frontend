@@ -6,7 +6,7 @@
  * is configured. It names each purpose that is configured (usage statistics for Umami, crash
  * reports and page speed for Faro), because one answer covers them all. Accept/Decline both persist
  * through `useAnalyticsConsentStore`, which the http layer's `onRequest` interceptor reads to
- * decide whether an anonymous request carries `X-Analytics-Consent`.
+ * decide whether an anonymous request carries `Analytics-Consent`.
  */
 import { useI18n } from 'vue-i18n';
 import { readFaroConfig, readUmamiConfig } from '@/infrastructure/observability/config.ts';

@@ -48,6 +48,10 @@
         "filter-needs-review": "Controllo",
         "filter-needs-review-all": "Qualsiasi",
         "filter-needs-review-yes": "Da controllare",
+        "chip-erases-on": "Verrà cancellato il {date}",
+        "confirm-restore-scheduled-title": "Ripristinare un account che il titolare ha eliminato?",
+        "confirm-restore-scheduled": "{name} ha chiesto di cancellare questo account. La cancellazione è un suo diritto secondo il GDPR e una sua scelta. Ripristinalo solo se te lo ha chiesto, ad esempio tramite l'assistenza. Riceverà un'email che lo avvisa del ripristino.",
+        "button-confirm-restore-scheduled": "Ripristina comunque",
         "chip-needs-review": "Da controllare"
     },
     "users-form": {
@@ -115,7 +119,10 @@
         "label-website": "Sito web",
         "label-locale": "Lingua",
         "label-role": "Ruolo",
-        "label-active": "Attivo",
+        "button-activate": "Attiva utente",
+        "button-deactivate": "Disattiva utente",
+        "success-activate": "Utente attivato",
+        "success-deactivate": "Utente disattivato",
         "button-submit": "Salva modifiche",
         "reset-form": "Reimposta modifiche",
         "button-go-to-details": "Torna ai dettagli utente",

@@ -72,7 +72,7 @@ describe('AC18 · A bot-shaped login meets the human check', () => {
         cy.logout();
 
         cy.step('the reset request has the check from the start, and is refused without its token');
-        cy.intercept('POST', '**/account/reset').as('reset');
+        cy.intercept('POST', '**/account/password/reset').as('reset');
         cy.visit('/en/password-reset');
         cy.get('[data-test=human-check-altcha]').should('exist');
         cy.get('[data-test=password-reset-email] input').type(OWNER.email);

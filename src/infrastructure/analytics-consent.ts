@@ -4,7 +4,7 @@
  * the same way `session.ts` persists `rememberMe` — through `@guebbit/js-toolkit`'s
  * `getCookie`/`setCookie`, already a dependency here, rather than a new one or `localStorage`.
  * Gated by Umami or Faro being configured (`isAnalyticsConsentEnabled`): the banner, the footer link
- * and `http/interceptors.ts`'s `X-Analytics-Consent` header all follow it. The answer also drives
+ * and `http/interceptors.ts`'s `Analytics-Consent` header all follow it. The answer also drives
  * Umami (it loads only after `granted`, a withdrawal silences it), Faro (it loads only after
  * `granted`, a withdrawal pauses it), and the browsing events the page reports to the backend
  * (`trackBrowsing`).

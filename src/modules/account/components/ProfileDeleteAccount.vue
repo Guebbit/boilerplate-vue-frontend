@@ -12,7 +12,8 @@ export default {
 /**
  * @module
  * Account-deletion trigger: a single confirm-then-request action chained through the app's
- * shared confirmation dialog before it calls the store. Self-wrapped in its own card, like its
+ * shared confirmation dialog before it calls the store. The account is locked at once and erased
+ * after a grace, so success ends the local session and says when, on the page the visitor lands. Self-wrapped in its own card, like its
  * siblings in the bottom grid (`ProfileSessions`, `ProfileAddresses`) — the most destructive
  * control on the page, kept apart from the panels above it rather than sharing their card.
  *
@@ -20,11 +21,14 @@ export default {
  * button that started it, rather than a toast — see docs/theory/request-flow.md.
  */
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '../stores/profile.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
+import { formatDate } from '@/infrastructure/utils/formatters.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
@@ -33,12 +37,17 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 const { t } = useI18n();
 
 /**
+ * Router instance, for leaving the profile once the session is gone.
+ */
+const router = useRouter();
+
+/**
  * Toast dispatcher, used to report every outcome to the visitor.
  */
 const { addMessage } = useNotificationsStore();
 
 /**
- * Starts the account-deletion flow, which finishes at an emailed confirmation link.
+ * Locks the account and schedules its erasure; ends the local session on success.
  */
 const { requestAccountDelete } = useProfileStore();
 
@@ -53,9 +62,27 @@ const {
 } = useBlockingError();
 
 /**
+ * Leaves the profile for Home and says when the account is erased: the session is already gone,
+ * so the profile page has nothing left to show.
+ *
+ * @param schedule - The dates the API answered, when it sent any.
+ * @param schedule.purgeAt - When the account is erased unless restored first.
+ * @returns A promise resolving once the notice is shown.
+ */
+const leaveWithNotice = (schedule?: { purgeAt: string }) =>
+    router
+        .push(routerLinkI18n({ name: 'Home' }))
+        .then(() =>
+            addMessage(
+                t('profile-page.deletion-scheduled', { date: formatDate(schedule?.purgeAt) })
+            )
+        );
+
+/**
  * Starts the account deletion flow after an explicit confirmation.
  *
- * @returns Nothing; success is toasted, a failure blocks in place ({@link deleteError}).
+ * @returns Nothing; success sends the visitor Home with a toast naming the erasure date, a
+ *  failure blocks in place ({@link deleteError}).
  */
 const handleDeleteAccount = singleFlight(() =>
     useDialogStore()
@@ -64,7 +91,7 @@ const handleDeleteAccount = singleFlight(() =>
             if (!accepted) return;
             clearDeleteError();
             return requestAccountDelete()
-                .then(() => addMessage(t('profile-page.success-delete-request')))
+                .then(leaveWithNotice)
                 .catch((error) => reportDeleteError(error));
         })
 );

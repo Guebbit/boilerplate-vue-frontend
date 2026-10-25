@@ -6,12 +6,15 @@
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
+import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import { createPinia, setActivePinia } from 'pinia';
 import { listObservabilityAuditEntries, listAuditEntries } from '@api';
 import * as schemas from '@api/schemas';
 import AdminAuditTab from '../components/AdminAuditTab.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
+import { collectModuleRoutes } from '@/kernel/registry';
+import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractEnvelope,
@@ -32,12 +35,20 @@ vi.mock('@api', () => ({
     )
 }));
 
+/** Memory-history router carrying the real module routes, so a target can link to its page. */
+const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+        { path: '/:locale', component: RouterView, children: collectModuleRoutes(enabledModules) }
+    ]
+});
+
 /** Mounts the audit tab for the platform or the shop trail, optionally filtered to one target. */
 const mountTab = (props: { endpoint: 'platform' | 'shop'; target?: string }) => {
     // The copy buttons toast through the notifications store, which needs an active Pinia.
     const pinia = createPinia();
     setActivePinia(pinia);
-    return mount(AdminAuditTab, { props, global: { plugins: [vuetify, i18n, pinia] } });
+    return mount(AdminAuditTab, { props, global: { plugins: [vuetify, i18n, pinia, router] } });
 };
 
 beforeEach(() => {
@@ -64,13 +75,25 @@ describe('endpoint selection', () => {
         });
     });
 
-    it('merges a fixed target into the shop request', () => {
+    it('starts the shop request on the target it was given', () => {
         mountTab({ endpoint: 'shop', target: 'o1' });
 
         return flushPromises().then(() => {
             expect(listAuditEntries).toHaveBeenCalledWith(
                 expect.objectContaining({ target: 'o1' })
             );
+        });
+    });
+
+    it('ignores a target on the platform trail, whose contract has no such filter', () => {
+        const wrapper = mountTab({ endpoint: 'platform', target: 'o1' });
+
+        return flushPromises().then(() => {
+            expect(listObservabilityAuditEntries).toHaveBeenCalledWith(
+                expect.not.objectContaining({ target: 'o1' })
+            );
+            expect(wrapper.find('[data-test=filter-target]').exists()).toBe(false);
+            expect(wrapper.find('[data-test=filter-own-order]').exists()).toBe(false);
         });
     });
 });
@@ -91,6 +114,114 @@ describe('the filter form', () => {
                     expect.objectContaining({ actor: 'ada@example.com', page: 1 })
                 );
             });
+    });
+});
+
+describe('the target and own-order filters (shop trail)', () => {
+    it('lets the pre-filled target be edited, then searches on the new one', () => {
+        const wrapper = mountTab({ endpoint: 'shop', target: 'o1' });
+
+        return flushPromises()
+            .then(() => {
+                expect(wrapper.get('[data-test=filter-target] input').element).toHaveProperty(
+                    'value',
+                    'o1'
+                );
+                vi.mocked(listAuditEntries).mockClear();
+                return wrapper.get('[data-test=filter-target] input').setValue('u7');
+            })
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(() => flushPromises())
+            .then(() => {
+                expect(listAuditEntries).toHaveBeenCalledWith(
+                    expect.objectContaining({ target: 'u7', page: 1 })
+                );
+            });
+    });
+
+    it('sends ownOrder=true once the box is ticked', () => {
+        const wrapper = mountTab({ endpoint: 'shop' });
+
+        return flushPromises()
+            .then(() => {
+                vi.mocked(listAuditEntries).mockClear();
+                return wrapper.get('[data-test=filter-own-order] input').setValue(true);
+            })
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(() => flushPromises())
+            .then(() => {
+                expect(listAuditEntries).toHaveBeenCalledWith(
+                    expect.objectContaining({ ownOrder: true })
+                );
+            });
+    });
+
+    it('clears both on reset', () => {
+        const wrapper = mountTab({ endpoint: 'shop', target: 'o1' });
+
+        return flushPromises()
+            .then(() => {
+                vi.mocked(listAuditEntries).mockClear();
+                return wrapper.get('[data-test=filter-own-order] input').setValue(true);
+            })
+            .then(() => wrapper.get('[data-test=search-reset]').trigger('click'))
+            .then(() => flushPromises())
+            .then(() => {
+                expect(listAuditEntries).toHaveBeenLastCalledWith(
+                    expect.objectContaining({ target: undefined, ownOrder: undefined })
+                );
+            });
+    });
+});
+
+/** One row on `targetType`/`targetId`, with the fields the table needs. */
+const rowOn = (targetType?: string, targetId?: string) => ({
+    actorUserId: 'u1',
+    actorRole: 'admin',
+    actorScope: 'tenant',
+    action: 'admin.order.shipped',
+    outcome: 'success',
+    timestamp: '2026-10-18T08:00:00.000Z',
+    level: 'info',
+    targetType,
+    targetId
+});
+
+/** Mounts the shop trail answering `items`. */
+const mountWith = (items: ReturnType<typeof rowOn>[]) => {
+    vi.mocked(listAuditEntries).mockResolvedValueOnce(
+        contractEnvelope<Awaited<ReturnType<typeof listAuditEntries>>>(
+            schemas.ListAuditEntriesResponse,
+            {
+                items,
+                meta: { page: 1, pageSize: 50, totalItems: items.length, totalPages: 1 }
+            }
+        )
+    );
+    return mountTab({ endpoint: 'shop' });
+};
+
+describe('the target column', () => {
+    it('shows the type and a short id, linked to the page of a record that has one', () => {
+        const wrapper = mountWith([rowOn('order', '6adc83737c230dfde46df72f')]);
+
+        return flushPromises().then(() => {
+            const cell = wrapper.get('[data-test=audit-target]');
+            expect(cell.text()).toBe('order 6adc8373');
+            expect(cell.element.tagName).toBe('A');
+            expect(cell.attributes('href')).toBe('/en/orders/6adc83737c230dfde46df72f');
+        });
+    });
+
+    it('shows plain text for a target type with no page, and a dash for no target', () => {
+        const wrapper = mountWith([rowOn('api_key', 'k1234567890'), rowOn()]);
+
+        return flushPromises().then(() => {
+            const cells = wrapper.findAll('[data-test=audit-target]');
+            expect(cells).toHaveLength(1);
+            expect(cells[0]?.element.tagName).toBe('SPAN');
+            expect(cells[0]?.text()).toBe('api_key k1234567');
+        });
     });
 });
 

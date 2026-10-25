@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 import { useTwoFactorStore } from '../stores/two-factor.ts';
+import { useDeletionRestoreStore } from '../stores/deletion-restore.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -244,17 +245,17 @@ describe('the enrollment machine', () => {
     });
 
     it('removeMethod and disableAll each refetch status afterward', () => {
-        responses['DELETE /account/2fa/methods/email'] = orvalEnvelope();
-        responses['DELETE /account/2fa'] = orvalEnvelope();
+        responses['POST /account/2fa/methods/email/remove'] = orvalEnvelope();
+        responses['POST /account/2fa/disable'] = orvalEnvelope();
         const store = useTwoFactorStore();
         return store
             .removeMethod('email', '123456')
             .then(() => store.disableAll('123456'))
             .then(() => {
                 expect(requestedUrls()).toEqual([
-                    '/account/2fa/methods/email',
+                    '/account/2fa/methods/email/remove',
                     '/account/2fa',
-                    '/account/2fa',
+                    '/account/2fa/disable',
                     '/account/2fa'
                 ]);
             });
@@ -270,7 +271,7 @@ describe('every write reaches the API each time', () => {
             resendAfter: 30,
             expiresAt: '2026-01-01T00:10:00.000Z'
         });
-        responses['DELETE /account/2fa/methods/email'] = orvalEnvelope();
+        responses['POST /account/2fa/methods/email/remove'] = orvalEnvelope();
         responses['POST /account/2fa/backup-codes'] = orvalEnvelope({
             backupCodes: ['aaa-111'],
             backupCodesRemaining: 10
@@ -286,7 +287,9 @@ describe('every write reaches the API each time', () => {
             .then(() => {
                 const urls = requestedUrls();
                 expect(urls.filter((url) => url.endsWith('/setup'))).toHaveLength(2);
-                expect(urls.filter((url) => url === '/account/2fa/methods/email')).toHaveLength(2);
+                expect(
+                    urls.filter((url) => url === '/account/2fa/methods/email/remove')
+                ).toHaveLength(2);
                 expect(urls.filter((url) => url === '/account/2fa/backup-codes')).toHaveLength(2);
             });
     });
@@ -297,7 +300,7 @@ describe('every write reaches the API each time', () => {
             backupCodes: [],
             backupCodesRemaining: 10
         });
-        responses['DELETE /account/2fa'] = orvalEnvelope();
+        responses['POST /account/2fa/disable'] = orvalEnvelope();
         const store = useTwoFactorStore();
         return store
             .confirmMethod('email', '111111')
@@ -307,7 +310,7 @@ describe('every write reaches the API each time', () => {
             .then(() => {
                 const urls = requestedUrls();
                 expect(urls.filter((url) => url.endsWith('/confirm'))).toHaveLength(2);
-                expect(urls.filter((url) => url === '/account/2fa')).toHaveLength(2 + 4);
+                expect(urls.filter((url) => url === '/account/2fa')).toHaveLength(4);
             });
     });
 });
@@ -440,6 +443,24 @@ describe('the login-time challenge', () => {
             expect(session.accessToken).toBe('stepped-up-jwt');
             expect(session.isAuth).toBe(true);
             expect(store.challenge).toBeUndefined();
+        });
+    });
+
+    it('submitLoginCode opens the restore offer, and adopts no session, for an account in its deletion grace', () => {
+        const store = useTwoFactorStore();
+        store.beginLoginChallenge(MFA_OUTCOME, false);
+        responses['POST /account/login/2fa'] = orvalEnvelope({
+            deletionPending: true,
+            challenge: 'restore-claim-check',
+            expiresAt: '2026-10-24T10:05:00.000Z',
+            purgeAt: '2026-11-23T00:00:00.000Z'
+        });
+
+        return store.submitLoginCode('123456').then((outcome) => {
+            expect(outcome).toBe('deletion-pending');
+            expect(useSessionStore().isAuth).toBe(false);
+            expect(store.challenge).toBeUndefined();
+            expect(useDeletionRestoreStore().pending?.challenge).toBe('restore-claim-check');
         });
     });
 
@@ -631,7 +652,7 @@ describe('per-action loading flags', () => {
     });
 
     it('all three code-proved mutations answer the one prompt flag', () => {
-        responses['DELETE /account/2fa/methods/email'] = orvalEnvelope();
+        responses['POST /account/2fa/methods/email/remove'] = orvalEnvelope();
         responses['POST /account/2fa/backup-codes'] = orvalEnvelope({
             backupCodes: ['ccc-333'],
             backupCodesRemaining: 10

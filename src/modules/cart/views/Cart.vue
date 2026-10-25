@@ -208,27 +208,13 @@ watch([notes, paymentMethodId, addressId], () => {
 });
 
 /**
- * Whether any line cannot be bought as it stands (short, sold out, off sale, removed). Checkout
- * refuses every one of those, so "Place order" waits until the shopper has fixed them. A
- * `preorder` line is buyable: it ships from its release date. So is a `backorder` one: it ships
- * by its restock date.
- */
-const linesNeedAttention = computed(() =>
-    cartItems.value.some(
-        ({ availability }) =>
-            availability !== 'in_stock' &&
-            availability !== 'preorder' &&
-            availability !== 'backorder'
-    )
-);
-
-/**
- * Whether checkout may run yet: every line buyable, a physical basket with a method, and — only
- * when that method demands it — an address. Reads the cart's own `shipping.required` flag rather
+ * Whether checkout may run yet: the cart says every line is buyable (`checkoutable`: short, sold
+ * out, off sale and removed lines block it, preorder and backorder ones do not), a physical basket
+ * has a method, and — only when that method demands it — an address. Reads the cart's own `shipping.required` flag rather
  * than re-deriving it from the lines: the server already decided.
  */
 const canCheckout = computed(() => {
-    if (linesNeedAttention.value) return false;
+    if (!cart.value?.checkoutable) return false;
     // Billing is asked on its own when nothing ships to an address: an entry must be chosen
     // (the picker pre-selects the default, so this only holds back an empty book).
     if (!shipsToAddress.value && billingAddressId.value === undefined) return false;
@@ -275,7 +261,7 @@ const shortfallText = ({ title, requested, availability }: CheckoutShortfallLine
 const orderLink = useOrderLink();
 
 /**
- * Where each unpaid order `CART_OPEN_ORDER_LIMIT` named lives, as links the shopper can follow to
+ * Where each unpaid order `CART_OPEN_ORDER_LIMIT_REACHED` named lives, as links the shopper can follow to
  * pay or cancel one. An order page is the orders module's: a build without
  * it has nowhere to send the shopper, so those ids simply get no link.
  */
@@ -439,7 +425,7 @@ const handleClearCart = singleFlight(() => {
  */
 const onPageHide = () =>
     sendPendingKeepalive((productId, quantity) => {
-        sendKeepalive('PUT', `/cart/${productId}`, { quantity });
+        sendKeepalive('PATCH', `/cart/items/${productId}`, { quantity });
     });
 
 onMounted(() => window.addEventListener('pagehide', onPageHide));
@@ -537,7 +523,7 @@ onMounted(() =>
             <PurchaseHoldNotice :refresh-signal="holdSignal" />
 
             <!--
-                CART_OPEN_ORDER_LIMIT names the unpaid orders in the way: the fix is paying or
+                CART_OPEN_ORDER_LIMIT_REACHED names the unpaid orders in the way: the fix is paying or
                 cancelling one, so each is a link to its page rather than a sentence alone.
             -->
             <v-alert
@@ -562,7 +548,7 @@ onMounted(() =>
                 shopper is not left with a dead button and no reason.
             -->
             <v-alert
-                v-if="linesNeedAttention"
+                v-if="cartItems.length > 0 && !cart?.checkoutable"
                 type="info"
                 variant="tonal"
                 data-test="cart-lines-need-attention"
@@ -587,7 +573,7 @@ onMounted(() =>
                     :unit-price="productOf(item.productId)?.price"
                     :currency="productOf(item.productId)?.currency ?? ''"
                     :can-decrease="!placing && lineQuantity(item) > MIN_LINE_QUANTITY"
-                    :can-increase="!placing"
+                    :can-increase="!placing && item.canIncrease"
                     :remove-disabled="loading"
                     @step="(delta) => stepQuantity(item.productId, item.quantity, delta)"
                     @remove="removeLine(item.productId)"

@@ -10,7 +10,6 @@ import {
     chartTable,
     escapeCsvCell,
     isFlat,
-    MAX_BUCKETS,
     percentChange,
     periodFromQuery,
     periodProblem,
@@ -21,6 +20,9 @@ import {
     xyChartSource
 } from '../domain';
 import type { ChartModel } from '../domain';
+
+/** The ceilings the API states. */
+const LIMITS = { maxRangeDays: 731, maxBuckets: 400 };
 
 /** A fixed "today" so every preset is a known range. */
 const TODAY = new Date(2026, 9, 12);
@@ -41,20 +43,26 @@ describe('periodProblem', () => {
         );
     });
 
-    it('allows exactly two years and refuses a day more', () => {
+    it("allows exactly the API's range and refuses a day more", () => {
+        // 2024-01-01 to 2025-12-31 is 731 days (a leap day inside): the server takes it.
         expect(
-            periodProblem({ from: '2025-01-01', to: '2026-12-31', interval: 'month' })
+            periodProblem({ from: '2024-01-01', to: '2025-12-31', interval: 'month' }, LIMITS)
         ).toBeUndefined();
-        expect(periodProblem({ from: '2024-01-01', to: '2026-12-31', interval: 'month' })).toBe(
-            'too-long'
-        );
+        expect(
+            periodProblem({ from: '2024-01-01', to: '2026-01-01', interval: 'month' }, LIMITS)
+        ).toBe('too-long');
+    });
+
+    it('checks only the shape until the ceilings are read', () => {
+        expect(
+            periodProblem({ from: '2000-01-01', to: '2026-12-31', interval: 'day' })
+        ).toBeUndefined();
     });
 
     it('refuses a daily series longer than the bucket ceiling', () => {
-        expect(periodProblem({ from: '2025-01-01', to: '2026-02-15', interval: 'day' })).toBe(
-            'too-many-buckets'
-        );
-        expect(MAX_BUCKETS).toBe(400);
+        expect(
+            periodProblem({ from: '2025-01-01', to: '2026-02-15', interval: 'day' }, LIMITS)
+        ).toBe('too-many-buckets');
     });
 });
 

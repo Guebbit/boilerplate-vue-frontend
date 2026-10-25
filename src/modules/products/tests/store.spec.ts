@@ -78,6 +78,7 @@ const PRODUCT: Product = {
     currency: 'EUR',
     inStock: true,
     lowStock: false,
+    buyable: true,
     description: 'A gadget',
     imageUrl: 'https://example.com/g.jpg',
     categories: ['tools'],
@@ -575,8 +576,8 @@ describe('useProductsStore', () => {
                 store.filters = {
                     text: 'gad',
                     id: 'p1',
-                    minPrice: 5,
-                    maxPrice: 50,
+                    priceMin: 5,
+                    priceMax: 50,
                     active: false,
                     deleted: true
                 };
@@ -597,8 +598,8 @@ describe('useProductsStore', () => {
                             // `id`, the name the API actually reads; `productId` filters nothing.
                             // The filter box searches for one id; the API reads a batch.
                             id: ['p1'],
-                            minPrice: 5,
-                            maxPrice: 50,
+                            priceMin: 5,
+                            priceMax: 50,
                             // The admin-only "Active" filter must reach the request.
                             active: false,
                             deleted: true

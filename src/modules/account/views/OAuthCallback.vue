@@ -15,7 +15,8 @@ export default {
  * provider: `?linked=<provider>`). Any session is already restored by `tryRestoreAuth`
  * in the router's global guard by the time this view mounts — this only decides where to go next:
  * `Home` on a plain success, `TwoFactorChallenge` when the account has 2FA armed
- * (`?mfaRequired=1`), or a translated explanation with a way back to `/login` when the backend
+ * (`?mfaRequired=1`), `AccountRestoreChallenge` when the account is in the grace of its own
+ * deletion (`?deletionPending=1`), or a translated explanation with a way back to `/login` when the backend
  * redirected here with `?error=<code>`.
  */
 import { computed, onMounted } from 'vue';
@@ -26,6 +27,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { parseJsonSafe } from '@/infrastructure/utils/safe-storage.ts';
 import { useTwoFactorStore } from '../stores/two-factor.ts';
+import { useDeletionRestoreStore } from '../stores/deletion-restore.ts';
 import { usePostLoginRedirect } from '../composables/use-post-login-redirect.ts';
 import type { TwoFactorMethodSummary } from '@api';
 
@@ -108,6 +110,20 @@ const oauthChallenge = computed(() => {
 });
 
 /**
+ * The restore offer's dates, when the callback redirected here with `?deletionPending=1` because
+ * the account is in the grace of its own deletion: `account/oauth/config.ts#oauthFrontendDeletionCallbackUrl`
+ * on the backend wrote this query string. The claim check itself rides an httpOnly cookie.
+ *
+ * `undefined` when either date is missing, treated as no offer at all.
+ */
+const oauthDeletion = computed(() => {
+    const { deletionPending, purgeAt, expiresAt } = route.query;
+    if (deletionPending !== '1' || typeof purgeAt !== 'string' || typeof expiresAt !== 'string')
+        return undefined;
+    return { purgeAt, expiresAt };
+});
+
+/**
  * Where this lands once there is nothing left to decide: `TwoFactorChallenge` with the challenge
  * handed to its store, `Home`/`?continue=` on a plain success, or nowhere at all on an error — the
  * card stays up for the visitor to read.
@@ -122,6 +138,17 @@ onMounted(() => {
             t('oauth.callback-page.linked', { provider: providerLabel(route.query.linked) })
         );
         void redirectAfterLogin();
+        return;
+    }
+
+    if (oauthDeletion.value) {
+        useDeletionRestoreStore().beginOAuth(oauthDeletion.value);
+        void router.push(
+            routerLinkI18n({
+                name: 'AccountRestoreChallenge',
+                query: { continue: route.query.continue }
+            })
+        );
         return;
     }
 

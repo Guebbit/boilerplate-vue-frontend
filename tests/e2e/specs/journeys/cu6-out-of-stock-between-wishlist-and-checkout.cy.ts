@@ -44,8 +44,7 @@ describe('CU6 · Out of stock between wishlist and checkout', () => {
             cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).then((product) => {
                 const free = product?.available ?? 0;
                 expect(free, 'the shelf had units to take').to.be.greaterThan(0);
-                cy.apiAs('admin', 'POST', '/inventory/adjustments', {
-                    productId,
+                cy.apiAs('admin', 'POST', `/inventory/levels/${productId}/adjust`, {
                     delta: -free,
                     note: 'CU6 stocktake'
                 });

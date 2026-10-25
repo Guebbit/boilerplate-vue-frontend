@@ -59,7 +59,7 @@ describe('N2 · Withdraw after delivery', () => {
             cy.get('[data-test=withdrawal-until]').should('exist');
             cy.get('[data-test=order-return]').should('not.exist');
             const paid = { cents: 0 };
-            cy.apiAs<PaymentLike>('user', 'GET', `/payments/order/${orderId}`).then((payment) => {
+            cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`).then((payment) => {
                 paid.cents = Math.round(Number(payment?.amount) * 100);
             });
 
@@ -111,7 +111,7 @@ describe('N2 · Withdraw after delivery', () => {
 
             cy.step('the payment reports the part-refund, and a credit note is issued for it');
             eventually(
-                () => cy.apiAs<PaymentLike>('admin', 'GET', `/payments/order/${orderId}`),
+                () => cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`),
                 (payment) => Number(payment?.amountRefunded) > 0
             ).should((payment) => {
                 expect(Math.round(Number(payment?.amountRefunded) * 100)).to.equal(

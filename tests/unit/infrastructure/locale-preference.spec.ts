@@ -12,7 +12,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import * as schemas from '@api/schemas';
 import { contractResponse } from './http/orval-fixture-schema.ts';
-import { aUser } from '../../support/unit/fixtures.ts';
+import { anAccount } from '../../support/unit/fixtures.ts';
 
 // Deliberately untyped: the mock returns case-by-case fixture shapes the generated types refuse.
 const updateAccountMock = vi.fn();
@@ -53,7 +53,9 @@ const signedIn = () => {
 beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    updateAccountMock.mockResolvedValue(contractResponse(schemas.UpdateAccountResponse, aUser()));
+    updateAccountMock.mockResolvedValue(
+        contractResponse(schemas.UpdateAccountResponse, anAccount())
+    );
 });
 
 describe('persistLocalePreference', () => {

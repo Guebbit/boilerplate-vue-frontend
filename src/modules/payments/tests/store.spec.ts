@@ -14,6 +14,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { usePaymentsStore } from '../store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { aPayment } from '../../../../tests/support/unit/fixtures.ts';
 import * as schemas from '@api/schemas';
 import {
     contractRequest,
@@ -34,7 +35,8 @@ const PAYMENT = {
     provider: 'fake',
     method: 'card',
     amountRefunded: 0,
-    refunds: []
+    refunds: [],
+    actions: { pay: false, sync: false, refund: false, settleByHand: [] }
 };
 
 /** Canned response per `METHOD /url` key; an `Error` or `Declined` entry makes the call reject. */
@@ -89,10 +91,10 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'POST /payments/intent': orvalEnvelope(PAYMENT),
+        'POST /payments': orvalEnvelope(PAYMENT),
         'POST /payments/payment-1/confirm': orvalEnvelope({ ...PAYMENT, status: 'succeeded' }),
         'POST /payments/payment-1/sync': orvalEnvelope({ ...PAYMENT, status: 'succeeded' }),
-        'GET /payments/order/order-1': orvalEnvelope({ ...PAYMENT, status: 'succeeded' })
+        'GET /payments/orders/order-1': orvalEnvelope({ ...PAYMENT, status: 'succeeded' })
     };
 });
 
@@ -140,7 +142,7 @@ describe('fetchPaymentForOrder', () => {
      * the caller — swallowed, it renders the pay form for an order that may already be paid.
      */
     it('lets any other failure through instead of calling it "no payment yet"', () => {
-        responses = { 'GET /payments/order/order-1': new Error('Internal Server Error') };
+        responses = { 'GET /payments/orders/order-1': new Error('Internal Server Error') };
         const store = usePaymentsStore();
         return expect(store.fetchPaymentForOrder('order-1')).rejects.toMatchObject({
             status: 500
@@ -152,7 +154,7 @@ describe('payForOrder', () => {
     it('walks the PSP sequence: intent first, then the confirm with the method reference', () => {
         const store = usePaymentsStore();
         return store.payForOrder('order-1', 'pm_card_visa').then(() => {
-            expect(requestedUrls()).toEqual(['/payments/intent', '/payments/payment-1/confirm']);
+            expect(requestedUrls()).toEqual(['/payments', '/payments/payment-1/confirm']);
             expect(store.payment?.status).toBe('succeeded');
         });
     });
@@ -160,7 +162,7 @@ describe('payForOrder', () => {
     it('sends no Idempotency-Key on the intent, which a stored replay would leak a secret through', () => {
         const store = usePaymentsStore();
         return store.payForOrder('order-1', 'pm_card_visa').then(() => {
-            expect(idempotencyKeyOf('/payments/intent')).toBeUndefined();
+            expect(idempotencyKeyOf('/payments')).toBeUndefined();
             expect(idempotencyKeyOf('/confirm')).toEqual(expect.any(String));
         });
     });
@@ -216,7 +218,7 @@ describe('payForOrder', () => {
 describe('finishAtProvider', () => {
     it('re-reads the payment and settles it', () => {
         const store = usePaymentsStore();
-        return store.finishAtProvider('payment-1').then(() => {
+        return store.finishAtProvider('payment-1', 'order-1').then(() => {
             expect(requestedUrls()).toEqual(['/payments/payment-1/sync']);
             expect(store.payment?.status).toBe('succeeded');
         });
@@ -229,16 +231,52 @@ describe('finishAtProvider', () => {
             message: 'The card was declined'
         };
         const store = usePaymentsStore();
-        return expect(store.finishAtProvider('payment-1')).rejects.toMatchObject({
+        return expect(store.finishAtProvider('payment-1', 'order-1')).rejects.toMatchObject({
             status: 409,
             errors: [{ code: 'PAYMENT_DECLINED' }]
         });
+    });
+
+    // A declined 3-D Secure would otherwise leave "finish" on a payment that is back to `pay`.
+    it('re-reads the payment when the provider declined it, before rejecting', () => {
+        responses['POST /payments/payment-1/sync'] = {
+            status: 409,
+            code: 'PAYMENT_DECLINED',
+            message: 'The card was declined'
+        };
+        const store = usePaymentsStore();
+
+        return store
+            .finishAtProvider('payment-1', 'order-1')
+            .catch(() => undefined)
+            .then(() => {
+                expect(requestedUrls()).toEqual([
+                    '/payments/payment-1/sync',
+                    '/payments/orders/order-1'
+                ]);
+            });
+    });
+
+    it('does not re-read on a refusal that says nothing about the payment', () => {
+        responses['POST /payments/payment-1/sync'] = {
+            status: 429,
+            code: 'RATE_LIMITED',
+            message: 'Slow down'
+        };
+        const store = usePaymentsStore();
+
+        return store
+            .finishAtProvider('payment-1', 'order-1')
+            .catch(() => undefined)
+            .then(() => {
+                expect(requestedUrls()).toEqual(['/payments/payment-1/sync']);
+            });
     });
 });
 
 describe('recordOfflinePayment', () => {
     it('sends the method and reference, and mirrors the settled payment', () => {
-        responses['POST /payments/order/order-1/offline'] = orvalEnvelope({
+        responses['POST /payments/orders/order-1/offline'] = orvalEnvelope({
             ...PAYMENT,
             provider: 'manual',
             method: 'cash',
@@ -269,7 +307,7 @@ describe('recordOfflinePayment', () => {
      * absence and not a decline — the caller's toast carries the server's own message.
      */
     it('lets a refusal through — a card charge already in flight, for instance', () => {
-        responses['POST /payments/order/order-1/offline'] = {
+        responses['POST /payments/orders/order-1/offline'] = {
             status: 409,
             code: 'PAYMENT_IN_FLIGHT',
             message: 'A card payment is already in progress for this order.'
@@ -285,59 +323,54 @@ describe('recordOfflinePayment', () => {
     });
 });
 
-describe('findOrderByReference', () => {
-    it('resolves the order behind the reference', () => {
-        responses['GET /payments/order-by-reference'] = orvalEnvelope({
-            id: 'order-1',
-            userId: 'user-1',
-            email: 'shopper@example.com',
-            items: [],
-            totalItems: 0,
-            totalQuantity: 0,
-            totalPrice: 0,
-            netTotal: 0,
-            taxTotal: 0,
-            shippingNetAmount: 0,
-            shippingTaxAmount: 0,
-            taxSummary: [],
-            status: 'pending'
+describe('findOrderIdByReference', () => {
+    it('resolves the order id of the payment the reference names, filtering the staff list', () => {
+        responses['POST /payments/search'] = orvalEnvelope({
+            items: [PAYMENT],
+            meta: { page: 1, pageSize: 1, totalItems: 1, totalPages: 1 }
         });
         const store = usePaymentsStore();
 
-        return store.findOrderByReference('RF13 2EY8 H44V JAVZ KX80 JRL').then((order) => {
+        return store.findOrderIdByReference('RF13 2EY8 H44V JAVZ KX80 JRL').then((orderId) => {
             const call = vi
                 .mocked(orvalMutator)
-                .mock.calls.map((entry) => entry[0] as { url: string; params?: unknown })
-                .find(({ url }) => url.endsWith('/order-by-reference'));
+                .mock.calls.map((entry) => entry[0] as { url: string; data?: unknown })
+                .find(({ url }) => url.endsWith('/payments/search'));
 
-            expect(call?.params).toEqual({ ref: 'RF13 2EY8 H44V JAVZ KX80 JRL' });
-            expect(order).toMatchObject({ id: 'order-1' });
+            expect(call?.data).toEqual({
+                transferReference: 'RF13 2EY8 H44V JAVZ KX80 JRL',
+                pageSize: 1
+            });
+            expect(orderId).toBe('order-1');
         });
     });
 
     /**
-     * A malformed or an unmatched reference both answer 404, indistinguishably (the API's own
-     * choice, so a wrong-but-close code confirms nothing) — read the same way
-     * `fetchPaymentForOrder` reads its own 404, as an answer rather than a failure.
+     * A malformed or an unmatched reference both answer an empty page, indistinguishably (the
+     * API's own choice, so a wrong-but-close code confirms nothing): an answer, not a failure.
      */
-    it('reads a 404 as "no such order", not as a crash', () => {
+    it('reads an empty page as "no such order", not as a crash', () => {
+        responses['POST /payments/search'] = orvalEnvelope({
+            items: [],
+            meta: { page: 1, pageSize: 1, totalItems: 0, totalPages: 0 }
+        });
         const store = usePaymentsStore();
 
-        return store.findOrderByReference('not-a-real-reference').then((order) => {
-            expect(order).toBeUndefined();
+        return store.findOrderIdByReference('not-a-real-reference').then((orderId) => {
+            expect(orderId).toBeUndefined();
         });
     });
 
     /**
-     * The other half of "absence is an answer": only 404 is. A 500 must reach the caller, or a
-     * transient outage renders as "no order matches this reference" instead of the real failure.
+     * Only an empty page is an absence. A 500 must reach the caller, or a transient outage renders
+     * as "no order matches this reference" instead of the real failure.
      */
-    it('lets any other failure through instead of calling it "no such order"', () => {
-        responses['GET /payments/order-by-reference'] = new Error('Internal Server Error');
+    it('lets any failure through instead of calling it "no such order"', () => {
+        responses['POST /payments/search'] = new Error('Internal Server Error');
         const store = usePaymentsStore();
 
         return expect(
-            store.findOrderByReference('RF13 2EY8 H44V JAVZ KX80 JRL')
+            store.findOrderIdByReference('RF13 2EY8 H44V JAVZ KX80 JRL')
         ).rejects.toMatchObject({
             status: 500
         });
@@ -349,37 +382,46 @@ const refundCall = () =>
     vi
         .mocked(orvalMutator)
         .mock.calls.map((entry) => entry[0] as { url: string; data?: unknown })
-        .find(({ url }) => url.endsWith('/refund'));
+        .find(({ url }) => url.endsWith('/refunds'));
 
-describe('refundForOrder', () => {
+/** The refund record `POST /payments/{id}/refunds` answers with. */
+const REFUND = {
+    id: 'refund-1',
+    amount: 50,
+    currency: 'EUR',
+    status: 'succeeded',
+    reason: 'goodwill',
+    createdAt: '2026-10-24T10:00:00.000Z'
+};
+
+/** The payment and order the refund specs act on. */
+const TARGET_1 = { id: 'payment-1', orderId: 'order-1' };
+
+/** A second payment, for the specs that must not mix two. */
+const TARGET_2 = { id: 'payment-2', orderId: 'order-2' };
+
+describe('refundPayment', () => {
     it('sends no body for a full refund, so everything still refundable goes back', () => {
-        responses['POST /payments/order/order-1/refund'] = orvalEnvelope({
-            ...PAYMENT,
-            status: 'refunded',
-            amountRefunded: 50
-        });
+        responses['POST /payments/payment-1/refunds'] = orvalEnvelope(REFUND);
+        responses['GET /payments/payment-1'] = orvalEnvelope({ ...PAYMENT, amountRefunded: 50 });
 
         return usePaymentsStore()
-            .refundForOrder('order-1')
+            .refundPayment(TARGET_1)
             .then(() => {
                 expect(refundCall()?.data).toBeUndefined();
             });
     });
 
     it('sends the amount for a partial refund, and keeps the running total', () => {
-        responses['POST /payments/order/order-1/refund'] = orvalEnvelope({
-            ...PAYMENT,
-            status: 'succeeded',
-            amountRefunded: 12.5
-        });
-        responses['GET /payments/order/order-1'] = orvalEnvelope({
+        responses['POST /payments/payment-1/refunds'] = orvalEnvelope({ ...REFUND, amount: 12.5 });
+        responses['GET /payments/payment-1'] = orvalEnvelope({
             ...PAYMENT,
             status: 'succeeded',
             amountRefunded: 12.5
         });
         const store = usePaymentsStore();
 
-        return store.refundForOrder('order-1', 12.5).then(() => {
+        return store.refundPayment(TARGET_1, 12.5).then(() => {
             expect(contractRequest(schemas.RefundPaymentByOrderBody, refundCall()?.data)).toEqual({
                 amount: 12.5
             });
@@ -387,22 +429,116 @@ describe('refundForOrder', () => {
         });
     });
 
-    it('re-reads the payment after a refund, since the refund answer carries no actions', () => {
-        responses['POST /payments/order/order-1/refund'] = orvalEnvelope({
-            ...PAYMENT,
-            status: 'succeeded',
-            amountRefunded: 5
-        });
-        responses['GET /payments/order/order-1'] = orvalEnvelope({
+    it('reads the payment again after the 201, and keeps the actions that read carries', () => {
+        responses['POST /payments/payment-1/refunds'] = orvalEnvelope({ ...REFUND, amount: 5 });
+        responses['GET /payments/payment-1'] = orvalEnvelope({
             ...PAYMENT,
             status: 'succeeded',
             amountRefunded: 5,
-            actions: { pay: false, refund: true }
+            actions: { pay: false, sync: false, refund: true, settleByHand: [] }
         });
         const store = usePaymentsStore();
 
-        return store.refundForOrder('order-1', 5).then(() => {
-            expect(store.payment?.actions?.refund, 'money is still left to refund').toBe(true);
+        return store.refundPayment(TARGET_1, 5).then(() => {
+            expect(store.payment?.actions.refund, 'money is still left to refund').toBe(true);
+            expect(requestedUrls()).toEqual(['/payments/payment-1/refunds', '/payments/payment-1']);
+        });
+    });
+
+    // Two operators on the same payment: the loser's answer is a 409, and the page still shows the button.
+    it('re-reads the payment when nothing was left to refund, before rejecting', () => {
+        responses['POST /payments/payment-1/refunds'] = {
+            status: 409,
+            code: 'PAYMENT_NOT_REFUNDABLE',
+            message: 'Nothing left'
+        };
+        const store = usePaymentsStore();
+
+        return store
+            .refundPayment(TARGET_1)
+            .catch(() => undefined)
+            .then(() => {
+                expect(requestedUrls()).toEqual([
+                    '/payments/payment-1/refunds',
+                    '/payments/orders/order-1'
+                ]);
+            });
+    });
+});
+
+describe('settleRefundByHand', () => {
+    const SETTLED = {
+        ...PAYMENT,
+        provider: 'manual',
+        method: 'cash',
+        status: 'succeeded',
+        refundedByHand: true,
+        actions: { pay: false, sync: false, refund: false, settleByHand: [] }
+    };
+
+    it('posts to the refund and mirrors the payment the answer carries', () => {
+        responses['POST /payments/payment-1/refunds/refund-1/settle'] = orvalEnvelope(SETTLED);
+        const store = usePaymentsStore();
+        store.payment = aPayment({
+            id: 'payment-1',
+            actions: { pay: false, sync: false, refund: false, settleByHand: ['refund-1'] }
+        });
+
+        return store
+            .settleRefundByHand({ id: 'payment-1', orderId: 'order-1' }, 'refund-1')
+            .then(() => {
+                expect(requestedUrls()).toEqual(['/payments/payment-1/refunds/refund-1/settle']);
+                expect(store.payment?.actions.settleByHand).toEqual([]);
+            });
+    });
+
+    it('leaves another order’s cached payment alone', () => {
+        responses['POST /payments/payment-9/refunds/refund-1/settle'] = orvalEnvelope({
+            ...SETTLED,
+            id: 'payment-9',
+            orderId: 'order-9'
+        });
+        const store = usePaymentsStore();
+        store.payment = aPayment({ id: 'payment-1' });
+
+        return store
+            .settleRefundByHand({ id: 'payment-9', orderId: 'order-9' }, 'refund-1')
+            .then(() => {
+                expect(store.payment?.id).toBe('payment-1');
+            });
+    });
+
+    it('re-reads the payment when another operator settled it first, before rejecting', () => {
+        responses['POST /payments/payment-1/refunds/refund-1/settle'] = {
+            status: 409,
+            code: 'PAYMENT_REFUND_NOT_OPEN',
+            message: 'Already settled'
+        };
+        const store = usePaymentsStore();
+
+        return expect(store.settleRefundByHand({ id: 'payment-1', orderId: 'order-1' }, 'refund-1'))
+            .rejects.toMatchObject({ errors: [{ code: 'PAYMENT_REFUND_NOT_OPEN' }] })
+            .then(() => {
+                expect(requestedUrls()).toEqual([
+                    '/payments/payment-1/refunds/refund-1/settle',
+                    '/payments/orders/order-1'
+                ]);
+            });
+    });
+});
+
+describe('readPaymentForOrder', () => {
+    it('reads the payment without replacing the order page’s cached one', () => {
+        responses['GET /payments/orders/order-2'] = orvalEnvelope({
+            ...PAYMENT,
+            id: 'payment-2',
+            orderId: 'order-2'
+        });
+        const store = usePaymentsStore();
+
+        return store.readPaymentForOrder('order-2').then((read) => {
+            expect(read?.id).toBe('payment-2');
+            expect(store.payment).toBeUndefined();
         });
     });
 });
@@ -411,22 +547,18 @@ describe('refundForOrder', () => {
 const refundKeyAt = (index: number): string | undefined => {
     const calls = vi
         .mocked(orvalMutator)
-        .mock.calls.filter((entry) => (entry[0] as { url: string }).url.endsWith('/refund'));
+        .mock.calls.filter((entry) => (entry[0] as { url: string }).url.endsWith('/refunds'));
     const options = calls[index]?.[1] as { headers?: Record<string, string> } | undefined;
     return options?.headers?.['Idempotency-Key'];
 };
 
 describe('the refund key after a failure', () => {
     beforeEach(() => {
-        responses['POST /payments/order/order-1/refund'] = new Error('the database went away');
-        responses['POST /payments/order/order-2/refund'] = orvalEnvelope({
+        responses['POST /payments/payment-1/refunds'] = new Error('the database went away');
+        responses['POST /payments/payment-2/refunds'] = orvalEnvelope(REFUND);
+        responses['GET /payments/payment-2'] = orvalEnvelope({
             ...PAYMENT,
-            orderId: 'order-2',
-            status: 'succeeded',
-            amountRefunded: 50
-        });
-        responses['GET /payments/order/order-2'] = orvalEnvelope({
-            ...PAYMENT,
+            id: 'payment-2',
             orderId: 'order-2'
         });
     });
@@ -435,9 +567,9 @@ describe('the refund key after a failure', () => {
         const store = usePaymentsStore();
 
         return store
-            .refundForOrder('order-1')
+            .refundPayment(TARGET_1)
             .catch(() => undefined)
-            .then(() => store.refundForOrder('order-1').catch(() => undefined))
+            .then(() => store.refundPayment(TARGET_1).catch(() => undefined))
             .then(() => {
                 expect(refundKeyAt(1)).toEqual(expect.any(String));
                 expect(refundKeyAt(1)).not.toBe(refundKeyAt(0));
@@ -448,15 +580,15 @@ describe('the refund key after a failure', () => {
         const store = usePaymentsStore();
 
         return store
-            .refundForOrder('order-1')
+            .refundPayment(TARGET_1)
             .catch(() => undefined)
             .then(() => {
-                expect(requestedUrls()).toContain('/payments/order/order-1');
+                expect(requestedUrls()).toContain('/payments/orders/order-1');
             });
     });
 
     it('keeps the key after a lost connection, so the retry replays the first attempt', () => {
-        responses['POST /payments/order/order-1/refund'] = {
+        responses['POST /payments/payment-1/refunds'] = {
             status: 0,
             code: 'NETWORK',
             message: 'offline'
@@ -464,16 +596,16 @@ describe('the refund key after a failure', () => {
         const store = usePaymentsStore();
 
         return store
-            .refundForOrder('order-1')
+            .refundPayment(TARGET_1)
             .catch(() => undefined)
-            .then(() => store.refundForOrder('order-1').catch(() => undefined))
+            .then(() => store.refundPayment(TARGET_1).catch(() => undefined))
             .then(() => {
                 expect(refundKeyAt(1)).toBe(refundKeyAt(0));
             });
     });
 
-    it('never carries a key kept for one order onto a refund of another', () => {
-        responses['POST /payments/order/order-1/refund'] = {
+    it('never carries a key kept for one payment onto a refund of another', () => {
+        responses['POST /payments/payment-1/refunds'] = {
             status: 0,
             code: 'NETWORK',
             message: 'offline'
@@ -481,9 +613,9 @@ describe('the refund key after a failure', () => {
         const store = usePaymentsStore();
 
         return store
-            .refundForOrder('order-1')
+            .refundPayment(TARGET_1)
             .catch(() => undefined)
-            .then(() => store.refundForOrder('order-2'))
+            .then(() => store.refundPayment(TARGET_2))
             .then(() => {
                 expect(refundKeyAt(1)).not.toBe(refundKeyAt(0));
             });

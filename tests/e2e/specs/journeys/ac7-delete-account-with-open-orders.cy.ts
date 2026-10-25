@@ -1,16 +1,20 @@
 // requires-module: account, delivery, orders
 /**
  * @module
- * AC7 · Delete my account while an order is still open. The deletion goes ahead, and the shop
+ * AC7 · Delete my account while an order is still open. The account locks at once and is erased once
+ * its grace has run out, and the shop
  * keeps what the law makes it keep: a paid order is an invoice, so it is detached from the person
  * but stays whole and staff can still ship it; an order that was never paid is no invoice, so its
  * personal details are marked for scrubbing at once and the next sweep wipes them.
  *
- * Demo only: the sweep is run on demand through the job lever (`cy.runJob('reap-orders')`),
- * which a live deployment does not mount. Needs the demo outbox for the two mails.
+ * Demo only: the clock is moved past the grace (`cy.travel`) and the purge and the sweep are run on
+ * demand through the job lever (`cy.runJob`), which a live deployment does not mount. Needs the demo
+ * outbox for the two mails.
  */
-import { expectMailTemplate, mailedLinkUrl } from '../../../support/e2e/commands';
 import { shipTheOpenGroup } from '../../../support/e2e/steps';
+
+/** Past the longest grace the knob allows (31 days), so the purge finds the account due. */
+const PAST_THE_GRACE_MS = 32 * 24 * 60 * 60 * 1000;
 
 /** The tracking code staff type to ship the express order. Chosen here so it is searchable. */
 const TRACKING_CODE = 'TRK-E2E-AC7';
@@ -79,23 +83,21 @@ describe('AC7 · Delete my account while an order is still open', () => {
             availableAsStaff(items[0].product.id).as('freeBefore');
         });
 
-        cy.step('they ask for the deletion and confirm it from the mail');
+        cy.step('they ask for the deletion: the account locks and they are sent Home');
         cy.loginAs('user');
         cy.visit('/en/profile');
         cy.get('[data-test=profile-delete-account] button').click();
         cy.get('[data-test=app-dialog-confirm]').click();
-        cy.accountOf('user').then(({ email }) => {
-            cy.emailTo(email).then((mail) => {
-                expectMailTemplate(mail, 'account.delete-request');
-                cy.visit(mailedLinkUrl(mail));
-            });
-        });
-        cy.get('#account-delete-confirm-page button[type=submit]').click();
         cy.get('#home-page').should('exist');
+        cy.accountOf('user').then(({ email }) => {
+            cy.emailTo(email, (mail) => mail.template === 'account.deletion-scheduled');
+        });
 
-        cy.step('the goodbye is mailed, and the deleted login is refused');
+        cy.step('the grace runs out, the purge erases it, and the goodbye is mailed');
+        cy.travel(PAST_THE_GRACE_MS);
+        cy.runJob('reap-scheduled-deletions').its('result.purged').should('equal', 1);
         cy.accountOf('user').then(({ email, password }) => {
-            cy.emailTo(email, (mail) => mail.template === 'account.delete-confirm');
+            cy.emailTo(email, (mail) => mail.template === 'account.deleted');
             cy.visit('/en/login');
             cy.get('[type=email]').should('not.be.disabled').type(email);
             cy.get('[type=password]').should('not.be.disabled').type(password);

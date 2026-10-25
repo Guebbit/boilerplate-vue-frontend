@@ -74,7 +74,7 @@ beforeEach(() => {
     vi.mocked(removeCartItem).mockResolvedValue(answer);
     vi.mocked(clearCart).mockResolvedValue(answer);
     vi.mocked(setCartShippingMethod).mockResolvedValue(answer);
-    vi.mocked(reorder).mockResolvedValue(answer);
+    vi.mocked(reorder).mockResolvedValue(answered({ cart: SERVER_CART, lines: [] }));
     vi.mocked(mergeCart).mockResolvedValue(answered({ cart: SERVER_CART, lines: [] }));
     vi.mocked(apiCheckout).mockResolvedValue(answered(anOrder()));
 });
@@ -138,7 +138,7 @@ describe('answers that arrive in the order the requests left', () => {
         await read.settled;
 
         expect(store.cartItems).toEqual([
-            { productId: 'p1', quantity: 3, availability: 'in_stock' }
+            { productId: 'p1', quantity: 3, availability: 'in_stock', canIncrease: true }
         ]);
     });
 });

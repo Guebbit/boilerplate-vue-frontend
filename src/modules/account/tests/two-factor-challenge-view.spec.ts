@@ -16,10 +16,13 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 
 wireModulesIntoCore();
 
+/** The router's `push`, shared so a case can see where the view sent the visitor. */
+const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+
 vi.mock('vue-router', () => ({
     RouterLink: { template: '<a><slot /></a>' },
     useRoute: () => ({ fullPath: '/', params: {}, query: {} }),
-    useRouter: () => ({ push: vi.fn(), replace: vi.fn() })
+    useRouter: () => ({ push, replace: vi.fn() })
 }));
 
 /** A login-time MFA challenge, its `expiresAt` the one thing each case below controls. */
@@ -175,6 +178,28 @@ describe('TwoFactorChallenge — the way back to login', () => {
             .then(() => {
                 expect(store.challenge).toBeDefined();
                 expect(wrapper.find('[data-test=two-factor-challenge-submit]').exists()).toBe(true);
+            });
+    });
+
+    it('sends an account in its deletion grace to the restore offer, not to a session', () => {
+        const store = useTwoFactorStore();
+        store.beginLoginChallenge(
+            challengeExpiring(new Date(Date.now() + 300_000).toISOString()),
+            false
+        );
+        vi.spyOn(store, 'submitLoginCode').mockResolvedValue('deletion-pending');
+        push.mockResolvedValue(undefined);
+        const wrapper = mountChallenge();
+
+        return wrapper
+            .get('[data-test=two-factor-challenge-code] input')
+            .setValue('123456')
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                expect(push).toHaveBeenCalledExactlyOnceWith(
+                    expect.objectContaining({ name: 'AccountRestoreChallenge' })
+                );
             });
     });
 });

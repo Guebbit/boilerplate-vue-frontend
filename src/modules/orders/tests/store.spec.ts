@@ -17,7 +17,6 @@ import {
     listOrders,
     searchOrders,
     getOrderById,
-    createOrder as apiCreateOrder,
     updateOrderById,
     deleteOrderById,
     hardDeleteOrderById,
@@ -77,7 +76,6 @@ const RESPONSES = {
     listed: contractResponse(schemas.ListOrdersResponse, EMPTY_PAGE),
     searched: contractResponse(schemas.SearchOrdersResponse, EMPTY_PAGE),
     fetched: contractResponse(schemas.GetOrderByIdResponse, ORDER),
-    created: contractResponse(schemas.CreateOrderResponse, ORDER),
     updated: contractResponse(schemas.UpdateOrderByIdResponse, ORDER),
     deleted: contractResponse(schemas.DeleteOrderByIdResponse),
     hardDeleted: contractResponse(schemas.HardDeleteOrderByIdResponse),
@@ -88,7 +86,6 @@ vi.mock('@api', () => ({
     listOrders: vi.fn(() => Promise.resolve(RESPONSES.listed)),
     searchOrders: vi.fn(() => Promise.resolve(RESPONSES.searched)),
     getOrderById: vi.fn(() => Promise.resolve(RESPONSES.fetched)),
-    createOrder: vi.fn(() => Promise.resolve(RESPONSES.created)),
     updateOrderById: vi.fn(() => Promise.resolve(RESPONSES.updated)),
     deleteOrderById: vi.fn(() => Promise.resolve(RESPONSES.deleted)),
     hardDeleteOrderById: vi.fn(() => Promise.resolve(RESPONSES.hardDeleted)),
@@ -142,23 +139,6 @@ describe('useOrdersStore', () => {
                 .then(() => {
                     expect(searchOrders).toHaveBeenCalledWith({ page: 3, pageSize: 25 });
                 }));
-    });
-
-    describe('createOrder', () => {
-        it('forwards the payload unchanged', () => {
-            const payload = {
-                userId: 'u1',
-                email: 'ada@example.com',
-                items: [{ productId: 'p1', quantity: 1 }]
-            };
-
-            return useOrdersStore()
-                .createOrder(payload)
-                .then(() => {
-                    expect(apiCreateOrder).toHaveBeenCalledWith(payload);
-                    contractRequest(schemas.CreateOrderBody, payload);
-                });
-        });
     });
 
     describe('updateOrder', () => {

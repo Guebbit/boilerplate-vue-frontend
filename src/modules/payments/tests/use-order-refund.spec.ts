@@ -20,8 +20,8 @@ import {
 
 wireModulesIntoCore();
 
-/** Builds a payment whose refund action is allowed or not. */
-const payment = (refund: boolean) => ({
+/** Builds a payment whose refund action is allowed or not, and that names `owed` records to settle. */
+const payment = (refund: boolean, owed: string[] = []) => ({
     id: 'p1',
     orderId: 'o1',
     userId: 'u1',
@@ -32,8 +32,15 @@ const payment = (refund: boolean) => ({
     provider: 'fake',
     method: 'card',
     amountRefunded: refund ? 0 : 50,
-    refunds: [],
-    actions: { pay: false, refund }
+    refunds: owed.map((id) => ({
+        id,
+        amount: 12,
+        currency: 'EUR',
+        status: 'pending',
+        reason: 'goodwill',
+        createdAt: '2026-03-05T10:00:00Z'
+    })),
+    actions: { pay: false, sync: false, refund, settleByHand: owed }
 });
 
 /** Canned response per `METHOD /url` key, set by each test before it acts. */
@@ -60,8 +67,16 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /payments/order/o1': orvalEnvelope(payment(true)),
-        'POST /payments/order/o1/refund': orvalEnvelope(payment(false))
+        'GET /payments/orders/o1': orvalEnvelope(payment(true)),
+        'POST /payments/p1/refunds': orvalEnvelope({
+            id: 'r1',
+            amount: 10,
+            currency: 'EUR',
+            status: 'succeeded',
+            reason: 'goodwill',
+            createdAt: '2026-10-24T10:00:00.000Z'
+        }),
+        'GET /payments/p1': orvalEnvelope(payment(false))
     };
 });
 
@@ -86,12 +101,25 @@ describe('useOrderRefund', () => {
 
         return settled()
             .then(() => {
-                // The refund answer carries no `actions`; the re-read after it does.
-                responses['GET /payments/order/o1'] = orvalEnvelope(payment(false));
                 return refund();
             })
             .then(() => {
                 expect(canRefund.value).toBe(false);
+            });
+    });
+
+    it('lists the hand-paid refunds the server names, and drops one once it is settled', () => {
+        responses['GET /payments/orders/o1'] = orvalEnvelope(payment(false, ['r1']));
+        responses['POST /payments/p1/refunds/r1/settle'] = orvalEnvelope(payment(false));
+        const { settleable, settle } = useOrderRefund(ref('o1'));
+
+        return settled()
+            .then(() => {
+                expect(settleable.value.map((record) => record.id)).toEqual(['r1']);
+                return settle('r1');
+            })
+            .then(() => {
+                expect(settleable.value).toEqual([]);
             });
     });
 

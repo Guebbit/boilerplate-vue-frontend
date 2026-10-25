@@ -65,7 +65,7 @@ describe('FR13 · A slow network', () => {
         cy.navigateTo('/en/products');
         searchAndOpenProduct('product.rich');
         expectIdle();
-        slow('POST', '**/cart', 'addToCart');
+        slow('POST', '**/cart/items', 'addToCart');
         cy.get('[data-test=add-to-cart]').click();
         cy.get('[data-test=add-to-cart]').should('be.disabled');
         expectBusy();
@@ -76,7 +76,7 @@ describe('FR13 · A slow network', () => {
 
         cy.step('the heart waits: busy, then the saved product is let go');
         cy.get('[data-test=wishlist-toggle]').should('contain.text', 'Saved');
-        slow('DELETE', '**/wishlist/*', 'unsave');
+        slow('DELETE', '**/wishlist/items/*', 'unsave');
         cy.get('[data-test=wishlist-toggle]').click();
         cy.get('[data-test=wishlist-toggle]').should('be.disabled');
         expectBusy();
@@ -88,7 +88,7 @@ describe('FR13 · A slow network', () => {
 
         cy.step('two steps on the cart are one request, even when the page is left at once');
         cy.goToCart();
-        cy.intercept('PUT', '**/cart/*').as('setQuantity');
+        cy.intercept('PATCH', '**/cart/items/*').as('setQuantity');
         firstLineQuantity().then((before) => {
             // Both steps and the click on a bar link happen in ONE task, inside the 400 ms debounce:
             // the page is left with the steps still waiting, and they must reach the server all the same.

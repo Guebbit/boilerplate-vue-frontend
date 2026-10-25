@@ -108,7 +108,9 @@ describe('PS3 · The preorder board, from allowance to allocation', () => {
             });
 
             cy.step('the warehouse receives two units: both orders are allocated');
-            cy.apiAs('warehouse', 'POST', '/inventory/receipts', { productId, quantity: 2 });
+            cy.apiAs('warehouse', 'POST', `/inventory/levels/${productId}/receive`, {
+                quantity: 2
+            });
             cy.visit('/en/sales/preorders');
             cy.contains('[data-test=preorder-products] tr', title)
                 .find('[data-test=preorder-outstanding]')

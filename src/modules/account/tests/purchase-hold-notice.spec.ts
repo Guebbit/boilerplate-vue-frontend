@@ -12,11 +12,11 @@ import PurchaseHoldNotice from '../components/PurchaseHoldNotice.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import type { User } from '@types';
+import type { Account } from '@types';
 wireModulesIntoCore();
 
 /** The profile the mocked store holds. */
-const profile = ref<Partial<User> | undefined>();
+const profile = ref<Partial<Account> | undefined>();
 
 /** The mocked store's loader. */
 const fetchProfile = vi.fn(() => Promise.resolve(undefined));

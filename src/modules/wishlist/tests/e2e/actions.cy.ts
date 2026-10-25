@@ -13,7 +13,11 @@ actionTable('wishlist', [
         trigger: () => {
             cy.get('[data-test=wishlist-remove]').first().click();
         },
-        intercept: { method: 'DELETE', url: '**/wishlist/*', operation: '/wishlist/{productId}' },
+        intercept: {
+            method: 'DELETE',
+            url: '**/wishlist/items/*',
+            operation: '/wishlist/items/{productId}'
+        },
         kind: 'row',
         alert: 'wishlist-line-action-error',
         message: 'The removal failed',
@@ -26,7 +30,7 @@ actionTable('wishlist', [
         trigger: () => {
             cy.get('[data-test=wishlist-toggle]').click();
         },
-        intercept: { method: 'PUT', url: '**/wishlist/*', operation: '/wishlist/{productId}' },
+        intercept: { method: 'POST', url: '**/wishlist/items', operation: '/wishlist/items' },
         kind: 'row',
         alert: 'wishlist-toggle-error',
         message: 'The save failed',

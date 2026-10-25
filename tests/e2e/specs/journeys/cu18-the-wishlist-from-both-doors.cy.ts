@@ -45,7 +45,7 @@ describe('CU18 · The wishlist, from both doors', () => {
         cy.subjectProduct('product.barebones').then((bottle) => {
             cy.subjectProduct('product.rich').then((food) => {
                 cy.env(['apiUrl']).then(({ apiUrl }) => {
-                    cy.intercept('PUT', `${String(apiUrl)}/wishlist/*`).as('save');
+                    cy.intercept('POST', `${String(apiUrl)}/wishlist/items`).as('save');
                 });
 
                 cy.step('saves a product from its grid card');

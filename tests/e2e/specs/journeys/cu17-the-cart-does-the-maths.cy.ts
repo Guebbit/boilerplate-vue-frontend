@@ -55,7 +55,7 @@ describe('CU17 · The cart does the maths', () => {
 
                 cy.navigateTo('/en/products');
                 cy.get('[data-test=filter-text] input').type(`${bottle.title}{enter}`);
-                cy.intercept('POST', '**/cart').as('addToCart');
+                cy.intercept('POST', '**/cart/items').as('addToCart');
                 cy.contains('[data-test=product-card]', bottle.title)
                     .find('[data-test=add-to-cart]')
                     .click();
@@ -77,7 +77,7 @@ describe('CU17 · The cart does the maths', () => {
                 cy.step('steps the food up three times and down once, fast');
                 cy.goToCart();
                 cy.get('[data-test=cart-item]').should('have.length', 2);
-                cy.intercept('PUT', `**/cart/${food.id}`).as('setQuantity');
+                cy.intercept('PATCH', `**/cart/items/${food.id}`).as('setQuantity');
                 cy.contains('[data-test=cart-item]', food.title).within(() => {
                     cy.get('[data-test=cart-increase]').click();
                     cy.get('[data-test=cart-increase]').click();
@@ -130,9 +130,9 @@ describe('CU17 · The cart does the maths', () => {
                     'the per-line cap: one more unit is refused, on the cart and on the product page'
                 );
                 const cap = 10;
-                cy.apiAs('user', 'PUT', `/cart/${food.id}`, { quantity: cap });
+                cy.apiAs('user', 'PATCH', `/cart/items/${food.id}`, { quantity: cap });
                 cy.reload();
-                cy.intercept('PUT', `**/cart/${food.id}`).as('pastTheCap');
+                cy.intercept('PATCH', `**/cart/items/${food.id}`).as('pastTheCap');
                 cy.contains('[data-test=cart-item]', food.title)
                     .find('[data-test=cart-increase]')
                     .click();

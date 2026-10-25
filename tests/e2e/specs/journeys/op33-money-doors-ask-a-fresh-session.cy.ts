@@ -136,7 +136,7 @@ describe('OP33 · The money doors ask a fresh session', () => {
         );
         cy.switchUser('manager');
         cy.subjectId('product.rich').then((productId) => {
-            cy.apiAs('manager', 'POST', '/cart', { productId, quantity: 1 });
+            cy.apiAs('manager', 'POST', '/cart/items', { productId, quantity: 1 });
             cy.apiAs('manager', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
             // A staff account has no address on file, and every order needs a billing one.
             cy.apiAs<{ id: string }>('manager', 'POST', '/account/addresses', {

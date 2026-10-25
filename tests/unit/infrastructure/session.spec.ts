@@ -11,7 +11,7 @@ import type { Mock } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import * as schemas from '@api/schemas';
 import { contractResponse } from './http/orval-fixture-schema.ts';
-import { aUser } from '../../support/unit/fixtures.ts';
+import { anAccount } from '../../support/unit/fixtures.ts';
 
 // `vi.fn()` deliberately left untyped: these mocks return partial, case-by-case fixture shapes
 // the real generated envelope types would refuse, and that looseness is the point of a mock.
@@ -116,6 +116,22 @@ describe('setAccessToken — the rememberMe marker, with the isAuth hint left to
         expect(cookieJar().rememberMe).toBe('true');
     });
 
+    it("lasts as long as the server's longest tier", () => {
+        const store = useSessionStore();
+        store.lifetimes = { lifetimeSeconds: { short: 86_400, medium: 604_800, long: 1_209_600 } };
+        const cookieWrites: string[] = [];
+        const setter = vi.spyOn(document, 'cookie', 'set').mockImplementation((value) => {
+            cookieWrites.push(value);
+        });
+
+        store.setAccessToken('token', true);
+        setter.mockRestore();
+
+        const expires = /expires=([^;]+)/.exec(cookieWrites.join(';'))?.[1] ?? '';
+        const days = (new Date(expires).getTime() - Date.now()) / 86_400_000;
+        expect(Math.round(days)).toBe(14);
+    });
+
     it('keeps the marker across a refresh that does not pass `remember`', () => {
         const store = useSessionStore();
         store.setAccessToken('token', true);
@@ -191,7 +207,7 @@ describe('loadViewer', () => {
         getAccountMock.mockResolvedValue(
             contractResponse(
                 schemas.GetAccountResponse,
-                aUser({
+                anAccount({
                     role: 'customer',
                     imageUrl: '/images/abc.png',
                     thumbnailUrl: '/images/thumbs/v1/abc.webp'
@@ -210,7 +226,7 @@ describe('loadViewer', () => {
         getAccountMock.mockResolvedValue(
             contractResponse(
                 schemas.GetAccountResponse,
-                aUser({ role: 'customer', imageUrl: '/images/abc.png' })
+                anAccount({ role: 'customer', imageUrl: '/images/abc.png' })
             )
         );
         const store = useSessionStore();
@@ -228,7 +244,7 @@ describe('loadViewer', () => {
         getAccountMock.mockResolvedValue(
             contractResponse(
                 schemas.GetAccountResponse,
-                aUser({ role: 'customer', verifiedAt: '2026-01-01T00:00:00.000Z' })
+                anAccount({ role: 'customer', verifiedAt: '2026-01-01T00:00:00.000Z' })
             )
         );
         const store = useSessionStore();
@@ -240,7 +256,7 @@ describe('loadViewer', () => {
 
     it('projects verified false while verifiedAt is absent', () => {
         getAccountMock.mockResolvedValue(
-            contractResponse(schemas.GetAccountResponse, aUser({ role: 'customer' }))
+            contractResponse(schemas.GetAccountResponse, anAccount({ role: 'customer' }))
         );
         const store = useSessionStore();
 
@@ -256,7 +272,7 @@ describe('loadViewer', () => {
      */
     it('loads the rules that go with the viewer, not just the projection', () => {
         getAccountMock.mockResolvedValue(
-            contractResponse(schemas.GetAccountResponse, aUser({ role: 'admin' }))
+            contractResponse(schemas.GetAccountResponse, anAccount({ role: 'admin' }))
         );
         getMyAbilitiesMock.mockResolvedValue(
             contractResponse(schemas.GetMyAbilitiesResponse, {
@@ -286,7 +302,7 @@ describe('loadViewer', () => {
      */
     it('answers a checkout ability the same way it answers a CRUD one', () => {
         getAccountMock.mockResolvedValue(
-            contractResponse(schemas.GetAccountResponse, aUser({ role: 'customer' }))
+            contractResponse(schemas.GetAccountResponse, anAccount({ role: 'customer' }))
         );
         getMyAbilitiesMock.mockResolvedValue(
             contractResponse(schemas.GetMyAbilitiesResponse, {
@@ -342,7 +358,7 @@ describe('loadViewer', () => {
      */
     it('carries the published subject set alongside the rules', () => {
         getAccountMock.mockResolvedValue(
-            contractResponse(schemas.GetAccountResponse, aUser({ role: 'admin' }))
+            contractResponse(schemas.GetAccountResponse, anAccount({ role: 'admin' }))
         );
         getMyAbilitiesMock.mockResolvedValue(
             contractResponse(schemas.GetMyAbilitiesResponse, {
@@ -375,7 +391,7 @@ describe('loadViewer', () => {
     /** A response that omits `subjects` altogether must not wipe out a set already known. */
     it('leaves a previously published subject set alone when a response omits it', () => {
         getAccountMock.mockResolvedValue(
-            contractResponse(schemas.GetAccountResponse, aUser({ role: 'admin' }))
+            contractResponse(schemas.GetAccountResponse, anAccount({ role: 'admin' }))
         );
         const store = useSessionStore();
         store.setAbilities({ tenant: [], platform: [], subjects: ['Order'] });
@@ -593,7 +609,7 @@ describe('clearSession', () => {
 describe('refreshToken', () => {
     it('is marked passive, with its abilities re-read: neither is the person acting', () => {
         refreshTokenMock.mockResolvedValue({ data: { token: 'fresh' } });
-        const marked = { headers: { 'X-Session-Passive': 'true' } };
+        const marked = { headers: { 'Session-Passive': 'true' } };
         const store = signedIn();
 
         return store
@@ -710,7 +726,9 @@ describe('refreshToken', () => {
  */
 /** Answers `GET /account/session-config` with the given mode. */
 const answerMode = (mode: 'jwt' | 'cookie') =>
-    getSessionConfigMock.mockResolvedValue({ data: { mode } });
+    getSessionConfigMock.mockResolvedValue({
+        data: { mode, lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 } }
+    });
 
 describe('session modes', () => {
     beforeEach(() => {
@@ -867,12 +885,17 @@ describe('a sign-in in another tab', () => {
     });
 
     it('replaces the person this tab was acting as', () => {
-        getSessionConfigMock.mockResolvedValue({ data: { mode: 'jwt' } });
+        getSessionConfigMock.mockResolvedValue({
+            data: {
+                mode: 'jwt',
+                lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
+            }
+        });
         refreshTokenMock.mockResolvedValue({ data: { token: 'second-persons' } });
         getAccountMock.mockResolvedValue(
             contractResponse(
                 schemas.GetAccountResponse,
-                aUser({ id: SECOND_PERSON, role: 'customer' })
+                anAccount({ id: SECOND_PERSON, role: 'customer' })
             )
         );
         const store = signedIn();

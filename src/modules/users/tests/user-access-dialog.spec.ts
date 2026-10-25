@@ -17,6 +17,7 @@ import type {
     UserAccessDialogRequestOptions,
     UserAccessDialogTarget
 } from '../composables/use-user-access-dialog.ts';
+import { ALL_USER_ACTIONS, userActionsOf } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -154,18 +155,19 @@ const disabledOf = (wrapper: Awaited<ReturnType<typeof mountDialog>>, test: stri
     wrapper.find(`[data-test=${test}]`).classes().includes('v-input--disabled');
 
 /**
- * What the picker offers follows the row's `actions`: the role select is the edit key's and never
- * one's own (the server refuses it), the active switch is the ban key's, a different key.
+ * What the picker offers follows the row's `actions`: the role select is `assignRole`, own account
+ * included (no rule refuses it), the status switch is `deactivate` while active and `activate`
+ * while not.
  */
 describe('UserAccessDialog — what the picker offers', () => {
-    it('offers both the role and the active switch when the row allows update and ban', () =>
+    it('offers both the role and the status switch when the row allows them', () =>
         mountDialog({
             target: {
                 id: 'u1',
                 name: 'ada',
                 role: 'customer',
                 active: true,
-                actions: { update: true, ban: true, delete: false }
+                actions: ALL_USER_ACTIONS
             }
         }).then((wrapper) => {
             expect(disabledOf(wrapper, 'user-access-role')).toBe(false);
@@ -173,35 +175,40 @@ describe('UserAccessDialog — what the picker offers', () => {
         }));
 
     // Support: holds the edit key, not the ban key.
-    it('disables the active switch when the row allows no ban', () =>
+    it('disables the status switch when the row allows no status move', () =>
         mountDialog({
             target: {
                 id: 'u1',
                 name: 'ada',
                 role: 'customer',
                 active: true,
-                actions: { update: true, ban: false, delete: false }
+                actions: userActionsOf({ update: true, assignRole: true })
             }
         }).then((wrapper) => {
             expect(disabledOf(wrapper, 'user-access-role')).toBe(false);
             expect(disabledOf(wrapper, 'user-access-active')).toBe(true);
         }));
 
-    it('disables the role select when the row allows no update', () =>
+    it('disables the role select when the row allows no assignRole', () =>
         mountDialog({
             target: {
                 id: 'u1',
                 name: 'ada',
                 role: 'customer',
                 active: true,
-                actions: { update: false, ban: true, delete: false }
+                actions: userActionsOf({
+                    setPurchaseHold: true,
+                    liftPurchaseHold: true,
+                    activate: true,
+                    deactivate: true
+                })
             }
         }).then((wrapper) => {
             expect(disabledOf(wrapper, 'user-access-role')).toBe(true);
             expect(disabledOf(wrapper, 'user-access-active')).toBe(false);
         }));
 
-    it('never offers the role of the signed-in admin themselves, even with every action allowed', () => {
+    it('offers the signed-in admin their own role when the server allows it', () => {
         useSessionStore().viewer = { id: 'u1', email: 'me@example.com', role: 'admin' };
 
         return mountDialog({
@@ -210,10 +217,10 @@ describe('UserAccessDialog — what the picker offers', () => {
                 name: 'me',
                 role: 'admin',
                 active: true,
-                actions: { update: true, ban: true, delete: true }
+                actions: ALL_USER_ACTIONS
             }
         }).then((wrapper) => {
-            expect(disabledOf(wrapper, 'user-access-role')).toBe(true);
+            expect(disabledOf(wrapper, 'user-access-role')).toBe(false);
             expect(disabledOf(wrapper, 'user-access-active')).toBe(false);
         });
     });
