@@ -72,7 +72,7 @@ const USER_WITH_CONTACT = aUser({
 let loadedUser = LOADED_USER;
 
 /**
- * Answers every GET with {@link LOADED_USER} and every PATCH with a bare success envelope.
+ * Answers every GET with {@link LOADED_USER} and every other call with no body.
  */
 const mockTransport = () => {
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) =>

@@ -52,7 +52,7 @@ const router = createRouter({
 /**
  * Queues GET responses in order, one per call — the initial load, then whatever a mutating action
  * force-refetches afterwards. Any other method the test does not set up its own answer for
- * resolves with a bare success envelope.
+ * resolves with no body.
  *
  * @param users - One `User` fixture per expected GET, in call order.
  */

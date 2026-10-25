@@ -435,9 +435,9 @@ describe('useCartStore', () => {
          * A 200 carrying no order is not a shape this client should crash on: the cart was still
          * emptied server-side, so the success path must run to the end and resolve.
          */
-        it('survives a success envelope with no order in it', () => {
+        it('survives a success with no order in it', () => {
             const store = useCartStore();
-            // @ts-expect-error -- an envelope with no order in it is exactly what this case sends
+            // @ts-expect-error -- a body with no order in it is exactly what this case sends
             vi.mocked(apiCheckout).mockResolvedValueOnce(answered({}));
 
             return store
