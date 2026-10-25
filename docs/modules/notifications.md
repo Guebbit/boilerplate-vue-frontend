@@ -148,14 +148,14 @@ None. The module has no routes.
 
 #### Endpoints called
 
-| Call                              | Response envelope                 |
+| Call                              | Response schema                   |
 | --------------------------------- | --------------------------------- |
 | `GET /notifications`              | `ListNotificationsResponse`       |
 | `POST /notifications/read-all`    | `ReadAllNotificationsResponse`    |
 | `POST /notifications/dismiss-all` | `DismissAllNotificationsResponse` |
 | `DELETE /notifications/{id}`      | `DeleteNotificationByIdResponse`  |
 
-Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract
+Each row registers one Zod schema through the manifest, so enabling the domain turns its contract
 validation on and deleting the folder turns it off. The stream's frames are validated against the
 AsyncAPI schemas by `createSseClient` while validation is on.
 
@@ -177,7 +177,7 @@ AsyncAPI schemas by `createSseClient` while validation is on.
 | `components/NotificationsBell.vue`    | The bell, its badge and its panel.                                                  | [read](../theory/layers.md)           |
 | `domain/describe.ts`                  | Pure: a `code` and its typed `params` to a sentence.                                | [read](../theory/domain-layer.md)     |
 | `types.ts`                            | The row the panel renders.                                                          | [read](../theory/layers.md)           |
-| `response-schemas.ts`                 | One Zod envelope per endpoint called.                                               | [read](../api/openapi-workflow.md)    |
+| `response-schemas.ts`                 | One Zod schema per endpoint called.                                                 | [read](../api/openapi-workflow.md)    |
 | `locales/en.json` · `locales/it.json` | The sentences, keyed by code, and the bell's labels.                                | [read](../tools/i18n.md)              |
 
 ## Libraries

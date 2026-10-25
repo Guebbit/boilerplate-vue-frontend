@@ -145,7 +145,7 @@ This module routes to nothing. It contributes components, schemas or a store to 
 
 #### Endpoints called
 
-| Call                                               | Response envelope                 |
+| Call                                               | Response schema                   |
 | -------------------------------------------------- | --------------------------------- |
 | `POST /delivery/orders/{id}/start`                 | `StartFulfilmentResponse`         |
 | `GET /delivery/orders/{id}`                        | `GetFulfillmentByOrderResponse`   |
@@ -157,7 +157,7 @@ This module routes to nothing. It contributes components, schemas or a store to 
 | `POST /delivery/shipments/{id}/deliver`            | `DeliverShipmentResponse`         |
 | `GET /delivery/methods`                            | `ListShippingMethodsResponse`     |
 
-Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 
 ## Files
 
@@ -174,7 +174,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `locales/en.json`                     | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
 | `locales/it.json`                     | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
 | `module.ts`                           | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots. | [read](../theory/modules.md)          |
-| `response-schemas.ts`                 | One row per endpoint this domain calls, pairing a method and path pattern with the Zod envelope its response is validated against.                                                  | [read](../api/openapi-workflow.md)    |
+| `response-schemas.ts`                 | One row per endpoint this domain calls, pairing a method and path pattern with the Zod schema its response is validated against.                                                    | [read](../api/openapi-workflow.md)    |
 | `store.ts`                            | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                              | [read](../tools/state-and-routing.md) |
 | `tests/`                              | Vitest suites — the store with the transport mocked, and each component and the pure helpers.                                                                                       | [read](../tools/unit-testing.md)      |
 
