@@ -12,6 +12,7 @@ import { listObservabilityAuditEntries, listAuditEntries } from '@api';
 import type { AuditEntryItem } from '@types';
 import type { AdminAuditFilters } from '../types.ts';
 import { translate } from '@/i18n';
+import { getErrorMessage } from '@/infrastructure/utils/errors.ts';
 
 /**
  * Which trail to read: `platform` is the installation-wide log (`GET /observability/audit`,
@@ -75,7 +76,10 @@ export const useAuditTrail = (endpoint: AuditEndpoint): UseAuditTrailReturn => {
                       pageSize: filters.pageSize
                   })
             ).then((response) => response.data),
-        { fallbackErrorMessage: translate('admin-page.error-load-audit') }
+        {
+            fallbackErrorMessage: translate('admin-page.error-load-audit'),
+            resolveError: getErrorMessage
+        }
     );
 
     /**

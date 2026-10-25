@@ -12,6 +12,7 @@ import { useAsyncAction } from '@guebbit/vue-toolkit';
 import { getObservabilityHealth, getObservabilityMetricsOverview } from '@api';
 import type { ObservabilityHealth, ObservabilityMetricsSummary } from '@types';
 import { translate } from '@/i18n';
+import { getErrorMessage } from '@/infrastructure/utils/errors.ts';
 
 /**
  * Shape returned by {@link useAdminObservability}: the two panels' payloads and per-call
@@ -79,7 +80,8 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
         loading: loadingHealth,
         run: runHealth
     } = useAsyncAction(() => getObservabilityHealth().then((response) => response.data), {
-        fallbackErrorMessage: translate('admin-page.error-load-health')
+        fallbackErrorMessage: translate('admin-page.error-load-health'),
+        resolveError: getErrorMessage
     });
 
     /**
@@ -92,7 +94,8 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
         loading: loadingMetrics,
         run: runMetrics
     } = useAsyncAction(() => getObservabilityMetricsOverview().then((response) => response.data), {
-        fallbackErrorMessage: translate('admin-page.error-load-metrics')
+        fallbackErrorMessage: translate('admin-page.error-load-metrics'),
+        resolveError: getErrorMessage
     });
 
     /**

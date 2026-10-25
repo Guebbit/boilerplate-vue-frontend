@@ -34,6 +34,7 @@ import {
     listWebhookEvents
 } from '@api';
 import { translate } from '@/i18n';
+import { getErrorMessage } from '@/infrastructure/utils/errors.ts';
 import type { AxiosRequestConfig } from 'axios';
 import type {
     WebhookSubscription,
@@ -280,7 +281,8 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         loading: loadingEventCatalogue,
         run: runEventCatalogue
     } = useAsyncAction(() => listWebhookEvents().then((r) => r.data), {
-        fallbackErrorMessage: translate('webhooks-form.error-load-events')
+        fallbackErrorMessage: translate('webhooks-form.error-load-events'),
+        resolveError: getErrorMessage
     });
 
     /**
