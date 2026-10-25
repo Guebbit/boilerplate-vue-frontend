@@ -17,7 +17,8 @@ import {
     eventually,
     idFromLocation,
     orderNumberShown,
-    searchAndOpenProduct
+    searchAndOpenProduct,
+    paymentOfOrder
 } from '../../../support/e2e/steps';
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
 
@@ -81,7 +82,7 @@ describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
             });
             // The refund is the payments module answering the cancel, so it may land a beat later.
             eventually(
-                () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`),
+                () => paymentOfOrder<PaymentLike>('user', orderId),
                 (payment) => payment?.displayStatus === 'refunded'
             ).should((payment) => {
                 expect(payment?.displayStatus).to.equal('refunded');

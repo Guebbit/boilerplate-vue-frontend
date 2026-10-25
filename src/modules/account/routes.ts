@@ -96,7 +96,7 @@ export default [
     {
         // Signed in, unlike the confirms above: the download is the account's own data, and the
         // API asks for a fresh session before sending it. The id in the path is not a credential.
-        path: 'account-export/:id',
+        path: 'account-export',
         name: 'AccountExportDownload',
         meta: { access: 'auth', title: 'account-export-page.page-title' },
         component: () => import('./views/AccountExportDownload.vue')

@@ -20,6 +20,8 @@
         "filter-user-id": "User ID",
         "filter-product-id": "Product ID",
         "filter-email": "Email",
+        "filter-order-number": "Order number",
+        "filter-order-number-hint": "As the customer quotes it, e.g. #2026-41",
         "filter-status": "Status",
         "filter-status-any": "All",
         "filter-fulfillment-status": "Fulfilment",

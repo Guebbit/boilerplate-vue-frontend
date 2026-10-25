@@ -1603,6 +1603,986 @@ export interface RefreshTokenResponse {
     token: string;
 }
 
+export interface ExportSession {
+    id: Id;
+    createdAt: string;
+    expiration: string;
+    lastUsedAt?: string;
+    /** The coarse device label stored at sign-in (`cookie` mode only). */
+    device?: string;
+}
+
+export interface ExportLinkedProvider {
+    /** Registry name of the provider, e.g. `google`. */
+    provider: string;
+    /** The provider's own stable identifier for the account (its `sub`), an online identifier under GDPR Art. 4(1). */
+    providerId: string;
+    connectedAt: string;
+}
+
+export interface ExportTwoFactorMethod {
+    /** Wire name of the factor, e.g. `totp` or `email`. */
+    method: string;
+    /** When the factor was armed. */
+    enrolledAt: string;
+}
+
+export interface ExportSignInMethods {
+    /** The identity providers linked to the account. */
+    providers: ExportLinkedProvider[];
+    /** The second factors armed on the account. A setup never confirmed is left out. */
+    twoFactor: ExportTwoFactorMethod[];
+}
+
+export type FeedbackCategory = (typeof FeedbackCategory)[keyof typeof FeedbackCategory];
+
+export const FeedbackCategory = {
+    order: 'order',
+    cancellation: 'cancellation',
+    return: 'return',
+    payment: 'payment',
+    account: 'account',
+    privacy: 'privacy',
+    other: 'other'
+} as const;
+
+export type FeedbackRequestStatus =
+    (typeof FeedbackRequestStatus)[keyof typeof FeedbackRequestStatus];
+
+export const FeedbackRequestStatus = {
+    new: 'new',
+    in_progress: 'in_progress',
+    resolved: 'resolved',
+    spam: 'spam'
+} as const;
+
+export interface ExportFeedbackTicket {
+    id: Id;
+    name?: string;
+    email: Email;
+    subject: string;
+    message: string;
+    category?: FeedbackCategory;
+    orderNumber?: string;
+    status: FeedbackRequestStatus;
+    respondedAt?: string;
+    createdAt?: string;
+}
+
+export interface CartItem {
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
+}
+
+export interface WishlistExportItem {
+    productId: Id;
+}
+
+/**
+ * An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of "absent". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards.
+ * @minLength 1
+ * @maxLength 64
+ */
+export type Sku = string;
+
+/**
+ * When a product ships from, as an ISO 8601 date-time with a zone. A product with a future date that is active and purchasable is a preorder. At most one year ahead (Google's `availability_date` rule); a date in the past is accepted and simply means "released". Moving it later notifies the buyers who already paid (`delivery`).
+ */
+export type ReleaseDate = string;
+
+/**
+ * WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%.
+ */
+export type RateType = (typeof RateType)[keyof typeof RateType];
+
+export const RateType = {
+    standard: 'standard',
+    'zero-rated': 'zero-rated',
+    exempt: 'exempt'
+} as const;
+
+export interface OrderLineProduct {
+    id: Id;
+    title: string;
+    /**
+     * Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.
+     * @minimum 0
+     */
+    price: number;
+    description?: string;
+    requiresShipping?: boolean;
+    noWithdrawal?: boolean;
+    sku?: Sku;
+    /** @minimum 0 */
+    weight?: number;
+    releaseDate?: ReleaseDate;
+    /** The line was sold before its release date, frozen at checkout. `delivery` reads it, never the catalogue, to decide which fulfillment order the line belongs to: a bank transfer may be paid a week after the order was placed. */
+    preorder?: boolean;
+    categories?: string[];
+    tags?: string[];
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
+    /**
+     * The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.
+     * @minimum 0
+     * @maximum 1
+     */
+    taxRate: number;
+    rateType?: RateType;
+}
+
+export interface OrderLineCurrent {
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+}
+
+export interface OrderItem {
+    product: OrderLineProduct;
+    /** @minimum 1 */
+    quantity: number;
+    locale: Locale;
+    /**
+     * How many of `quantity` were owed rather than on the shelf when the order was placed. Absent when the shelf covered the whole line.
+     * @minimum 1
+     */
+    backorderedQuantity?: number;
+    /** When the owed units were promised: the product's `restockDate`, or the day the order was placed plus 30 days when it had none. Present with `backorderedQuantity` and frozen with it, so a later change to the catalogue moves no promise. */
+    promisedAt?: string;
+    /** Whether `promisedAt` was a date the product named. `false` means the buyer was promised delivery "within 30 days" of the order. Present with `promisedAt`. */
+    promiseDated?: boolean;
+    /** The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`. */
+    current: OrderLineCurrent | null;
+    /**
+     * VAT included in this line's total, at its own frozen `taxRate`.
+     * @minimum 0
+     */
+    readonly taxAmount: number;
+    /**
+     * This line's total excluding VAT — `price × quantity` minus `taxAmount`.
+     * @minimum 0
+     */
+    readonly netAmount: number;
+}
+
+export interface OrderTaxSummaryRow {
+    /**
+     * The decimal rate this row is for (`0.22` for 22%) — never repeated across rows.
+     * @minimum 0
+     */
+    rate: number;
+    /** @minimum 0 */
+    netAmount: number;
+    /** @minimum 0 */
+    taxAmount: number;
+    /**
+     * `netAmount + taxAmount`, not re-derived from a price.
+     * @minimum 0
+     */
+    grossAmount: number;
+}
+
+export interface OrderAddress {
+    fullName: AddressFullName;
+    street: AddressStreet;
+    city: AddressCity;
+    zip: AddressZip;
+    country: CountryCode;
+    phone?: AddressPhone;
+}
+
+/**
+ * How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.
+ */
+export type PaymentMethodId = (typeof PaymentMethodId)[keyof typeof PaymentMethodId];
+
+export const PaymentMethodId = {
+    card: 'card',
+    bank_transfer: 'bank_transfer'
+} as const;
+
+/**
+ * Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`.
+ */
+export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
+
+export const OrderStatus = {
+    pending: 'pending',
+    paid: 'paid',
+    processing: 'processing',
+    shipped: 'shipped',
+    delivered: 'delivered',
+    cancelled: 'cancelled'
+} as const;
+
+/**
+ * Where the order's MONEY stands, beside `status` — Shopify's `financial_status`. `unpaid` until a payment lands; `paid`; then `partially_refunded` once some but not all of it went back, and `refunded` once all of it did. Read-only: `payments` stamps the refund states, `orders` derives the first two.
+ */
+export type OrderPaymentStatus = (typeof OrderPaymentStatus)[keyof typeof OrderPaymentStatus];
+
+export const OrderPaymentStatus = {
+    unpaid: 'unpaid',
+    paid: 'paid',
+    partially_refunded: 'partially_refunded',
+    refunded: 'refunded'
+} as const;
+
+/**
+ * Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from the status and the fulfilment summary delivery reports. First match wins: `fulfilled` once everything arrived; `shipped` once everything has left; `partially_fulfilled` once something left and more remains; `on_hold` while every remaining unit is held back; `in_progress` while being prepared; `unfulfilled` before work starts, and for a pending or cancelled order. Read-only.
+ */
+export type OrderFulfillmentStatus =
+    (typeof OrderFulfillmentStatus)[keyof typeof OrderFulfillmentStatus];
+
+export const OrderFulfillmentStatus = {
+    unfulfilled: 'unfulfilled',
+    in_progress: 'in_progress',
+    on_hold: 'on_hold',
+    partially_fulfilled: 'partially_fulfilled',
+    shipped: 'shipped',
+    fulfilled: 'fulfilled'
+} as const;
+
+/**
+ * Where any return on the order stands — Shopify's `returnStatus`. `none` when no return holds goods; `requested` while one awaits staff; `in_progress` once approved and awaiting its goods; `partially_returned` / `returned` once received goods cover some / every unit on the order. Read-only: `returns` stamps it, and `delivered` stays terminal — a return is its own object, not an order status.
+ */
+export type OrderReturnStatus = (typeof OrderReturnStatus)[keyof typeof OrderReturnStatus];
+
+export const OrderReturnStatus = {
+    none: 'none',
+    requested: 'requested',
+    in_progress: 'in_progress',
+    partially_returned: 'partially_returned',
+    returned: 'returned'
+} as const;
+
+export interface ExportOrder {
+    id: Id;
+    userId?: Id;
+    email: Email;
+    items: OrderItem[];
+    /**
+     * Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
+     * @minimum 0
+     */
+    totalItems: number;
+    /**
+     * Sum of `quantity` across every line item.
+     * @minimum 0
+     */
+    totalQuantity: number;
+    /**
+     * Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
+     * @minimum 0
+     */
+    totalPrice: number;
+    /** ISO-4217 currency code this order was priced in (e.g. EUR). */
+    readonly currency: string;
+    /**
+     * Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
+     * @minimum 0
+     */
+    readonly netTotal: number;
+    /**
+     * Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers.
+     * @minimum 0
+     */
+    readonly taxTotal: number;
+    /**
+     * Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
+     * @minimum 0
+     */
+    readonly shippingNetAmount: number;
+    /**
+     * Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
+     * @minimum 0
+     */
+    readonly shippingTaxAmount: number;
+    /** One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines. */
+    readonly taxSummary: readonly OrderTaxSummaryRow[];
+    /** Optional order notes */
+    notes?: string;
+    /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
+    shippingMethod?: string;
+    /**
+     * What that method cost at checkout time — a later rate change cannot re-price history.
+     * @minimum 0
+     */
+    shippingCost?: number;
+    shippingAddress?: OrderAddress;
+    billingAddress?: OrderAddress;
+    paymentMethod?: PaymentMethodId;
+    payBy?: string;
+    readonly orderNumber: string;
+    status: OrderStatus;
+    paymentStatus: OrderPaymentStatus;
+    fulfillmentStatus: OrderFulfillmentStatus;
+    returnStatus: OrderReturnStatus;
+    /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
+    readonly withdrawUntil?: string;
+    paidAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
+}
+
+/**
+ * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`.
+ */
+export type OrderTimelineType = (typeof OrderTimelineType)[keyof typeof OrderTimelineType];
+
+export const OrderTimelineType = {
+    created: 'created',
+    paid: 'paid',
+    processing: 'processing',
+    shipped: 'shipped',
+    delivered: 'delivered',
+    cancelled: 'cancelled',
+    status_overridden: 'status_overridden',
+    payment_declined: 'payment_declined',
+    refund_issued: 'refund_issued',
+    refund_settled: 'refund_settled',
+    refund_failed: 'refund_failed',
+    shipment_shipped: 'shipment_shipped',
+    shipment_delivered: 'shipment_delivered',
+    fulfillment_held: 'fulfillment_held',
+    fulfillment_released: 'fulfillment_released',
+    remainder_cancelled: 'remainder_cancelled',
+    return_requested: 'return_requested',
+    return_approved: 'return_approved',
+    return_declined: 'return_declined',
+    return_received: 'return_received',
+    return_closed: 'return_closed',
+    invoice_issued: 'invoice_issued',
+    credit_note_issued: 'credit_note_issued',
+    release_date_moved: 'release_date_moved',
+    delay_notice_sent: 'delay_notice_sent',
+    address_corrected: 'address_corrected'
+} as const;
+
+/**
+ * Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both.
+ */
+export type OrderTimelineExportEntryAudience =
+    (typeof OrderTimelineExportEntryAudience)[keyof typeof OrderTimelineExportEntryAudience];
+
+export const OrderTimelineExportEntryAudience = {
+    buyer: 'buyer',
+    staff: 'staff'
+} as const;
+
+/**
+ * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
+ */
+export type OrderTimelineExportEntryData = { [key: string]: unknown };
+
+export interface OrderTimelineExportEntry {
+    orderId: Id;
+    id: Id;
+    at: string;
+    type: OrderTimelineType;
+    /** Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both. */
+    audience: OrderTimelineExportEntryAudience;
+    /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
+    actor?: Id;
+    /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
+    text?: string;
+    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
+    data: OrderTimelineExportEntryData;
+}
+
+export type RefundStatus = (typeof RefundStatus)[keyof typeof RefundStatus];
+
+export const RefundStatus = {
+    pending: 'pending',
+    succeeded: 'succeeded',
+    failed: 'failed'
+} as const;
+
+/**
+ * Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to; `late_payment` — the money arrived after the order could no longer be paid (its stock reservation had expired or it was cancelled), so the sale was lost and the money went back. The buyer is mailed it like a cancellation's refund.
+ */
+export type RefundReason = (typeof RefundReason)[keyof typeof RefundReason];
+
+export const RefundReason = {
+    cancellation: 'cancellation',
+    goodwill: 'goodwill',
+    return: 'return',
+    late_payment: 'late_payment'
+} as const;
+
+/**
+ * Why the provider last refused a refund, as a closed code. Staff only (`display:Payment`). `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
+ */
+export type RefundFailureReason = (typeof RefundFailureReason)[keyof typeof RefundFailureReason];
+
+export const RefundFailureReason = {
+    declined: 'declined',
+    insufficient_funds: 'insufficient_funds',
+    expired_or_canceled_card: 'expired_or_canceled_card',
+    lost_or_stolen_card: 'lost_or_stolen_card',
+    provider_unavailable: 'provider_unavailable',
+    unknown: 'unknown'
+} as const;
+
+/**
+ * One attempt to give money back — a record per attempt, not a field on the payment. The idempotency key is stored but never published. The provider's refund id and a failed refund's `failureReason` go to staff only (`display:Payment`); the provider's own error wording stays in the logs.
+ */
+export interface Refund {
+    id: Id;
+    /**
+     * The amount returned, in the payment's own `currency`.
+     * @minimum 0
+     */
+    amount: number;
+    /** ISO-4217 currency code, copied from the payment. */
+    currency: string;
+    /** `pending` while the provider is being asked; `failed` when it refused — a sweep retries the same refund with the same idempotency key; `succeeded` once the money is confirmed back (or, for a hand-paid payment, reported back by the operator). */
+    status: RefundStatus;
+    reason: RefundReason;
+    returnId?: Id;
+    /** When the refund succeeded. Absent while it has not. */
+    settledAt?: string;
+    /** The provider's id for the refund (Stripe's `re_…`). Staff only. */
+    providerRefundRef?: string;
+    failureReason?: RefundFailureReason;
+    createdAt: string;
+}
+
+export type ExportPaymentStatus = (typeof ExportPaymentStatus)[keyof typeof ExportPaymentStatus];
+
+export const ExportPaymentStatus = {
+    requires_confirmation: 'requires_confirmation',
+    requires_action: 'requires_action',
+    processing: 'processing',
+    succeeded: 'succeeded',
+    declined: 'declined',
+    cancelled: 'cancelled'
+} as const;
+
+export interface ExportPayment {
+    id: Id;
+    orderId: Id;
+    /** @minimum 0 */
+    amount: number;
+    currency: string;
+    /** @minimum 0 */
+    amountRefunded: number;
+    refunds: Refund[];
+    status: ExportPaymentStatus;
+    provider: string;
+    cardLast4?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface ExportInvoiceDocument {
+    orderId: Id;
+    number: string;
+    issuedAt: string;
+    currency: string;
+    /** @minimum 0 */
+    grandTotal: number;
+}
+
+/**
+ * One product in a shipment.
+ */
+export interface ShipmentLine {
+    productId: Id;
+    title: string;
+    /** @minimum 1 */
+    quantity: number;
+}
+
+export type ExportShipmentStatus = (typeof ExportShipmentStatus)[keyof typeof ExportShipmentStatus];
+
+export const ExportShipmentStatus = {
+    shipped: 'shipped',
+    delivered: 'delivered'
+} as const;
+
+/**
+ * A shipment as an account export carries it — the record, without the caller's `actions`.
+ */
+export interface ExportShipment {
+    id: Id;
+    orderId: Id;
+    fulfillmentOrderId: Id;
+    /** @minimum 1 */
+    number: number;
+    trackingCode?: string;
+    status: ExportShipmentStatus;
+    lines: ShipmentLine[];
+    shippedAt: string;
+    deliveredAt?: string;
+}
+
+/**
+ * `digital` when no line rides in a parcel; its act is `fulfill`, not a shipment.
+ */
+export type FulfillmentOrderKind = (typeof FulfillmentOrderKind)[keyof typeof FulfillmentOrderKind];
+
+export const FulfillmentOrderKind = {
+    physical: 'physical',
+    digital: 'digital'
+} as const;
+
+/**
+ * Where a fulfillment order stands (Shopify's names). `open` until something ships; `in_progress` once part of it has shipped and lines remain; `on_hold` while staff, or the stock it awaits, holds it back; `closed` once nothing remains and something shipped from it; `cancelled` once nothing remains and nothing ever shipped from it.
+ */
+export type FulfillmentOrderStatus =
+    (typeof FulfillmentOrderStatus)[keyof typeof FulfillmentOrderStatus];
+
+export const FulfillmentOrderStatus = {
+    open: 'open',
+    in_progress: 'in_progress',
+    on_hold: 'on_hold',
+    closed: 'closed',
+    cancelled: 'cancelled'
+} as const;
+
+/**
+ * One product on a fulfillment order, with how much has shipped, been cancelled and still remains.
+ */
+export interface FulfillmentOrderLine {
+    productId: Id;
+    /** The product's title as the order froze it. */
+    title: string;
+    /**
+     * Units this fulfillment order carries.
+     * @minimum 1
+     */
+    quantity: number;
+    /** @minimum 0 */
+    shippedQuantity: number;
+    /**
+     * Units cancelled before they shipped — a remainder cancel.
+     * @minimum 0
+     */
+    cancelledQuantity: number;
+    /**
+     * `quantity − shippedQuantity − cancelledQuantity`, computed here so no client counts.
+     * @minimum 0
+     */
+    remaining: number;
+}
+
+/**
+ * What a hold means to the BUYER, whatever staff's reason: `awaiting_stock` (the goods are not here yet), `check_address` (the buyer can act: the address needs a look), `delayed` (held for a check, said plainly). A reason that must stay quiet, such as `high_risk`, reads as `delayed`, so a notice never reveals a screening result. The reason itself (`FulfillmentHoldReason`) is staff's.
+ */
+export type FulfillmentHoldNotice =
+    (typeof FulfillmentHoldNotice)[keyof typeof FulfillmentHoldNotice];
+
+export const FulfillmentHoldNotice = {
+    awaiting_stock: 'awaiting_stock',
+    check_address: 'check_address',
+    delayed: 'delayed'
+} as const;
+
+/**
+ * Why a fulfillment order is on hold (Shopify's hold reasons). `awaiting_stock` is set only by the allocation of stock, and released only by it; the other three are staff's.
+ */
+export type FulfillmentHoldReason =
+    (typeof FulfillmentHoldReason)[keyof typeof FulfillmentHoldReason];
+
+export const FulfillmentHoldReason = {
+    awaiting_stock: 'awaiting_stock',
+    incorrect_address: 'incorrect_address',
+    high_risk: 'high_risk',
+    other: 'other'
+} as const;
+
+/**
+ * Who cancelled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `order`: the whole order was cancelled.
+ */
+export type FulfillmentCancelReason =
+    (typeof FulfillmentCancelReason)[keyof typeof FulfillmentCancelReason];
+
+export const FulfillmentCancelReason = {
+    buyer: 'buyer',
+    staff: 'staff',
+    order: 'order'
+} as const;
+
+/**
+ * A fulfillment order as an account export carries it, with staff's hold note (their assessment of the buyer is the buyer's data) and without who wrote it.
+ */
+export interface ExportFulfillmentOrder {
+    id: Id;
+    orderId: Id;
+    /** @minimum 1 */
+    number: number;
+    kind: FulfillmentOrderKind;
+    status: FulfillmentOrderStatus;
+    lines: FulfillmentOrderLine[];
+    holdNotice?: FulfillmentHoldNotice;
+    /** @maxLength 500 */
+    holdMessage?: string;
+    holdReason?: FulfillmentHoldReason;
+    /**
+     * Staff's free text about the hold. Present until the retention sweep unsets it.
+     * @maxLength 1000
+     */
+    holdNote?: string;
+    agreedAt?: string;
+    expectedAt?: string;
+    /** When the buyer was last told the date had moved or would be missed. */
+    lastNoticeAt?: string;
+    cancelReason?: FulfillmentCancelReason;
+}
+
+/**
+ * Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`.
+ */
+export type ReturnStatus = (typeof ReturnStatus)[keyof typeof ReturnStatus];
+
+export const ReturnStatus = {
+    requested: 'requested',
+    approved: 'approved',
+    declined: 'declined',
+    received: 'received',
+    closed: 'closed'
+} as const;
+
+/**
+ * Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
+ */
+export type ReturnReason = (typeof ReturnReason)[keyof typeof ReturnReason];
+
+export const ReturnReason = {
+    withdrawal: 'withdrawal',
+    defective: 'defective',
+    wrong_item: 'wrong_item',
+    other: 'other'
+} as const;
+
+export type ExportReturnLinesItem = {
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
+    title: string;
+};
+
+export interface ExportReturn {
+    id: Id;
+    orderId: Id;
+    status: ReturnStatus;
+    reason: ReturnReason;
+    note?: string;
+    declineReason?: string;
+    lines: ExportReturnLinesItem[];
+    createdAt?: string;
+}
+
+/**
+ * Whether the credential works right now, decided by the server. `revoked` and `expired` are final. `suspended` means the person who minted it can no longer sign in (banned, soft-deleted or erased): the key is refused with 401 and comes back by itself if they do. Checked in that order, so a revoked key never reads as `suspended`.
+ */
+export type ApiKeyStatus = (typeof ApiKeyStatus)[keyof typeof ApiKeyStatus];
+
+export const ApiKeyStatus = {
+    active: 'active',
+    expired: 'expired',
+    revoked: 'revoked',
+    suspended: 'suspended'
+} as const;
+
+export interface ApiKey {
+    id: Id;
+    name: string;
+    /** The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which. */
+    publicPrefix: string;
+    status: ApiKeyStatus;
+    /**
+     * The permission rules this credential was minted with, each spelled `<action>:<Subject>` (`display:Order`). Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
+     * @minItems 1
+     */
+    permissions: string[];
+    lastUsedAt?: string;
+    expiresAt: string;
+    revokedAt?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export type ExampleStatus = (typeof ExampleStatus)[keyof typeof ExampleStatus];
+
+export const ExampleStatus = {
+    draft: 'draft',
+    published: 'published',
+    archived: 'archived'
+} as const;
+
+/**
+ * What the requesting caller may do to this example, decided by the server. A client renders its controls from this instead of re-implementing the lifecycle or the ownership rule: both depend on who asks, and a second copy in a separately deployed client is how the two come to disagree.
+ */
+export interface ExampleActions {
+    /** The statuses this caller may move the example to through `POST /examples/{id}/transitions`. Never contains the current status; empty when the caller may not edit it. */
+    transitions: ExampleStatus[];
+    /** Whether `PATCH`/`PUT /examples/{id}` and `PUT /examples/{id}/cover` would be accepted for this caller. */
+    update: boolean;
+    /** Whether `DELETE /examples/{id}` would be accepted for this caller. */
+    delete: boolean;
+}
+
+export interface Example {
+    id: Id;
+    /** The fallback-language title. Other languages are written through `/locales/translations/example/{id}`. */
+    title: string;
+    body: string;
+    status: ExampleStatus;
+    userId: Id;
+    /** The owner's display name. */
+    ownerName: string;
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+    /** Stamped the first time the example is published, never moved again. */
+    publishedAt?: string;
+    createdAt: string;
+    updatedAt?: string;
+    actions?: ExampleActions;
+}
+
+export interface ProductTitles {
+    [key: string]: string;
+}
+
+export interface CartLineRemovedParams {
+    productId: Id;
+    titles: ProductTitles;
+}
+
+/**
+ * Meaning, not look — a client picks the colour. The four words most notification APIs share (Ant Design, Atlassian flags).
+ */
+export type NotificationSeverity = (typeof NotificationSeverity)[keyof typeof NotificationSeverity];
+
+export const NotificationSeverity = {
+    info: 'info',
+    success: 'success',
+    warning: 'warning',
+    error: 'error'
+} as const;
+
+export type NotificationCartLineRemovedCode =
+    (typeof NotificationCartLineRemovedCode)[keyof typeof NotificationCartLineRemovedCode];
+
+export const NotificationCartLineRemovedCode = {
+    'notificationscart-line-removed': 'notifications.cart-line-removed'
+} as const;
+
+/**
+ * A product left the catalogue and left the caller's cart with it.
+ */
+export interface NotificationCartLineRemoved {
+    id: Id;
+    code: NotificationCartLineRemovedCode;
+    params: CartLineRemovedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationWishlistItemRemovedCode =
+    (typeof NotificationWishlistItemRemovedCode)[keyof typeof NotificationWishlistItemRemovedCode];
+
+export const NotificationWishlistItemRemovedCode = {
+    'notificationswishlist-item-removed': 'notifications.wishlist-item-removed'
+} as const;
+
+/**
+ * A product left the catalogue and left the caller's wishlist with it.
+ */
+export interface NotificationWishlistItemRemoved {
+    id: Id;
+    code: NotificationWishlistItemRemovedCode;
+    params: CartLineRemovedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type CartMergeRefusedParamsLinesItem = {
+    productId: Id;
+    /** @minimum 1 */
+    requested: number;
+    titles: ProductTitles;
+};
+
+export interface CartMergeRefusedParams {
+    /** The guest-cart lines `POST /cart/merge` could not add at all. */
+    lines: CartMergeRefusedParamsLinesItem[];
+}
+
+export type NotificationCartMergeRefusedCode =
+    (typeof NotificationCartMergeRefusedCode)[keyof typeof NotificationCartMergeRefusedCode];
+
+export const NotificationCartMergeRefusedCode = {
+    'notificationscart-merge-refused': 'notifications.cart-merge-refused'
+} as const;
+
+/**
+ * Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available.
+ */
+export interface NotificationCartMergeRefused {
+    id: Id;
+    code: NotificationCartMergeRefusedCode;
+    params: CartMergeRefusedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+/**
+ * What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised and the date now expected (absent when there is none).
+ */
+export interface FulfillmentDelayedParams {
+    orderId: Id;
+    fulfillmentOrderId: Id;
+    /** The waiting products' titles, as the order froze them. */
+    titles: string[];
+    agreedAt: string;
+    expectedAt?: string;
+}
+
+export type NotificationFulfillmentDelayedCode =
+    (typeof NotificationFulfillmentDelayedCode)[keyof typeof NotificationFulfillmentDelayedCode];
+
+export const NotificationFulfillmentDelayedCode = {
+    'notificationsfulfillment-delayed': 'notifications.fulfillment-delayed'
+} as const;
+
+/**
+ * A preorder the caller paid for will arrive later than promised; cancelling is open and silence keeps waiting.
+ */
+export interface NotificationFulfillmentDelayed {
+    id: Id;
+    code: NotificationFulfillmentDelayedCode;
+    params: FulfillmentDelayedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type FulfillmentHeldParamsNotice =
+    (typeof FulfillmentHeldParamsNotice)[keyof typeof FulfillmentHeldParamsNotice];
+
+export const FulfillmentHeldParamsNotice = {
+    check_address: 'check_address',
+    delayed: 'delayed'
+} as const;
+
+/**
+ * What the buyer needs to read a hold notice: which order and fulfillment order, whether the address needs a look (`check_address`) or the order is only `delayed`, and the sentence staff wrote for them, if any. Never staff's reason.
+ */
+export interface FulfillmentHeldParams {
+    orderId: Id;
+    fulfillmentOrderId: Id;
+    notice: FulfillmentHeldParamsNotice;
+    /** @maxLength 500 */
+    message?: string;
+}
+
+export type NotificationFulfillmentHeldCode =
+    (typeof NotificationFulfillmentHeldCode)[keyof typeof NotificationFulfillmentHeldCode];
+
+export const NotificationFulfillmentHeldCode = {
+    'notificationsfulfillment-held': 'notifications.fulfillment-held'
+} as const;
+
+/**
+ * Part of an order the caller bought is held back, and they can act (check the address) or have a message from the shop.
+ */
+export interface NotificationFulfillmentHeld {
+    id: Id;
+    code: NotificationFulfillmentHeldCode;
+    params: FulfillmentHeldParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationStockAlertCode =
+    (typeof NotificationStockAlertCode)[keyof typeof NotificationStockAlertCode];
+
+export const NotificationStockAlertCode = {
+    'notificationsstock-alert': 'notifications.stock-alert'
+} as const;
+
+/**
+ * A product the caller asked to be told about can be ordered again. Sent once, then the request is gone.
+ */
+export interface NotificationStockAlert {
+    id: Id;
+    code: NotificationStockAlertCode;
+    params: CartLineRemovedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type Notification =
+    | NotificationCartLineRemoved
+    | NotificationWishlistItemRemoved
+    | NotificationCartMergeRefused
+    | NotificationFulfillmentDelayed
+    | NotificationFulfillmentHeld
+    | NotificationStockAlert;
+
+export interface StockAlert {
+    productId: Id;
+    createdAt: string;
+}
+
+export type AccountExportResponseInvoicing = {
+    invoices: ExportInvoiceDocument[];
+    creditNotes: ExportInvoiceDocument[];
+};
+
+export type AccountExportResponseRolesItemScope =
+    (typeof AccountExportResponseRolesItemScope)[keyof typeof AccountExportResponseRolesItemScope];
+
+export const AccountExportResponseRolesItemScope = {
+    tenant: 'tenant',
+    platform: 'platform'
+} as const;
+
+export type AccountExportResponseRolesItem = {
+    role: string;
+    scope: AccountExportResponseRolesItemScope;
+};
+
+export interface AccountExportResponse {
+    exportedAt: string;
+    profile: Account;
+    auditLog: AuditEntryItem[];
+    sessions: ExportSession[];
+    addresses: Address[];
+    signInMethods: ExportSignInMethods;
+    /** Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`. */
+    feedback?: ExportFeedbackTicket[];
+    cart: CartItem[];
+    wishlist: WishlistExportItem[];
+    orders: ExportOrder[];
+    orderTimeline: OrderTimelineExportEntry[];
+    payments: ExportPayment[];
+    invoicing: AccountExportResponseInvoicing;
+    shipments: ExportShipment[];
+    fulfillmentOrders: ExportFulfillmentOrder[];
+    returns: ExportReturn[];
+    apiKeys: ApiKey[];
+    roles: AccountExportResponseRolesItem[];
+    examples: Example[];
+    notifications: Notification[];
+    stockAlerts: StockAlert[];
+}
+
 /**
  * `building` on a fresh request. A request never answers `ready` or `failed`: asking again after either REPLACES the export with a new `building` one.
  */
@@ -1952,18 +2932,6 @@ export interface SearchUsersRequest {
     purchaseHoldReview?: true;
 }
 
-export type FeedbackCategory = (typeof FeedbackCategory)[keyof typeof FeedbackCategory];
-
-export const FeedbackCategory = {
-    order: 'order',
-    cancellation: 'cancellation',
-    return: 'return',
-    payment: 'payment',
-    account: 'account',
-    privacy: 'privacy',
-    other: 'other'
-} as const;
-
 export interface CreateFeedbackRequest {
     /**
      * @minLength 1
@@ -1994,16 +2962,6 @@ export interface CreateFeedbackRequest {
      */
     website?: string;
 }
-
-export type FeedbackRequestStatus =
-    (typeof FeedbackRequestStatus)[keyof typeof FeedbackRequestStatus];
-
-export const FeedbackRequestStatus = {
-    new: 'new',
-    in_progress: 'in_progress',
-    resolved: 'resolved',
-    spam: 'spam'
-} as const;
 
 export interface FeedbackRequest {
     id: Id;
@@ -2090,29 +3048,6 @@ export const TaxClass = {
     reduced: 'reduced',
     zero: 'zero'
 } as const;
-
-/**
- * WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%.
- */
-export type RateType = (typeof RateType)[keyof typeof RateType];
-
-export const RateType = {
-    standard: 'standard',
-    'zero-rated': 'zero-rated',
-    exempt: 'exempt'
-} as const;
-
-/**
- * An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of "absent". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards.
- * @minLength 1
- * @maxLength 64
- */
-export type Sku = string;
-
-/**
- * When a product ships from, as an ISO 8601 date-time with a zone. A product with a future date that is active and purchasable is a preorder. At most one year ahead (Google's `availability_date` rule); a date in the past is accepted and simply means "released". Moving it later notifies the buyers who already paid (`delivery`).
- */
-export type ReleaseDate = string;
 
 /**
  * When stock is expected back, as an ISO 8601 date-time with a zone, for a product that allows backorder. At most one year ahead. Without one the shop promises delivery within 30 days. A date in the past is accepted and the product then reads sold out until staff set a new date or clear it. Moving it later notifies the buyers who already paid (`delivery`).
@@ -2708,16 +3643,6 @@ export interface SetCartShippingMethodRequest {
     shippingMethodId: string | null;
 }
 
-/**
- * How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.
- */
-export type PaymentMethodId = (typeof PaymentMethodId)[keyof typeof PaymentMethodId];
-
-export const PaymentMethodId = {
-    card: 'card',
-    bank_transfer: 'bank_transfer'
-} as const;
-
 export interface CheckoutRequest {
     expectedTotal: ExpectedTotal;
     /**
@@ -2733,150 +3658,6 @@ export interface CheckoutRequest {
     /** How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`. That includes the default: a request that names no method asks for `card`, so a deployment with no card provider refuses it the same way. */
     paymentMethod?: PaymentMethodId;
 }
-
-export interface OrderLineProduct {
-    id: Id;
-    title: string;
-    /**
-     * Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.
-     * @minimum 0
-     */
-    price: number;
-    description?: string;
-    requiresShipping?: boolean;
-    noWithdrawal?: boolean;
-    sku?: Sku;
-    /** @minimum 0 */
-    weight?: number;
-    releaseDate?: ReleaseDate;
-    /** The line was sold before its release date, frozen at checkout. `delivery` reads it, never the catalogue, to decide which fulfillment order the line belongs to: a bank transfer may be paid a week after the order was placed. */
-    preorder?: boolean;
-    categories?: string[];
-    tags?: string[];
-    createdAt?: string;
-    updatedAt?: string;
-    deletedAt?: string;
-    /**
-     * The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.
-     * @minimum 0
-     * @maximum 1
-     */
-    taxRate: number;
-    rateType?: RateType;
-}
-
-export interface OrderLineCurrent {
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
-}
-
-export interface OrderItem {
-    product: OrderLineProduct;
-    /** @minimum 1 */
-    quantity: number;
-    locale: Locale;
-    /**
-     * How many of `quantity` were owed rather than on the shelf when the order was placed. Absent when the shelf covered the whole line.
-     * @minimum 1
-     */
-    backorderedQuantity?: number;
-    /** When the owed units were promised: the product's `restockDate`, or the day the order was placed plus 30 days when it had none. Present with `backorderedQuantity` and frozen with it, so a later change to the catalogue moves no promise. */
-    promisedAt?: string;
-    /** Whether `promisedAt` was a date the product named. `false` means the buyer was promised delivery "within 30 days" of the order. Present with `promisedAt`. */
-    promiseDated?: boolean;
-    /** The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`. */
-    current: OrderLineCurrent | null;
-    /**
-     * VAT included in this line's total, at its own frozen `taxRate`.
-     * @minimum 0
-     */
-    readonly taxAmount: number;
-    /**
-     * This line's total excluding VAT — `price × quantity` minus `taxAmount`.
-     * @minimum 0
-     */
-    readonly netAmount: number;
-}
-
-export interface OrderTaxSummaryRow {
-    /**
-     * The decimal rate this row is for (`0.22` for 22%) — never repeated across rows.
-     * @minimum 0
-     */
-    rate: number;
-    /** @minimum 0 */
-    netAmount: number;
-    /** @minimum 0 */
-    taxAmount: number;
-    /**
-     * `netAmount + taxAmount`, not re-derived from a price.
-     * @minimum 0
-     */
-    grossAmount: number;
-}
-
-export interface OrderAddress {
-    fullName: AddressFullName;
-    street: AddressStreet;
-    city: AddressCity;
-    zip: AddressZip;
-    country: CountryCode;
-    phone?: AddressPhone;
-}
-
-/**
- * Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`.
- */
-export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
-
-export const OrderStatus = {
-    pending: 'pending',
-    paid: 'paid',
-    processing: 'processing',
-    shipped: 'shipped',
-    delivered: 'delivered',
-    cancelled: 'cancelled'
-} as const;
-
-/**
- * Where the order's MONEY stands, beside `status` — Shopify's `financial_status`. `unpaid` until a payment lands; `paid`; then `partially_refunded` once some but not all of it went back, and `refunded` once all of it did. Read-only: `payments` stamps the refund states, `orders` derives the first two.
- */
-export type OrderPaymentStatus = (typeof OrderPaymentStatus)[keyof typeof OrderPaymentStatus];
-
-export const OrderPaymentStatus = {
-    unpaid: 'unpaid',
-    paid: 'paid',
-    partially_refunded: 'partially_refunded',
-    refunded: 'refunded'
-} as const;
-
-/**
- * Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from the status and the fulfilment summary delivery reports. First match wins: `fulfilled` once everything arrived; `shipped` once everything has left; `partially_fulfilled` once something left and more remains; `on_hold` while every remaining unit is held back; `in_progress` while being prepared; `unfulfilled` before work starts, and for a pending or cancelled order. Read-only.
- */
-export type OrderFulfillmentStatus =
-    (typeof OrderFulfillmentStatus)[keyof typeof OrderFulfillmentStatus];
-
-export const OrderFulfillmentStatus = {
-    unfulfilled: 'unfulfilled',
-    in_progress: 'in_progress',
-    on_hold: 'on_hold',
-    partially_fulfilled: 'partially_fulfilled',
-    shipped: 'shipped',
-    fulfilled: 'fulfilled'
-} as const;
-
-/**
- * Where any return on the order stands — Shopify's `returnStatus`. `none` when no return holds goods; `requested` while one awaits staff; `in_progress` once approved and awaiting its goods; `partially_returned` / `returned` once received goods cover some / every unit on the order. Read-only: `returns` stamps it, and `delivered` stays terminal — a return is its own object, not an order status.
- */
-export type OrderReturnStatus = (typeof OrderReturnStatus)[keyof typeof OrderReturnStatus];
-
-export const OrderReturnStatus = {
-    none: 'none',
-    requested: 'requested',
-    in_progress: 'in_progress',
-    partially_returned: 'partially_returned',
-    returned: 'returned'
-} as const;
 
 /**
  * Why the buyer's withdrawal button is not offered, first reason that applies. `all_excluded`: every line is goods Art. 16 CRD takes the right of withdrawal away from (made to order, perishable), so there is nothing to withdraw from — an unpaid or paid order can still be cancelled with the ordinary cancel. `window_closed`: the withdrawal period ended. `nothing_left`: every unit is already back with the shop.
@@ -2898,10 +3679,10 @@ export interface OrderActions {
     cancel: boolean;
     /** Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not a status move any request makes: a client starts the flow with `POST /payments` and the provider's yes does the rest. */
     pay: boolean;
-    /** Whether `POST /payments/orders/{orderId}/offline` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment and the caller holds the key that records one. A buyer's own step is `pay`; a buyer who is staff may also record. */
+    /** Whether `POST /orders/{id}/payments` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment and the caller holds the key that records one. A buyer's own step is `pay`; a buyer who is staff may also record. */
     recordPayment: boolean;
-    /** Whether `POST /delivery/orders/{id}/start` would be accepted for this caller. `paid → processing` is `system`-only in the lifecycle, reached only by reporting the fact through `delivery`'s own door. */
-    start: boolean;
+    /** Whether `POST /orders/{id}/process` would be accepted for this caller. `paid → processing` is `system`-only in the lifecycle, reached only by reporting the fact through `delivery`'s own door. */
+    process: boolean;
     /** The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `override:Order`, or once the order has left every overridable status. */
     override: OrderStatus[];
     /** Whether `PUT /orders/{id}/shipping-address` would be accepted for this caller: they hold `update:Order`, the order has a shipping address, and nothing has shipped. */
@@ -2989,6 +3770,11 @@ export interface Order {
     createdAt?: string;
     updatedAt?: string;
     deletedAt?: string;
+}
+
+export interface ReorderRequest {
+    /** One of the caller's own orders */
+    orderId: Id;
 }
 
 /**
@@ -3106,6 +3892,11 @@ export interface SearchOrdersRequest {
     userId?: Id;
     productId?: Id;
     email?: Email;
+    /**
+     * The order's number as the customer quotes it; a leading `#`, spaces and an unpadded sequence are tolerated; anything else finds nothing.
+     * @maxLength 32
+     */
+    orderNumber?: string;
     status?: OrderStatus;
     fulfillmentStatus?: OrderFulfillmentStatus;
     paymentMethod?: PaymentMethodId;
@@ -3162,77 +3953,6 @@ export interface CreditNoteSummary {
 
 export interface CreditNotesResponse {
     items: CreditNoteSummary[];
-}
-
-export interface PaymentMethodOption {
-    id: PaymentMethodId;
-    /**
-     * How long checkout holds stock for an order choosing this method (`NODE_BANK_TRANSFER_HOLD_HOURS`). Present on `bank_transfer` only — `card`'s hold is `NODE_RESERVATION_TTL_MINUTES`, a different unit, owned by `inventory` rather than a deployment choice this module makes.
-     * @minimum 0
-     */
-    holdHours?: number;
-}
-
-export interface PaymentMethodsResponse {
-    methods: PaymentMethodOption[];
-}
-
-export type RefundStatus = (typeof RefundStatus)[keyof typeof RefundStatus];
-
-export const RefundStatus = {
-    pending: 'pending',
-    succeeded: 'succeeded',
-    failed: 'failed'
-} as const;
-
-/**
- * Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to; `late_payment` — the money arrived after the order could no longer be paid (its stock reservation had expired or it was cancelled), so the sale was lost and the money went back. The buyer is mailed it like a cancellation's refund.
- */
-export type RefundReason = (typeof RefundReason)[keyof typeof RefundReason];
-
-export const RefundReason = {
-    cancellation: 'cancellation',
-    goodwill: 'goodwill',
-    return: 'return',
-    late_payment: 'late_payment'
-} as const;
-
-/**
- * Why the provider last refused a refund, as a closed code. Staff only (`display:Payment`). `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
- */
-export type RefundFailureReason = (typeof RefundFailureReason)[keyof typeof RefundFailureReason];
-
-export const RefundFailureReason = {
-    declined: 'declined',
-    insufficient_funds: 'insufficient_funds',
-    expired_or_canceled_card: 'expired_or_canceled_card',
-    lost_or_stolen_card: 'lost_or_stolen_card',
-    provider_unavailable: 'provider_unavailable',
-    unknown: 'unknown'
-} as const;
-
-/**
- * One attempt to give money back — a record per attempt, not a field on the payment. The idempotency key is stored but never published. The provider's refund id and a failed refund's `failureReason` go to staff only (`display:Payment`); the provider's own error wording stays in the logs.
- */
-export interface Refund {
-    id: Id;
-    /**
-     * The amount returned, in the payment's own `currency`.
-     * @minimum 0
-     */
-    amount: number;
-    /** ISO-4217 currency code, copied from the payment. */
-    currency: string;
-    /** `pending` while the provider is being asked; `failed` when it refused — a sweep retries the same refund with the same idempotency key; `succeeded` once the money is confirmed back (or, for a hand-paid payment, reported back by the operator). */
-    status: RefundStatus;
-    reason: RefundReason;
-    returnId?: Id;
-    /** When the refund succeeded. Absent while it has not. */
-    settledAt?: string;
-    /** The provider's id for the refund (Stripe's `re_…`). Staff only. */
-    providerRefundRef?: string;
-    failureReason?: RefundFailureReason;
-    createdAt: string;
 }
 
 /**
@@ -3341,12 +4061,12 @@ export interface Payment {
     orderNumber?: string;
     /** The order's customer email. Present on `GET /payments` rows only. */
     email?: string;
-    /** Which provider implementation handled it — the name the deployment registered (`NODE_PAYMENT_PROVIDER`), or `manual` for a payment recorded by hand (`POST /payments/orders/{orderId}/offline`). */
+    /** Which provider implementation handled it — the name the deployment registered (`NODE_PAYMENT_PROVIDER`), or `manual` for a payment recorded by hand (`POST /orders/{id}/payments`). */
     provider: string;
     /** How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /payments/orders/{orderId}/offline`, from what the admin chose there. */
     method: PaymentMethod;
     /**
-     * Free text identifying an offline payment — a bank transaction id, a receipt number. Set only by `POST /payments/orders/{orderId}/offline`; absent from a card payment.
+     * Free text identifying an offline payment — a bank transaction id, a receipt number. Set only by `POST /orders/{id}/payments`; absent from a card payment.
      * @maxLength 120
      */
     reference?: string;
@@ -3363,17 +4083,8 @@ export interface Payment {
     updatedAt?: string;
 }
 
-export interface RefundPaymentRequest {
-    /**
-     * How much to return, a decimal in the payment's own currency. Absent means everything still refundable.
-     * @exclusiveMinimum 0
-     */
-    amount?: number;
-    /**
-     * ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
-     * @maxLength 3
-     */
-    currency?: string;
+export interface OrderPaymentsResponse {
+    items: Payment[];
 }
 
 /**
@@ -3399,6 +4110,32 @@ export interface RecordOfflinePaymentRequest {
     reference?: string;
     /** When the money arrived. Must not be in the future. Defaults to now. */
     receivedAt?: string;
+}
+
+export interface PaymentMethodOption {
+    id: PaymentMethodId;
+    /**
+     * How long checkout holds stock for an order choosing this method (`NODE_BANK_TRANSFER_HOLD_HOURS`). Present on `bank_transfer` only — `card`'s hold is `NODE_RESERVATION_TTL_MINUTES`, a different unit, owned by `inventory` rather than a deployment choice this module makes.
+     * @minimum 0
+     */
+    holdHours?: number;
+}
+
+export interface PaymentMethodsResponse {
+    methods: PaymentMethodOption[];
+}
+
+export interface RefundPaymentRequest {
+    /**
+     * How much to return, a decimal in the payment's own currency. Absent means everything still refundable.
+     * @exclusiveMinimum 0
+     */
+    amount?: number;
+    /**
+     * ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
+     * @maxLength 3
+     */
+    currency?: string;
 }
 
 export interface ConfirmPaymentRequest {
@@ -3463,93 +4200,6 @@ export interface ShippingMethodsResponse {
 }
 
 /**
- * `digital` when no line rides in a parcel; its act is `fulfill`, not a shipment.
- */
-export type FulfillmentOrderKind = (typeof FulfillmentOrderKind)[keyof typeof FulfillmentOrderKind];
-
-export const FulfillmentOrderKind = {
-    physical: 'physical',
-    digital: 'digital'
-} as const;
-
-/**
- * Where a fulfillment order stands (Shopify's names). `open` until something ships; `in_progress` once part of it has shipped and lines remain; `on_hold` while staff, or the stock it awaits, holds it back; `closed` once nothing remains and something shipped from it; `cancelled` once nothing remains and nothing ever shipped from it.
- */
-export type FulfillmentOrderStatus =
-    (typeof FulfillmentOrderStatus)[keyof typeof FulfillmentOrderStatus];
-
-export const FulfillmentOrderStatus = {
-    open: 'open',
-    in_progress: 'in_progress',
-    on_hold: 'on_hold',
-    closed: 'closed',
-    cancelled: 'cancelled'
-} as const;
-
-/**
- * One product on a fulfillment order, with how much has shipped, been cancelled and still remains.
- */
-export interface FulfillmentOrderLine {
-    productId: Id;
-    /** The product's title as the order froze it. */
-    title: string;
-    /**
-     * Units this fulfillment order carries.
-     * @minimum 1
-     */
-    quantity: number;
-    /** @minimum 0 */
-    shippedQuantity: number;
-    /**
-     * Units cancelled before they shipped — a remainder cancel.
-     * @minimum 0
-     */
-    cancelledQuantity: number;
-    /**
-     * `quantity − shippedQuantity − cancelledQuantity`, computed here so no client counts.
-     * @minimum 0
-     */
-    remaining: number;
-}
-
-/**
- * What a hold means to the BUYER, whatever staff's reason: `awaiting_stock` (the goods are not here yet), `check_address` (the buyer can act: the address needs a look), `delayed` (held for a check, said plainly). A reason that must stay quiet, such as `high_risk`, reads as `delayed`, so a notice never reveals a screening result. The reason itself (`FulfillmentHoldReason`) is staff's.
- */
-export type FulfillmentHoldNotice =
-    (typeof FulfillmentHoldNotice)[keyof typeof FulfillmentHoldNotice];
-
-export const FulfillmentHoldNotice = {
-    awaiting_stock: 'awaiting_stock',
-    check_address: 'check_address',
-    delayed: 'delayed'
-} as const;
-
-/**
- * Why a fulfillment order is on hold (Shopify's hold reasons). `awaiting_stock` is set only by the allocation of stock, and released only by it; the other three are staff's.
- */
-export type FulfillmentHoldReason =
-    (typeof FulfillmentHoldReason)[keyof typeof FulfillmentHoldReason];
-
-export const FulfillmentHoldReason = {
-    awaiting_stock: 'awaiting_stock',
-    incorrect_address: 'incorrect_address',
-    high_risk: 'high_risk',
-    other: 'other'
-} as const;
-
-/**
- * Who cancelled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `order`: the whole order was cancelled.
- */
-export type FulfillmentCancelReason =
-    (typeof FulfillmentCancelReason)[keyof typeof FulfillmentCancelReason];
-
-export const FulfillmentCancelReason = {
-    buyer: 'buyer',
-    staff: 'staff',
-    order: 'order'
-} as const;
-
-/**
  * What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `update:Shipment`.
  */
 export interface FulfillmentOrderActions {
@@ -3601,16 +4251,6 @@ export interface FulfillmentOrder {
     actions: FulfillmentOrderActions;
     createdAt: string;
     updatedAt?: string;
-}
-
-/**
- * One product in a shipment.
- */
-export interface ShipmentLine {
-    productId: Id;
-    title: string;
-    /** @minimum 1 */
-    quantity: number;
 }
 
 /**
@@ -3831,31 +4471,6 @@ export interface DeliverShipmentRequest {
      */
     reason?: string;
 }
-
-/**
- * Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`.
- */
-export type ReturnStatus = (typeof ReturnStatus)[keyof typeof ReturnStatus];
-
-export const ReturnStatus = {
-    requested: 'requested',
-    approved: 'approved',
-    declined: 'declined',
-    received: 'received',
-    closed: 'closed'
-} as const;
-
-/**
- * Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
- */
-export type ReturnReason = (typeof ReturnReason)[keyof typeof ReturnReason];
-
-export const ReturnReason = {
-    withdrawal: 'withdrawal',
-    defective: 'defective',
-    wrong_item: 'wrong_item',
-    other: 'other'
-} as const;
 
 export type ReturnSortItem = (typeof ReturnSortItem)[keyof typeof ReturnSortItem];
 
@@ -4442,36 +5057,6 @@ export const ApiKeySortItem = {
  */
 export type ApiKeySort = ApiKeySortItem[];
 
-/**
- * Whether the credential works right now, decided by the server. `revoked` and `expired` are final. `suspended` means the person who minted it can no longer sign in (banned, soft-deleted or erased): the key is refused with 401 and comes back by itself if they do. Checked in that order, so a revoked key never reads as `suspended`.
- */
-export type ApiKeyStatus = (typeof ApiKeyStatus)[keyof typeof ApiKeyStatus];
-
-export const ApiKeyStatus = {
-    active: 'active',
-    expired: 'expired',
-    revoked: 'revoked',
-    suspended: 'suspended'
-} as const;
-
-export interface ApiKey {
-    id: Id;
-    name: string;
-    /** The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which. */
-    publicPrefix: string;
-    status: ApiKeyStatus;
-    /**
-     * The permission rules this credential was minted with, each spelled `<action>:<Subject>` (`display:Order`). Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
-     * @minItems 1
-     */
-    permissions: string[];
-    lastUsedAt?: string;
-    expiresAt: string;
-    revokedAt?: string;
-    createdAt: string;
-    updatedAt: string;
-}
-
 export interface ApiKeysResponse {
     items: ApiKey[];
     meta: PaginationMeta;
@@ -4553,577 +5138,6 @@ export interface SessionConfig {
      * @minimum 1
      */
     staffLifetimeSeconds?: number;
-}
-
-export interface ExportSession {
-    id: Id;
-    createdAt: string;
-    expiration: string;
-    lastUsedAt?: string;
-    /** The coarse device label stored at sign-in (`cookie` mode only). */
-    device?: string;
-}
-
-export interface ExportLinkedProvider {
-    /** Registry name of the provider, e.g. `google`. */
-    provider: string;
-    /** The provider's own stable identifier for the account (its `sub`), an online identifier under GDPR Art. 4(1). */
-    providerId: string;
-    connectedAt: string;
-}
-
-export interface ExportTwoFactorMethod {
-    /** Wire name of the factor, e.g. `totp` or `email`. */
-    method: string;
-    /** When the factor was armed. */
-    enrolledAt: string;
-}
-
-export interface ExportSignInMethods {
-    /** The identity providers linked to the account. */
-    providers: ExportLinkedProvider[];
-    /** The second factors armed on the account. A setup never confirmed is left out. */
-    twoFactor: ExportTwoFactorMethod[];
-}
-
-export interface ExportFeedbackTicket {
-    id: Id;
-    name?: string;
-    email: Email;
-    subject: string;
-    message: string;
-    category?: FeedbackCategory;
-    orderNumber?: string;
-    status: FeedbackRequestStatus;
-    respondedAt?: string;
-    createdAt?: string;
-}
-
-export interface CartItem {
-    productId: Id;
-    /** @minimum 1 */
-    quantity: number;
-}
-
-export interface WishlistExportItem {
-    productId: Id;
-}
-
-export interface ExportOrder {
-    id: Id;
-    userId?: Id;
-    email: Email;
-    items: OrderItem[];
-    /**
-     * Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
-     * @minimum 0
-     */
-    totalItems: number;
-    /**
-     * Sum of `quantity` across every line item.
-     * @minimum 0
-     */
-    totalQuantity: number;
-    /**
-     * Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
-     * @minimum 0
-     */
-    totalPrice: number;
-    /** ISO-4217 currency code this order was priced in (e.g. EUR). */
-    readonly currency: string;
-    /**
-     * Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
-     * @minimum 0
-     */
-    readonly netTotal: number;
-    /**
-     * Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers.
-     * @minimum 0
-     */
-    readonly taxTotal: number;
-    /**
-     * Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
-     * @minimum 0
-     */
-    readonly shippingNetAmount: number;
-    /**
-     * Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
-     * @minimum 0
-     */
-    readonly shippingTaxAmount: number;
-    /** One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines. */
-    readonly taxSummary: readonly OrderTaxSummaryRow[];
-    /** Optional order notes */
-    notes?: string;
-    /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
-    shippingMethod?: string;
-    /**
-     * What that method cost at checkout time — a later rate change cannot re-price history.
-     * @minimum 0
-     */
-    shippingCost?: number;
-    shippingAddress?: OrderAddress;
-    billingAddress?: OrderAddress;
-    paymentMethod?: PaymentMethodId;
-    payBy?: string;
-    readonly orderNumber: string;
-    status: OrderStatus;
-    paymentStatus: OrderPaymentStatus;
-    fulfillmentStatus: OrderFulfillmentStatus;
-    returnStatus: OrderReturnStatus;
-    /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
-    readonly withdrawUntil?: string;
-    paidAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    deletedAt?: string;
-}
-
-/**
- * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`.
- */
-export type OrderTimelineType = (typeof OrderTimelineType)[keyof typeof OrderTimelineType];
-
-export const OrderTimelineType = {
-    created: 'created',
-    paid: 'paid',
-    processing: 'processing',
-    shipped: 'shipped',
-    delivered: 'delivered',
-    cancelled: 'cancelled',
-    status_overridden: 'status_overridden',
-    payment_declined: 'payment_declined',
-    refund_issued: 'refund_issued',
-    refund_settled: 'refund_settled',
-    refund_failed: 'refund_failed',
-    shipment_shipped: 'shipment_shipped',
-    shipment_delivered: 'shipment_delivered',
-    fulfillment_held: 'fulfillment_held',
-    fulfillment_released: 'fulfillment_released',
-    remainder_cancelled: 'remainder_cancelled',
-    return_requested: 'return_requested',
-    return_approved: 'return_approved',
-    return_declined: 'return_declined',
-    return_received: 'return_received',
-    return_closed: 'return_closed',
-    invoice_issued: 'invoice_issued',
-    credit_note_issued: 'credit_note_issued',
-    release_date_moved: 'release_date_moved',
-    delay_notice_sent: 'delay_notice_sent',
-    address_corrected: 'address_corrected'
-} as const;
-
-/**
- * Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both.
- */
-export type OrderTimelineExportEntryAudience =
-    (typeof OrderTimelineExportEntryAudience)[keyof typeof OrderTimelineExportEntryAudience];
-
-export const OrderTimelineExportEntryAudience = {
-    buyer: 'buyer',
-    staff: 'staff'
-} as const;
-
-/**
- * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
- */
-export type OrderTimelineExportEntryData = { [key: string]: unknown };
-
-export interface OrderTimelineExportEntry {
-    orderId: Id;
-    id: Id;
-    at: string;
-    type: OrderTimelineType;
-    /** Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both. */
-    audience: OrderTimelineExportEntryAudience;
-    /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
-    actor?: Id;
-    /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
-    text?: string;
-    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
-    data: OrderTimelineExportEntryData;
-}
-
-export type ExportPaymentStatus = (typeof ExportPaymentStatus)[keyof typeof ExportPaymentStatus];
-
-export const ExportPaymentStatus = {
-    requires_confirmation: 'requires_confirmation',
-    requires_action: 'requires_action',
-    processing: 'processing',
-    succeeded: 'succeeded',
-    declined: 'declined',
-    cancelled: 'cancelled'
-} as const;
-
-export interface ExportPayment {
-    id: Id;
-    orderId: Id;
-    /** @minimum 0 */
-    amount: number;
-    currency: string;
-    /** @minimum 0 */
-    amountRefunded: number;
-    refunds: Refund[];
-    status: ExportPaymentStatus;
-    provider: string;
-    cardLast4?: string;
-    createdAt?: string;
-    updatedAt?: string;
-}
-
-export interface ExportInvoiceDocument {
-    orderId: Id;
-    number: string;
-    issuedAt: string;
-    currency: string;
-    /** @minimum 0 */
-    grandTotal: number;
-}
-
-export type ExportShipmentStatus = (typeof ExportShipmentStatus)[keyof typeof ExportShipmentStatus];
-
-export const ExportShipmentStatus = {
-    shipped: 'shipped',
-    delivered: 'delivered'
-} as const;
-
-/**
- * A shipment as an account export carries it — the record, without the caller's `actions`.
- */
-export interface ExportShipment {
-    id: Id;
-    orderId: Id;
-    fulfillmentOrderId: Id;
-    /** @minimum 1 */
-    number: number;
-    trackingCode?: string;
-    status: ExportShipmentStatus;
-    lines: ShipmentLine[];
-    shippedAt: string;
-    deliveredAt?: string;
-}
-
-/**
- * A fulfillment order as an account export carries it, with staff's hold note (their assessment of the buyer is the buyer's data) and without who wrote it.
- */
-export interface ExportFulfillmentOrder {
-    id: Id;
-    orderId: Id;
-    /** @minimum 1 */
-    number: number;
-    kind: FulfillmentOrderKind;
-    status: FulfillmentOrderStatus;
-    lines: FulfillmentOrderLine[];
-    holdNotice?: FulfillmentHoldNotice;
-    /** @maxLength 500 */
-    holdMessage?: string;
-    holdReason?: FulfillmentHoldReason;
-    /**
-     * Staff's free text about the hold. Present until the retention sweep unsets it.
-     * @maxLength 1000
-     */
-    holdNote?: string;
-    agreedAt?: string;
-    expectedAt?: string;
-    /** When the buyer was last told the date had moved or would be missed. */
-    lastNoticeAt?: string;
-    cancelReason?: FulfillmentCancelReason;
-}
-
-export type ExportReturnLinesItem = {
-    productId: Id;
-    /** @minimum 1 */
-    quantity: number;
-    title: string;
-};
-
-export interface ExportReturn {
-    id: Id;
-    orderId: Id;
-    status: ReturnStatus;
-    reason: ReturnReason;
-    note?: string;
-    declineReason?: string;
-    lines: ExportReturnLinesItem[];
-    createdAt?: string;
-}
-
-export type ExampleStatus = (typeof ExampleStatus)[keyof typeof ExampleStatus];
-
-export const ExampleStatus = {
-    draft: 'draft',
-    published: 'published',
-    archived: 'archived'
-} as const;
-
-/**
- * What the requesting caller may do to this example, decided by the server. A client renders its controls from this instead of re-implementing the lifecycle or the ownership rule: both depend on who asks, and a second copy in a separately deployed client is how the two come to disagree.
- */
-export interface ExampleActions {
-    /** The statuses this caller may move the example to through `POST /examples/{id}/transitions`. Never contains the current status; empty when the caller may not edit it. */
-    transitions: ExampleStatus[];
-    /** Whether `PATCH`/`PUT /examples/{id}` and `PUT /examples/{id}/cover` would be accepted for this caller. */
-    update: boolean;
-    /** Whether `DELETE /examples/{id}` would be accepted for this caller. */
-    delete: boolean;
-}
-
-export interface Example {
-    id: Id;
-    /** The fallback-language title. Other languages are written through `/locales/translations/example/{id}`. */
-    title: string;
-    body: string;
-    status: ExampleStatus;
-    userId: Id;
-    /** The owner's display name. */
-    ownerName: string;
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
-    /** Stamped the first time the example is published, never moved again. */
-    publishedAt?: string;
-    createdAt: string;
-    updatedAt?: string;
-    actions?: ExampleActions;
-}
-
-export interface ProductTitles {
-    [key: string]: string;
-}
-
-export interface CartLineRemovedParams {
-    productId: Id;
-    titles: ProductTitles;
-}
-
-/**
- * Meaning, not look — a client picks the colour. The four words most notification APIs share (Ant Design, Atlassian flags).
- */
-export type NotificationSeverity = (typeof NotificationSeverity)[keyof typeof NotificationSeverity];
-
-export const NotificationSeverity = {
-    info: 'info',
-    success: 'success',
-    warning: 'warning',
-    error: 'error'
-} as const;
-
-export type NotificationCartLineRemovedCode =
-    (typeof NotificationCartLineRemovedCode)[keyof typeof NotificationCartLineRemovedCode];
-
-export const NotificationCartLineRemovedCode = {
-    'notificationscart-line-removed': 'notifications.cart-line-removed'
-} as const;
-
-/**
- * A product left the catalogue and left the caller's cart with it.
- */
-export interface NotificationCartLineRemoved {
-    id: Id;
-    code: NotificationCartLineRemovedCode;
-    params: CartLineRemovedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-export type NotificationWishlistItemRemovedCode =
-    (typeof NotificationWishlistItemRemovedCode)[keyof typeof NotificationWishlistItemRemovedCode];
-
-export const NotificationWishlistItemRemovedCode = {
-    'notificationswishlist-item-removed': 'notifications.wishlist-item-removed'
-} as const;
-
-/**
- * A product left the catalogue and left the caller's wishlist with it.
- */
-export interface NotificationWishlistItemRemoved {
-    id: Id;
-    code: NotificationWishlistItemRemovedCode;
-    params: CartLineRemovedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-export type CartMergeRefusedParamsLinesItem = {
-    productId: Id;
-    /** @minimum 1 */
-    requested: number;
-    titles: ProductTitles;
-};
-
-export interface CartMergeRefusedParams {
-    /** The guest-cart lines `POST /cart/merge` could not add at all. */
-    lines: CartMergeRefusedParamsLinesItem[];
-}
-
-export type NotificationCartMergeRefusedCode =
-    (typeof NotificationCartMergeRefusedCode)[keyof typeof NotificationCartMergeRefusedCode];
-
-export const NotificationCartMergeRefusedCode = {
-    'notificationscart-merge-refused': 'notifications.cart-merge-refused'
-} as const;
-
-/**
- * Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available.
- */
-export interface NotificationCartMergeRefused {
-    id: Id;
-    code: NotificationCartMergeRefusedCode;
-    params: CartMergeRefusedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-/**
- * What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised and the date now expected (absent when there is none).
- */
-export interface FulfillmentDelayedParams {
-    orderId: Id;
-    fulfillmentOrderId: Id;
-    /** The waiting products' titles, as the order froze them. */
-    titles: string[];
-    agreedAt: string;
-    expectedAt?: string;
-}
-
-export type NotificationFulfillmentDelayedCode =
-    (typeof NotificationFulfillmentDelayedCode)[keyof typeof NotificationFulfillmentDelayedCode];
-
-export const NotificationFulfillmentDelayedCode = {
-    'notificationsfulfillment-delayed': 'notifications.fulfillment-delayed'
-} as const;
-
-/**
- * A preorder the caller paid for will arrive later than promised; cancelling is open and silence keeps waiting.
- */
-export interface NotificationFulfillmentDelayed {
-    id: Id;
-    code: NotificationFulfillmentDelayedCode;
-    params: FulfillmentDelayedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-export type FulfillmentHeldParamsNotice =
-    (typeof FulfillmentHeldParamsNotice)[keyof typeof FulfillmentHeldParamsNotice];
-
-export const FulfillmentHeldParamsNotice = {
-    check_address: 'check_address',
-    delayed: 'delayed'
-} as const;
-
-/**
- * What the buyer needs to read a hold notice: which order and fulfillment order, whether the address needs a look (`check_address`) or the order is only `delayed`, and the sentence staff wrote for them, if any. Never staff's reason.
- */
-export interface FulfillmentHeldParams {
-    orderId: Id;
-    fulfillmentOrderId: Id;
-    notice: FulfillmentHeldParamsNotice;
-    /** @maxLength 500 */
-    message?: string;
-}
-
-export type NotificationFulfillmentHeldCode =
-    (typeof NotificationFulfillmentHeldCode)[keyof typeof NotificationFulfillmentHeldCode];
-
-export const NotificationFulfillmentHeldCode = {
-    'notificationsfulfillment-held': 'notifications.fulfillment-held'
-} as const;
-
-/**
- * Part of an order the caller bought is held back, and they can act (check the address) or have a message from the shop.
- */
-export interface NotificationFulfillmentHeld {
-    id: Id;
-    code: NotificationFulfillmentHeldCode;
-    params: FulfillmentHeldParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-export type NotificationStockAlertCode =
-    (typeof NotificationStockAlertCode)[keyof typeof NotificationStockAlertCode];
-
-export const NotificationStockAlertCode = {
-    'notificationsstock-alert': 'notifications.stock-alert'
-} as const;
-
-/**
- * A product the caller asked to be told about can be ordered again. Sent once, then the request is gone.
- */
-export interface NotificationStockAlert {
-    id: Id;
-    code: NotificationStockAlertCode;
-    params: CartLineRemovedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-export type Notification =
-    | NotificationCartLineRemoved
-    | NotificationWishlistItemRemoved
-    | NotificationCartMergeRefused
-    | NotificationFulfillmentDelayed
-    | NotificationFulfillmentHeld
-    | NotificationStockAlert;
-
-export interface StockAlert {
-    productId: Id;
-    createdAt: string;
-}
-
-export type AccountExportResponseInvoicing = {
-    invoices: ExportInvoiceDocument[];
-    creditNotes: ExportInvoiceDocument[];
-};
-
-export type AccountExportResponseRolesItemScope =
-    (typeof AccountExportResponseRolesItemScope)[keyof typeof AccountExportResponseRolesItemScope];
-
-export const AccountExportResponseRolesItemScope = {
-    tenant: 'tenant',
-    platform: 'platform'
-} as const;
-
-export type AccountExportResponseRolesItem = {
-    role: string;
-    scope: AccountExportResponseRolesItemScope;
-};
-
-export interface AccountExportResponse {
-    exportedAt: string;
-    profile: Account;
-    auditLog: AuditEntryItem[];
-    sessions: ExportSession[];
-    addresses: Address[];
-    signInMethods: ExportSignInMethods;
-    /** Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`. */
-    feedback?: ExportFeedbackTicket[];
-    cart: CartItem[];
-    wishlist: WishlistExportItem[];
-    orders: ExportOrder[];
-    orderTimeline: OrderTimelineExportEntry[];
-    payments: ExportPayment[];
-    invoicing: AccountExportResponseInvoicing;
-    shipments: ExportShipment[];
-    fulfillmentOrders: ExportFulfillmentOrder[];
-    returns: ExportReturn[];
-    apiKeys: ApiKey[];
-    roles: AccountExportResponseRolesItem[];
-    examples: Example[];
-    notifications: Notification[];
-    stockAlerts: StockAlert[];
 }
 
 export interface SetPurchaseHoldRequest {
@@ -5757,6 +5771,11 @@ export type UserIdParamParameter = Id;
 export type ProductIdParamParameter = Id;
 
 /**
+ * The order's number as the customer quotes it (`2026-000041`); a leading `#`, spaces and an unpadded sequence (`#2026-41`) are tolerated. Exact and indexed. Anything that is not an order number finds nothing: an empty page, not an error. A caller holding `read:Order` alone still sees only their own orders.
+ */
+export type OrderNumberParamParameter = string;
+
+/**
  * First shop-local calendar day of the period, inclusive.
  */
 export type StatsFromParamParameter = string;
@@ -6151,6 +6170,11 @@ export type ListOrdersParams = {
      */
     productId?: ProductIdParamParameter;
     email?: Email;
+    /**
+     * The order's number as the customer quotes it (`2026-000041`); a leading `#`, spaces and an unpadded sequence (`#2026-41`) are tolerated. Exact and indexed. Anything that is not an order number finds nothing: an empty page, not an error. A caller holding `read:Order` alone still sees only their own orders.
+     * @maxLength 32
+     */
+    orderNumber?: OrderNumberParamParameter;
     status?: OrderStatus;
     /**
      * Filter to orders whose goods stand here — the same derived value `Order.fulfillmentStatus` carries, so `on_hold` and `partially_fulfilled` can be listed.
@@ -6410,6 +6434,11 @@ export type ExportOrdersParams = {
      */
     productId?: ProductIdParamParameter;
     email?: Email;
+    /**
+     * The order's number as the customer quotes it (`2026-000041`); a leading `#`, spaces and an unpadded sequence (`#2026-41`) are tolerated. Exact and indexed. Anything that is not an order number finds nothing: an empty page, not an error. A caller holding `read:Order` alone still sees only their own orders.
+     * @maxLength 32
+     */
+    orderNumber?: OrderNumberParamParameter;
     status?: OrderStatus;
     fulfillmentStatus?: OrderFulfillmentStatus;
     paymentMethod?: PaymentMethodId;
@@ -8040,7 +8069,7 @@ export const refreshToken = (
 };
 
 /**
- * Starts "give me my data" (Art. 15, 20) and answers at once with `202` and the export's `id` and `status`. The file is built in the background from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail — and a LINK to it is mailed to the account's address when it is ready, never the data itself. Fetch it with `GET /account/export/{id}`.
+ * Starts "give me my data" (Art. 15, 20) and answers at once with `202` and the export's `id` and `status`. The file is built in the background from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail — and a LINK to it is mailed to the account's address when it is ready, never the data itself. Fetch it with `GET /account/export`.
  *
  * One live export per account. Asking while one is `building` returns that one; asking after one is `ready` or `failed` replaces it (the old file and record are deleted first). A file is kept for `NODE_ACCOUNT_EXPORT_TTL_DAYS` days. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
  *
@@ -8051,6 +8080,16 @@ export const requestAccountExport = (
     options?: SecondParameter<typeof orvalMutator<AccountExportRequest>>
 ) => {
     return orvalMutator<AccountExportRequest>({ url: `/account/export`, method: 'POST' }, options);
+};
+
+/**
+ * Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. An account has one live export, so there is no id to name: the caller's own is the one served. A FRESH session (`requireFreshAuth`), same as the request. `404` when the caller has none, it is still `building`, `failed`, or already gone (past its retention): the caller cannot tell these apart, by design.
+ * @summary Download an export of the caller's own data
+ */
+export const downloadAccountExport = (
+    options?: SecondParameter<typeof orvalMutator<AccountExportResponse>>
+) => {
+    return orvalMutator<AccountExportResponse>({ url: `/account/export`, method: 'GET' }, options);
 };
 
 /**
@@ -9305,11 +9344,16 @@ export const checkout = (
  * @summary Reorder (refill cart from a past order)
  */
 export const reorder = (
-    orderId: string,
+    reorderRequest: ReorderRequest,
     options?: SecondParameter<typeof orvalMutator<ReorderResponse>>
 ) => {
     return orvalMutator<ReorderResponse>(
-        { url: `/cart/reorder/${orderId}`, method: 'POST' },
+        {
+            url: `/cart/reorder`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: reorderRequest
+        },
         options
     );
 };
@@ -9635,6 +9679,50 @@ export const getOrderCreditNote = (
 };
 
 /**
+ * The payment record of one of the caller's orders, so a reload mid-flow finds the intent and its status again. Unpaged: an order has one payment row, so `items` holds none or one, like `GET /orders/{id}/credit-notes`. No payment started yet is `{ "items": [] }`, not a 404: absence is an answer, and the client starts the flow with `POST /payments`. `404` only for an order the caller cannot see. A caller holding `display:Payment` reads anyone's.
+ * @summary List the payments of an order
+ */
+export const listOrderPayments = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<OrderPaymentsResponse>>
+) => {
+    return orvalMutator<OrderPaymentsResponse>(
+        { url: `/orders/${id}/payments`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * The payment is a child of the order: Solidus' `POST /api/orders/{number}/payments`. An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted a row that already existed: a card intent nobody paid, or the open payment of a `bank_transfer` order (the very payment being recorded).
+ * A transfer that arrives after its order was cancelled is recorded too, onto the payment the cancel closed: the money is real, the order cannot be paid any more, so it answers 200 with the payment `succeeded` and a refund record left open (a hand-paid refund is returned by the operator, off-system, and then marked done).
+ * Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * @summary Record a payment on an order
+ */
+export const recordOrderPayment = (
+    id: string,
+    recordOfflinePaymentRequest: RecordOfflinePaymentRequest,
+    options?: SecondParameter<typeof orvalMutator<Payment>>
+) => {
+    return orvalMutator<Payment>(
+        {
+            url: `/orders/${id}/payments`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: recordOfflinePaymentRequest
+        },
+        options
+    );
+};
+
+/**
+ * Reports that fulfilment has started — the order moves `paid → processing`. The verb names the status it reaches, as `cancel` does; the module behind it is `delivery`'s. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
+ * @summary Process a paid order
+ */
+export const processOrder = (id: string, options?: SecondParameter<typeof orvalMutator<Order>>) => {
+    return orvalMutator<Order>({ url: `/orders/${id}/process`, method: 'POST' }, options);
+};
+
+/**
  * Which methods this deployment offers, so the frontend hard-codes none. `card` is present only when a card payment provider is configured; `bank_transfer` only once its beneficiary and IBAN are configured. With neither the list is empty, and checkout is off until a method is configured. Public — like `GET /delivery/methods`, this is pre-purchase information.
  * @summary List payment methods
  */
@@ -9645,17 +9733,6 @@ export const listPaymentMethods = (
         { url: `/payments/methods`, method: 'GET' },
         options
     );
-};
-
-/**
- * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. A caller holding `display:Payment` reads anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments`.
- * @summary Get the payment behind an order
- */
-export const getPaymentByOrder = (
-    orderId: string,
-    options?: SecondParameter<typeof orvalMutator<Payment>>
-) => {
-    return orvalMutator<Payment>({ url: `/payments/orders/${orderId}`, method: 'GET' }, options);
 };
 
 /**
@@ -9690,28 +9767,6 @@ export const getRefund = (
 ) => {
     return orvalMutator<Refund>(
         { url: `/payments/${id}/refunds/${refundId}`, method: 'GET' },
-        options
-    );
-};
-
-/**
- * An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted a row that already existed: a card intent nobody paid, or the open payment of a `bank_transfer` order (the very payment being recorded).
- * A transfer that arrives after its order was cancelled is recorded too, onto the payment the cancel closed: the money is real, the order cannot be paid any more, so it answers 200 with the payment `succeeded` and a refund record left open (a hand-paid refund is returned by the operator, off-system, and then marked done).
- * Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
- * @summary Record a payment that arrived outside the provider
- */
-export const recordOfflinePayment = (
-    orderId: string,
-    recordOfflinePaymentRequest: RecordOfflinePaymentRequest,
-    options?: SecondParameter<typeof orvalMutator<Payment>>
-) => {
-    return orvalMutator<Payment>(
-        {
-            url: `/payments/orders/${orderId}/offline`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: recordOfflinePaymentRequest
-        },
         options
     );
 };
@@ -9798,20 +9853,6 @@ export const getFulfillmentByOrder = (
 ) => {
     return orvalMutator<OrderFulfillment>(
         { url: `/delivery/orders/${orderId}`, method: 'GET' },
-        options
-    );
-};
-
-/**
- * Reports that fulfilment has started — the order moves `paid → processing`. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
- * @summary Begin fulfilling a paid order
- */
-export const startFulfilment = (
-    orderId: string,
-    options?: SecondParameter<typeof orvalMutator<Order>>
-) => {
-    return orvalMutator<Order>(
-        { url: `/delivery/orders/${orderId}/start`, method: 'POST' },
         options
     );
 };
@@ -10588,20 +10629,6 @@ export const getSessionConfig = (options?: SecondParameter<typeof orvalMutator<S
 };
 
 /**
- * Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. Owner only, and a FRESH session (`requireFreshAuth`), same as the request. `404` for an export that is not the caller's, is still `building`, `failed`, or is already gone (past its retention, or replaced by a newer request): the caller cannot tell these apart, by design.
- * @summary Download an export of the caller's own data
- */
-export const downloadAccountExport = (
-    id: string,
-    options?: SecondParameter<typeof orvalMutator<AccountExportResponse>>
-) => {
-    return orvalMutator<AccountExportResponse>(
-        { url: `/account/export/${id}`, method: 'GET' },
-        options
-    );
-};
-
-/**
  * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Clears the account's review flag: placing a hold is acting on it. Audited as `admin.user.purchase_hold_set`.
  * @summary Put a purchase hold on a user
  */
@@ -11048,17 +11075,6 @@ export const getWebhookDelivery = (
 };
 
 /**
- * Returns one example, to anyone, but only while its status is `published`. A draft or an archived example answers `404`, the same as an id that does not exist.
- * @summary Read a published example
- */
-export const getPublishedExample = (
-    id: string,
-    options?: SecondParameter<typeof orvalMutator<Example>>
-) => {
-    return orvalMutator<Example>({ url: `/examples/published/${id}`, method: 'GET' }, options);
-};
-
-/**
  * Returns the caller's own examples, newest first by default. A caller holding `display:Example` sees everyone's.
  * @summary List examples
  */
@@ -11108,7 +11124,7 @@ export const searchExamples = (
 };
 
 /**
- * Returns one example the caller may read — their own, or any when they hold `display:Example`. Another person's example answers `404`, never `403`, so an id reveals nothing about who owns it.
+ * Returns one example, scoped by the caller as `GET /products/{id}` is. A `published` example is open to anyone, signed in or not. The owner also reads their own drafts and archived ones, and a caller holding `display:Example` reads any. Everything else answers `404`, never `403`, so an id reveals nothing about who owns it or whether a draft exists. The answer varies by caller and language, so it is never shared-cached.
  * @summary Read an example
  */
 export const getExampleById = (
@@ -11233,13 +11249,23 @@ export const replaceExampleCover = (
 };
 
 /**
- * The caller's own inbox, newest first. A notification stays until its owner deletes it (`DELETE /notifications/{id}`, `POST /notifications/dismiss-all`), the per-user cap trims it, or the account goes. Never paginated: the inbox is bounded by that cap, so one read is the whole of it. Empty and absent are the same state — this never answers 404. A client keeps the list live with `GET /notifications/stream`; the stream carries only what is written while it is open, so this read is what a login, a reload or a dropped connection starts from.
+ * The caller's own inbox, newest first. A notification stays until its owner deletes it (`DELETE /notifications/{id}`, `DELETE /notifications`), the per-user cap trims it, or the account goes. Never paginated: the inbox is bounded by that cap, so one read is the whole of it. Empty and absent are the same state — this never answers 404. A client keeps the list live with `GET /notifications/stream`; the stream carries only what is written while it is open, so this read is what a login, a reload or a dropped connection starts from.
  * @summary List notifications
  */
 export const listNotifications = (
     options?: SecondParameter<typeof orvalMutator<NotificationsResponse>>
 ) => {
     return orvalMutator<NotificationsResponse>({ url: `/notifications`, method: 'GET' }, options);
+};
+
+/**
+ * Permanently deletes every notification of the caller — a hard delete, like `DELETE /notifications/{id}`, on the collection itself (as `DELETE /account/sessions` and `DELETE /cart/items` are). Emptying an empty inbox is the state the caller asked for, so it answers 204 too. `POST /notifications/read-all` stays an action: it moves `readAt`, not membership.
+ * @summary Delete every notification
+ */
+export const dismissAllNotifications = (
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
+) => {
+    return orvalMutator<NoContentResponse>({ url: `/notifications`, method: 'DELETE' }, options);
 };
 
 /**
@@ -11259,19 +11285,6 @@ export const readAllNotifications = (
 ) => {
     return orvalMutator<NoContentResponse>(
         { url: `/notifications/read-all`, method: 'POST' },
-        options
-    );
-};
-
-/**
- * Permanently deletes every notification of the caller — a hard delete, like `DELETE /notifications/{id}`. Emptying an empty inbox is the state the caller asked for, so it answers 200.
- * @summary Delete every notification
- */
-export const dismissAllNotifications = (
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/notifications/dismiss-all`, method: 'POST' },
         options
     );
 };
@@ -11518,6 +11531,9 @@ export type RefreshTokenResult = NonNullable<Awaited<ReturnType<typeof refreshTo
 export type RequestAccountExportResult = NonNullable<
     Awaited<ReturnType<typeof requestAccountExport>>
 >;
+export type DownloadAccountExportResult = NonNullable<
+    Awaited<ReturnType<typeof downloadAccountExport>>
+>;
 export type LoginTwoFactorResult = NonNullable<Awaited<ReturnType<typeof loginTwoFactor>>>;
 export type SendTwoFactorCodeResult = NonNullable<Awaited<ReturnType<typeof sendTwoFactorCode>>>;
 export type GetTwoFactorStatusResult = NonNullable<Awaited<ReturnType<typeof getTwoFactorStatus>>>;
@@ -11656,15 +11672,14 @@ export type ListOrderCreditNotesResult = NonNullable<
     Awaited<ReturnType<typeof listOrderCreditNotes>>
 >;
 export type GetOrderCreditNoteResult = NonNullable<Awaited<ReturnType<typeof getOrderCreditNote>>>;
+export type ListOrderPaymentsResult = NonNullable<Awaited<ReturnType<typeof listOrderPayments>>>;
+export type RecordOrderPaymentResult = NonNullable<Awaited<ReturnType<typeof recordOrderPayment>>>;
+export type ProcessOrderResult = NonNullable<Awaited<ReturnType<typeof processOrder>>>;
 export type ListPaymentMethodsResult = NonNullable<Awaited<ReturnType<typeof listPaymentMethods>>>;
-export type GetPaymentByOrderResult = NonNullable<Awaited<ReturnType<typeof getPaymentByOrder>>>;
 export type RefundPaymentByOrderResult = NonNullable<
     Awaited<ReturnType<typeof refundPaymentByOrder>>
 >;
 export type GetRefundResult = NonNullable<Awaited<ReturnType<typeof getRefund>>>;
-export type RecordOfflinePaymentResult = NonNullable<
-    Awaited<ReturnType<typeof recordOfflinePayment>>
->;
 export type GetPaymentResult = NonNullable<Awaited<ReturnType<typeof getPayment>>>;
 export type ConfirmPaymentResult = NonNullable<Awaited<ReturnType<typeof confirmPayment>>>;
 export type SyncPaymentResult = NonNullable<Awaited<ReturnType<typeof syncPayment>>>;
@@ -11677,7 +11692,6 @@ export type ListShippingMethodsResult = NonNullable<
 export type GetFulfillmentByOrderResult = NonNullable<
     Awaited<ReturnType<typeof getFulfillmentByOrder>>
 >;
-export type StartFulfilmentResult = NonNullable<Awaited<ReturnType<typeof startFulfilment>>>;
 export type ListPreorderFulfillmentOrdersResult = NonNullable<
     Awaited<ReturnType<typeof listPreorderFulfillmentOrders>>
 >;
@@ -11761,9 +11775,6 @@ export type DeactivateLocaleResult = NonNullable<Awaited<ReturnType<typeof deact
 export type SendReauthCodeResult = NonNullable<Awaited<ReturnType<typeof sendReauthCode>>>;
 export type TouchSessionResult = NonNullable<Awaited<ReturnType<typeof touchSession>>>;
 export type GetSessionConfigResult = NonNullable<Awaited<ReturnType<typeof getSessionConfig>>>;
-export type DownloadAccountExportResult = NonNullable<
-    Awaited<ReturnType<typeof downloadAccountExport>>
->;
 export type SetUserPurchaseHoldResult = NonNullable<
     Awaited<ReturnType<typeof setUserPurchaseHold>>
 >;
@@ -11814,9 +11825,6 @@ export type DisableWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof disableWebhookSubscription>>
 >;
 export type GetWebhookDeliveryResult = NonNullable<Awaited<ReturnType<typeof getWebhookDelivery>>>;
-export type GetPublishedExampleResult = NonNullable<
-    Awaited<ReturnType<typeof getPublishedExample>>
->;
 export type ListExamplesResult = NonNullable<Awaited<ReturnType<typeof listExamples>>>;
 export type CreateExampleResult = NonNullable<Awaited<ReturnType<typeof createExample>>>;
 export type SearchExamplesResult = NonNullable<Awaited<ReturnType<typeof searchExamples>>>;
@@ -11832,14 +11840,14 @@ export type ReplaceExampleCoverResult = NonNullable<
     Awaited<ReturnType<typeof replaceExampleCover>>
 >;
 export type ListNotificationsResult = NonNullable<Awaited<ReturnType<typeof listNotifications>>>;
+export type DismissAllNotificationsResult = NonNullable<
+    Awaited<ReturnType<typeof dismissAllNotifications>>
+>;
 export type GetNotificationsStreamResult = NonNullable<
     Awaited<ReturnType<typeof getNotificationsStream>>
 >;
 export type ReadAllNotificationsResult = NonNullable<
     Awaited<ReturnType<typeof readAllNotifications>>
->;
-export type DismissAllNotificationsResult = NonNullable<
-    Awaited<ReturnType<typeof dismissAllNotifications>>
 >;
 export type GetNotificationByIdResult = NonNullable<
     Awaited<ReturnType<typeof getNotificationById>>

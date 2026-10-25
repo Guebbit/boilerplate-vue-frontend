@@ -15,7 +15,12 @@
  * Each spends one card confirm, as `user`. The Finish button is the server's `actions.sync`, which
  * the confirm's own answer already carries: the page never has to re-read to find it.
  */
-import { addToCartFromStorefront, eventually, idFromLocation } from '../../../support/e2e/steps';
+import {
+    addToCartFromStorefront,
+    eventually,
+    idFromLocation,
+    paymentOfOrder
+} from '../../../support/e2e/steps';
 
 /** The slice of an order this story reads. */
 interface OrderLike {
@@ -67,15 +72,13 @@ describe('CU4 · A card that is slow to settle', () => {
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
                 expect(order?.status, 'nothing is paid yet').to.equal('pending');
             });
-            cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`).should(
-                (payment) => {
-                    expect(
-                        payment?.actions.sync,
-                        'the server offers Finish, not a second method'
-                    ).to.equal(true);
-                    expect(payment?.actions.pay).to.equal(false);
-                }
-            );
+            paymentOfOrder<PaymentLike>('user', orderId).should((payment) => {
+                expect(
+                    payment?.actions.sync,
+                    'the server offers Finish, not a second method'
+                ).to.equal(true);
+                expect(payment?.actions.pay).to.equal(false);
+            });
             cy.reload();
             cy.get('[data-test=payment-finish]').should('exist');
 
@@ -87,11 +90,9 @@ describe('CU4 · A card that is slow to settle', () => {
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
                 expect(order?.status).to.equal('paid');
             });
-            cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`).should(
-                (payment) => {
-                    expect(payment?.status).to.equal('succeeded');
-                }
-            );
+            paymentOfOrder<PaymentLike>('user', orderId).should((payment) => {
+                expect(payment?.status).to.equal('succeeded');
+            });
         });
     });
 
@@ -108,7 +109,7 @@ describe('CU4 · A card that is slow to settle', () => {
 
             cy.step('the cancel itself refunds the payment, and the order stays cancelled');
             eventually(
-                () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`),
+                () => paymentOfOrder<PaymentLike>('user', orderId),
                 (payment) => payment?.displayStatus === 'refunded'
             ).should((payment) => {
                 expect(payment?.displayStatus).to.equal('refunded');

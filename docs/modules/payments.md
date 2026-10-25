@@ -159,7 +159,7 @@ The rest of the module is components, schemas and a store contributed to the mod
 | `POST /payments/{id}/confirm`                   | `ConfirmPaymentResponse`       |
 | `POST /payments/{id}/sync`                      | `SyncPaymentResponse`          |
 | `POST /payments`                                | `CreatePaymentResponse`        |
-| `GET /payments/orders/{id}`                     | `GetPaymentByOrderResponse`    |
+| `GET /orders/{id}/payments`                     | `ListOrderPaymentsResponse`    |
 | `GET /payments/{id}`                            | `GetPaymentResponse`           |
 | `GET /payments/{id}/refunds/{refundId}`         | `GetRefundResponse`            |
 | `POST /payments/{id}/refunds`                   | `RefundPaymentByOrderResponse` |

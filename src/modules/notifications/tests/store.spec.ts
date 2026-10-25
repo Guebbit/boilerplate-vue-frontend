@@ -101,7 +101,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     answers = {
         'POST /notifications/read-all': undefined,
-        'POST /notifications/dismiss-all': undefined
+        'DELETE /notifications': undefined
     };
     return loadLocale('en');
 });
@@ -600,9 +600,9 @@ describe('dismissAll', () => {
             .sync()
             .then(() => inbox.dismissAll())
             .then(() => {
-                expect(requests().filter((request) => request.startsWith('POST'))).toEqual([
-                    'POST /notifications/dismiss-all'
-                ]);
+                expect(
+                    requests().filter((request) => request.startsWith('DELETE /notifications'))
+                ).toEqual(['DELETE /notifications']);
                 expect(inbox.items).toEqual([]);
             });
     });
@@ -611,8 +611,8 @@ describe('dismissAll', () => {
         const inbox = useInboxStore();
         inbox.receiveCreated({ notification: row('n1') });
         const answer = Promise.withResolvers<undefined>();
-        answers['POST /notifications/dismiss-all'] = () =>
-            answer.promise.then(() => parseOrvalFixture('POST', '/notifications/dismiss-all', {}));
+        answers['DELETE /notifications'] = () =>
+            answer.promise.then(() => parseOrvalFixture('DELETE', '/notifications', {}));
 
         const dismissing = inbox.dismissAll();
         inbox.receiveCreated({ notification: row('n2') });
@@ -625,7 +625,7 @@ describe('dismissAll', () => {
     it('leaves everything in place and toasts the error when the server refuses', () => {
         const inbox = useInboxStore();
         serverHolds([row('n1'), row('n2')]);
-        answers['POST /notifications/dismiss-all'] = refusal(500);
+        answers['DELETE /notifications'] = refusal(500);
 
         return inbox
             .sync()

@@ -14,7 +14,7 @@ import { loadShop, shipToCountries as shipToCountriesOfShop } from '@/infrastruc
 import {
     listShippingMethods,
     getFulfillmentByOrder,
-    startFulfilment,
+    processOrder,
     shipFulfillmentOrder,
     fulfillFulfillmentOrder,
     holdFulfillmentOrder,
@@ -181,8 +181,8 @@ export const useDeliveryStore = defineStore('delivery', () => {
      * @param orderId - The order to start fulfilling.
      * @returns A promise resolving once the move lands.
      */
-    const start = (orderId: string) =>
-        fetchAny(() => startFulfilment(orderId).then(() => undefined));
+    const process = (orderId: string) =>
+        fetchAny(() => processOrder(orderId).then(() => undefined));
 
     /**
      * Cuts a shipment from a fulfillment order (admin). The order moves to `shipped` only when
@@ -285,7 +285,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
         fetchPreorderSummaries,
         fetchMethods,
         fetchFulfillmentForOrder,
-        start,
+        process,
         ship,
         fulfill,
         hold,

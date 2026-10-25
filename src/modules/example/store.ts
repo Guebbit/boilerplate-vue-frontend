@@ -14,7 +14,6 @@ import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
 import {
     listExamples,
     getExampleById,
-    getPublishedExample,
     createExample as apiCreateExample,
     updateExampleById,
     deleteExampleById,
@@ -162,13 +161,14 @@ export const useExampleStore = defineStore('example', () => {
         );
 
     /**
-     * Reads a published example for the public screen. Not cached with the signed-in records: a
-     * stranger's read and an owner's list are different answers, and this one needs no session.
+     * Reads one example for the public screen through the caller-scoped `GET /examples/{id}` (a
+     * published one is anyone's, no session needed). Not cached with the signed-in records: a
+     * stranger's read and an owner's list are different answers.
      *
      * @param id - The example to read.
      * @returns The published example.
      */
-    const fetchPublished = (id: string) => fetchAny(() => getPublishedExample(id));
+    const fetchPublished = (id: string) => fetchAny(() => getExampleById(id));
 
     return {
         examples,

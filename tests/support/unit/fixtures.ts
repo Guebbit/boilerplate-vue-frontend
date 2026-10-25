@@ -31,7 +31,7 @@ export const NO_ORDER_ACTIONS: OrderActions = {
     cancel: false,
     pay: false,
     recordPayment: false,
-    start: false,
+    process: false,
     override: [],
     correctAddress: false,
     withdraw: false,

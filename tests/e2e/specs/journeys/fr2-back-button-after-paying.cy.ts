@@ -8,7 +8,7 @@
  *
  * It spends one card confirmation of the customer's hourly budget, like any paying journey.
  */
-import { idFromLocation } from '../../../support/e2e/steps';
+import { idFromLocation, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** The slice of a payment this story reads: where the money stands. */
 interface PaymentLike {
@@ -62,11 +62,9 @@ describe('FR2 · The Back button after paying', () => {
             cy.reload();
             cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
             cy.get('[data-test=payment-submit]').should('not.exist');
-            cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`).should(
-                (payment) => {
-                    expect(payment?.status).to.equal('succeeded');
-                }
-            );
+            paymentOfOrder<PaymentLike>('user', orderId).should((payment) => {
+                expect(payment?.status).to.equal('succeeded');
+            });
             cy.apiAs<{ status: string }>('user', 'GET', `/orders/${orderId}`).should((order) => {
                 expect(order?.status).to.equal('paid');
             });

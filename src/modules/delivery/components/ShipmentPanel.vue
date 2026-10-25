@@ -13,7 +13,7 @@ export default {
  * @module
  * Single-file component: `<script setup>` lists the order's fulfillment orders, each a card with
  * its own shipments, and the one order-level control left here — "Start fulfilment", offered
- * by the order's own `actions.start`. Every other control lives on the record it acts on and
+ * by the order's own `actions.process`. Every other control lives on the record it acts on and
  * comes from that record's own `actions`: this panel never derives a lifecycle rule. The
  * tracking-code requirement is the one fact read off `GET /delivery/methods` (published, not a rule).
  */
@@ -42,7 +42,7 @@ const { orderId, shippingMethodId, canStart } = defineProps<{
      */
     shippingMethodId?: string;
     /**
-     * The order's own `actions.start` — whether `POST /delivery/orders/{id}/start` would be
+     * The order's own `actions.process` — whether `POST /orders/{id}/process` would be
      * accepted right now. Who may start fulfilment (`start:Shipment`) is a different key
      * than who may write a shipment, so it stays the order's flag.
      */
@@ -144,7 +144,7 @@ const shipmentsOf = (fulfillmentOrderId: string) =>
 const markStarted = () => {
     clearPanelError();
     return deliveryStore
-        .start(orderId)
+        .process(orderId)
         .then(() => deliveryStore.fetchFulfillmentForOrder(orderId))
         .then(() => {
             addMessage(t('shipment-panel.started'));

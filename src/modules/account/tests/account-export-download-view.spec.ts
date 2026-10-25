@@ -55,7 +55,7 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     return loadLocale('en').then(() =>
-        router.push('/en/account-export/e1').then(() => router.isReady())
+        router.push('/en/account-export').then(() => router.isReady())
     );
 });
 
@@ -75,7 +75,7 @@ describe('AccountExportDownload', () => {
             .trigger('click')
             .then(flushPromises)
             .then(() => {
-                expect(download).toHaveBeenCalledExactlyOnceWith('e1');
+                expect(download).toHaveBeenCalledExactlyOnceWith();
                 expect(downloadBlob).toHaveBeenCalledExactlyOnceWith(
                     JSON.stringify(DOCUMENT, null, 2),
                     'account-export-2026-09-07.json',

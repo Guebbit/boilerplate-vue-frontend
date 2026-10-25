@@ -294,7 +294,7 @@ describe('inside the panel', () => {
         panel()!.querySelector<HTMLElement>('[data-test=notifications-clear-all]')!.click();
         await flushPromises();
 
-        expect(requests()).toContain('POST /notifications/dismiss-all');
+        expect(requests()).toContain('DELETE /notifications');
         expect(useInboxStore().items).toEqual([]);
     });
 

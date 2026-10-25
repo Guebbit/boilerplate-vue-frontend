@@ -10,7 +10,7 @@
  * Time passes by moving the demo backend's clock, so this is a demo-only journey. The window is
  * `NODE_REAUTH_TIME_CRITICAL` (300 s); each jump is past it and inside the access token's life.
  */
-import { eventually, shipTheOpenGroup } from '../../../support/e2e/steps';
+import { eventually, shipTheOpenGroup, paymentOfOrder } from '../../../support/e2e/steps';
 import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
 
 /** Past the critical window (300 s), inside the access token's own life (600 s). */
@@ -100,18 +100,16 @@ describe('OP20 · Staff prove it’s still them', () => {
             cy.visit(`/en/orders/${orderId}/edit`);
             cy.get('[data-test=button-refund-only]').should('not.be.disabled').click();
             wrongThenCancel();
-            cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`).should(
-                (payment) => {
-                    expect(payment?.amountRefunded, 'cancel refunded nothing').to.equal(0);
-                }
-            );
+            paymentOfOrder<PaymentLike>('admin', orderId).should((payment) => {
+                expect(payment?.amountRefunded, 'cancel refunded nothing').to.equal(0);
+            });
             cy.get('[data-test=button-refund-only]').click();
             cy.get('[data-test=reauth-dialog]').should('be.visible');
             answerAs('admin');
             cy.get('[data-test=reauth-dialog]').should('not.exist');
             // The dialog closes once the password is accepted; the replayed refund lands just after.
             eventually(
-                () => cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`),
+                () => paymentOfOrder<PaymentLike>('admin', orderId),
                 (payment) => payment?.amountRefunded === payment?.amount
             ).should((payment) => {
                 expect(payment?.amountRefunded, 'refunded once, in full').to.equal(payment?.amount);

@@ -445,7 +445,7 @@ describe('AttentionList', () => {
     it('opens the payment’s drawer from a refund owed by hand, and from no other kind', async () => {
         answerAttentionWith(ITEMS);
         const read = vi
-            .spyOn(usePaymentsStore(), 'readPaymentForOrder')
+            .spyOn(usePaymentsStore(), 'readPayment')
             .mockResolvedValue(aPayment({ orderId: 'o1', provider: 'manual', method: 'cash' }));
         const wrapper = mount(AttentionList, { global: GLOBAL });
         await flushPromises();
@@ -455,7 +455,7 @@ describe('AttentionList', () => {
         await rows[1]?.get('[data-test="attention-open-payment"]').trigger('click');
         await flushPromises();
 
-        expect(read).toHaveBeenCalledWith('o1');
+        expect(read).toHaveBeenCalledWith('pay-1');
         expect(wrapper.find('[data-test="payment-drawer"]').exists()).toBe(true);
     });
 });

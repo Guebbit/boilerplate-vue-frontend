@@ -93,7 +93,8 @@ beforeEach(() => {
         'POST /payments': PAYMENT,
         'POST /payments/payment-1/confirm': { ...PAYMENT, status: 'succeeded' },
         'POST /payments/payment-1/sync': { ...PAYMENT, status: 'succeeded' },
-        'GET /payments/orders/order-1': { ...PAYMENT, status: 'succeeded' }
+        'GET /orders/order-1/payments': { items: [{ ...PAYMENT, status: 'succeeded' }] },
+        'GET /payments/payment-1': { ...PAYMENT, status: 'succeeded' }
     };
 });
 
@@ -126,8 +127,8 @@ describe('fetchPaymentForOrder', () => {
         });
     });
 
-    it('reads a 404 as "no payment yet", not as a crash', () => {
-        responses = {};
+    it('reads an empty list as "no payment yet", not as a crash', () => {
+        responses = { 'GET /orders/order-1/payments': { items: [] } };
         const store = usePaymentsStore();
         return store.fetchPaymentForOrder('order-1').then((payment) => {
             expect(payment).toBeUndefined();
@@ -141,7 +142,7 @@ describe('fetchPaymentForOrder', () => {
      * the caller — swallowed, it renders the pay form for an order that may already be paid.
      */
     it('lets any other failure through instead of calling it "no payment yet"', () => {
-        responses = { 'GET /payments/orders/order-1': new Error('Internal Server Error') };
+        responses = { 'GET /orders/order-1/payments': new Error('Internal Server Error') };
         const store = usePaymentsStore();
         return expect(store.fetchPaymentForOrder('order-1')).rejects.toMatchObject({
             status: 500
@@ -251,7 +252,7 @@ describe('finishAtProvider', () => {
             .then(() => {
                 expect(requestedUrls()).toEqual([
                     '/payments/payment-1/sync',
-                    '/payments/orders/order-1'
+                    '/orders/order-1/payments'
                 ]);
             });
     });
@@ -275,7 +276,7 @@ describe('finishAtProvider', () => {
 
 describe('recordOfflinePayment', () => {
     it('sends the method and reference, and mirrors the settled payment', () => {
-        responses['POST /payments/orders/order-1/offline'] = {
+        responses['POST /orders/order-1/payments'] = {
             ...PAYMENT,
             provider: 'manual',
             method: 'cash',
@@ -290,9 +291,9 @@ describe('recordOfflinePayment', () => {
                 const call = vi
                     .mocked(orvalMutator)
                     .mock.calls.map((entry) => entry[0] as { url: string; data?: unknown })
-                    .find(({ url }) => url.endsWith('/offline'));
+                    .find(({ url }) => url.endsWith('/payments'));
 
-                expect(contractRequest(schemas.RecordOfflinePaymentBody, call?.data)).toEqual({
+                expect(contractRequest(schemas.RecordOrderPaymentBody, call?.data)).toEqual({
                     method: 'cash',
                     reference: 'till-42'
                 });
@@ -306,7 +307,7 @@ describe('recordOfflinePayment', () => {
      * absence and not a decline — the caller's toast carries the server's own message.
      */
     it('lets a refusal through — a card charge already in flight, for instance', () => {
-        responses['POST /payments/orders/order-1/offline'] = {
+        responses['POST /orders/order-1/payments'] = {
             status: 409,
             code: 'PAYMENT_IN_FLIGHT',
             message: 'A card payment is already in progress for this order.'
@@ -459,7 +460,7 @@ describe('refundPayment', () => {
             .then(() => {
                 expect(requestedUrls()).toEqual([
                     '/payments/payment-1/refunds',
-                    '/payments/orders/order-1'
+                    '/orders/order-1/payments'
                 ]);
             });
     });
@@ -520,22 +521,22 @@ describe('settleRefundByHand', () => {
             .then(() => {
                 expect(requestedUrls()).toEqual([
                     '/payments/payment-1/refunds/refund-1/settle',
-                    '/payments/orders/order-1'
+                    '/orders/order-1/payments'
                 ]);
             });
     });
 });
 
-describe('readPaymentForOrder', () => {
+describe('readPayment', () => {
     it('reads the payment without replacing the order page’s cached one', () => {
-        responses['GET /payments/orders/order-2'] = {
+        responses['GET /payments/payment-2'] = {
             ...PAYMENT,
             id: 'payment-2',
             orderId: 'order-2'
         };
         const store = usePaymentsStore();
 
-        return store.readPaymentForOrder('order-2').then((read) => {
+        return store.readPayment('payment-2').then((read) => {
             expect(read?.id).toBe('payment-2');
             expect(store.payment).toBeUndefined();
         });
@@ -582,7 +583,7 @@ describe('the refund key after a failure', () => {
             .refundPayment(TARGET_1)
             .catch(() => undefined)
             .then(() => {
-                expect(requestedUrls()).toContain('/payments/orders/order-1');
+                expect(requestedUrls()).toContain('/orders/order-1/payments');
             });
     });
 

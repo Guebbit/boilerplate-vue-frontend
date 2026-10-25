@@ -90,7 +90,7 @@ describe('CU32 · My transfer was never paid', () => {
             });
 
             cy.step('recording the transfer settles the payment, which is then owed back');
-            cy.apiAs('admin', 'POST', `/payments/orders/${orderId}/offline`, {
+            cy.apiAs('admin', 'POST', `/orders/${orderId}/payments`, {
                 method: 'bank_transfer',
                 reference: 'LATE-TRANSFER-1'
             });

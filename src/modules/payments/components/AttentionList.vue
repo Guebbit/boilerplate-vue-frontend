@@ -72,8 +72,8 @@ onMounted(() => {
 });
 
 /**
- * The payment whose drawer is open, and whether it is. Read on demand: the item names an order,
- * not the payment.
+ * The payment whose drawer is open, and whether it is. Read on demand by the id the item carries:
+ * the item is a problem on a payment, not the payment itself.
  */
 const picked = ref<Payment>();
 
@@ -83,14 +83,14 @@ const picked = ref<Payment>();
 const drawerOpen = ref(false);
 
 /**
- * Opens the drawer on an order's payment.
+ * Opens the drawer on the payment an item is about.
  *
- * @param orderId - The order the item is about.
+ * @param paymentId - The payment the item names.
  * @returns A promise settling once the drawer opened or the failure was toasted.
  */
-const openPayment = (orderId: string) =>
+const openPayment = (paymentId: string) =>
     store
-        .readPaymentForOrder(orderId)
+        .readPayment(paymentId)
         .then((payment) => {
             picked.value = payment;
             drawerOpen.value = true;
@@ -181,7 +181,7 @@ const auditLink = computed(() => {
                     size="small"
                     variant="tonal"
                     data-test="attention-open-payment"
-                    @click="openPayment(item.orderId)"
+                    @click="openPayment(item.paymentId)"
                 >
                     {{ t('payments-list-page.button-open-payment') }}
                 </v-btn>

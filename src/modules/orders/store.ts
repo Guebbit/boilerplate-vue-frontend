@@ -83,6 +83,7 @@ const criteriaOf = (filters: OrdersFilters) => ({
     userId: filters.userId,
     productId: filters.productId,
     email: filters.email,
+    orderNumber: filters.orderNumber,
     status: filters.status,
     fulfillmentStatus: filters.fulfillmentStatus,
     paymentMethod: filters.paymentMethod,

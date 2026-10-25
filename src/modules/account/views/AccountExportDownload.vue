@@ -20,7 +20,6 @@ export default {
  */
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import { useProfileStore } from '../stores/profile.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -31,11 +30,6 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
  * Translation function.
  */
 const { t } = useI18n();
-
-/**
- * Current route, read for the export id the mailed link carries.
- */
-const route = useRoute();
 
 /**
  * Fetches the finished export.
@@ -69,11 +63,6 @@ const exportGone = ref(false);
 const downloading = ref(false);
 
 /**
- * The export id from the link: a route param, never trusted to be one string.
- */
-const exportId = typeof route.params.id === 'string' ? route.params.id : '';
-
-/**
  * Fetches the export and saves it as a local JSON file, named by the day it was assembled.
  *
  * @returns A promise resolving once the file is saved; a failure blocks in place
@@ -84,7 +73,7 @@ const handleDownload = () => {
     exportGone.value = false;
     saved.value = false;
     downloading.value = true;
-    return downloadAccountExport(exportId)
+    return downloadAccountExport()
         .then((data) => {
             // A success with no body: nothing to save, and nothing to claim was saved.
             if (!data) return;

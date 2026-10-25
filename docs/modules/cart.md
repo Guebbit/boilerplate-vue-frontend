@@ -426,7 +426,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `DELETE /cart/items/{id}` | `RemoveCartItemResponse`     |
 | `POST /cart/checkout`     | `CheckoutResponse`           |
 | `POST /cart/merge`        | `MergeCartResponse`          |
-| `POST /cart/reorder/{id}` | `ReorderResponse`            |
+| `POST /cart/reorder`      | `ReorderResponse`            |
 | `GET /cart/summary`       | `GetCartSummaryResponse`     |
 
 Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.

@@ -8,7 +8,7 @@
  * the list. The order a row belongs to is read off its link, since the row shows the order number.
  */
 
-import { dayShifted } from '../../../support/e2e/steps';
+import { dayShifted, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** The slice of a payment the filters are checked against. */
 interface PaymentLike {
@@ -64,102 +64,94 @@ describe('AT5 · Payments and refunds filters', () => {
     it('method, provider, order, reference, amount and the two windows each narrow the payments', () => {
         cy.subjectId('order.paidOffline').then((cashId) => {
             cy.subjectId('order.paid').then((cardId) => {
-                cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${cashId}`).then((cash) => {
-                    cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${cardId}`).then(
-                        (card) => {
-                            if (!cash || !card)
-                                throw new Error('AT5: a seeded order has no payment');
+                paymentOfOrder<PaymentLike>('admin', cashId).then((cash) => {
+                    paymentOfOrder<PaymentLike>('admin', cardId).then((card) => {
+                        if (!cash || !card) throw new Error('AT5: a seeded order has no payment');
 
-                            cy.step('method: cash lists the cash payment and not the card one');
+                        cy.step('method: cash lists the cash payment and not the card one');
+                        narrowedTo(
+                            () => cy.pickOption('[data-test=filter-method]', /cash/i),
+                            [cashId],
+                            [cardId]
+                        );
+
+                        cy.step(
+                            'provider: only payments of that provider, and none for an unknown one'
+                        );
+                        cy.get('[data-test=filter-provider] input').type(card.provider ?? '');
+                        cy.get('[data-test=payments-search-submit]').click();
+                        cy.get('[data-test=payment-row]').should('have.length.greaterThan', 0);
+                        cy.get('[data-test=payment-row]').each(($row) => {
+                            expect($row.text()).to.contain(card.provider);
+                        });
+                        cy.get('[data-test=payments-search-reset]').click();
+                        cy.get('[data-test=filter-provider] input').type('no-such-provider');
+                        cy.get('[data-test=payments-search-submit]').click();
+                        cy.get('[data-test=payment-row]').should('not.exist');
+                        cy.get('[data-test=payments-search-reset]').click();
+
+                        cy.step('order id: exactly that order');
+                        narrowedTo(
+                            () => cy.get('[data-test=filter-order-id] input').type(cashId),
+                            [cashId],
+                            [cardId]
+                        );
+
+                        cy.step('reference: only the payment that carries it');
+                        const reference = card.reference ?? cash.reference;
+                        if (reference)
                             narrowedTo(
-                                () => cy.pickOption('[data-test=filter-method]', /cash/i),
-                                [cashId],
-                                [cardId]
+                                () => cy.get('[data-test=filter-reference] input').type(reference),
+                                [reference === card.reference ? cardId : cashId],
+                                []
                             );
 
-                            cy.step(
-                                'provider: only payments of that provider, and none for an unknown one'
-                            );
-                            cy.get('[data-test=filter-provider] input').type(card.provider ?? '');
-                            cy.get('[data-test=payments-search-submit]').click();
-                            cy.get('[data-test=payment-row]').should('have.length.greaterThan', 0);
-                            cy.get('[data-test=payment-row]').each(($row) => {
-                                expect($row.text()).to.contain(card.provider);
-                            });
-                            cy.get('[data-test=payments-search-reset]').click();
-                            cy.get('[data-test=filter-provider] input').type('no-such-provider');
-                            cy.get('[data-test=payments-search-submit]').click();
-                            cy.get('[data-test=payment-row]').should('not.exist');
-                            cy.get('[data-test=payments-search-reset]').click();
-
-                            cy.step('order id: exactly that order');
-                            narrowedTo(
-                                () => cy.get('[data-test=filter-order-id] input').type(cashId),
-                                [cashId],
-                                [cardId]
-                            );
-
-                            cy.step('reference: only the payment that carries it');
-                            const reference = card.reference ?? cash.reference;
-                            if (reference)
-                                narrowedTo(
-                                    () =>
-                                        cy
-                                            .get('[data-test=filter-reference] input')
-                                            .type(reference),
-                                    [reference === card.reference ? cardId : cashId],
-                                    []
+                        cy.step('amount: a range around the card payment');
+                        narrowedTo(
+                            () => {
+                                cy.get('[data-test=filter-amount-min] input').type(
+                                    String(card.amount)
                                 );
+                                cy.get('[data-test=filter-amount-max] input').type(
+                                    String(card.amount)
+                                );
+                            },
+                            [cardId],
+                            card.amount === cash.amount ? [] : [cashId]
+                        );
 
-                            cy.step('amount: a range around the card payment');
-                            narrowedTo(
-                                () => {
-                                    cy.get('[data-test=filter-amount-min] input').type(
-                                        String(card.amount)
-                                    );
-                                    cy.get('[data-test=filter-amount-max] input').type(
-                                        String(card.amount)
-                                    );
-                                },
-                                [cardId],
-                                card.amount === cash.amount ? [] : [cashId]
-                            );
+                        cy.step('created window: around the card payment, then a window with none');
+                        narrowedTo(
+                            () => {
+                                cy.get('[data-test=filter-created-from] input').type(
+                                    dayShifted(card.createdAt, -1)
+                                );
+                                cy.get('[data-test=filter-created-to] input').type(
+                                    dayShifted(card.createdAt, 1)
+                                );
+                            },
+                            [cardId],
+                            []
+                        );
+                        cy.get('[data-test=filter-created-to] input').type('2000-01-01');
+                        cy.get('[data-test=payments-search-submit]').click();
+                        cy.get('[data-test=payment-row]').should('not.exist');
+                        cy.get('[data-test=payments-search-reset]').click();
 
-                            cy.step(
-                                'created window: around the card payment, then a window with none'
-                            );
-                            narrowedTo(
-                                () => {
-                                    cy.get('[data-test=filter-created-from] input').type(
-                                        dayShifted(card.createdAt, -1)
-                                    );
-                                    cy.get('[data-test=filter-created-to] input').type(
-                                        dayShifted(card.createdAt, 1)
-                                    );
-                                },
-                                [cardId],
-                                []
-                            );
-                            cy.get('[data-test=filter-created-to] input').type('2000-01-01');
-                            cy.get('[data-test=payments-search-submit]').click();
-                            cy.get('[data-test=payment-row]').should('not.exist');
-                            cy.get('[data-test=payments-search-reset]').click();
-
-                            cy.step('received window: around the cash payment');
-                            narrowedTo(
-                                () => {
-                                    cy.get('[data-test=filter-received-from] input').type(
-                                        dayShifted(cash.receivedAt ?? cash.createdAt, -1)
-                                    );
-                                    cy.get('[data-test=filter-received-to] input').type(
-                                        dayShifted(cash.receivedAt ?? cash.createdAt, 1)
-                                    );
-                                },
-                                [cashId],
-                                []
-                            );
-                        }
-                    );
+                        cy.step('received window: around the cash payment');
+                        narrowedTo(
+                            () => {
+                                cy.get('[data-test=filter-received-from] input').type(
+                                    dayShifted(cash.receivedAt ?? cash.createdAt, -1)
+                                );
+                                cy.get('[data-test=filter-received-to] input').type(
+                                    dayShifted(cash.receivedAt ?? cash.createdAt, 1)
+                                );
+                            },
+                            [cashId],
+                            []
+                        );
+                    });
                 });
             });
         });

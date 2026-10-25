@@ -147,7 +147,7 @@ This module routes to nothing. It contributes components, schemas or a store to 
 
 | Call                                               | Response schema                   |
 | -------------------------------------------------- | --------------------------------- |
-| `POST /delivery/orders/{id}/start`                 | `StartFulfilmentResponse`         |
+| `POST /orders/{id}/process`                        | `ProcessOrderResponse`            |
 | `GET /delivery/orders/{id}`                        | `GetFulfillmentByOrderResponse`   |
 | `POST /delivery/fulfillment-orders/{id}/shipments` | `ShipFulfillmentOrderResponse`    |
 | `POST /delivery/fulfillment-orders/{id}/fulfill`   | `FulfillFulfillmentOrderResponse` |

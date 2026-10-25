@@ -69,7 +69,7 @@ visitor was. No session is minted for it.
 
 **The data export is a link, not a download.** The profile button only asks (`requestAccountExport`,
 `202`) and says an email is coming; the API builds the file in the background and mails a link to
-`account-export/:id`, whose one button fetches it (`downloadAccountExport`) and saves it as JSON. A
+`account-export`, whose one button fetches it (`downloadAccountExport`) and saves it as JSON. A
 button rather than a download on arrival, so a mail scanner that prefetches the link triggers
 nothing. Both calls need a fresh session, which the step-up interceptor asks for in place. See the
 backend's [data export](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/account.md#data-export).
@@ -122,7 +122,7 @@ Seven stores, listed by what each one's setup function returns — an internal r
 | `account-restore`        | `AccountRestore`          | `public` | —          | `views/AccountRestore.vue`          |
 | `verify-email/confirm`   | `VerifyEmailConfirm`      | `public` | —          | `views/VerifyEmailConfirm.vue`      |
 | `oauth/callback`         | `OAuthCallback`           | `public` | —          | `views/OAuthCallback.vue`           |
-| `account-export/:id`     | `AccountExportDownload`   | `auth`   | —          | `views/AccountExportDownload.vue`   |
+| `account-export`         | `AccountExportDownload`   | `auth`   | —          | `views/AccountExportDownload.vue`   |
 | `profile`                | `Profile`                 | `auth`   | —          | `views/Profile.vue`                 |
 | `logout`                 | `Logout`                  | `public` | `—`        |
 
@@ -149,7 +149,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `PUT /account/addresses/{id}/default`        | `SetDefaultAddressResponse`        |
 | `POST /account/restore`                      | `RestoreAccountResponse`           |
 | `POST /account/export`                       | `RequestAccountExportResponse`     |
-| `GET /account/export/{id}`                   | `DownloadAccountExportResponse`    |
+| `GET /account/export`                        | `DownloadAccountExportResponse`    |
 | `POST /account/login`                        | `LoginResponse`                    |
 | `POST /account/login/2fa`                    | `LoginTwoFactorResponse`           |
 | `POST /account/login/restore`                | `LoginRestoreResponse`             |

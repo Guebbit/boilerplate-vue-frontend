@@ -62,7 +62,7 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /payments/orders/o1': payment(true),
+        'GET /orders/o1/payments': { items: [payment(true)] },
         'POST /payments/p1/refunds': {
             id: 'r1',
             amount: 10,
@@ -104,7 +104,7 @@ describe('useOrderRefund', () => {
     });
 
     it('lists the hand-paid refunds the server names, and drops one once it is settled', () => {
-        responses['GET /payments/orders/o1'] = payment(false, ['r1']);
+        responses['GET /orders/o1/payments'] = { items: [payment(false, ['r1'])] };
         responses['POST /payments/p1/refunds/r1/settle'] = payment(false);
         const { settleable, settle } = useOrderRefund(ref('o1'));
 
@@ -119,8 +119,8 @@ describe('useOrderRefund', () => {
     });
 
     it('offers nothing at all when the order has no payment', () => {
-        // A 404 is an answer — no intent was ever created — and it must not enable a control.
-        responses = {};
+        // An empty list is the answer — no intent was ever created — and it must not enable a control.
+        responses = { 'GET /orders/o1/payments': { items: [] } };
         const { canRefund } = useOrderRefund(ref('o1'));
 
         return settled().then(() => {

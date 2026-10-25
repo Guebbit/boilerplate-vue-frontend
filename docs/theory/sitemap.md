@@ -24,7 +24,7 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`account`](../modules/account.md)                     | `email-change/confirm`                 | `EmailChangeConfirm`      | `public` | —                            | `views/EmailChangeConfirm.vue`      |
 | [`account`](../modules/account.md)                     | `email-change/undo`                    | `EmailChangeUndo`         | `public` | —                            | `views/EmailChangeUndo.vue`         |
 | [`account`](../modules/account.md)                     | `oauth/callback`                       | `OAuthCallback`           | `public` | —                            | `views/OAuthCallback.vue`           |
-| [`account`](../modules/account.md)                     | `account-export/:id`                   | `AccountExportDownload`   | `auth`   | —                            | `views/AccountExportDownload.vue`   |
+| [`account`](../modules/account.md)                     | `account-export`                       | `AccountExportDownload`   | `auth`   | —                            | `views/AccountExportDownload.vue`   |
 | [`account`](../modules/account.md)                     | `profile`                              | `Profile`                 | `auth`   | —                            | `views/Profile.vue`                 |
 | [`account`](../modules/account.md)                     | `logout`                               | `Logout`                  | `public` | —                            | `—`                                 |
 | [`api-keys`](../modules/api-keys.md)                   | `api-keys`                             | `ApiKeysList`             | `auth`   | `read ApiKey`                | `views/ApiKeysList.vue`             |

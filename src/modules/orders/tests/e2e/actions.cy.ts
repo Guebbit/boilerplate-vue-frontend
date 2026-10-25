@@ -149,8 +149,8 @@ actionTable('orders', [
         },
         intercept: {
             method: 'POST',
-            url: '**/cart/reorder/*',
-            operation: '/cart/reorder/{orderId}'
+            url: '**/cart/reorder',
+            operation: '/cart/reorder'
         },
         kind: 'row',
         alert: 'order-reorder-error',

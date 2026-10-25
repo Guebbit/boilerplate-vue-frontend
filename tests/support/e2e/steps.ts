@@ -532,7 +532,7 @@ export const shipThroughTheApi = (
     orderId: string,
     trackingCode?: string
 ): Cypress.Chainable<{ id: string } | null> => {
-    cy.apiAs('admin', 'POST', `/delivery/orders/${orderId}/start`);
+    cy.apiAs('admin', 'POST', `/orders/${orderId}/process`);
     return cy
         .apiAs<{ fulfillmentOrders: { id: string }[] }>(
             'admin',
@@ -576,7 +576,7 @@ export const paidPreorderBy = (productId: string): Cypress.Chainable<string> => 
     cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
     return checkoutAs<{ id: string }>('user').then((order) => {
         const id = String(order?.id);
-        cy.apiAs('admin', 'POST', `/payments/orders/${id}/offline`, { method: 'cash' });
+        cy.apiAs('admin', 'POST', `/orders/${id}/payments`, { method: 'cash' });
         return cy.wrap(id, { log: false });
     });
 };
@@ -590,3 +590,18 @@ export const paidPreorderBy = (productId: string): Cypress.Chainable<string> => 
  */
 export const dayShifted = (iso: string, days: number): string =>
     new Date(new Date(iso).getTime() + days * 86_400_000).toISOString().slice(0, 10);
+
+/**
+ * An order's payment as the API serves it (`GET /orders/{id}/payments`: none or one).
+ *
+ * @param persona - who reads it
+ * @param orderId - the order
+ * @returns a chain yielding the payment, or `undefined` when none was started
+ */
+export const paymentOfOrder = <T>(
+    persona: E2ERole,
+    orderId: string
+): Cypress.Chainable<T | undefined> =>
+    cy
+        .apiAs<{ items: T[] }>(persona, 'GET', `/orders/${orderId}/payments`)
+        .then((list) => cy.wrap<T | undefined>(list?.items[0], { log: false }));

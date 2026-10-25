@@ -434,7 +434,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                         <ShipmentPanel
                             :order-id="currentOrder.id"
                             :shipping-method-id="currentOrder.shippingMethod"
-                            :can-start="currentOrder.actions?.start ?? false"
+                            :can-start="currentOrder.actions?.process ?? false"
                             @moved="fetchOrder(currentOrder.id, { forced: true })"
                         />
                     </div>

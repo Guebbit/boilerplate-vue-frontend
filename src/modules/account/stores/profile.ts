@@ -476,15 +476,14 @@ export const useProfileStore = defineStore('accountProfile', () => {
         fetchAny(() => apiRequestAccountExport().then((data) => data));
 
     /**
-     * Downloads a finished export — the page the mailed link opens calls this. Same fresh-session
+     * Downloads the caller's finished export (an account has one) — the page the mailed link opens calls this. Same fresh-session
      * rule as the request, handled the same way. The body is the export document itself, not an
      * envelope around it.
      *
-     * @param id - The export to fetch, from the mailed link.
      * @returns A promise resolving with the export document; a `404` (not yours, not ready, or
      *  gone) rejects.
      */
-    const downloadAccountExport = (id: string) => fetchAny(() => apiDownloadAccountExport(id));
+    const downloadAccountExport = () => fetchAny(() => apiDownloadAccountExport());
 
     /**
      * Cancels a scheduled account deletion with the mailed link's one-time token. It signs nobody

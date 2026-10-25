@@ -7,6 +7,7 @@
  * from its drawer: answering No writes nothing, answering Yes refunds what is left, and the buyer
  * ends up with a refund and a credit note.
  */
+import { paymentOfOrder } from '../../../support/e2e/steps';
 import { byTemplate } from '../../../../scripts/e2e/mail-filters';
 
 /** The slice of a payment this story reads. */
@@ -57,7 +58,7 @@ describe('OP36 · The payments page’s two doors', () => {
             cy.get('[data-test=payment-row]').should('have.length', 1).first().click();
             cy.get('[data-test=drawer-refund]').click();
             cy.get('[data-test=app-dialog-cancel]').click();
-            cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/orders/${cardId}`)
+            paymentOfOrder<PaymentLike>('moderator', cardId)
                 .its('amountRefunded')
                 .should('equal', 0);
 
@@ -71,7 +72,7 @@ describe('OP36 · The payments page’s two doors', () => {
             cy.get('[data-test=refund-filter-order-id] input').type(cardId);
             cy.get('[data-test=refunds-search-submit]').click();
             cy.get('[data-test=refund-order-link]').should('have.length', 1);
-            cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${cardId}`)
+            paymentOfOrder<PaymentLike>('user', cardId)
                 .its('amountRefunded')
                 .should('be.greaterThan', 0);
             cy.apiAs<unknown[]>('user', 'GET', `/orders/${cardId}/credit-notes`)

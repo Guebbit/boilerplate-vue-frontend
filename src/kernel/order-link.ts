@@ -26,3 +26,24 @@ export const useOrderLink = () => {
         return target ? routerLinkI18n(target) : undefined;
     };
 };
+
+/**
+ * Builds the link-maker from an order NUMBER (as a customer quotes it) to the staff orders list
+ * filtered to it. Call it from `setup`.
+ *
+ * @returns A function from a number to the locale-prefixed filtered list, or `undefined` when the
+ *  number is absent or the app serves no staff orders page.
+ */
+export const useOrderNumberLink = () => {
+    /**
+     * The router, for the `hasRoute` guard.
+     */
+    const router = useRouter();
+
+    return (orderNumber?: string | null): RouteLocationRaw | undefined => {
+        const target = orderNumber
+            ? linkIfRouted(router, 'SalesOrders', undefined, { orderNumber })
+            : undefined;
+        return target ? routerLinkI18n(target) : undefined;
+    };
+};

@@ -129,7 +129,7 @@ const {
 const session = useSessionStore();
 
 /**
- * Whether this is the staff page: the search-by-id/user/product/email boxes and the transfer queue
+ * Whether this is the staff page: the search-by-id/user/product/email/order-number boxes and the transfer queue
  * mean nothing on the account page, whose list is only the viewer's own. The route guard
  * (`meta.can: ['display', 'Order']`) keeps a customer off the staff page and lets in the warehouse
  * and support, who read every order and edit none.
@@ -177,6 +177,7 @@ const { sync: syncUrl } = useListUrlState({
         id: 'string',
         productId: 'string',
         email: 'string',
+        orderNumber: 'string',
         status: Object.values(OrderStatus),
         fulfillmentStatus: Object.values(OrderFulfillmentStatus),
         paymentMethod: 'string',
@@ -532,6 +533,14 @@ const handleExport = () => {
                         v-model="filters.email"
                         :label="t('orders-list-page.filter-email')"
                         data-test="filter-email"
+                        hide-details
+                    />
+                    <v-text-field
+                        v-if="isStaff"
+                        v-model="filters.orderNumber"
+                        :label="t('orders-list-page.filter-order-number')"
+                        :hint="t('orders-list-page.filter-order-number-hint')"
+                        data-test="filter-order-number"
                         hide-details
                     />
                     <v-select

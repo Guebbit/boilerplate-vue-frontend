@@ -14,10 +14,10 @@ import {
     confirmPayment,
     syncPayment,
     getPayment,
-    getPaymentByOrder,
+    listOrderPayments,
     refundPaymentByOrder,
     settleRefundByHand as settleRefundByHandRequest,
-    recordOfflinePayment as recordOfflinePaymentRequest,
+    recordOrderPayment,
     listPaymentMethods,
     searchPayments,
     listRefunds,
@@ -33,11 +33,7 @@ import type {
     SearchPaymentsRequest
 } from '@types';
 import { ERROR_CODES } from '@api/error-codes';
-import {
-    hasErrorCode,
-    isTransportFailure,
-    rethrowUnlessAbsent
-} from '@/infrastructure/utils/errors';
+import { hasErrorCode, isTransportFailure } from '@/infrastructure/utils/errors';
 import { useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
 
 /**
@@ -80,7 +76,7 @@ export const usePaymentsStore = defineStore('payments', () => {
     const refundIdempotencyKeys = useIdempotencyKeys();
 
     /**
-     * `Idempotency-Key`s for `recordOfflinePayment`'s `POST /payments/orders/{orderId}/offline`, one
+     * `Idempotency-Key`s for `recordOfflinePayment`'s `POST /orders/{id}/payments`, one
      * per order, for the same reason as the refund's.
      */
     const offlineIdempotencyKeys = useIdempotencyKeys();
@@ -105,26 +101,19 @@ export const usePaymentsStore = defineStore('payments', () => {
         );
 
     /**
-     * Loads the payment behind an order. A 404 is an answer — no intent yet — not an error:
-     * the panel renders the pay form from `undefined`.
+     * Loads the payment behind an order (`GET /orders/{id}/payments`, none or one). An empty list is
+     * the answer for an order nobody started paying: the panel renders the pay form from
+     * `undefined`. A 404 now means the order itself is not visible, a real failure.
      *
      * @param orderId - The order in question.
      * @returns A promise resolving with the payment, or undefined.
      */
     const fetchPaymentForOrder = (orderId: string) =>
         fetchAny(() =>
-            getPaymentByOrder(orderId)
-                .then((response) => {
-                    payment.value = response;
-                    return payment.value;
-                })
-                .catch((error: unknown) => {
-                    // 404 only: anything else is a real failure, and swallowing it would render
-                    // the pay form for an order that already has a payment.
-                    rethrowUnlessAbsent(error, 404);
-                    payment.value = undefined;
-                    return undefined;
-                })
+            listOrderPayments(orderId).then((response) => {
+                payment.value = response.items[0];
+                return payment.value;
+            })
         );
 
     /**
@@ -156,14 +145,14 @@ export const usePaymentsStore = defineStore('payments', () => {
         });
 
     /**
-     * Reads an order's payment (`GET /payments/orders/{orderId}`) without touching the shared
-     * `payment` record: for a screen that is not the order page (the needs-attention list opening
-     * the drawer) and must not replace what an order page holds.
+     * Reads one payment by its own id (`GET /payments/{id}`) without touching the shared `payment`
+     * record: for a screen that is not the order page (the needs-attention list opening the
+     * drawer) and must not replace what an order page holds.
      *
-     * @param orderId - The order whose payment is asked about.
+     * @param paymentId - The payment to read.
      * @returns A promise resolving with the payment as this caller may act on it.
      */
-    const readPaymentForOrder = (orderId: string) => fetchAny(() => getPaymentByOrder(orderId));
+    const readPayment = (paymentId: string) => fetchAny(() => getPayment(paymentId));
 
     /**
      * Pays an order: intent first, then the confirm with the provider's method reference.
@@ -329,7 +318,7 @@ export const usePaymentsStore = defineStore('payments', () => {
     const recordOfflinePayment = (orderId: string, body: RecordOfflinePaymentRequest) => {
         const keeper = offlineIdempotencyKeys.forSubject(orderId);
         return fetchAny(() =>
-            recordOfflinePaymentRequest(orderId, body, keeper.withKey())
+            recordOrderPayment(orderId, body, keeper.withKey())
                 .then((response) => {
                     keeper.settle();
                     payment.value = response;
@@ -478,7 +467,7 @@ export const usePaymentsStore = defineStore('payments', () => {
         attention,
         awaitingPage,
         awaitingTotal,
-        readPaymentForOrder,
+        readPayment,
         fetchPaymentsPage,
         fetchAwaitingPage,
         fetchRefundsPage,

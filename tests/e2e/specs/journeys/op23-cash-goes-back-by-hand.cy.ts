@@ -11,7 +11,7 @@
  * cancel and after the refund, while a credit note joins it. One download is enough: the invoicing
  * budget is spent per download, and the story is the money, not the PDF.
  */
-import { eventually } from '../../../support/e2e/steps';
+import { eventually, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** The slice of a payment this story reads: the method, and where the money stands. */
 interface PaymentLike {
@@ -53,7 +53,7 @@ describe('OP23 · Cash goes back by hand', () => {
             cy.get('[data-test=button-cancel-and-refund]').should('not.be.disabled').click();
             cy.get('[data-test=button-cancel-and-refund]').should('be.disabled');
             eventually(
-                () => cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/orders/${orderId}`),
+                () => paymentOfOrder<PaymentLike>('moderator', orderId),
                 (payment) => payment?.displayStatus === 'refund_pending'
             ).should((payment) => {
                 expect(payment?.method).to.not.equal('card');
@@ -73,13 +73,11 @@ describe('OP23 · Cash goes back by hand', () => {
             cy.get('[data-test=app-dialog-confirm]').click();
             cy.get('[data-test^=button-mark-returned-]').should('not.exist');
             cy.get('[data-test=order-edit-actions-error]').should('not.exist');
-            cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/orders/${orderId}`).should(
-                (payment) => {
-                    expect(payment?.displayStatus).to.equal('refunded');
-                    expect(payment?.refundedByHand).to.equal(true);
-                    expect(payment?.actions.settleByHand).to.have.length(0);
-                }
-            );
+            paymentOfOrder<PaymentLike>('moderator', orderId).should((payment) => {
+                expect(payment?.displayStatus).to.equal('refunded');
+                expect(payment?.refundedByHand).to.equal(true);
+                expect(payment?.actions.settleByHand).to.have.length(0);
+            });
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=payment-refunded-by-hand]').should('exist');
             cy.get('[data-test=payment-refund-pending]').should('not.exist');

@@ -9,7 +9,7 @@
  * The customer is the witness: their own order page shows the refund and the credit note that
  * goes with it. The order is `order.delivered`, paid by card weeks ago, so nothing is spent.
  */
-import { eventually, orderMailTo } from '../../../support/e2e/steps';
+import { eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** The slice of a payment this story reads: where the money stands. */
 interface PaymentLike {
@@ -44,23 +44,19 @@ describe('OP4 · A return: refund a delivered order', () => {
             cy.get('[data-test=button-refund-only]').should('not.be.disabled');
             cy.get('[data-test=button-cancel-only]').should('be.disabled');
             cy.get('[data-test=button-cancel-and-refund]').should('be.disabled');
-            cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/orders/${orderId}`).should(
-                (payment) => {
-                    expect(payment?.status).to.equal('succeeded');
-                    expect(payment?.amountRefunded).to.equal(0);
-                }
-            );
+            paymentOfOrder<PaymentLike>('moderator', orderId).should((payment) => {
+                expect(payment?.status).to.equal('succeeded');
+                expect(payment?.amountRefunded).to.equal(0);
+            });
 
             cy.step('refund only: the money goes back');
             cy.get('[data-test=button-refund-only]').click();
             cy.get('[data-test=order-edit-actions-error]').should('not.exist');
             cy.get('[data-test=button-refund-only]').should('be.disabled');
-            cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/orders/${orderId}`).should(
-                (payment) => {
-                    expect(payment?.displayStatus).to.equal('refunded');
-                    expect(payment?.amountRefunded).to.equal(payment?.amount);
-                }
-            );
+            paymentOfOrder<PaymentLike>('moderator', orderId).should((payment) => {
+                expect(payment?.displayStatus).to.equal('refunded');
+                expect(payment?.amountRefunded).to.equal(payment?.amount);
+            });
 
             cy.step('the order itself did not move, and a credit note was issued');
             cy.apiAs<OrderLike>('moderator', 'GET', `/orders/${orderId}`).should((order) => {
