@@ -41,6 +41,10 @@ instance.interceptors.response.use(undefined, onResponseRejectWithStepUp);
  */
 const send = <T>(request: AxiosRequestConfig): Promise<T> =>
     instance.request<T>(request).then((response) => {
+        // A 204 has no body: axios hands it over as `''`, which the generated `zod.void()` schema
+        // rejects. `undefined` is what the contract declares, so the cast to `T` is sound for
+        // every operation that answers 204.
+        if (response.status === 204) return undefined as T;
         if (shouldValidateResponses()) validateResponseAgainstContract(request, response.data);
         return response.data;
     });

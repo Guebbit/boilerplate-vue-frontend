@@ -88,6 +88,18 @@ describe('orvalMutator contract validation', () => {
         );
     });
 
+    it('resolves a 204 to undefined instead of failing its contract check', () => {
+        server.use(
+            http.post(`${API}/analytics/events`, () => new HttpResponse(null, { status: 204 }))
+        );
+        vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
+        return loadHttp().then(({ orvalMutator }) =>
+            expect(
+                orvalMutator({ url: '/analytics/events', method: 'POST', data: {} })
+            ).resolves.toBeUndefined()
+        );
+    });
+
     it('resolves normally when VITE_VALIDATE_RESPONSES=true and the response satisfies its schema', () => {
         server.use(
             http.get(`${API}/account`, () =>
