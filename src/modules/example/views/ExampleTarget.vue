@@ -233,7 +233,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                 </div>
                 <p v-else class="m-0 opacity-75">{{ t('generic.loading-state') }}</p>
 
-                <div v-if="currentExample?.actions?.transitions.length" class="mt-8">
+                <div v-if="currentExample?.actions.transitions.length" class="mt-8">
                     <h3 class="mb-3 text-lg font-semibold">
                         {{ t('example-target-page.section-status') }}
                     </h3>
@@ -259,7 +259,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
 
             <template #actions>
                 <v-btn
-                    v-if="currentExample?.actions?.update"
+                    v-if="currentExample?.actions.update"
                     color="secondary"
                     data-test="example-go-to-edit"
                     :to="routerLinkI18n({ name: 'ExampleEdit', params: { id } })"
@@ -267,7 +267,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                     {{ t('example-target-page.button-go-to-edit') }}
                 </v-btn>
                 <v-btn
-                    v-if="currentExample?.actions?.delete"
+                    v-if="currentExample?.actions.delete"
                     color="error"
                     variant="tonal"
                     data-test="example-delete"

@@ -14,6 +14,7 @@
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { listApiKeys, mintApiKey, revokeApiKey } from '@api';
 import type { ApiKey, MintApiKeyRequest } from '@types';
@@ -81,8 +82,16 @@ export const useApiKeysStore = defineStore('api-keys', () => {
         fetchAny(() =>
             mintApiKey(data).then((created) => {
                 const { secret: _secret, ...record } = created;
-                // A key just minted is live: the mint response carries no status of its own.
-                editApiKeyRecord({ ...record, status: 'active' }, record.id);
+                // A key just minted is live. The mint response carries neither a status nor
+                // `actions`; the next list read replaces this row with the server's own answer.
+                editApiKeyRecord(
+                    {
+                        ...record,
+                        status: 'active',
+                        actions: { revoke: useSessionStore().can('delete', 'ApiKey') }
+                    },
+                    record.id
+                );
                 return created;
             })
         );
@@ -101,7 +110,15 @@ export const useApiKeysStore = defineStore('api-keys', () => {
      */
     const revokeCredential = (id: string) =>
         fetchAny(() => revokeApiKey(id)).then(() => {
-            editApiKeyRecord({ revokedAt: new Date().toISOString(), status: 'revoked' }, id, false);
+            editApiKeyRecord(
+                {
+                    revokedAt: new Date().toISOString(),
+                    status: 'revoked',
+                    actions: { revoke: false }
+                },
+                id,
+                false
+            );
         });
 
     return {

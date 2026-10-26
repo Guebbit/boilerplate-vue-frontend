@@ -180,7 +180,7 @@ provideExample({ example: currentExample, changeStatus });
  *
  * @returns `false` only when the record says so; true while it loads.
  */
-const mayEdit = computed(() => currentExample.value?.actions?.update !== false);
+const mayEdit = computed(() => currentExample.value?.actions.update !== false);
 
 /**
  * Validates the form and saves it: the changed fields as one JSON PATCH, then the cover, if one
@@ -341,7 +341,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                     :fields="asideFields"
                 >
                     <template #icon><NotebookPen :size="28" /></template>
-                    <div v-if="currentExample?.actions?.transitions.length">
+                    <div v-if="currentExample?.actions.transitions.length">
                         <h3 class="mb-3 text-lg font-semibold">
                             {{ t('example-target-page.section-status') }}
                         </h3>

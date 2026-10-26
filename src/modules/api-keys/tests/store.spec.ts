@@ -37,7 +37,8 @@ const API_KEY = {
     permissions: ['products.read'],
     expiresAt: '2027-01-01T00:00:00.000Z',
     createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z'
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    actions: { revoke: true }
 };
 
 vi.mock('@/infrastructure/http', () => ({
@@ -148,8 +149,10 @@ describe('useApiKeysStore', () => {
                     const store = useApiKeysStore();
                     expect(store.apiKeys[API_KEY.id]).toMatchObject({
                         id: API_KEY.id,
-                        name: API_KEY.name
+                        name: API_KEY.name,
+                        status: 'active'
                     });
+                    expect(typeof store.apiKeys[API_KEY.id]?.actions.revoke).toBe('boolean');
                 });
         });
     });
@@ -174,6 +177,7 @@ describe('useApiKeysStore', () => {
             return store.revokeCredential(API_KEY.id).then(() => {
                 expect(store.apiKeys[API_KEY.id]?.revokedAt).toEqual(expect.any(String));
                 expect(store.apiKeys[API_KEY.id]?.status).toBe('revoked');
+                expect(store.apiKeys[API_KEY.id]?.actions.revoke).toBe(false);
             });
         });
 

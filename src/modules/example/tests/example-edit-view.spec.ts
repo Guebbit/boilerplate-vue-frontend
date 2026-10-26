@@ -41,7 +41,8 @@ const EXAMPLE: Example = {
     userId: 'u-1',
     ownerName: 'ada',
     createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z'
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    actions: { transitions: [], update: true, delete: true }
 };
 
 /**
