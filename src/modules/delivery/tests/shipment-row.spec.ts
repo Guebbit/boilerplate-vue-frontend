@@ -56,6 +56,68 @@ describe('what a row shows', () => {
     });
 });
 
+describe('a parcel reported lost', () => {
+    const lost = {
+        status: 'lost' as const,
+        lostAt: '2026-09-03T10:00:00.000Z',
+        lostReason: 'lost' as const,
+        lostMessage: 'We are sending a new one on Monday.'
+    };
+
+    it('says so in words, with the message the buyer was given', () => {
+        const { wrapper } = mountRow(aShipment(lost));
+
+        expect(wrapper.get('[data-test=shipment-status]').text()).toBe('Lost in transit');
+        expect(wrapper.get('[data-test=shipment-lost-reason]').text()).toContain('Lost');
+        expect(wrapper.get('[data-test=shipment-lost-message]').text()).toContain(
+            'sending a new one on Monday'
+        );
+    });
+
+    it('shows staff note only when the server sent it', () => {
+        const buyer = mountRow(aShipment(lost));
+        const staff = mountRow(aShipment({ ...lost, lostNote: 'carrier claim 42' }));
+
+        expect(buyer.wrapper.find('[data-test=shipment-lost-note]').exists()).toBe(false);
+        expect(staff.wrapper.get('[data-test=shipment-lost-note]').text()).toContain(
+            'carrier claim 42'
+        );
+    });
+
+    it('names a damaged parcel as damaged', () => {
+        const { wrapper } = mountRow(aShipment({ ...lost, lostReason: 'damaged' }));
+
+        expect(wrapper.get('[data-test=shipment-lost-reason]').text()).toContain('Damaged');
+    });
+
+    it('offers the arrival only while the server says the parcel can still arrive', () => {
+        const stuck = mountRow(aShipment(lost));
+        const open = mountRow(
+            aShipment({
+                ...lost,
+                actions: { deliver: true, forceDeliver: false, update: true, markLost: false }
+            })
+        );
+
+        expect(stuck.wrapper.find('[data-test=mark-delivered]').exists()).toBe(false);
+        expect(open.wrapper.find('[data-test=mark-delivered]').exists()).toBe(true);
+    });
+});
+
+describe('reporting a loss', () => {
+    it('offers the button only on the server’s markLost flag', () => {
+        const offered = mountRow(
+            aShipment({
+                actions: { deliver: true, forceDeliver: false, update: true, markLost: true }
+            })
+        );
+        const absent = mountRow(aShipment());
+
+        expect(offered.wrapper.find('[data-test=open-report-lost]').exists()).toBe(true);
+        expect(absent.wrapper.find('[data-test=open-report-lost]').exists()).toBe(false);
+    });
+});
+
 describe('where the parcel went', () => {
     const OLD = {
         fullName: 'Ada Lovelace',
@@ -99,7 +161,7 @@ describe('a tracked parcel still waiting for its code', () => {
             aShipment({
                 status: 'delivered',
                 awaitingTracking: false,
-                actions: { deliver: false, forceDeliver: false, update: true }
+                actions: { deliver: false, forceDeliver: false, update: true, markLost: false }
             })
         );
         const edit = vi.spyOn(store, 'editTracking').mockResolvedValue(aShipment());
@@ -125,7 +187,9 @@ describe('the controls come from `actions`', () => {
 
     it('marks delivered on the ordinary door and tells the page', () => {
         const { wrapper, store } = mountRow(
-            aShipment({ actions: { deliver: true, forceDeliver: false, update: false } })
+            aShipment({
+                actions: { deliver: true, forceDeliver: false, update: false, markLost: false }
+            })
         );
         const deliver = vi.spyOn(store, 'deliver').mockResolvedValue(aShipment());
 
@@ -143,7 +207,7 @@ describe('the controls come from `actions`', () => {
         const { wrapper, store } = mountRow(
             aShipment({
                 trackingCode: 'TRK-1',
-                actions: { deliver: false, forceDeliver: false, update: true }
+                actions: { deliver: false, forceDeliver: false, update: true, markLost: false }
             })
         );
         const edit = vi.spyOn(store, 'editTracking').mockResolvedValue(aShipment());
@@ -166,7 +230,9 @@ describe('the controls come from `actions`', () => {
 
     it('shows a lost race in place and does not tell the page', () => {
         const { wrapper, store } = mountRow(
-            aShipment({ actions: { deliver: true, forceDeliver: false, update: false } })
+            aShipment({
+                actions: { deliver: true, forceDeliver: false, update: false, markLost: false }
+            })
         );
         vi.spyOn(store, 'deliver').mockRejectedValue(new Error('already delivered'));
 
@@ -186,7 +252,9 @@ describe('the controls come from `actions`', () => {
 describe('the forced arrival', () => {
     it('is not offered without the forceDeliver flag', () => {
         const { wrapper } = mountRow(
-            aShipment({ actions: { deliver: true, forceDeliver: false, update: false } })
+            aShipment({
+                actions: { deliver: true, forceDeliver: false, update: false, markLost: false }
+            })
         );
 
         expect(wrapper.find('[data-test=force-deliver-toggle]').exists()).toBe(false);
@@ -201,7 +269,9 @@ describe('the forced arrival', () => {
 
     it('needs the toggle and a reason before the button works, then sends both', () => {
         const { wrapper, store } = mountRow(
-            aShipment({ actions: { deliver: true, forceDeliver: true, update: false } })
+            aShipment({
+                actions: { deliver: true, forceDeliver: true, update: false, markLost: false }
+            })
         );
         const deliver = vi.spyOn(store, 'deliver').mockResolvedValue(aShipment());
 

@@ -19,6 +19,10 @@
         "fulfillment-held-check_address": "Una parte del tuo ordine è in sospeso: controlla l'indirizzo di consegna.",
         "fulfillment-held-delayed": "Una parte del tuo ordine è trattenuta per un momento e partirà più tardi del previsto.",
         "fulfillment-held-message": "Il negozio scrive: {message}",
+        "shipment-lost-lost": "Un pacco del tuo ordine è andato smarrito durante il viaggio. Lo spediremo di nuovo, oppure ti rimborseremo se preferisci.",
+        "shipment-lost-damaged": "Un pacco del tuo ordine è stato danneggiato durante il viaggio. Lo spediremo di nuovo, oppure ti rimborseremo se preferisci.",
+        "shipment-lost-owed": "Dobbiamo rifornire una parte: {titles} è atteso intorno al {expected}.",
+        "shipment-lost-message": "Il negozio scrive: {message}",
         "link-order": "Apri l'ordine",
         "stock-alert": "Buone notizie: {name} si può ordinare di nuovo.",
         "staff": {

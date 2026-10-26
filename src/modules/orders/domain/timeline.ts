@@ -36,14 +36,16 @@ export interface TimelineLine {
 }
 
 /**
- * Reads a string out of the free-form `data`.
+ * Reads a string out of the free-form `data`. A number is read as its digits: the server writes a
+ * shipment's `number` as one.
  *
  * @param data - The row's `data`.
  * @param key - The field.
- * @returns The value when it is a non-empty string.
+ * @returns The value when it is a non-empty string or a number.
  */
 const textOf = (data: Readonly<Record<string, unknown>>, key: string): string | undefined => {
     const value = data[key];
+    if (typeof value === 'number') return String(value);
     return typeof value === 'string' && value !== '' ? value : undefined;
 };
 
@@ -252,6 +254,10 @@ const DETAILS: Readonly<Partial<Record<OrderTimelineType, DetailBuilder>>> = {
     ],
     shipment_delivered: (tools, data) => [
         plain(tools, data, 'number', 'order-timeline.detail-shipment')
+    ],
+    shipment_lost: (tools, data) => [
+        plain(tools, data, 'number', 'order-timeline.detail-shipment'),
+        coded(tools, data, 'reason', 'order-timeline.detail-reason', 'order-timeline.lost-reason-')
     ],
     fulfillment_held: (tools, data) => [
         coded(tools, data, 'reason', 'order-timeline.detail-reason', 'order-timeline.hold-reason-')

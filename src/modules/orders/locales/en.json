@@ -176,6 +176,7 @@
         "type-refund_canceled": "Refund canceled by staff",
         "type-shipment_shipped": "Parcel shipped",
         "type-shipment_delivered": "Parcel delivered",
+        "type-shipment_lost": "Parcel lost in transit",
         "type-fulfillment_held": "Shipping put on hold",
         "type-fulfillment_released": "Shipping hold released",
         "type-remainder_cancelled": "Rest of the order cancelled",
@@ -222,6 +223,8 @@
         "hold-reason-awaiting_stock": "Awaiting stock",
         "hold-reason-incorrect_address": "Incorrect address",
         "hold-reason-high_risk": "High risk",
+        "lost-reason-lost": "Lost",
+        "lost-reason-damaged": "Damaged in transit",
         "hold-reason-other": "Other reason"
     },
     "orders-export": {

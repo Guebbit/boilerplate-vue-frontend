@@ -19,6 +19,10 @@
         "fulfillment-held-check_address": "Part of your order is on hold: please check its delivery address.",
         "fulfillment-held-delayed": "Part of your order is held back for a moment and will leave later than planned.",
         "fulfillment-held-message": "The shop says: {message}",
+        "shipment-lost-lost": "A parcel of your order was lost on the way. We will send it again, or refund you if you prefer.",
+        "shipment-lost-damaged": "A parcel of your order was damaged on the way. We will send it again, or refund you if you prefer.",
+        "shipment-lost-owed": "We have to restock part of it: {titles} is expected around {expected}.",
+        "shipment-lost-message": "The shop says: {message}",
         "link-order": "Open the order",
         "stock-alert": "Good news: {name} can be ordered again.",
         "staff": {

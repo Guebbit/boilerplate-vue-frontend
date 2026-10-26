@@ -45,7 +45,8 @@
         "last-notice": "Last notice sent {date}",
         "cancel-reason-buyer": "Cancelled by the buyer",
         "cancel-reason-staff": "Cancelled by staff",
-        "cancel-reason-order": "Cancelled with the order"
+        "cancel-reason-order": "Cancelled with the order",
+        "cancel-reason-found": "Closed: the lost parcel arrived"
     },
     "shipment-row": {
         "title": "Shipment #{number}",
@@ -62,7 +63,14 @@
         "label-force": "Force (override)",
         "label-force-reason": "Reason for override",
         "tracking-saved": "Tracking code saved.",
-        "delivered": "Marked delivered."
+        "delivered": "Marked delivered.",
+        "status-lost": "Lost in transit",
+        "lost-damaged": "Damaged in transit",
+        "lost-at": "Reported {date}",
+        "lost-message": "Message from the shop: {message}",
+        "lost-note": "Note: {note}",
+        "button-report-lost": "Report lost / damaged",
+        "lost-lost": "Lost by the carrier"
     },
     "ship-items-dialog": {
         "title": "Ship items from group #{number}",
@@ -111,5 +119,18 @@
         "state-allocated": "Allocated",
         "state-shipped": "Shipped",
         "state-cancelled": "Cancelled"
+    },
+    "report-lost-dialog": {
+        "title": "Report shipment #{number} lost or damaged",
+        "label-reason": "What happened",
+        "reason-lost": "Lost by the carrier",
+        "reason-damaged": "Damaged in transit",
+        "hint-reason": "Damaged means in transit and never handed over. Damage the buyer found after receiving the goods is a return.",
+        "label-note": "Note (optional)",
+        "hint-note": "Only staff see this. Don't include phone numbers or addresses.",
+        "label-message": "Message for the buyer (optional)",
+        "hint-message": "The buyer reads this and gets it by email. Say what you will do and when.",
+        "button-report": "Report",
+        "success": "The loss is recorded. Ship the items again, or cancel the rest."
     }
 }

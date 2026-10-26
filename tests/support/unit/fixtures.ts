@@ -343,7 +343,7 @@ export const aShipment = (overrides: Partial<Shipment> = {}): Shipment => ({
     forced: false,
     awaitingTracking: false,
     shippedAt: '2026-09-02T10:00:00.000Z',
-    actions: { deliver: false, forceDeliver: false, update: false },
+    actions: { deliver: false, forceDeliver: false, update: false, markLost: false },
     ...overrides
 });
 

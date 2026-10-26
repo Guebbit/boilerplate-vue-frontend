@@ -40,6 +40,18 @@ const base = {
     agreedAt: 'A'
 };
 
+/** A lost-parcel notice's sentence. */
+const lost = (extra: Record<string, unknown> = {}, reason: 'lost' | 'damaged' = 'lost') =>
+    describeNotification(
+        {
+            code: 'notifications.shipment-lost',
+            params: { orderId: 'o1', shipmentId: 's1', reason, ...extra }
+        },
+        ['en'],
+        translate,
+        format
+    );
+
 /** A fulfillment-held notice's sentence. */
 const held = (notice: 'check_address' | 'delayed', message?: string) =>
     describeNotification(
@@ -237,6 +249,32 @@ describe('describeNotification', () => {
                     params: { orderId: 'o9', fulfillmentOrderId: 'f', notice: 'delayed' }
                 })
             ).toBe('o9');
+        });
+    });
+
+    describe('a parcel reported lost', () => {
+        it('says what happened, once per reason', () => {
+            expect(lost()).toBe('notifications.shipment-lost-lost');
+            expect(lost({}, 'damaged')).toBe('notifications.shipment-lost-damaged');
+        });
+
+        it('adds what is owed only with its date, then the shop’s message', () => {
+            expect(lost({ owed: ['Vinyl', 'Poster'], expectedAt: 'D' })).toBe(
+                'notifications.shipment-lost-lost notifications.shipment-lost-owed|titles=Vinyl, Poster|expected=D!'
+            );
+            expect(lost({ owed: ['Vinyl'] })).toBe('notifications.shipment-lost-lost');
+            expect(lost({ message: 'Monday.' })).toBe(
+                'notifications.shipment-lost-lost notifications.shipment-lost-message|message=Monday.'
+            );
+        });
+
+        it('names the order it is about', () => {
+            expect(
+                notificationOrderId({
+                    code: 'notifications.shipment-lost',
+                    params: { orderId: 'o7', shipmentId: 's1', reason: 'lost' }
+                })
+            ).toBe('o7');
         });
     });
 

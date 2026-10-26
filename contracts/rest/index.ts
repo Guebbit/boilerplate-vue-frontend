@@ -1926,7 +1926,7 @@ export interface ExportOrder {
 }
 
 /**
- * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`.
+ * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`. Shipments: `shipment_shipped`, `shipment_delivered`, `shipment_lost`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`.
  */
 export type OrderTimelineType = (typeof OrderTimelineType)[keyof typeof OrderTimelineType];
 
@@ -1945,6 +1945,7 @@ export const OrderTimelineType = {
     refund_canceled: 'refund_canceled',
     shipment_shipped: 'shipment_shipped',
     shipment_delivered: 'shipment_delivered',
+    shipment_lost: 'shipment_lost',
     fulfillment_held: 'fulfillment_held',
     fulfillment_released: 'fulfillment_released',
     remainder_cancelled: 'remainder_cancelled',
@@ -2092,6 +2093,17 @@ export interface ExportInvoiceDocument {
 }
 
 /**
+ * The tail of the order's lifecycle, as the carrier sees it. `lost`: staff reported the parcel lost or damaged in transit, so its units are open again; it can still become `delivered` if it turns up and nothing was shipped or cancelled meanwhile.
+ */
+export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
+
+export const ShipmentStatus = {
+    shipped: 'shipped',
+    delivered: 'delivered',
+    lost: 'lost'
+} as const;
+
+/**
  * One product in a shipment.
  */
 export interface ShipmentLine {
@@ -2101,11 +2113,14 @@ export interface ShipmentLine {
     quantity: number;
 }
 
-export type ExportShipmentStatus = (typeof ExportShipmentStatus)[keyof typeof ExportShipmentStatus];
+/**
+ * Why the parcel will not arrive. `lost`: the carrier lost it. `damaged`: it was damaged in transit, reported before its arrival was recorded (damage found after the buyer has the goods is a return).
+ */
+export type ShipmentLostReason = (typeof ShipmentLostReason)[keyof typeof ShipmentLostReason];
 
-export const ExportShipmentStatus = {
-    shipped: 'shipped',
-    delivered: 'delivered'
+export const ShipmentLostReason = {
+    lost: 'lost',
+    damaged: 'damaged'
 } as const;
 
 /**
@@ -2118,12 +2133,25 @@ export interface ExportShipment {
     /** @minimum 1 */
     number: number;
     trackingCode?: string;
-    status: ExportShipmentStatus;
+    status: ShipmentStatus;
     lines: ShipmentLine[];
     /** Where this parcel went — the order's shipping address as it stood when the shipment was cut, so a later correction of the order's address never rewrites it. Absent for a pickup, a digital fulfilment, and once the order's own address has been scrubbed. */
     destination?: OrderAddress;
     shippedAt: string;
     deliveredAt?: string;
+    /** When staff reported it lost or damaged. Kept as history when the parcel turns up and is then delivered. */
+    lostAt?: string;
+    lostReason?: ShipmentLostReason;
+    /**
+     * What staff wrote for the buyer when they reported the loss; never reaped.
+     * @maxLength 500
+     */
+    lostMessage?: string;
+    /**
+     * Staff's free text about the loss. Reaped with the other free text.
+     * @maxLength 1000
+     */
+    lostNote?: string;
 }
 
 /**
@@ -2202,7 +2230,7 @@ export const FulfillmentHoldReason = {
 } as const;
 
 /**
- * Who cancelled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `order`: the whole order was cancelled.
+ * Who cancelled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `order`: the whole order was cancelled. `found`: the lost parcel turned up, so the units owed for it are no longer owed (no refund).
  */
 export type FulfillmentCancelReason =
     (typeof FulfillmentCancelReason)[keyof typeof FulfillmentCancelReason];
@@ -2210,7 +2238,8 @@ export type FulfillmentCancelReason =
 export const FulfillmentCancelReason = {
     buyer: 'buyer',
     staff: 'staff',
-    order: 'order'
+    order: 'order',
+    found: 'found'
 } as const;
 
 /**
@@ -2510,6 +2539,49 @@ export interface NotificationFulfillmentHeld {
     createdAt: string;
 }
 
+export type ShipmentLostParamsReason =
+    (typeof ShipmentLostParamsReason)[keyof typeof ShipmentLostParamsReason];
+
+export const ShipmentLostParamsReason = {
+    lost: 'lost',
+    damaged: 'damaged'
+} as const;
+
+/**
+ * What the buyer needs to read a lost-parcel notice: which order and shipment, whether it was lost or damaged in transit, the sentence staff wrote for them if any, and the units the shelf could not cover again with the date they are now expected (absent when everything is being sent again from the shelf).
+ */
+export interface ShipmentLostParams {
+    orderId: Id;
+    shipmentId: Id;
+    reason: ShipmentLostParamsReason;
+    /** @maxLength 500 */
+    message?: string;
+    /** The titles of the products still to be restocked, as the order froze them. */
+    owed?: string[];
+    expectedAt?: string;
+}
+
+export type NotificationShipmentLostCode =
+    (typeof NotificationShipmentLostCode)[keyof typeof NotificationShipmentLostCode];
+
+export const NotificationShipmentLostCode = {
+    'notificationsshipment-lost': 'notifications.shipment-lost'
+} as const;
+
+/**
+ * A parcel the caller was waiting for was reported lost or damaged in transit; the shop sends it again or refunds.
+ */
+export interface NotificationShipmentLost {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationShipmentLostCode;
+    params: ShipmentLostParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
 export type NotificationStockAlertCode =
     (typeof NotificationStockAlertCode)[keyof typeof NotificationStockAlertCode];
 
@@ -2595,6 +2667,7 @@ export type Notification =
     | NotificationCartMergeRefused
     | NotificationFulfillmentDelayed
     | NotificationFulfillmentHeld
+    | NotificationShipmentLost
     | NotificationStockAlert
     | NotificationStaffPurchaseHoldPlaced
     | NotificationStaffWebhookDisabled;
@@ -4246,26 +4319,18 @@ export interface OrderFulfillmentOrdersResponse {
  * What the requesting caller may do to this shipment, decided by the server.
  */
 export interface ShipmentActions {
-    /** Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`. */
+    /** Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`, or `lost` with every unit on it still open (see the operation). */
     deliver: boolean;
     /** Whether `POST /delivery/shipments/{id}/deliver` with `forced: true` would be accepted: the arrival is open (as for `deliver`) and the caller also holds `override:Order`. True beside `deliver`, not instead of it: forcing records the arrival without a carrier confirmation and needs a `reason`. */
     forceDeliver: boolean;
-    /** Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — any physical shipment, shipped or delivered. */
+    /** Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — any physical shipment, shipped, delivered or lost. */
     update: boolean;
+    /** Whether `POST /delivery/shipments/{id}/lost` would be accepted — a physical shipment still `shipped`, on an order that is `processing` or `shipped`. */
+    markLost: boolean;
 }
 
 /**
- * The tail of the order's lifecycle, as the carrier sees it.
- */
-export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
-
-export const ShipmentStatus = {
-    shipped: 'shipped',
-    delivered: 'delivered'
-} as const;
-
-/**
- * What actually left, at one time, with one tracking code (Shopify's `Fulfillment`). Born `shipped`; a digital fulfilment is born `delivered`.
+ * What actually left, at one time, with one tracking code (Shopify's `Fulfillment`). Born `shipped`; a digital fulfilment is born `delivered`. A parcel that will not arrive becomes `lost`; one that turns up after all becomes `delivered`.
  */
 export interface Shipment {
     id: Id;
@@ -4278,7 +4343,6 @@ export interface Shipment {
     number: number;
     /** The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false), and for a digital fulfilment. */
     trackingCode?: string;
-    /** The tail of the order's lifecycle, as the carrier sees it. */
     status: ShipmentStatus;
     lines: ShipmentLine[];
     /** Where this parcel went — the order's shipping address as it stood when the shipment was cut, so a later correction of the order's address never rewrites it. Absent for a pickup, a digital fulfilment, and once the order's own address has been scrubbed. */
@@ -4289,6 +4353,19 @@ export interface Shipment {
     awaitingTracking: boolean;
     shippedAt: string;
     deliveredAt?: string;
+    /** When staff reported it lost or damaged. Kept as history when the parcel turns up and is then delivered. */
+    lostAt?: string;
+    lostReason?: ShipmentLostReason;
+    /**
+     * What staff wrote for the buyer when they reported the loss. Everyone who reads the shipment sees it.
+     * @maxLength 500
+     */
+    lostMessage?: string;
+    /**
+     * Staff's free text about the loss. Left out for anyone who cannot update fulfilment.
+     * @maxLength 1000
+     */
+    lostNote?: string;
     actions: ShipmentActions;
     createdAt?: string;
     updatedAt?: string;
@@ -5432,6 +5509,22 @@ export interface ReleaseDateImpact {
      * @minimum 0
      */
     notify: number;
+}
+
+export interface MarkShipmentLostRequest {
+    reason: ShipmentLostReason;
+    /**
+     * Free text for the staff who read the record later; reaped with the other free text. The buyer never sees it.
+     * @minLength 1
+     * @maxLength 1000
+     */
+    note?: string;
+    /**
+     * A sentence for the buyer, shown on their order and mailed with the loss notice. Separate from `note`, which they never see. Not translated.
+     * @minLength 1
+     * @maxLength 500
+     */
+    message?: string;
 }
 
 export interface CloseReturnRequest {
@@ -10139,7 +10232,7 @@ export const getShipment = (
 };
 
 /**
- * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped` or `delivered`; a digital fulfilment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.
+ * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped`, `delivered` or `lost`; a digital fulfilment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.
  * @summary Correct a shipment's tracking code
  */
 export const updateShipment = (
@@ -10159,7 +10252,7 @@ export const updateShipment = (
 };
 
 /**
- * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped` or `delivered`; a digital fulfilment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.
+ * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped`, `delivered` or `lost`; a digital fulfilment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.
  * @summary Correct a shipment's tracking code
  */
 export const updateShipmentWithMergePatchJson = (
@@ -10180,6 +10273,8 @@ export const updateShipmentWithMergePatchJson = (
 
 /**
  * Stamps the shipment delivered. The order moves `shipped → delivered` when this was the last undelivered shipment and nothing remains to ship; its withdrawal clock then starts from the LAST delivery (CRD Art. 9(2)(b)(i)). Refuses a shipment already delivered with `DELIVERY_NOT_DELIVERABLE`.
+ *
+ * A `lost` shipment that turns up is accepted too, but only while every unit on it is still open: not shipped again and not cancelled, the owed units of a short shelf included. All or nothing, in one transaction: the shipment becomes `delivered` (its `lostAt` and `lostReason` stay as history), the units go back on the fulfillment order, the top-up of the stock hold is given back and the owed fulfillment order is closed with no refund (`cancelReason: found`). Otherwise `DELIVERY_LOST_SUPERSEDED` (409).
  * @summary Record a shipment's arrival
  */
 export const deliverShipment = (
@@ -11089,6 +11184,28 @@ export const getFulfillmentOrder = (
 ) => {
     return orvalMutator<FulfillmentOrder>(
         { url: `/delivery/fulfillment-orders/${id}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Staff reports a parcel that left but will not arrive (`lost`), or arrived unusable before its arrival was recorded (`damaged`, in transit and never handed over; damage found after the buyer has the goods is a return). Needs `update:Shipment`; no step-up. Only a `shipped` physical shipment on an order that is `processing` or `shipped` can be reported (`DELIVERY_NOT_LOSABLE`).
+ *
+ * One transaction: the shipment becomes `lost`; its units come off the fulfillment order's `shipped` count, so staff ship them again with the ordinary ship door (the same order, no new invoice, no new revenue, shipping is not charged again); the order's stock hold is topped up, with whatever free shelf units exist. Units the shelf cannot cover are owed: they move to a NEW fulfillment order on hold for stock (`cause: backorder`, dated by the product's restock date or 30 days), outside the backorder cap, first in the queue by the original payment. An order that was `shipped` goes back to `processing`. The buyer is mailed and gets an inbox row, always; `message` is the sentence they read.
+ * @summary Report a shipment lost or damaged
+ */
+export const markShipmentLost = (
+    id: string,
+    markShipmentLostRequest: MarkShipmentLostRequest,
+    options?: SecondParameter<typeof orvalMutator<Shipment>>
+) => {
+    return orvalMutator<Shipment>(
+        {
+            url: `/delivery/shipments/${id}/lost`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: markShipmentLostRequest
+        },
         options
     );
 };
@@ -12011,6 +12128,7 @@ export type PreviewRestockDateImpactResult = NonNullable<
 export type GetFulfillmentOrderResult = NonNullable<
     Awaited<ReturnType<typeof getFulfillmentOrder>>
 >;
+export type MarkShipmentLostResult = NonNullable<Awaited<ReturnType<typeof markShipmentLost>>>;
 export type CloseReturnResult = NonNullable<Awaited<ReturnType<typeof closeReturn>>>;
 export type GetSalesStatsResult = NonNullable<Awaited<ReturnType<typeof getSalesStats>>>;
 export type GetProductStatsResult = NonNullable<Awaited<ReturnType<typeof getProductStats>>>;

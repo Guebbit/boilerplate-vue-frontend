@@ -123,6 +123,46 @@ const describeHeld = (
 };
 
 /**
+ * The lost-parcel notice's sentences and its two optional lines, as literals so the unused-key
+ * check can see them.
+ */
+const LOST_KEYS = {
+    lost: 'notifications.shipment-lost-lost',
+    damaged: 'notifications.shipment-lost-damaged',
+    owed: 'notifications.shipment-lost-owed',
+    message: 'notifications.shipment-lost-message'
+};
+
+/**
+ * The sentence of a parcel reported lost or damaged: what happened, what is still owed and when
+ * (only when the shelf could not cover it), then what the shop wrote for the buyer.
+ *
+ * @param parameters - The notice's facts.
+ * @param format - Date spelling.
+ * @param translate - The translate function.
+ * @returns The finished text.
+ */
+const describeLost = (
+    parameters: Extract<DescribableNotification, { code: 'notifications.shipment-lost' }>['params'],
+    format: FormatDate,
+    translate: Translate
+): string =>
+    [
+        translate(LOST_KEYS[parameters.reason]),
+        parameters.owed && parameters.expectedAt
+            ? translate(LOST_KEYS.owed, {
+                  titles: parameters.owed.join(NAME_SEPARATOR),
+                  expected: format(parameters.expectedAt)
+              })
+            : undefined,
+        parameters.message
+            ? translate(LOST_KEYS.message, { message: parameters.message })
+            : undefined
+    ]
+        .filter((part): part is string => part !== undefined)
+        .join(' ');
+
+/**
  * The order a notification is about, when it is about one — where the reader can cancel.
  *
  * @param notification - The stored row's `code` and `params`.
@@ -130,7 +170,8 @@ const describeHeld = (
  */
 export const notificationOrderId = (notification: DescribableNotification): string | undefined =>
     notification.code === 'notifications.fulfillment-delayed' ||
-    notification.code === 'notifications.fulfillment-held'
+    notification.code === 'notifications.fulfillment-held' ||
+    notification.code === 'notifications.shipment-lost'
         ? notification.params.orderId
         : undefined;
 
@@ -254,6 +295,9 @@ export const describeNotification = (
         }
         case 'notifications.fulfillment-held': {
             return describeHeld(notification.params, translate);
+        }
+        case 'notifications.shipment-lost': {
+            return describeLost(notification.params, formatDate, translate);
         }
         case 'notifications.staff.purchase-hold-placed': {
             return translate(notification.code, { until: formatDate(notification.params.until) });
