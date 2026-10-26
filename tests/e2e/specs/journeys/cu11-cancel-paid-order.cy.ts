@@ -8,7 +8,7 @@
  * The buyer is mailed twice: the cancellation, and the refund that follows it. The order is the
  * seeded `order.paid`, so the story spends no card budget; paying is N1's and CU1's business.
  */
-import { eventually, orderMailTo } from '../../../support/e2e/steps';
+import { eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** The slice of a payment this story reads: where the money stands. */
 interface PaymentLike {
@@ -87,7 +87,7 @@ describe('CU11 · I cancel a paid order and get my money back', () => {
                 cy.step('the whole payment goes back to the card');
                 // The refund is the payments module answering the cancel, so it may land a beat later.
                 eventually(
-                    () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`),
+                    () => paymentOfOrder<PaymentLike>('user', orderId),
                     (payment) => payment?.displayStatus === 'refunded'
                 ).should((payment) => {
                     expect(payment?.displayStatus).to.equal('refunded');

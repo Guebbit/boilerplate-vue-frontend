@@ -148,12 +148,12 @@ None. The module has no routes.
 
 #### Endpoints called
 
-| Call                              | Response schema                   |
-| --------------------------------- | --------------------------------- |
-| `GET /notifications`              | `ListNotificationsResponse`       |
-| `POST /notifications/read-all`    | `ReadAllNotificationsResponse`    |
-| `POST /notifications/dismiss-all` | `DismissAllNotificationsResponse` |
-| `DELETE /notifications/{id}`      | `DeleteNotificationByIdResponse`  |
+| Call                           | Response schema                   |
+| ------------------------------ | --------------------------------- |
+| `GET /notifications`           | `ListNotificationsResponse`       |
+| `POST /notifications/read-all` | `ReadAllNotificationsResponse`    |
+| `DELETE /notifications`        | `DismissAllNotificationsResponse` |
+| `DELETE /notifications/{id}`   | `DeleteNotificationByIdResponse`  |
 
 Each row registers one Zod schema through the manifest, so enabling the domain turns its contract
 validation on and deleting the folder turns it off. The stream's frames are validated against the

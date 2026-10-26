@@ -504,7 +504,7 @@ export const useCartStore = defineStore('cart', () => {
      */
     const reorder = (orderId: string) =>
         replaceCartFrom(
-            () => apiReorder(orderId),
+            () => apiReorder({ orderId }),
             ({ cart: updated }) => updated,
             true
         );

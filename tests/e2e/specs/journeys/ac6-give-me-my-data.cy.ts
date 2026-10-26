@@ -37,7 +37,7 @@ const SIGNED_TOKEN = /eyJ(?:[\w-]+\.){2}[\w-]+/;
  * @returns the URL of the download page
  */
 const exportLinkOf = (mail: MailedEmail): string =>
-    mail.links?.find((href) => href.includes('/account-export/')) ?? mailedLinkUrl(mail);
+    mail.links?.find((href) => href.includes('/account-export')) ?? mailedLinkUrl(mail);
 
 /** What the download sends: the export document itself, with no envelope around it. */
 interface ExportData {
@@ -78,7 +78,7 @@ describe('AC6 · Give me my data', () => {
         cy.get('[data-test=profile-export-data-requested]').should('be.visible');
 
         cy.step('the link is mailed, and opening it offers the file');
-        cy.intercept('GET', '**/account/export/*').as('download');
+        cy.intercept('GET', '**/account/export').as('download');
         cy.accountOf('user').then(({ email }) => {
             cy.wrap(email).as('email');
             // No template filter: a live mail sink cannot say which template a mail came from, and
@@ -192,7 +192,7 @@ describe('AC6 · Give me my data', () => {
         cy.visit('/en/profile');
         cy.get('[data-test=profile-export-data] button').click();
         cy.wait('@export').its('response.statusCode').should('equal', 202);
-        cy.intercept('GET', '**/account/export/*').as('download');
+        cy.intercept('GET', '**/account/export').as('download');
         cy.get<string>('@email').then((email) => {
             cy.get<string>('@firstLink').then((firstLink) => {
                 cy.emailTo(email, (mail) => exportLinkOf(mail) !== firstLink).then((mail) => {

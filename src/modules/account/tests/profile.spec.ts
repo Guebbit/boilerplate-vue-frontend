@@ -89,7 +89,7 @@ beforeEach(() => {
         // the fixture is free to leave empty; only `exportedAt` and `profile` are required scalars
         // on `AccountExportResponse`. `invoicing` is the one exception — an object of two empty
         // arrays, never absent, for an account with no paid orders yet.
-        'GET /account/export/e1': {
+        'GET /account/export': {
             exportedAt: '2026-09-07T00:00:00.000Z',
             profile: USER,
             roles: [],
@@ -253,11 +253,11 @@ describe('requestAccountExport', () => {
 });
 
 describe('downloadAccountExport', () => {
-    it('returns the export document from GET /account/export/{id}', () =>
+    it('returns the export document from GET /account/export', () =>
         useProfileStore()
-            .downloadAccountExport('e1')
+            .downloadAccountExport()
             .then((data) => {
-                expect(requestedUrls().at(-1)).toBe('/account/export/e1');
+                expect(requestedUrls().at(-1)).toBe('/account/export');
                 expect(data?.profile).toEqual(USER);
                 expect(data?.exportedAt).toBe('2026-09-07T00:00:00.000Z');
             }));

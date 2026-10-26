@@ -18,7 +18,8 @@ import {
     eventually,
     idFromLocation,
     orderMailTo,
-    orderNumberShown
+    orderNumberShown,
+    paymentOfOrder
 } from '../../../support/e2e/steps';
 
 /** What the warehouse keeps back for handling damage, in cents. */
@@ -59,7 +60,7 @@ describe('N2 · Withdraw after delivery', () => {
             cy.get('[data-test=withdrawal-until]').should('exist');
             cy.get('[data-test=order-return]').should('not.exist');
             const paid = { cents: 0 };
-            cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`).then((payment) => {
+            paymentOfOrder<PaymentLike>('user', orderId).then((payment) => {
                 paid.cents = Math.round(Number(payment?.amount) * 100);
             });
 
@@ -111,7 +112,7 @@ describe('N2 · Withdraw after delivery', () => {
 
             cy.step('the payment reports the part-refund, and a credit note is issued for it');
             eventually(
-                () => cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`),
+                () => paymentOfOrder<PaymentLike>('admin', orderId),
                 (payment) => Number(payment?.amountRefunded) > 0
             ).should((payment) => {
                 expect(Math.round(Number(payment?.amountRefunded) * 100)).to.equal(

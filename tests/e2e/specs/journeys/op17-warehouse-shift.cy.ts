@@ -10,7 +10,13 @@
  * Setup the story does not care about goes through the API: the digital order is bought by the
  * customer and paid by the admin, and the return request is approved by support first.
  */
-import { adminMenuLinks, centsOf, checkoutAs, isTurnedBack } from '../../../support/e2e/steps';
+import {
+    adminMenuLinks,
+    centsOf,
+    checkoutAs,
+    isTurnedBack,
+    paymentOfOrder
+} from '../../../support/e2e/steps';
 import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
 
@@ -47,7 +53,7 @@ const aPaidDigitalOrder = (): Cypress.Chainable<string> =>
         cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 1 });
         return checkoutAs('user').then((order) => {
             const orderId = String(order?.id);
-            cy.apiAs('admin', 'POST', `/payments/orders/${orderId}/offline`, { method: 'cash' });
+            cy.apiAs('admin', 'POST', `/orders/${orderId}/payments`, { method: 'cash' });
             return cy.wrap(orderId, { log: false });
         });
     });
@@ -167,11 +173,7 @@ describe('OP17 · A warehouse shift', () => {
             cy.step('the return closes with the refund minus the deduction');
             cy.apiAs<ReturnLike>('warehouse', 'GET', `/returns/${returnId}`).then((received) => {
                 expect(received?.status).to.equal('closed');
-                cy.apiAs<PaymentLike>(
-                    'admin',
-                    'GET',
-                    `/payments/orders/${String(received?.orderId)}`
-                ).then((payment) => {
+                paymentOfOrder<PaymentLike>('admin', String(received?.orderId)).then((payment) => {
                     const paidCents = Math.round(Number(payment?.amount) * 100);
                     centsOf('[data-test=return-refund]').should((refund) => {
                         expect(refund).to.equal(paidCents - DEDUCTION_CENTS);

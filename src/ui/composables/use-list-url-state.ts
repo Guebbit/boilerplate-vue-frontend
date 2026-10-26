@@ -128,9 +128,10 @@ export const useListUrlState = <TFilters extends object>(
         }
         // `TFilters` is a search-filter shape: every field optional, so a subset of its keys is a `TFilters`.
         options.filters.value = next as TFilters;
-        options.page.value = positiveInteger(firstOf(query[keyOf('page')])) ?? 1;
+        // Size first: the toolkit resets the page to 1 the moment the size changes.
         const size = positiveInteger(firstOf(query[keyOf('pageSize')]));
         if (options.pageSize && size !== undefined) options.pageSize.value = size;
+        options.page.value = positiveInteger(firstOf(query[keyOf('page')])) ?? 1;
     };
 
     hydrate(route.query);

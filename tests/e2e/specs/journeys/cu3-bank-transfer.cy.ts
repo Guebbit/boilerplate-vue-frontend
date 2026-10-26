@@ -65,11 +65,12 @@ describe('CU3 · Bank transfer, both sides', { tags: '@smoke' }, () => {
         cy.get('[data-test=transfer-reference]').invoke('text').should('not.be.empty');
         cy.get('[data-test=transfer-deadline]').invoke('text').should('not.be.empty');
         idFromLocation().then((orderId) => {
-            cy.apiAs<{ nextAction?: TransferAction }>(
+            cy.apiAs<{ items: { nextAction?: TransferAction }[] }>(
                 'user',
                 'GET',
-                `/payments/orders/${orderId}`
-            ).then((payment) => {
+                `/orders/${orderId}/payments`
+            ).then((list) => {
+                const payment = list?.items[0];
                 const action = payment?.nextAction;
                 expect(action, 'the payment carries the instructions').to.not.equal(undefined);
                 cy.get('[data-test=transfer-beneficiary]')

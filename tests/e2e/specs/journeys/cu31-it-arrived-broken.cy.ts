@@ -10,7 +10,7 @@
  * goods were faulty or not what was ordered. Money is compared in cents against what the API says
  * the order cost, never a sum made on the page.
  */
-import { centsOf, eventually, orderMailTo } from '../../../support/e2e/steps';
+import { centsOf, eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** What the warehouse keeps back for handling on the first return, in cents. */
 const DEDUCTION_CENTS = 100;
@@ -183,7 +183,7 @@ describe('CU31 · It arrived broken', () => {
 
                     cy.step('the money, the credit note and the mail follow');
                     eventually(
-                        () => cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`),
+                        () => paymentOfOrder<PaymentLike>('admin', orderId),
                         (payment) => inCents(Number(payment?.amountRefunded)) > 0
                     ).should((payment) => {
                         expect(inCents(Number(payment?.amountRefunded))).to.equal(
@@ -224,28 +224,20 @@ describe('CU31 · It arrived broken', () => {
                         cy.apiAs('support', 'POST', `/returns/${second?.id}/approve`);
                         cy.apiAs('warehouse', 'POST', `/returns/${second?.id}/receive`, {});
                     });
-                    cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`).then(
-                        (before) => {
-                            const paid = inCents(Number(before?.amount));
-                            eventually(
-                                () =>
-                                    cy.apiAs<PaymentLike>(
-                                        'admin',
-                                        'GET',
-                                        `/payments/orders/${orderId}`
-                                    ),
-                                (payment) =>
-                                    inCents(Number(payment?.amountRefunded)) >
-                                    a.cents - DEDUCTION_CENTS
-                            ).should((payment) => {
-                                expect(
-                                    inCents(Number(payment?.amountRefunded)),
-                                    'everything paid comes back but the deduction, shipping included'
-                                ).to.equal(paid - DEDUCTION_CENTS);
-                                expect(payment?.displayStatus).to.not.equal('refunded');
-                            });
-                        }
-                    );
+                    paymentOfOrder<PaymentLike>('admin', orderId).then((before) => {
+                        const paid = inCents(Number(before?.amount));
+                        eventually(
+                            () => paymentOfOrder<PaymentLike>('admin', orderId),
+                            (payment) =>
+                                inCents(Number(payment?.amountRefunded)) > a.cents - DEDUCTION_CENTS
+                        ).should((payment) => {
+                            expect(
+                                inCents(Number(payment?.amountRefunded)),
+                                'everything paid comes back but the deduction, shipping included'
+                            ).to.equal(paid - DEDUCTION_CENTS);
+                            expect(payment?.displayStatus).to.not.equal('refunded');
+                        });
+                    });
 
                     cy.step('nothing is left to send back');
                     cy.switchUser('user');

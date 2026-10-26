@@ -110,7 +110,7 @@ describe('"arrives in N shipments"', () => {
 });
 
 describe('the start-fulfilment door', () => {
-    it('offers "Start fulfilment" only when `actions.start` says so', () => {
+    it('offers "Start fulfilment" only when `actions.process` says so', () => {
         expect(
             mountPanel({ orderId: 'o1', canStart: true })
                 .wrapper.find('[data-test=mark-started]')
@@ -125,7 +125,7 @@ describe('the start-fulfilment door', () => {
 
     it('starts, re-reads the fulfilment (every `actions` flag depends on the order) and emits `moved`', () => {
         const { wrapper, store } = mountPanel({ orderId: 'o1', canStart: true });
-        const start = vi.spyOn(store, 'start').mockResolvedValue(undefined);
+        const start = vi.spyOn(store, 'process').mockResolvedValue(undefined);
 
         return wrapper
             .get('[data-test=mark-started]')
@@ -140,7 +140,7 @@ describe('the start-fulfilment door', () => {
 
     it('shows a refusal as the inline error, instead of silently doing nothing', () => {
         const { wrapper, store } = mountPanel({ orderId: 'o1', canStart: true });
-        vi.spyOn(store, 'start').mockRejectedValue(new Error('not paid'));
+        vi.spyOn(store, 'process').mockRejectedValue(new Error('not paid'));
 
         return wrapper
             .get('[data-test=mark-started]')

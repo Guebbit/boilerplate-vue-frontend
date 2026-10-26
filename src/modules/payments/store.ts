@@ -14,10 +14,10 @@ import {
     confirmPayment,
     syncPayment,
     getPayment,
-    getPaymentByOrder,
-    refundPaymentByOrder,
+    listOrderPayments,
+    createRefund,
     settleRefundByHand as settleRefundByHandRequest,
-    recordOfflinePayment as recordOfflinePaymentRequest,
+    recordOrderPayment,
     listPaymentMethods,
     searchPayments,
     listRefunds,
@@ -33,11 +33,7 @@ import type {
     SearchPaymentsRequest
 } from '@types';
 import { ERROR_CODES } from '@api/error-codes';
-import {
-    hasErrorCode,
-    isTransportFailure,
-    rethrowUnlessAbsent
-} from '@/infrastructure/utils/errors';
+import { hasErrorCode, isTransportFailure } from '@/infrastructure/utils/errors';
 import { useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
 
 /**
@@ -80,7 +76,7 @@ export const usePaymentsStore = defineStore('payments', () => {
     const refundIdempotencyKeys = useIdempotencyKeys();
 
     /**
-     * `Idempotency-Key`s for `recordOfflinePayment`'s `POST /payments/orders/{orderId}/offline`, one
+     * `Idempotency-Key`s for `recordOfflinePayment`'s `POST /orders/{id}/payments`, one
      * per order, for the same reason as the refund's.
      */
     const offlineIdempotencyKeys = useIdempotencyKeys();
@@ -105,26 +101,19 @@ export const usePaymentsStore = defineStore('payments', () => {
         );
 
     /**
-     * Loads the payment behind an order. A 404 is an answer — no intent yet — not an error:
-     * the panel renders the pay form from `undefined`.
+     * Loads the payment behind an order (`GET /orders/{id}/payments`, none or one). An empty list is
+     * the answer for an order nobody started paying: the panel renders the pay form from
+     * `undefined`. A 404 now means the order itself is not visible, a real failure.
      *
      * @param orderId - The order in question.
      * @returns A promise resolving with the payment, or undefined.
      */
     const fetchPaymentForOrder = (orderId: string) =>
         fetchAny(() =>
-            getPaymentByOrder(orderId)
-                .then((response) => {
-                    payment.value = response;
-                    return payment.value;
-                })
-                .catch((error: unknown) => {
-                    // 404 only: anything else is a real failure, and swallowing it would render
-                    // the pay form for an order that already has a payment.
-                    rethrowUnlessAbsent(error, 404);
-                    payment.value = undefined;
-                    return undefined;
-                })
+            listOrderPayments(orderId).then((response) => {
+                payment.value = response.items[0];
+                return payment.value;
+            })
         );
 
     /**
@@ -156,14 +145,14 @@ export const usePaymentsStore = defineStore('payments', () => {
         });
 
     /**
-     * Reads an order's payment (`GET /payments/orders/{orderId}`) without touching the shared
-     * `payment` record: for a screen that is not the order page (the needs-attention list opening
-     * the drawer) and must not replace what an order page holds.
+     * Reads one payment by its own id (`GET /payments/{id}`) without touching the shared `payment`
+     * record: for a screen that is not the order page (the needs-attention list opening the
+     * drawer) and must not replace what an order page holds.
      *
-     * @param orderId - The order whose payment is asked about.
+     * @param paymentId - The payment to read.
      * @returns A promise resolving with the payment as this caller may act on it.
      */
-    const readPaymentForOrder = (orderId: string) => fetchAny(() => getPaymentByOrder(orderId));
+    const readPayment = (paymentId: string) => fetchAny(() => getPayment(paymentId));
 
     /**
      * Pays an order: intent first, then the confirm with the provider's method reference.
@@ -246,33 +235,29 @@ export const usePaymentsStore = defineStore('payments', () => {
      * Returns a payment's money without touching its order's status — the operator's standalone
      * refund. Admin-only at the API; a caller without the role gets the 403 this rethrows.
      *
-     * The API answers 201 with the new refund record only, so the payment is read again
-     * (`GET /payments/{id}`) and replaces the cached one: that carries the running totals and
-     * withdraws `actions.refund`, which greys the control out afterwards. On a hand-paid payment
-     * the refund is only opened, and `actions.settleByHand` names the record to confirm.
+     * The API answers 201 with the record this request wrote, whatever became of it: `succeeded`,
+     * `pending` (hand-paid money waiting for the operator) or `failed` (the provider refused). A
+     * refusal is an answer, not an error. The payment is read again (`GET /payments/{id}`) and
+     * replaces the cached one: that carries the running totals, `actions.settleByHand` (which names
+     * the record to confirm) and withdraws `actions.refund`, which greys the control out.
      *
      * @param target - The payment being returned and the order it belongs to.
      * @param target.id - The payment.
      * @param target.orderId - Its order, for the re-read after a fault.
      * @param amount - A partial refund, a decimal in the payment's own currency. Absent returns
      *  everything still refundable.
-     * @returns A promise resolving with the refunded payment.
+     * @returns A promise resolving with the refreshed payment and the record this request wrote.
      */
     const refundPayment = (target: { id: string; orderId: string }, amount?: number) => {
         const keeper = refundIdempotencyKeys.forSubject(target.id);
         return fetchAny(() =>
-            refundPaymentByOrder(
-                target.id,
-                amount === undefined ? undefined : { amount },
-                keeper.withKey()
-            )
-                .then(() => {
+            createRefund(target.id, amount === undefined ? undefined : { amount }, keeper.withKey())
+                .then((created) => {
                     keeper.settle();
-                    return getPayment(target.id);
-                })
-                .then((response) => {
-                    payment.value = response;
-                    return payment.value;
+                    return getPayment(target.id).then((response) => {
+                        payment.value = response;
+                        return { payment: response, refund: created };
+                    });
                 })
                 .catch((error: unknown) => {
                     keeper.settle(error);
@@ -288,29 +273,41 @@ export const usePaymentsStore = defineStore('payments', () => {
     };
 
     /**
-     * Confirms that a hand-paid refund's money was returned outside the application
+     * Confirms that a refund's money was returned outside the application
      * (`POST /payments/{id}/refunds/{refundId}/settle`). Nothing is sent anywhere. Needs
-     * `create:Refund` and a fresh session; the API answers the payment with its `actions`.
+     * `create:Refund` and a fresh session.
      *
-     * The answer replaces the cached payment when it is the same one. A refund another operator
-     * settled first answers 409 `PAYMENT_REFUND_NOT_OPEN`, and the payment is re-read before the
-     * error is rethrown, so the "Mark returned" button the loser pressed is gone.
+     * The API answers the refund it settled, so the payment is read again
+     * (`GET /payments/{id}`) for the totals and its `actions`. That read replaces the cached
+     * payment only when it is the same one: settling from a list must not swap what an order
+     * page holds.
+     *
+     * Two faults re-read the order's payment before rethrowing, so the "Mark returned" button the
+     * loser pressed is gone: 409 `PAYMENT_REFUND_NOT_OPEN` (another operator settled it first) and
+     * 409 `PAYMENT_REFUND_IN_FLIGHT` (a card refund with no final answer yet).
      *
      * @param target - The payment and the order it belongs to.
      * @param target.id - The payment carrying the refund.
      * @param target.orderId - Its order, for the re-read.
      * @param refundId - The refund record to mark as returned.
-     * @returns A promise resolving with the payment as it now stands.
+     * @returns A promise resolving with the payment as it now stands, read after the settle.
      */
     const settleRefundByHand = (target: { id: string; orderId: string }, refundId: string) =>
         fetchAny(() =>
             settleRefundByHandRequest(target.id, refundId)
+                // The answer is the refund; the payment (totals, actions) is a read of its own.
+                .then(() => getPayment(target.id))
                 .then((response) => {
                     if (payment.value?.id === response.id) payment.value = response;
                     return response;
                 })
                 .catch((error: unknown) =>
-                    rereadAfterFault(target.orderId, error, ERROR_CODES.PAYMENT_REFUND_NOT_OPEN)
+                    rereadAfterFault(
+                        target.orderId,
+                        error,
+                        ERROR_CODES.PAYMENT_REFUND_NOT_OPEN,
+                        ERROR_CODES.PAYMENT_REFUND_IN_FLIGHT
+                    )
                 )
         );
 
@@ -329,7 +326,7 @@ export const usePaymentsStore = defineStore('payments', () => {
     const recordOfflinePayment = (orderId: string, body: RecordOfflinePaymentRequest) => {
         const keeper = offlineIdempotencyKeys.forSubject(orderId);
         return fetchAny(() =>
-            recordOfflinePaymentRequest(orderId, body, keeper.withKey())
+            recordOrderPayment(orderId, body, keeper.withKey())
                 .then((response) => {
                     keeper.settle();
                     payment.value = response;
@@ -478,7 +475,7 @@ export const usePaymentsStore = defineStore('payments', () => {
         attention,
         awaitingPage,
         awaitingTotal,
-        readPaymentForOrder,
+        readPayment,
         fetchPaymentsPage,
         fetchAwaitingPage,
         fetchRefundsPage,

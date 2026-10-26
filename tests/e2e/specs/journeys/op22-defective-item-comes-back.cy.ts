@@ -11,7 +11,7 @@
  * everything the payment took, less the deduction.
  */
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
-import { centsOf, eventually, orderMailTo } from '../../../support/e2e/steps';
+import { centsOf, eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** What the warehouse keeps back for handling, in cents. */
 const DEDUCTION_CENTS = 200;
@@ -153,14 +153,12 @@ describe('OP22 · A defective item comes back', () => {
                     (received) => {
                         expect(received?.status).to.equal('closed');
                         const orderId = String(received?.orderId);
-                        cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`).then(
-                            (payment) => {
-                                const paidCents = Math.round(Number(payment?.amount) * 100);
-                                centsOf('[data-test=return-refund]').should((refund) => {
-                                    expect(refund).to.equal(paidCents - DEDUCTION_CENTS);
-                                });
-                            }
-                        );
+                        paymentOfOrder<PaymentLike>('admin', orderId).then((payment) => {
+                            const paidCents = Math.round(Number(payment?.amount) * 100);
+                            centsOf('[data-test=return-refund]').should((refund) => {
+                                expect(refund).to.equal(paidCents - DEDUCTION_CENTS);
+                            });
+                        });
 
                         cy.step('the ledger shows the goods back, against that order');
                         cy.visit('/en/inventory');

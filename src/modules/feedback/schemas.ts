@@ -46,3 +46,9 @@ export const contactSchema = z.object({
     // this form only has to carry it through unedited.
     website: z.string().optional()
 });
+
+/**
+ * The contract's order-number bound; the contact view reads it from here because a component
+ * does not import `@api/schemas`.
+ */
+export { createFeedbackRequestBodyOrderNumberMax as orderNumberMax } from '@api/schemas';

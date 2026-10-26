@@ -2749,7 +2749,7 @@ paths:
         - Auth
       summary: Request an export of the caller's own data
       description: |-
-        Starts "give me my data" (Art. 15, 20) and answers at once with `202` and the export's `id` and `status`. The file is built in the background from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail — and a LINK to it is mailed to the account's address when it is ready, never the data itself. Fetch it with `GET /account/export/{id}`.
+        Starts "give me my data" (Art. 15, 20) and answers at once with `202` and the export's `id` and `status`. The file is built in the background from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail — and a LINK to it is mailed to the account's address when it is ready, never the data itself. Fetch it with `GET /account/export`.
 
         One live export per account. Asking while one is `building` returns that one; asking after one is `ready` or `failed` replaces it (the old file and record are deleted first). A file is kept for `NODE_ACCOUNT_EXPORT_TTL_DAYS` days. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
 
@@ -2769,6 +2769,38 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
+    get:
+      tags:
+        - Auth
+      summary: Download an export of the caller's own data
+      description: "Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. An account has one live export, so there is no id to name: the caller's own is the one served. A FRESH session (`requireFreshAuth`), same as the request. `404` when the caller has none, it is still `building`, `failed`, or already gone (past its retention): the caller cannot tell these apart, by design."
+      operationId: downloadAccountExport
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        "200":
+          description: The caller's own data
+          headers:
+            Content-Disposition:
+              description: "`attachment`, with the file name `account-export.json`."
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountExportResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -5006,7 +5038,7 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: cart
-  /cart/reorder/{orderId}:
+  /cart/reorder:
     post:
       tags:
         - Cart
@@ -5016,9 +5048,12 @@ paths:
       security:
         - bearerAuth: []
         - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/OrderIdPathParam"
-          description: One of the caller's own orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderRequest"
       responses:
         "200":
           description: The updated cart, and what happened to each order line
@@ -5026,6 +5061,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReorderResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5034,6 +5071,12 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -5208,6 +5251,7 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/Email"
+        - $ref: "#/components/parameters/OrderNumberParam"
         - name: status
           in: query
           schema:
@@ -5688,7 +5732,9 @@ paths:
       tags:
         - Orders
       summary: Cancel order
-      description: "Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return). A customer can cancel only their own orders; an operator (a caller holding `update:Order`) can cancel anyone's, and must have proved themselves recently: a stale session answers `401 REAUTH_REQUIRED`, while the buyer's own cancel is never prompted. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner."
+      description: |-
+        Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return). A customer can cancel only their own orders; an operator (a caller holding `update:Order`) can cancel anyone's, and must have proved themselves recently: a stale session answers `401 REAUTH_REQUIRED`, while the buyer's own cancel is never prompted. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
+        The refund of a paid order runs AFTER this answer, so a 200 does not say the money is back: follow it on the payment (`displayStatus` `refund_pending`, then `refunded`) and on `GET /payments/attention`. A provider that refuses it leaves the refund open and retried; the cancel stays done.
       operationId: cancelOrderById
       security:
         - bearerAuth: []
@@ -5877,6 +5923,133 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: invoicing
+  /orders/{id}/payments:
+    get:
+      tags:
+        - Payments
+      summary: List the payments of an order
+      description: "The payment record of one of the caller's orders, so a reload mid-flow finds the intent and its status again. Unpaged: an order has one payment row, so `items` holds none or one, like `GET /orders/{id}/credit-notes`. No payment started yet is `{ \"items\": [] }`, not a 404: absence is an answer, and the client starts the flow with `POST /payments`. `404` only for an order the caller cannot see. A caller holding `display:Payment` reads anyone's."
+      operationId: listOrderPayments
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+          description: The order
+      responses:
+        "200":
+          description: The order's payments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderPaymentsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: payments
+    post:
+      tags:
+        - Payments
+      summary: Record a payment on an order
+      description: |-
+        The payment is a child of the order: Solidus' `POST /api/orders/{number}/payments`. An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted a row that already existed: a card intent nobody paid, or the open payment of a `bank_transfer` order (the very payment being recorded).
+        A transfer that arrives after its order was cancelled is recorded too, onto the payment the cancel closed: the money is real, the order cannot be paid any more, so it answers 200 with the payment `succeeded` and a refund record left open (a hand-paid refund is returned by the operator, off-system, and then marked done).
+        Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+      operationId: recordOrderPayment
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+          description: The order the money arrived for. Must still be `pending`
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordOfflinePaymentRequest"
+      responses:
+        "200":
+          description: The payment, `succeeded` — it converted the row of an unpaid card intent — with the order now `paid`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "201":
+          description: The payment, `succeeded`, with the order now `paid`
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: payments
+  /orders/{id}/process:
+    post:
+      tags:
+        - Delivery
+      summary: Process a paid order
+      description: Reports that fulfilment has started — the order moves `paid → processing`. The verb names the status it reaches, as `cancel` does; the module behind it is `delivery`'s. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
+      operationId: processOrder
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+          description: The order to process
+      responses:
+        "200":
+          description: The order, now `processing`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
   /payments/methods:
     get:
       tags:
@@ -5899,46 +6072,16 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: payments
-  /payments/orders/{orderId}:
-    get:
-      tags:
-        - Payments
-      summary: Get the payment behind an order
-      description: The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. A caller holding `display:Payment` reads anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments`.
-      operationId: getPaymentByOrder
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/OrderIdPathParam"
-          description: One of the caller's own orders
-      responses:
-        "200":
-          description: The payment
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Payment"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: payments
   /payments/{id}/refunds:
     post:
       tags:
         - Payments
       summary: Refund a payment
       description: |-
-        Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 201 with the new `Refund` record and its address in `Location`; read the payment again (`GET /payments/{id}`) for the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left, which includes a refund still open: a card refund the provider has not confirmed belongs to the refund sweep) or 422 (asks for more than is left).
+        Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 201 with the new `Refund` record and its address in `Location`; read the payment again (`GET /payments/{id}`) for the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left to refund) or 422 (asks for more than is left). A refund still open counts against what is left, so a second partial refund beside it is allowed while money remains.
+        The 201 is the answer for every outcome of the record the request wrote; its `status` carries the result. `succeeded`: the money is back. `failed`: the provider refused, the record is kept and counts against what is left, and it is either retried by the refund sweep or, when `actions.settleByHand` lists it, final and waiting for the money to be returned another way. `pending`: hand-paid money waiting for an operator. A refusal is never a 5xx. The reason of a refusal (`failureReason`) is sent to `display:Payment` callers only.
         On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it. Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
-      operationId: refundPaymentByOrder
+      operationId: createRefund
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -5953,7 +6096,7 @@ paths:
               $ref: "#/components/schemas/RefundPaymentRequest"
       responses:
         "201":
-          description: The refund record just opened. The payment stays `succeeded`; its `displayStatus` says how much of it went back
+          description: The refund record this request wrote, whatever became of it (`succeeded`, `failed` with its reason, or `pending`). The payment stays `succeeded`; its `displayStatus` says how much of it went back
           headers:
             Location:
               $ref: "#/components/headers/Location"
@@ -6013,68 +6156,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: payments
-  /payments/orders/{orderId}/offline:
-    post:
-      tags:
-        - Payments
-      summary: Record a payment that arrived outside the provider
-      description: |-
-        An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted a row that already existed: a card intent nobody paid, or the open payment of a `bank_transfer` order (the very payment being recorded).
-        A transfer that arrives after its order was cancelled is recorded too, onto the payment the cancel closed: the money is real, the order cannot be paid any more, so it answers 200 with the payment `succeeded` and a refund record left open (a hand-paid refund is returned by the operator, off-system, and then marked done).
-        Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
-      operationId: recordOfflinePayment
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/OrderIdPathParam"
-          description: The order the money arrived for. Must still be `pending`
-        - $ref: "#/components/parameters/IdempotencyKeyHeader"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RecordOfflinePaymentRequest"
-      responses:
-        "200":
-          description: The payment, `succeeded` — it converted the row of an unpaid card intent — with the order now `paid`
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Payment"
-        "201":
-          description: The payment, `succeeded`, with the order now `paid`
-          headers:
-            Location:
-              $ref: "#/components/headers/Location"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Payment"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
-        "413":
-          $ref: "#/components/responses/PayloadTooLarge"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -6142,17 +6223,17 @@ paths:
             SyncPayment:
               operationId: syncPayment
               parameters:
-                id: $response.body#/data/id
+                id: $response.body#/id
               description: An in-flight payment is resolved by re-reading the provider here.
             RefundPayment:
-              operationId: refundPaymentByOrder
+              operationId: createRefund
               parameters:
-                orderId: $response.body#/data/orderId
+                orderId: $response.body#/orderId
               description: A succeeded payment can be refunded without touching the order status.
             CancelOrder:
               operationId: cancelOrderById
               parameters:
-                id: $response.body#/data/orderId
+                id: $response.body#/orderId
               description: A paid order can still be cancelled, which refunds it too.
         "400":
           $ref: "#/components/responses/BadRequest"
@@ -6299,41 +6380,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: delivery
-  /delivery/orders/{orderId}/start:
-    post:
-      tags:
-        - Delivery
-      summary: Begin fulfilling a paid order
-      description: Reports that fulfilment has started — the order moves `paid → processing`. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
-      operationId: startFulfilment
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/OrderIdPathParam"
-          description: The order to start fulfilling
-      responses:
-        "200":
-          description: The order, now `processing`
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Order"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -7025,7 +7071,7 @@ paths:
       summary: Record that the returned goods arrived
       description: |-
         The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409.
-        What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
+        What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed (its refund record is already on the payment, follow it there and on `GET /payments/attention`), `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
       operationId: receiveReturn
       security:
         - bearerAuth: []
@@ -8212,41 +8258,6 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
-  /account/export/{id}:
-    get:
-      tags:
-        - Auth
-      summary: Download an export of the caller's own data
-      description: "Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. Owner only, and a FRESH session (`requireFreshAuth`), same as the request. `404` for an export that is not the caller's, is still `building`, `failed`, or is already gone (past its retention, or replaced by a newer request): the caller cannot tell these apart, by design."
-      operationId: downloadAccountExport
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/IdPathParam"
-      responses:
-        "200":
-          description: The caller's own data
-          headers:
-            Content-Disposition:
-              description: "`attachment`, with the file name `account-export.json`."
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AccountExportResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: account
   /users/{id}/purchase-hold:
     put:
       tags:
@@ -8486,6 +8497,7 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/Email"
+        - $ref: "#/components/parameters/OrderNumberParam"
         - name: status
           in: query
           schema:
@@ -8764,7 +8776,7 @@ paths:
             ConfirmPayment:
               operationId: confirmPayment
               parameters:
-                id: $response.body#/data/id
+                id: $response.body#/id
               description: The intent's id is confirmed here to complete the charge.
         "201":
           description: The payment intent, ready to confirm
@@ -8779,7 +8791,7 @@ paths:
             ConfirmPayment:
               operationId: confirmPayment
               parameters:
-                id: $response.body#/data/id
+                id: $response.body#/id
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -8906,7 +8918,7 @@ paths:
       tags:
         - Payments
       summary: Payments that need a person (staff)
-      description: "Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`), and refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age). A cancelled order's refund is one of them, because its record opens before the provider is asked. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`."
+      description: "Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`), card refunds the provider refused for good (`refused_refund`: shown at once, the money has to go back another way), and refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age). A cancelled order's refund is one of them, because its record opens before the provider is asked. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`."
       operationId: listPaymentAttention
       security:
         - bearerAuth: []
@@ -8934,7 +8946,9 @@ paths:
       tags:
         - Payments
       summary: Mark a hand-paid refund as returned
-      description: "An operator confirming that money already handed back outside the application (cash given back, a bank transfer sent) was returned, on a refund left `pending` by `POST /payments/{id}/refunds`, a cancellation, a received return or a withdrawal. Nothing is sent anywhere: the refund record settles with `refundedByHand`, `payment.refunded` fires as for any refund (the credit note is issued, a return waiting on it closes), and the audit row is `admin.payment.refund_settled_by_hand`. The refund is named by its own id, so one payment carrying several open refunds settles each separately. Only a hand-paid (`manual`) payment's refund can be settled this way; a card refund belongs to the provider and its sweep (409 `PAYMENT_REFUND_NOT_BY_HAND`). A refund two operators settle at once settles once, and the loser answers 409 `PAYMENT_REFUND_NOT_OPEN`. Needs `create:Refund`, which carries the same fresh-session requirement as the refund itself: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional."
+      description: |-
+        An operator confirming that money was handed back outside the application (cash given back, a bank transfer sent). Nothing is sent anywhere: the refund record settles with `settledByHand`, `payment.refunded` fires as for any refund (the credit note is issued, a return waiting on it closes), and the audit row is `admin.payment.refund_settled_by_hand`. The refund is named by its own id, so one payment carrying several open refunds settles each separately.
+        Which refunds may be settled: a hand-paid (`manual`) payment's `pending` refund; and a card refund the provider refused in a way that proves the money did not move (`RefundFailureReason`: `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card`, `provider_removed`). The payment's `actions.settleByHand` lists exactly these ids. A card refund that is `pending` (an attempt is running) or `failed` for an unclear reason (`provider_unavailable`, `unknown`) answers 409 `PAYMENT_REFUND_IN_FLIGHT`: the money may have moved, and the sweep settles it from the provider. A refund two operators settle at once settles once, and the loser answers 409 `PAYMENT_REFUND_NOT_OPEN`. Needs `create:Refund`, which carries the same fresh-session requirement as the refund itself: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
       operationId: settleRefundByHand
       security:
         - bearerAuth: []
@@ -8951,11 +8965,11 @@ paths:
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
       responses:
         "200":
-          description: The payment, with that refund `succeeded` and `refundedByHand` set
+          description: The refund as it now stands (`succeeded`, `settledByHand` set). `GET /payments/{id}` for the totals and the actions.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Payment"
+                $ref: "#/components/schemas/Refund"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9569,32 +9583,6 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: webhooks
-  /examples/published/{id}:
-    get:
-      tags:
-        - Examples
-      summary: Read a published example
-      description: Returns one example, to anyone, but only while its status is `published`. A draft or an archived example answers `404`, the same as an id that does not exist.
-      operationId: getPublishedExample
-      security: []
-      parameters:
-        - $ref: "#/components/parameters/IdPathParam"
-      responses:
-        "200":
-          description: The published example
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Example"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: example
   /examples:
     get:
       tags:
@@ -9742,9 +9730,10 @@ paths:
       tags:
         - Examples
       summary: Read an example
-      description: Returns one example the caller may read — their own, or any when they hold `display:Example`. Another person's example answers `404`, never `403`, so an id reveals nothing about who owns it.
+      description: Returns one example, scoped by the caller as `GET /products/{id}` is. A `published` example is open to anyone, signed in or not. The owner also reads their own drafts and archived ones, and a caller holding `display:Example` reads any. Everything else answers `404`, never `403`, so an id reveals nothing about who owns it or whether a draft exists. The answer varies by caller and language, so it is never shared-cached.
       operationId: getExampleById
       security:
+        - {}
         - bearerAuth: []
         - cookieAuth: []
       parameters:
@@ -9759,10 +9748,6 @@ paths:
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "429":
@@ -10008,7 +9993,7 @@ paths:
       tags:
         - Notifications
       summary: List notifications
-      description: "The caller's own inbox, newest first. A notification stays until its owner deletes it (`DELETE /notifications/{id}`, `POST /notifications/dismiss-all`), the per-user cap trims it, or the account goes. Never paginated: the inbox is bounded by that cap, so one read is the whole of it. Empty and absent are the same state — this never answers 404. A client keeps the list live with `GET /notifications/stream`; the stream carries only what is written while it is open, so this read is what a login, a reload or a dropped connection starts from."
+      description: "The caller's own inbox, newest first. A notification stays until its owner deletes it (`DELETE /notifications/{id}`, `DELETE /notifications`), the per-user cap trims it, or the account goes. Never paginated: the inbox is bounded by that cap, so one read is the whole of it. Empty and absent are the same state — this never answers 404. A client keeps the list live with `GET /notifications/stream`; the stream carries only what is written while it is open, so this read is what a login, a reload or a dropped connection starts from."
       operationId: listNotifications
       security:
         - bearerAuth: []
@@ -10024,6 +10009,31 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: notifications
+    delete:
+      tags:
+        - Notifications
+      summary: Delete every notification
+      description: "Permanently deletes every notification of the caller — a hard delete, like `DELETE /notifications/{id}`, on the collection itself (as `DELETE /account/sessions` and `DELETE /cart/items` are). Emptying an empty inbox is the state the caller asked for, so it answers 204 too. `POST /notifications/read-all` stays an action: it moves `readAt`, not membership."
+      operationId: dismissAllNotifications
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        "204":
+          $ref: "#/components/responses/NoContent"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -10063,30 +10073,6 @@ paths:
       summary: Mark every notification read
       description: Sets `readAt` on every unread notification of the caller. The bell calls it when it opens, so the badge (unread count) goes to zero while the messages stay. Repeating it is a no-op.
       operationId: readAllNotifications
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      responses:
-        "204":
-          $ref: "#/components/responses/NoContent"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: notifications
-  /notifications/dismiss-all:
-    post:
-      tags:
-        - Notifications
-      summary: Delete every notification
-      description: Permanently deletes every notification of the caller — a hard delete, like `DELETE /notifications/{id}`. Emptying an empty inbox is the state the caller asked for, so it answers 200.
-      operationId: dismissAllNotifications
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -10544,13 +10530,6 @@ components:
         type: string
         maxLength: 32
       description: "Wire name of a second factor — a `method` from `GET /account/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel."
-    OrderIdPathParam:
-      name: orderId
-      in: path
-      required: true
-      schema:
-        $ref: "#/components/schemas/Id"
-      description: Order identifier
     UserIdParam:
       name: userId
       in: query
@@ -10563,6 +10542,21 @@ components:
       required: false
       schema:
         $ref: "#/components/schemas/Id"
+    OrderNumberParam:
+      name: orderNumber
+      in: query
+      required: false
+      description: "The order's number as the customer quotes it (`2026-000041`); a leading `#`, spaces and an unpadded sequence (`#2026-41`) are tolerated. Exact and indexed. Anything that is not an order number finds nothing: an empty page, not an error. A caller holding `read:Order` alone still sees only their own orders."
+      schema:
+        type: string
+        maxLength: 32
+    OrderIdPathParam:
+      name: orderId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Id"
+      description: Order identifier
     ReauthMethodPathParam:
       name: method
       in: path
@@ -12922,6 +12916,1483 @@ components:
         token:
           type: string
           description: New access JWT
+    ExportSession:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - createdAt
+        - expiration
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        createdAt:
+          type: string
+          format: date-time
+        expiration:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: string
+          format: date-time
+        device:
+          type: string
+          description: The coarse device label stored at sign-in (`cookie` mode only).
+    ExportLinkedProvider:
+      type: object
+      additionalProperties: false
+      required:
+        - provider
+        - providerId
+        - connectedAt
+      properties:
+        provider:
+          type: string
+          description: Registry name of the provider, e.g. `google`.
+        providerId:
+          type: string
+          description: The provider's own stable identifier for the account (its `sub`), an online identifier under GDPR Art. 4(1).
+        connectedAt:
+          type: string
+          format: date-time
+    ExportTwoFactorMethod:
+      type: object
+      additionalProperties: false
+      required:
+        - method
+        - enrolledAt
+      properties:
+        method:
+          type: string
+          description: Wire name of the factor, e.g. `totp` or `email`.
+        enrolledAt:
+          type: string
+          format: date-time
+          description: When the factor was armed.
+    ExportSignInMethods:
+      type: object
+      additionalProperties: false
+      required:
+        - providers
+        - twoFactor
+      properties:
+        providers:
+          type: array
+          description: The identity providers linked to the account.
+          items:
+            $ref: "#/components/schemas/ExportLinkedProvider"
+        twoFactor:
+          type: array
+          description: The second factors armed on the account. A setup never confirmed is left out.
+          items:
+            $ref: "#/components/schemas/ExportTwoFactorMethod"
+    FeedbackCategory:
+      type: string
+      enum:
+        - order
+        - cancellation
+        - return
+        - payment
+        - account
+        - privacy
+        - other
+    FeedbackRequestStatus:
+      type: string
+      enum:
+        - new
+        - in_progress
+        - resolved
+        - spam
+    ExportFeedbackTicket:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - email
+        - subject
+        - message
+        - status
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+        email:
+          $ref: "#/components/schemas/Email"
+        subject:
+          type: string
+        message:
+          type: string
+        category:
+          $ref: "#/components/schemas/FeedbackCategory"
+        orderNumber:
+          type: string
+        status:
+          $ref: "#/components/schemas/FeedbackRequestStatus"
+        respondedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    CartItem:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        quantity:
+          type: integer
+          minimum: 1
+    WishlistExportItem:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+    Sku:
+      type: string
+      maxLength: 64
+      minLength: 1
+      description: "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+    ReleaseDate:
+      type: string
+      format: date-time
+      description: When a product ships from, as an ISO 8601 date-time with a zone. A product with a future date that is active and purchasable is a preorder. At most one year ahead (Google's `availability_date` rule); a date in the past is accepted and simply means "released". Moving it later notifies the buyers who already paid (`delivery`).
+    RateType:
+      type: string
+      enum:
+        - standard
+        - zero-rated
+        - exempt
+      description: "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
+    OrderLineProduct:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - price
+        - taxRate
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+        price:
+          type: number
+          format: double
+          minimum: 0
+          description: Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.
+        description:
+          type: string
+        requiresShipping:
+          type: boolean
+          default: true
+        noWithdrawal:
+          type: boolean
+        sku:
+          $ref: "#/components/schemas/Sku"
+        weight:
+          type: integer
+          minimum: 0
+        releaseDate:
+          $ref: "#/components/schemas/ReleaseDate"
+        preorder:
+          type: boolean
+          description: "The line was sold before its release date, frozen at checkout. `delivery` reads it, never the catalogue, to decide which fulfillment order the line belongs to: a bank transfer may be paid a week after the order was placed."
+        categories:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+        taxRate:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.
+        rateType:
+          $ref: "#/components/schemas/RateType"
+    OrderLineCurrent:
+      type: object
+      additionalProperties: false
+      properties:
+        imageUrl:
+          $ref: "#/components/schemas/ImageUrl"
+        thumbnailUrl:
+          $ref: "#/components/schemas/ThumbnailUrl"
+    OrderItem:
+      type: object
+      additionalProperties: false
+      required:
+        - product
+        - quantity
+        - locale
+        - current
+        - taxAmount
+        - netAmount
+      properties:
+        product:
+          $ref: "#/components/schemas/OrderLineProduct"
+        quantity:
+          type: integer
+          minimum: 1
+        locale:
+          $ref: "#/components/schemas/Locale"
+        backorderedQuantity:
+          type: integer
+          minimum: 1
+          description: How many of `quantity` were owed rather than on the shelf when the order was placed. Absent when the shelf covered the whole line.
+        promisedAt:
+          type: string
+          format: date-time
+          description: "When the owed units were promised: the product's `restockDate`, or the day the order was placed plus 30 days when it had none. Present with `backorderedQuantity` and frozen with it, so a later change to the catalogue moves no promise."
+        promiseDated:
+          type: boolean
+          description: Whether `promisedAt` was a date the product named. `false` means the buyer was promised delivery "within 30 days" of the order. Present with `promisedAt`.
+        current:
+          oneOf:
+            - $ref: "#/components/schemas/OrderLineCurrent"
+            - type: "null"
+          description: The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`.
+        taxAmount:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: VAT included in this line's total, at its own frozen `taxRate`.
+        netAmount:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: This line's total excluding VAT — `price × quantity` minus `taxAmount`.
+    OrderTaxSummaryRow:
+      type: object
+      additionalProperties: false
+      required:
+        - rate
+        - netAmount
+        - taxAmount
+        - grossAmount
+      properties:
+        rate:
+          type: number
+          format: double
+          minimum: 0
+          description: The decimal rate this row is for (`0.22` for 22%) — never repeated across rows.
+        netAmount:
+          type: number
+          format: double
+          minimum: 0
+        taxAmount:
+          type: number
+          format: double
+          minimum: 0
+        grossAmount:
+          type: number
+          format: double
+          minimum: 0
+          description: "`netAmount + taxAmount`, not re-derived from a price."
+    OrderAddress:
+      type: object
+      additionalProperties: false
+      required:
+        - fullName
+        - street
+        - city
+        - zip
+        - country
+      properties:
+        fullName:
+          $ref: "#/components/schemas/AddressFullName"
+        street:
+          $ref: "#/components/schemas/AddressStreet"
+        city:
+          $ref: "#/components/schemas/AddressCity"
+        zip:
+          $ref: "#/components/schemas/AddressZip"
+        country:
+          $ref: "#/components/schemas/CountryCode"
+        phone:
+          $ref: "#/components/schemas/AddressPhone"
+    PaymentMethodId:
+      type: string
+      enum:
+        - card
+        - bank_transfer
+      description: How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.
+    OrderStatus:
+      type: string
+      enum:
+        - pending
+        - paid
+        - processing
+        - shipped
+        - delivered
+        - cancelled
+      description: Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`.
+    OrderPaymentStatus:
+      type: string
+      enum:
+        - unpaid
+        - paid
+        - partially_refunded
+        - refunded
+      description: "Where the order's MONEY stands, beside `status` — Shopify's `financial_status`. `unpaid` until a payment lands; `paid`; then `partially_refunded` once some but not all of it went back, and `refunded` once all of it did. Read-only: `payments` stamps the refund states, `orders` derives the first two."
+    OrderFulfillmentStatus:
+      type: string
+      enum:
+        - unfulfilled
+        - in_progress
+        - on_hold
+        - partially_fulfilled
+        - shipped
+        - fulfilled
+      description: "Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from the status and the fulfilment summary delivery reports. First match wins: `fulfilled` once everything arrived; `shipped` once everything has left; `partially_fulfilled` once something left and more remains; `on_hold` while every remaining unit is held back; `in_progress` while being prepared; `unfulfilled` before work starts, and for a pending or cancelled order. Read-only."
+    OrderReturnStatus:
+      type: string
+      enum:
+        - none
+        - requested
+        - in_progress
+        - partially_returned
+        - returned
+      description: "Where any return on the order stands — Shopify's `returnStatus`. `none` when no return holds goods; `requested` while one awaits staff; `in_progress` once approved and awaiting its goods; `partially_returned` / `returned` once received goods cover some / every unit on the order. Read-only: `returns` stamps it, and `delivered` stays terminal — a return is its own object, not an order status."
+    ExportOrder:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - email
+        - items
+        - totalItems
+        - totalQuantity
+        - totalPrice
+        - status
+        - paymentStatus
+        - fulfillmentStatus
+        - returnStatus
+        - currency
+        - orderNumber
+        - netTotal
+        - taxTotal
+        - shippingNetAmount
+        - shippingTaxAmount
+        - taxSummary
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        userId:
+          $ref: "#/components/schemas/Id"
+        email:
+          $ref: "#/components/schemas/Email"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        totalItems:
+          type: integer
+          minimum: 0
+          description: Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
+          example: 2
+        totalQuantity:
+          type: integer
+          minimum: 0
+          description: Sum of `quantity` across every line item.
+          example: 5
+        totalPrice:
+          type: number
+          format: double
+          minimum: 0
+          description: Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
+          example: 149.97
+        currency:
+          type: string
+          readOnly: true
+          description: ISO-4217 currency code this order was priced in (e.g. EUR).
+        netTotal:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
+        taxTotal:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
+        shippingNetAmount:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
+        shippingTaxAmount:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
+        taxSummary:
+          type: array
+          readOnly: true
+          items:
+            $ref: "#/components/schemas/OrderTaxSummaryRow"
+          description: "One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines."
+        notes:
+          type: string
+          description: Optional order notes
+        shippingMethod:
+          type: string
+          description: The shipping method's id as the checkout froze it (e.g. standard, express, pickup).
+        shippingCost:
+          type: number
+          format: double
+          minimum: 0
+          description: What that method cost at checkout time — a later rate change cannot re-price history.
+        shippingAddress:
+          $ref: "#/components/schemas/OrderAddress"
+        billingAddress:
+          $ref: "#/components/schemas/OrderAddress"
+        paymentMethod:
+          $ref: "#/components/schemas/PaymentMethodId"
+        payBy:
+          type: string
+          format: date-time
+        orderNumber:
+          type: string
+          readOnly: true
+          example: 2026-000041
+        status:
+          $ref: "#/components/schemas/OrderStatus"
+        paymentStatus:
+          $ref: "#/components/schemas/OrderPaymentStatus"
+        fulfillmentStatus:
+          $ref: "#/components/schemas/OrderFulfillmentStatus"
+        returnStatus:
+          $ref: "#/components/schemas/OrderReturnStatus"
+        withdrawUntil:
+          type: string
+          format: date-time
+          readOnly: true
+          description: "The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet."
+        paidAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+    OrderTimelineType:
+      type: string
+      enum:
+        - created
+        - paid
+        - processing
+        - shipped
+        - delivered
+        - cancelled
+        - status_overridden
+        - payment_declined
+        - refund_issued
+        - refund_settled
+        - refund_failed
+        - shipment_shipped
+        - shipment_delivered
+        - fulfillment_held
+        - fulfillment_released
+        - remainder_cancelled
+        - return_requested
+        - return_approved
+        - return_declined
+        - return_received
+        - return_closed
+        - invoice_issued
+        - credit_note_issued
+        - release_date_moved
+        - delay_notice_sent
+        - address_corrected
+      description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`."
+    OrderTimelineExportEntry:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - at
+        - type
+        - audience
+        - data
+        - orderId
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        id:
+          $ref: "#/components/schemas/Id"
+        at:
+          type: string
+          format: date-time
+        type:
+          $ref: "#/components/schemas/OrderTimelineType"
+        audience:
+          type: string
+          enum:
+            - buyer
+            - staff
+          description: "Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both."
+        actor:
+          allOf:
+            - $ref: "#/components/schemas/Id"
+          description: The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id.
+        text:
+          type: string
+          description: Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays.
+        data:
+          type: object
+          additionalProperties: true
+          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
+    RefundStatus:
+      type: string
+      enum:
+        - pending
+        - succeeded
+        - failed
+    RefundReason:
+      type: string
+      enum:
+        - cancellation
+        - goodwill
+        - return
+        - late_payment
+      description: Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to; `late_payment` — the money arrived after the order could no longer be paid (its stock reservation had expired or it was cancelled), so the sale was lost and the money went back. The buyer is mailed it like a cancellation's refund.
+    RefundFailureReason:
+      type: string
+      enum:
+        - declined
+        - insufficient_funds
+        - expired_or_canceled_card
+        - lost_or_stolen_card
+        - provider_removed
+        - provider_unavailable
+        - unknown
+      description: |-
+        Why the provider last refused a refund, as a closed code. Staff only (`display:Payment`). `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
+        Money did NOT move for `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` (the payment's provider is no longer installed, so nothing was asked): the refund may be marked returned by hand once the money went back another way. `declined`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` are final and are not retried; `insufficient_funds` (the shop's own provider balance is short) and the unclear `provider_unavailable` and `unknown` are retried with a growing delay. An unclear refusal may have gone through, so it is never offered for hand settlement.
+    Refund:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - amount
+        - currency
+        - status
+        - reason
+        - createdAt
+      description: One attempt to give money back — a record per attempt, not a field on the payment. The idempotency key is stored but never published. The provider's refund id and a failed refund's `failureReason` go to staff only (`display:Payment`); the provider's own error wording stays in the logs.
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        amount:
+          type: number
+          format: double
+          minimum: 0
+          description: The amount returned, in the payment's own `currency`.
+        currency:
+          type: string
+          description: ISO-4217 currency code, copied from the payment.
+        status:
+          allOf:
+            - $ref: "#/components/schemas/RefundStatus"
+          description: "`pending` while the provider is being asked (or, on a hand-paid payment, until an operator reports the money back); `failed` when it refused — the sweep retries it with the same idempotency key unless the refusal is final, and an operator may report it returned by hand when the money provably did not move (see `RefundFailureReason`); `succeeded` once the money is confirmed back, or reported back by the operator."
+        reason:
+          $ref: "#/components/schemas/RefundReason"
+        returnId:
+          $ref: "#/components/schemas/Id"
+        settledAt:
+          type: string
+          format: date-time
+          description: When the refund succeeded. Absent while it has not.
+        settledByHand:
+          type: boolean
+          description: "`true` when an operator reported this refund's money returned outside the application (`POST /payments/{id}/refunds/{refundId}/settle`): a hand-paid payment's refund, or a card refund the provider refused. Per refund. Absent otherwise."
+        providerRefundRef:
+          type: string
+          description: The provider's id for the refund (Stripe's `re_…`). Staff only.
+        failureReason:
+          $ref: "#/components/schemas/RefundFailureReason"
+        createdAt:
+          type: string
+          format: date-time
+    ExportPayment:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - amount
+        - currency
+        - status
+        - provider
+        - amountRefunded
+        - refunds
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        amount:
+          type: number
+          format: double
+          minimum: 0
+        currency:
+          type: string
+        amountRefunded:
+          type: number
+          format: double
+          minimum: 0
+        refunds:
+          type: array
+          items:
+            $ref: "#/components/schemas/Refund"
+        status:
+          type: string
+          enum:
+            - requires_confirmation
+            - requires_action
+            - processing
+            - succeeded
+            - declined
+            - cancelled
+        provider:
+          type: string
+        cardLast4:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ExportInvoiceDocument:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - number
+        - issuedAt
+        - currency
+        - grandTotal
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: string
+        issuedAt:
+          type: string
+          format: date-time
+        currency:
+          type: string
+        grandTotal:
+          type: number
+          format: double
+          minimum: 0
+    ShipmentLine:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - title
+        - quantity
+      description: One product in a shipment.
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+    ExportShipment:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - fulfillmentOrderId
+        - number
+        - status
+        - lines
+        - shippedAt
+      description: A shipment as an account export carries it — the record, without the caller's `actions`.
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: integer
+          minimum: 1
+        trackingCode:
+          type: string
+        status:
+          type: string
+          enum:
+            - shipped
+            - delivered
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShipmentLine"
+        shippedAt:
+          type: string
+          format: date-time
+        deliveredAt:
+          type: string
+          format: date-time
+    FulfillmentOrderKind:
+      type: string
+      enum:
+        - physical
+        - digital
+      description: "`digital` when no line rides in a parcel; its act is `fulfill`, not a shipment."
+    FulfillmentOrderStatus:
+      type: string
+      enum:
+        - open
+        - in_progress
+        - on_hold
+        - closed
+        - cancelled
+      description: Where a fulfillment order stands (Shopify's names). `open` until something ships; `in_progress` once part of it has shipped and lines remain; `on_hold` while staff, or the stock it awaits, holds it back; `closed` once nothing remains and something shipped from it; `cancelled` once nothing remains and nothing ever shipped from it.
+    FulfillmentOrderLine:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - title
+        - quantity
+        - shippedQuantity
+        - cancelledQuantity
+        - remaining
+      description: One product on a fulfillment order, with how much has shipped, been cancelled and still remains.
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+          description: The product's title as the order froze it.
+        quantity:
+          type: integer
+          minimum: 1
+          description: Units this fulfillment order carries.
+        shippedQuantity:
+          type: integer
+          minimum: 0
+        cancelledQuantity:
+          type: integer
+          minimum: 0
+          description: Units cancelled before they shipped — a remainder cancel.
+        remaining:
+          type: integer
+          minimum: 0
+          description: "`quantity − shippedQuantity − cancelledQuantity`, computed here so no client counts."
+    FulfillmentHoldNotice:
+      type: string
+      enum:
+        - awaiting_stock
+        - check_address
+        - delayed
+      description: "What a hold means to the BUYER, whatever staff's reason: `awaiting_stock` (the goods are not here yet), `check_address` (the buyer can act: the address needs a look), `delayed` (held for a check, said plainly). A reason that must stay quiet, such as `high_risk`, reads as `delayed`, so a notice never reveals a screening result. The reason itself (`FulfillmentHoldReason`) is staff's."
+    FulfillmentHoldReason:
+      type: string
+      enum:
+        - awaiting_stock
+        - incorrect_address
+        - high_risk
+        - other
+      description: Why a fulfillment order is on hold (Shopify's hold reasons). `awaiting_stock` is set only by the allocation of stock, and released only by it; the other three are staff's.
+    FulfillmentCancelReason:
+      type: string
+      enum:
+        - buyer
+        - staff
+        - order
+      description: "Who cancelled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `order`: the whole order was cancelled."
+    ExportFulfillmentOrder:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - number
+        - kind
+        - status
+        - lines
+      description: A fulfillment order as an account export carries it, with staff's hold note (their assessment of the buyer is the buyer's data) and without who wrote it.
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: integer
+          minimum: 1
+        kind:
+          $ref: "#/components/schemas/FulfillmentOrderKind"
+        status:
+          $ref: "#/components/schemas/FulfillmentOrderStatus"
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/FulfillmentOrderLine"
+        holdNotice:
+          $ref: "#/components/schemas/FulfillmentHoldNotice"
+        holdMessage:
+          type: string
+          maxLength: 500
+        holdReason:
+          $ref: "#/components/schemas/FulfillmentHoldReason"
+        holdNote:
+          type: string
+          maxLength: 1000
+          description: Staff's free text about the hold. Present until the retention sweep unsets it.
+        agreedAt:
+          type: string
+          format: date-time
+        expectedAt:
+          type: string
+          format: date-time
+        lastNoticeAt:
+          type: string
+          format: date-time
+          description: When the buyer was last told the date had moved or would be missed.
+        cancelReason:
+          $ref: "#/components/schemas/FulfillmentCancelReason"
+    ReturnStatus:
+      type: string
+      enum:
+        - requested
+        - approved
+        - declined
+        - received
+        - closed
+      description: "Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`."
+    ReturnReason:
+      type: string
+      enum:
+        - withdrawal
+        - defective
+        - wrong_item
+        - other
+      description: Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
+    ExportReturn:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - status
+        - reason
+        - lines
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        status:
+          $ref: "#/components/schemas/ReturnStatus"
+        reason:
+          $ref: "#/components/schemas/ReturnReason"
+        note:
+          type: string
+        declineReason:
+          type: string
+        lines:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - productId
+              - quantity
+              - title
+            properties:
+              productId:
+                $ref: "#/components/schemas/Id"
+              quantity:
+                type: integer
+                minimum: 1
+              title:
+                type: string
+        createdAt:
+          type: string
+          format: date-time
+    ApiKeyStatus:
+      type: string
+      enum:
+        - active
+        - expired
+        - revoked
+        - suspended
+      description: "Whether the credential works right now, decided by the server. `revoked` and `expired` are final. `suspended` means the person who minted it can no longer sign in (banned, soft-deleted or erased): the key is refused with 401 and comes back by itself if they do. Checked in that order, so a revoked key never reads as `suspended`."
+    ApiKey:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - publicPrefix
+        - permissions
+        - status
+        - expiresAt
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+        publicPrefix:
+          type: string
+          description: The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which.
+        status:
+          $ref: "#/components/schemas/ApiKeyStatus"
+        permissions:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: The permission rules this credential was minted with, each spelled `<action>:<Subject>` (`display:Order`). Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
+        lastUsedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        revokedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ExampleStatus:
+      type: string
+      enum:
+        - draft
+        - published
+        - archived
+    ExampleActions:
+      type: object
+      additionalProperties: false
+      required:
+        - transitions
+        - update
+        - delete
+      description: "What the requesting caller may do to this example, decided by the server. A client renders its controls from this instead of re-implementing the lifecycle or the ownership rule: both depend on who asks, and a second copy in a separately deployed client is how the two come to disagree."
+      properties:
+        transitions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExampleStatus"
+          description: The statuses this caller may move the example to through `POST /examples/{id}/transitions`. Never contains the current status; empty when the caller may not edit it.
+          example:
+            - published
+            - archived
+        update:
+          type: boolean
+          description: Whether `PATCH`/`PUT /examples/{id}` and `PUT /examples/{id}/cover` would be accepted for this caller.
+        delete:
+          type: boolean
+          description: Whether `DELETE /examples/{id}` would be accepted for this caller.
+    Example:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - body
+        - status
+        - userId
+        - ownerName
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+          description: The fallback-language title. Other languages are written through `/locales/translations/example/{id}`.
+        body:
+          type: string
+        status:
+          $ref: "#/components/schemas/ExampleStatus"
+        userId:
+          $ref: "#/components/schemas/Id"
+        ownerName:
+          type: string
+          description: The owner's display name.
+        imageUrl:
+          $ref: "#/components/schemas/ImageUrl"
+        thumbnailUrl:
+          $ref: "#/components/schemas/ThumbnailUrl"
+        publishedAt:
+          type: string
+          format: date-time
+          description: Stamped the first time the example is published, never moved again.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        actions:
+          $ref: "#/components/schemas/ExampleActions"
+    ProductTitles:
+      type: object
+      additionalProperties:
+        type: string
+    CartLineRemovedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - titles
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        titles:
+          $ref: "#/components/schemas/ProductTitles"
+    NotificationSeverity:
+      type: string
+      description: Meaning, not look — a client picks the colour. The four words most notification APIs share (Ant Design, Atlassian flags).
+      enum:
+        - info
+        - success
+        - warning
+        - error
+    NotificationCartLineRemoved:
+      type: object
+      additionalProperties: false
+      description: A product left the catalogue and left the caller's cart with it.
+      required:
+        - id
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        code:
+          type: string
+          enum:
+            - notifications.cart-line-removed
+        params:
+          $ref: "#/components/schemas/CartLineRemovedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationWishlistItemRemoved:
+      type: object
+      additionalProperties: false
+      description: A product left the catalogue and left the caller's wishlist with it.
+      required:
+        - id
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        code:
+          type: string
+          enum:
+            - notifications.wishlist-item-removed
+        params:
+          $ref: "#/components/schemas/CartLineRemovedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    CartMergeRefusedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - lines
+      properties:
+        lines:
+          type: array
+          description: The guest-cart lines `POST /cart/merge` could not add at all.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - productId
+              - requested
+              - titles
+            properties:
+              productId:
+                $ref: "#/components/schemas/Id"
+              requested:
+                type: integer
+                minimum: 1
+              titles:
+                $ref: "#/components/schemas/ProductTitles"
+    NotificationCartMergeRefused:
+      type: object
+      additionalProperties: false
+      description: Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available.
+      required:
+        - id
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        code:
+          type: string
+          enum:
+            - notifications.cart-merge-refused
+        params:
+          $ref: "#/components/schemas/CartMergeRefusedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    FulfillmentDelayedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - fulfillmentOrderId
+        - titles
+        - agreedAt
+      description: "What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised and the date now expected (absent when there is none)."
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+        titles:
+          type: array
+          description: The waiting products' titles, as the order froze them.
+          items:
+            type: string
+        agreedAt:
+          type: string
+          format: date-time
+        expectedAt:
+          type: string
+          format: date-time
+    NotificationFulfillmentDelayed:
+      type: object
+      additionalProperties: false
+      description: A preorder the caller paid for will arrive later than promised; cancelling is open and silence keeps waiting.
+      required:
+        - id
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        code:
+          type: string
+          enum:
+            - notifications.fulfillment-delayed
+        params:
+          $ref: "#/components/schemas/FulfillmentDelayedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    FulfillmentHeldParams:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - fulfillmentOrderId
+        - notice
+      description: "What the buyer needs to read a hold notice: which order and fulfillment order, whether the address needs a look (`check_address`) or the order is only `delayed`, and the sentence staff wrote for them, if any. Never staff's reason."
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+        notice:
+          type: string
+          enum:
+            - check_address
+            - delayed
+        message:
+          type: string
+          maxLength: 500
+    NotificationFulfillmentHeld:
+      type: object
+      additionalProperties: false
+      description: Part of an order the caller bought is held back, and they can act (check the address) or have a message from the shop.
+      required:
+        - id
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        code:
+          type: string
+          enum:
+            - notifications.fulfillment-held
+        params:
+          $ref: "#/components/schemas/FulfillmentHeldParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationStockAlert:
+      type: object
+      additionalProperties: false
+      description: A product the caller asked to be told about can be ordered again. Sent once, then the request is gone.
+      required:
+        - id
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        code:
+          type: string
+          enum:
+            - notifications.stock-alert
+        params:
+          $ref: "#/components/schemas/CartLineRemovedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    Notification:
+      oneOf:
+        - $ref: "#/components/schemas/NotificationCartLineRemoved"
+        - $ref: "#/components/schemas/NotificationWishlistItemRemoved"
+        - $ref: "#/components/schemas/NotificationCartMergeRefused"
+        - $ref: "#/components/schemas/NotificationFulfillmentDelayed"
+        - $ref: "#/components/schemas/NotificationFulfillmentHeld"
+        - $ref: "#/components/schemas/NotificationStockAlert"
+      discriminator:
+        propertyName: code
+        mapping:
+          notifications.cart-line-removed: "#/components/schemas/NotificationCartLineRemoved"
+          notifications.wishlist-item-removed: "#/components/schemas/NotificationWishlistItemRemoved"
+          notifications.cart-merge-refused: "#/components/schemas/NotificationCartMergeRefused"
+          notifications.fulfillment-delayed: "#/components/schemas/NotificationFulfillmentDelayed"
+          notifications.fulfillment-held: "#/components/schemas/NotificationFulfillmentHeld"
+          notifications.stock-alert: "#/components/schemas/NotificationStockAlert"
+    StockAlert:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - createdAt
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        createdAt:
+          type: string
+          format: date-time
+    AccountExportResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - exportedAt
+        - profile
+        - auditLog
+        - sessions
+        - addresses
+        - signInMethods
+        - cart
+        - wishlist
+        - orders
+        - orderTimeline
+        - payments
+        - invoicing
+        - shipments
+        - fulfillmentOrders
+        - returns
+        - apiKeys
+        - roles
+        - examples
+        - notifications
+        - stockAlerts
+      properties:
+        exportedAt:
+          type: string
+          format: date-time
+        profile:
+          $ref: "#/components/schemas/Account"
+        auditLog:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditEntryItem"
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportSession"
+        addresses:
+          type: array
+          items:
+            $ref: "#/components/schemas/Address"
+        signInMethods:
+          $ref: "#/components/schemas/ExportSignInMethods"
+        feedback:
+          type: array
+          description: Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`.
+          items:
+            $ref: "#/components/schemas/ExportFeedbackTicket"
+        cart:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartItem"
+        wishlist:
+          type: array
+          items:
+            $ref: "#/components/schemas/WishlistExportItem"
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportOrder"
+        orderTimeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderTimelineExportEntry"
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportPayment"
+        invoicing:
+          type: object
+          additionalProperties: false
+          required:
+            - invoices
+            - creditNotes
+          properties:
+            invoices:
+              type: array
+              items:
+                $ref: "#/components/schemas/ExportInvoiceDocument"
+            creditNotes:
+              type: array
+              items:
+                $ref: "#/components/schemas/ExportInvoiceDocument"
+        shipments:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportShipment"
+        fulfillmentOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportFulfillmentOrder"
+        returns:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportReturn"
+        apiKeys:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiKey"
+        roles:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - role
+              - scope
+            properties:
+              role:
+                type: string
+              scope:
+                type: string
+                enum:
+                  - tenant
+                  - platform
+        examples:
+          type: array
+          items:
+            $ref: "#/components/schemas/Example"
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        stockAlerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockAlert"
     AccountExportRequest:
       type: object
       additionalProperties: false
@@ -13413,16 +14884,6 @@ components:
           type: boolean
           enum:
             - true
-    FeedbackCategory:
-      type: string
-      enum:
-        - order
-        - cancellation
-        - return
-        - payment
-        - account
-        - privacy
-        - other
     CreateFeedbackRequest:
       type: object
       additionalProperties: false
@@ -13457,13 +14918,6 @@ components:
           maxLength: 200
           description: |
             Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `FeedbackRequest`, which does not declare it.
-    FeedbackRequestStatus:
-      type: string
-      enum:
-        - new
-        - in_progress
-        - resolved
-        - spam
     FeedbackRequest:
       type: object
       additionalProperties: false
@@ -13578,22 +15032,6 @@ components:
         - reduced
         - zero
       description: A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate.
-    RateType:
-      type: string
-      enum:
-        - standard
-        - zero-rated
-        - exempt
-      description: "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
-    Sku:
-      type: string
-      maxLength: 64
-      minLength: 1
-      description: "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
-    ReleaseDate:
-      type: string
-      format: date-time
-      description: When a product ships from, as an ISO 8601 date-time with a zone. A product with a future date that is active and purchasable is a preorder. At most one year ahead (Google's `availability_date` rule); a date in the past is accepted and simply means "released". Moving it later notifies the buyers who already paid (`delivery`).
     RestockDate:
       type: string
       format: date-time
@@ -14567,12 +16005,6 @@ components:
           maxLength: 64
           minLength: 1
           description: Which shipping method (see `GET /delivery/methods`) the cart plans to ship by. `null` clears the choice. An id that matches no method refuses with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`; one that does not apply to the basket refuses with 409 (`CART_SHIPPING_NOT_APPLICABLE`, `CART_SHIPPING_METHOD_WEIGHT`).
-    PaymentMethodId:
-      type: string
-      enum:
-        - card
-        - bank_transfer
-      description: How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.
     CheckoutRequest:
       type: object
       additionalProperties: false
@@ -14599,206 +16031,6 @@ components:
             - $ref: "#/components/schemas/PaymentMethodId"
           default: card
           description: "How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`. That includes the default: a request that names no method asks for `card`, so a deployment with no card provider refuses it the same way."
-    OrderLineProduct:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - title
-        - price
-        - taxRate
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        title:
-          type: string
-        price:
-          type: number
-          format: double
-          minimum: 0
-          description: Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.
-        description:
-          type: string
-        requiresShipping:
-          type: boolean
-          default: true
-        noWithdrawal:
-          type: boolean
-        sku:
-          $ref: "#/components/schemas/Sku"
-        weight:
-          type: integer
-          minimum: 0
-        releaseDate:
-          $ref: "#/components/schemas/ReleaseDate"
-        preorder:
-          type: boolean
-          description: "The line was sold before its release date, frozen at checkout. `delivery` reads it, never the catalogue, to decide which fulfillment order the line belongs to: a bank transfer may be paid a week after the order was placed."
-        categories:
-          type: array
-          items:
-            type: string
-        tags:
-          type: array
-          items:
-            type: string
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        deletedAt:
-          type: string
-          format: date-time
-        taxRate:
-          type: number
-          format: double
-          minimum: 0
-          maximum: 1
-          description: The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.
-        rateType:
-          $ref: "#/components/schemas/RateType"
-    OrderLineCurrent:
-      type: object
-      additionalProperties: false
-      properties:
-        imageUrl:
-          $ref: "#/components/schemas/ImageUrl"
-        thumbnailUrl:
-          $ref: "#/components/schemas/ThumbnailUrl"
-    OrderItem:
-      type: object
-      additionalProperties: false
-      required:
-        - product
-        - quantity
-        - locale
-        - current
-        - taxAmount
-        - netAmount
-      properties:
-        product:
-          $ref: "#/components/schemas/OrderLineProduct"
-        quantity:
-          type: integer
-          minimum: 1
-        locale:
-          $ref: "#/components/schemas/Locale"
-        backorderedQuantity:
-          type: integer
-          minimum: 1
-          description: How many of `quantity` were owed rather than on the shelf when the order was placed. Absent when the shelf covered the whole line.
-        promisedAt:
-          type: string
-          format: date-time
-          description: "When the owed units were promised: the product's `restockDate`, or the day the order was placed plus 30 days when it had none. Present with `backorderedQuantity` and frozen with it, so a later change to the catalogue moves no promise."
-        promiseDated:
-          type: boolean
-          description: Whether `promisedAt` was a date the product named. `false` means the buyer was promised delivery "within 30 days" of the order. Present with `promisedAt`.
-        current:
-          oneOf:
-            - $ref: "#/components/schemas/OrderLineCurrent"
-            - type: "null"
-          description: The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`.
-        taxAmount:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: VAT included in this line's total, at its own frozen `taxRate`.
-        netAmount:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: This line's total excluding VAT — `price × quantity` minus `taxAmount`.
-    OrderTaxSummaryRow:
-      type: object
-      additionalProperties: false
-      required:
-        - rate
-        - netAmount
-        - taxAmount
-        - grossAmount
-      properties:
-        rate:
-          type: number
-          format: double
-          minimum: 0
-          description: The decimal rate this row is for (`0.22` for 22%) — never repeated across rows.
-        netAmount:
-          type: number
-          format: double
-          minimum: 0
-        taxAmount:
-          type: number
-          format: double
-          minimum: 0
-        grossAmount:
-          type: number
-          format: double
-          minimum: 0
-          description: "`netAmount + taxAmount`, not re-derived from a price."
-    OrderAddress:
-      type: object
-      additionalProperties: false
-      required:
-        - fullName
-        - street
-        - city
-        - zip
-        - country
-      properties:
-        fullName:
-          $ref: "#/components/schemas/AddressFullName"
-        street:
-          $ref: "#/components/schemas/AddressStreet"
-        city:
-          $ref: "#/components/schemas/AddressCity"
-        zip:
-          $ref: "#/components/schemas/AddressZip"
-        country:
-          $ref: "#/components/schemas/CountryCode"
-        phone:
-          $ref: "#/components/schemas/AddressPhone"
-    OrderStatus:
-      type: string
-      enum:
-        - pending
-        - paid
-        - processing
-        - shipped
-        - delivered
-        - cancelled
-      description: Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`.
-    OrderPaymentStatus:
-      type: string
-      enum:
-        - unpaid
-        - paid
-        - partially_refunded
-        - refunded
-      description: "Where the order's MONEY stands, beside `status` — Shopify's `financial_status`. `unpaid` until a payment lands; `paid`; then `partially_refunded` once some but not all of it went back, and `refunded` once all of it did. Read-only: `payments` stamps the refund states, `orders` derives the first two."
-    OrderFulfillmentStatus:
-      type: string
-      enum:
-        - unfulfilled
-        - in_progress
-        - on_hold
-        - partially_fulfilled
-        - shipped
-        - fulfilled
-      description: "Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from the status and the fulfilment summary delivery reports. First match wins: `fulfilled` once everything arrived; `shipped` once everything has left; `partially_fulfilled` once something left and more remains; `on_hold` while every remaining unit is held back; `in_progress` while being prepared; `unfulfilled` before work starts, and for a pending or cancelled order. Read-only."
-    OrderReturnStatus:
-      type: string
-      enum:
-        - none
-        - requested
-        - in_progress
-        - partially_returned
-        - returned
-      description: "Where any return on the order stands — Shopify's `returnStatus`. `none` when no return holds goods; `requested` while one awaits staff; `in_progress` once approved and awaiting its goods; `partially_returned` / `returned` once received goods cover some / every unit on the order. Read-only: `returns` stamps it, and `delivered` stays terminal — a return is its own object, not an order status."
     WithdrawBlockedReason:
       type: string
       enum:
@@ -14813,7 +16045,7 @@ components:
         - cancel
         - pay
         - recordPayment
-        - start
+        - process
         - override
         - correctAddress
         - invoice
@@ -14831,10 +16063,10 @@ components:
           description: "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not a status move any request makes: a client starts the flow with `POST /payments` and the provider's yes does the rest."
         recordPayment:
           type: boolean
-          description: "Whether `POST /payments/orders/{orderId}/offline` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment and the caller holds the key that records one. A buyer's own step is `pay`; a buyer who is staff may also record."
-        start:
+          description: "Whether `POST /orders/{id}/payments` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment and the caller holds the key that records one. A buyer's own step is `pay`; a buyer who is staff may also record."
+        process:
           type: boolean
-          description: Whether `POST /delivery/orders/{id}/start` would be accepted for this caller. `paid → processing` is `system`-only in the lifecycle, reached only by reporting the fact through `delivery`'s own door.
+          description: Whether `POST /orders/{id}/process` would be accepted for this caller. `paid → processing` is `system`-only in the lifecycle, reached only by reporting the fact through `delivery`'s own door.
         override:
           type: array
           items:
@@ -14999,6 +16231,15 @@ components:
         deletedAt:
           type: string
           format: date-time
+    ReorderRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+          description: One of the caller's own orders
     MergeLineReason:
       type: string
       description: |-
@@ -15172,6 +16413,10 @@ components:
           $ref: "#/components/schemas/Id"
         email:
           $ref: "#/components/schemas/Email"
+        orderNumber:
+          type: string
+          maxLength: 32
+          description: The order's number as the customer quotes it; a leading `#`, spaces and an unpadded sequence are tolerated; anything else finds nothing.
         status:
           $ref: "#/components/schemas/OrderStatus"
         fulfillmentStatus:
@@ -15274,94 +16519,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CreditNoteSummary"
-    PaymentMethodOption:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-      properties:
-        id:
-          $ref: "#/components/schemas/PaymentMethodId"
-        holdHours:
-          type: number
-          minimum: 0
-          description: How long checkout holds stock for an order choosing this method (`NODE_BANK_TRANSFER_HOLD_HOURS`). Present on `bank_transfer` only — `card`'s hold is `NODE_RESERVATION_TTL_MINUTES`, a different unit, owned by `inventory` rather than a deployment choice this module makes.
-    PaymentMethodsResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - methods
-      properties:
-        methods:
-          type: array
-          items:
-            $ref: "#/components/schemas/PaymentMethodOption"
-    RefundStatus:
-      type: string
-      enum:
-        - pending
-        - succeeded
-        - failed
-    RefundReason:
-      type: string
-      enum:
-        - cancellation
-        - goodwill
-        - return
-        - late_payment
-      description: Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to; `late_payment` — the money arrived after the order could no longer be paid (its stock reservation had expired or it was cancelled), so the sale was lost and the money went back. The buyer is mailed it like a cancellation's refund.
-    RefundFailureReason:
-      type: string
-      enum:
-        - declined
-        - insufficient_funds
-        - expired_or_canceled_card
-        - lost_or_stolen_card
-        - provider_unavailable
-        - unknown
-      description: Why the provider last refused a refund, as a closed code. Staff only (`display:Payment`). `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
-    Refund:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - amount
-        - currency
-        - status
-        - reason
-        - createdAt
-      description: One attempt to give money back — a record per attempt, not a field on the payment. The idempotency key is stored but never published. The provider's refund id and a failed refund's `failureReason` go to staff only (`display:Payment`); the provider's own error wording stays in the logs.
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        amount:
-          type: number
-          format: double
-          minimum: 0
-          description: The amount returned, in the payment's own `currency`.
-        currency:
-          type: string
-          description: ISO-4217 currency code, copied from the payment.
-        status:
-          allOf:
-            - $ref: "#/components/schemas/RefundStatus"
-          description: "`pending` while the provider is being asked; `failed` when it refused — a sweep retries the same refund with the same idempotency key; `succeeded` once the money is confirmed back (or, for a hand-paid payment, reported back by the operator)."
-        reason:
-          $ref: "#/components/schemas/RefundReason"
-        returnId:
-          $ref: "#/components/schemas/Id"
-        settledAt:
-          type: string
-          format: date-time
-          description: When the refund succeeded. Absent while it has not.
-        providerRefundRef:
-          type: string
-          description: The provider's id for the refund (Stripe's `re_…`). Staff only.
-        failureReason:
-          $ref: "#/components/schemas/RefundFailureReason"
-        createdAt:
-          type: string
-          format: date-time
     PaymentDisplayStatus:
       type: string
       enum:
@@ -15428,12 +16585,12 @@ components:
           description: "Whether the buyer may finish at the provider with `POST /payments/{id}/sync` — the payment is `requires_action` or `processing`, it went through the provider, and the caller is the payer holding `checkout:Cart`. Narrower than the route on purpose: the route also accepts a payment that is awaiting confirmation or was declined, whose next step is `pay`. Never true together with `pay`."
         refund:
           type: boolean
-          description: "Whether `POST /payments/{id}/refunds` would be accepted: the caller holds `create:Refund`, the payment is `succeeded` and something is left to refund. False once nothing is left (fully refunded, or the rest already asked back, a refund still open included), which is what greys the control out rather than letting the operator discover it by clicking. On a hand-paid payment the refund only opens a record; `settleByHand` confirms it."
+          description: "Whether `POST /payments/{id}/refunds` would be accepted: the caller holds `create:Refund`, the payment is `succeeded` and something is left to refund. False once nothing is left (fully refunded, or the rest already asked back), which is what greys the control out rather than letting the operator discover it by clicking. A refund still open counts against what is left but does not hide the control while money remains. On a hand-paid payment the refund only opens a record; `settleByHand` confirms it."
         settleByHand:
           type: array
           items:
             $ref: "#/components/schemas/Id"
-          description: "The ids of the refunds this caller may mark as returned with `POST /payments/{id}/refunds/{refundId}/settle`: the caller holds `create:Refund`, the payment is `succeeded` and hand-paid, and the refund is `pending`. An array because the route takes a target; empty when there is none."
+          description: "The ids of the refunds this caller may mark as returned with `POST /payments/{id}/refunds/{refundId}/settle`: the caller holds `create:Refund`, the payment is `succeeded`, and the refund is either a hand-paid payment's `pending` one or a card refund `failed` with a reason that proves the money did not move (`RefundFailureReason`). The server decides; a client never rebuilds this rule. An array because the route takes a target; empty when there is none."
     Payment:
       type: object
       additionalProperties: false
@@ -15499,7 +16656,7 @@ components:
           description: The order's customer email. Present on `GET /payments` rows only.
         provider:
           type: string
-          description: Which provider implementation handled it — the name the deployment registered (`NODE_PAYMENT_PROVIDER`), or `manual` for a payment recorded by hand (`POST /payments/orders/{orderId}/offline`).
+          description: Which provider implementation handled it — the name the deployment registered (`NODE_PAYMENT_PROVIDER`), or `manual` for a payment recorded by hand (`POST /orders/{id}/payments`).
         method:
           type: string
           enum:
@@ -15511,14 +16668,11 @@ components:
         reference:
           type: string
           maxLength: 120
-          description: Free text identifying an offline payment — a bank transaction id, a receipt number. Set only by `POST /payments/orders/{orderId}/offline`; absent from a card payment.
+          description: Free text identifying an offline payment — a bank transaction id, a receipt number. Set only by `POST /orders/{id}/payments`; absent from a card payment.
         receivedAt:
           type: string
           format: date-time
           description: When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST /payments/orders/{orderId}/offline`; absent from a card payment.
-        refundedByHand:
-          type: boolean
-          description: "`true` once a refunded `manual` payment has had its money returned to the customer outside this application — there is no provider to ask, so this is the operator's own record that it was done (`POST /payments/{id}/refunds/{refundId}/settle`). Set by that route alone. Absent otherwise."
         clientSecret:
           type: string
           description: "Returned by `POST /payments` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response."
@@ -15533,19 +16687,16 @@ components:
         updatedAt:
           type: string
           format: date-time
-    RefundPaymentRequest:
+    OrderPaymentsResponse:
       type: object
       additionalProperties: false
+      required:
+        - items
       properties:
-        amount:
-          type: number
-          format: double
-          exclusiveMinimum: 0
-          description: How much to return, a decimal in the payment's own currency. Absent means everything still refundable.
-        currency:
-          type: string
-          maxLength: 3
-          description: ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Payment"
     RecordOfflinePaymentRequest:
       type: object
       additionalProperties: false
@@ -15568,6 +16719,41 @@ components:
           type: string
           format: date-time
           description: When the money arrived. Must not be in the future. Defaults to now.
+    PaymentMethodOption:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+      properties:
+        id:
+          $ref: "#/components/schemas/PaymentMethodId"
+        holdHours:
+          type: number
+          minimum: 0
+          description: How long checkout holds stock for an order choosing this method (`NODE_BANK_TRANSFER_HOLD_HOURS`). Present on `bank_transfer` only — `card`'s hold is `NODE_RESERVATION_TTL_MINUTES`, a different unit, owned by `inventory` rather than a deployment choice this module makes.
+    PaymentMethodsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - methods
+      properties:
+        methods:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentMethodOption"
+    RefundPaymentRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        amount:
+          type: number
+          format: double
+          exclusiveMinimum: 0
+          description: How much to return, a decimal in the payment's own currency. Absent means everything still refundable.
+        currency:
+          type: string
+          maxLength: 3
+          description: ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
     ConfirmPaymentRequest:
       type: object
       additionalProperties: false
@@ -15645,75 +16831,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShippingMethod"
-    FulfillmentOrderKind:
-      type: string
-      enum:
-        - physical
-        - digital
-      description: "`digital` when no line rides in a parcel; its act is `fulfill`, not a shipment."
-    FulfillmentOrderStatus:
-      type: string
-      enum:
-        - open
-        - in_progress
-        - on_hold
-        - closed
-        - cancelled
-      description: Where a fulfillment order stands (Shopify's names). `open` until something ships; `in_progress` once part of it has shipped and lines remain; `on_hold` while staff, or the stock it awaits, holds it back; `closed` once nothing remains and something shipped from it; `cancelled` once nothing remains and nothing ever shipped from it.
-    FulfillmentOrderLine:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-        - title
-        - quantity
-        - shippedQuantity
-        - cancelledQuantity
-        - remaining
-      description: One product on a fulfillment order, with how much has shipped, been cancelled and still remains.
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
-        title:
-          type: string
-          description: The product's title as the order froze it.
-        quantity:
-          type: integer
-          minimum: 1
-          description: Units this fulfillment order carries.
-        shippedQuantity:
-          type: integer
-          minimum: 0
-        cancelledQuantity:
-          type: integer
-          minimum: 0
-          description: Units cancelled before they shipped — a remainder cancel.
-        remaining:
-          type: integer
-          minimum: 0
-          description: "`quantity − shippedQuantity − cancelledQuantity`, computed here so no client counts."
-    FulfillmentHoldNotice:
-      type: string
-      enum:
-        - awaiting_stock
-        - check_address
-        - delayed
-      description: "What a hold means to the BUYER, whatever staff's reason: `awaiting_stock` (the goods are not here yet), `check_address` (the buyer can act: the address needs a look), `delayed` (held for a check, said plainly). A reason that must stay quiet, such as `high_risk`, reads as `delayed`, so a notice never reveals a screening result. The reason itself (`FulfillmentHoldReason`) is staff's."
-    FulfillmentHoldReason:
-      type: string
-      enum:
-        - awaiting_stock
-        - incorrect_address
-        - high_risk
-        - other
-      description: Why a fulfillment order is on hold (Shopify's hold reasons). `awaiting_stock` is set only by the allocation of stock, and released only by it; the other three are staff's.
-    FulfillmentCancelReason:
-      type: string
-      enum:
-        - buyer
-        - staff
-        - order
-      description: "Who cancelled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `order`: the whole order was cancelled."
     FulfillmentOrderActions:
       type: object
       additionalProperties: false
@@ -15804,22 +16921,6 @@ components:
         updatedAt:
           type: string
           format: date-time
-    ShipmentLine:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-        - title
-        - quantity
-      description: One product in a shipment.
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
-        title:
-          type: string
-        quantity:
-          type: integer
-          minimum: 1
     ShipmentActions:
       type: object
       additionalProperties: false
@@ -16140,23 +17241,6 @@ components:
           maxLength: 1000
           minLength: 1
           description: Required exactly when `forced` is `true`.
-    ReturnStatus:
-      type: string
-      enum:
-        - requested
-        - approved
-        - declined
-        - received
-        - closed
-      description: "Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`."
-    ReturnReason:
-      type: string
-      enum:
-        - withdrawal
-        - defective
-        - wrong_item
-        - other
-      description: Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
     ReturnSort:
       type: array
       minItems: 1
@@ -17067,57 +18151,6 @@ components:
           - -expiresAt
           - lastUsedAt
           - -lastUsedAt
-    ApiKeyStatus:
-      type: string
-      enum:
-        - active
-        - expired
-        - revoked
-        - suspended
-      description: "Whether the credential works right now, decided by the server. `revoked` and `expired` are final. `suspended` means the person who minted it can no longer sign in (banned, soft-deleted or erased): the key is refused with 401 and comes back by itself if they do. Checked in that order, so a revoked key never reads as `suspended`."
-    ApiKey:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - name
-        - publicPrefix
-        - permissions
-        - status
-        - expiresAt
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        name:
-          type: string
-        publicPrefix:
-          type: string
-          description: The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which.
-        status:
-          $ref: "#/components/schemas/ApiKeyStatus"
-        permissions:
-          type: array
-          items:
-            type: string
-          minItems: 1
-          description: The permission rules this credential was minted with, each spelled `<action>:<Subject>` (`display:Order`). Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
-        lastUsedAt:
-          type: string
-          format: date-time
-        expiresAt:
-          type: string
-          format: date-time
-        revokedAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
     ApiKeysResponse:
       type: object
       additionalProperties: false
@@ -17251,1019 +18284,6 @@ components:
           type: integer
           minimum: 1
           description: The longest a staff or admin session lives from sign-in, whatever the tier (`NODE_SESSION_LIFETIME_STAFF`). Absent when the cap is off.
-    ExportSession:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - createdAt
-        - expiration
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        createdAt:
-          type: string
-          format: date-time
-        expiration:
-          type: string
-          format: date-time
-        lastUsedAt:
-          type: string
-          format: date-time
-        device:
-          type: string
-          description: The coarse device label stored at sign-in (`cookie` mode only).
-    ExportLinkedProvider:
-      type: object
-      additionalProperties: false
-      required:
-        - provider
-        - providerId
-        - connectedAt
-      properties:
-        provider:
-          type: string
-          description: Registry name of the provider, e.g. `google`.
-        providerId:
-          type: string
-          description: The provider's own stable identifier for the account (its `sub`), an online identifier under GDPR Art. 4(1).
-        connectedAt:
-          type: string
-          format: date-time
-    ExportTwoFactorMethod:
-      type: object
-      additionalProperties: false
-      required:
-        - method
-        - enrolledAt
-      properties:
-        method:
-          type: string
-          description: Wire name of the factor, e.g. `totp` or `email`.
-        enrolledAt:
-          type: string
-          format: date-time
-          description: When the factor was armed.
-    ExportSignInMethods:
-      type: object
-      additionalProperties: false
-      required:
-        - providers
-        - twoFactor
-      properties:
-        providers:
-          type: array
-          description: The identity providers linked to the account.
-          items:
-            $ref: "#/components/schemas/ExportLinkedProvider"
-        twoFactor:
-          type: array
-          description: The second factors armed on the account. A setup never confirmed is left out.
-          items:
-            $ref: "#/components/schemas/ExportTwoFactorMethod"
-    ExportFeedbackTicket:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - email
-        - subject
-        - message
-        - status
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        name:
-          type: string
-        email:
-          $ref: "#/components/schemas/Email"
-        subject:
-          type: string
-        message:
-          type: string
-        category:
-          $ref: "#/components/schemas/FeedbackCategory"
-        orderNumber:
-          type: string
-        status:
-          $ref: "#/components/schemas/FeedbackRequestStatus"
-        respondedAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-    CartItem:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-        - quantity
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
-        quantity:
-          type: integer
-          minimum: 1
-    WishlistExportItem:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
-    ExportOrder:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - email
-        - items
-        - totalItems
-        - totalQuantity
-        - totalPrice
-        - status
-        - paymentStatus
-        - fulfillmentStatus
-        - returnStatus
-        - currency
-        - orderNumber
-        - netTotal
-        - taxTotal
-        - shippingNetAmount
-        - shippingTaxAmount
-        - taxSummary
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        userId:
-          $ref: "#/components/schemas/Id"
-        email:
-          $ref: "#/components/schemas/Email"
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/OrderItem"
-        totalItems:
-          type: integer
-          minimum: 0
-          description: Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
-          example: 2
-        totalQuantity:
-          type: integer
-          minimum: 0
-          description: Sum of `quantity` across every line item.
-          example: 5
-        totalPrice:
-          type: number
-          format: double
-          minimum: 0
-          description: Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
-          example: 149.97
-        currency:
-          type: string
-          readOnly: true
-          description: ISO-4217 currency code this order was priced in (e.g. EUR).
-        netTotal:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
-        taxTotal:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
-        shippingNetAmount:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
-        shippingTaxAmount:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
-        taxSummary:
-          type: array
-          readOnly: true
-          items:
-            $ref: "#/components/schemas/OrderTaxSummaryRow"
-          description: "One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines."
-        notes:
-          type: string
-          description: Optional order notes
-        shippingMethod:
-          type: string
-          description: The shipping method's id as the checkout froze it (e.g. standard, express, pickup).
-        shippingCost:
-          type: number
-          format: double
-          minimum: 0
-          description: What that method cost at checkout time — a later rate change cannot re-price history.
-        shippingAddress:
-          $ref: "#/components/schemas/OrderAddress"
-        billingAddress:
-          $ref: "#/components/schemas/OrderAddress"
-        paymentMethod:
-          $ref: "#/components/schemas/PaymentMethodId"
-        payBy:
-          type: string
-          format: date-time
-        orderNumber:
-          type: string
-          readOnly: true
-          example: 2026-000041
-        status:
-          $ref: "#/components/schemas/OrderStatus"
-        paymentStatus:
-          $ref: "#/components/schemas/OrderPaymentStatus"
-        fulfillmentStatus:
-          $ref: "#/components/schemas/OrderFulfillmentStatus"
-        returnStatus:
-          $ref: "#/components/schemas/OrderReturnStatus"
-        withdrawUntil:
-          type: string
-          format: date-time
-          readOnly: true
-          description: "The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet."
-        paidAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        deletedAt:
-          type: string
-          format: date-time
-    OrderTimelineType:
-      type: string
-      enum:
-        - created
-        - paid
-        - processing
-        - shipped
-        - delivered
-        - cancelled
-        - status_overridden
-        - payment_declined
-        - refund_issued
-        - refund_settled
-        - refund_failed
-        - shipment_shipped
-        - shipment_delivered
-        - fulfillment_held
-        - fulfillment_released
-        - remainder_cancelled
-        - return_requested
-        - return_approved
-        - return_declined
-        - return_received
-        - return_closed
-        - invoice_issued
-        - credit_note_issued
-        - release_date_moved
-        - delay_notice_sent
-        - address_corrected
-      description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`."
-    OrderTimelineExportEntry:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - at
-        - type
-        - audience
-        - data
-        - orderId
-      properties:
-        orderId:
-          $ref: "#/components/schemas/Id"
-        id:
-          $ref: "#/components/schemas/Id"
-        at:
-          type: string
-          format: date-time
-        type:
-          $ref: "#/components/schemas/OrderTimelineType"
-        audience:
-          type: string
-          enum:
-            - buyer
-            - staff
-          description: "Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both."
-        actor:
-          allOf:
-            - $ref: "#/components/schemas/Id"
-          description: The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id.
-        text:
-          type: string
-          description: Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays.
-        data:
-          type: object
-          additionalProperties: true
-          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
-    ExportPayment:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - amount
-        - currency
-        - status
-        - provider
-        - amountRefunded
-        - refunds
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        amount:
-          type: number
-          format: double
-          minimum: 0
-        currency:
-          type: string
-        amountRefunded:
-          type: number
-          format: double
-          minimum: 0
-        refunds:
-          type: array
-          items:
-            $ref: "#/components/schemas/Refund"
-        status:
-          type: string
-          enum:
-            - requires_confirmation
-            - requires_action
-            - processing
-            - succeeded
-            - declined
-            - cancelled
-        provider:
-          type: string
-        cardLast4:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-    ExportInvoiceDocument:
-      type: object
-      additionalProperties: false
-      required:
-        - orderId
-        - number
-        - issuedAt
-        - currency
-        - grandTotal
-      properties:
-        orderId:
-          $ref: "#/components/schemas/Id"
-        number:
-          type: string
-        issuedAt:
-          type: string
-          format: date-time
-        currency:
-          type: string
-        grandTotal:
-          type: number
-          format: double
-          minimum: 0
-    ExportShipment:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - fulfillmentOrderId
-        - number
-        - status
-        - lines
-        - shippedAt
-      description: A shipment as an account export carries it — the record, without the caller's `actions`.
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        fulfillmentOrderId:
-          $ref: "#/components/schemas/Id"
-        number:
-          type: integer
-          minimum: 1
-        trackingCode:
-          type: string
-        status:
-          type: string
-          enum:
-            - shipped
-            - delivered
-        lines:
-          type: array
-          items:
-            $ref: "#/components/schemas/ShipmentLine"
-        shippedAt:
-          type: string
-          format: date-time
-        deliveredAt:
-          type: string
-          format: date-time
-    ExportFulfillmentOrder:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - number
-        - kind
-        - status
-        - lines
-      description: A fulfillment order as an account export carries it, with staff's hold note (their assessment of the buyer is the buyer's data) and without who wrote it.
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        number:
-          type: integer
-          minimum: 1
-        kind:
-          $ref: "#/components/schemas/FulfillmentOrderKind"
-        status:
-          $ref: "#/components/schemas/FulfillmentOrderStatus"
-        lines:
-          type: array
-          items:
-            $ref: "#/components/schemas/FulfillmentOrderLine"
-        holdNotice:
-          $ref: "#/components/schemas/FulfillmentHoldNotice"
-        holdMessage:
-          type: string
-          maxLength: 500
-        holdReason:
-          $ref: "#/components/schemas/FulfillmentHoldReason"
-        holdNote:
-          type: string
-          maxLength: 1000
-          description: Staff's free text about the hold. Present until the retention sweep unsets it.
-        agreedAt:
-          type: string
-          format: date-time
-        expectedAt:
-          type: string
-          format: date-time
-        lastNoticeAt:
-          type: string
-          format: date-time
-          description: When the buyer was last told the date had moved or would be missed.
-        cancelReason:
-          $ref: "#/components/schemas/FulfillmentCancelReason"
-    ExportReturn:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - status
-        - reason
-        - lines
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        status:
-          $ref: "#/components/schemas/ReturnStatus"
-        reason:
-          $ref: "#/components/schemas/ReturnReason"
-        note:
-          type: string
-        declineReason:
-          type: string
-        lines:
-          type: array
-          items:
-            type: object
-            additionalProperties: false
-            required:
-              - productId
-              - quantity
-              - title
-            properties:
-              productId:
-                $ref: "#/components/schemas/Id"
-              quantity:
-                type: integer
-                minimum: 1
-              title:
-                type: string
-        createdAt:
-          type: string
-          format: date-time
-    ExampleStatus:
-      type: string
-      enum:
-        - draft
-        - published
-        - archived
-    ExampleActions:
-      type: object
-      additionalProperties: false
-      required:
-        - transitions
-        - update
-        - delete
-      description: "What the requesting caller may do to this example, decided by the server. A client renders its controls from this instead of re-implementing the lifecycle or the ownership rule: both depend on who asks, and a second copy in a separately deployed client is how the two come to disagree."
-      properties:
-        transitions:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExampleStatus"
-          description: The statuses this caller may move the example to through `POST /examples/{id}/transitions`. Never contains the current status; empty when the caller may not edit it.
-          example:
-            - published
-            - archived
-        update:
-          type: boolean
-          description: Whether `PATCH`/`PUT /examples/{id}` and `PUT /examples/{id}/cover` would be accepted for this caller.
-        delete:
-          type: boolean
-          description: Whether `DELETE /examples/{id}` would be accepted for this caller.
-    Example:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - title
-        - body
-        - status
-        - userId
-        - ownerName
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        title:
-          type: string
-          description: The fallback-language title. Other languages are written through `/locales/translations/example/{id}`.
-        body:
-          type: string
-        status:
-          $ref: "#/components/schemas/ExampleStatus"
-        userId:
-          $ref: "#/components/schemas/Id"
-        ownerName:
-          type: string
-          description: The owner's display name.
-        imageUrl:
-          $ref: "#/components/schemas/ImageUrl"
-        thumbnailUrl:
-          $ref: "#/components/schemas/ThumbnailUrl"
-        publishedAt:
-          type: string
-          format: date-time
-          description: Stamped the first time the example is published, never moved again.
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        actions:
-          $ref: "#/components/schemas/ExampleActions"
-    ProductTitles:
-      type: object
-      additionalProperties:
-        type: string
-    CartLineRemovedParams:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-        - titles
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
-        titles:
-          $ref: "#/components/schemas/ProductTitles"
-    NotificationSeverity:
-      type: string
-      description: Meaning, not look — a client picks the colour. The four words most notification APIs share (Ant Design, Atlassian flags).
-      enum:
-        - info
-        - success
-        - warning
-        - error
-    NotificationCartLineRemoved:
-      type: object
-      additionalProperties: false
-      description: A product left the catalogue and left the caller's cart with it.
-      required:
-        - id
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        code:
-          type: string
-          enum:
-            - notifications.cart-line-removed
-        params:
-          $ref: "#/components/schemas/CartLineRemovedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    NotificationWishlistItemRemoved:
-      type: object
-      additionalProperties: false
-      description: A product left the catalogue and left the caller's wishlist with it.
-      required:
-        - id
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        code:
-          type: string
-          enum:
-            - notifications.wishlist-item-removed
-        params:
-          $ref: "#/components/schemas/CartLineRemovedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    CartMergeRefusedParams:
-      type: object
-      additionalProperties: false
-      required:
-        - lines
-      properties:
-        lines:
-          type: array
-          description: The guest-cart lines `POST /cart/merge` could not add at all.
-          items:
-            type: object
-            additionalProperties: false
-            required:
-              - productId
-              - requested
-              - titles
-            properties:
-              productId:
-                $ref: "#/components/schemas/Id"
-              requested:
-                type: integer
-                minimum: 1
-              titles:
-                $ref: "#/components/schemas/ProductTitles"
-    NotificationCartMergeRefused:
-      type: object
-      additionalProperties: false
-      description: Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available.
-      required:
-        - id
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        code:
-          type: string
-          enum:
-            - notifications.cart-merge-refused
-        params:
-          $ref: "#/components/schemas/CartMergeRefusedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    FulfillmentDelayedParams:
-      type: object
-      additionalProperties: false
-      required:
-        - orderId
-        - fulfillmentOrderId
-        - titles
-        - agreedAt
-      description: "What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised and the date now expected (absent when there is none)."
-      properties:
-        orderId:
-          $ref: "#/components/schemas/Id"
-        fulfillmentOrderId:
-          $ref: "#/components/schemas/Id"
-        titles:
-          type: array
-          description: The waiting products' titles, as the order froze them.
-          items:
-            type: string
-        agreedAt:
-          type: string
-          format: date-time
-        expectedAt:
-          type: string
-          format: date-time
-    NotificationFulfillmentDelayed:
-      type: object
-      additionalProperties: false
-      description: A preorder the caller paid for will arrive later than promised; cancelling is open and silence keeps waiting.
-      required:
-        - id
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        code:
-          type: string
-          enum:
-            - notifications.fulfillment-delayed
-        params:
-          $ref: "#/components/schemas/FulfillmentDelayedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    FulfillmentHeldParams:
-      type: object
-      additionalProperties: false
-      required:
-        - orderId
-        - fulfillmentOrderId
-        - notice
-      description: "What the buyer needs to read a hold notice: which order and fulfillment order, whether the address needs a look (`check_address`) or the order is only `delayed`, and the sentence staff wrote for them, if any. Never staff's reason."
-      properties:
-        orderId:
-          $ref: "#/components/schemas/Id"
-        fulfillmentOrderId:
-          $ref: "#/components/schemas/Id"
-        notice:
-          type: string
-          enum:
-            - check_address
-            - delayed
-        message:
-          type: string
-          maxLength: 500
-    NotificationFulfillmentHeld:
-      type: object
-      additionalProperties: false
-      description: Part of an order the caller bought is held back, and they can act (check the address) or have a message from the shop.
-      required:
-        - id
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        code:
-          type: string
-          enum:
-            - notifications.fulfillment-held
-        params:
-          $ref: "#/components/schemas/FulfillmentHeldParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    NotificationStockAlert:
-      type: object
-      additionalProperties: false
-      description: A product the caller asked to be told about can be ordered again. Sent once, then the request is gone.
-      required:
-        - id
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        code:
-          type: string
-          enum:
-            - notifications.stock-alert
-        params:
-          $ref: "#/components/schemas/CartLineRemovedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    Notification:
-      oneOf:
-        - $ref: "#/components/schemas/NotificationCartLineRemoved"
-        - $ref: "#/components/schemas/NotificationWishlistItemRemoved"
-        - $ref: "#/components/schemas/NotificationCartMergeRefused"
-        - $ref: "#/components/schemas/NotificationFulfillmentDelayed"
-        - $ref: "#/components/schemas/NotificationFulfillmentHeld"
-        - $ref: "#/components/schemas/NotificationStockAlert"
-      discriminator:
-        propertyName: code
-        mapping:
-          notifications.cart-line-removed: "#/components/schemas/NotificationCartLineRemoved"
-          notifications.wishlist-item-removed: "#/components/schemas/NotificationWishlistItemRemoved"
-          notifications.cart-merge-refused: "#/components/schemas/NotificationCartMergeRefused"
-          notifications.fulfillment-delayed: "#/components/schemas/NotificationFulfillmentDelayed"
-          notifications.fulfillment-held: "#/components/schemas/NotificationFulfillmentHeld"
-          notifications.stock-alert: "#/components/schemas/NotificationStockAlert"
-    StockAlert:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-        - createdAt
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
-        createdAt:
-          type: string
-          format: date-time
-    AccountExportResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - exportedAt
-        - profile
-        - auditLog
-        - sessions
-        - addresses
-        - signInMethods
-        - cart
-        - wishlist
-        - orders
-        - orderTimeline
-        - payments
-        - invoicing
-        - shipments
-        - fulfillmentOrders
-        - returns
-        - apiKeys
-        - roles
-        - examples
-        - notifications
-        - stockAlerts
-      properties:
-        exportedAt:
-          type: string
-          format: date-time
-        profile:
-          $ref: "#/components/schemas/Account"
-        auditLog:
-          type: array
-          items:
-            $ref: "#/components/schemas/AuditEntryItem"
-        sessions:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportSession"
-        addresses:
-          type: array
-          items:
-            $ref: "#/components/schemas/Address"
-        signInMethods:
-          $ref: "#/components/schemas/ExportSignInMethods"
-        feedback:
-          type: array
-          description: Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`.
-          items:
-            $ref: "#/components/schemas/ExportFeedbackTicket"
-        cart:
-          type: array
-          items:
-            $ref: "#/components/schemas/CartItem"
-        wishlist:
-          type: array
-          items:
-            $ref: "#/components/schemas/WishlistExportItem"
-        orders:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportOrder"
-        orderTimeline:
-          type: array
-          items:
-            $ref: "#/components/schemas/OrderTimelineExportEntry"
-        payments:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportPayment"
-        invoicing:
-          type: object
-          additionalProperties: false
-          required:
-            - invoices
-            - creditNotes
-          properties:
-            invoices:
-              type: array
-              items:
-                $ref: "#/components/schemas/ExportInvoiceDocument"
-            creditNotes:
-              type: array
-              items:
-                $ref: "#/components/schemas/ExportInvoiceDocument"
-        shipments:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportShipment"
-        fulfillmentOrders:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportFulfillmentOrder"
-        returns:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportReturn"
-        apiKeys:
-          type: array
-          items:
-            $ref: "#/components/schemas/ApiKey"
-        roles:
-          type: array
-          items:
-            type: object
-            additionalProperties: false
-            required:
-              - role
-              - scope
-            properties:
-              role:
-                type: string
-              scope:
-                type: string
-                enum:
-                  - tenant
-                  - platform
-        examples:
-          type: array
-          items:
-            $ref: "#/components/schemas/Example"
-        notifications:
-          type: array
-          items:
-            $ref: "#/components/schemas/Notification"
-        stockAlerts:
-          type: array
-          items:
-            $ref: "#/components/schemas/StockAlert"
     SetPurchaseHoldRequest:
       type: object
       additionalProperties: false
@@ -18499,8 +18519,9 @@ components:
       type: string
       enum:
         - stale_refund
+        - refused_refund
         - manual_refund_owed
-      description: "`stale_refund` — a provider refund open past the threshold; `manual_refund_owed` — money to hand back outside the system on a `manual` payment. Both are an open refund record on a payment: a cancel or a refund opens it before anything is asked of a provider, so no refund is owed without one."
+      description: "`stale_refund` — a provider refund open past the threshold, still waiting for the provider's answer or its next retry; `refused_refund` — a card refund the provider refused for good (a final `RefundFailureReason`), shown at once: the money has to go back another way; `manual_refund_owed` — money to hand back outside the system on a `manual` payment. Both are an open refund record on a payment: a cancel or a refund opens it before anything is asked of a provider, so no refund is owed without one."
     PaymentAttentionItem:
       type: object
       additionalProperties: false
@@ -19459,9 +19480,9 @@ x-error-codes:
   PAYMENT_REFUND_EXCEEDS_REMAINING:
     status: 422
     description: The refund asks for more than the payment still has left to give back.
-  PAYMENT_REFUND_NOT_BY_HAND:
+  PAYMENT_REFUND_IN_FLIGHT:
     status: 409
-    description: The refund goes back through the card provider and its sweep; an operator cannot mark it returned by hand.
+    description: The card refund has no final answer yet (an attempt is running, or the provider did not say whether the money moved), so it cannot be marked returned by hand.
   PAYMENT_REFUND_NOT_OPEN:
     status: 409
     description: The refund was already settled (another operator confirmed it first).

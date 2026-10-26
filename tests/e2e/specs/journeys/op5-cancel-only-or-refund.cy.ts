@@ -12,7 +12,7 @@
  * Two seeded paid orders, one for each branch. Stock is read as the admin sees it, off the API,
  * beside the shelf before and after.
  */
-import { eventually, orderMailTo } from '../../../support/e2e/steps';
+import { eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** The slice of a payment this story reads: where the money stands. */
 interface PaymentLike {
@@ -79,25 +79,19 @@ describe('OP5 · Cancel only versus cancel and refund', () => {
                     cy.apiAs<OrderLike>('admin', 'GET', `/orders/${keptId}`).should((order) => {
                         expect(order?.status).to.equal('cancelled');
                     });
-                    cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${keptId}`).should(
-                        (payment) => {
-                            expect(payment?.status, 'the money was not touched').to.equal(
-                                'succeeded'
-                            );
-                            expect(payment?.amountRefunded).to.equal(0);
-                        }
-                    );
+                    paymentOfOrder<PaymentLike>('admin', keptId).should((payment) => {
+                        expect(payment?.status, 'the money was not touched').to.equal('succeeded');
+                        expect(payment?.amountRefunded).to.equal(0);
+                    });
                     cy.get('[data-test=button-cancel-and-refund]').should('be.disabled');
 
                     cy.step('refund only still works afterwards, and settles the payment');
                     cy.get('[data-test=button-refund-only]').should('not.be.disabled').click();
                     cy.get('[data-test=button-refund-only]').should('be.disabled');
-                    cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${keptId}`).should(
-                        (payment) => {
-                            expect(payment?.displayStatus).to.equal('refunded');
-                            expect(payment?.amountRefunded).to.equal(payment?.amount);
-                        }
-                    );
+                    paymentOfOrder<PaymentLike>('admin', keptId).should((payment) => {
+                        expect(payment?.displayStatus).to.equal('refunded');
+                        expect(payment?.amountRefunded).to.equal(payment?.amount);
+                    });
 
                     cy.step('cancel and refund: one press does both');
                     cy.visit(`/en/orders/${refundedId}/edit`);
@@ -110,8 +104,7 @@ describe('OP5 · Cancel only versus cancel and refund', () => {
                         expect(order?.status).to.equal('cancelled');
                     });
                     eventually(
-                        () =>
-                            cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${refundedId}`),
+                        () => paymentOfOrder<PaymentLike>('admin', refundedId),
                         (payment) => payment?.displayStatus === 'refunded'
                     ).should((payment) => {
                         expect(payment?.displayStatus).to.equal('refunded');

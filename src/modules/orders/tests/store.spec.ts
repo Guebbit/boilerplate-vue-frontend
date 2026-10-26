@@ -246,6 +246,7 @@ describe('useOrdersStore', () => {
                 .exportOrdersCsv({
                     status: 'paid',
                     email: 'a@b.c',
+                    orderNumber: '#2026-41',
                     id: 'o1',
                     createdFrom: '2026-10-01'
                 })
@@ -255,6 +256,8 @@ describe('useOrdersStore', () => {
                     expect(query).toMatchObject({
                         status: 'paid',
                         email: 'a@b.c',
+                        // Sent as typed: the server owns the tolerant reading of a quoted number.
+                        orderNumber: '#2026-41',
                         id: ['o1']
                     });
                     // The calendar day became an instant (its zone is the browser's, so only the shape is fixed).

@@ -119,7 +119,7 @@ describe('OP21 · The stock counters follow an order', () => {
 
             cy.step('the order is paid: the units stay on the shelf, still reserved');
             cy.get<string>('@first').then((orderId) => {
-                cy.apiAs('admin', 'POST', `/payments/orders/${orderId}/offline`, {
+                cy.apiAs('admin', 'POST', `/orders/${orderId}/payments`, {
                     method: 'cash'
                 });
             });

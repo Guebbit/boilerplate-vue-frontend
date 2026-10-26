@@ -10,7 +10,7 @@
  * The payments drawer and the refunds tab are OP36's. The order is the seeded `order.paid`, so no
  * card budget is spent.
  */
-import { eventually, orderMailTo } from '../../../support/e2e/steps';
+import { eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** The goodwill amount, in the payment's currency. */
 const GOODWILL = 5;
@@ -32,7 +32,7 @@ describe('OP26 · A goodwill refund, in part', () => {
 
     it('refuses what is not money, refunds the part once, and the rest closes the payment', () => {
         cy.subjectId('order.paid').then((orderId) => {
-            cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`).then((before) => {
+            paymentOfOrder<PaymentLike>('admin', orderId).then((before) => {
                 const total = Number(before?.amount);
                 expect(before?.amountRefunded, 'nothing has gone back yet').to.equal(0);
 
@@ -66,11 +66,9 @@ describe('OP26 · A goodwill refund, in part', () => {
                     'contain.text',
                     'That is more than is left to refund on this payment.'
                 );
-                cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`).should(
-                    (payment) => {
-                        expect(payment?.amountRefunded, 'neither refusal moved money').to.equal(0);
-                    }
-                );
+                paymentOfOrder<PaymentLike>('admin', orderId).should((payment) => {
+                    expect(payment?.amountRefunded, 'neither refusal moved money').to.equal(0);
+                });
 
                 cy.step('a double press on a real amount lands exactly one refund');
                 cy.get('[data-test=refund-amount] input').clear();
@@ -78,7 +76,7 @@ describe('OP26 · A goodwill refund, in part', () => {
                 cy.get('[data-test=button-refund-only]').dblclick();
                 cy.contains('Payment refunded. The order status is unchanged.').should('exist');
                 eventually(
-                    () => cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`),
+                    () => paymentOfOrder<PaymentLike>('admin', orderId),
                     (payment) => (payment?.refunds.length ?? 0) > 0
                 ).should((payment) => {
                     expect(payment?.refunds).to.have.length(1);
@@ -100,7 +98,7 @@ describe('OP26 · A goodwill refund, in part', () => {
                 cy.get('[data-test=refund-amount] input').clear();
                 cy.get('[data-test=button-refund-only]').should('not.be.disabled').click();
                 eventually(
-                    () => cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`),
+                    () => paymentOfOrder<PaymentLike>('admin', orderId),
                     (payment) => payment?.displayStatus === 'refunded'
                 ).should((payment) => {
                     expect(payment?.refunds).to.have.length(2);

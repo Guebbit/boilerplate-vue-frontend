@@ -24,6 +24,7 @@ import { useFeedbackStore } from '../store.ts';
 import { useRowActions } from '@/ui/composables/use-row-actions.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useOrderNumberLink } from '@/kernel/order-link.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
@@ -59,6 +60,11 @@ const canUpdate = computed(() => session.can('update', 'Feedback'));
  * Whether the viewer may erase a ticket.
  */
 const canDelete = computed(() => session.can('delete', 'Feedback'));
+
+/**
+ * A ticket's order number as a link to the staff orders list filtered to it, when the build ships one.
+ */
+const orderNumberLink = useOrderNumberLink();
 
 /**
  * Toast dispatcher.
@@ -364,11 +370,24 @@ const handleDelete = (requestId: string, subject: string) =>
                                 {{ t(`contact-page.category-${request.category}`) }}
                             </v-chip>
                             <span v-if="request.orderNumber" class="ml-2">
-                                {{
-                                    t('feedback-inbox-page.label-order', {
-                                        number: request.orderNumber
-                                    })
-                                }}
+                                <router-link
+                                    v-if="orderNumberLink(request.orderNumber)"
+                                    :to="orderNumberLink(request.orderNumber)!"
+                                    data-test="feedback-order-link"
+                                >
+                                    {{
+                                        t('feedback-inbox-page.label-order', {
+                                            number: request.orderNumber
+                                        })
+                                    }}
+                                </router-link>
+                                <template v-else>
+                                    {{
+                                        t('feedback-inbox-page.label-order', {
+                                            number: request.orderNumber
+                                        })
+                                    }}
+                                </template>
                             </span>
                         </p>
                         <p

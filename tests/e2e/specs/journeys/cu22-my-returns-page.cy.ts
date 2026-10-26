@@ -14,7 +14,7 @@
  * customer does. The two defective requests are seeded; support and the warehouse answer them through
  * the API, since what they do is not what this story is about.
  */
-import { centsOf, cents } from '../../../support/e2e/steps';
+import { centsOf, cents, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** The reason support gives for declining, which the customer must be able to read. */
 const DECLINE_REASON = 'The photos show ordinary wear, not a fault.';
@@ -124,11 +124,9 @@ describe('CU22 · My returns page tells me where each one stands', () => {
                         .then((href) => {
                             opened.id = String(href).split('/').at(-1) ?? '';
                         });
-                    cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`).then(
-                        (payment) => {
-                            opened.paid = Math.round(Number(payment?.amount) * 100);
-                        }
-                    );
+                    paymentOfOrder<PaymentLike>('user', orderId).then((payment) => {
+                        opened.paid = Math.round(Number(payment?.amount) * 100);
+                    });
                     cy.then(() =>
                         cy.apiAs('warehouse', 'POST', `/returns/${opened.id}/receive`, {
                             handlingDeduction: DEDUCTION

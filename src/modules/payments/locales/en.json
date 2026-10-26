@@ -119,9 +119,11 @@
         "failure-reason-insufficient_funds": "Insufficient funds",
         "failure-reason-expired_or_canceled_card": "The card has expired or was cancelled",
         "failure-reason-lost_or_stolen_card": "The card was reported lost or stolen",
+        "failure-reason-provider_removed": "The payment provider is no longer installed",
         "failure-reason-provider_unavailable": "The payment provider was unavailable",
         "failure-reason-unknown": "The provider gave no usable reason",
-        "attention-kind-stale_refund": "Refund open for too long",
+        "attention-kind-stale_refund": "Waiting for the provider's answer",
+        "attention-kind-refused_refund": "Refused: return the money another way",
         "attention-kind-manual_refund_owed": "Money to hand back outside the system",
         "attention-hint": "Only problems still recorded on a payment or an order. A fixed one disappears on the next read.",
         "button-reload": "Reload",
@@ -140,11 +142,21 @@
         "button-refund": "Refund the rest",
         "button-mark-returned": "Mark returned",
         "confirm-mark-returned": "Confirm you returned {amount} to the customer outside the app? Nothing is sent.",
+        "confirm-mark-returned-card": "Confirm you returned {amount} to the customer another way? Do this only after the money has left: the app stops retrying this refund and tells the customer it is back.",
         "mark-returned-done": "Marked as returned",
         "button-open-payment": "Open payment",
         "button-open-order": "Open the order",
         "confirm-refund": "Refund everything still refundable on order {order}? The money goes back to the customer.",
         "refund-done": "Refund requested"
+    },
+    "refund-notice": {
+        "recorded": "Refund recorded. Hand the money back outside the app, then press Mark returned.",
+        "refused": "The card provider refused this refund: {reason}. {next}",
+        "no-reason": "no usable reason given",
+        "settle-by-hand": "Return the money another way, then press Mark returned.",
+        "retried": "It stays open and is retried automatically.",
+        "cancel-under-way": "Order cancelled. The refund is under way; its status shows on the payment.",
+        "receive-owed": "Goods received. The refund is not settled yet; follow it on the order's payment."
     },
     "navigation": {
         "label-payments": "Payments"

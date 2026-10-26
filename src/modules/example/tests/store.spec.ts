@@ -294,12 +294,12 @@ describe('useExampleStore', () => {
     });
 
     describe('fetchPublished', () => {
-        it('reads through the public route and returns the example', () =>
+        it('reads through the item route and returns the example', () =>
             useExampleStore()
                 .fetchPublished(EXAMPLE.id)
                 .then((found) => {
                     expect(lastRequest()).toMatchObject({
-                        url: `/examples/published/${EXAMPLE.id}`,
+                        url: `/examples/${EXAMPLE.id}`,
                         method: 'GET'
                     });
                     expect(found?.title).toBe('A title');

@@ -8,7 +8,7 @@ import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
 
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { getCurrentLocale } from '@/i18n';
@@ -122,6 +122,7 @@ export const useProductsStore = defineStore('products', () => {
 
         filters,
         loading,
+        isLoading,
         pageCurrent,
         pageSize,
         pageTotal,
@@ -340,7 +341,17 @@ export const useProductsStore = defineStore('products', () => {
      * @returns A promise resolving with the admin record.
      */
     const fetchProductAdmin = (productId: string): Promise<ProductAdmin | undefined> =>
-        fetchAny(() => getProductAdmin(productId));
+        fetchAny(() => getProductAdmin(productId), {
+            // Own bucket so the edit form's controls disable apart from other reads; `forced`
+            // keeps the record uncached, as the screen someone is actively editing must be.
+            key: ['admin'],
+            forced: true
+        });
+
+    /**
+     * Whether the admin record is being read.
+     */
+    const loadingProductAdmin = computed(() => isLoading(['admin']));
 
     /**
      * Reads many products at once — the join a cart or wishlist needs for its lines, in one
@@ -415,6 +426,7 @@ export const useProductsStore = defineStore('products', () => {
         fetchProduct,
         watchProduct,
         fetchProductAdmin,
+        loadingProductAdmin,
         createProduct,
         updateProduct,
         deleteProduct,

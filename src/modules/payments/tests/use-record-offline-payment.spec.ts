@@ -69,7 +69,7 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'POST /payments/orders/o1/offline': PAYMENT
+        'POST /orders/o1/payments': PAYMENT
     };
 });
 
@@ -78,12 +78,12 @@ describe('useRecordOfflinePayment', () => {
         const { recordOfflinePayment } = useRecordOfflinePayment(ref('o1'));
 
         return recordOfflinePayment({ method: 'cash', reference: 'till-1' }).then(() => {
-            expect(responses['POST /payments/orders/o1/offline']).toBeDefined();
+            expect(responses['POST /orders/o1/payments']).toBeDefined();
         });
     });
 
     it('lets a refusal through — the caller owns the toast', () => {
-        responses['POST /payments/orders/o1/offline'] = {
+        responses['POST /orders/o1/payments'] = {
             status: 409,
             code: 'PAYMENT_IN_FLIGHT',
             message: 'A card payment is already in progress for this order.'

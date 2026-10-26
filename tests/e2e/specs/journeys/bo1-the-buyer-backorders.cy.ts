@@ -70,7 +70,7 @@ describe('BO1 · The buyer backorders', () => {
                 cy.get('[data-test=order-item-owed]').should('contain.text', 'backorder');
 
                 cy.step('the order is paid; the owed part waits for stock on its own');
-                cy.apiAs('admin', 'POST', `/payments/orders/${orderId}/offline`, {
+                cy.apiAs('admin', 'POST', `/orders/${orderId}/payments`, {
                     method: 'cash'
                 });
                 eventually(

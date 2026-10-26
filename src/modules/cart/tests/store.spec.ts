@@ -641,7 +641,7 @@ describe('useCartStore', () => {
             const store = useCartStore();
 
             return store.reorder('o1').then((result) => {
-                expect(apiReorder).toHaveBeenCalledWith('o1');
+                expect(apiReorder).toHaveBeenCalledWith({ orderId: 'o1' });
                 expect(store.cart).toEqual(CART);
                 expect(store.cartSummary?.itemsCount).toBe(1);
                 expect(result?.lines).toEqual([

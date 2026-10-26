@@ -27,6 +27,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatDate, formatDateTime, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import type { ApiKey } from '@types';
+import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 
 import type { ThemeColor } from '@/ui/types.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
@@ -60,10 +61,17 @@ const session = useSessionStore();
 const { watchApiKeysSearch, revokeCredential } = useApiKeysStore();
 
 /**
- * Api-keys store reactive state — the current page window and the pagination counters. No
- * filters ref: there is nothing to filter on.
+ * Api-keys store reactive state — the current page window and the pagination counters. `filters`
+ * is always empty (nothing to filter on) and only feeds the URL helper below.
  */
-const { pageItemList, pageCurrent, pageSize, pageTotal, loading } = storeToRefs(useApiKeysStore());
+const { filters, pageItemList, pageCurrent, pageSize, pageTotal, loading } =
+    storeToRefs(useApiKeysStore());
+
+/**
+ * Keeps the page and page size in the URL: a reload or a shared link lands on the same page. Runs
+ * before the search below so the first read already uses what the link names.
+ */
+useListUrlState({ filters, page: pageCurrent, pageSize, params: {} });
 
 /**
  * Row-action button size: `small` on desktop, Vuetify's bigger default below `sm`, where a tap

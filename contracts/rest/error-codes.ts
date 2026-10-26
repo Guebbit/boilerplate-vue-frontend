@@ -184,8 +184,8 @@ export const ERROR_CODES = {
     PAYMENT_ORDER_NOT_PAYABLE: 'PAYMENT_ORDER_NOT_PAYABLE',
     /** 422 — The refund asks for more than the payment still has left to give back. */
     PAYMENT_REFUND_EXCEEDS_REMAINING: 'PAYMENT_REFUND_EXCEEDS_REMAINING',
-    /** 409 — The refund goes back through the card provider and its sweep; an operator cannot mark it returned by hand. */
-    PAYMENT_REFUND_NOT_BY_HAND: 'PAYMENT_REFUND_NOT_BY_HAND',
+    /** 409 — The card refund has no final answer yet (an attempt is running, or the provider did not say whether the money moved), so it cannot be marked returned by hand. */
+    PAYMENT_REFUND_IN_FLIGHT: 'PAYMENT_REFUND_IN_FLIGHT',
     /** 409 — The refund was already settled (another operator confirmed it first). */
     PAYMENT_REFUND_NOT_OPEN: 'PAYMENT_REFUND_NOT_OPEN',
     /** 412 — The write's `If-Match` no longer describes the stored resource — someone changed or removed it since the caller read it. Re-read, reapply the edit, resend. */

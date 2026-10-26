@@ -6,7 +6,7 @@
  * SERVER computed — never a sum made on the page — and a confirm step. Confirming closes a
  * cancellation, the group has nothing left to cancel, and the money for those two units goes back.
  */
-import { eventually, orderMailTo } from '../../../support/e2e/steps';
+import { eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** The slice of the options read this story compares the screen with. */
 interface OptionsLike {
@@ -101,7 +101,7 @@ describe('CU30 · Cancel what has not shipped', () => {
 
             cy.step('the refund for those units goes back to the card, in part');
             eventually(
-                () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`),
+                () => paymentOfOrder<PaymentLike>('user', orderId),
                 (payment) => payment?.displayStatus === 'partially_refunded'
             ).should((payment) => {
                 expect(payment?.displayStatus).to.equal('partially_refunded');

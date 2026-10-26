@@ -175,7 +175,7 @@ const deleteFlags = (remove: boolean, permanent: boolean, restorable = false) =>
     cancel: false,
     pay: false,
     recordPayment: false,
-    start: false,
+    process: false,
     override: [],
     correctAddress: false,
     invoice: false,

@@ -41,6 +41,7 @@ import type { DictionaryRow } from '../dictionaries.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
+import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 
 /**
  * One language's translation rows: paginated, searched, edited inline.
@@ -175,6 +176,16 @@ const appChoice = computed({
     }
 });
 
+/**
+ * Keeps the text and app filters and the page in the URL. Runs before the tag is put into the
+ * filters below, because a link that names a filter replaces the whole filter object.
+ */
+const { sync: syncUrl } = useListUrlState({
+    filters,
+    page: pageCurrent,
+    params: { text: 'string', app: 'string' }
+});
+
 /*
  * The tag rides INSIDE the filters so the search cache keys on it — see the store. Immediate,
  * because the first search must not fire before the tag is in place.
@@ -206,6 +217,7 @@ if (apps.value.length === 0) void localesStore.fetchApps();
  */
 const handleSearch = () => {
     pageCurrent.value = 1;
+    syncUrl();
     return search();
 };
 

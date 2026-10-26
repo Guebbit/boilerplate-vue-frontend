@@ -93,7 +93,8 @@ beforeEach(() => {
         'POST /payments': PAYMENT,
         'POST /payments/payment-1/confirm': { ...PAYMENT, status: 'succeeded' },
         'POST /payments/payment-1/sync': { ...PAYMENT, status: 'succeeded' },
-        'GET /payments/orders/order-1': { ...PAYMENT, status: 'succeeded' }
+        'GET /orders/order-1/payments': { items: [{ ...PAYMENT, status: 'succeeded' }] },
+        'GET /payments/payment-1': { ...PAYMENT, status: 'succeeded' }
     };
 });
 
@@ -126,8 +127,8 @@ describe('fetchPaymentForOrder', () => {
         });
     });
 
-    it('reads a 404 as "no payment yet", not as a crash', () => {
-        responses = {};
+    it('reads an empty list as "no payment yet", not as a crash', () => {
+        responses = { 'GET /orders/order-1/payments': { items: [] } };
         const store = usePaymentsStore();
         return store.fetchPaymentForOrder('order-1').then((payment) => {
             expect(payment).toBeUndefined();
@@ -141,7 +142,7 @@ describe('fetchPaymentForOrder', () => {
      * the caller — swallowed, it renders the pay form for an order that may already be paid.
      */
     it('lets any other failure through instead of calling it "no payment yet"', () => {
-        responses = { 'GET /payments/orders/order-1': new Error('Internal Server Error') };
+        responses = { 'GET /orders/order-1/payments': new Error('Internal Server Error') };
         const store = usePaymentsStore();
         return expect(store.fetchPaymentForOrder('order-1')).rejects.toMatchObject({
             status: 500
@@ -251,7 +252,7 @@ describe('finishAtProvider', () => {
             .then(() => {
                 expect(requestedUrls()).toEqual([
                     '/payments/payment-1/sync',
-                    '/payments/orders/order-1'
+                    '/orders/order-1/payments'
                 ]);
             });
     });
@@ -275,7 +276,7 @@ describe('finishAtProvider', () => {
 
 describe('recordOfflinePayment', () => {
     it('sends the method and reference, and mirrors the settled payment', () => {
-        responses['POST /payments/orders/order-1/offline'] = {
+        responses['POST /orders/order-1/payments'] = {
             ...PAYMENT,
             provider: 'manual',
             method: 'cash',
@@ -290,9 +291,9 @@ describe('recordOfflinePayment', () => {
                 const call = vi
                     .mocked(orvalMutator)
                     .mock.calls.map((entry) => entry[0] as { url: string; data?: unknown })
-                    .find(({ url }) => url.endsWith('/offline'));
+                    .find(({ url }) => url.endsWith('/payments'));
 
-                expect(contractRequest(schemas.RecordOfflinePaymentBody, call?.data)).toEqual({
+                expect(contractRequest(schemas.RecordOrderPaymentBody, call?.data)).toEqual({
                     method: 'cash',
                     reference: 'till-42'
                 });
@@ -306,7 +307,7 @@ describe('recordOfflinePayment', () => {
      * absence and not a decline — the caller's toast carries the server's own message.
      */
     it('lets a refusal through — a card charge already in flight, for instance', () => {
-        responses['POST /payments/orders/order-1/offline'] = {
+        responses['POST /orders/order-1/payments'] = {
             status: 409,
             code: 'PAYMENT_IN_FLIGHT',
             message: 'A card payment is already in progress for this order.'
@@ -421,10 +422,26 @@ describe('refundPayment', () => {
         const store = usePaymentsStore();
 
         return store.refundPayment(TARGET_1, 12.5).then(() => {
-            expect(contractRequest(schemas.RefundPaymentByOrderBody, refundCall()?.data)).toEqual({
+            expect(contractRequest(schemas.CreateRefundBody, refundCall()?.data)).toEqual({
                 amount: 12.5
             });
             expect(store.payment?.amountRefunded).toBe(12.5);
+        });
+    });
+
+    it('answers the record a refusal left, a normal answer and not an error', () => {
+        const refused = { ...REFUND, status: 'failed', failureReason: 'declined' };
+        responses['POST /payments/payment-1/refunds'] = refused;
+        responses['GET /payments/payment-1'] = {
+            ...PAYMENT,
+            actions: { pay: false, sync: false, refund: true, settleByHand: ['refund-1'] }
+        };
+        const store = usePaymentsStore();
+
+        return store.refundPayment(TARGET_1, 50).then((done) => {
+            expect(done?.refund).toMatchObject({ status: 'failed', failureReason: 'declined' });
+            expect(done?.payment.actions.settleByHand).toEqual(['refund-1']);
+            expect(store.payment?.actions.settleByHand).toEqual(['refund-1']);
         });
     });
 
@@ -459,7 +476,7 @@ describe('refundPayment', () => {
             .then(() => {
                 expect(requestedUrls()).toEqual([
                     '/payments/payment-1/refunds',
-                    '/payments/orders/order-1'
+                    '/orders/order-1/payments'
                 ]);
             });
     });
@@ -471,12 +488,13 @@ describe('settleRefundByHand', () => {
         provider: 'manual',
         method: 'cash',
         status: 'succeeded',
-        refundedByHand: true,
+        refunds: [{ ...REFUND, status: 'succeeded', settledByHand: true }],
         actions: { pay: false, sync: false, refund: false, settleByHand: [] }
     };
 
-    it('posts to the refund and mirrors the payment the answer carries', () => {
-        responses['POST /payments/payment-1/refunds/refund-1/settle'] = SETTLED;
+    it('posts to the refund, then reads the payment again and mirrors it', () => {
+        responses['POST /payments/payment-1/refunds/refund-1/settle'] = SETTLED.refunds[0];
+        responses['GET /payments/payment-1'] = SETTLED;
         const store = usePaymentsStore();
         store.payment = aPayment({
             id: 'payment-1',
@@ -486,13 +504,17 @@ describe('settleRefundByHand', () => {
         return store
             .settleRefundByHand({ id: 'payment-1', orderId: 'order-1' }, 'refund-1')
             .then(() => {
-                expect(requestedUrls()).toEqual(['/payments/payment-1/refunds/refund-1/settle']);
+                expect(requestedUrls()).toEqual([
+                    '/payments/payment-1/refunds/refund-1/settle',
+                    '/payments/payment-1'
+                ]);
                 expect(store.payment?.actions.settleByHand).toEqual([]);
             });
     });
 
     it('leaves another order’s cached payment alone', () => {
-        responses['POST /payments/payment-9/refunds/refund-1/settle'] = {
+        responses['POST /payments/payment-9/refunds/refund-1/settle'] = SETTLED.refunds[0];
+        responses['GET /payments/payment-9'] = {
             ...SETTLED,
             id: 'payment-9',
             orderId: 'order-9'
@@ -520,22 +542,22 @@ describe('settleRefundByHand', () => {
             .then(() => {
                 expect(requestedUrls()).toEqual([
                     '/payments/payment-1/refunds/refund-1/settle',
-                    '/payments/orders/order-1'
+                    '/orders/order-1/payments'
                 ]);
             });
     });
 });
 
-describe('readPaymentForOrder', () => {
+describe('readPayment', () => {
     it('reads the payment without replacing the order page’s cached one', () => {
-        responses['GET /payments/orders/order-2'] = {
+        responses['GET /payments/payment-2'] = {
             ...PAYMENT,
             id: 'payment-2',
             orderId: 'order-2'
         };
         const store = usePaymentsStore();
 
-        return store.readPaymentForOrder('order-2').then((read) => {
+        return store.readPayment('payment-2').then((read) => {
             expect(read?.id).toBe('payment-2');
             expect(store.payment).toBeUndefined();
         });
@@ -582,7 +604,7 @@ describe('the refund key after a failure', () => {
             .refundPayment(TARGET_1)
             .catch(() => undefined)
             .then(() => {
-                expect(requestedUrls()).toContain('/payments/orders/order-1');
+                expect(requestedUrls()).toContain('/orders/order-1/payments');
             });
     });
 

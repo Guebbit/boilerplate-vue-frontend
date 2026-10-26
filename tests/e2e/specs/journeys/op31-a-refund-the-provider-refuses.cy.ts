@@ -2,7 +2,7 @@
 /**
  * @module
  * OP31 · A refund the provider refuses. The moderator refunds a paid order from the payments
- * drawer while the card network says no: the drawer shows the refusal, the Refunds tab lists the
+ * drawer while the card network says no: the drawer stays open on the refusal, the Refunds tab lists the
  * failed record with its reason, and the staff timeline (never the buyer's) keeps a "refund
  * failed" row. An hour later the Needs-attention tab lists the open refund; once the provider
  * lets it through, the retry sweep completes it, the attention list empties, the payment reads
@@ -48,7 +48,9 @@ describe('OP31 · A refund the provider refuses', () => {
             cy.get('[data-test=payment-row]').should('have.length', 1).first().click();
             cy.get('[data-test=drawer-refund]').click();
             cy.get('[data-test=app-dialog-confirm]').click();
-            cy.get('[data-test=drawer-refund-error]').should('not.be.empty');
+            // A refusal is an answer: the drawer stays open on the failed record, with its reason.
+            cy.get('[data-test=drawer-failure-reason]').should('exist');
+            cy.get('[data-test=drawer-refund-error]').should('not.exist');
             cy.get('[data-test=drawer-close]').click();
 
             cy.step('the Refunds tab lists the failed refund with its reason');
@@ -69,7 +71,7 @@ describe('OP31 · A refund the provider refuses', () => {
             cy.contains('[data-test=attention-row]', orderId).within(() => {
                 cy.get('[data-test=attention-kind]').should(
                     'contain.text',
-                    'Refund open for too long'
+                    "Waiting for the provider's answer"
                 );
                 cy.get('[data-test=attention-failure-reason]').should('exist');
             });

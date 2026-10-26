@@ -12,7 +12,11 @@
  */
 import { z } from 'zod';
 import { translate } from '@/i18n';
-import { createProductBodyPriceMin } from '@api/schemas';
+import {
+    createProductBodyPriceMin,
+    createProductBodyTranslationsOneDescriptionMax,
+    createProductBodyTranslationsOneTitleMax
+} from '@api/schemas';
 
 /**
  * Validation schemas for the product forms.
@@ -24,7 +28,10 @@ import { createProductBodyPriceMin } from '@api/schemas';
  */
 const productsTitleSchema = z
     .string()
-    .min(1, { error: () => translate('products-form.title-required') });
+    .min(1, { error: () => translate('products-form.title-required') })
+    .max(createProductBodyTranslationsOneTitleMax, {
+        error: () => translate('products-form.title-too-long')
+    });
 
 /**
  * Validation schema for a product price, enforcing the minimum declared by the API contract.
@@ -42,7 +49,12 @@ const productTranslationFieldsSchema = z.object({
     title: productsTitleSchema,
     // `.optional()`, not `.nullish()`: the write contract's `ProductTranslationFields.description`
     // has no `null` arm — omitting the key is how the field stays unset.
-    description: z.string().optional()
+    description: z
+        .string()
+        .max(createProductBodyTranslationsOneDescriptionMax, {
+            error: () => translate('products-form.description-too-long')
+        })
+        .optional()
 });
 
 /**

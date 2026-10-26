@@ -135,9 +135,8 @@ const overrideStatusOptions = computed(() =>
 /**
  * The money half of the operator's actions — `payments` answers for it, this page only asks.
  */
-const { canRefund, settleable, refund, settle, refreshPayment, refundLoading } = useOrderRefund(
-    computed(() => id)
-);
+const { canRefund, settleable, refund, cancelNotice, settle, refreshPayment, refundLoading } =
+    useOrderRefund(computed(() => id));
 
 /**
  * The operator's money actions, and whether each is still open.
@@ -246,7 +245,7 @@ const cancelOnce = (withRefund: boolean) => {
         .then(() =>
             refreshPayment().then(() =>
                 withRefund
-                    ? announceRefund('order-edit-page.cancel-refund-done')
+                    ? addMessage(cancelNotice('order-edit-page.cancel-refund-done'))
                     : addMessage(t('order-edit-page.cancel-done'))
             )
         )
@@ -284,16 +283,6 @@ const refundAmountInvalid = computed(() => Number.isNaN(refundAmount.value));
 const runRefund = () => runExclusive(refundOnce);
 
 /**
- * The toast after money was asked back: a hand-paid refund is not done until the operator has
- * handed the money back and marked it returned, so it says so instead of "refunded".
- *
- * @param doneKey - The wording for a refund that went through.
- * @returns The notification's result.
- */
-const announceRefund = (doneKey: string) =>
-    addMessage(t(settleable.value.length > 0 ? 'order-edit-page.refund-recorded' : doneKey));
-
-/**
  * Confirms that one hand-paid refund was returned outside the application, after an explicit
  * question: nothing is sent, so the click is the operator's word.
  *
@@ -326,9 +315,9 @@ const runSettle = (refundId: string, amount: string) =>
 const refundOnce = () => {
     clearActionsError();
     return refund(refundAmount.value)
-        .then(() => {
+        .then((notice) => {
             refundAmountText.value = '';
-            return announceRefund('order-edit-page.refund-done');
+            if (notice) addMessage(notice.text, notice.type);
         })
         .catch((error: unknown) => reportActionsError(error));
 };

@@ -15,6 +15,7 @@ import {
     loadBundledDictionary,
     localeDirections,
     localeNativeNames,
+    bundledLocales,
     mergeDictionaries,
     supportedLanguages,
     updateLocale,
@@ -179,6 +180,9 @@ export const fetchLocaleOverrides = (locale: string): Promise<TranslationDiction
  * supported, and the switcher stops offering it. The deployment's default and fallback languages
  * are never taken away, so there is always a language to redirect to.
  *
+ * Safe to run again: `main.ts` re-runs it whenever the session changes (sign-in, restore,
+ * sign-out), because the manifest differs per caller (staff also see draft languages).
+ *
  * Mutates the exported array rather than returning a new one, because `supportedLanguages` is
  * imported by value in a dozen places and reassigning the binding would leave them on the old list.
  *
@@ -186,14 +190,15 @@ export const fetchLocaleOverrides = (locale: string): Promise<TranslationDiction
  */
 export const mergeRemoteLocales = (): Promise<string[]> =>
     readRemoteLocales().then(({ offered, switchedOff, keep }) => {
-        const added = offered.filter((locale) => !supportedLanguages.includes(locale));
+        // Rebuilt from the folder every time, so a re-read after sign-out drops what only a
+        // signed-in caller (a draft language) was offered.
+        const target = [...new Set([...bundledLocales, ...offered])].filter(
+            (locale) => keep.includes(locale) || !switchedOff.includes(locale)
+        );
+        const added = target.filter((locale) => !supportedLanguages.includes(locale));
 
-        supportedLanguages.push(...added);
-
-        for (const locale of switchedOff) {
-            const index = supportedLanguages.indexOf(locale);
-            if (index !== -1 && !keep.includes(locale)) supportedLanguages.splice(index, 1);
-        }
+        // splice(0, n, ...items): replace the whole content in place (the binding is shared).
+        supportedLanguages.splice(0, supportedLanguages.length, ...target);
 
         return added;
     });

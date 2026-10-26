@@ -6,6 +6,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import ReturnStaffActions from '../components/ReturnStaffActions.vue';
 import { useReturnsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
@@ -101,6 +102,19 @@ describe('ReturnStaffActions', () => {
         await flushPromises();
 
         expect(store.receive).toHaveBeenCalledWith('r1', undefined);
+    });
+
+    it('says the money is still owed when the receipt answers received', async () => {
+        const { wrapper, store } = mountActions(
+            aReturn({ actions: { approve: false, decline: false, receive: true } })
+        );
+        vi.mocked(store.receive).mockResolvedValue(aReturn({ status: 'received' }));
+
+        await wrapper.get('[data-test=return-receive-form]').trigger('submit');
+        await flushPromises();
+
+        const toasts = useNotificationsStore().history.map(({ message }) => message);
+        expect(toasts.some((message) => message.includes('refund is not settled yet'))).toBe(true);
     });
 
     it('receives with the handling deduction as a number', async () => {

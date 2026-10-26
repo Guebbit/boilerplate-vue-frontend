@@ -26,7 +26,7 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
-import { returnNoteSchema } from '../schemas.ts';
+import { returnNoteSchema, returnNoteMax } from '../schemas.ts';
 import type { ReturnOptionLine, ReturnReason } from '@types';
 
 /**
@@ -351,7 +351,7 @@ const submit = () =>
                 :hint="t('returns-request.hint-note')"
                 persistent-hint
                 rows="3"
-                maxlength="1000"
+                :maxlength="returnNoteMax"
                 counter
                 v-bind="fieldErrorProps(showFormErrors ? (formErrors.note ?? []) : [])"
                 hide-details="auto"

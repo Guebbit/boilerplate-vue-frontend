@@ -10,7 +10,11 @@
  */
 import { z } from 'zod';
 import { translate } from '@/i18n';
-import { createWebhookSubscriptionBodyUrlRegExp } from '@api/schemas';
+import {
+    createWebhookSubscriptionBodyDescriptionMax,
+    createWebhookSubscriptionBodyUrlMax,
+    createWebhookSubscriptionBodyUrlRegExp
+} from '@api/schemas';
 
 /**
  * Validation schema for a subscription's target URL: syntactically valid, and `https://`
@@ -20,6 +24,9 @@ import { createWebhookSubscriptionBodyUrlRegExp } from '@api/schemas';
  */
 const webhookUrlSchema = z
     .url({ error: () => translate('webhooks-form.url-invalid') })
+    .max(createWebhookSubscriptionBodyUrlMax, {
+        error: () => translate('webhooks-form.url-too-long')
+    })
     .regex(createWebhookSubscriptionBodyUrlRegExp, {
         error: () => translate('webhooks-form.url-must-be-https')
     });
@@ -38,7 +45,12 @@ const webhookEventTypesSchema = z
  */
 export const webhookCreateSchema = z.object({
     url: webhookUrlSchema,
-    description: z.string().optional(),
+    description: z
+        .string()
+        .max(createWebhookSubscriptionBodyDescriptionMax, {
+            error: () => translate('webhooks-form.description-too-long')
+        })
+        .optional(),
     eventTypes: webhookEventTypesSchema
 });
 

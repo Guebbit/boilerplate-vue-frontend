@@ -32,3 +32,12 @@ export const returnNoteSchema = z
         error: () =>
             translate('returns-request.error-note-too-long', { max: createReturnBodyNoteMax })
     });
+
+/**
+ * The contract's bounds for the decline reason and the return note; views read them from here
+ * because a component does not import `@api/schemas`.
+ */
+export {
+    declineReturnBodyReasonMax as declineReasonMax,
+    createReturnBodyNoteMax as returnNoteMax
+} from '@api/schemas';

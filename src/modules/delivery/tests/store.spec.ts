@@ -89,7 +89,7 @@ beforeEach(() => {
         'POST /delivery/fulfillment-orders/fo1/release': aFulfillmentOrder(),
         'PATCH /delivery/shipments/s1': aShipment({ trackingCode: 'TRK-9' }),
         'POST /delivery/shipments/s1/deliver': aShipment({ status: 'delivered' }),
-        'POST /delivery/orders/order-3/start': {
+        'POST /orders/order-3/process': {
             id: 'order-3',
             userId: 'u1',
             email: 'shopper@example.com',
@@ -189,10 +189,10 @@ describe('fetchFulfillmentForOrder', () => {
     });
 });
 
-describe('start', () => {
+describe('process', () => {
     it('resolves once fulfilment starts, without touching the lists — this module owns no order data', () => {
         const store = useDeliveryStore();
-        return store.start('order-3').then((result) => {
+        return store.process('order-3').then((result) => {
             expect(result).toBeUndefined();
             expect(store.fulfillmentOrders).toEqual([]);
         });
