@@ -11,8 +11,9 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * The staff's three moves on a return — approve, decline (with the reason the customer is told),
- * receive (with an optional handling deduction). Which of them is open is the server's
+ * The staff's four moves on a return — approve, decline (with the reason the customer is told),
+ * receive (with an optional handling deduction), close by hand (with an optional note, when the
+ * money will not follow the usual way). Which of them is open is the server's
  * `Return.actions`; this component renders that answer and re-implements none of the lifecycle.
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
@@ -24,7 +25,12 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
-import { declineReasonSchema, declineReasonMax } from '../schemas.ts';
+import {
+    closeNoteMax,
+    closeNoteSchema,
+    declineReasonSchema,
+    declineReasonMax
+} from '../schemas.ts';
 import type { Return } from '@types';
 
 /**
@@ -58,7 +64,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * The three moves.
  */
-const { approve, decline, receive } = useReturnsStore();
+const { approve, decline, receive, close } = useReturnsStore();
 
 /**
  * True while any move is in flight; disables every button so two cannot race from one screen.
@@ -124,6 +130,33 @@ const {
     applyServerErrors: applyReceiveErrors
 } = useStructureFormValidation({ handlingDeduction: '' }, receiveSchema, {
     formElement: receiveElement,
+    revalidateOn: locale,
+    onInvalid: () => addMessage(t('generic.fix-errors'))
+});
+
+/**
+ * The close form's element.
+ */
+const closeElement = ref<HTMLFormElement>();
+
+/**
+ * Closing takes an optional note: the audit row keeps it, nothing else reads it.
+ */
+const closeSchema = z.object({
+    note: closeNoteSchema
+});
+
+/**
+ * The close form's state, errors and submit gating.
+ */
+const {
+    form: closeForm,
+    formErrors: closeErrors,
+    showFormErrors: showCloseErrors,
+    handleSubmit: handleCloseSubmit,
+    applyServerErrors: applyCloseErrors
+} = useStructureFormValidation({ note: '' }, closeSchema, {
+    formElement: closeElement,
     revalidateOn: locale,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
@@ -208,6 +241,20 @@ const submitReceive = () =>
             'refund-notice.receive-owed'
         )
     );
+
+/**
+ * Validates the optional note, then closes the return by hand.
+ *
+ * @returns A promise settling once the move finished.
+ */
+const submitClose = () =>
+    handleCloseSubmit(({ note }) =>
+        run(
+            () => close(props.item.id, note === '' ? undefined : note),
+            'return-staff-actions.success-close',
+            applyCloseErrors
+        )
+    );
 </script>
 
 <template>
@@ -275,6 +322,30 @@ const submitReceive = () =>
             />
             <v-btn type="submit" color="primary" data-test="return-receive" :disabled="loading">
                 {{ t('return-staff-actions.button-receive') }}
+            </v-btn>
+        </form>
+
+        <form
+            v-if="item.actions?.close"
+            ref="closeElement"
+            novalidate
+            class="flex flex-wrap items-start gap-3"
+            data-test="return-close-form"
+            @submit.prevent="submitClose"
+        >
+            <v-text-field
+                v-model="closeForm.note"
+                :label="t('return-staff-actions.label-close-note')"
+                :hint="t('return-staff-actions.hint-close')"
+                persistent-hint
+                v-bind="fieldErrorProps(showCloseErrors ? (closeErrors.note ?? []) : [])"
+                :maxlength="closeNoteMax"
+                class="w-full grow sm:w-auto sm:min-w-64"
+                hide-details="auto"
+                data-test="return-close-note"
+            />
+            <v-btn type="submit" variant="tonal" data-test="return-close" :disabled="loading">
+                {{ t('return-staff-actions.button-close') }}
             </v-btn>
         </form>
 

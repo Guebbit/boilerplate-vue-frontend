@@ -6,7 +6,11 @@
  */
 import { z } from 'zod';
 import { translate } from '@/i18n';
-import { createReturnBodyNoteMax, declineReturnBodyReasonMax } from '@api/schemas';
+import {
+    closeReturnBodyNoteMax,
+    createReturnBodyNoteMax,
+    declineReturnBodyReasonMax
+} from '@api/schemas';
 
 /**
  * Staff's reason for declining a return: required, within the decline operation's cap.
@@ -20,6 +24,18 @@ export const declineReasonSchema = z
             translate('return-staff-actions.error-reason-too-long', {
                 max: declineReturnBodyReasonMax
             })
+    });
+
+/**
+ * Staff's optional note when closing a return by hand, within the close operation's cap. Empty is
+ * fine: closing is housekeeping, and the audit row only keeps a note when there is one.
+ */
+export const closeNoteSchema = z
+    .string()
+    .trim()
+    .max(closeReturnBodyNoteMax, {
+        error: () =>
+            translate('return-staff-actions.error-note-too-long', { max: closeReturnBodyNoteMax })
     });
 
 /**
@@ -38,6 +54,7 @@ export const returnNoteSchema = z
  * because a component does not import `@api/schemas`.
  */
 export {
+    closeReturnBodyNoteMax as closeNoteMax,
     declineReturnBodyReasonMax as declineReasonMax,
     createReturnBodyNoteMax as returnNoteMax
 } from '@api/schemas';
