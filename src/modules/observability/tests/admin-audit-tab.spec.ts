@@ -53,7 +53,8 @@ const mountTab = (props: { endpoint: 'platform' | 'shop'; target?: string }) => 
 
 beforeEach(() => {
     vi.clearAllMocks();
-    return loadLocale('en');
+    // The tab writes its state into the current route's query, so a real route must be current.
+    return router.push('/en/audit').then(() => loadLocale('en'));
 });
 
 describe('endpoint selection', () => {
@@ -292,5 +293,21 @@ describe('own money', () => {
             expect(wrapper.findAll('[data-test=audit-own-order]')).toHaveLength(1);
             expect(wrapper.get('[data-test=audit-own-order]').text()).toBe('Own order');
         });
+    });
+});
+
+describe('list state in the URL', () => {
+    it('opens on the filters and page its link names', () => {
+        return router
+            .push('/en/audit?audit-actor=ada&audit-page=3&audit-pageSize=20')
+            .then(() => {
+                mountTab({ endpoint: 'platform' });
+                return flushPromises();
+            })
+            .then(() => {
+                expect(listObservabilityAuditEntries).toHaveBeenCalledWith(
+                    expect.objectContaining({ actor: 'ada', page: 3, pageSize: 20 })
+                );
+            });
     });
 });

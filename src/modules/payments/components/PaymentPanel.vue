@@ -382,7 +382,7 @@ watch(
                 {{ t('payments-panel.refund-card-pending') }}
             </p>
             <p
-                v-else-if="payment.refundedByHand"
+                v-else-if="payment.refunds.some((refund) => refund.settledByHand)"
                 class="mt-2 mb-0 text-sm"
                 data-test="payment-refunded-by-hand"
             >

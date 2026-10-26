@@ -17,7 +17,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { aPayment, aProblem } from '../../../../tests/support/unit/fixtures.ts';
-import type { Payment } from '@types';
+import type { Payment, Refund } from '@types';
 
 wireModulesIntoCore();
 
@@ -30,6 +30,16 @@ const router = createRouter({
 });
 
 /** A payment with everything the drawer can show. */
+/** A record of the refund the request wrote, for the specs that stub the store's answer. */
+const SETTLED_REFUND: Refund = {
+    id: 'r-new',
+    amount: 100,
+    currency: 'EUR',
+    status: 'succeeded',
+    reason: 'goodwill',
+    createdAt: '2026-03-05T10:00:00Z'
+};
+
 const FULL: Payment = aPayment({
     providerRef: 'pi_abc123',
     cardLast4: '4242',
@@ -119,7 +129,10 @@ describe('PaymentDrawer', () => {
 
     it('refunds the whole remainder after a confirmation, then tells the list and closes', async () => {
         const store = usePaymentsStore();
-        const refund = vi.spyOn(store, 'refundPayment').mockResolvedValue(FULL);
+        const refund = vi.spyOn(store, 'refundPayment').mockResolvedValue({
+            payment: FULL,
+            refund: { ...SETTLED_REFUND, status: 'succeeded' }
+        });
         vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
         const wrapper = mountDrawer(FULL);
 
@@ -131,8 +144,26 @@ describe('PaymentDrawer', () => {
         expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]);
     });
 
+    it('stays open when the provider refused the refund, so Mark returned is in reach', async () => {
+        const store = usePaymentsStore();
+        vi.spyOn(store, 'refundPayment').mockResolvedValue({
+            payment: FULL,
+            refund: { ...SETTLED_REFUND, status: 'failed', failureReason: 'declined' }
+        });
+        vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+        const wrapper = mountDrawer(FULL);
+
+        await wrapper.get('[data-test="drawer-refund"]').trigger('click');
+        await flushPromises();
+
+        expect(wrapper.emitted('changed')).toHaveLength(1);
+        expect(wrapper.emitted('update:modelValue')?.at(-1)).not.toEqual([false]);
+    });
+
     it('refunds once when the button is pressed twice before the first answer', async () => {
-        const refund = vi.spyOn(usePaymentsStore(), 'refundPayment').mockResolvedValue(FULL);
+        const refund = vi
+            .spyOn(usePaymentsStore(), 'refundPayment')
+            .mockResolvedValue({ payment: FULL, refund: SETTLED_REFUND });
         const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
         const wrapper = mountDrawer(FULL);
         const button = wrapper.get('[data-test="drawer-refund"]');
@@ -146,7 +177,9 @@ describe('PaymentDrawer', () => {
     });
 
     it('does nothing when the confirmation is declined', async () => {
-        const refund = vi.spyOn(usePaymentsStore(), 'refundPayment').mockResolvedValue(FULL);
+        const refund = vi
+            .spyOn(usePaymentsStore(), 'refundPayment')
+            .mockResolvedValue({ payment: FULL, refund: SETTLED_REFUND });
         vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(false);
         const wrapper = mountDrawer(FULL);
 

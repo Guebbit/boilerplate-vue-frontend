@@ -63,9 +63,14 @@ const localesStore = useLocalesStore();
 /**
  * The manifest and its fallback locale. The manifest is every language the caller may write into:
  * a switched-off one (`active: false`) reaches only staff holding `display:Locale`, and the tab bar
- * offers it as a draft.
+ * offers it as a draft. `loading` is any read or write in flight; `saving` is the save alone.
  */
-const { capabilities, fallbackLocale } = storeToRefs(localesStore);
+const {
+    capabilities,
+    fallbackLocale,
+    loading,
+    savingEntityTranslations: saving
+} = storeToRefs(localesStore);
 
 /**
  * The session, for the two rules this screen renders from: `translations.read` to enter, and
@@ -120,14 +125,6 @@ const openTags = useTranslationTabOrder(() => drafts.value, fallbackLocale);
 const activeTab = ref<string>();
 
 /**
- * Whether a fetch or save is in flight.
- */
-const loading = ref(false);
-
-/** Whether a save is in flight. */
-const saving = ref(false);
-
-/**
  * Order-independent text form of the drafts: a removed tab is `null`, a tab opened this session is
  * an extra key, and re-adding a closed tab must not read as a change just because the key order moved.
  *
@@ -166,7 +163,6 @@ useLeaveGuard(isDirty, () => session.isAuth);
  * @returns A promise resolving once the screen's state reflects the server's.
  */
 const load = () => {
-    loading.value = true;
     return Promise.all([
         // Refetched on every load, not cached for the session: who is signed in decides whether the
         // manifest carries the draft languages, and a session can change under an open store.
@@ -183,10 +179,7 @@ const load = () => {
             originalTags.value = Object.keys(byLocale);
             activeTab.value = openTags.value[0];
         })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error))
-        .finally(() => {
-            loading.value = false;
-        });
+        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
 };
 
 // Vue `watch` over two sources: re-load when either the entity type or id changes.
@@ -244,7 +237,6 @@ const { message: saveError, report: reportSaveError, clear: clearSaveError } = u
 const handleSave = () => {
     const body = toMergeTranslationsBody(drafts.value);
 
-    saving.value = true;
     clearSaveError();
     return localesStore
         .saveEntityTranslations(entityType.value, entityId.value, body)
@@ -252,10 +244,7 @@ const handleSave = () => {
             addMessage(t('entity-translations-page.success-save'));
             return load();
         })
-        .catch((error: unknown) => reportSaveError(error))
-        .finally(() => {
-            saving.value = false;
-        });
+        .catch((error: unknown) => reportSaveError(error));
 };
 </script>
 

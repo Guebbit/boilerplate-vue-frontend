@@ -211,6 +211,7 @@
         "failure-reason-insufficient_funds": "Fondi insufficienti",
         "failure-reason-expired_or_canceled_card": "La carta è scaduta o annullata",
         "failure-reason-lost_or_stolen_card": "La carta risulta smarrita o rubata",
+        "failure-reason-provider_removed": "Il gestore dei pagamenti non è più installato",
         "failure-reason-provider_unavailable": "Il gestore dei pagamenti non era disponibile",
         "failure-reason-unknown": "Il gestore non ha indicato un motivo utilizzabile",
         "return-reason-withdrawal": "Recesso",

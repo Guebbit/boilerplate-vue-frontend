@@ -25,6 +25,7 @@ import { RefundReason, RefundStatus } from '@/types/enums.ts';
 import type { ThemeColor } from '@/ui/types.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
+import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
@@ -86,9 +87,31 @@ const { page, pageTotal, load } = usePagedTable(refundsTotal, (pageNumber, pageS
 );
 
 /**
- * Apply the filters from the first page, or clear them all and reload.
+ * The filters and page in the URL, under the `refunds-` prefix because the payments tab keeps its
+ * own state in the same query string.
  */
-const { handleSearch, handleReset } = useListSearch({ filters, page, search: load });
+const { sync: syncUrl } = useListUrlState({
+    filters,
+    page,
+    prefix: 'refunds',
+    params: {
+        status: Object.values(RefundStatus),
+        reason: Object.values(RefundReason),
+        orderId: 'string',
+        createdFrom: 'string',
+        createdTo: 'string'
+    }
+});
+
+/**
+ * Apply the filters from the first page, or clear them all and reload; both keep the URL in step.
+ */
+const { handleSearch, handleReset } = useListSearch({
+    filters,
+    page,
+    search: load,
+    onApplied: syncUrl
+});
 
 /**
  * The status select's options, "any" first (value `null`).

@@ -89,6 +89,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
 
         filters: subscriptionFilters,
         loading: loadingSubscriptions,
+        isLoading: isLoadingSubscriptions,
         pageCurrent: subscriptionPageCurrent,
         pageSize: subscriptionPageSize,
         pageTotal: subscriptionsPageTotal,
@@ -157,6 +158,17 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         );
 
     /**
+     * Settings every subscription write shares: its own bucket, so the target page's buttons
+     * disable apart from reads, and `forced` because a keyed `fetchAny` would be served from cache.
+     */
+    const WRITE_SETTINGS = { key: ['write'], forced: true };
+
+    /**
+     * Whether a secret, enable or disable write is in flight.
+     */
+    const writingSubscription = computed(() => isLoadingSubscriptions(['write']));
+
+    /**
      * Mints a new secret onto an existing subscription's ring, without disturbing any secret
      * already on it — the ring carries both until {@link removeSecret} drops the old one.
      *
@@ -168,12 +180,14 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      * @returns The full response, including the plaintext `newSecret`
      */
     const rotateSecret = (id: string) =>
-        fetchAnySubscriptions(() =>
-            rotateWebhookSubscriptionSecret(id).then((updated) => {
-                const { secret: _secret, newSecret: _newSecret, ...record } = updated;
-                editSubscriptionRecord(record, id);
-                return updated;
-            })
+        fetchAnySubscriptions(
+            () =>
+                rotateWebhookSubscriptionSecret(id).then((updated) => {
+                    const { secret: _secret, newSecret: _newSecret, ...record } = updated;
+                    editSubscriptionRecord(record, id);
+                    return updated;
+                }),
+            WRITE_SETTINGS
         );
 
     /**
@@ -187,11 +201,13 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      * @param secretId - the ring entry to remove
      */
     const removeSecret = (id: string, secretId: string) =>
-        fetchAnySubscriptions(() =>
-            removeWebhookSubscriptionSecret(id, secretId).then((updated) => {
-                editSubscriptionRecord(updated, id);
-                return updated;
-            })
+        fetchAnySubscriptions(
+            () =>
+                removeWebhookSubscriptionSecret(id, secretId).then((updated) => {
+                    editSubscriptionRecord(updated, id);
+                    return updated;
+                }),
+            WRITE_SETTINGS
         );
 
     /**
@@ -202,11 +218,13 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      * @param id - the subscription to enable
      */
     const enableSubscription = (id: string) =>
-        fetchAnySubscriptions(() =>
-            enableWebhookSubscription(id).then((updated) => {
-                editSubscriptionRecord(updated, id);
-                return updated;
-            })
+        fetchAnySubscriptions(
+            () =>
+                enableWebhookSubscription(id).then((updated) => {
+                    editSubscriptionRecord(updated, id);
+                    return updated;
+                }),
+            WRITE_SETTINGS
         );
 
     /**
@@ -215,11 +233,13 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      * @param id - the subscription to disable
      */
     const disableSubscription = (id: string) =>
-        fetchAnySubscriptions(() =>
-            disableWebhookSubscription(id).then((updated) => {
-                editSubscriptionRecord(updated, id);
-                return updated;
-            })
+        fetchAnySubscriptions(
+            () =>
+                disableWebhookSubscription(id).then((updated) => {
+                    editSubscriptionRecord(updated, id);
+                    return updated;
+                }),
+            WRITE_SETTINGS
         );
 
     /**
@@ -303,6 +323,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
 
         subscriptionFilters,
         loadingSubscriptions,
+        writingSubscription,
         subscriptionPageCurrent,
         subscriptionPageSize,
         subscriptionsPageTotal,

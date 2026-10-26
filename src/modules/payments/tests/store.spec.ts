@@ -422,10 +422,26 @@ describe('refundPayment', () => {
         const store = usePaymentsStore();
 
         return store.refundPayment(TARGET_1, 12.5).then(() => {
-            expect(contractRequest(schemas.RefundPaymentByOrderBody, refundCall()?.data)).toEqual({
+            expect(contractRequest(schemas.CreateRefundBody, refundCall()?.data)).toEqual({
                 amount: 12.5
             });
             expect(store.payment?.amountRefunded).toBe(12.5);
+        });
+    });
+
+    it('answers the record a refusal left, a normal answer and not an error', () => {
+        const refused = { ...REFUND, status: 'failed', failureReason: 'declined' };
+        responses['POST /payments/payment-1/refunds'] = refused;
+        responses['GET /payments/payment-1'] = {
+            ...PAYMENT,
+            actions: { pay: false, sync: false, refund: true, settleByHand: ['refund-1'] }
+        };
+        const store = usePaymentsStore();
+
+        return store.refundPayment(TARGET_1, 50).then((done) => {
+            expect(done?.refund).toMatchObject({ status: 'failed', failureReason: 'declined' });
+            expect(done?.payment.actions.settleByHand).toEqual(['refund-1']);
+            expect(store.payment?.actions.settleByHand).toEqual(['refund-1']);
         });
     });
 
@@ -472,12 +488,13 @@ describe('settleRefundByHand', () => {
         provider: 'manual',
         method: 'cash',
         status: 'succeeded',
-        refundedByHand: true,
+        refunds: [{ ...REFUND, status: 'succeeded', settledByHand: true }],
         actions: { pay: false, sync: false, refund: false, settleByHand: [] }
     };
 
-    it('posts to the refund and mirrors the payment the answer carries', () => {
-        responses['POST /payments/payment-1/refunds/refund-1/settle'] = SETTLED;
+    it('posts to the refund, then reads the payment again and mirrors it', () => {
+        responses['POST /payments/payment-1/refunds/refund-1/settle'] = SETTLED.refunds[0];
+        responses['GET /payments/payment-1'] = SETTLED;
         const store = usePaymentsStore();
         store.payment = aPayment({
             id: 'payment-1',
@@ -487,13 +504,17 @@ describe('settleRefundByHand', () => {
         return store
             .settleRefundByHand({ id: 'payment-1', orderId: 'order-1' }, 'refund-1')
             .then(() => {
-                expect(requestedUrls()).toEqual(['/payments/payment-1/refunds/refund-1/settle']);
+                expect(requestedUrls()).toEqual([
+                    '/payments/payment-1/refunds/refund-1/settle',
+                    '/payments/payment-1'
+                ]);
                 expect(store.payment?.actions.settleByHand).toEqual([]);
             });
     });
 
     it('leaves another order’s cached payment alone', () => {
-        responses['POST /payments/payment-9/refunds/refund-1/settle'] = {
+        responses['POST /payments/payment-9/refunds/refund-1/settle'] = SETTLED.refunds[0];
+        responses['GET /payments/payment-9'] = {
             ...SETTLED,
             id: 'payment-9',
             orderId: 'order-9'

@@ -24,7 +24,7 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
-import { declineReasonSchema } from '../schemas.ts';
+import { declineReasonSchema, declineReasonMax } from '../schemas.ts';
 import type { Return } from '@types';
 
 /**
@@ -136,17 +136,24 @@ const {
  * @param applyFieldErrors - The submitting form's own `applyServerErrors`, so a refusal that
  *  names one of its fields lands on it; absent for a move with no form. It calls `onUnmapped`
  *  for whatever no field took, which is what makes the general error appear.
+ * @param owed - The toast key for a move that answered `received` (its money still owed), when
+ *  that differs from `success`.
  * @returns A promise settling once the move finished.
  */
 const run = (
     move: () => Promise<unknown>,
     success: string,
-    applyFieldErrors?: (error: unknown, options: { onUnmapped: () => void }) => boolean
+    applyFieldErrors?: (error: unknown, options: { onUnmapped: () => void }) => boolean,
+    owed?: string
 ) => {
     clearMoveError();
     return move()
-        .then(() => {
-            addMessage(t(success));
+        .then((moved) => {
+            // A receipt whose refund has not landed yet is still a receipt: say the money is owed.
+            const stillOwed =
+                owed !== undefined &&
+                (moved as { status?: string } | undefined)?.status === 'received';
+            addMessage(t(stillOwed ? owed : success));
             emit('changed');
         })
         .catch((error: unknown) => {
@@ -197,7 +204,8 @@ const submitReceive = () =>
                         : { handlingDeduction: Number(handlingDeduction) }
                 ),
             'return-staff-actions.success-receive',
-            applyReceiveErrors
+            applyReceiveErrors,
+            'refund-notice.receive-owed'
         )
     );
 </script>
@@ -226,7 +234,7 @@ const submitReceive = () =>
                 v-model="declineForm.reason"
                 :label="t('return-staff-actions.label-reason')"
                 v-bind="fieldErrorProps(showDeclineErrors ? (declineErrors.reason ?? []) : [])"
-                maxlength="500"
+                :maxlength="declineReasonMax"
                 class="w-full grow sm:w-auto sm:min-w-64"
                 hide-details="auto"
                 data-test="return-decline-reason"

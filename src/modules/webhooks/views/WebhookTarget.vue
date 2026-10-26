@@ -74,7 +74,7 @@ const {
 /**
  * The subscription being displayed.
  */
-const { currentSubscription } = storeToRefs(useWebhooksStore());
+const { currentSubscription, writingSubscription } = storeToRefs(useWebhooksStore());
 
 /**
  * Selects and loads the subscription whenever the route id changes; a missing or forbidden one
@@ -136,12 +136,6 @@ const retiresAtBySecret = computed(
 const revealedSecret = ref<string>();
 
 /**
- * Whether an enable/disable/rotate/remove call is in flight, disabling the secret-ring buttons while one
- * settles.
- */
-const busy = ref(false);
-
-/**
  * The status action's own blocked state — enable and disable share one control area, so they
  * share one alert beside it.
  */
@@ -157,13 +151,9 @@ const {
 const handleEnable = () => {
     if (!id) return;
     clearStatusError();
-    busy.value = true;
     return enableSubscription(id)
         .then(() => addMessage(t('webhook-target-page.success-enable')))
-        .catch((error: unknown) => reportStatusError(error))
-        .finally(() => {
-            busy.value = false;
-        });
+        .catch((error: unknown) => reportStatusError(error));
 };
 
 /**
@@ -181,13 +171,9 @@ const handleDisable = singleFlight(() => {
         .then((accepted) => {
             if (!accepted) return;
             clearStatusError();
-            busy.value = true;
             return disableSubscription(id)
                 .then(() => addMessage(t('webhook-target-page.success-disable')))
-                .catch((error: unknown) => reportStatusError(error))
-                .finally(() => {
-                    busy.value = false;
-                });
+                .catch((error: unknown) => reportStatusError(error));
         });
 });
 
@@ -207,15 +193,11 @@ const {
 const handleRotateSecret = () => {
     if (!id) return;
     clearRotateSecretError();
-    busy.value = true;
     return rotateSecret(id)
         .then((updated) => {
             if (updated?.newSecret) revealedSecret.value = updated.newSecret;
         })
-        .catch((error: unknown) => reportRotateSecretError(error))
-        .finally(() => {
-            busy.value = false;
-        });
+        .catch((error: unknown) => reportRotateSecretError(error));
 };
 
 /**
@@ -244,13 +226,9 @@ const handleRemoveSecret = singleFlight((secretId: string) => {
         .then((accepted) => {
             if (!accepted) return;
             clearRemoveSecretError();
-            busy.value = true;
             return removeSecret(id, secretId)
                 .then(() => addMessage(t('webhook-target-page.success-remove-secret')))
-                .catch((error: unknown) => reportRemoveSecretError(error))
-                .finally(() => {
-                    busy.value = false;
-                });
+                .catch((error: unknown) => reportRemoveSecretError(error));
         });
 });
 
@@ -414,7 +392,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                         v-if="currentSubscription.actions.enable"
                         variant="tonal"
                         color="success"
-                        :disabled="busy"
+                        :disabled="writingSubscription"
                         data-test="webhook-enable"
                         @click="handleEnable"
                     >
@@ -424,7 +402,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                         v-if="currentSubscription.actions.disable"
                         variant="tonal"
                         color="secondary"
-                        :disabled="busy"
+                        :disabled="writingSubscription"
                         data-test="webhook-disable"
                         @click="handleDisable"
                     >
@@ -480,7 +458,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                                         size="small"
                                         variant="tonal"
                                         color="error"
-                                        :disabled="busy"
+                                        :disabled="writingSubscription"
                                         :aria-label="
                                             t('webhook-target-page.button-remove-secret-named', {
                                                 id: secretId
@@ -501,7 +479,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                         class="mt-4"
                         variant="tonal"
                         color="secondary"
-                        :disabled="busy"
+                        :disabled="writingSubscription"
                         data-test="webhook-rotate-secret"
                         @click="handleRotateSecret"
                     >

@@ -64,19 +64,21 @@ const { t } = i18n;
 const session = useSessionStore();
 
 /**
- * The rows, oldest first, as the server filtered them for this caller.
+ * The rows, oldest first, as the server filtered them for this caller. Absent until the first read
+ * lands.
  */
-const entries = ref<OrderTimelineEntry[]>([]);
-
-/**
- * Whether the first read is still in flight.
- */
-const loading = ref(true);
+const entries = ref<OrderTimelineEntry[]>();
 
 /**
  * The read's own blocked state: a failure shows in place of the list, not as a toast.
  */
 const { message: readError, report: reportReadError, clear: clearReadError } = useBlockingError();
+
+/**
+ * Whether the first read is still in flight: nothing has arrived and nothing has failed. Derived,
+ * not a flag — a refresh keeps the rows on screen and never brings the notice back.
+ */
+const loading = computed(() => entries.value === undefined && readError.value === undefined);
 
 /**
  * The helpers `describeTimelineEntry` needs, bound to this app's i18n and formatters.
@@ -93,7 +95,7 @@ const tools: TimelineTools = {
  * Each row with its line, rebuilt when the rows or the language change.
  */
 const lines = computed(() =>
-    entries.value.map((entry) => ({ entry, line: describeTimelineEntry(entry, tools) }))
+    (entries.value ?? []).map((entry) => ({ entry, line: describeTimelineEntry(entry, tools) }))
 );
 
 /**
@@ -127,9 +129,6 @@ const load = () => {
         })
         .catch((error: unknown) => {
             if (read === latestRead) reportReadError(error);
-        })
-        .finally(() => {
-            if (read === latestRead) loading.value = false;
         });
 };
 

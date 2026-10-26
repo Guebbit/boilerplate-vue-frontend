@@ -6,7 +6,7 @@
  * a record's own history and the shop-wide audit page without duplicating the fetch/pagination
  * wiring three times.
  */
-import { computed, reactive } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RouterLink, useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -23,6 +23,7 @@ import type { AuditEntryItem } from '@types';
 import type { AdminAuditFilters } from '../types.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
+import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 
 /**
  * i18n translator for this component's template and messages.
@@ -61,18 +62,57 @@ const { entries, total, pages, loading, error, fetchPage } = useAuditTrail(props
 const DEFAULT_PAGE_SIZE = 50;
 
 /**
- * Live audit filter form state, sent as-is to {@link fetchPage}.
+ * The criteria the form edits; the page and its size are their own refs below.
  */
-const filters = reactive<AdminAuditFilters>({
-    actor: undefined,
-    action: undefined,
-    outcome: undefined,
-    since: undefined,
-    target: props.endpoint === 'shop' ? props.target : undefined,
-    ownOrder: undefined,
-    page: 1,
-    pageSize: DEFAULT_PAGE_SIZE
+type AuditCriteria = Omit<AdminAuditFilters, 'page' | 'pageSize'>;
+
+/**
+ * Live audit filter form state.
+ */
+const filters = ref<AuditCriteria>({
+    target: props.endpoint === 'shop' ? props.target : undefined
 });
+
+/**
+ * The page shown, 1-based. Kept apart from {@link filters} so the URL helper can restore the
+ * criteria without touching it.
+ */
+const page = ref(1);
+
+/**
+ * Rows per page.
+ */
+const pageSize = ref(DEFAULT_PAGE_SIZE);
+
+/**
+ * Keeps the criteria, page and page size in the URL under `audit-`, so a filtered trail can be
+ * handed to support as a link.
+ */
+const { sync: syncUrl } = useListUrlState({
+    filters,
+    page,
+    pageSize,
+    prefix: 'audit',
+    params: {
+        actor: 'string',
+        action: 'string',
+        outcome: ['success', 'failure'],
+        since: 'string',
+        target: 'string',
+        ownOrder: 'boolean'
+    }
+});
+
+// A link without a `target` still starts a record's own history on that record.
+if (filters.value.target === undefined && props.endpoint === 'shop' && props.target)
+    filters.value.target = props.target;
+
+/**
+ * Reads the page the criteria and page state name.
+ *
+ * @returns The fetch promise, resolving once the page is loaded (or `error` is set).
+ */
+const load = () => fetchPage({ ...filters.value, page: page.value, pageSize: pageSize.value });
 
 /**
  * Options of the outcome select. The "all" row's value is `null`, not `undefined` —
@@ -92,9 +132,9 @@ const outcomeOptions = computed(() => [
  * {@link filters}.
  */
 const outcomeChoice = useAnyFilterChoice(
-    () => filters.outcome,
+    () => filters.value.outcome,
     (value) => {
-        filters.outcome = value;
+        filters.value.outcome = value;
     }
 );
 
@@ -128,23 +168,24 @@ const tableHeaders = computed<CoreDataTableHeader<AuditEntryItem>[]>(() => [
  */
 const handleSearch = () => {
     // Back to the first page: the previous page number belongs to the previous result set.
-    filters.page = 1;
-    return fetchPage({ ...filters });
+    page.value = 1;
+    syncUrl();
+    return load();
 };
 
 /**
  * Turning the pager re-runs the search on that page.
  *
- * The page lives in the filter bag rather than in separate state: the trail is append-only and
- * paged from the newest end, so a page number that outlived its filters would point at a
- * different set of rows than the one the visitor was reading.
+ * The page is not remembered across a filter change: the trail is append-only and paged from the
+ * newest end, so a page number that outlived its filters would point at a different set of rows
+ * than the one the visitor was reading.
  *
- * @param page - The 1-based page the pager moved to.
+ * @param next - The 1-based page the pager moved to.
  * @returns The fetch promise, resolving once the page is loaded.
  */
-const handlePageChange = (page: number) => {
-    filters.page = page;
-    return fetchPage({ ...filters });
+const handlePageChange = (next: number) => {
+    page.value = next;
+    return load();
 };
 
 /**
@@ -153,15 +194,9 @@ const handlePageChange = (page: number) => {
  * @returns The fetch promise, resolving once the page is loaded.
  */
 const handleReset = () => {
-    filters.actor = undefined;
-    filters.action = undefined;
-    filters.outcome = undefined;
-    filters.since = undefined;
-    filters.target = undefined;
-    filters.ownOrder = undefined;
-    filters.page = 1;
-    filters.pageSize = DEFAULT_PAGE_SIZE;
-    return fetchPage({ ...filters });
+    filters.value = {};
+    pageSize.value = DEFAULT_PAGE_SIZE;
+    return handleSearch();
 };
 
 /**
@@ -186,7 +221,7 @@ const truncateId = (value?: string, length = 8) =>
     value ? `${value.slice(0, length)}...` : EMPTY_VALUE;
 
 // The initial load: the first page, unfiltered.
-void fetchPage({ ...filters });
+void load();
 </script>
 
 <template>
@@ -240,7 +275,7 @@ void fetchPage({ ...filters });
                         hide-details
                     />
                     <PageSizeSelect
-                        v-model="filters.pageSize"
+                        v-model="pageSize"
                         :sizes="pageSizeOptions"
                         @update:model-value="handleSearch"
                     />
@@ -367,7 +402,7 @@ void fetchPage({ ...filters });
         </DataTable>
 
         <ListPagination
-            :model-value="filters.page"
+            :model-value="page"
             :length="pages"
             :aria-label="t('admin-page.audit-pagination')"
             @update:model-value="handlePageChange"

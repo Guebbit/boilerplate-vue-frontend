@@ -19,6 +19,7 @@ export default {
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref, watch } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -83,6 +84,11 @@ const { id } = defineProps<{
 const { fetchProductAdmin, updateProduct } = useProductsStore();
 
 /**
+ * Whether the admin record is currently loading.
+ */
+const { loadingProductAdmin: loadingAdmin } = storeToRefs(useProductsStore());
+
+/**
  * Router, asked whether the optional `EntityTranslations` route exists in this build.
  */
 const router = useRouter();
@@ -121,24 +127,13 @@ void fetchTranslationLocales();
 const adminProduct = ref<Awaited<ReturnType<typeof fetchProductAdmin>>>();
 
 /**
- * Whether the admin record is currently loading.
- */
-const loadingAdmin = ref(false);
-
-/**
  * (Re)loads the admin record for `id`.
  */
-const loadAdminProduct = (productId: string) => {
-    loadingAdmin.value = true;
-    return fetchProductAdmin(productId)
-        .then((data) => {
-            adminProduct.value = data;
-            return data;
-        })
-        .finally(() => {
-            loadingAdmin.value = false;
-        });
-};
+const loadAdminProduct = (productId: string) =>
+    fetchProductAdmin(productId).then((data) => {
+        adminProduct.value = data;
+        return data;
+    });
 
 /**
  * Decimal places this product's own price field should accept — a KWD product can't round-trip

@@ -176,7 +176,6 @@ const auditLink = computed(() => {
                     {{ t(`payments-list-page.failure-reason-${item.failureReason}`) }}
                 </p>
                 <v-btn
-                    v-if="item.kind === 'manual_refund_owed'"
                     class="mt-1"
                     size="small"
                     variant="tonal"

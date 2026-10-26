@@ -32,6 +32,8 @@
     "webhooks-form": {
         "url-invalid": "Enter a valid URL",
         "url-must-be-https": "The URL must use https://",
+        "url-too-long": "The URL is too long",
+        "description-too-long": "Description is too long",
         "event-types-required": "Choose at least one event",
         "error-load-events": "Could not load the list of events"
     },

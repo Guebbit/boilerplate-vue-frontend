@@ -4,6 +4,7 @@
  * messages themselves belong to `schemas-i18n.spec.ts`; these are the rules.
  */
 import { describe, expect, it } from 'vitest';
+import { createWebhookSubscriptionBodyDescriptionMax } from '@api/schemas';
 import { webhookCreateSchema, webhookEditSchema } from '../schemas';
 
 /** A form payload that passes, for tests that vary one field away from valid. */
@@ -57,5 +58,16 @@ describe('webhookEditSchema', () => {
 
     it('has no `enabled` field: whether a subscription is on is not an edit', () => {
         expect(Object.keys(webhookEditSchema.shape)).not.toContain('enabled');
+    });
+});
+
+describe('webhookCreateSchema description bound', () => {
+    it('refuses a description past the contract maximum', () => {
+        expect(
+            webhookCreateSchema.safeParse({
+                ...validSubscription,
+                description: 'a'.repeat(createWebhookSubscriptionBodyDescriptionMax + 1)
+            }).success
+        ).toBe(false);
     });
 });

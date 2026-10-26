@@ -10,6 +10,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { loadLocale } from '@/i18n';
 import { ref } from 'vue';
 import { useOrderRefund } from '../composables/use-order-refund';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -103,9 +104,41 @@ describe('useOrderRefund', () => {
             });
     });
 
+    it('answers a refusal as a warning that names the next step, not as an error', () => {
+        responses['POST /payments/p1/refunds'] = {
+            id: 'r9',
+            amount: 10,
+            currency: 'EUR',
+            status: 'failed',
+            failureReason: 'lost_or_stolen_card',
+            reason: 'goodwill',
+            createdAt: '2026-10-24T10:00:00.000Z'
+        };
+        responses['GET /payments/p1'] = payment(true, ['r9']);
+        const { refund } = useOrderRefund(ref('o1'));
+
+        return loadLocale('en')
+            .then(() => settled())
+            .then(() => refund())
+            .then((notice) => {
+                expect(notice?.type).toBe('warning');
+                expect(notice?.text).toContain('press Mark returned');
+            });
+    });
+
     it('lists the hand-paid refunds the server names, and drops one once it is settled', () => {
         responses['GET /orders/o1/payments'] = { items: [payment(false, ['r1'])] };
-        responses['POST /payments/p1/refunds/r1/settle'] = payment(false);
+        // The settle answers the refund it settled; the payment is a read of its own.
+        responses['POST /payments/p1/refunds/r1/settle'] = {
+            id: 'r1',
+            amount: 12,
+            currency: 'EUR',
+            status: 'succeeded',
+            reason: 'goodwill',
+            settledByHand: true,
+            createdAt: '2026-03-05T10:00:00Z'
+        };
+        responses['GET /payments/p1'] = payment(false);
         const { settleable, settle } = useOrderRefund(ref('o1'));
 
         return settled()

@@ -5,19 +5,28 @@
  */
 import { z } from 'zod';
 import { translate } from '@/i18n';
-import { signupBodyUsernameMin, signupBodyPasswordMin, signupBodyPasswordMax } from '@api/schemas';
+import {
+    createUserBodyEmailMax,
+    createUserBodyUsernameMax,
+    signupBodyUsernameMin,
+    signupBodyPasswordMin,
+    signupBodyPasswordMax
+} from '@api/schemas';
 
 /**
  * Validation schema for an email address.
  */
-const usersEmailSchema = z.email({ error: () => translate('users-form.email-invalid') });
+const usersEmailSchema = z
+    .email({ error: () => translate('users-form.email-invalid') })
+    .max(createUserBodyEmailMax, { error: () => translate('users-form.email-too-long') });
 
 /**
  * Validation schema for a username, enforcing the minimum length declared by the API contract.
  */
 const usersUsernameSchema = z
     .string()
-    .min(signupBodyUsernameMin, { error: () => translate('users-form.username-min') });
+    .min(signupBodyUsernameMin, { error: () => translate('users-form.username-min') })
+    .max(createUserBodyUsernameMax, { error: () => translate('users-form.username-too-long') });
 
 /**
  * Validation schema for a password: the contract's length bounds and nothing more. No composition

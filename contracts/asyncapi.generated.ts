@@ -46,6 +46,12 @@ export interface OrderCancelledEnvelope {
   'data': OrderIdPayload;
 }
 export type OrderCancelledEventType = "order.cancelled";
+export interface OrderRedactedEnvelope {
+  'type': OrderRedactedEventType;
+  'timestamp': string;
+  'data': OrderIdPayload;
+}
+export type OrderRedactedEventType = "order.redacted";
 export interface ShipmentShippedEnvelope {
   'type': ShipmentShippedEventType;
   'timestamp': string;
@@ -56,9 +62,9 @@ export interface ShipmentPayload {
   'orderId': string;
   'shipmentId': string;
   'fulfillmentOrderId': string;
-  'lines': AnonymousSchema29[];
+  'lines': AnonymousSchema31[];
 }
-export interface AnonymousSchema29 {
+export interface AnonymousSchema31 {
   'productId': string;
   'quantity': number;
 }
@@ -140,42 +146,62 @@ export interface ExamplePublishedPayload {
   'exampleId': string;
   'title': string;
 }
+export interface UserErasedEnvelope {
+  'type': UserErasedEventType;
+  'timestamp': string;
+  'data': UserIdPayload;
+}
+export type UserErasedEventType = "user.erased";
+export interface UserIdPayload {
+  'userId': string;
+}
+export interface UserUpdatedEnvelope {
+  'type': UserUpdatedEventType;
+  'timestamp': string;
+  'data': UserUpdatedPayload;
+}
+export type UserUpdatedEventType = "user.updated";
+export interface UserUpdatedPayload {
+  'userId': string;
+  'changed': UserChangedField[];
+}
+export type UserChangedField = "username" | "email" | "phone" | "website" | "imageUrl";
 export interface NotificationCreatedPayload {
   'notification': NotificationCartLineRemovedPayload | NotificationWishlistItemRemovedPayload | NotificationCartMergeRefusedPayload | NotificationFulfillmentDelayedPayload | NotificationFulfillmentHeldPayload | NotificationStockAlertPayload;
 }
 export interface NotificationCartLineRemovedPayload {
   'id': string;
-  'code': AnonymousSchema67;
+  'code': AnonymousSchema77;
   'params': CartLineRemovedParamsPayload;
-  'severity': AnonymousSchema71;
+  'severity': AnonymousSchema81;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema67 = "notifications.cart-line-removed";
+export type AnonymousSchema77 = "notifications.cart-line-removed";
 export interface CartLineRemovedParamsPayload {
   'productId': string;
   'titles': { [name: string]: string };
 }
-export type AnonymousSchema71 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema81 = "info" | "success" | "warning" | "error";
 export interface NotificationWishlistItemRemovedPayload {
   'id': string;
-  'code': AnonymousSchema75;
+  'code': AnonymousSchema85;
   'params': CartLineRemovedParamsPayload;
-  'severity': AnonymousSchema76;
-  'readAt'?: string;
-  'createdAt': string;
-}
-export type AnonymousSchema75 = "notifications.wishlist-item-removed";
-export type AnonymousSchema76 = "info" | "success" | "warning" | "error";
-export interface NotificationCartMergeRefusedPayload {
-  'id': string;
-  'code': AnonymousSchema80;
-  'params': CartMergeRefusedParamsPayload;
   'severity': AnonymousSchema86;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema80 = "notifications.cart-merge-refused";
+export type AnonymousSchema85 = "notifications.wishlist-item-removed";
+export type AnonymousSchema86 = "info" | "success" | "warning" | "error";
+export interface NotificationCartMergeRefusedPayload {
+  'id': string;
+  'code': AnonymousSchema90;
+  'params': CartMergeRefusedParamsPayload;
+  'severity': AnonymousSchema96;
+  'readAt'?: string;
+  'createdAt': string;
+}
+export type AnonymousSchema90 = "notifications.cart-merge-refused";
 export interface CartMergeRefusedParamsPayload {
   'lines': CartMergeRefusedLinePayload[];
 }
@@ -184,16 +210,16 @@ export interface CartMergeRefusedLinePayload {
   'requested': number;
   'titles': { [name: string]: string };
 }
-export type AnonymousSchema86 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema96 = "info" | "success" | "warning" | "error";
 export interface NotificationFulfillmentDelayedPayload {
   'id': string;
-  'code': AnonymousSchema90;
+  'code': AnonymousSchema100;
   'params': FulfillmentDelayedParamsPayload;
-  'severity': AnonymousSchema97;
+  'severity': AnonymousSchema107;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema90 = "notifications.fulfillment-delayed";
+export type AnonymousSchema100 = "notifications.fulfillment-delayed";
 export interface FulfillmentDelayedParamsPayload {
   'orderId': string;
   'fulfillmentOrderId': string;
@@ -201,34 +227,34 @@ export interface FulfillmentDelayedParamsPayload {
   'agreedAt': string;
   'expectedAt'?: string;
 }
-export type AnonymousSchema97 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema107 = "info" | "success" | "warning" | "error";
 export interface NotificationFulfillmentHeldPayload {
   'id': string;
-  'code': AnonymousSchema101;
+  'code': AnonymousSchema111;
   'params': FulfillmentHeldParamsPayload;
-  'severity': AnonymousSchema106;
+  'severity': AnonymousSchema116;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema101 = "notifications.fulfillment-held";
+export type AnonymousSchema111 = "notifications.fulfillment-held";
 export interface FulfillmentHeldParamsPayload {
   'orderId': string;
   'fulfillmentOrderId': string;
-  'notice': AnonymousSchema104;
+  'notice': AnonymousSchema114;
   'message'?: string;
 }
-export type AnonymousSchema104 = "check_address" | "delayed";
-export type AnonymousSchema106 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema114 = "check_address" | "delayed";
+export type AnonymousSchema116 = "info" | "success" | "warning" | "error";
 export interface NotificationStockAlertPayload {
   'id': string;
-  'code': AnonymousSchema110;
+  'code': AnonymousSchema120;
   'params': CartLineRemovedParamsPayload;
-  'severity': AnonymousSchema111;
+  'severity': AnonymousSchema121;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema110 = "notifications.stock-alert";
-export type AnonymousSchema111 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema120 = "notifications.stock-alert";
+export type AnonymousSchema121 = "info" | "success" | "warning" | "error";
 export interface NotificationsDeletedPayload {
   'all': boolean;
   'ids': string[];
@@ -243,6 +269,7 @@ export type HeartbeatEvent = ObservabilityMetricsPayload;
 export type OrderCreatedEvent = OrderCreatedEnvelope;
 export type OrderPaidEvent = OrderPaidEnvelope;
 export type OrderCancelledEvent = OrderCancelledEnvelope;
+export type OrderRedactedEvent = OrderRedactedEnvelope;
 export type ShipmentShippedEvent = ShipmentShippedEnvelope;
 export type ShipmentDeliveredEvent = ShipmentDeliveredEnvelope;
 export type PaymentSucceededEvent = PaymentSucceededEnvelope;
@@ -252,6 +279,8 @@ export type ReturnReceivedEvent = ReturnReceivedEnvelope;
 export type ReturnClosedEvent = ReturnClosedEnvelope;
 export type ReturnRequestedEvent = ReturnRequestedEnvelope;
 export type ExamplePublishedEvent = ExamplePublishedEnvelope;
+export type UserErasedEvent = UserErasedEnvelope;
+export type UserUpdatedEvent = UserUpdatedEnvelope;
 export type NotificationCreatedEvent = NotificationCreatedPayload;
 export type NotificationsDeletedEvent = NotificationsDeletedPayload;
 export type NotificationsReadEvent = NotificationsReadPayload;
@@ -273,6 +302,7 @@ export const ORDER_CHANNELS = {
     CREATED: 'order.created',
     PAID: 'order.paid',
     CANCELLED: 'order.cancelled',
+    REDACTED: 'order.redacted',
 } as const;
 
 /* Union of every "order." channel name */
@@ -314,6 +344,15 @@ export const EXAMPLE_CHANNELS = {
 
 /* Union of every "example." channel name */
 export type ExampleChannel = (typeof EXAMPLE_CHANNELS)[keyof typeof EXAMPLE_CHANNELS];
+
+/* Channel names in the "user." namespace */
+export const USER_CHANNELS = {
+    ERASED: 'user.erased',
+    UPDATED: 'user.updated',
+} as const;
+
+/* Union of every "user." channel name */
+export type UserChannel = (typeof USER_CHANNELS)[keyof typeof USER_CHANNELS];
 
 /* Channel names in the "notifications." namespace */
 export const NOTIFICATIONS_CHANNELS = {
