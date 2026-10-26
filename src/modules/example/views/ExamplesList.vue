@@ -295,7 +295,7 @@ const handleDelete = (example: Example) =>
                         {{ t('examples-list-page.button-view') }}
                     </v-btn>
                     <v-btn
-                        v-if="item.actions?.update"
+                        v-if="item.actions.update"
                         :size="rowActionSize"
                         variant="tonal"
                         color="secondary"
@@ -308,7 +308,7 @@ const handleDelete = (example: Example) =>
                         {{ t('examples-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
-                        v-if="item.actions?.delete"
+                        v-if="item.actions.delete"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"

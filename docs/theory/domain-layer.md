@@ -186,6 +186,19 @@ Both halves are live:
 
 The same floor is applied on the API side, where it removed `nextDeletionState` and `readScope`.
 
+### A server rule is read, never copied
+
+The backend leads. A rule only the server can decide (which status can move where, how many of a
+thing, for how long) reaches the client as a flag in the record's `actions`, a field, or a
+generated constant. `domain/` holds what the client decides alone: formatting, selection,
+ordering, a client-only state machine.
+
+| Check                                                    | What it refuses                                                             |
+| -------------------------------------------------------- | --------------------------------------------------------------------------- |
+| lint, `src/modules/*/domain` block of `eslint.config.ts` | a `Record<XStatus, …>`: a table keyed by a server status                    |
+| `example-template.spec.ts`                               | a `NEXT_STATUSES` or `TRANSITIONS` export                                   |
+| audit `ddd-drift`, class F2                              | what a tool cannot see: a string comparison, a hard-coded limit or duration |
+
 ### The folder is optional
 
 Nine of the nineteen modules have one — `cart`, `delivery`, `example`, `inventory`, `locales`,

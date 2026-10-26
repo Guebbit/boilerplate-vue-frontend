@@ -3436,14 +3436,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
             thumbnailUrl: zod.string().optional(),
             publishedAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true }),
-            updatedAt: zod.iso.datetime({ offset: true }).optional(),
-            actions: zod
-                .strictObject({
-                    transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
-                    update: zod.boolean(),
-                    delete: zod.boolean()
-                })
-                .optional()
+            updatedAt: zod.iso.datetime({ offset: true }).optional()
         })
     ),
     notifications: zod.array(
@@ -10999,14 +10992,12 @@ export const ListReturnsResponse = zod.strictObject({
                 .optional(),
             refundAmount: zod.number().min(listReturnsResponseItemsItemRefundAmountMin).optional(),
             closedAt: zod.iso.datetime({ offset: true }).optional(),
-            actions: zod
-                .strictObject({
-                    approve: zod.boolean(),
-                    decline: zod.boolean(),
-                    receive: zod.boolean(),
-                    close: zod.boolean()
-                })
-                .optional(),
+            actions: zod.strictObject({
+                approve: zod.boolean(),
+                decline: zod.boolean(),
+                receive: zod.boolean(),
+                close: zod.boolean()
+            }),
             createdAt: zod.iso.datetime({ offset: true }),
             updatedAt: zod.iso.datetime({ offset: true }).optional()
         })
@@ -11129,14 +11120,12 @@ export const CreateReturnResponse = zod.strictObject({
     handlingDeduction: zod.number().min(createReturnResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(createReturnResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
-    actions: zod
-        .strictObject({
-            approve: zod.boolean(),
-            decline: zod.boolean(),
-            receive: zod.boolean(),
-            close: zod.boolean()
-        })
-        .optional(),
+    actions: zod.strictObject({
+        approve: zod.boolean(),
+        decline: zod.boolean(),
+        receive: zod.boolean(),
+        close: zod.boolean()
+    }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
@@ -11273,14 +11262,12 @@ export const GetReturnByIdResponse = zod.strictObject({
     handlingDeduction: zod.number().min(getReturnByIdResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(getReturnByIdResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
-    actions: zod
-        .strictObject({
-            approve: zod.boolean(),
-            decline: zod.boolean(),
-            receive: zod.boolean(),
-            close: zod.boolean()
-        })
-        .optional(),
+    actions: zod.strictObject({
+        approve: zod.boolean(),
+        decline: zod.boolean(),
+        receive: zod.boolean(),
+        close: zod.boolean()
+    }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
@@ -11343,14 +11330,12 @@ export const ApproveReturnResponse = zod.strictObject({
     handlingDeduction: zod.number().min(approveReturnResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(approveReturnResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
-    actions: zod
-        .strictObject({
-            approve: zod.boolean(),
-            decline: zod.boolean(),
-            receive: zod.boolean(),
-            close: zod.boolean()
-        })
-        .optional(),
+    actions: zod.strictObject({
+        approve: zod.boolean(),
+        decline: zod.boolean(),
+        receive: zod.boolean(),
+        close: zod.boolean()
+    }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
@@ -11417,14 +11402,12 @@ export const DeclineReturnResponse = zod.strictObject({
     handlingDeduction: zod.number().min(declineReturnResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(declineReturnResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
-    actions: zod
-        .strictObject({
-            approve: zod.boolean(),
-            decline: zod.boolean(),
-            receive: zod.boolean(),
-            close: zod.boolean()
-        })
-        .optional(),
+    actions: zod.strictObject({
+        approve: zod.boolean(),
+        decline: zod.boolean(),
+        receive: zod.boolean(),
+        close: zod.boolean()
+    }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
@@ -11502,14 +11485,12 @@ export const ReceiveReturnResponse = zod.strictObject({
     handlingDeduction: zod.number().min(receiveReturnResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(receiveReturnResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
-    actions: zod
-        .strictObject({
-            approve: zod.boolean(),
-            decline: zod.boolean(),
-            receive: zod.boolean(),
-            close: zod.boolean()
-        })
-        .optional(),
+    actions: zod.strictObject({
+        approve: zod.boolean(),
+        decline: zod.boolean(),
+        receive: zod.boolean(),
+        close: zod.boolean()
+    }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
@@ -12560,7 +12541,10 @@ export const ListApiKeysResponse = zod.strictObject({
             expiresAt: zod.iso.datetime({ offset: true }),
             revokedAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true }),
-            updatedAt: zod.iso.datetime({ offset: true })
+            updatedAt: zod.iso.datetime({ offset: true }),
+            actions: zod.strictObject({
+                revoke: zod.boolean()
+            })
         })
     ),
     meta: zod.strictObject({
@@ -12640,7 +12624,10 @@ export const GetApiKeyResponse = zod.strictObject({
     expiresAt: zod.iso.datetime({ offset: true }),
     revokedAt: zod.iso.datetime({ offset: true }).optional(),
     createdAt: zod.iso.datetime({ offset: true }),
-    updatedAt: zod.iso.datetime({ offset: true })
+    updatedAt: zod.iso.datetime({ offset: true }),
+    actions: zod.strictObject({
+        revoke: zod.boolean()
+    })
 });
 /**
  * A soft state change, not a delete: `revokedAt` is stamped and every future
@@ -14634,14 +14621,12 @@ export const CloseReturnResponse = zod.strictObject({
     handlingDeduction: zod.number().min(closeReturnResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(closeReturnResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
-    actions: zod
-        .strictObject({
-            approve: zod.boolean(),
-            decline: zod.boolean(),
-            receive: zod.boolean(),
-            close: zod.boolean()
-        })
-        .optional(),
+    actions: zod.strictObject({
+        approve: zod.boolean(),
+        decline: zod.boolean(),
+        receive: zod.boolean(),
+        close: zod.boolean()
+    }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
@@ -15190,13 +15175,11 @@ export const ListExamplesResponse = zod.strictObject({
             publishedAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true }),
             updatedAt: zod.iso.datetime({ offset: true }).optional(),
-            actions: zod
-                .strictObject({
-                    transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
-                    update: zod.boolean(),
-                    delete: zod.boolean()
-                })
-                .optional()
+            actions: zod.strictObject({
+                transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+                update: zod.boolean(),
+                delete: zod.boolean()
+            })
         })
     ),
     meta: zod.strictObject({
@@ -15254,13 +15237,11 @@ export const CreateExampleResponse = zod.strictObject({
     publishedAt: zod.iso.datetime({ offset: true }).optional(),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
-    actions: zod
-        .strictObject({
-            transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
-            update: zod.boolean(),
-            delete: zod.boolean()
-        })
-        .optional()
+    actions: zod.strictObject({
+        transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+        update: zod.boolean(),
+        delete: zod.boolean()
+    })
 });
 /**
  * Searches and filters examples via a JSON request body. Functionally equivalent to `GET /examples` with query parameters.
@@ -15319,13 +15300,11 @@ export const SearchExamplesResponse = zod.strictObject({
             publishedAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true }),
             updatedAt: zod.iso.datetime({ offset: true }).optional(),
-            actions: zod
-                .strictObject({
-                    transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
-                    update: zod.boolean(),
-                    delete: zod.boolean()
-                })
-                .optional()
+            actions: zod.strictObject({
+                transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+                update: zod.boolean(),
+                delete: zod.boolean()
+            })
         })
     ),
     meta: zod.strictObject({
@@ -15372,13 +15351,11 @@ export const GetExampleByIdResponse = zod.strictObject({
     publishedAt: zod.iso.datetime({ offset: true }).optional(),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
-    actions: zod
-        .strictObject({
-            transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
-            update: zod.boolean(),
-            delete: zod.boolean()
-        })
-        .optional()
+    actions: zod.strictObject({
+        transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+        update: zod.boolean(),
+        delete: zod.boolean()
+    })
 });
 /**
  * Replaces the example's writable fields (RFC 9110 §9.3.4). `title` and `body` are required, since a PUT names the whole representation. The status moves through `POST /examples/{id}/transitions`.
@@ -15423,13 +15400,11 @@ export const ReplaceExampleByIdResponse = zod.strictObject({
     publishedAt: zod.iso.datetime({ offset: true }).optional(),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
-    actions: zod
-        .strictObject({
-            transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
-            update: zod.boolean(),
-            delete: zod.boolean()
-        })
-        .optional()
+    actions: zod.strictObject({
+        transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+        update: zod.boolean(),
+        delete: zod.boolean()
+    })
 });
 /**
  * Merges a change into the example (RFC 7396, an omitted field is left unchanged).
@@ -15474,13 +15449,11 @@ export const UpdateExampleByIdResponse = zod.strictObject({
     publishedAt: zod.iso.datetime({ offset: true }).optional(),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
-    actions: zod
-        .strictObject({
-            transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
-            update: zod.boolean(),
-            delete: zod.boolean()
-        })
-        .optional()
+    actions: zod.strictObject({
+        transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+        update: zod.boolean(),
+        delete: zod.boolean()
+    })
 });
 /**
  * Permanently removes the example identified by `{id}`, and its cover image with it.
@@ -15532,13 +15505,11 @@ export const TransitionExampleResponse = zod.strictObject({
     publishedAt: zod.iso.datetime({ offset: true }).optional(),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
-    actions: zod
-        .strictObject({
-            transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
-            update: zod.boolean(),
-            delete: zod.boolean()
-        })
-        .optional()
+    actions: zod.strictObject({
+        transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+        update: zod.boolean(),
+        delete: zod.boolean()
+    })
 });
 /**
  * Replaces the cover image of the example identified by `{id}`. The image is digested in the background; until it is, `imageUrl` is a placeholder.
@@ -15576,13 +15547,11 @@ export const ReplaceExampleCoverResponse = zod.strictObject({
     publishedAt: zod.iso.datetime({ offset: true }).optional(),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
-    actions: zod
-        .strictObject({
-            transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
-            update: zod.boolean(),
-            delete: zod.boolean()
-        })
-        .optional()
+    actions: zod.strictObject({
+        transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+        update: zod.boolean(),
+        delete: zod.boolean()
+    })
 });
 /**
  * The caller's own inbox, newest first. A notification stays until its owner deletes it (`DELETE /notifications/{id}`, `DELETE /notifications`), the per-user cap trims it, or the account goes. Never paginated: the inbox is bounded by that cap, so one read is the whole of it. Empty and absent are the same state — this never answers 404. A client keeps the list live with `GET /notifications/stream`; the stream carries only what is written while it is open, so this read is what a login, a reload or a dropped connection starts from.

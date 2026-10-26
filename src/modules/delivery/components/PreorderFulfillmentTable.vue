@@ -28,6 +28,7 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { EMPTY_VALUE, formatDate, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import type { ThemeColor } from '@/ui/types.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
+import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
@@ -95,24 +96,67 @@ const STATES = [
 ] as const satisfies readonly PreorderFulfillmentState[];
 
 /**
+ * The board's own filters; a missing key shows everything.
+ */
+interface BoardFilters {
+    /** One state, or every state when absent. */
+    state?: PreorderFulfillmentState;
+    /** Only late rows. */
+    late?: boolean;
+    /** Only rows due within {@link DUE_SOON_DAYS}. */
+    dueSoon?: boolean;
+}
+
+/**
+ * The filters, kept together so the URL can carry them.
+ */
+const filters = ref<BoardFilters>({});
+
+/**
  * The state filter; `undefined` shows every state.
  */
-const state = ref<PreorderFulfillmentState>();
+const state = computed({
+    get: () => filters.value.state,
+    set: (value) => {
+        filters.value = { ...filters.value, state: value };
+    }
+});
 
 /**
  * Whether only late rows show.
  */
-const lateOnly = ref(false);
+const lateOnly = computed({
+    get: () => filters.value.late ?? false,
+    set: (value) => {
+        filters.value = { ...filters.value, late: value };
+    }
+});
 
 /**
  * Whether only rows due within {@link DUE_SOON_DAYS} show.
  */
-const dueSoonOnly = ref(false);
+const dueSoonOnly = computed({
+    get: () => filters.value.dueSoon ?? false,
+    set: (value) => {
+        filters.value = { ...filters.value, dueSoon: value };
+    }
+});
 
 /**
  * The page shown, 1-based.
  */
 const page = ref(1);
+
+/**
+ * Keeps the filters and page in the URL under `fulfillment-*`, so a late-only view can be shared.
+ * The tab and the product filter are the page's own keys and stay untouched.
+ */
+const { sync: syncUrl } = useListUrlState({
+    filters,
+    page,
+    params: { state: STATES, late: 'boolean', dueSoon: 'boolean' },
+    prefix: 'fulfillment'
+});
 
 /**
  * How many pages the current filters span.
@@ -140,7 +184,11 @@ const load = () =>
  * A changed filter starts over from the first page; a changed page just reads it.
  */
 watch([state, lateOnly, dueSoonOnly, () => productId], () => {
-    if (page.value === 1) return load();
+    // A page change writes the URL itself (`useListUrlState` watches the page).
+    if (page.value === 1) {
+        syncUrl();
+        return load();
+    }
     page.value = 1;
 });
 

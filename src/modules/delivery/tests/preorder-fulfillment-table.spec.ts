@@ -114,6 +114,31 @@ describe('what the table asks for', () => {
         }));
 });
 
+describe('what the URL carries', () => {
+    it('writes a switched filter into the query under `fulfillment-*`', () =>
+        mountTable([aPreorderFulfillmentOrder()]).then(({ wrapper }) =>
+            wrapper
+                .get('[data-test=preorder-filter-late] input')
+                .setValue(true)
+                .then(flushPromises)
+                // The URL write is `router.replace`, which settles a task later.
+                .then(() => new Promise((resolve) => setTimeout(resolve, 50)))
+                .then(() => {
+                    expect(router.currentRoute.value.query['fulfillment-late']).toBe('true');
+                })
+        ));
+
+    it('reads a shared link back into the filters before the first read', () =>
+        router
+            .push('/en/sales/preorders?fulfillment-late=true&fulfillment-state=allocated')
+            .then(() => mountTable([aPreorderFulfillmentOrder()]))
+            .then(({ read }) => {
+                expect(read).toHaveBeenLastCalledWith(
+                    expect.objectContaining({ late: true, state: 'allocated' })
+                );
+            }));
+});
+
 describe('what a row says', () => {
     it('names the order, the buyer and the lines, and links the order', () =>
         mountTable([aPreorderFulfillmentOrder({ orderId: 'o7', orderNumber: '2027-000007' })]).then(

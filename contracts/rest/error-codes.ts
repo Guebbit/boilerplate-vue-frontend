@@ -70,6 +70,10 @@ export const ERROR_CODES = {
     DELIVERY_OVERRIDE_REASON_REQUIRED: 'DELIVERY_OVERRIDE_REASON_REQUIRED',
     /** 422 — Shipping a tracked method requires a tracking code and none was supplied. */
     DELIVERY_TRACKING_CODE_REQUIRED: 'DELIVERY_TRACKING_CODE_REQUIRED',
+    /** 409 — Another account already holds this email address — on signup, or on a profile email change. */
+    EMAIL_ALREADY_USED: 'EMAIL_ALREADY_USED',
+    /** 409 — The account's email address is verified already, so there is nothing to resend. */
+    EMAIL_ALREADY_VERIFIED: 'EMAIL_ALREADY_VERIFIED',
     /** 429 — An email change was already requested for this account in the last minute — carries `details.retryAfter`. */
     EMAIL_CHANGE_TOO_SOON: 'EMAIL_CHANGE_TOO_SOON',
     /** 403 — Checkout requires a verified email address — see `POST /account/email-verification/resend`. */
@@ -240,10 +244,18 @@ export const ERROR_CODES = {
     USER_ALREADY_INACTIVE: 'USER_ALREADY_INACTIVE',
     /** 409 — The account owner asked for its deletion and the grace has run out, so it is erased by the next purge run and can no longer be restored. */
     USER_ERASURE_DUE: 'USER_ERASURE_DUE',
+    /** 409 — The account's erasure was claimed by another run, or is not due yet, so this run did nothing. */
+    USER_ERASURE_NOT_DUE: 'USER_ERASURE_NOT_DUE',
     /** 409 — The account is not soft-deleted, so there is nothing to restore. */
     USER_NOT_DELETED: 'USER_NOT_DELETED',
+    /** 409 — The reaper may only erase an account it soft-deleted itself. Raised by the reaper, never by a route. */
+    USER_NOT_REAPER_DELETED: 'USER_NOT_REAPER_DELETED',
+    /** 409 — The inactivity reaper tried to delete an account that was never warned first. Raised by the reaper, never by a route. */
+    USER_NOT_WARNED: 'USER_NOT_WARNED',
     /** 409 — The account has no purchase hold and no review flag, so there is nothing to lift. */
     USER_PURCHASE_HOLD_NOT_SET: 'USER_PURCHASE_HOLD_NOT_SET',
+    /** 409 — The inactivity reaper met an account holding a staff role and left it alone. Raised by the reaper, never by a route. */
+    USER_STAFF_NOT_REAPABLE: 'USER_STAFF_NOT_REAPABLE',
     /** 422 — One or more fields failed schema validation — see `errors[].details.field`. */
     VALIDATION_ERROR: 'VALIDATION_ERROR',
     /** 409 — A retry of this delivery is already in flight. */

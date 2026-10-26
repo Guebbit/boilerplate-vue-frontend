@@ -46,7 +46,8 @@ const PUBLISHED: Example = {
     userId: 'u-1',
     ownerName: 'ada',
     publishedAt: '2026-01-12T09:00:00.000Z',
-    createdAt: '2026-01-01T00:00:00.000Z'
+    createdAt: '2026-01-01T00:00:00.000Z',
+    actions: { transitions: [], update: false, delete: false }
 };
 
 /**

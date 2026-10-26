@@ -13998,7 +13998,7 @@ components:
         - revoked
         - suspended
       description: "Whether the credential works right now, decided by the server. `revoked` and `expired` are final. `suspended` means the person who minted it can no longer sign in (banned, soft-deleted or erased): the key is refused with 401 and comes back by itself if they do. Checked in that order, so a revoked key never reads as `suspended`."
-    ApiKey:
+    ExportApiKey:
       type: object
       additionalProperties: false
       required:
@@ -14017,7 +14017,6 @@ components:
           type: string
         publicPrefix:
           type: string
-          description: The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which.
         status:
           $ref: "#/components/schemas/ApiKeyStatus"
         permissions:
@@ -14025,7 +14024,6 @@ components:
           items:
             type: string
           minItems: 1
-          description: The permission rules this credential was minted with, each spelled `<action>:<Subject>` (`display:Order`). Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
         lastUsedAt:
           type: string
           format: date-time
@@ -14047,30 +14045,7 @@ components:
         - draft
         - published
         - archived
-    ExampleActions:
-      type: object
-      additionalProperties: false
-      required:
-        - transitions
-        - update
-        - delete
-      description: "What the requesting caller may do to this example, decided by the server. A client renders its controls from this instead of re-implementing the lifecycle or the ownership rule: both depend on who asks, and a second copy in a separately deployed client is how the two come to disagree."
-      properties:
-        transitions:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExampleStatus"
-          description: The statuses this caller may move the example to through `POST /examples/{id}/transitions`. Never contains the current status; empty when the caller may not edit it.
-          example:
-            - published
-            - archived
-        update:
-          type: boolean
-          description: Whether `PATCH`/`PUT /examples/{id}` and `PUT /examples/{id}/cover` would be accepted for this caller.
-        delete:
-          type: boolean
-          description: Whether `DELETE /examples/{id}` would be accepted for this caller.
-    Example:
+    ExportExample:
       type: object
       additionalProperties: false
       required:
@@ -14086,7 +14061,6 @@ components:
           $ref: "#/components/schemas/Id"
         title:
           type: string
-          description: The fallback-language title. Other languages are written through `/locales/translations/example/{id}`.
         body:
           type: string
         status:
@@ -14095,7 +14069,6 @@ components:
           $ref: "#/components/schemas/Id"
         ownerName:
           type: string
-          description: The owner's display name.
         imageUrl:
           $ref: "#/components/schemas/ImageUrl"
         thumbnailUrl:
@@ -14103,15 +14076,12 @@ components:
         publishedAt:
           type: string
           format: date-time
-          description: Stamped the first time the example is published, never moved again.
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
-        actions:
-          $ref: "#/components/schemas/ExampleActions"
     ProductTitles:
       type: object
       additionalProperties:
@@ -14501,7 +14471,7 @@ components:
         apiKeys:
           type: array
           items:
-            $ref: "#/components/schemas/ApiKey"
+            $ref: "#/components/schemas/ExportApiKey"
         roles:
           type: array
           items:
@@ -14521,7 +14491,7 @@ components:
         examples:
           type: array
           items:
-            $ref: "#/components/schemas/Example"
+            $ref: "#/components/schemas/ExportExample"
         notifications:
           type: array
           items:
@@ -17470,6 +17440,7 @@ components:
         - lines
         - returnPostage
         - createdAt
+        - actions
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -18302,6 +18273,62 @@ components:
           - -expiresAt
           - lastUsedAt
           - -lastUsedAt
+    ApiKeyActions:
+      type: object
+      additionalProperties: false
+      required:
+        - revoke
+      description: What the requesting caller may do to this credential, decided by the server.
+      properties:
+        revoke:
+          type: boolean
+          description: Whether `DELETE /api-keys/{id}` would revoke this credential for this caller. False for a caller without `delete:ApiKey`, and for a credential that is revoked already (the call would change nothing).
+    ApiKey:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - publicPrefix
+        - permissions
+        - status
+        - expiresAt
+        - createdAt
+        - updatedAt
+        - actions
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+        publicPrefix:
+          type: string
+          description: The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which.
+        status:
+          $ref: "#/components/schemas/ApiKeyStatus"
+        permissions:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: The permission rules this credential was minted with, each spelled `<action>:<Subject>` (`display:Order`). Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
+        lastUsedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        revokedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        actions:
+          $ref: "#/components/schemas/ApiKeyActions"
     ApiKeysResponse:
       type: object
       additionalProperties: false
@@ -19187,6 +19214,72 @@ components:
           - -title
           - status
           - -status
+    ExampleActions:
+      type: object
+      additionalProperties: false
+      required:
+        - transitions
+        - update
+        - delete
+      description: "What the requesting caller may do to this example, decided by the server. A client renders its controls from this instead of re-implementing the lifecycle or the ownership rule: both depend on who asks, and a second copy in a separately deployed client is how the two come to disagree."
+      properties:
+        transitions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExampleStatus"
+          description: The statuses this caller may move the example to through `POST /examples/{id}/transitions`. Never contains the current status; empty when the caller may not edit it.
+          example:
+            - published
+            - archived
+        update:
+          type: boolean
+          description: Whether `PATCH`/`PUT /examples/{id}` and `PUT /examples/{id}/cover` would be accepted for this caller.
+        delete:
+          type: boolean
+          description: Whether `DELETE /examples/{id}` would be accepted for this caller.
+    Example:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - body
+        - status
+        - userId
+        - ownerName
+        - createdAt
+        - actions
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+          description: The fallback-language title. Other languages are written through `/locales/translations/example/{id}`.
+        body:
+          type: string
+        status:
+          $ref: "#/components/schemas/ExampleStatus"
+        userId:
+          $ref: "#/components/schemas/Id"
+        ownerName:
+          type: string
+          description: The owner's display name.
+        imageUrl:
+          $ref: "#/components/schemas/ImageUrl"
+        thumbnailUrl:
+          $ref: "#/components/schemas/ThumbnailUrl"
+        publishedAt:
+          type: string
+          format: date-time
+          description: Stamped the first time the example is published, never moved again.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        actions:
+          $ref: "#/components/schemas/ExampleActions"
     ExamplesResponse:
       type: object
       additionalProperties: false
@@ -19484,6 +19577,12 @@ x-error-codes:
   DELIVERY_TRACKING_CODE_REQUIRED:
     status: 422
     description: Shipping a tracked method requires a tracking code and none was supplied.
+  EMAIL_ALREADY_USED:
+    status: 409
+    description: Another account already holds this email address — on signup, or on a profile email change.
+  EMAIL_ALREADY_VERIFIED:
+    status: 409
+    description: The account's email address is verified already, so there is nothing to resend.
   EMAIL_CHANGE_TOO_SOON:
     status: 429
     description: An email change was already requested for this account in the last minute — carries `details.retryAfter`.
@@ -19739,12 +19838,24 @@ x-error-codes:
   USER_ERASURE_DUE:
     status: 409
     description: The account owner asked for its deletion and the grace has run out, so it is erased by the next purge run and can no longer be restored.
+  USER_ERASURE_NOT_DUE:
+    status: 409
+    description: The account's erasure was claimed by another run, or is not due yet, so this run did nothing.
   USER_NOT_DELETED:
     status: 409
     description: The account is not soft-deleted, so there is nothing to restore.
+  USER_NOT_REAPER_DELETED:
+    status: 409
+    description: The reaper may only erase an account it soft-deleted itself. Raised by the reaper, never by a route.
+  USER_NOT_WARNED:
+    status: 409
+    description: The inactivity reaper tried to delete an account that was never warned first. Raised by the reaper, never by a route.
   USER_PURCHASE_HOLD_NOT_SET:
     status: 409
     description: The account has no purchase hold and no review flag, so there is nothing to lift.
+  USER_STAFF_NOT_REAPABLE:
+    status: 409
+    description: The inactivity reaper met an account holding a staff role and left it alone. Raised by the reaper, never by a route.
   VALIDATION_ERROR:
     status: 422
     description: One or more fields failed schema validation — see `errors[].details.field`.

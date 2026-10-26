@@ -50,8 +50,8 @@ const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * The session, for the `meta.can` rule that gates the revoke action — a reader who cannot revoke
- * should not see a button that 403s.
+ * The session, for the create button: it has no row, so no `actions` to follow. Revoke follows
+ * each row's own `actions.revoke`.
  */
 const session = useSessionStore();
 
@@ -237,13 +237,13 @@ const handleRevoke = (apiKey: ApiKey) =>
 
             <template v-slot:[`item.actions`]="{ item }">
                 <v-btn
-                    v-if="session.can('delete', 'ApiKey')"
+                    v-if="item.actions.revoke"
                     :size="rowActionSize"
                     variant="tonal"
                     color="error"
                     data-test="row-revoke"
                     :aria-label="t('api-keys-list-page.button-revoke-named', { name: item.name })"
-                    :disabled="loading || item.status === 'revoked'"
+                    :disabled="loading"
                     @click.stop="handleRevoke(item)"
                 >
                     {{ t('api-keys-list-page.button-revoke') }}

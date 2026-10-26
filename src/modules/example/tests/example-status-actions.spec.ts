@@ -71,22 +71,6 @@ describe('ExampleStatusActions', () => {
         })
     );
 
-    it('renders nothing for an example that carries no actions', () =>
-        loadLocale('en').then(() => {
-            const Provider = defineComponent({
-                setup() {
-                    provideExample({
-                        example: ref({ id: 'a', status: 'draft' } as Example),
-                        changeStatus: vi.fn()
-                    });
-                },
-                render: () => h(ExampleStatusActions)
-            });
-            const wrapper = mount(Provider, { global: { plugins: [vuetify, i18n] } });
-
-            expect(offered(wrapper)).toEqual([]);
-        }));
-
     it('offers nothing while the example is still loading', () =>
         mountUnder(undefined).then((wrapper) => {
             expect(offered(wrapper)).toEqual([]);

@@ -28,10 +28,9 @@ const { t } = useI18n();
 const { example, changeStatus } = useProvidedExample();
 
 /**
- * The statuses the server says this caller may move the shown example to; none while it loads, and
- * none when the record carries no `actions`.
+ * The statuses the server says this caller may move the shown example to; none while it loads.
  */
-const nextStatuses = computed(() => example.value?.actions?.transitions ?? []);
+const nextStatuses = computed(() => example.value?.actions.transitions ?? []);
 </script>
 
 <template>

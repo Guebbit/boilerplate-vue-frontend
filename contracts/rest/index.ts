@@ -2293,16 +2293,12 @@ export const ApiKeyStatus = {
     suspended: 'suspended'
 } as const;
 
-export interface ApiKey {
+export interface ExportApiKey {
     id: Id;
     name: string;
-    /** The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which. */
     publicPrefix: string;
     status: ApiKeyStatus;
-    /**
-     * The permission rules this credential was minted with, each spelled `<action>:<Subject>` (`display:Order`). Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
-     * @minItems 1
-     */
+    /** @minItems 1 */
     permissions: string[];
     lastUsedAt?: string;
     expiresAt: string;
@@ -2319,34 +2315,18 @@ export const ExampleStatus = {
     archived: 'archived'
 } as const;
 
-/**
- * What the requesting caller may do to this example, decided by the server. A client renders its controls from this instead of re-implementing the lifecycle or the ownership rule: both depend on who asks, and a second copy in a separately deployed client is how the two come to disagree.
- */
-export interface ExampleActions {
-    /** The statuses this caller may move the example to through `POST /examples/{id}/transitions`. Never contains the current status; empty when the caller may not edit it. */
-    transitions: ExampleStatus[];
-    /** Whether `PATCH`/`PUT /examples/{id}` and `PUT /examples/{id}/cover` would be accepted for this caller. */
-    update: boolean;
-    /** Whether `DELETE /examples/{id}` would be accepted for this caller. */
-    delete: boolean;
-}
-
-export interface Example {
+export interface ExportExample {
     id: Id;
-    /** The fallback-language title. Other languages are written through `/locales/translations/example/{id}`. */
     title: string;
     body: string;
     status: ExampleStatus;
     userId: Id;
-    /** The owner's display name. */
     ownerName: string;
     imageUrl?: ImageUrl;
     thumbnailUrl?: ThumbnailUrl;
-    /** Stamped the first time the example is published, never moved again. */
     publishedAt?: string;
     createdAt: string;
     updatedAt?: string;
-    actions?: ExampleActions;
 }
 
 export interface ProductTitles {
@@ -2582,9 +2562,9 @@ export interface AccountExportResponse {
     shipments: ExportShipment[];
     fulfillmentOrders: ExportFulfillmentOrder[];
     returns: ExportReturn[];
-    apiKeys: ApiKey[];
+    apiKeys: ExportApiKey[];
     roles: AccountExportResponseRolesItem[];
-    examples: Example[];
+    examples: ExportExample[];
     notifications: Notification[];
     stockAlerts: StockAlert[];
 }
@@ -4581,7 +4561,7 @@ export interface Return {
     refundAmount?: number;
     /** When the money went back and the return finished. */
     closedAt?: string;
-    actions?: ReturnActions;
+    actions: ReturnActions;
     createdAt: string;
     updatedAt?: string;
 }
@@ -5064,6 +5044,33 @@ export const ApiKeySortItem = {
  * @maxItems 3
  */
 export type ApiKeySort = ApiKeySortItem[];
+
+/**
+ * What the requesting caller may do to this credential, decided by the server.
+ */
+export interface ApiKeyActions {
+    /** Whether `DELETE /api-keys/{id}` would revoke this credential for this caller. False for a caller without `delete:ApiKey`, and for a credential that is revoked already (the call would change nothing). */
+    revoke: boolean;
+}
+
+export interface ApiKey {
+    id: Id;
+    name: string;
+    /** The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which. */
+    publicPrefix: string;
+    status: ApiKeyStatus;
+    /**
+     * The permission rules this credential was minted with, each spelled `<action>:<Subject>` (`display:Order`). Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
+     * @minItems 1
+     */
+    permissions: string[];
+    lastUsedAt?: string;
+    expiresAt: string;
+    revokedAt?: string;
+    createdAt: string;
+    updatedAt: string;
+    actions: ApiKeyActions;
+}
 
 export interface ApiKeysResponse {
     items: ApiKey[];
@@ -5574,6 +5581,36 @@ export const ExampleSortItem = {
  * @maxItems 3
  */
 export type ExampleSort = ExampleSortItem[];
+
+/**
+ * What the requesting caller may do to this example, decided by the server. A client renders its controls from this instead of re-implementing the lifecycle or the ownership rule: both depend on who asks, and a second copy in a separately deployed client is how the two come to disagree.
+ */
+export interface ExampleActions {
+    /** The statuses this caller may move the example to through `POST /examples/{id}/transitions`. Never contains the current status; empty when the caller may not edit it. */
+    transitions: ExampleStatus[];
+    /** Whether `PATCH`/`PUT /examples/{id}` and `PUT /examples/{id}/cover` would be accepted for this caller. */
+    update: boolean;
+    /** Whether `DELETE /examples/{id}` would be accepted for this caller. */
+    delete: boolean;
+}
+
+export interface Example {
+    id: Id;
+    /** The fallback-language title. Other languages are written through `/locales/translations/example/{id}`. */
+    title: string;
+    body: string;
+    status: ExampleStatus;
+    userId: Id;
+    /** The owner's display name. */
+    ownerName: string;
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+    /** Stamped the first time the example is published, never moved again. */
+    publishedAt?: string;
+    createdAt: string;
+    updatedAt?: string;
+    actions: ExampleActions;
+}
 
 export interface ExamplesResponse {
     items: Example[];
