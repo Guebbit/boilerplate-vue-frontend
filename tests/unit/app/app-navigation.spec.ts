@@ -228,6 +228,14 @@ vi.mock('@/infrastructure/session.ts', () => ({
     useSessionStore: () => session
 }));
 
+/** The languages the caller is previewing as drafts; `isDraftLanguage` reads it. */
+const drafts = vi.hoisted(() => new Set<string>());
+
+vi.mock('@/infrastructure/locale-overrides.ts', async (importOriginal) => ({
+    ...(await importOriginal<Record<string, unknown>>()),
+    isDraftLanguage: (tag: string) => drafts.has(tag)
+}));
+
 vi.mock('@/infrastructure/locale-preference.ts', () => ({
     persistLocalePreference: (locale: string) => persistLocalePreference(locale)
 }));
@@ -767,6 +775,18 @@ describe('Navigation', () => {
             expect(
                 options.filter((option) => option.attributes('aria-current') === 'true')
             ).toHaveLength(1);
+        });
+
+        it("label a draft language in the viewer's language, and a live one not", () => {
+            drafts.clear();
+            drafts.add('it');
+            const { wrapper } = mountNav();
+
+            const marker = wrapper.get('#app-drawer [data-test=drawer-draft-it]');
+            expect(marker.text()).toContain('draft');
+            expect(marker.attributes('lang')).toBe('en');
+            expect(wrapper.find('#app-drawer [data-test=drawer-draft-en]').exists()).toBe(false);
+            drafts.clear();
         });
 
         it('switch the language by re-entering the current route', () => {

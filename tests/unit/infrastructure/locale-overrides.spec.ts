@@ -39,6 +39,7 @@ const {
     fetchRemoteLocales,
     fetchLocaleOverrides,
     mergeRemoteLocales,
+    isDraftLanguage,
     withLocaleOverrides,
     refreshRunningLocale
 } = await import('@/infrastructure/locale-overrides.ts');
@@ -304,6 +305,66 @@ describe('mergeRemoteLocales', () => {
             .then(() => {
                 expect(supportedLanguages).not.toContain('es');
                 expect(supportedLanguages).toContain('en');
+            });
+    });
+
+    // A draft is an offered language that is switched off: the switcher labels it, and choosing it
+    // is the opt-in to preview its product text.
+    it('marks a staff-visible switched-off language as a draft, and a live one not', () => {
+        getLocalesMock.mockResolvedValue(
+            contractResponse(schemas.GetLocalesResponse, {
+                locales: [
+                    capability('en'),
+                    capability('es', ['demo-be', 'demo-fe'], { active: false, source: 'both' })
+                ],
+                default: 'en',
+                fallback: 'en'
+            })
+        );
+
+        return mergeRemoteLocales().then(() => {
+            expect(isDraftLanguage('es')).toBe(true);
+            expect(isDraftLanguage('en')).toBe(false);
+        });
+    });
+
+    it("does not mark a visitor's language: the switched-off row never reaches the list", () => {
+        getLocalesMock.mockResolvedValue(
+            contractResponse(schemas.GetLocalesResponse, {
+                locales: [
+                    capability('en'),
+                    capability('it', ['demo-be'], { active: false, source: 'static' })
+                ],
+                default: 'en',
+                fallback: 'en'
+            })
+        );
+
+        return mergeRemoteLocales().then(() => {
+            expect(isDraftLanguage('it')).toBe(false);
+        });
+    });
+
+    it('forgets the drafts on a re-read, so sign-out empties them', () => {
+        getLocalesMock.mockResolvedValue(
+            contractResponse(schemas.GetLocalesResponse, {
+                locales: [
+                    capability('en'),
+                    capability('es', ['demo-be', 'demo-fe'], { active: false, source: 'both' })
+                ],
+                default: 'en',
+                fallback: 'en'
+            })
+        );
+
+        return mergeRemoteLocales()
+            .then(() => {
+                expect(isDraftLanguage('es')).toBe(true);
+                getLocalesMock.mockResolvedValue(manifest(false));
+                return mergeRemoteLocales();
+            })
+            .then(() => {
+                expect(isDraftLanguage('es')).toBe(false);
             });
     });
 
