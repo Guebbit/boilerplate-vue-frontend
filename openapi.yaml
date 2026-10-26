@@ -92,7 +92,7 @@ tags:
   - name: Examples
     description: The example module - the small, complete domain to copy when starting a new one. Safe to delete.
   - name: Notifications
-    description: The signed-in user's in-app notifications and their delivery preferences.
+    description: The signed-in user's in-app notifications, their own and the shop's work notices for staff.
   - name: Shop
     description: The shop itself — who it is, where it ships, and what it trades in.
   - name: Sitemap
@@ -10134,7 +10134,7 @@ paths:
       tags:
         - Notifications
       summary: List notifications
-      description: "The caller's own inbox, newest first. A notification stays until its owner deletes it (`DELETE /notifications/{id}`, `DELETE /notifications`), the per-user cap trims it, or the account goes. Never paginated: the inbox is bounded by that cap, so one read is the whole of it. Empty and absent are the same state — this never answers 404. A client keeps the list live with `GET /notifications/stream`; the stream carries only what is written while it is open, so this read is what a login, a reload or a dropped connection starts from."
+      description: "The caller's own inbox, newest first, plus the work notices (`audience: staff`) of their shop whose permission sets they hold right now: a staff member who loses a role stops seeing the notices that role earned, and a member promoted later sees only those written after. A notification stays until its owner deletes it (`DELETE /notifications/{id}`, `DELETE /notifications`), the per-user cap trims it, or the account goes. Never paginated: the inbox is bounded by that cap, so one read is the whole of it. Empty and absent are the same state — this never answers 404. A client keeps the list live with `GET /notifications/stream`; the stream carries only what is written while it is open, so this read is what a login, a reload or a dropped connection starts from."
       operationId: listNotifications
       security:
         - bearerAuth: []
@@ -10236,7 +10236,7 @@ paths:
       tags:
         - Notifications
       summary: Get a notification
-      description: One of the caller's own notifications, the same shape the list carries. Someone else's, an unknown id and a malformed one are the same 404, so a probe cannot tell them apart.
+      description: One of the caller's own notifications, the same shape the list carries (a work notice only while the caller still holds its permission sets). Someone else's, an unknown id and a malformed one are the same 404, so a probe cannot tell them apart.
       operationId: getNotificationById
       security:
         - bearerAuth: []
@@ -14085,6 +14085,12 @@ components:
         updatedAt:
           type: string
           format: date-time
+    NotificationAudience:
+      type: string
+      enum:
+        - own
+        - staff
+      description: "Whose message this is. `own`: about the caller as a person or buyer. `staff`: a work notice sent because the caller's role does that work, not because it concerns them."
     ProductTitles:
       type: object
       additionalProperties:
@@ -14114,6 +14120,7 @@ components:
       description: A product left the catalogue and left the caller's cart with it.
       required:
         - id
+        - audience
         - code
         - params
         - severity
@@ -14121,6 +14128,8 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
         code:
           type: string
           enum:
@@ -14142,6 +14151,7 @@ components:
       description: A product left the catalogue and left the caller's wishlist with it.
       required:
         - id
+        - audience
         - code
         - params
         - severity
@@ -14149,6 +14159,8 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
         code:
           type: string
           enum:
@@ -14194,6 +14206,7 @@ components:
       description: Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available.
       required:
         - id
+        - audience
         - code
         - params
         - severity
@@ -14201,6 +14214,8 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
         code:
           type: string
           enum:
@@ -14247,6 +14262,7 @@ components:
       description: A preorder the caller paid for will arrive later than promised; cancelling is open and silence keeps waiting.
       required:
         - id
+        - audience
         - code
         - params
         - severity
@@ -14254,6 +14270,8 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
         code:
           type: string
           enum:
@@ -14296,6 +14314,7 @@ components:
       description: Part of an order the caller bought is held back, and they can act (check the address) or have a message from the shop.
       required:
         - id
+        - audience
         - code
         - params
         - severity
@@ -14303,6 +14322,8 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
         code:
           type: string
           enum:
@@ -14324,6 +14345,7 @@ components:
       description: A product the caller asked to be told about can be ordered again. Sent once, then the request is gone.
       required:
         - id
+        - audience
         - code
         - params
         - severity
@@ -14331,12 +14353,99 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
         code:
           type: string
           enum:
             - notifications.stock-alert
         params:
           $ref: "#/components/schemas/CartLineRemovedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    PurchaseHoldPlacedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - userId
+        - until
+      description: "The shop's rule paused a buyer's checkout. Ids and instants only: the account's own page has the rest."
+      properties:
+        userId:
+          $ref: "#/components/schemas/Id"
+        until:
+          type: string
+          format: date-time
+          description: When the pause ends by itself.
+    NotificationStaffPurchaseHoldPlaced:
+      type: object
+      additionalProperties: false
+      description: A buyer's checkout was paused by the shop's cancellation rule; staff who can ban decide whether to step in.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - notifications.staff.purchase-hold-placed
+        params:
+          $ref: "#/components/schemas/PurchaseHoldPlacedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    WebhookDisabledParams:
+      type: object
+      additionalProperties: false
+      required:
+        - subscriptionId
+      description: A webhook subscription was switched off after repeated delivery failures.
+      properties:
+        subscriptionId:
+          $ref: "#/components/schemas/Id"
+    NotificationStaffWebhookDisabled:
+      type: object
+      additionalProperties: false
+      description: A webhook subscription was switched off after repeated failures; staff who manage webhooks fix the endpoint and re-enable it.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - notifications.staff.webhook-disabled
+        params:
+          $ref: "#/components/schemas/WebhookDisabledParams"
         severity:
           $ref: "#/components/schemas/NotificationSeverity"
         readAt:
@@ -14354,6 +14463,8 @@ components:
         - $ref: "#/components/schemas/NotificationFulfillmentDelayed"
         - $ref: "#/components/schemas/NotificationFulfillmentHeld"
         - $ref: "#/components/schemas/NotificationStockAlert"
+        - $ref: "#/components/schemas/NotificationStaffPurchaseHoldPlaced"
+        - $ref: "#/components/schemas/NotificationStaffWebhookDisabled"
       discriminator:
         propertyName: code
         mapping:
@@ -14363,6 +14474,24 @@ components:
           notifications.fulfillment-delayed: "#/components/schemas/NotificationFulfillmentDelayed"
           notifications.fulfillment-held: "#/components/schemas/NotificationFulfillmentHeld"
           notifications.stock-alert: "#/components/schemas/NotificationStockAlert"
+          notifications.staff.purchase-hold-placed: "#/components/schemas/NotificationStaffPurchaseHoldPlaced"
+          notifications.staff.webhook-disabled: "#/components/schemas/NotificationStaffWebhookDisabled"
+    StaffNoticeExport:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - createdAt
+      description: One work notice this account received as staff, without the facts it named.
+      properties:
+        code:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        readAt:
+          type: string
+          format: date-time
     StockAlert:
       type: object
       additionalProperties: false
@@ -14398,6 +14527,7 @@ components:
         - roles
         - examples
         - notifications
+        - staffNotifications
         - stockAlerts
       properties:
         exportedAt:
@@ -14499,6 +14629,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Notification"
+        staffNotifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/StaffNoticeExport"
         stockAlerts:
           type: array
           items:

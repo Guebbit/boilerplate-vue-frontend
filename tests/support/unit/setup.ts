@@ -9,7 +9,8 @@
  * `@/infrastructure/query-client.ts` is safe to import here regardless — it pulls in only
  * `@tanstack/vue-query`, never the API client or a module.
  */
-import { beforeEach } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest';
+import { server } from './msw-server.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 
 // ResizeObserver — used by v-app-bar, v-number-input & friends
@@ -55,4 +56,30 @@ Object.defineProperty(globalThis, 'visualViewport', {
  */
 beforeEach(() => {
     queryClient.clear();
+});
+
+/**
+ * Starts the shared MSW server. `onUnhandledRequest: 'error'` prints the method and URL of any
+ * call no handler answers and refuses it, so no unit spec ever opens a real socket. Whatever
+ * happens to listen on localhost:3000 (often the paired backend) can no longer change a result.
+ * https://mswjs.io/docs/api/setup-server/listen
+ */
+beforeAll(() => {
+    server.listen({ onUnhandledRequest: 'error' });
+});
+
+/**
+ * Drops the handlers a spec added with `server.use(...)`, so one test's mocks never answer the next.
+ * https://mswjs.io/docs/api/setup-server/reset-handlers
+ */
+afterEach(() => {
+    server.resetHandlers();
+});
+
+/**
+ * Stops intercepting and restores the patched Node request modules.
+ * https://mswjs.io/docs/api/setup-server/close
+ */
+afterAll(() => {
+    server.close();
 });

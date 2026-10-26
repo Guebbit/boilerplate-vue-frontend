@@ -135,6 +135,46 @@ export const notificationOrderId = (notification: DescribableNotification): stri
         : undefined;
 
 /**
+ * Where a notification points inside the admin: which kind of screen, and the id it shows. A
+ * kind, not a route name: naming a sibling's route is the link composable's job, next to the
+ * `hasRoute` guard that makes it safe.
+ */
+export interface NotificationTarget {
+    /**
+     * The screen: a buyer's account page, or a webhook subscription's page.
+     */
+    screen: 'account' | 'webhook-subscription';
+    /**
+     * The id of the account or subscription.
+     */
+    id: string;
+}
+
+/**
+ * The admin screen a work notice is about: the buyer's account for a purchase hold, the
+ * subscription for a disabled webhook. Own messages point at none here (an order is
+ * {@link notificationOrderId}'s job).
+ *
+ * @param notification - The stored row's `code` and `params`.
+ * @returns The screen, or `undefined` for a notification that is not a work notice.
+ */
+export const notificationTarget = (
+    notification: DescribableNotification
+): NotificationTarget | undefined => {
+    switch (notification.code) {
+        case 'notifications.staff.purchase-hold-placed': {
+            return { screen: 'account', id: notification.params.userId };
+        }
+        case 'notifications.staff.webhook-disabled': {
+            return { screen: 'webhook-subscription', id: notification.params.subscriptionId };
+        }
+        default: {
+            return undefined;
+        }
+    }
+};
+
+/**
  * A product's name in the reader's language.
  *
  * The first language in `preferred` that has a name wins; failing that, whichever name exists,
@@ -214,6 +254,12 @@ export const describeNotification = (
         }
         case 'notifications.fulfillment-held': {
             return describeHeld(notification.params, translate);
+        }
+        case 'notifications.staff.purchase-hold-placed': {
+            return translate(notification.code, { until: formatDate(notification.params.until) });
+        }
+        case 'notifications.staff.webhook-disabled': {
+            return translate(notification.code);
         }
         default: {
             return translate(UNKNOWN_CODE_KEY);
