@@ -21,6 +21,7 @@ import { flushPromises } from '@vue/test-utils';
 import { i18n } from '@/i18n';
 
 import { useProductsStore } from '../store';
+import { useSessionStore, type SessionViewer } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
@@ -425,6 +426,23 @@ describe('useProductsStore', () => {
                     expect(restored).toMatchObject({ id: 'p1' });
                     expect(useProductsStore().products.p1).toMatchObject({ id: 'p1' });
                 }));
+    });
+
+    // A staff member's draft-language text and admin-only rows must not outlive their sign-out
+    // in the same tab (the cache scope is the language, not the person).
+    describe('a change of viewer', () => {
+        it('forgets the cached products', async () => {
+            const store = useProductsStore();
+            const session = useSessionStore();
+            session.viewer = asStub<SessionViewer>({ id: 'a', email: 'a@example.com' });
+            await store.fetchProduct('p1');
+            expect(store.products.p1).toBeDefined();
+
+            session.viewer = asStub<SessionViewer>({ id: 'b', email: 'b@example.com' });
+            await nextTick();
+
+            expect(store.products).toEqual({});
+        });
     });
 
     describe('hardDeleteProduct', () => {
