@@ -4,8 +4,7 @@
  * One card per fulfillment order — the group of lines that leave together — in Shopify's admin
  * layout: status, hold reason, what is promised and when, each line with how much shipped,
  * was cancelled and remains, then the shipments cut from it. Every button comes from the
- * record's own `actions`; the one exception is the forced ship, offered to an override holder
- * while the ordinary door is closed (the server refuses what does not apply). A late preorder also
+ * record's own `actions` (the server refuses what does not apply). A late preorder also
  * shows the promised date, the last notice sent, and who cancelled it. The shop only tells the
  * buyer: there is no question to answer.
  */
@@ -29,8 +28,8 @@ const props = defineProps<{
     fulfillmentOrder: FulfillmentOrder;
     /** This fulfillment order's shipments, oldest first. */
     shipments: Shipment[];
-    /** Whether the order's shipping method needs a tracking code on every shipment. */
-    trackingRequired?: boolean;
+    /** The order's shipping address as one line, handed to each shipment row. */
+    orderAddress?: string | undefined;
 }>();
 
 /**
@@ -79,12 +78,10 @@ const holdOpen = ref(false);
 const { message: cardError, report: reportCardError, clear: clearCardError } = useBlockingError();
 
 /**
- * Whether the ship button shows: the ordinary door, or the forced one while the ordinary is closed
- * — both answered by the server (`actions.ship`, `actions.forceShip`).
+ * Whether the ship button shows — answered by the server (`actions.ship`), which also covers a
+ * `paid` order for a caller who may start it.
  */
-const offerShip = computed(
-    () => props.fulfillmentOrder.actions.ship || props.fulfillmentOrder.actions.forceShip
-);
+const offerShip = computed(() => props.fulfillmentOrder.actions.ship);
 
 /**
  * The status chip's text. A buyer, who is never sent staff's reason, reads a held group as
@@ -332,6 +329,7 @@ const release = () =>
                 v-for="shipment in shipments"
                 :key="'shipment-' + shipment.id"
                 :shipment="shipment"
+                :order-address="orderAddress"
                 @moved="emit('moved')"
             />
         </ul>
@@ -339,7 +337,6 @@ const release = () =>
         <ShipItemsDialog
             v-model="shipOpen"
             :fulfillment-order="fulfillmentOrder"
-            :tracking-required="trackingRequired"
             @shipped="emit('moved')"
         />
         <HoldDialog

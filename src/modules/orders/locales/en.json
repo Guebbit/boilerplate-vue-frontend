@@ -143,7 +143,7 @@
         "confirm-mark-returned": "Confirm you returned {amount} outside the app? Nothing is sent.",
         "mark-returned-done": "Marked as returned.",
         "shipping-address-title": "Correct the shipping address",
-        "shipping-address-hint": "Replaces where this order ships. Only possible while nothing has shipped. The buyer sees the new address on the order.",
+        "shipping-address-hint": "Replaces where the units not yet shipped go, while any remain. A parcel that already left keeps the address it went to. The buyer sees the new address on the order.",
         "override-title": "Correct status",
         "override-hint": "Force a move past the ordinary rule, with a reason recorded on the order. No parcel record and no shipped email fire.",
         "label-override-reason": "Reason",
