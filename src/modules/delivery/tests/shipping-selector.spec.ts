@@ -55,7 +55,7 @@ describe('ShippingSelector', () => {
     });
 
     /**
-     * The order page's `ShipmentPanel` calls `fetchMethods()` from the same shared delivery
+     * Another page may have fetched `fetchMethods()` on the same shared delivery
      * store, before the cart ever mounts this component. A guard that skips the fetch whenever
      * the list is already non-empty would leave the cart trusting a list another page fetched.
      */

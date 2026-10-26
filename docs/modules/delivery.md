@@ -78,7 +78,7 @@ record with its own `actions` (the store reads both at once); the panel is a car
 ```mermaid
 flowchart TD
     panel["ShipmentPanel<br/>mark in progress · 'arrives in N shipments'"] --> card["FulfillmentOrderCard<br/>status · hold reason · lines"]
-    card --> row["ShipmentRow<br/>tracking · mark delivered"]
+    card --> row["ShipmentRow<br/>tracking (or missing) · mark delivered"]
     card -- "actions.ship" --> ship["ShipItemsDialog<br/>quantity per line · tracking"]
     card -- "actions.hold" --> hold["HoldDialog<br/>reason · note"]
     card -- "actions.release / fulfill" --> store
@@ -93,7 +93,9 @@ deliver or fulfill; a card offers ship, fulfil (digital), hold and release from 
 order's flags, and a shipment row offers mark-delivered and edit-tracking from the shipment's. The one
 order-level control left is the optional "Mark in progress" (`Order.actions.process`): shipping a `paid`
 order starts it by itself. The forced arrival is offered on a deliverable shipment (`actions.deliver`) to
-an `override:Order` holder.
+an `override:Order` holder. A row shows a "Tracking code missing" chip while the server says
+`awaitingTracking`, and "Sent to: …" when its `destination` differs from where the order ships now
+(the page hands the order's address line down).
 
 **What the pure helpers do** (`domain/ship-lines.ts`): turn the ship dialog's quantity fields into the
 lines to send (never more than `remaining`, at least one unit) and count "arrives in N shipments"

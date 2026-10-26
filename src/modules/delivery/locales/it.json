@@ -52,6 +52,8 @@
         "status-shipped": "Spedita",
         "status-delivered": "Consegnata",
         "tracking": "Tracciamento: {code}",
+        "awaiting-tracking": "Codice di tracciamento mancante",
+        "sent-to": "Inviata a: {address}",
         "shipped-at": "Spedita il {date}",
         "delivered-at": "Consegnata il {date}",
         "label-tracking-code": "Codice di tracciamento",
@@ -68,7 +70,7 @@
         "hint-remaining": "{remaining} rimanenti",
         "error-lines-invalid": "Spedisci almeno un articolo, e non più di quanti ne restano su ogni riga.",
         "label-tracking-code": "Codice di tracciamento",
-        "tracking-code-required": "Richiesto per questo metodo di spedizione",
+        "tracking-code-hint": "Express è tracciata: aggiungi il codice ora, o più tardi dalla spedizione",
         "button-ship": "Segna come spedita",
         "success": "Spedizione registrata."
     },

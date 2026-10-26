@@ -23,8 +23,6 @@ import type { FulfillmentOrder } from '@types';
  */
 const props = defineProps<{
     fulfillmentOrder: FulfillmentOrder;
-    /** Whether the order's shipping method needs a tracking code on every shipment. */
-    trackingRequired?: boolean;
 }>();
 
 /**
@@ -91,11 +89,7 @@ const verdict = computed(() => readShipLines(props.fulfillmentOrder.lines, quant
  * Whether the form can be sent right now.
  */
 const canSubmit = computed(
-    () =>
-        !loading.value &&
-        verdict.value.valid &&
-        (!props.trackingRequired || trackingCode.value.trim() !== '') &&
-        props.fulfillmentOrder.actions.ship
+    () => !loading.value && verdict.value.valid && props.fulfillmentOrder.actions.ship
 );
 
 /**
@@ -165,9 +159,7 @@ const submit = singleFlight(() => {
                 <v-text-field
                     v-model="trackingCode"
                     :label="t('ship-items-dialog.label-tracking-code')"
-                    :hint="
-                        trackingRequired ? t('ship-items-dialog.tracking-code-required') : undefined
-                    "
+                    :hint="t('ship-items-dialog.tracking-code-hint')"
                     persistent-hint
                     maxlength="100"
                     density="compact"

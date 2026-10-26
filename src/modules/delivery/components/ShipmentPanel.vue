@@ -15,7 +15,6 @@ export default {
  * its own shipments, and the one order-level control left here — the optional "Mark in progress",
  * offered by the order's own `actions.process`. Every other control lives on the record it acts on and
  * comes from that record's own `actions`: this panel never derives a lifecycle rule. The
- * tracking-code requirement is the one fact read off `GET /delivery/methods` (published, not a rule).
  */
 
 import { computed, watch } from 'vue';
@@ -32,22 +31,19 @@ import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 /**
  * The order page's shipping corner: what is to leave, in how many goes, and what has.
  */
-const { orderId, shippingMethodId, canStart } = defineProps<{
+const { orderId, canStart, shippingAddress } = defineProps<{
     /**
      * The order whose fulfilment this shows.
      */
     orderId: string;
-    /**
-     * The method frozen on the order at checkout — looked up against the methods list to know
-     * whether a tracking code is required.
-     */
-    shippingMethodId?: string;
     /**
      * The order's own `actions.process` — whether `POST /orders/{id}/process` would be
      * accepted right now. Who may start fulfilment (`start:Shipment`) is a different key
      * than who may write a shipment, so it stays the order's flag.
      */
     canStart?: boolean;
+    /** The order's shipping address as one line, so a shipment can say where it went instead. */
+    shippingAddress?: string | undefined;
 }>();
 
 /**
@@ -71,17 +67,16 @@ const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * Delivery store, for the methods list and the lists this panel renders.
+ * Delivery store, for the lists this panel renders.
  */
 const deliveryStore = useDeliveryStore();
 
 /**
- * The store's lists, as last fetched for ANY order, the methods list and the in-flight flag.
+ * The store's lists, as last fetched for ANY order, and the in-flight flag.
  */
 const {
     fulfillmentOrders: rawFulfillmentOrders,
     shipments: rawShipments,
-    methods,
     loading
 } = storeToRefs(deliveryStore);
 
@@ -107,15 +102,6 @@ const arrivesInCount = computed(() => {
     const count = shipmentCount(fulfillmentOrders.value, shipments.value);
     return count >= 2 ? count : 0;
 });
-
-/**
- * Whether the order's own shipping method needs a tracking code — `undefined` (methods not
- * loaded yet, or the order carries none) reads as "not required", matching the server's own
- * `method?.tracked` check.
- */
-const trackingRequired = computed(
-    () => methods.value.find((method) => method.id === shippingMethodId)?.tracked ?? false
-);
 
 /**
  * This panel's own blocked state — a refusal of "start fulfilment" shown in place rather than
@@ -160,11 +146,6 @@ const markStarted = () => {
 const onAmbientError = useAmbientError();
 
 /**
- * The methods list is order-independent, so it loads once, at setup.
- */
-deliveryStore.fetchMethods().catch(onAmbientError);
-
-/**
  * Fetches the fulfilment on mount AND whenever `orderId` changes — `immediate: true` covers the
  * mount case, the watch covers navigating to a different order without a remount.
  */
@@ -191,7 +172,7 @@ watch(
                 :key="'fulfillment-order-' + fulfillmentOrder.id"
                 :fulfillment-order="fulfillmentOrder"
                 :shipments="shipmentsOf(fulfillmentOrder.id)"
-                :tracking-required="trackingRequired"
+                :order-address="shippingAddress"
                 @moved="emit('moved')"
             />
         </div>

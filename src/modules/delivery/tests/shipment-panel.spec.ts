@@ -31,7 +31,6 @@ wireModulesIntoCore();
  */
 const mountPanel = (props: { orderId: string; canStart?: boolean }) => {
     const store = useDeliveryStore();
-    vi.spyOn(store, 'fetchMethods').mockResolvedValue(undefined);
     vi.spyOn(store, 'fetchFulfillmentForOrder').mockResolvedValue(undefined);
 
     const wrapper = mount(ShipmentPanel, {

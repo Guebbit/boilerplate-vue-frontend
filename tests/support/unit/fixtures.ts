@@ -341,6 +341,7 @@ export const aShipment = (overrides: Partial<Shipment> = {}): Shipment => ({
     status: 'shipped',
     lines: [{ productId: 'p1', title: 'Shirt', quantity: 1 }],
     forced: false,
+    awaitingTracking: false,
     shippedAt: '2026-09-02T10:00:00.000Z',
     actions: { deliver: false, forceDeliver: false, update: false },
     ...overrides

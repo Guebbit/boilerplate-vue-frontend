@@ -2,7 +2,7 @@
  * @module
  * `ShipItemsDialog.vue` — staff cutting a shipment. Mounts the real dialog with `v-dialog` stubbed
  * to render inline and the store's `ship` spied. Covered: quantities default to everything
- * remaining and gate the submit, the tracked-method rule and a
+ * remaining and gate the submit, the optional tracking code and a
  * refusal staying in the dialog. The arithmetic is `ship-lines.spec.ts`'s.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
@@ -30,16 +30,12 @@ const SHIPPABLE = aFulfillmentOrder({
  * Mounts the dialog closed, then opens it through `v-model` — the transition the form re-seeds on.
  *
  * @param fulfillmentOrder - The group being shipped from.
- * @param extra - `trackingRequired`.
  * @returns The wrapper and the spied `ship`.
  */
-const openDialog = (
-    fulfillmentOrder: FulfillmentOrder,
-    extra: { trackingRequired?: boolean } = {}
-) => {
+const openDialog = (fulfillmentOrder: FulfillmentOrder) => {
     const ship = vi.spyOn(useDeliveryStore(), 'ship').mockResolvedValue(aShipment());
     const wrapper = mount(ShipItemsDialog, {
-        props: { modelValue: false, fulfillmentOrder, ...extra },
+        props: { modelValue: false, fulfillmentOrder },
         global: {
             plugins: [vuetify, i18n],
             stubs: { VDialog: { template: '<div><slot /></div>' } }
@@ -109,17 +105,10 @@ describe('the tracking code', () => {
                 });
         }));
 
-    it('is required on a tracked method', () =>
-        openDialog(SHIPPABLE, { trackingRequired: true }).then(({ wrapper }) => {
-            expect(wrapper.get('[data-test=ship-submit]').attributes('disabled')).toBeDefined();
-            return wrapper
-                .get('[data-test=ship-tracking-code] input')
-                .setValue('TRK-1')
-                .then(() => {
-                    expect(
-                        wrapper.get('[data-test=ship-submit]').attributes('disabled')
-                    ).toBeUndefined();
-                });
+    it('never blocks the submit, even on a tracked method: the code may come later', () =>
+        openDialog(SHIPPABLE).then(({ wrapper }) => {
+            expect(wrapper.get('[data-test=ship-submit]').attributes('disabled')).toBeUndefined();
+            expect(wrapper.text()).toContain('Express is tracked: add the code now');
         }));
 });
 

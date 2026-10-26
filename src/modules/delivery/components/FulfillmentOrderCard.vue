@@ -28,8 +28,8 @@ const props = defineProps<{
     fulfillmentOrder: FulfillmentOrder;
     /** This fulfillment order's shipments, oldest first. */
     shipments: Shipment[];
-    /** Whether the order's shipping method needs a tracking code on every shipment. */
-    trackingRequired?: boolean;
+    /** The order's shipping address as one line, handed to each shipment row. */
+    orderAddress?: string | undefined;
 }>();
 
 /**
@@ -329,6 +329,7 @@ const release = () =>
                 v-for="shipment in shipments"
                 :key="'shipment-' + shipment.id"
                 :shipment="shipment"
+                :order-address="orderAddress"
                 @moved="emit('moved')"
             />
         </ul>
@@ -336,7 +337,6 @@ const release = () =>
         <ShipItemsDialog
             v-model="shipOpen"
             :fulfillment-order="fulfillmentOrder"
-            :tracking-required="trackingRequired"
             @shipped="emit('moved')"
         />
         <HoldDialog
