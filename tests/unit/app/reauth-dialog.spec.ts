@@ -75,7 +75,10 @@ describe('ReauthDialog', () => {
     it('shows the password prompt once the store opens it', () => {
         const wrapper = mountDialog();
         // Never awaited in this case — settling it is what the OTHER cases below assert on.
-        void useReauthPromptStore().requestStepUp();
+        // The prompt's outcome is not what this case checks; a cancel rejects it, so catch.
+        useReauthPromptStore()
+            .requestStepUp()
+            .catch(() => undefined);
 
         return settled(wrapper).then(() => {
             expect(wrapper.find('[data-test="reauth-dialog-password"]').exists()).toBe(true);
@@ -113,7 +116,10 @@ describe('ReauthDialog', () => {
         const wrapper = mountDialog();
         // Deliberately never settles in this case: a wrong password keeps the prompt open rather
         // than rejecting the caller's promise.
-        void useReauthPromptStore().requestStepUp();
+        // The prompt's outcome is not what this case checks; a cancel rejects it, so catch.
+        useReauthPromptStore()
+            .requestStepUp()
+            .catch(() => undefined);
 
         return settled(wrapper).then(() =>
             wrapper
@@ -160,7 +166,10 @@ describe('ReauthDialog', () => {
 
     it('shows no code field for a challenge that asked for recency alone', () => {
         const wrapper = mountDialog();
-        void useReauthPromptStore().requestStepUp();
+        // The prompt's outcome is not what this case checks; a cancel rejects it, so catch.
+        useReauthPromptStore()
+            .requestStepUp()
+            .catch(() => undefined);
 
         return settled(wrapper).then(() => {
             expect(wrapper.find('[data-test="reauth-dialog-otp"]').exists()).toBe(false);
@@ -263,7 +272,10 @@ describe('ReauthDialog — an account with no password', () => {
     it('shows a dead end when the server offers no method', () => {
         reauthMethods.mockResolvedValue([]);
         const wrapper = mountDialog();
-        void useReauthPromptStore().requestStepUp();
+        // The prompt's outcome is not what this case checks; a cancel rejects it, so catch.
+        useReauthPromptStore()
+            .requestStepUp()
+            .catch(() => undefined);
 
         return nextRenderTick(wrapper)
             .then(() => nextRenderTick(wrapper))

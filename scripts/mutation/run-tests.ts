@@ -48,6 +48,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { MUTATION_REPORT_PATH } from './baseline';
 import { overlayReport, renderHtml, type StrykerReport } from './overlay';
+import { failScript } from '../fail-script';
 
 /*
  * Two levels: this file is `scripts/mutation/run-tests.ts`, so one `..` reaches `scripts/` and
@@ -239,4 +240,4 @@ const main = async () => {
     });
 };
 
-void main();
+main().catch(failScript);

@@ -38,6 +38,7 @@ import { useDialogStore } from '@/ui/dialog.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**
  * Every movement newest first, with its why. The sweep is here too: releasing stale holds is a
@@ -262,7 +263,13 @@ const loadMissingTitles = (rows: StockMovement[]) => {
 
 // Vue `watch(source, callback, { immediate })`: `immediate` also loads the titles of rows
 // already present when the component mounts.
+// eslint-disable-next-line @typescript-eslint/no-floating-promises -- loadMissingTitles drops a failed title read
 watch(movements, (rows) => void loadMissingTitles(rows), { immediate: true });
+
+/**
+ * Toasts a background read's failure; these reads have no form to host an inline error.
+ */
+const onAmbientError = useAmbientError();
 
 /**
  * Loads the ledger page matching the current filters.
@@ -275,7 +282,9 @@ const loadMovements = () =>
         reason: movementsReason.value
     });
 
-watch([movementsPage, movementsProductId, movementsReason], () => void loadMovements());
+watch([movementsPage, movementsProductId, movementsReason], () =>
+    loadMovements().catch(onAmbientError)
+);
 
 watch([movementsProductId, movementsReason], syncUrl);
 
@@ -323,7 +332,7 @@ const handleSweep = singleFlight(() =>
 );
 
 onMounted(() => {
-    void loadMovements();
+    loadMovements().catch(onAmbientError);
 });
 </script>
 

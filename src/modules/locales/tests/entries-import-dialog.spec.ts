@@ -68,8 +68,13 @@ describe('a replace-mode import', () => {
     it('emits nothing when the confirmation is dismissed', () =>
         mountDialog()
             .then((wrapper) => fillForm(wrapper, 'replace').then(() => wrapper))
+            .then((wrapper) =>
+                wrapper
+                    .get('form')
+                    .trigger('submit')
+                    .then(() => wrapper)
+            )
             .then((wrapper) => {
-                void wrapper.get('form').trigger('submit');
                 return Promise.resolve().then(() => {
                     useDialogStore().answer(false);
                     return nextRenderTick(wrapper).then(() => {
@@ -81,8 +86,13 @@ describe('a replace-mode import', () => {
     it('emits the import once the confirmation is accepted', () =>
         mountDialog()
             .then((wrapper) => fillForm(wrapper, 'replace').then(() => wrapper))
+            .then((wrapper) =>
+                wrapper
+                    .get('form')
+                    .trigger('submit')
+                    .then(() => wrapper)
+            )
             .then((wrapper) => {
-                void wrapper.get('form').trigger('submit');
                 return Promise.resolve().then(() => {
                     useDialogStore().answer(true);
                     // Two hops: `confirm()`'s promise resolving, then `handleImport`'s own

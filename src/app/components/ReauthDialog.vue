@@ -145,6 +145,7 @@ const loadMethods = () =>
     reauthMethods()
         .then((list) => {
             methods.value = list;
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises -- nextTick only rejects if its callback throws, and this one cannot
             if (list[0] === 'password') void nextTick(() => passwordField.value?.focus());
         })
         .catch((error: unknown) => {
@@ -163,6 +164,7 @@ watch(
         methods.value = undefined;
         errorMessage.value = undefined;
         startCooldown(0);
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- loadMethods shows its failure in the dialog
         void loadMethods();
     },
     // Also on mount: the dialog may be created while a prompt is already open.
@@ -236,6 +238,7 @@ const sendCode = () => {
         .then((resendAfter) => {
             startCooldown(resendAfter);
             sent.value = true;
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises -- nextTick only rejects if its callback throws, and this one cannot
             void nextTick(() => codeField.value?.focus());
         })
         .catch((error: unknown) => {

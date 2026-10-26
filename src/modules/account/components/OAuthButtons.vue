@@ -25,6 +25,7 @@ const route = useRoute();
  * of this block is a no-op rather than a second request.
  */
 const { providers: oauthProviders } = storeToRefs(useOAuthProvidersStore());
+// eslint-disable-next-line @typescript-eslint/no-floating-promises -- fetchProviders falls back to the providers already held
 void useOAuthProvidersStore().fetchProviders();
 
 /**

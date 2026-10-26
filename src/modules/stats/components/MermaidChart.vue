@@ -97,10 +97,12 @@ const render = (): Promise<void> => {
 
 watch(
     () => [props.definition, theme.current.value.dark],
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- render records its failure in `failed` instead of rejecting
     () => void render()
 );
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- render records its failure in `failed` instead of rejecting
     void render();
 });
 

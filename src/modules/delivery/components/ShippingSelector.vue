@@ -23,6 +23,7 @@ import { storeToRefs } from 'pinia';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useDeliveryStore } from '../store.ts';
 import type { CartShippingOption } from '@types';
+import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**
  * The cart's shipping choice: one radio per fitting method, already priced by the server against
@@ -81,12 +82,17 @@ const deliveryStore = useDeliveryStore();
  */
 const { methods, shipToCountries: storeShipToCountries } = storeToRefs(deliveryStore);
 
+/**
+ * Toasts a background read's failure; these reads have no form to host an inline error.
+ */
+const onAmbientError = useAmbientError();
+
 /*
  * Fetches on mount, for `shipToCountries` and {@link freeAboveOf} below — the radios themselves
  * render straight off {@link options}, the caller's own priced, fitting list.
  */
 onMounted(() => {
-    void deliveryStore.fetchMethods();
+    deliveryStore.fetchMethods().catch(onAmbientError);
 });
 
 /**

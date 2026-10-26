@@ -52,6 +52,7 @@ import { SECONDS, weighSpecs, balanceShards } from './shard-balancer';
 import { printFlakyReport, resetFlakyReport } from './flaky-report';
 import { readSpecDurations } from './spec-durations';
 import { runWatched } from './shard-process';
+import { failScript } from '../fail-script';
 import { countFinishedSpecs, judgeShard } from './shard-verdict';
 
 /*
@@ -362,7 +363,7 @@ const runShard = (files: string[], index: number) =>
         // Staggered, not concurrent-from-zero — see SHARD_STAGGER_MS. The clock starts before the
         // wait so a shard's reported seconds stay comparable with the weights in SECONDS.
         setTimeout(() => {
-            void runWatched('npx', ['cypress', 'run', '--e2e', '--spec', files.join(',')], {
+            runWatched('npx', ['cypress', 'run', '--e2e', '--spec', files.join(',')], {
                 cwd: REPO_ROOT,
                 quietMs: QUIET_MINUTES * 60_000,
                 env: {
@@ -376,22 +377,33 @@ const runShard = (files: string[], index: number) =>
                     // Where this process hosts the webhook sink its backend was told about.
                     E2E_WEBHOOK_SINK_PORT: String(SHARD_SINK_PORT_BASE + index)
                 }
-            }).then(({ code, signal, hung, output }) => {
-                const verdict = judgeShard({
-                    code,
-                    signal,
-                    hung,
-                    quietMinutes: QUIET_MINUTES,
-                    assigned: files.length,
-                    ran: countFinishedSpecs(output)
+            })
+                .then(({ code, signal, hung, output }) => {
+                    const verdict = judgeShard({
+                        code,
+                        signal,
+                        hung,
+                        quietMinutes: QUIET_MINUTES,
+                        assigned: files.length,
+                        ran: countFinishedSpecs(output)
+                    });
+                    resolve({
+                        index,
+                        reason: verdict.ok ? undefined : verdict.reason,
+                        output,
+                        seconds: Math.round((Date.now() - startedAt) / 1000)
+                    });
+                })
+                .catch((error: unknown) => {
+                    // `runWatched` never rejects; this is the verdict code above throwing. Fail the
+                    // shard with the reason rather than leave its promise pending forever.
+                    resolve({
+                        index,
+                        reason: `shard verdict could not be judged: ${String(error)}`,
+                        output: '',
+                        seconds: Math.round((Date.now() - startedAt) / 1000)
+                    });
                 });
-                resolve({
-                    index,
-                    reason: verdict.ok ? undefined : verdict.reason,
-                    output,
-                    seconds: Math.round((Date.now() - startedAt) / 1000)
-                });
-            });
         }, index * SHARD_STAGGER_MS);
     });
 
@@ -436,4 +448,4 @@ const main = async () => {
     process.exit(failed > 0 ? 1 : 0);
 };
 
-void main();
+main().catch(failScript);

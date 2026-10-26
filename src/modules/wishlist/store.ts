@@ -6,11 +6,12 @@
  */
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
-import { useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useNotificationsStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { getWishlist, createWishlistItem, deleteWishlistItem, moveWishlistItemToCart } from '@api';
 import type { WishlistItem } from '@types';
 import { useCartStore } from '@/modules/cart';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
 import { createRequestTickets } from '@/infrastructure/utils/request-ticket.ts';
 
@@ -88,13 +89,17 @@ export const useWishlistStore = defineStore('wishlist', () => {
     /**
      * The wishlist for a heart that only needs to know what is saved: the first call reads it, every
      * later call reuses that read. {@link fetchWishlist} stays the door that always asks the server.
+     * A failed read is toasted ONCE here, not once per heart, and forgotten so the next heart asks
+     * again.
      *
-     * @returns A promise resolving with the saved lines.
+     * @returns A promise resolving with the saved lines, or `undefined` when they could not be
+     *  read. Never rejects.
      */
     const ensureWishlist = () => {
         shared ??= fetchWishlist().catch((error: unknown) => {
             shared = undefined;
-            throw error;
+            notifyErrorMessages(useNotificationsStore().addMessage, error);
+            return undefined;
         });
         return shared;
     };

@@ -88,6 +88,7 @@ const registerAfterCreate = (step: (productId: string) => Promise<void>) => {
  * The deployment's active locales and fallback tag — what the tab bar offers.
  */
 const { locales, fallbackLocale, fetchTranslationLocales } = useTranslationLocales();
+// eslint-disable-next-line @typescript-eslint/no-floating-promises -- fetchTranslationLocales never rejects (it falls back to the shop languages)
 void fetchTranslationLocales();
 
 /**
@@ -190,6 +191,7 @@ const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
  * The shop's currency decides how many decimals the price input takes: a JPY shop has no cents to
  * type, a KWD shop has three. Asked here as well as at boot, so a failed boot read is retried.
  */
+// eslint-disable-next-line @typescript-eslint/no-floating-promises -- loadShop never rejects (it logs and leaves the shop empty)
 void loadShop();
 
 /**
@@ -241,6 +243,7 @@ const submitForm = () => {
                     markSaved();
                     addMessage(t('product-create-page.success-create'));
                     // Fire-and-forget: a NavigationFailure must not convert a completed create into an error toast.
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
                     void router.push(
                         routerLinkI18n({ name: 'ProductTarget', params: { id: newProduct.id } })
                     );

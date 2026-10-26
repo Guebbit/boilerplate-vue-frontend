@@ -74,9 +74,12 @@ watch(
         const rest = Object.fromEntries(
             Object.entries(route.query).filter(([name]) => name !== 'tour')
         );
-        void router
+        router
             .replace({ query: rest })
-            .then(() => (isKnownTour(tourId) ? open(tourId) : false));
+            .then(() => (isKnownTour(tourId) ? open(tourId) : false))
+            .catch((error: unknown) => {
+                warn('tours', 'could not replay tour', tourId, error);
+            });
     },
     { immediate: true, flush: 'post' }
 );
@@ -90,6 +93,7 @@ watch(
         if (!readToursEnabled() || !TOURS[WELCOME_TOUR_ID].auto) return;
         if (!accountId || !ready || routeName === SIGN_IN_ROUTE_NAME) return;
         if (requestedTour() !== undefined || hasSeen(WELCOME_TOUR_ID)) return;
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- open catches and logs a tour that cannot start
         void open(WELCOME_TOUR_ID);
     },
     { immediate: true, flush: 'post' }

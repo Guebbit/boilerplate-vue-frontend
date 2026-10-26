@@ -119,6 +119,7 @@ const code = ref('');
  */
 onMounted(() => {
     if (!challenge.value) {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
         void router.replace(routerLinkI18n({ name: 'Login' }));
         return;
     }

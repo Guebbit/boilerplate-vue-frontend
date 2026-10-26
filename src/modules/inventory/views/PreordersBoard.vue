@@ -111,6 +111,7 @@ const syncUrl = () =>
  */
 const selectTab = (tab: BoardTab) => {
     activeTab.value = tab;
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- syncUrl only awaits a router navigation (failures reach router.onError)
     void syncUrl();
 };
 
@@ -132,6 +133,7 @@ const showOrders = (id: string, title: string) => {
 const clearProduct = () => {
     productId.value = undefined;
     productLabel.value = undefined;
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- syncUrl only awaits a router navigation (failures reach router.onError)
     void syncUrl();
 };
 </script>

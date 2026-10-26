@@ -83,6 +83,7 @@ const PRODUCTS_RESOURCE_KEY = 'products';
 export const invalidateProductsCache = (): void => {
     // Fire-and-forget on purpose: it resolves once the on-screen refetches finish, and a failed
     // background refetch leaves the cached copy showing; no caller has anything to do with either.
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- invalidateQueries resolves even when a refetch fails (no throwOnError)
     void queryClient.invalidateQueries({ queryKey: [PRODUCTS_RESOURCE_KEY] });
 };
 

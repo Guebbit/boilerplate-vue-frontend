@@ -75,11 +75,11 @@ describe('provideExample', () => {
         expect(childContext?.example.value?.title).toBe('Changed');
     });
 
-    it('lets a descendant ask for a status change without touching the ref', () => {
+    it('lets a descendant ask for a status change without touching the ref', async () => {
         const changeStatus = vi.fn().mockResolvedValue(undefined);
         mountPair({ example: ref(AN_EXAMPLE), changeStatus });
 
-        void childContext?.changeStatus('published');
+        await childContext?.changeStatus('published');
 
         expect(changeStatus).toHaveBeenCalledWith('published');
     });

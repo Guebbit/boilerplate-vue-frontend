@@ -178,6 +178,7 @@ const handleSecretDone = () => {
     addMessage(t('api-key-create-page.success-create'));
     revealedSecret.value = undefined;
     // Fire-and-forget: a NavigationFailure must not convert a completed mint into an error toast.
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
     void router.push({ name: 'ApiKeysList' });
 };
 </script>

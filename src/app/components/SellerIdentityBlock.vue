@@ -21,6 +21,7 @@ const { t } = useI18n();
  * Asks for the shop, which dedupes against the boot-time load: a page opened directly may render
  * before that request has answered.
  */
+// eslint-disable-next-line @typescript-eslint/no-floating-promises -- loadShop never rejects (it logs and leaves the shop empty)
 void loadShop();
 
 /**

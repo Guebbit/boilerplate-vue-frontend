@@ -63,6 +63,7 @@ const handleToggle = () => {
 // The heart needs to know what is already saved; fire-and-forget, it is decoration on the page.
 // Shared: a grid mounts one heart per card, and they all wait on the same single read.
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- the shared read never rejects (it toasts a failure once)
     if (isAuth.value) void wishlist.ensureWishlist();
 });
 </script>

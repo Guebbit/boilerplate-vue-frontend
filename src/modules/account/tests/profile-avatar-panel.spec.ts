@@ -69,8 +69,7 @@ describe('ProfileAvatar — the remove button', () => {
         const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
         const button = mountPanel('/images/ada.png').get('[data-test=profile-avatar-remove]');
 
-        void button.trigger('click');
-        void button.trigger('click');
+        await Promise.all([button.trigger('click'), button.trigger('click')]);
         await flushPromises();
 
         expect(confirm).toHaveBeenCalledTimes(1);

@@ -24,6 +24,7 @@ import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useProductsStore } from '../store';
@@ -117,6 +118,7 @@ const mayViewTranslations = computed(
  * The deployment's active locales and fallback tag — what the tab bar offers to add.
  */
 const { locales, fallbackLocale, fetchTranslationLocales } = useTranslationLocales();
+// eslint-disable-next-line @typescript-eslint/no-floating-promises -- fetchTranslationLocales never rejects (it falls back to the shop languages)
 void fetchTranslationLocales();
 
 /**
@@ -285,6 +287,12 @@ activateAutoHydrate(
 );
 
 /**
+ * What a 404 or 403 on the admin read does: the Error page, not a form left empty. Any other
+ * failure toasts.
+ */
+const onMissingRecord = useMissingRecord();
+
+/**
  * Loads the admin record whenever the route's product id changes, and resets the open tab: a
  * route change while this view stays mounted (editing product A, then B) must not leave B's form
  * open on whichever tab A happened to be on.
@@ -293,7 +301,7 @@ watch(
     () => id,
     (productId) => {
         activeTab.value = undefined;
-        if (productId) void loadAdminProduct(productId);
+        if (productId) loadAdminProduct(productId).catch(onMissingRecord);
     },
     { immediate: true }
 );

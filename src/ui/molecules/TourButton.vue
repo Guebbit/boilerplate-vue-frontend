@@ -43,6 +43,7 @@ const enabled = readToursEnabled();
 /**
  * Asks the shell to open the tour.
  */
+// eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
 const open = () => void router.push({ query: { ...route.query, tour: props.tour } });
 </script>
 

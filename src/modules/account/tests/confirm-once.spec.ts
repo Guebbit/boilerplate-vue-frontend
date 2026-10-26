@@ -53,9 +53,9 @@ beforeEach(() => {
  */
 const pressTwice = (button: Pick<DOMWrapper<Element>, 'trigger'>) => {
     const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
-    void button.trigger('click');
-    void button.trigger('click');
-    return flushPromises().then(() => confirm);
+    return Promise.all([button.trigger('click'), button.trigger('click')])
+        .then(() => flushPromises())
+        .then(() => confirm);
 };
 
 describe('a double press on a confirm-then-write control in the account panels', () => {
