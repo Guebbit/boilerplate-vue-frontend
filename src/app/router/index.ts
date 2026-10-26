@@ -367,6 +367,7 @@ router.afterEach((to, from, failure) => {
 
     const title = to.meta.title ? translate(to.meta.title) : '';
     document.title = title ? `${title} — ${appName}` : appName;
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- announceRouteChange only awaits nextTick
     void announceRouteChange(title);
 
     // A page behind a sign-in, or the error page, must never be listed: the route table is the one
@@ -389,6 +390,7 @@ router.afterEach((to, from, failure) => {
     // `onMounted` cannot consume this — this is the SOLE place that does, on every page
     // change. The tick waits for the new page's own content to actually be in the DOM first.
     requestMainFocus();
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- nextTick only rejects if its callback throws, and this one cannot
     void nextTick(consumeMainFocus);
 });
 

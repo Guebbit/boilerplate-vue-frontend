@@ -82,6 +82,7 @@ const { message: loadError, report: reportLoadError, clear: clearLoadError } = u
  */
 const load = () => {
     clearLoadError();
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
     void router.replace({ query: { ...period.value } });
     return stats
         .loadProductSales(props.productId, period.value)
@@ -95,6 +96,7 @@ const load = () => {
  */
 const applyPeriod = (next: StatsPeriodChoice) => {
     period.value = next;
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- load records or toasts its own failure
     void load();
 };
 
@@ -162,6 +164,7 @@ onMounted(() => {
     stats.loadLimits().catch((error: unknown) => {
         logger.debug('http', '[Stats] period limits not read', error);
     });
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- load records or toasts its own failure
     void load();
 });
 </script>

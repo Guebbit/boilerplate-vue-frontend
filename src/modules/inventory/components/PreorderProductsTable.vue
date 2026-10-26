@@ -125,6 +125,7 @@ const load = () =>
     );
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- load records or toasts its own failure
     void load();
 });
 

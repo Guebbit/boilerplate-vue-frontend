@@ -59,6 +59,7 @@ const session = useSessionStore();
 
 onMounted(() => {
     // The lifetimes fill in once the session config answers; a failed read leaves them blank.
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- loadSessionMode never rejects (a failed read is dropped and retried)
     void session.loadSessionMode();
     fetchAntibotConfig()
         .then((envelope) => {

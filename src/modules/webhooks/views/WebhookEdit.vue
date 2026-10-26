@@ -66,6 +66,7 @@ const { watchSubscription, updateSubscription, fetchEventCatalogue } = useWebhoo
 const { currentSubscription, eventCatalogue, loadingEventCatalogue, loadingSubscriptions } =
     storeToRefs(useWebhooksStore());
 
+// eslint-disable-next-line @typescript-eslint/no-floating-promises -- the read resolves into the composable's error state instead of rejecting
 onMounted(() => void fetchEventCatalogue());
 
 /**

@@ -42,6 +42,7 @@ import { useDialogStore } from '@/ui/dialog.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
+import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**
  * One language's translation rows: paginated, searched, edited inline.
@@ -203,14 +204,20 @@ watch(tag, (nextTag) => {
     filters.value.tag = nextTag;
     pageCurrent.value = 1;
     drafts.value = {};
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- search is the toolkit's watch-search: its onError handler reports a failure
     void search();
 });
 
+/**
+ * Toasts a background read's failure; these reads have no form to host an inline error.
+ */
+const onAmbientError = useAmbientError();
+
 // The header needs the manifest and the selects the registry; harmless when the list page
 // already loaded them.
-if (capabilities.value.length === 0) void localesStore.fetchLanguages();
+if (capabilities.value.length === 0) localesStore.fetchLanguages().catch(onAmbientError);
 // Likewise for the app registry.
-if (apps.value.length === 0) void localesStore.fetchApps();
+if (apps.value.length === 0) localesStore.fetchApps().catch(onAmbientError);
 
 /**
  * Applies the text/app filters, returning to the first page.

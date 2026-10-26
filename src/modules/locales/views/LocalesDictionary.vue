@@ -396,6 +396,7 @@ watch(incompleteOnly, () => {
 });
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- loadBoard toasts its own failure
     void loadBoard();
 });
 </script>

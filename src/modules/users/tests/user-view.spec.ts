@@ -236,8 +236,7 @@ describe('the purchase hold', () => {
         const lift = vi.spyOn(useUsersStore(), 'liftPurchaseHold').mockResolvedValue({ ...A_USER });
         const button = mountUser(HELD).get('[data-test=user-lift-hold]');
 
-        void button.trigger('click');
-        void button.trigger('click');
+        await Promise.all([button.trigger('click'), button.trigger('click')]);
         await flushPromises();
 
         expect(lift).toHaveBeenCalledTimes(1);

@@ -33,6 +33,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { TwoFactorSetup } from '@api';
+import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**
  * Which second factor is being armed.
@@ -87,6 +88,11 @@ const { delivery, secondsUntilResend, sendingCode, confirmingCode } = storeToRef
 const setup = ref<TwoFactorSetup>();
 
 /**
+ * Toasts a background read's failure; these reads have no form to host an inline error.
+ */
+const onAmbientError = useAmbientError();
+
+/**
  * Closes the dialog, dropping any pending enrollment first — a delivered method's `setupMethod`
  * starts the resend countdown's `setInterval`, and nothing else stops it: `confirmMethod`'s own
  * success path already clears it, but cancelling, or the mount call itself failing, would
@@ -96,7 +102,7 @@ const closeAndClear = () => {
     emit('close');
     // Re-read the status too: a replace disarms the method before its new code is proved, so a
     // cancel would otherwise leave the panel listing a factor the server no longer holds.
-    void twoFactor.abandonSetup();
+    twoFactor.abandonSetup().catch(onAmbientError);
 };
 
 onMounted(() => {
@@ -133,9 +139,11 @@ watch(
     (uri) => {
         qrCodeDataUrl.value = undefined;
         if (!uri) return;
-        void QRCode.toDataURL(uri).then((dataUrl) => {
-            qrCodeDataUrl.value = dataUrl;
-        });
+        QRCode.toDataURL(uri)
+            .then((dataUrl) => {
+                qrCodeDataUrl.value = dataUrl;
+            })
+            .catch(onAmbientError);
     },
     { immediate: true }
 );

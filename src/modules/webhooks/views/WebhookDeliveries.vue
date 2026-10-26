@@ -26,6 +26,7 @@ import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import WebhookDeliveriesFilters from '../components/WebhookDeliveriesFilters.vue';
 import type { WebhookDeliveryFilters } from '../types.ts';
 import { WebhookDeliveryStatus } from '@/types/enums.ts';
+import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**
  * Translation function.
@@ -56,7 +57,14 @@ const {
     loadingDeliveries
 } = storeToRefs(useWebhooksStore());
 
-onMounted(() => void fetchAllSubscriptions());
+/**
+ * Toasts a background read's failure; these reads have no form to host an inline error.
+ */
+const onAmbientError = useAmbientError();
+
+onMounted(() => {
+    fetchAllSubscriptions().catch(onAmbientError);
+});
 
 /**
  * Keeps the filters and page in the URL: a deep link (a bookmark, or the "view deliveries" link off
@@ -124,6 +132,7 @@ const handleReplay = (id: string) => {
 };
 
 // The initial load: the store already holds the URL's filters, so run the first search.
+// eslint-disable-next-line @typescript-eslint/no-floating-promises -- search is the toolkit's watch-search: its onError handler reports a failure
 void search();
 </script>
 

@@ -143,10 +143,10 @@ describe('AddressPicker — adding a place at checkout', () => {
         expect(wrapper.find('[data-test=address-picker-add]').exists()).toBe(true);
     });
 
-    it('chooses the entry the visitor just added, not the default', () => {
+    it('chooses the entry the visitor just added, not the default', async () => {
         const { store, wrapper } = mountPicker([anAddress({ id: 'a1', default: true })], 'a1');
         // The add came through THIS picker's own dialog.
-        void wrapper.get('[data-test=address-picker-add]').trigger('click');
+        await wrapper.get('[data-test=address-picker-add]').trigger('click');
 
         store.addresses = [anAddress({ id: 'a1', default: true }), anAddress({ id: 'a2' })];
 

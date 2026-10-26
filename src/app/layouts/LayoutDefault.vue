@@ -233,6 +233,7 @@ watch(expiredSignal, () => {
     useNotificationsStore().addMessage(t('session-expired.message'));
     // `force`: a navigation to the address already shown is otherwise dropped as a duplicate,
     // and the guard is exactly what has to run again.
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
     void router.replace({ path: route.path, query: route.query, hash: route.hash, force: true });
 });
 
@@ -242,6 +243,7 @@ watch(expiredSignal, () => {
  */
 watch(idleSignal, () => {
     useNotificationsStore().addMessage(t('idle-session.ended'));
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
     void router.replace({ path: route.path, query: route.query, hash: route.hash, force: true });
 });
 
@@ -252,6 +254,7 @@ watch(idleSignal, () => {
  */
 watch(abilitiesSignal, () => {
     const verdict = enforceRouteAccess(router.currentRoute.value, router);
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
     if (verdict) void router.replace(verdict);
 });
 

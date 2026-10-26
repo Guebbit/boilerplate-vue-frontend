@@ -56,6 +56,7 @@ const { createSubscription, fetchEventCatalogue } = useWebhooksStore();
 /** Reactive event catalogue and its loading flag. */
 const { eventCatalogue, loadingEventCatalogue } = storeToRefs(useWebhooksStore());
 
+// eslint-disable-next-line @typescript-eslint/no-floating-promises -- the read resolves into the composable's error state instead of rejecting
 onMounted(() => void fetchEventCatalogue());
 
 /**
@@ -156,6 +157,7 @@ const handleSecretDone = () => {
     const id = createdSubscriptionId.value;
     revealedSecret.value = undefined;
     // Fire-and-forget: a NavigationFailure must not convert a completed create into an error toast.
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
     if (id) void router.push(routerLinkI18n({ name: 'WebhookTarget', params: { id } }));
 };
 </script>

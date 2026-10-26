@@ -38,6 +38,7 @@ const { health, metrics, loadingHealth, loadingMetrics, errorHealth, errorMetric
 const overviewLoading = computed(() => loadingHealth.value || loadingMetrics.value);
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- the read resolves into the composable's error state instead of rejecting
     void fetchAll();
 });
 </script>

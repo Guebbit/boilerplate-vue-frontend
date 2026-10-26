@@ -27,6 +27,7 @@ import { shipmentCount } from '../domain/ship-lines.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import FulfillmentOrderCard from './FulfillmentOrderCard.vue';
+import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**
  * The order page's shipping corner: what is to leave, in how many goes, and what has.
@@ -154,9 +155,14 @@ const markStarted = () => {
 };
 
 /**
+ * Toasts a background read's failure; these reads have no form to host an inline error.
+ */
+const onAmbientError = useAmbientError();
+
+/**
  * The methods list is order-independent, so it loads once, at setup.
  */
-void deliveryStore.fetchMethods();
+deliveryStore.fetchMethods().catch(onAmbientError);
 
 /**
  * Fetches the fulfilment on mount AND whenever `orderId` changes — `immediate: true` covers the
@@ -164,7 +170,7 @@ void deliveryStore.fetchMethods();
  */
 watch(
     () => orderId,
-    (newOrderId) => void deliveryStore.fetchFulfillmentForOrder(newOrderId),
+    (newOrderId) => deliveryStore.fetchFulfillmentForOrder(newOrderId).catch(onAmbientError),
     { immediate: true }
 );
 </script>

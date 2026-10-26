@@ -135,6 +135,7 @@ const handleDelete = singleFlight(() => {
             return deleteExample(id)
                 .then(() => {
                     addMessage(t('example-target-page.success-delete'));
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
                     void router.push(routerLinkI18n({ name: 'ExamplesList' }));
                 })
                 .catch((error: unknown) => reportDeleteError(error));

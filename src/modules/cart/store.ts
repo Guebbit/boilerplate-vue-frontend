@@ -48,6 +48,7 @@ import {
     writeMergeAttempt
 } from './composables/guest-cart-storage';
 import { useGuestCart } from './composables/use-guest-cart';
+import { logger } from '@/infrastructure/utils/logger.ts';
 
 /**
  * What a caller of {@link useCartStore}'s `checkout` supplies: the request without the total,
@@ -636,10 +637,14 @@ export const useCartStore = defineStore('cart', () => {
         );
         signInRead = settled;
         seeding = read;
-        void settled.then(() => {
-            if (signInRead === settled) signInRead = undefined;
-            if (seeding === read) seeding = undefined;
-        });
+        settled
+            .then(() => {
+                if (signInRead === settled) signInRead = undefined;
+                if (seeding === read) seeding = undefined;
+            })
+            .catch((error: unknown) => {
+                logger.error('[Cart] Could not release the sign-in read:', error);
+            });
         return read;
     };
 

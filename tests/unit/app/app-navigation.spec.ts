@@ -581,33 +581,33 @@ describe('Navigation', () => {
         ]);
     });
 
-    it('asks for the welcome tour through ?tour= from the "Show me around" entry', () => {
+    it('asks for the welcome tour through ?tour= from the "Show me around" entry', async () => {
         session.isAuth.value = true;
         session.viewer.value = { email: 'someone@example.com' };
 
-        void mountNav().wrapper.find('[data-test="show-tour"]').trigger('click');
+        await mountNav().wrapper.find('[data-test="show-tour"]').trigger('click');
 
         expect(pushSpy).toHaveBeenCalledWith({ query: { tour: 'welcome' } });
     });
 
-    it('sends the signed-in visitor to Logout on click', () => {
+    it('sends the signed-in visitor to Logout on click', async () => {
         session.isAuth.value = true;
         session.viewer.value = { email: 'someone@example.com' };
         registeredRoutes.value = ['Login', 'Signup', 'Logout'];
 
-        void mountNav().wrapper.find('[data-test="logout"]').trigger('click');
+        await mountNav().wrapper.find('[data-test="logout"]').trigger('click');
 
         expect(pushSpy).toHaveBeenCalledWith(expect.objectContaining({ name: 'Logout' }));
     });
 
-    it('sends the signed-in visitor Home instead, on a build with no Logout route', () => {
+    it('sends the signed-in visitor Home instead, on a build with no Logout route', async () => {
         // Same reasoning as the sign-in/sign-up links above: a route name is a string nothing
         // type-checks, so a build missing the account module must not throw on logout either.
         session.isAuth.value = true;
         session.viewer.value = { email: 'someone@example.com' };
         registeredRoutes.value = [];
 
-        void mountNav().wrapper.find('[data-test="logout"]').trigger('click');
+        await mountNav().wrapper.find('[data-test="logout"]').trigger('click');
 
         expect(pushSpy).toHaveBeenCalledWith(expect.objectContaining({ name: 'Home' }));
     });

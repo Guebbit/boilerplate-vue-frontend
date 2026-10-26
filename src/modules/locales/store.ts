@@ -327,6 +327,7 @@ export const useLocalesStore = defineStore('locales', () => {
             createLocaleEntry(tag, app, body).then((response) => {
                 addRecord(response);
                 // The new row's page position is the server's call, so cached pages are stale.
+                // eslint-disable-next-line @typescript-eslint/no-floating-promises -- invalidateQueries resolves even when a refetch fails (no throwOnError)
                 void invalidateEntrySearches();
                 return response;
             })
@@ -388,6 +389,7 @@ export const useLocalesStore = defineStore('locales', () => {
                 : updateLocaleEntries(tag, app, { entries })
             ).then((response) => {
                 // An import rewrote an unknown slice of the table; every cached page is stale.
+                // eslint-disable-next-line @typescript-eslint/no-floating-promises -- invalidateQueries resolves even when a refetch fails (no throwOnError)
                 void invalidateEntrySearches();
                 return response;
             })

@@ -153,6 +153,7 @@ export const useListUrlState = <TFilters extends object>(
         const foreign = Object.fromEntries(
             Object.entries(route.query).filter(([key]) => !ownKeys.includes(key))
         );
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
         void router.replace({ query: { ...foreign, ...query } });
     };
 

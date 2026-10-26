@@ -630,16 +630,12 @@ export const withTextMode = (mode: LayoutMode, measure: () => void): void => {
         style.id = 'layout-text-mode';
         style.textContent = css;
         win.document.head.append(style);
-        return new Cypress.Promise<void>((resolve) => {
-            void nextFrames(win).then(resolve);
-        });
+        return nextFrames(win);
     });
     measure();
     cy.window({ log: false }).then((win) => {
         win.document.querySelector('#layout-text-mode')?.remove();
-        return new Cypress.Promise<void>((resolve) => {
-            void nextFrames(win).then(resolve);
-        });
+        return nextFrames(win);
     });
 };
 

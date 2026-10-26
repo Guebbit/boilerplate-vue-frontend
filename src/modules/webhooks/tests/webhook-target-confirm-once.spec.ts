@@ -84,8 +84,7 @@ describe('a double press on a webhook confirm-then-write control', () => {
         await flushPromises();
         const button = wrapper.findAll('[data-test=webhook-secret-remove]')[0];
 
-        void button.trigger('click');
-        void button.trigger('click');
+        await Promise.all([button.trigger('click'), button.trigger('click')]);
         await flushPromises();
 
         expect(confirm).toHaveBeenCalledTimes(1);
@@ -97,8 +96,7 @@ describe('a double press on a webhook confirm-then-write control', () => {
         await flushPromises();
         const button = wrapper.get('[data-test=webhook-delete]');
 
-        void button.trigger('click');
-        void button.trigger('click');
+        await Promise.all([button.trigger('click'), button.trigger('click')]);
         await flushPromises();
 
         expect(confirm).toHaveBeenCalledTimes(1);
@@ -110,8 +108,7 @@ describe('a double press on a webhook confirm-then-write control', () => {
         await flushPromises();
         const button = wrapper.get('[data-test=webhook-disable]');
 
-        void button.trigger('click');
-        void button.trigger('click');
+        await Promise.all([button.trigger('click'), button.trigger('click')]);
         await flushPromises();
 
         expect(confirm).toHaveBeenCalledTimes(1);

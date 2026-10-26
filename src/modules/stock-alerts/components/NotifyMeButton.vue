@@ -66,6 +66,7 @@ const handleToggle = () => {
 
 // The button needs to know what was already asked; shared, so a grid costs one read.
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- the shared read never rejects (it toasts a failure once)
     if (isAuth.value) void alerts.ensureStockAlerts();
 });
 </script>

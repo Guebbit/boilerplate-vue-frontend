@@ -184,6 +184,7 @@ const load = () => {
 
 // Vue `watch` over two sources: re-load when either the entity type or id changes.
 // `immediate: true` also loads on mount. https://vuejs.org/api/reactivity-core.html#watch
+// eslint-disable-next-line @typescript-eslint/no-floating-promises -- load records or toasts its own failure
 watch([entityType, entityId], () => void load(), { immediate: true });
 
 /**
