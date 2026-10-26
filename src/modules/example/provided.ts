@@ -8,7 +8,8 @@
  */
 import { provide, inject } from 'vue';
 import type { InjectionKey, Ref } from 'vue';
-import type { Example, ExampleStatus } from '@types';
+import type { Example } from '@types';
+import type { ExampleEvent } from './store.ts';
 
 /**
  * What travels down the tree. The example is read-only to a descendant; changing it goes through
@@ -18,8 +19,8 @@ import type { Example, ExampleStatus } from '@types';
 export interface ProvidedExample {
     /** The example the screen shows, `undefined` while it loads. */
     example: Ref<Example | undefined>;
-    /** Asks the provider to move the example to another status. */
-    changeStatus: (status: ExampleStatus) => Promise<unknown>;
+    /** Asks the provider to apply a lifecycle event to the example. */
+    changeStatus: (event: ExampleEvent) => Promise<unknown>;
 }
 
 /**

@@ -85,12 +85,12 @@ actionTable('example', [
         persona: 'editor',
         route: `/en/examples/${EDITOR_PUBLISHED}`,
         trigger: () => {
-            cy.get('[data-test^=example-move-]').first().click();
+            cy.get('[data-test=example-move-archive]').click();
         },
         intercept: {
             method: 'POST',
-            url: `**/examples/${EDITOR_PUBLISHED}/transitions`,
-            operation: '/examples/{id}/transitions'
+            url: `**/examples/${EDITOR_PUBLISHED}/archive`,
+            operation: '/examples/{id}/archive'
         },
         kind: 'row',
         alert: 'example-target-status-error',

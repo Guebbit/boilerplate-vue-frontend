@@ -234,7 +234,14 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                 </div>
                 <p v-else class="m-0 opacity-75">{{ t('generic.loading-state') }}</p>
 
-                <div v-if="currentExample?.actions.transitions.length" class="mt-8">
+                <div
+                    v-if="
+                        currentExample?.actions.publish ||
+                        currentExample?.actions.archive ||
+                        currentExample?.actions.unarchive
+                    "
+                    class="mt-8"
+                >
                     <h3 class="mb-3 text-lg font-semibold">
                         {{ t('example-target-page.section-status') }}
                     </h3>

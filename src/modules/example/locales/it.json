@@ -8,9 +8,9 @@
         "archived": "Archiviato"
     },
     "example-status-actions": {
-        "move-to-draft": "Torna a bozza",
-        "move-to-published": "Pubblica",
-        "move-to-archived": "Archivia"
+        "event-publish": "Pubblica",
+        "event-archive": "Archivia",
+        "event-unarchive": "Torna a bozza"
     },
     "example-form": {
         "title-required": "Inserisci un titolo",

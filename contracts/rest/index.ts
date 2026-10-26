@@ -5672,8 +5672,12 @@ export type ExampleSort = ExampleSortItem[];
  * What the requesting caller may do to this example, decided by the server. A client renders its controls from this instead of re-implementing the lifecycle or the ownership rule: both depend on who asks, and a second copy in a separately deployed client is how the two come to disagree.
  */
 export interface ExampleActions {
-    /** The statuses this caller may move the example to through `POST /examples/{id}/transitions`. Never contains the current status; empty when the caller may not edit it. */
-    transitions: ExampleStatus[];
+    /** Whether `POST /examples/{id}/publish` would be accepted for this caller, from the status the example holds now. */
+    publish: boolean;
+    /** Whether `POST /examples/{id}/archive` would be accepted for this caller, from the status the example holds now. */
+    archive: boolean;
+    /** Whether `POST /examples/{id}/unarchive` would be accepted for this caller, from the status the example holds now. */
+    unarchive: boolean;
     /** Whether `PATCH`/`PUT /examples/{id}` and `PUT /examples/{id}/cover` would be accepted for this caller. */
     update: boolean;
     /** Whether `DELETE /examples/{id}` would be accepted for this caller. */
@@ -5748,10 +5752,6 @@ export interface UpdateExampleRequest {
      * @maxLength 20000
      */
     body?: string;
-}
-
-export interface TransitionExampleRequest {
-    to: ExampleStatus;
 }
 
 export interface ReplaceExampleCoverRequestMultipart {
@@ -11344,7 +11344,7 @@ export const getExampleById = (
 };
 
 /**
- * Replaces the example's writable fields (RFC 9110 §9.3.4). `title` and `body` are required, since a PUT names the whole representation. The status moves through `POST /examples/{id}/transitions`.
+ * Replaces the example's writable fields (RFC 9110 §9.3.4). `title` and `body` are required, since a PUT names the whole representation. The status moves through `POST /examples/{id}/publish|archive|unarchive`.
  * @summary Replace an example
  */
 export const replaceExampleById = (
@@ -11415,23 +11415,36 @@ export const deleteExampleById = (
 };
 
 /**
- * Moves the example to `to`. Which moves are open is the caller's `Example.actions.transitions`. A move into `published` stamps `publishedAt` the first time, announces `example.published` and mails the owner. Another person's example answers `404`, as every write here does.
- * @summary Move an example to another status
+ * Moves a draft to `published`. Stamps `publishedAt` the first time, announces `example.published` and mails the owner. Whether the door is open is the caller's `Example.actions.publish`. Another person's example answers `404`, as every write here does. Answers `409` `EXAMPLE_NOT_PUBLISHABLE` from any other status.
+ * @summary Publish an example
  */
-export const transitionExample = (
+export const publishExample = (
     id: string,
-    transitionExampleRequest: TransitionExampleRequest,
     options?: SecondParameter<typeof orvalMutator<Example>>
 ) => {
-    return orvalMutator<Example>(
-        {
-            url: `/examples/${id}/transitions`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: transitionExampleRequest
-        },
-        options
-    );
+    return orvalMutator<Example>({ url: `/examples/${id}/publish`, method: 'POST' }, options);
+};
+
+/**
+ * Moves a draft or a published example to `archived`. Whether the door is open is the caller's `Example.actions.archive`. Another person's example answers `404`. Answers `409` `EXAMPLE_NOT_ARCHIVABLE` from any other status.
+ * @summary Archive an example
+ */
+export const archiveExample = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<Example>>
+) => {
+    return orvalMutator<Example>({ url: `/examples/${id}/archive`, method: 'POST' }, options);
+};
+
+/**
+ * Moves an archived example back to `draft`; publishing it again keeps the original `publishedAt`. Whether the door is open is the caller's `Example.actions.unarchive`. Another person's example answers `404`. Answers `409` `EXAMPLE_NOT_UNARCHIVABLE` from any other status.
+ * @summary Return an archived example to draft
+ */
+export const unarchiveExample = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<Example>>
+) => {
+    return orvalMutator<Example>({ url: `/examples/${id}/unarchive`, method: 'POST' }, options);
 };
 
 /**
@@ -12045,7 +12058,9 @@ export type UpdateExampleByIdWithMergePatchJsonResult = NonNullable<
     Awaited<ReturnType<typeof updateExampleByIdWithMergePatchJson>>
 >;
 export type DeleteExampleByIdResult = NonNullable<Awaited<ReturnType<typeof deleteExampleById>>>;
-export type TransitionExampleResult = NonNullable<Awaited<ReturnType<typeof transitionExample>>>;
+export type PublishExampleResult = NonNullable<Awaited<ReturnType<typeof publishExample>>>;
+export type ArchiveExampleResult = NonNullable<Awaited<ReturnType<typeof archiveExample>>>;
+export type UnarchiveExampleResult = NonNullable<Awaited<ReturnType<typeof unarchiveExample>>>;
 export type ReplaceExampleCoverResult = NonNullable<
     Awaited<ReturnType<typeof replaceExampleCover>>
 >;

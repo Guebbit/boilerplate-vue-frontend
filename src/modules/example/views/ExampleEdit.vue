@@ -341,7 +341,13 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                     :fields="asideFields"
                 >
                     <template #icon><NotebookPen :size="28" /></template>
-                    <div v-if="currentExample?.actions.transitions.length">
+                    <div
+                        v-if="
+                            currentExample?.actions.publish ||
+                            currentExample?.actions.archive ||
+                            currentExample?.actions.unarchive
+                        "
+                    >
                         <h3 class="mb-3 text-lg font-semibold">
                             {{ t('example-target-page.section-status') }}
                         </h3>

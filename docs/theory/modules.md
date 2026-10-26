@@ -229,7 +229,7 @@ Its backend twin, `../boilerplate-node-backend/src/modules/example`, shows the s
 
 ```mermaid
 flowchart LR
-    List["list / detail / edit<br/>render example.actions"] -->|"press a move"| Door["POST /examples/{id}/transitions"]
+    List["list / detail / edit<br/>render example.actions"] -->|"press a move"| Door["POST /examples/{id}/publish, archive, unarchive"]
     Door -->|"200 + new actions"| Cache["store replaces the record"]
     Door -->|"409: a peer moved it"| Reread["re-read past the cache<br/>buttons show the server's new answer"]
     Cache --> List
@@ -238,7 +238,7 @@ flowchart LR
 
 Copy the folder, rename it, delete the screens and the patterns you do not need (each header says
 when), and delete `example` once you have your own domain. The transition table lives on the
-backend; a client never holds one (`actions.transitions` is the server's list).
+backend; a client never holds one (`actions.publish`, `archive` and `unarchive` are the server's answer).
 
 ## Adding and deleting a domain
 

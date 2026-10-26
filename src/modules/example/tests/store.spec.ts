@@ -204,7 +204,7 @@ describe('useExampleStore', () => {
     });
 
     describe('transitionExample', () => {
-        it('posts { to } to the door and replaces the cached record with the answer', () => {
+        it('posts to the event’s own door and replaces the cached record with the answer', () => {
             const store = useExampleStore();
             store.addExampleRecord({ ...EXAMPLE } as never);
             vi.mocked(orvalMutator).mockImplementationOnce(
@@ -213,19 +213,24 @@ describe('useExampleStore', () => {
                         parseOrvalFixture(config.method, config.url, {
                             ...EXAMPLE,
                             status: 'published',
-                            actions: { transitions: ['archived'], update: true, delete: true }
+                            actions: {
+                                publish: false,
+                                archive: true,
+                                unarchive: false,
+                                update: true,
+                                delete: true
+                            }
                         })
                     )
             );
 
-            return store.transitionExample(EXAMPLE.id, 'published').then(() => {
+            return store.transitionExample(EXAMPLE.id, 'publish').then(() => {
                 expect(lastRequest()).toMatchObject({
-                    url: `/examples/${EXAMPLE.id}/transitions`,
+                    url: `/examples/${EXAMPLE.id}/publish`,
                     method: 'POST'
                 });
-                expect(lastBody(schemas.TransitionExampleBody)).toEqual({ to: 'published' });
                 expect(store.examples[EXAMPLE.id]?.status).toBe('published');
-                expect(store.examples[EXAMPLE.id]?.actions?.transitions).toEqual(['archived']);
+                expect(store.examples[EXAMPLE.id]?.actions?.archive).toBe(true);
             });
         });
     });
