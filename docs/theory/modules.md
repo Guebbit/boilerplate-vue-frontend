@@ -236,6 +236,18 @@ flowchart LR
     Reread --> List
 ```
 
+### Standards the template follows
+
+The backend owns each of these and writes it once; the frontend follows it and never restates the
+rule. The backend's "Standards the template carries" table
+lists where each one lives.
+
+| Standard                                 | What the frontend does                                            |
+| ---------------------------------------- | ----------------------------------------------------------------- |
+| `actions` on every read and write        | renders a control only from the flag; no status table of its own  |
+| A status change is a door per event      | one button per open flag, each calling its own generated function |
+| A refused lifecycle move is 409 + a code | shows the message in place, re-reads the record past the cache    |
+
 Copy the folder, rename it, delete the screens and the patterns you do not need (each header says
 when), and delete `example` once you have your own domain. The transition table lives on the
 backend; a client never holds one (`actions.publish`, `archive` and `unarchive` are the server's answer).
