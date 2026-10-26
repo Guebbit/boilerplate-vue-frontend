@@ -17,6 +17,7 @@ import {
     listOrderPayments,
     createRefund,
     settleRefundByHand as settleRefundByHandRequest,
+    cancelRefund as cancelRefundRequest,
     recordOrderPayment,
     listPaymentMethods,
     searchPayments,
@@ -312,6 +313,41 @@ export const usePaymentsStore = defineStore('payments', () => {
         );
 
     /**
+     * Voids a refund the shop must never pay: a duplicate, or one the provider's dashboard already
+     * covered. Nothing is sent anywhere and nobody is mailed; the amount becomes refundable again.
+     * Like the hand settle, the answer is the refund and the payment (totals, actions) is a read of
+     * its own, which replaces the cached one.
+     *
+     * @param target - The payment carrying the refund and the order it belongs to.
+     * @param target.id - The payment.
+     * @param target.orderId - Its order, for the re-read after a fault.
+     * @param refundId - The refund record to cancel.
+     * @param note - Why, for the audit row; required by the API.
+     * @returns A promise resolving with the payment as it now stands, read after the cancel.
+     */
+    const cancelRefund = (
+        target: { id: string; orderId: string },
+        refundId: string,
+        note: string
+    ) =>
+        fetchAny(() =>
+            cancelRefundRequest(target.id, refundId, { note })
+                .then(() => getPayment(target.id))
+                .then((response) => {
+                    if (payment.value?.id === response.id) payment.value = response;
+                    return response;
+                })
+                .catch((error: unknown) =>
+                    rereadAfterFault(
+                        target.orderId,
+                        error,
+                        ERROR_CODES.PAYMENT_REFUND_NOT_OPEN,
+                        ERROR_CODES.PAYMENT_REFUND_IN_FLIGHT
+                    )
+                )
+        );
+
+    /**
      * Records money that arrived outside the provider — cash, a transfer, by hand. Admin-only at
      * the API; a caller without the role gets the 403 this rethrows.
      *
@@ -487,6 +523,7 @@ export const usePaymentsStore = defineStore('payments', () => {
         finishAtProvider,
         refundPayment,
         settleRefundByHand,
+        cancelRefund,
         recordOfflinePayment,
         findOrderIdByReference
     };

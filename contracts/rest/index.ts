@@ -1926,7 +1926,7 @@ export interface ExportOrder {
 }
 
 /**
- * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`.
+ * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`.
  */
 export type OrderTimelineType = (typeof OrderTimelineType)[keyof typeof OrderTimelineType];
 
@@ -1942,6 +1942,7 @@ export const OrderTimelineType = {
     refund_issued: 'refund_issued',
     refund_settled: 'refund_settled',
     refund_failed: 'refund_failed',
+    refund_canceled: 'refund_canceled',
     shipment_shipped: 'shipment_shipped',
     shipment_delivered: 'shipment_delivered',
     fulfillment_held: 'fulfillment_held',
@@ -2013,6 +2014,7 @@ export const RefundReason = {
 /**
  * Why the provider last refused a refund, as a closed code. Staff only (`display:Payment`). `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
  * Money did NOT move for `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` (the payment's provider is no longer installed, so nothing was asked): the refund may be marked returned by hand once the money went back another way. `declined`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` are final and are not retried; `insufficient_funds` (the shop's own provider balance is short) and the unclear `provider_unavailable` and `unknown` are retried with a growing delay. An unclear refusal may have gone through, so it is never offered for hand settlement.
+ * `canceled` is not a refusal: staff voided the refund (`POST /payments/{id}/refunds/{refundId}/cancel`). Nothing was sent, it is never retried and it can neither be settled by hand nor canceled again.
  */
 export type RefundFailureReason = (typeof RefundFailureReason)[keyof typeof RefundFailureReason];
 
@@ -2023,7 +2025,8 @@ export const RefundFailureReason = {
     lost_or_stolen_card: 'lost_or_stolen_card',
     provider_removed: 'provider_removed',
     provider_unavailable: 'provider_unavailable',
-    unknown: 'unknown'
+    unknown: 'unknown',
+    canceled: 'canceled'
 } as const;
 
 /**
@@ -2038,7 +2041,7 @@ export interface Refund {
     amount: number;
     /** ISO-4217 currency code, copied from the payment. */
     currency: string;
-    /** `pending` while the provider is being asked (or, on a hand-paid payment, until an operator reports the money back); `failed` when it refused — the sweep retries it with the same idempotency key unless the refusal is final, and an operator may report it returned by hand when the money provably did not move (see `RefundFailureReason`); `succeeded` once the money is confirmed back, or reported back by the operator. */
+    /** `pending` while the provider is being asked (or, on a hand-paid payment, until an operator reports the money back); `failed` when it refused — the sweep retries it with the same idempotency key unless the refusal is final, and an operator may report it returned by hand when the money provably did not move (see `RefundFailureReason`); `succeeded` once the money is confirmed back, or reported back by the operator. A `failed` refund with `failureReason: canceled` was voided by staff and is closed for good. */
     status: RefundStatus;
     reason: RefundReason;
     returnId?: Id;
@@ -4008,6 +4011,8 @@ export interface PaymentActions {
     refund: boolean;
     /** The ids of the refunds this caller may mark as returned with `POST /payments/{id}/refunds/{refundId}/settle`: the caller holds `create:Refund`, the payment is `succeeded`, and the refund is either a hand-paid payment's `pending` one or a card refund `failed` with a reason that proves the money did not move (`RefundFailureReason`). The server decides; a client never rebuilds this rule. An array because the route takes a target; empty when there is none. */
     settleByHand: Id[];
+    /** The ids of the refunds this caller may void with `POST /payments/{id}/refunds/{refundId}/cancel`: the same set as `settleByHand` (money that provably did not move), so a hand-paid `pending` refund or a card refund refused for a clear reason. The server decides. Empty when there is none. */
+    cancelRefund: Id[];
 }
 
 /**
@@ -4534,6 +4539,8 @@ export interface ReturnActions {
     decline: boolean;
     /** Whether `POST /returns/{id}/receive` would be accepted. */
     receive: boolean;
+    /** Whether `POST /returns/{id}/close` would be accepted. */
+    close: boolean;
 }
 
 export interface Return {
@@ -5310,10 +5317,21 @@ export interface PaymentAttentionItem {
     failureReason?: RefundFailureReason;
     /** When the problem was recorded, so the page can sort by age. */
     since: string;
+    /** The legal deadline to give the money back, on a `refused_refund` that pays for a withdrawal or a return: the refund's creation plus 14 days (Consumer Rights Directive Art. 13). Absent for any other refund, which shows its age only. The client shows the days left; a past date means the deadline has gone. */
+    refundDueBy?: string;
 }
 
 export interface PaymentAttentionResponse {
     items: PaymentAttentionItem[];
+}
+
+export interface CancelRefundRequest {
+    /**
+     * Why the refund is voided (who refunded it elsewhere and where, or that it was a duplicate). Staff-only free text, kept in the audit row and nowhere the buyer reads.
+     * @minLength 1
+     * @maxLength 1000
+     */
+    note: string;
 }
 
 /**
@@ -5325,6 +5343,15 @@ export interface ReleaseDateImpact {
      * @minimum 0
      */
     notify: number;
+}
+
+export interface CloseReturnRequest {
+    /**
+     * Why the return is closed by hand. Optional, staff-only free text, kept in the audit row and nowhere the customer reads.
+     * @minLength 1
+     * @maxLength 1000
+     */
+    note?: string;
 }
 
 /**
@@ -10854,6 +10881,28 @@ export const settleRefundByHand = (
 };
 
 /**
+ * A local void for a refund the shop will not pay: a duplicate opened by mistake, or one the provider's dashboard already covered. The record goes `failed` with `failureReason: canceled` and the amount it held returns to what is refundable. Nothing is sent to the provider, no credit note is issued and the buyer is not mailed: the money never moved, so there is nothing to report. The sweep never sends a canceled refund. The note says why, and is kept in the audit row `admin.payment.refund_canceled` with the order's timeline row `refund_canceled` (staff only) and the `payment.refund_canceled` event.
+ * Which refunds may be canceled: exactly the ones `actions.cancelRefund` lists, the same set as `actions.settleByHand`: a hand-paid (`manual`) payment's `pending` refund, and a card refund the provider refused in a way that proves the money did not move (`RefundFailureReason`: `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card`, `provider_removed`). A `succeeded` refund, or one already canceled, answers 409 `PAYMENT_REFUND_NOT_OPEN`: the money moved, and cancelling it would falsify the books. A card refund that is `pending` (an attempt is running) or `failed` for an unclear reason (`provider_unavailable`, `unknown`) answers 409 `PAYMENT_REFUND_IN_FLIGHT`: the money may have moved. Needs `create:Refund`, with the same fresh-session requirement as creating one: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
+ * @summary Cancel a refund that must never be paid
+ */
+export const cancelRefund = (
+    id: string,
+    refundId: Id,
+    cancelRefundRequest: CancelRefundRequest,
+    options?: SecondParameter<typeof orvalMutator<Refund>>
+) => {
+    return orvalMutator<Refund>(
+        {
+            url: `/payments/${id}/refunds/${refundId}/cancel`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: cancelRefundRequest
+        },
+        options
+    );
+};
+
+/**
  * A preview for staff about to save a release date, so the save is never a surprise. Counts the
  * orders whose waiting fulfillment orders for this product would get a delay email (`notify`), counted once per order. It judges with the same rule
  * the save does and writes nothing: the counts are a snapshot, and a payment or shipment between the
@@ -10907,6 +10956,26 @@ export const getFulfillmentOrder = (
 ) => {
     return orvalMutator<FulfillmentOrder>(
         { url: `/delivery/fulfillment-orders/${id}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Staff finish a `received` return whose refund will not follow the usual way: it was canceled, or the money went back outside the application. The return becomes `closed` and the order's timeline and the audit row `admin.return.closed` say so, with the note in the audit row only. No money moves, no stock moves (the units went back on sale when the goods were received), no credit note is issued and the customer is not mailed that their money went back: closing is bookkeeping, not a refund. A return that is not `received` (a `requested` one is declined, not closed) answers 409 `RETURN_NOT_CLOSABLE`. Needs `receive:Return`, the key that receives the goods, which carries a fresh-session requirement.
+ * @summary Close a return by hand
+ */
+export const closeReturn = (
+    id: string,
+    closeReturnRequest?: CloseReturnRequest,
+    options?: SecondParameter<typeof orvalMutator<Return>>
+) => {
+    return orvalMutator<Return>(
+        {
+            url: `/returns/${id}/close`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: closeReturnRequest
+        },
         options
     );
 };
@@ -11798,6 +11867,7 @@ export type ListPaymentAttentionResult = NonNullable<
     Awaited<ReturnType<typeof listPaymentAttention>>
 >;
 export type SettleRefundByHandResult = NonNullable<Awaited<ReturnType<typeof settleRefundByHand>>>;
+export type CancelRefundResult = NonNullable<Awaited<ReturnType<typeof cancelRefund>>>;
 export type PreviewReleaseDateImpactResult = NonNullable<
     Awaited<ReturnType<typeof previewReleaseDateImpact>>
 >;
@@ -11807,6 +11877,7 @@ export type PreviewRestockDateImpactResult = NonNullable<
 export type GetFulfillmentOrderResult = NonNullable<
     Awaited<ReturnType<typeof getFulfillmentOrder>>
 >;
+export type CloseReturnResult = NonNullable<Awaited<ReturnType<typeof closeReturn>>>;
 export type GetSalesStatsResult = NonNullable<Awaited<ReturnType<typeof getSalesStats>>>;
 export type GetProductStatsResult = NonNullable<Awaited<ReturnType<typeof getProductStats>>>;
 export type GetProductSalesSeriesResult = NonNullable<

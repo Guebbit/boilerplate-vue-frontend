@@ -119,6 +119,34 @@ const headers = computed<CoreDataTableHeader<(typeof rows.value)[number]>[]>(() 
 ]);
 
 /**
+ * One day, in milliseconds.
+ */
+const DAY_MS = 86_400_000;
+
+/**
+ * What the legal pay-back deadline of a refused refund reads today (Consumer Rights Directive
+ * Art. 13): the days left, or how many days late. Nothing for a refund that has no such deadline,
+ * which shows its age only. The server sends the date; the count is the page's, because it changes
+ * every day while the row does not.
+ *
+ * @param refundDueBy - The item's `refundDueBy`, absent when the law sets no deadline.
+ * @returns The sentence and whether it is overdue, or `undefined` for no deadline.
+ */
+const deadlineOf = (refundDueBy: string | undefined) => {
+    if (!refundDueBy) return undefined;
+    const days = Math.ceil((new Date(refundDueBy).getTime() - Date.now()) / DAY_MS);
+    return days >= 0
+        ? {
+              overdue: false,
+              text: t('payments-list-page.attention-deadline-left', { count: days }, days)
+          }
+        : {
+              overdue: true,
+              text: t('payments-list-page.attention-deadline-over', { count: -days }, -days)
+          };
+};
+
+/**
  * The order's page, or nothing when this build ships none.
  */
 const orderLink = useOrderLink();
@@ -187,6 +215,14 @@ const auditLink = computed(() => {
             </template>
             <template v-slot:[`item.since`]="{ item }">
                 {{ formatDateTime(item.since) }}
+                <p
+                    v-if="deadlineOf(item.refundDueBy)"
+                    class="mt-1 text-xs font-semibold"
+                    :class="deadlineOf(item.refundDueBy)?.overdue ? 'text-error' : 'text-warning'"
+                    data-test="attention-deadline"
+                >
+                    {{ deadlineOf(item.refundDueBy)?.text }}
+                </p>
             </template>
             <template v-slot:[`item.amount`]="{ item }">
                 {{ formatCurrency(item.amount, item.currency) }}

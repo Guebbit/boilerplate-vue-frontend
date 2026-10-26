@@ -235,6 +235,7 @@ const DETAILS: Readonly<Partial<Record<OrderTimelineType, DetailBuilder>>> = {
     status_overridden: statusMove,
     refund_issued: refundParts,
     refund_settled: refundParts,
+    refund_canceled: refundParts,
     refund_failed: (tools, data) => [
         ...refundParts(tools, data),
         coded(

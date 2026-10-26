@@ -35,7 +35,7 @@ const PAYMENT = {
     method: 'card',
     amountRefunded: 0,
     refunds: [],
-    actions: { pay: false, sync: false, refund: false, settleByHand: [] }
+    actions: { pay: false, sync: false, refund: false, settleByHand: [], cancelRefund: [] }
 };
 
 /** Canned response per `METHOD /url` key; an `Error` or `Declined` entry makes the call reject. */
@@ -434,7 +434,13 @@ describe('refundPayment', () => {
         responses['POST /payments/payment-1/refunds'] = refused;
         responses['GET /payments/payment-1'] = {
             ...PAYMENT,
-            actions: { pay: false, sync: false, refund: true, settleByHand: ['refund-1'] }
+            actions: {
+                pay: false,
+                sync: false,
+                refund: true,
+                settleByHand: ['refund-1'],
+                cancelRefund: []
+            }
         };
         const store = usePaymentsStore();
 
@@ -451,7 +457,7 @@ describe('refundPayment', () => {
             ...PAYMENT,
             status: 'succeeded',
             amountRefunded: 5,
-            actions: { pay: false, sync: false, refund: true, settleByHand: [] }
+            actions: { pay: false, sync: false, refund: true, settleByHand: [], cancelRefund: [] }
         };
         const store = usePaymentsStore();
 
@@ -489,7 +495,7 @@ describe('settleRefundByHand', () => {
         method: 'cash',
         status: 'succeeded',
         refunds: [{ ...REFUND, status: 'succeeded', settledByHand: true }],
-        actions: { pay: false, sync: false, refund: false, settleByHand: [] }
+        actions: { pay: false, sync: false, refund: false, settleByHand: [], cancelRefund: [] }
     };
 
     it('posts to the refund, then reads the payment again and mirrors it', () => {
@@ -498,7 +504,13 @@ describe('settleRefundByHand', () => {
         const store = usePaymentsStore();
         store.payment = aPayment({
             id: 'payment-1',
-            actions: { pay: false, sync: false, refund: false, settleByHand: ['refund-1'] }
+            actions: {
+                pay: false,
+                sync: false,
+                refund: false,
+                settleByHand: ['refund-1'],
+                cancelRefund: []
+            }
         });
 
         return store
@@ -542,6 +554,62 @@ describe('settleRefundByHand', () => {
             .then(() => {
                 expect(requestedUrls()).toEqual([
                     '/payments/payment-1/refunds/refund-1/settle',
+                    '/orders/order-1/payments'
+                ]);
+            });
+    });
+});
+
+describe('cancelRefund', () => {
+    const VOIDED = {
+        ...PAYMENT,
+        refunds: [{ ...REFUND, status: 'failed', failureReason: 'canceled' }],
+        actions: { pay: false, sync: false, refund: true, settleByHand: [], cancelRefund: [] }
+    };
+
+    it('posts the note, then reads the payment again and mirrors it', () => {
+        responses['POST /payments/payment-1/refunds/refund-1/cancel'] = VOIDED.refunds[0];
+        responses['GET /payments/payment-1'] = VOIDED;
+        const store = usePaymentsStore();
+        store.payment = aPayment({
+            id: 'payment-1',
+            actions: {
+                pay: false,
+                sync: false,
+                refund: false,
+                settleByHand: ['refund-1'],
+                cancelRefund: ['refund-1']
+            }
+        });
+
+        return store
+            .cancelRefund({ id: 'payment-1', orderId: 'order-1' }, 'refund-1', 'refunded elsewhere')
+            .then(() => {
+                expect(requestedUrls()).toEqual([
+                    '/payments/payment-1/refunds/refund-1/cancel',
+                    '/payments/payment-1'
+                ]);
+                const cancelCall = vi.mocked(orvalMutator).mock.calls[0]?.[0] as { data: unknown };
+                expect(contractRequest(schemas.CancelRefundBody, cancelCall.data)).toEqual({
+                    note: 'refunded elsewhere'
+                });
+                expect(store.payment?.actions.cancelRefund).toEqual([]);
+            });
+    });
+
+    it('re-reads the payment when the refund is no longer open, before rejecting', () => {
+        responses['POST /payments/payment-1/refunds/refund-1/cancel'] = {
+            status: 409,
+            code: 'PAYMENT_REFUND_NOT_OPEN',
+            message: 'Already closed'
+        };
+        const store = usePaymentsStore();
+
+        return expect(store.cancelRefund({ id: 'payment-1', orderId: 'order-1' }, 'refund-1', 'x'))
+            .rejects.toMatchObject({ errors: [{ code: 'PAYMENT_REFUND_NOT_OPEN' }] })
+            .then(() => {
+                expect(requestedUrls()).toEqual([
+                    '/payments/payment-1/refunds/refund-1/cancel',
                     '/orders/order-1/payments'
                 ]);
             });

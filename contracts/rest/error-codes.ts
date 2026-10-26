@@ -208,6 +208,8 @@ export const ERROR_CODES = {
     RETURN_LINES_INVALID: 'RETURN_LINES_INVALID',
     /** 409 — The fulfillment order has nothing left to cancel, or nothing has shipped from the order yet (cancel the whole order instead). */
     RETURN_NOTHING_TO_CANCEL: 'RETURN_NOTHING_TO_CANCEL',
+    /** 409 — The return is not one that was received and still awaits its money, so it cannot be closed by hand. */
+    RETURN_NOT_CLOSABLE: 'RETURN_NOT_CLOSABLE',
     /** 409 — The return has already been decided. */
     RETURN_NOT_DECIDABLE: 'RETURN_NOT_DECIDABLE',
     /** 409 — The return is not an approved one awaiting its goods. */
