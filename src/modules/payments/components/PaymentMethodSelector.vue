@@ -21,6 +21,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import type { PaymentMethodId } from '@types';
 import { usePaymentsStore } from '../store.ts';
+import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**
  * The chosen method's id, or undefined while nothing is selected — the checkout defaults to
@@ -48,8 +49,13 @@ const paymentsStore = usePaymentsStore();
  */
 const { methods } = storeToRefs(paymentsStore);
 
+/**
+ * Toasts a background read's failure; these reads have no form to host an inline error.
+ */
+const onAmbientError = useAmbientError();
+
 onMounted(() => {
-    if (methods.value.length === 0) void paymentsStore.fetchMethods();
+    if (methods.value.length === 0) paymentsStore.fetchMethods().catch(onAmbientError);
 });
 </script>
 

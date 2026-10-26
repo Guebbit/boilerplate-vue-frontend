@@ -28,6 +28,7 @@ import BackorderLimitDialog from './BackorderLimitDialog.vue';
 import type { InventoryLevel } from '@types';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
+import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**
  * The shelf counts, one row per product: what is on hand right now, three numbers each. The
@@ -147,6 +148,11 @@ const { sync: syncUrl } = useListUrlState({
 const levelsPageTotal = computed(() => Math.ceil(levelsTotal.value / PAGE_SIZE));
 
 /**
+ * Toasts a background read's failure; these reads have no form to host an inline error.
+ */
+const onAmbientError = useAmbientError();
+
+/**
  * Loads the board page matching the current filters.
  */
 const loadLevels = () =>
@@ -158,10 +164,10 @@ const loadLevels = () =>
 
 watch(lowOnly, syncUrl);
 
-watch([levelsPage, lowOnly], () => void loadLevels());
+watch([levelsPage, lowOnly], () => loadLevels().catch(onAmbientError));
 
 onMounted(() => {
-    void loadLevels();
+    loadLevels().catch(onAmbientError);
 });
 </script>
 

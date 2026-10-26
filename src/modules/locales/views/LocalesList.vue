@@ -32,6 +32,7 @@ import type { LocaleCapability } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
+import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**
  * The languages board: every language the deployment offers, from both tiers, each stating what
@@ -248,9 +249,14 @@ const handleDelete = singleFlight((language: LocaleCapability) => {
  */
 const appKind = (id: string) => apps.value.find((app) => app.id === id)?.kind ?? 'frontend';
 
+/**
+ * Toasts a background read's failure; these reads have no form to host an inline error.
+ */
+const onAmbientError = useAmbientError();
+
 onMounted(() => {
-    void localesStore.fetchLanguages();
-    void localesStore.fetchApps();
+    localesStore.fetchLanguages().catch(onAmbientError);
+    localesStore.fetchApps().catch(onAmbientError);
 });
 </script>
 

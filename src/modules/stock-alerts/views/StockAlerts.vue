@@ -21,6 +21,7 @@ import { useProductLines } from '@/modules/products';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useStockAlertsStore } from '../store.ts';
+import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**
  * Translation function.
@@ -69,10 +70,15 @@ const handleCancel = (productId: string) => {
         .catch((error) => reportActionError(error));
 };
 
+/**
+ * Toasts a background read's failure; these reads have no form to host an inline error.
+ */
+const onAmbientError = useAmbientError();
+
 onMounted(() => {
-    void fetchStockAlerts().then((requests) =>
-        loadProducts((requests ?? []).map(({ productId }) => productId))
-    );
+    fetchStockAlerts()
+        .then((requests) => loadProducts((requests ?? []).map(({ productId }) => productId)))
+        .catch(onAmbientError);
 });
 </script>
 

@@ -26,6 +26,7 @@ import { withAntibotToken, isAntibotVerificationFailed } from '@/infrastructure/
 import { usePaymentsStore } from '../store.ts';
 import PaymentStatusChip from './PaymentStatusChip.vue';
 import TransferInstructionsPanel from './TransferInstructionsPanel.vue';
+import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**
  * The order page's payment corner: the card form while the order is payable and the deployment
@@ -247,10 +248,15 @@ const finishAtProvider = () => {
 };
 
 /**
+ * Toasts a background read's failure; these reads have no form to host an inline error.
+ */
+const onAmbientError = useAmbientError();
+
+/**
  * Loads the offered methods once, if nothing has yet — the cart's selector may already have.
  */
 onMounted(() => {
-    if (methods.value.length === 0) void paymentsStore.fetchMethods();
+    if (methods.value.length === 0) paymentsStore.fetchMethods().catch(onAmbientError);
 });
 
 /**
@@ -259,7 +265,7 @@ onMounted(() => {
  */
 watch(
     () => orderId,
-    (newOrderId) => void paymentsStore.fetchPaymentForOrder(newOrderId),
+    (newOrderId) => paymentsStore.fetchPaymentForOrder(newOrderId).catch(onAmbientError),
     { immediate: true }
 );
 </script>
