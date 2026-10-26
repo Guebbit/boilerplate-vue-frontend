@@ -17,6 +17,7 @@ import { Bell, Trash2 } from 'lucide-vue-next';
 import { useOrderLink } from '@/kernel/order-link.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useInboxLifecycle } from '../composables/use-inbox-lifecycle';
+import { useNotificationLink } from '../composables/use-notification-link';
 import { useInboxStore } from '../store';
 
 /**
@@ -59,6 +60,11 @@ const freshIds = ref<ReadonlySet<string>>(new Set());
  * The notice's order page, or nothing when it has none or this build ships no order page.
  */
 const orderLink = useOrderLink();
+
+/**
+ * A work notice's screen in the admin, or nothing when this build or this reader has none.
+ */
+const targetLink = useNotificationLink();
 
 /**
  * The panel card, so focus can move into it when it opens.
@@ -202,6 +208,15 @@ const focusPanel = () => {
                         data-test="notification-order-link"
                     >
                         {{ t('notifications.link-order') }}
+                    </router-link>
+
+                    <router-link
+                        v-if="targetLink(item.target)"
+                        :to="targetLink(item.target)!"
+                        class="text-sm underline"
+                        data-test="notification-target-link"
+                    >
+                        {{ t('notifications.link-target') }}
                     </router-link>
 
                     <template #append>

@@ -34,7 +34,7 @@ import { notifyErrorMessages, rethrowUnlessAbsent } from '@/infrastructure/utils
 import { createRequestTickets } from '@/infrastructure/utils/request-ticket.ts';
 import { formatDate } from '@/infrastructure/utils/formatters.ts';
 import { asPassive } from '@/infrastructure/http/passive.ts';
-import { describeNotification, notificationOrderId } from './domain';
+import { describeNotification, notificationOrderId, notificationTarget } from './domain';
 import type { InboxItem } from './types';
 
 /**
@@ -189,7 +189,8 @@ export const useInboxStore = defineStore('inbox', () => {
             type: message.type,
             createdAt: notification.createdAt,
             unread: notification.readAt === undefined,
-            orderId: notificationOrderId(notification)
+            orderId: notificationOrderId(notification),
+            target: notificationTarget(notification)
         }))
     );
 

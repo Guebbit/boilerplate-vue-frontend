@@ -20,6 +20,11 @@
         "fulfillment-held-delayed": "Una parte del tuo ordine è trattenuta per un momento e partirà più tardi del previsto.",
         "fulfillment-held-message": "Il negozio scrive: {message}",
         "link-order": "Apri l'ordine",
-        "stock-alert": "Buone notizie: {name} si può ordinare di nuovo."
+        "stock-alert": "Buone notizie: {name} si può ordinare di nuovo.",
+        "staff": {
+            "purchase-hold-placed": "Il checkout di un acquirente è sospeso fino al {until} dopo ripetuti annullamenti. Controlla l'account se sospetti un abuso.",
+            "webhook-disabled": "Una sottoscrizione webhook è stata disattivata dopo ripetuti errori di consegna. Correggi l'endpoint, poi riattivala."
+        },
+        "link-target": "Aprila"
     }
 }

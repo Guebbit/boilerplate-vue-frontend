@@ -20,6 +20,11 @@
         "fulfillment-held-delayed": "Part of your order is held back for a moment and will leave later than planned.",
         "fulfillment-held-message": "The shop says: {message}",
         "link-order": "Open the order",
-        "stock-alert": "Good news: {name} can be ordered again."
+        "stock-alert": "Good news: {name} can be ordered again.",
+        "staff": {
+            "purchase-hold-placed": "A buyer's checkout was paused until {until} after repeated cancellations. Review the account if you suspect abuse.",
+            "webhook-disabled": "A webhook subscription was switched off after repeated delivery failures. Fix the endpoint, then re-enable it."
+        },
+        "link-target": "Open it"
     }
 }

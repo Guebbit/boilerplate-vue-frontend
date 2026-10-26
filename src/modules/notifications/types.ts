@@ -4,6 +4,7 @@
  * store. No endpoint answers with these directly.
  */
 import type { EToastType } from '@guebbit/vue-toolkit';
+import type { NotificationTarget } from './domain';
 
 /**
  * One row of the bell's panel.
@@ -29,6 +30,11 @@ export interface InboxItem {
      * The order the notification is about, when it is about one: the bell links to it.
      */
     orderId?: string | undefined;
+    /**
+     * The admin screen a work notice is about, when it is one: the bell links to it, when this
+     * build ships the screen and the reader may open it.
+     */
+    target?: NotificationTarget | undefined;
     /**
      * Whether the owner has not opened the bell since it arrived.
      */

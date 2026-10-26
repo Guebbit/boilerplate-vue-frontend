@@ -11,7 +11,7 @@ The layer that answers: **does this one piece of logic — a component, a store,
 | [jsdom](https://github.com/jsdom/jsdom)                      | DOM implementation Vitest runs component tests against (via `tests/support/unit/jsdom-quiet-css.environment.ts` — see that file for why it's a thin wrapper around plain `jsdom` rather than the string `'jsdom'`) |
 | [Pinia](https://pinia.vuejs.org/) (`createPinia()` per test) | Stores under test get a fresh instance every time — no state leaks between tests                                                                                                                                   |
 | `vi.mock()`                                                  | Replaces `@api` (the generated client), `@/infrastructure/observability`, etc. with hand-written stubs                                                                                                             |
-| [msw/node](https://mswjs.io/docs/integrations/node)          | The transport specs mock HTTP for real instead of stubbing a module — `http-refresh.spec.ts`, `step-up.spec.ts` and the two `http-validate-*.spec.ts`, see below                                                   |
+| [msw/node](https://mswjs.io/docs/integrations/node)          | One shared server for every unit spec: an unmocked request is refused, and the transport specs mock HTTP for real instead of stubbing a module, see below                                                          |
 
 ## Where it sits
 
@@ -20,7 +20,7 @@ The layer that answers: **does this one piece of logic — a component, a store,
 flowchart TB
     Source["src/**\ncore · ui · platform · modules"] --> Unit["Vitest\ntests/unit/**/*.spec.ts"]
     Unit --> ModuleMock["vi.mock('@api', ...)\nhand-written return values"]
-    Unit --> NodeMSW["msw/node\nreal HTTP, real interceptor chain\n(the transport specs only)"]
+    Unit --> NodeMSW["msw/node\none shared server, real interceptor chain\nunmocked requests refused"]
     Unit --> Mutation["Stryker\nmutation-tests THIS layer\nsee Mutation Testing"]
 
     classDef src fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -33,7 +33,7 @@ flowchart TB
     class Mutation out;
 ```
 
-Everything below this layer (components, Pinia stores, `src/infrastructure/http`, `src/infrastructure`) is exercised **without** a browser and **without** an API — a real browser talking to a real backend starts one layer up, in [The demo profile](./demo-profile.md).
+Everything below this layer (components, Pinia stores, `src/infrastructure/http`, `src/infrastructure`) is exercised **without** a browser and **without** an API. That is enforced: `tests/support/unit/setup.ts` starts one shared MSW server (`tests/support/unit/msw-server.ts`) with `onUnhandledRequest: 'error'`, so a request no spec mocked is refused and logged as `[MSW] Error: intercepted a request without a matching request handler` instead of reaching whatever listens on `localhost:3000`. `VITE_API_URL` is pinned to `''` in `vitest.config.ts`, so a local `.env` cannot change a result. The refusal is not a test failure on its own: a spec that ignores the failed read still passes, so read the log. A spec that needs a real loopback listener adds `server.use(http.all(/^https:\/\/127\.0\.0\.1:\d+\//, () => passthrough()))` for that origin only (see `webhook-tester.spec.ts`) — a real browser talking to a real backend starts one layer up, in [The demo profile](./demo-profile.md).
 
 ## Patterns
 
@@ -66,13 +66,18 @@ vi.mock('@api', () => ({
 
 ### The exception — a real HTTP server for the transport specs
 
-`tests/unit/infrastructure/http/http-refresh.spec.ts` (and, on the same approach, `step-up.spec.ts` and the two `http-validate-*.spec.ts`) is deliberately **not** stubbed at the module boundary. The 401 → refresh → replay flow lives entirely inside axios's interceptor chain (`src/infrastructure/http/index.ts`), so a hand-rolled stub would never actually exercise it — there'd be nothing to intercept. It uses `msw/node` to run a real server and assert on the request sequence:
+`tests/unit/infrastructure/http/http-refresh.spec.ts` (and, on the same approach, `step-up.spec.ts` and the two `http-validate-*.spec.ts`) is deliberately **not** stubbed at the module boundary. The 401 → refresh → replay flow lives entirely inside axios's interceptor chain (`src/infrastructure/http/index.ts`), so a hand-rolled stub would never actually exercise it — there'd be nothing to intercept. It registers handlers on the shared `msw/node` server and asserts on the request sequence. Any spec mocks an API read the same way, and the handlers are dropped after each test:
 
 ```ts
-const server = setupServer(
-    http.get(`${API}/account/refresh`, () => HttpResponse.json({ token: 'fresh-token' })),
-    http.get(`${API}/orders`, ({ request }) => /* 401 unless Authorization matches */ )
-);
+import { http, HttpResponse } from 'msw';
+import { server } from '../../../support/unit/msw-server.ts';
+
+beforeEach(() => {
+    server.use(
+        http.get(`${API}/account/refresh`, () => HttpResponse.json({ token: 'fresh-token' })),
+        http.get(`${API}/orders`, ({ request }) => /* 401 unless Authorization matches */ )
+    );
+});
 ```
 
 `tests/unit/infrastructure/http/http.spec.ts` covers the same module's error-normalisation logic with plain stubs — the two are complementary, not overlapping.
