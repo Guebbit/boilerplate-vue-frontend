@@ -31,15 +31,15 @@ Copy the exclusion list from "Out of scope" below into the report header.
 
 ## The drift classes
 
-| class                           | drift when                                                                                               | fine when                                                              | sev                                       |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
-| F1 doc claim                    | a count, list or "only X" in `docs/` or a `module.ts` docblock disagrees with `ls` / `rg`                | the claim is generated and checked (the sitemap block)                 | high                                      |
-| F2 client decides a server rule | a button or option is gated on status literals the server should answer through an `*Actions` flag       | the literal only labels, colours or picks a notice, and gates no write | high (the fix is a backend contract flag) |
-| F3 context-map label wrong      | a module page's relationship label disagrees with what the import does (the table in `strategic-ddd.md`) | the label matches the import                                           | med                                       |
-| F4 barrel wider than needed     | a barrel publishes a store or composable where a component or schema would serve the sibling             | the sibling must read the state                                        | med                                       |
-| F5 `domain/` floor, both ways   | a rule with 2+ callers, or a trap, lives in a view or store; or `domain/` holds formatting or `Intl`     | one caller, no trap: inline is right                                   | low                                       |
-| F6 label vs depth               | a `generic` module grows a `domain/`; the subdomain table names gone modules or misses real ones         | `core` with no `domain/`                                               | low                                       |
-| F7 enum restated                | a `.ts` union or literal array copies a generated enum                                                   | the values are client-only state                                       | low                                       |
+| class                           | drift when                                                                                                                                                                                        | fine when                                                              | sev                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
+| F1 doc claim                    | a count, list or "only X" in `docs/` or a `module.ts` docblock disagrees with `ls` / `rg`                                                                                                         | the claim is generated and checked (the sitemap block)                 | high                                      |
+| F2 client decides a server rule | a button or option is gated on status literals, or a `domain/` table keyed by a `*Status`, or a hard-coded limit or duration, that the server should answer through an `*Actions` flag or a field | the literal only labels, colours or picks a notice, and gates no write | high (the fix is a backend contract flag) |
+| F3 context-map label wrong      | a module page's relationship label disagrees with what the import does (the table in `strategic-ddd.md`)                                                                                          | the label matches the import                                           | med                                       |
+| F4 barrel wider than needed     | a barrel publishes a store or composable where a component or schema would serve the sibling                                                                                                      | the sibling must read the state                                        | med                                       |
+| F5 `domain/` floor, both ways   | a rule with 2+ callers, or a trap, lives in a view or store; or `domain/` holds formatting or `Intl`                                                                                              | one caller, no trap: inline is right                                   | low                                       |
+| F6 label vs depth               | a `generic` module grows a `domain/`; the subdomain table names gone modules or misses real ones                                                                                                  | `core` with no `domain/`                                               | low                                       |
+| F7 enum restated                | a `.ts` union or literal array copies a generated enum                                                                                                                                            | the values are client-only state                                       | low                                       |
 
 ## Procedure
 
@@ -71,9 +71,14 @@ rg -n "price\s*\*|\*\s*\w*quantity" src
 rg -n "^    \w+Actions:" openapi.yaml
 rg -n "new Set\(\[|\.has\(\s*\w*(props\.)?\w+\.status|override.*includes\(" src -g '!**/tests/**'
 rg -n "^export const can[A-Z]" src/modules/*/domain
+rg -n "Record<\w+Status," src/modules/*/domain
+rg -n "\b(MAX|MIN|LIMIT|DAYS|HOURS)_\w+\s*=\s*\d+" src -g '!**/tests/**'
 ```
 
-The last two catch a server rule held in a set, or moved into `domain/`.
+The `can` and `Record` greps catch a server rule moved into `domain/`; the last one a limit or duration the
+server owns (compare each with the contract's field bounds and the backend's `config.ts`). The `Record<…Status,`
+shape is also refused by lint (`eslint.config.ts`, the `src/modules/*/domain` block); the grep stays for the
+copies lint is blind to, such as a status → status[] map written with `Map` or a string-literal key.
 
 For each hit, find the `*Actions` schema of that resource. Verdict:
 

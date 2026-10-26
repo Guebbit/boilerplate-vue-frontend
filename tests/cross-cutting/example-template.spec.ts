@@ -100,10 +100,9 @@ describe('no module keeps a status transition table on the client', () => {
         }
         const offenders = files.filter((file) => {
             const source = readFileSync(path.join(domain, file), 'utf8');
-            return (
-                /export const (?:NEXT_STATUSES|TRANSITIONS)\b/.test(source) ||
-                /Record<\s*\w*Status\s*,\s*readonly\s+\w*Status\[]\s*>/.test(source)
-            );
+            // The `Record<XStatus, …>` shape is refused by lint (the `src/modules/*/domain` block
+            // in `eslint.config.ts`); the export NAME is what a regex can still see.
+            return /export const (?:NEXT_STATUSES|TRANSITIONS)\b/.test(source);
         });
 
         expect(offenders).toEqual([]);

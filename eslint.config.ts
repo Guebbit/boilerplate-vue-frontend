@@ -363,6 +363,16 @@ const bannedDoubleCasts = [
     }
 ];
 
+/**
+ * `try`/`catch` in production code: for the rare spot where a throwing API has no safe wrapper.
+ * Shared by every `src/**` block that sets `no-restricted-syntax`, which does not merge.
+ */
+const bannedTryCatch = {
+    selector: 'TryStatement',
+    message:
+        'try/catch in production code is for the rare spot where a throwing API has no safe wrapper and the failure has a local answer. Prefer returning a verdict or letting the rejection reach the caller\u2019s handler; if this spot truly needs one, disable this rule on the line with a description of what is being contained.'
+};
+
 /*
  * Two unicorn rules turned off rather than exempted eleven times, plus the rest of the
  * plugin's tuning in one place.
@@ -994,13 +1004,32 @@ export default defineConfigWithVueTs(
         files: ['src/**/*.{ts,mts,tsx,vue}'],
         ignores: ['src/**/__tests__/**', 'src/modules/*/tests/**'],
         rules: {
+            'no-restricted-syntax': ['error', ...bannedDoubleCasts, bannedTryCatch]
+        }
+    },
+
+    /**
+     * A `domain/` table keyed by a server status restates a backend rule. The server publishes
+     * what a caller may do through the record's `actions` flags; the client reads them.
+     * `no-restricted-syntax` does not merge across blocks, so this one spreads every ban the
+     * `src/**` block above carries.
+     *
+     * Blind to string comparisons (`=== 'cancelled'`): the audit checklist covers those
+     * (`scripts/audit/ddd-drift/SKILL.md`, class F2).
+     */
+    {
+        files: ['src/modules/*/domain/**/*.ts'],
+        ignores: ['src/**/__tests__/**', 'src/modules/*/tests/**'],
+        rules: {
             'no-restricted-syntax': [
                 'error',
                 ...bannedDoubleCasts,
+                bannedTryCatch,
                 {
-                    selector: 'TryStatement',
+                    selector:
+                        "TSTypeReference[typeName.name='Record'] > TSTypeParameterInstantiation > TSTypeReference:first-child[typeName.name=/Status$/]",
                     message:
-                        'try/catch in production code is for the rare spot where a throwing API has no safe wrapper and the failure has a local answer. Prefer returning a verdict or letting the rejection reach the caller\u2019s handler; if this spot truly needs one, disable this rule on the line with a description of what is being contained.'
+                        'A table keyed by a server status restates a backend rule. Read the record\u2019s `actions` flags instead (docs/theory/domain-layer.md).'
                 }
             ]
         }
