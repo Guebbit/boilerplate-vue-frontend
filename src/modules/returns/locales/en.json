@@ -38,7 +38,16 @@
         "label-lines": "What comes back",
         "no-lines": "No goods are expected back: the order was cancelled before dispatch.",
         "button-order": "Go to the order",
-        "button-list": "Back to returns"
+        "button-list": "Back to returns",
+        "label-requested": "Asked",
+        "label-stated": "Stated",
+        "stated": "{date}, by {channel}",
+        "label-opened-by": "Opened by",
+        "opened-by-staff": "Our team, on the buyer's request",
+        "label-exceptions": "Waived by staff",
+        "exception-window_closed": "Past its deadline",
+        "exception-excluded_goods": "Made-to-order goods",
+        "label-decline-message": "Message to the buyer"
     },
     "return-staff-actions": {
         "button-approve": "Approve return",
@@ -53,7 +62,7 @@
         "label-cancel-note": "Why cancel it? (optional)",
         "hint-cancel": "Use this when the goods will never come back. Nothing is paid, restocked or emailed, and the same items can be returned again. If the buyer posted the parcel and it got lost, receive it with a restock count of 0 instead.",
         "success-cancel": "Return canceled.",
-        "label-reason": "Reason the customer is told",
+        "label-reason": "Reason",
         "label-deduction": "Handling damage to keep back ({currency}, optional)",
         "error-reason-required": "A reason is required",
         "error-reason-too-long": "The reason is too long ({max} characters at most)",
@@ -65,7 +74,14 @@
         "hint-restock": "Set a line to 0 for a broken unit: it never reaches the shelf. The refund does not change.",
         "label-restock-line": "{title} (of {max})",
         "error-restock-invalid": "Enter a whole number from 0 up to the line's quantity",
-        "restocked-line": "{title}: restocked {restocked} of {quantity}"
+        "restocked-line": "{title}: restocked {restocked} of {quantity}",
+        "label-message": "Message to the buyer",
+        "hint-message": "Optional. Required for \"Other\": the buyer reads it beside the reason.",
+        "error-message-required": "Write a message to the buyer: \"Other\" alone does not say why.",
+        "decline-reason-return_period_ended": "The return period ended",
+        "decline-reason-not_returnable": "Not returnable",
+        "decline-reason-no_defect_found": "No defect found",
+        "decline-reason-other": "Other"
     },
     "returns-request": {
         "button-open": "Return goods",
@@ -81,7 +97,11 @@
         "error-lines-required": "Pick at least one item to send back",
         "hint-line-excluded": "Made to order goods can only come back if they are defective or not what you ordered.",
         "error-quantity-invalid": "Enter a whole quantity, from 1 up to what you can still return",
-        "success": "Return requested. We will review it and email you."
+        "success": "Return requested. We will review it and email you.",
+        "button-open-staff": "Open a return for the buyer",
+        "button-submit-staff": "Open return",
+        "hint-exception": "This reason is past its deadline. The return will be opened anyway and recorded as an exception.",
+        "error-date-invalid": "Enter a day that is not in the future"
     },
     "withdrawal-panel": {
         "title": "Returns and withdrawal",
@@ -96,7 +116,9 @@
         "blocked-all_excluded": "Everything in this order was made to your specifications, so the right of withdrawal does not apply. If nothing has shipped, you can still cancel the order.",
         "blocked-window_closed": "The withdrawal period for this order has ended.",
         "blocked-nothing_left": "Everything in this order has already been returned.",
-        "contact-us": "Contact us"
+        "contact-us": "Contact us",
+        "record-hint": "The buyer withdrew by phone, email or letter? Record it with the day they sent it.",
+        "button-record": "Record a withdrawal"
     },
     "cancel-remainder-dialog": {
         "title": "Cancel what has not shipped: group #{number}",
@@ -105,6 +127,26 @@
         "includes-shipping": "Includes {amount} for delivery.",
         "label-note": "Why (optional)",
         "button-confirm": "Cancel and refund",
-        "success": "Cancelled. The refund is on its way."
+        "success": "Cancelled. The refund is on its way.",
+        "label-as-withdrawal": "This is the buyer's withdrawal, stated outside the shop"
+    },
+    "stated-at-fields": {
+        "label-date": "Day the buyer asked (optional)",
+        "hint-date": "Leave empty for now. The deadline is judged on this day.",
+        "label-date-required": "Day the buyer sent it",
+        "label-channel": "How the buyer sent it",
+        "channel-phone": "Phone",
+        "channel-email": "Email",
+        "channel-letter": "Letter",
+        "channel-other": "Other",
+        "channel-online": "the shop's button"
+    },
+    "record-withdrawal-dialog": {
+        "title": "Record a withdrawal",
+        "lead": "The law counts a withdrawal from the day the buyer sent it, not the day you read it. The buyer is emailed both days. You will be asked for your password: this is a legal record.",
+        "error-date-invalid": "Enter the day the buyer sent it, not in the future",
+        "error-channel-required": "Choose how the buyer sent it",
+        "button-confirm": "Record withdrawal",
+        "success": "Withdrawal recorded. The buyer is emailed the day they stated it."
     }
 }

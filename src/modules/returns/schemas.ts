@@ -10,20 +10,48 @@ import {
     cancelReturnBodyNoteMax,
     closeReturnBodyNoteMax,
     createReturnBodyNoteMax,
-    declineReturnBodyReasonMax
+    declineReturnBodyMessageMax
 } from '@api/schemas';
 
 /**
- * Staff's reason for declining a return: required, within the decline operation's cap.
+ * The codes a decline can carry, in the order the select lists them. The contract's enum, spelled
+ * here only because a select needs the list at runtime.
  */
-export const declineReasonSchema = z
+export const DECLINE_REASONS = [
+    'return_period_ended',
+    'not_returnable',
+    'no_defect_found',
+    'other'
+] as const;
+
+/**
+ * One of {@link DECLINE_REASONS}.
+ */
+export type DeclineReason = (typeof DECLINE_REASONS)[number];
+
+/**
+ * {@link DECLINE_REASONS} as plain strings, so a select's value can be looked up.
+ */
+const DECLINE_REASON_NAMES: ReadonlySet<string> = new Set(DECLINE_REASONS);
+
+/**
+ * The decline code: a required pick from the list, never typed.
+ */
+export const declineReasonSchema = z.string().refine((value) => DECLINE_REASON_NAMES.has(value), {
+    error: () => translate('return-staff-actions.error-reason-required')
+});
+
+/**
+ * Staff's message to the buyer, within the decline operation's cap. Empty is fine unless the code
+ * is `other`: the form adds that rule, since it depends on the other field.
+ */
+export const declineMessageSchema = z
     .string()
     .trim()
-    .min(1, { error: () => translate('return-staff-actions.error-reason-required') })
-    .max(declineReturnBodyReasonMax, {
+    .max(declineReturnBodyMessageMax, {
         error: () =>
             translate('return-staff-actions.error-reason-too-long', {
-                max: declineReturnBodyReasonMax
+                max: declineReturnBodyMessageMax
             })
     });
 
@@ -71,6 +99,6 @@ export const returnNoteSchema = z
 export {
     cancelReturnBodyNoteMax as cancelNoteMax,
     closeReturnBodyNoteMax as closeNoteMax,
-    declineReturnBodyReasonMax as declineReasonMax,
+    declineReturnBodyMessageMax as declineMessageMax,
     createReturnBodyNoteMax as returnNoteMax
 } from '@api/schemas';

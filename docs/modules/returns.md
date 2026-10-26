@@ -109,8 +109,7 @@ product can be returned again until nothing is left. The server re-checks all of
 excluded line, a closed window) and its message shows in the form. Staff then approve or decline the
 return like any other.
 
-**Staff moves come from `Return.actions`.** `ReturnStaffActions` renders approve, decline (with the
-reason the customer is told), receive (with a restock count per line and an optional handling deduction), close and cancel (each with an
+**Staff moves come from `Return.actions`.** `ReturnStaffActions` renders approve, decline (a reason picked from a list, plus a message to the buyer that "Other" requires), receive (with a restock count per line and an optional handling deduction), close and cancel (each with an
 optional note) from the five booleans, and re-implements none of the lifecycle. Receiving and
 closing are step-up gated: the http layer prompts for the password when the server answers
 `REAUTH_REQUIRED`. Close is for a received return whose refund was canceled or paid outside the app:
@@ -133,6 +132,17 @@ stateDiagram-v2
     received --> closed: the money went back
     received --> closed: staff close it by hand
 ```
+
+**Staff acting for the buyer.** A caller holding `update:Return` who is not the buyer gets, on the
+order page, **Open a return for the buyer** (the same `ReturnRequestForm`, plus an optional "day the
+buyer asked", and a reason already past its deadline is labelled as an exception the return will
+record; made-to-order lines stay open for them) and **Record a withdrawal**
+(`RecordWithdrawalDialog`: the day the buyer sent it, never in the future, and the channel; both
+required). A partly shipped order's "cancel what has not shipped" dialog gets the same two fields
+behind a tick for staff. The shop asks for the password first (the server fails closed whenever the
+body carries `statedVia`), and judges the window on the day given. The return page shows when the
+buyer asked or stated it, and to staff what was waived. `StatedAtFields` is the one pair of fields
+the three forms share; the server owns every rule.
 
 **Goods with no right of withdrawal** (EU Art. 16) carry `noWithdrawal` on their order line; the order
 page says so on the line, and the product form has the switch. The refusal itself is the backend's.

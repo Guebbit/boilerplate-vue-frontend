@@ -19,6 +19,7 @@ import {
     listReturns,
     receiveReturn
 } from '@api';
+import type { DeclineReason } from './schemas.ts';
 import type {
     CreateReturnRequest,
     ListReturnsParams,
@@ -158,14 +159,20 @@ export const useReturnsStore = defineStore('returns', () => {
     const approve = (returnId: string) => updateTarget(() => approveReturn(returnId), {}, returnId);
 
     /**
-     * Staff refuse a requested return, saying why — the customer is mailed the reason.
+     * Staff refuse a requested return with a reason code — the customer reads one sentence per code
+     * in their own language, and the message when there is one (required for `other`).
      *
      * @param returnId - Which return.
-     * @param reason - What the customer is told.
+     * @param reason - The code.
+     * @param message - What the customer is also told; required when the code is `other`.
      * @returns A promise resolving with the declined return.
      */
-    const decline = (returnId: string, reason: string) =>
-        updateTarget(() => declineReturn(returnId, { reason }), {}, returnId);
+    const decline = (returnId: string, reason: DeclineReason, message?: string) =>
+        updateTarget(
+            () => declineReturn(returnId, { reason, ...(message ? { message } : {}) }),
+            {},
+            returnId
+        );
 
     /**
      * Records that the goods arrived: they go back on sale and the customer is paid back. Step-up

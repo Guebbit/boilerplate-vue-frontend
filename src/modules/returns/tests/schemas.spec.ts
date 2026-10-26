@@ -1,22 +1,31 @@
 /**
  * @module
- * `src/modules/returns/schemas.ts` — the decline reason and the return note.
+ * `src/modules/returns/schemas.ts` — the decline code and message, and the return note.
  *
  * The caps are read from `@api/schemas` rather than retyped, so a contract change moves the tests
  * with the form: one past the cap fails, exactly the cap passes.
  */
 import { describe, expect, it } from 'vitest';
-import { createReturnBodyNoteMax, declineReturnBodyReasonMax } from '@api/schemas';
-import { declineReasonSchema, returnNoteSchema } from '../schemas';
+import { createReturnBodyNoteMax, declineReturnBodyMessageMax } from '@api/schemas';
+import { declineMessageSchema, declineReasonSchema, returnNoteSchema } from '../schemas';
 
 describe('declineReasonSchema', () => {
-    it('requires a reason and caps it at the contract maximum', () => {
-        expect(declineReasonSchema.safeParse('  ').success).toBe(false);
-        expect(declineReasonSchema.safeParse('a'.repeat(declineReturnBodyReasonMax)).success).toBe(
-            true
-        );
+    it('takes only a listed code', () => {
+        expect(declineReasonSchema.safeParse('').success).toBe(false);
+        expect(declineReasonSchema.safeParse('Worn').success).toBe(false);
+        for (const code of ['return_period_ended', 'not_returnable', 'no_defect_found', 'other'])
+            expect(declineReasonSchema.safeParse(code).success).toBe(true);
+    });
+});
+
+describe('declineMessageSchema', () => {
+    it('allows an empty message and caps it at the contract maximum', () => {
+        expect(declineMessageSchema.safeParse('').success).toBe(true);
         expect(
-            declineReasonSchema.safeParse('a'.repeat(declineReturnBodyReasonMax + 1)).success
+            declineMessageSchema.safeParse('a'.repeat(declineReturnBodyMessageMax)).success
+        ).toBe(true);
+        expect(
+            declineMessageSchema.safeParse('a'.repeat(declineReturnBodyMessageMax + 1)).success
         ).toBe(false);
     });
 });

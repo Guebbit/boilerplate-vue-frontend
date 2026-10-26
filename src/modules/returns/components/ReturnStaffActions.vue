@@ -31,8 +31,10 @@ import {
     cancelNoteSchema,
     closeNoteMax,
     closeNoteSchema,
-    declineReasonSchema,
-    declineReasonMax
+    DECLINE_REASONS,
+    declineMessageMax,
+    declineMessageSchema,
+    declineReasonSchema
 } from '../schemas.ts';
 import type { Return } from '@types';
 
@@ -102,11 +104,28 @@ const showRestocked = computed(
 const declineElement = ref<HTMLFormElement>();
 
 /**
- * Decline needs a reason — a refusal nobody explains is not one.
+ * Decline needs a reason code, and a message to the buyer when the code is `other`: "other" alone
+ * tells them nothing.
  */
-const declineSchema = z.object({
-    reason: declineReasonSchema
-});
+const declineSchema = z
+    .object({
+        reason: declineReasonSchema,
+        message: declineMessageSchema
+    })
+    .refine(({ reason, message }) => reason !== 'other' || message !== '', {
+        path: ['message'],
+        error: () => t('return-staff-actions.error-message-required')
+    });
+
+/**
+ * The reason select's choices, translated.
+ */
+const declineOptions = computed(() =>
+    DECLINE_REASONS.map((reason) => ({
+        value: reason,
+        title: t(`return-staff-actions.decline-reason-${reason}`)
+    }))
+);
 
 /**
  * The decline form's state, errors and submit gating.
@@ -117,7 +136,7 @@ const {
     showFormErrors: showDeclineErrors,
     handleSubmit: handleDeclineSubmit,
     applyServerErrors: applyDeclineErrors
-} = useStructureFormValidation({ reason: '' }, declineSchema, {
+} = useStructureFormValidation({ reason: '', message: '' }, declineSchema, {
     formElement: declineElement,
     revalidateOn: locale,
     onInvalid: () => addMessage(t('generic.fix-errors'))
@@ -309,13 +328,16 @@ const handleApprove = () =>
  * @returns A promise settling once the move finished.
  */
 const submitDecline = () =>
-    handleDeclineSubmit(({ reason }) =>
-        run(
-            () => decline(props.item.id, reason),
+    handleDeclineSubmit(({ reason, message }) => {
+        // The schema already refused anything but a listed code; this narrows it for the store.
+        const code = DECLINE_REASONS.find((candidate) => candidate === reason);
+        if (!code) return Promise.resolve();
+        return run(
+            () => decline(props.item.id, code, message === '' ? undefined : message),
             'return-staff-actions.success-decline',
             applyDeclineErrors
-        )
-    );
+        );
+    });
 
 /**
  * Validates the deduction and the restock counts, then records the goods as received. Only a line
@@ -392,14 +414,28 @@ const submitCancel = () =>
             data-test="return-decline-form"
             @submit.prevent="submitDecline"
         >
-            <v-text-field
+            <v-select
                 v-model="declineForm.reason"
+                :items="declineOptions"
+                item-title="title"
+                item-value="value"
                 :label="t('return-staff-actions.label-reason')"
                 v-bind="fieldErrorProps(showDeclineErrors ? (declineErrors.reason ?? []) : [])"
-                :maxlength="declineReasonMax"
                 class="w-full grow sm:w-auto sm:min-w-64"
                 hide-details="auto"
                 data-test="return-decline-reason"
+            />
+            <v-textarea
+                v-model="declineForm.message"
+                :label="t('return-staff-actions.label-message')"
+                :hint="t('return-staff-actions.hint-message')"
+                persistent-hint
+                rows="2"
+                :maxlength="declineMessageMax"
+                v-bind="fieldErrorProps(showDeclineErrors ? (declineErrors.message ?? []) : [])"
+                class="w-full grow sm:w-auto sm:min-w-64"
+                hide-details="auto"
+                data-test="return-decline-message"
             />
             <v-btn
                 type="submit"

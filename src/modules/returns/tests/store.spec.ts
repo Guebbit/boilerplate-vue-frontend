@@ -123,17 +123,30 @@ describe('the staff moves', () => {
         });
     });
 
-    it('decline sends the reason', () => {
+    it('decline sends the code, and the message when there is one', () => {
         responses['POST /returns/r1/decline'] = aReturn({
             status: 'declined',
-            declineReason: 'Used'
+            declineReason: 'other'
         });
 
         return useReturnsStore()
-            .decline('r1', 'Used')
+            .decline('r1', 'other', 'Sold as a bundle')
             .then(() => {
                 expect(contractRequest(schemas.DeclineReturnBody, sent[0].data)).toEqual({
-                    reason: 'Used'
+                    reason: 'other',
+                    message: 'Sold as a bundle'
+                });
+            });
+    });
+
+    it('decline sends only the code when there is no message', () => {
+        responses['POST /returns/r1/decline'] = aReturn({ status: 'declined' });
+
+        return useReturnsStore()
+            .decline('r1', 'not_returnable')
+            .then(() => {
+                expect(contractRequest(schemas.DeclineReturnBody, sent[0].data)).toEqual({
+                    reason: 'not_returnable'
                 });
             });
     });

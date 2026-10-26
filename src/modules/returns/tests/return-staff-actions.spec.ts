@@ -8,6 +8,8 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { VSelect } from 'vuetify/components';
+import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import ReturnStaffActions from '../components/ReturnStaffActions.vue';
 import { useReturnsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
@@ -107,11 +109,12 @@ describe('ReturnStaffActions', () => {
             })
         );
 
-        await wrapper.get('[data-test=return-decline-reason] input').setValue('Worn');
+        emitOn(wrapper.getComponent(VSelect), 'update:modelValue', 'no_defect_found');
+        await flushPromises();
         await wrapper.get('[data-test=return-decline-form]').trigger('submit');
         await flushPromises();
 
-        expect(store.decline).toHaveBeenCalledWith('r1', 'Worn');
+        expect(store.decline).toHaveBeenCalledWith('r1', 'no_defect_found', undefined);
     });
 
     it('receives with no body when nothing is kept back', async () => {
@@ -211,7 +214,8 @@ describe('ReturnStaffActions', () => {
         );
         vi.mocked(store.decline).mockRejectedValue(new Error('connection lost'));
 
-        await wrapper.get('[data-test=return-decline-reason] input').setValue('Worn');
+        emitOn(wrapper.getComponent(VSelect), 'update:modelValue', 'no_defect_found');
+        await flushPromises();
         await wrapper.get('[data-test=return-decline-form]').trigger('submit');
         await flushPromises();
 
@@ -535,6 +539,54 @@ describe('ReturnStaffActions', () => {
 
         expect(staffView.wrapper.get('[data-test=return-restocked]').text()).toContain(
             'Shirt: restocked 1 of 2'
+        );
+    });
+
+    it('declines with a code and the message beside it', async () => {
+        const { wrapper, store } = mountActions(
+            aReturn({
+                status: 'requested',
+                actions: {
+                    approve: true,
+                    decline: true,
+                    receive: false,
+                    close: false,
+                    cancel: false
+                }
+            })
+        );
+
+        emitOn(wrapper.getComponent(VSelect), 'update:modelValue', 'other');
+        await wrapper
+            .get('[data-test=return-decline-message] textarea')
+            .setValue('Sold as a bundle');
+        await wrapper.get('[data-test=return-decline-form]').trigger('submit');
+        await flushPromises();
+
+        expect(store.decline).toHaveBeenCalledWith('r1', 'other', 'Sold as a bundle');
+    });
+
+    it('asks for a message when the code is other, and sends nothing without it', async () => {
+        const { wrapper, store } = mountActions(
+            aReturn({
+                status: 'requested',
+                actions: {
+                    approve: true,
+                    decline: true,
+                    receive: false,
+                    close: false,
+                    cancel: false
+                }
+            })
+        );
+
+        emitOn(wrapper.getComponent(VSelect), 'update:modelValue', 'other');
+        await wrapper.get('[data-test=return-decline-form]').trigger('submit');
+        await flushPromises();
+
+        expect(store.decline).not.toHaveBeenCalled();
+        expect(wrapper.get('[data-test=return-decline-form]').text()).toContain(
+            'Write a message to the buyer'
         );
     });
 });

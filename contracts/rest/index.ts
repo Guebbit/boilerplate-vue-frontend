@@ -2265,6 +2265,18 @@ export const ReturnReason = {
     other: 'other'
 } as const;
 
+/**
+ * Why staff declined, as a code the buyer reads in their own language and a shop can count: `return_period_ended` — past the window; `not_returnable` — exempt from returns (an Art. 16 exception) or sold as final sale; `no_defect_found` — a guarantee claim where the goods conform; `other` — see the message.
+ */
+export type ReturnDeclineReason = (typeof ReturnDeclineReason)[keyof typeof ReturnDeclineReason];
+
+export const ReturnDeclineReason = {
+    return_period_ended: 'return_period_ended',
+    not_returnable: 'not_returnable',
+    no_defect_found: 'no_defect_found',
+    other: 'other'
+} as const;
+
 export type ExportReturnLinesItem = {
     productId: Id;
     /** @minimum 1 */
@@ -2278,7 +2290,8 @@ export interface ExportReturn {
     status: ReturnStatus;
     reason: ReturnReason;
     note?: string;
-    declineReason?: string;
+    declineReason?: ReturnDeclineReason;
+    declineMessage?: string;
     lines: ExportReturnLinesItem[];
     createdAt?: string;
 }
@@ -4603,6 +4616,41 @@ export const ReturnPostagePayer = {
 } as const;
 
 /**
+ * How the buyer stated a withdrawal. `online` is the shop's own button; the rest are what staff record.
+ */
+export type ReturnStatementChannel =
+    (typeof ReturnStatementChannel)[keyof typeof ReturnStatementChannel];
+
+export const ReturnStatementChannel = {
+    online: 'online',
+    phone: 'phone',
+    email: 'email',
+    letter: 'letter',
+    other: 'other'
+} as const;
+
+/**
+ * Who opened the return — the order's buyer, or staff on the buyer's behalf.
+ */
+export type ReturnOpenedBy = (typeof ReturnOpenedBy)[keyof typeof ReturnOpenedBy];
+
+export const ReturnOpenedBy = {
+    buyer: 'buyer',
+    staff: 'staff'
+} as const;
+
+/**
+ * A rule staff waived when they opened the return for a buyer: `window_closed` — the reason's deadline had passed when the buyer asked; `excluded_goods` — a line is goods Art. 16 takes the right of withdrawal away from.
+ */
+export type ReturnPolicyException =
+    (typeof ReturnPolicyException)[keyof typeof ReturnPolicyException];
+
+export const ReturnPolicyException = {
+    window_closed: 'window_closed',
+    excluded_goods: 'excluded_goods'
+} as const;
+
+/**
  * What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the key that names the act and a status the act can run from.
  */
 export interface ReturnActions {
@@ -4638,8 +4686,18 @@ export interface Return {
     lines: ReturnLine[];
     /** Who pays to send the goods back — frozen when the return was opened, from the shop's configuration, so it is what the customer was told beforehand (Art. 14(1)). */
     returnPostage: ReturnPostagePayer;
-    /** Why staff declined. Present only on a `declined` return. */
-    declineReason?: string;
+    /** When the buyer asked (or, for a withdrawal, stated it). The server sets it for the buyer; staff may backdate it to the day the buyer actually phoned or wrote. The deadline is judged on it. */
+    requestedAt: string;
+    statedVia?: ReturnStatementChannel;
+    openedBy: ReturnOpenedBy;
+    /** What staff waived when they opened it. Empty when the buyer opened it, or nothing was waived. */
+    policyExceptions: ReturnPolicyException[];
+    declineReason?: ReturnDeclineReason;
+    /**
+     * What staff wrote to the buyer beside the reason code; required when the code is `other`. Free text, so `reap:returns` unsets it after the retention window; the code stays.
+     * @maxLength 500
+     */
+    declineMessage?: string;
     /** When staff decided it — or, for a withdrawal, when it was opened already approved. */
     decidedAt?: string;
     /** When the goods arrived and went back on sale. */
@@ -4668,6 +4726,19 @@ export interface ReturnsResponse {
     meta: PaginationMeta;
 }
 
+/**
+ * How the buyer stated a withdrawal outside the shop, as staff record it.
+ */
+export type StaffStatementChannel =
+    (typeof StaffStatementChannel)[keyof typeof StaffStatementChannel];
+
+export const StaffStatementChannel = {
+    phone: 'phone',
+    email: 'email',
+    letter: 'letter',
+    other: 'other'
+} as const;
+
 export type CreateReturnRequestLinesItem = {
     productId: Id;
     /** @minimum 1 */
@@ -4685,6 +4756,9 @@ export interface CreateReturnRequest {
     kind?: ReturnKind;
     /** Required exactly when `kind` is `cancellation` — the fulfillment order whose remainder is cancelled. */
     fulfillmentOrderId?: Id;
+    /** Staff only: when the buyer asked, or for a withdrawal when they stated it (Art. 11(2) judges timing on the day it was sent). Required for a staff withdrawal, optional otherwise (default now). Never in the future, never before the order was made. The buyer does not send it. */
+    requestedAt?: string;
+    statedVia?: StaffStatementChannel;
     /**
      * What comes back. Absent means everything on the order that is still left to return — the usual shape of a withdrawal. Not allowed on a `cancellation`: the whole remainder is its lines.
      * @minItems 1
@@ -4737,20 +4811,23 @@ export interface ReturnOptions {
     orderId: Id;
     /** ISO-4217 code of the order's own currency. */
     currency: string;
-    /** The reasons THIS caller can still name, so a client offers no door that is shut. Empty for staff (the right is the buyer's own) and once every deadline has passed. `withdrawal` and `other` last for the withdrawal period; `defective` and `wrong_item` for two years from delivery (the legal guarantee of conformity), made-to-order goods included. */
+    /** The reasons THIS caller can still name, so a client offers no door that is shut. The buyer's are the ones whose deadline is open: empty once every deadline has passed. `withdrawal` and `other` last for the withdrawal period; `defective` and `wrong_item` for two years from delivery (the legal guarantee of conformity), made-to-order goods included. Staff holding `update:Return` get every reason: they open a return, or record a withdrawal, for the buyer. */
     reasons?: ReturnReason[];
-    /** Per product, what has shipped and not yet been returned. Empty unless `reasons` is not. Goods excluded from withdrawal (Art. 16) are listed only while a `defective` or `wrong_item` reason is open, and carry `withdrawable: false`. */
+    /** For staff, the non-withdrawal reasons that are past their deadline now: opening a return for one is recorded as an exception (`window_closed`). Empty for the buyer. A preview: the server judges the deadline on `requestedAt` when it opens. */
+    exceptions: ReturnReason[];
+    /** Per product, what has shipped and not yet been returned. Empty unless `reasons` is not. Goods excluded from withdrawal (Art. 16) are listed to the buyer only while a `defective` or `wrong_item` reason is open, and to staff always; they carry `withdrawable: false`. */
     returnable: ReturnOptionLine[];
     cancellable: CancellableFulfillmentOrder[];
 }
 
 export interface DeclineReturnRequest {
+    reason: ReturnDeclineReason;
     /**
-     * What the customer is told. Required — a refusal nobody explains is not one.
+     * Text for the buyer, mailed beside the reason. Required when `reason` is `other` ("other" alone tells the buyer nothing); optional otherwise.
      * @minLength 1
      * @maxLength 500
      */
-    reason: string;
+    message?: string;
 }
 
 export type ReceiveReturnRequestLinesItem = {
@@ -10244,8 +10321,9 @@ export const listReturns = (
 /**
  * The customer's one door for sending goods back — and the EU "withdraw from contract here" button (Consumer Rights Directive Art. 11a): a withdrawal is a return with `reason: withdrawal`, not a separate endpoint.
  * Always answers a `Return` (201, with `Location`); where the goods are decides what it is. Once they have shipped, a withdrawal is born `approved` and any other reason waits for staff. Before dispatch there is nothing to send back, so a withdrawal cancels the order — refunded in full, stock released — and the `Return` is born `closed`: `reason: withdrawal`, no `lines`, `refundAmount` what the order cost (zero when nothing was paid). Either way the customer gets an acknowledgement email carrying the exact date and time, and `Return.orderId` is where the client reloads the order from. `Order.actions.withdraw` says whether the button is offered; the client never counts the days.
- * `kind: cancellation` cancels what has not shipped yet — the remainder of ONE fulfillment order (`fulfillmentOrderId`) once something has shipped from the order. It is born `closed`, its `lines` are the remainder, and the refund of those lines follows (plus the delivery when it takes the last unit of the order). The buyer uses it as part of their withdrawal, and names `reason: withdrawal`; staff may use it too (out of stock for good), name any other reason, and need `create:Refund` — the refund key, `stepUp: critical`. Staff naming `withdrawal` on someone else's order are refused (`RETURN_CANCELLATION_INVALID`): that reason is the buyer's right, and writing it for them would falsify a legal record. A staff cancellation asks a fresh session; the buyer's own withdrawal never does. `GET /returns/options` says what each door would take and refund, and whether this caller may use it (`cancel`).
- * A return answers for goods that left (`kind: return`, the default); only the order's own buyer opens one, an operator included. Sending `Idempotency-Key` makes a retry safe.
+ * `kind: cancellation` cancels what has not shipped yet — the remainder of ONE fulfillment order (`fulfillmentOrderId`) once something has shipped from the order. It is born `closed`, its `lines` are the remainder, and the refund of those lines follows (plus the delivery when it takes the last unit of the order). The buyer uses it as part of their withdrawal, and names `reason: withdrawal`; staff may use it too (out of stock for good), name any other reason, and need `create:Refund` — the refund key, `stepUp: critical`. A staff cancellation asks a fresh session; the buyer's own withdrawal never does. `GET /returns/options` says what each door would take and refund, and whether this caller may use it (`cancel`).
+ * A return answers for goods that left (`kind: return`, the default). The order's buyer opens one for any reason whose deadline is open. Staff holding `update:Return` open one on a buyer's behalf, the way a phone call or an email asks for it: it is born `approved`, opening it IS the decision, and the buyer is told where to send the goods. Staff are not stopped by the deadline or by goods Art. 16 excludes for the shop's own reasons (`defective`, `wrong_item`, `other`): what they waived is recorded on the return, in `policyExceptions`. `requestedAt` says when the buyer asked (default now, never in the future, never before the order existed); the deadline is judged on it.
+ * Staff can also record a withdrawal the buyer stated outside the shop: `reason: withdrawal` with `requestedAt` (when the buyer sent it, Art. 11(2)) and `statedVia` (`phone`, `email`, `letter`, `other`), both required. The withdrawal keeps its legal window, judged on `requestedAt`, and its Art. 16 exclusion. It does everything the buyer's own withdrawal does, and the customer is told when they stated it and when the shop recorded it. Shipped goods need `update:Return`; before dispatch the order is cancelled and refunded, which needs `create:Refund` (money out) and `update:Order` (the cancel); a remainder cancel needs `create:Refund`. Any request carrying `statedVia` asks a fresh session: the record is a legal act, and the check fails closed. The buyer sends neither `requestedAt` nor `statedVia` (422): the server sets them. Sending `Idempotency-Key` makes a retry safe.
  * @summary Open a return, or withdraw from the contract
  */
 export const createReturn = (
@@ -10264,7 +10342,7 @@ export const createReturn = (
 };
 
 /**
- * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned, offered to the buyer only and only while a deadline in `reasons` is open: staff get an empty list (cancelling is theirs, returning is the buyer's right), and so does a buyer past every deadline. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`.
+ * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned, offered while a reason in `reasons` is open: the buyer's `reasons` are the ones whose deadline is open (none past every deadline), and staff holding `update:Return` get every reason, since they may open a return or record a withdrawal on a buyer's behalf. `exceptions` lists, for staff, the reasons that are past their deadline now, so a client can label what opening one would waive. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`.
  * @summary What an order can still send back or cancel
  */
 export const getReturnOptions = (
@@ -10297,7 +10375,7 @@ export const approveReturn = (
 };
 
 /**
- * Staff refuse a `requested` return, saying why — the customer is mailed the reason. Same conditional write as `approve`.
+ * Staff refuse a `requested` return with a reason code, and a message to the buyer that `other` requires — the customer is mailed the code's sentence, in their own language, and the message. Same conditional write as `approve`. A decline is final: a mistaken one is fixed by opening a new return for the same lines. A decline is a complaint the shop does not settle, so the mail does not carry the ADR information Directive 2013/11 Art. 13(3) asks for; that is the shop's to add.
  * @summary Decline a return request
  */
 export const declineReturn = (
