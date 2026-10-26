@@ -60,6 +60,16 @@ vi.mock('vue-router', () => ({
     useRouter: () => ({ push: vi.fn(), replace: vi.fn() })
 }));
 
+/*
+ * The OAuth block reads `GET /oauth/providers` on mount. Left to the network it reaches whatever
+ * listens on the dev API port (a dev server answering HTML, say) and the junk answer breaks the
+ * render, so the read is held offline: the block then falls back to offering nothing.
+ */
+vi.mock('@api', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@api')>()),
+    listOAuthProviders: vi.fn(() => Promise.reject(new Error('offline')))
+}));
+
 /**
  * Mounts `Login` with the plugins and stub it needs — the DOM under test for every case below.
  */
