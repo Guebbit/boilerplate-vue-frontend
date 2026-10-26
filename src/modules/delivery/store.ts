@@ -13,7 +13,8 @@ import { queryClient } from '@/infrastructure/query-client.ts';
 import { loadShop, shipToCountries as shipToCountriesOfShop } from '@/infrastructure/shop.ts';
 import {
     listShippingMethods,
-    getFulfillmentByOrder,
+    listOrderFulfillmentOrders,
+    listOrderShipments,
     processOrder,
     shipFulfillmentOrder,
     fulfillFulfillmentOrder,
@@ -153,16 +154,18 @@ export const useDeliveryStore = defineStore('delivery', () => {
 
     /**
      * Reads an order's fulfilment into state, with no loading flag of its own: every write below
-     * ends with it, inside the write's own wrapper.
+     * ends with it, inside the write's own wrapper. Two reads, one per list, replaced together.
      *
      * @param orderId - The order in question.
      * @returns A promise resolving once both lists are replaced.
      */
     const readFulfillment = (orderId: string) =>
-        getFulfillmentByOrder(orderId).then((response) => {
-            fulfillmentOrders.value = response.fulfillmentOrders;
-            shipments.value = response.shipments;
-        });
+        Promise.all([listOrderFulfillmentOrders(orderId), listOrderShipments(orderId)]).then(
+            ([plan, left]) => {
+                fulfillmentOrders.value = plan.items;
+                shipments.value = left.items;
+            }
+        );
 
     /**
      * Loads an order's fulfillment orders and shipments. Both come back empty until the order is

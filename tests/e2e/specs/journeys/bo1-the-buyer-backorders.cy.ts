@@ -28,7 +28,7 @@ interface OrderLike {
 
 /** The slice of the delivery view this story reads. */
 interface DeliveryLike {
-    fulfillmentOrders: { status: string; holdReason?: string }[];
+    items: { status: string; holdReason?: string }[];
 }
 
 describe('BO1 · The buyer backorders', () => {
@@ -74,10 +74,15 @@ describe('BO1 · The buyer backorders', () => {
                     method: 'cash'
                 });
                 eventually(
-                    () => cy.apiAs<DeliveryLike>('admin', 'GET', `/delivery/orders/${orderId}`),
-                    (view) => (view?.fulfillmentOrders.length ?? 0) === 2
+                    () =>
+                        cy.apiAs<DeliveryLike>(
+                            'admin',
+                            'GET',
+                            `/orders/${orderId}/fulfillment-orders`
+                        ),
+                    (view) => (view?.items.length ?? 0) === 2
                 ).then((view) => {
-                    const held = view?.fulfillmentOrders.filter(
+                    const held = view?.items.filter(
                         ({ holdReason }) => holdReason === 'awaiting_stock'
                     );
                     expect(held).to.have.length(1);
@@ -86,9 +91,13 @@ describe('BO1 · The buyer backorders', () => {
                 cy.step('stock arrives: the wait is released, and everything ships');
                 cy.apiAs('admin', 'POST', `/inventory/levels/${id}/receive`, { quantity: 1 });
                 eventually(
-                    () => cy.apiAs<DeliveryLike>('admin', 'GET', `/delivery/orders/${orderId}`),
-                    (view) =>
-                        view?.fulfillmentOrders.every(({ status }) => status !== 'on_hold') ?? false
+                    () =>
+                        cy.apiAs<DeliveryLike>(
+                            'admin',
+                            'GET',
+                            `/orders/${orderId}/fulfillment-orders`
+                        ),
+                    (view) => view?.items.every(({ status }) => status !== 'on_hold') ?? false
                 );
                 shipThroughTheApi(orderId, 'BO1-TRACK');
             });

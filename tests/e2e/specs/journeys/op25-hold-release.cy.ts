@@ -22,7 +22,7 @@ interface OrderLike {
 
 /** The slice of an order's fulfilment this story reads. */
 interface FulfilmentLike {
-    fulfillmentOrders: { id: string }[];
+    items: { id: string }[];
 }
 
 describe('OP25 · Hold a group back, then let it go', () => {
@@ -110,12 +110,12 @@ describe('OP25 · Hold a group back, then let it go', () => {
 
             cy.step('a stale dialog: someone else held it first, and the refusal shows in place');
             cy.get('[data-test=open-hold]').click();
-            cy.apiAs<FulfilmentLike>('admin', 'GET', `/delivery/orders/${orderId}`).then(
+            cy.apiAs<FulfilmentLike>('admin', 'GET', `/orders/${orderId}/fulfillment-orders`).then(
                 (fulfilment) => {
                     cy.apiAs(
                         'admin',
                         'POST',
-                        `/delivery/fulfillment-orders/${fulfilment?.fulfillmentOrders[0]?.id ?? ''}/hold`,
+                        `/delivery/fulfillment-orders/${fulfilment?.items[0]?.id ?? ''}/hold`,
                         { reason: 'other' }
                     );
                 }

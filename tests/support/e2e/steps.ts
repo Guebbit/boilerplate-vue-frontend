@@ -534,13 +534,9 @@ export const shipThroughTheApi = (
 ): Cypress.Chainable<{ id: string } | null> => {
     cy.apiAs('admin', 'POST', `/orders/${orderId}/process`);
     return cy
-        .apiAs<{ fulfillmentOrders: { id: string }[] }>(
-            'admin',
-            'GET',
-            `/delivery/orders/${orderId}`
-        )
+        .apiAs<{ items: { id: string }[] }>('admin', 'GET', `/orders/${orderId}/fulfillment-orders`)
         .then((fulfilment) => {
-            const group = fulfilment?.fulfillmentOrders[0];
+            const group = fulfilment?.items[0];
             if (!group) throw new Error(`shipThroughTheApi: order ${orderId} has no group to ship`);
             return cy.apiAs<{ id: string }>(
                 'admin',

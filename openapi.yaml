@@ -6050,6 +6050,72 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: delivery
+  /orders/{id}/fulfillment-orders:
+    get:
+      tags:
+        - Delivery
+      summary: List the fulfillment orders of an order
+      description: "The plan for an order's goods: its fulfillment orders, the groups of lines that leave together, made by rule when the order is paid. Each carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers `items: []` — absence is the answer, never a 404. A hold reads to the buyer as `holdNotice` and staff's `holdMessage`; `holdReason` and `holdNote` are staff's own and are left out for anyone else. Unpaged: one order holds a handful. Each item has its own read at `GET /delivery/fulfillment-orders/{id}`."
+      operationId: listOrderFulfillmentOrders
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+          description: One of the caller's own orders
+      responses:
+        "200":
+          description: The fulfillment orders of the order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderFulfillmentOrdersResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
+  /orders/{id}/shipments:
+    get:
+      tags:
+        - Delivery
+      summary: List the shipments of an order
+      description: "What actually left for an order: the shipments cut from its fulfillment orders, oldest first, with tracking code and delivered date. Each carries its own `actions`, decided per caller. Scoped like the order: a buyer reads their own, staff holding `display:Order` read any; someone else's order is a 404, and an order with nothing shipped is `items: []`. Unpaged. Each item has its own read at `GET /delivery/shipments/{id}`, which is also where the `Location` of a newly cut shipment points."
+      operationId: listOrderShipments
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+          description: One of the caller's own orders
+      responses:
+        "200":
+          description: The shipments of the order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderShipmentsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
   /payments/methods:
     get:
       tags:
@@ -6349,37 +6415,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ShippingMethodsResponse"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: delivery
-  /delivery/orders/{orderId}:
-    get:
-      tags:
-        - Delivery
-      summary: Get the fulfilment of an order
-      description: "Where an order's goods stand: its fulfillment orders (the groups of lines that leave together, made by rule when the order is paid) and the shipments cut from them (what actually left, with its tracking code). Each record carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers both lists empty — absence is the answer, never a 404. A hold reads to the buyer as `holdNotice` and staff's `holdMessage`; `holdReason` and `holdNote` are staff's own and are left out for anyone else."
-      operationId: getFulfillmentByOrder
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/OrderIdPathParam"
-          description: One of the caller's own orders
-      responses:
-        "200":
-          description: The fulfillment orders and the shipments of the order
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OrderFulfillment"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -10550,13 +10585,6 @@ components:
       schema:
         type: string
         maxLength: 32
-    OrderIdPathParam:
-      name: orderId
-      in: path
-      required: true
-      schema:
-        $ref: "#/components/schemas/Id"
-      description: Order identifier
     ReauthMethodPathParam:
       name: method
       in: path
@@ -16719,6 +16747,189 @@ components:
           type: string
           format: date-time
           description: When the money arrived. Must not be in the future. Defaults to now.
+    FulfillmentOrderActions:
+      type: object
+      additionalProperties: false
+      required:
+        - ship
+        - forceShip
+        - fulfill
+        - hold
+        - release
+      description: What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `update:Shipment`.
+      properties:
+        ship:
+          type: boolean
+          description: Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining.
+        forceShip:
+          type: boolean
+          description: "Whether `POST /delivery/fulfillment-orders/{id}/shipments` with `forced: true` would be accepted and the ordinary door would not: the caller holds `override:Order`, the order is `paid` (or otherwise not yet `processing`) and the fulfillment order still has units to ship."
+        fulfill:
+          type: boolean
+          description: Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open.
+        hold:
+          type: boolean
+          description: Whether `POST /delivery/fulfillment-orders/{id}/hold` would be accepted.
+        release:
+          type: boolean
+          description: Whether `POST /delivery/fulfillment-orders/{id}/release` would be accepted — never for `awaiting_stock`.
+    FulfillmentOrder:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - number
+        - kind
+        - status
+        - lines
+        - actions
+        - createdAt
+      description: A group of an order's lines that should leave together, made by rule when the order is paid (Shopify's `FulfillmentOrder`). One order, one payment, one invoice, as many fulfillment orders as the rule makes.
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: integer
+          minimum: 1
+          description: 1-based position within the order — `#1` is the one that ships now.
+        kind:
+          $ref: "#/components/schemas/FulfillmentOrderKind"
+        status:
+          $ref: "#/components/schemas/FulfillmentOrderStatus"
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/FulfillmentOrderLine"
+        holdNotice:
+          $ref: "#/components/schemas/FulfillmentHoldNotice"
+        holdMessage:
+          type: string
+          maxLength: 500
+          description: What staff wrote for the buyer about the hold. Everyone who reads the fulfillment order sees it.
+        holdReason:
+          $ref: "#/components/schemas/FulfillmentHoldReason"
+        holdNote:
+          type: string
+          maxLength: 1000
+          description: Staff's free text about the hold. Left out for anyone who cannot update fulfilment.
+        agreedAt:
+          type: string
+          format: date-time
+          description: The date promised when ordering, frozen from the line snapshot (CRD Art. 18).
+        expectedAt:
+          type: string
+          format: date-time
+          description: When it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected.
+        lastNoticeAt:
+          type: string
+          format: date-time
+          description: When the buyer was last told the date had moved or would be missed.
+        cancelReason:
+          $ref: "#/components/schemas/FulfillmentCancelReason"
+        actions:
+          $ref: "#/components/schemas/FulfillmentOrderActions"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    OrderFulfillmentOrdersResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/FulfillmentOrder"
+    ShipmentActions:
+      type: object
+      additionalProperties: false
+      required:
+        - deliver
+        - forceDeliver
+        - update
+      description: What the requesting caller may do to this shipment, decided by the server.
+      properties:
+        deliver:
+          type: boolean
+          description: Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`.
+        forceDeliver:
+          type: boolean
+          description: "Whether `POST /delivery/shipments/{id}/deliver` with `forced: true` would be accepted: the arrival is open (as for `deliver`) and the caller also holds `override:Order`. True beside `deliver`, not instead of it: forcing records the arrival without a carrier confirmation and needs a `reason`."
+        update:
+          type: boolean
+          description: Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — still `shipped`.
+    Shipment:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - fulfillmentOrderId
+        - number
+        - status
+        - lines
+        - forced
+        - shippedAt
+        - actions
+      description: What actually left, at one time, with one tracking code (Shopify's `Fulfillment`). Born `shipped`; a digital fulfilment is born `delivered`.
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: integer
+          minimum: 1
+          description: 1-based position within the order, in the order shipments were cut.
+        trackingCode:
+          type: string
+          description: The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false), and for a digital fulfilment.
+        status:
+          type: string
+          enum:
+            - shipped
+            - delivered
+          description: The tail of the order's lifecycle, as the carrier sees it.
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShipmentLine"
+        forced:
+          type: boolean
+          description: Whether staff skipped a step to record it (shipped from `paid` without `start`).
+        shippedAt:
+          type: string
+          format: date-time
+        deliveredAt:
+          type: string
+          format: date-time
+        actions:
+          $ref: "#/components/schemas/ShipmentActions"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    OrderShipmentsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Shipment"
     PaymentMethodOption:
       type: object
       additionalProperties: false
@@ -16831,185 +17042,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShippingMethod"
-    FulfillmentOrderActions:
-      type: object
-      additionalProperties: false
-      required:
-        - ship
-        - forceShip
-        - fulfill
-        - hold
-        - release
-      description: What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `update:Shipment`.
-      properties:
-        ship:
-          type: boolean
-          description: Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining.
-        forceShip:
-          type: boolean
-          description: "Whether `POST /delivery/fulfillment-orders/{id}/shipments` with `forced: true` would be accepted and the ordinary door would not: the caller holds `override:Order`, the order is `paid` (or otherwise not yet `processing`) and the fulfillment order still has units to ship."
-        fulfill:
-          type: boolean
-          description: Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open.
-        hold:
-          type: boolean
-          description: Whether `POST /delivery/fulfillment-orders/{id}/hold` would be accepted.
-        release:
-          type: boolean
-          description: Whether `POST /delivery/fulfillment-orders/{id}/release` would be accepted — never for `awaiting_stock`.
-    FulfillmentOrder:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - number
-        - kind
-        - status
-        - lines
-        - actions
-        - createdAt
-      description: A group of an order's lines that should leave together, made by rule when the order is paid (Shopify's `FulfillmentOrder`). One order, one payment, one invoice, as many fulfillment orders as the rule makes.
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        number:
-          type: integer
-          minimum: 1
-          description: 1-based position within the order — `#1` is the one that ships now.
-        kind:
-          $ref: "#/components/schemas/FulfillmentOrderKind"
-        status:
-          $ref: "#/components/schemas/FulfillmentOrderStatus"
-        lines:
-          type: array
-          items:
-            $ref: "#/components/schemas/FulfillmentOrderLine"
-        holdNotice:
-          $ref: "#/components/schemas/FulfillmentHoldNotice"
-        holdMessage:
-          type: string
-          maxLength: 500
-          description: What staff wrote for the buyer about the hold. Everyone who reads the fulfillment order sees it.
-        holdReason:
-          $ref: "#/components/schemas/FulfillmentHoldReason"
-        holdNote:
-          type: string
-          maxLength: 1000
-          description: Staff's free text about the hold. Left out for anyone who cannot update fulfilment.
-        agreedAt:
-          type: string
-          format: date-time
-          description: The date promised when ordering, frozen from the line snapshot (CRD Art. 18).
-        expectedAt:
-          type: string
-          format: date-time
-          description: When it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected.
-        lastNoticeAt:
-          type: string
-          format: date-time
-          description: When the buyer was last told the date had moved or would be missed.
-        cancelReason:
-          $ref: "#/components/schemas/FulfillmentCancelReason"
-        actions:
-          $ref: "#/components/schemas/FulfillmentOrderActions"
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-    ShipmentActions:
-      type: object
-      additionalProperties: false
-      required:
-        - deliver
-        - forceDeliver
-        - update
-      description: What the requesting caller may do to this shipment, decided by the server.
-      properties:
-        deliver:
-          type: boolean
-          description: Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`.
-        forceDeliver:
-          type: boolean
-          description: "Whether `POST /delivery/shipments/{id}/deliver` with `forced: true` would be accepted: the arrival is open (as for `deliver`) and the caller also holds `override:Order`. True beside `deliver`, not instead of it: forcing records the arrival without a carrier confirmation and needs a `reason`."
-        update:
-          type: boolean
-          description: Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — still `shipped`.
-    Shipment:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - fulfillmentOrderId
-        - number
-        - status
-        - lines
-        - forced
-        - shippedAt
-        - actions
-      description: What actually left, at one time, with one tracking code (Shopify's `Fulfillment`). Born `shipped`; a digital fulfilment is born `delivered`.
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        fulfillmentOrderId:
-          $ref: "#/components/schemas/Id"
-        number:
-          type: integer
-          minimum: 1
-          description: 1-based position within the order, in the order shipments were cut.
-        trackingCode:
-          type: string
-          description: The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false), and for a digital fulfilment.
-        status:
-          type: string
-          enum:
-            - shipped
-            - delivered
-          description: The tail of the order's lifecycle, as the carrier sees it.
-        lines:
-          type: array
-          items:
-            $ref: "#/components/schemas/ShipmentLine"
-        forced:
-          type: boolean
-          description: Whether staff skipped a step to record it (shipped from `paid` without `start`).
-        shippedAt:
-          type: string
-          format: date-time
-        deliveredAt:
-          type: string
-          format: date-time
-        actions:
-          $ref: "#/components/schemas/ShipmentActions"
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-    OrderFulfillment:
-      type: object
-      additionalProperties: false
-      required:
-        - fulfillmentOrders
-        - shipments
-      description: An order's fulfilment — both lists empty until the order is paid.
-      properties:
-        fulfillmentOrders:
-          type: array
-          items:
-            $ref: "#/components/schemas/FulfillmentOrder"
-        shipments:
-          type: array
-          items:
-            $ref: "#/components/schemas/Shipment"
     PreorderFulfillmentState:
       type: string
       enum:

@@ -72,8 +72,8 @@ concerns, and between them they cover four of the client's nine context edges.
 
 An order is not one parcel. When it is paid the backend splits it into **fulfillment orders** (lines
 that leave together), and each one is shipped in one or more **shipments** (what actually left, with
-its own tracking code). `GET /delivery/orders/{id}` answers both lists, each record with its own
-`actions`; the panel is a card per fulfillment order and the shipments inside it.
+its own tracking code). `GET /orders/{id}/fulfillment-orders` and `GET /orders/{id}/shipments` answer the two lists, each
+record with its own `actions` (the store reads both at once); the panel is a card per fulfillment order and the shipments inside it.
 
 ```mermaid
 flowchart TD
@@ -145,17 +145,18 @@ This module routes to nothing. It contributes components, schemas or a store to 
 
 #### Endpoints called
 
-| Call                                               | Response schema                   |
-| -------------------------------------------------- | --------------------------------- |
-| `POST /orders/{id}/process`                        | `ProcessOrderResponse`            |
-| `GET /delivery/orders/{id}`                        | `GetFulfillmentByOrderResponse`   |
-| `POST /delivery/fulfillment-orders/{id}/shipments` | `ShipFulfillmentOrderResponse`    |
-| `POST /delivery/fulfillment-orders/{id}/fulfill`   | `FulfillFulfillmentOrderResponse` |
-| `POST /delivery/fulfillment-orders/{id}/hold`      | `HoldFulfillmentOrderResponse`    |
-| `POST /delivery/fulfillment-orders/{id}/release`   | `ReleaseFulfillmentOrderResponse` |
-| `PATCH /delivery/shipments/{id}`                   | `UpdateShipmentResponse`          |
-| `POST /delivery/shipments/{id}/deliver`            | `DeliverShipmentResponse`         |
-| `GET /delivery/methods`                            | `ListShippingMethodsResponse`     |
+| Call                                               | Response schema                      |
+| -------------------------------------------------- | ------------------------------------ |
+| `POST /orders/{id}/process`                        | `ProcessOrderResponse`               |
+| `GET /orders/{id}/fulfillment-orders`              | `ListOrderFulfillmentOrdersResponse` |
+| `GET /orders/{id}/shipments`                       | `ListOrderShipmentsResponse`         |
+| `POST /delivery/fulfillment-orders/{id}/shipments` | `ShipFulfillmentOrderResponse`       |
+| `POST /delivery/fulfillment-orders/{id}/fulfill`   | `FulfillFulfillmentOrderResponse`    |
+| `POST /delivery/fulfillment-orders/{id}/hold`      | `HoldFulfillmentOrderResponse`       |
+| `POST /delivery/fulfillment-orders/{id}/release`   | `ReleaseFulfillmentOrderResponse`    |
+| `PATCH /delivery/shipments/{id}`                   | `UpdateShipmentResponse`             |
+| `POST /delivery/shipments/{id}/deliver`            | `DeliverShipmentResponse`            |
+| `GET /delivery/methods`                            | `ListShippingMethodsResponse`        |
 
 Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 

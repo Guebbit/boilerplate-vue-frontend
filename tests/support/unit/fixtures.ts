@@ -300,7 +300,7 @@ export const aPreorderFulfillmentOrder = (
 });
 
 /**
- * A valid fulfillment order as `GET /delivery/orders/{id}` answers it — one physical line, open,
+ * A valid fulfillment order as `GET /orders/{id}/fulfillment-orders` answers it — one physical line, open,
  * nothing shipped, and no action offered.
  *
  * @param overrides - the fields a case actually cares about

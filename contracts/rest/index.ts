@@ -4113,6 +4113,116 @@ export interface RecordOfflinePaymentRequest {
     receivedAt?: string;
 }
 
+/**
+ * What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `update:Shipment`.
+ */
+export interface FulfillmentOrderActions {
+    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining. */
+    ship: boolean;
+    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` with `forced: true` would be accepted and the ordinary door would not: the caller holds `override:Order`, the order is `paid` (or otherwise not yet `processing`) and the fulfillment order still has units to ship. */
+    forceShip: boolean;
+    /** Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open. */
+    fulfill: boolean;
+    /** Whether `POST /delivery/fulfillment-orders/{id}/hold` would be accepted. */
+    hold: boolean;
+    /** Whether `POST /delivery/fulfillment-orders/{id}/release` would be accepted — never for `awaiting_stock`. */
+    release: boolean;
+}
+
+/**
+ * A group of an order's lines that should leave together, made by rule when the order is paid (Shopify's `FulfillmentOrder`). One order, one payment, one invoice, as many fulfillment orders as the rule makes.
+ */
+export interface FulfillmentOrder {
+    id: Id;
+    orderId: Id;
+    /**
+     * 1-based position within the order — `#1` is the one that ships now.
+     * @minimum 1
+     */
+    number: number;
+    kind: FulfillmentOrderKind;
+    status: FulfillmentOrderStatus;
+    lines: FulfillmentOrderLine[];
+    holdNotice?: FulfillmentHoldNotice;
+    /**
+     * What staff wrote for the buyer about the hold. Everyone who reads the fulfillment order sees it.
+     * @maxLength 500
+     */
+    holdMessage?: string;
+    holdReason?: FulfillmentHoldReason;
+    /**
+     * Staff's free text about the hold. Left out for anyone who cannot update fulfilment.
+     * @maxLength 1000
+     */
+    holdNote?: string;
+    /** The date promised when ordering, frozen from the line snapshot (CRD Art. 18). */
+    agreedAt?: string;
+    /** When it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected. */
+    expectedAt?: string;
+    /** When the buyer was last told the date had moved or would be missed. */
+    lastNoticeAt?: string;
+    cancelReason?: FulfillmentCancelReason;
+    actions: FulfillmentOrderActions;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+export interface OrderFulfillmentOrdersResponse {
+    items: FulfillmentOrder[];
+}
+
+/**
+ * What the requesting caller may do to this shipment, decided by the server.
+ */
+export interface ShipmentActions {
+    /** Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`. */
+    deliver: boolean;
+    /** Whether `POST /delivery/shipments/{id}/deliver` with `forced: true` would be accepted: the arrival is open (as for `deliver`) and the caller also holds `override:Order`. True beside `deliver`, not instead of it: forcing records the arrival without a carrier confirmation and needs a `reason`. */
+    forceDeliver: boolean;
+    /** Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — still `shipped`. */
+    update: boolean;
+}
+
+/**
+ * The tail of the order's lifecycle, as the carrier sees it.
+ */
+export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
+
+export const ShipmentStatus = {
+    shipped: 'shipped',
+    delivered: 'delivered'
+} as const;
+
+/**
+ * What actually left, at one time, with one tracking code (Shopify's `Fulfillment`). Born `shipped`; a digital fulfilment is born `delivered`.
+ */
+export interface Shipment {
+    id: Id;
+    orderId: Id;
+    fulfillmentOrderId: Id;
+    /**
+     * 1-based position within the order, in the order shipments were cut.
+     * @minimum 1
+     */
+    number: number;
+    /** The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false), and for a digital fulfilment. */
+    trackingCode?: string;
+    /** The tail of the order's lifecycle, as the carrier sees it. */
+    status: ShipmentStatus;
+    lines: ShipmentLine[];
+    /** Whether staff skipped a step to record it (shipped from `paid` without `start`). */
+    forced: boolean;
+    shippedAt: string;
+    deliveredAt?: string;
+    actions: ShipmentActions;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface OrderShipmentsResponse {
+    items: Shipment[];
+}
+
 export interface PaymentMethodOption {
     id: PaymentMethodId;
     /**
@@ -4198,116 +4308,6 @@ export interface ShippingMethod {
 
 export interface ShippingMethodsResponse {
     methods: ShippingMethod[];
-}
-
-/**
- * What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `update:Shipment`.
- */
-export interface FulfillmentOrderActions {
-    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining. */
-    ship: boolean;
-    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` with `forced: true` would be accepted and the ordinary door would not: the caller holds `override:Order`, the order is `paid` (or otherwise not yet `processing`) and the fulfillment order still has units to ship. */
-    forceShip: boolean;
-    /** Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open. */
-    fulfill: boolean;
-    /** Whether `POST /delivery/fulfillment-orders/{id}/hold` would be accepted. */
-    hold: boolean;
-    /** Whether `POST /delivery/fulfillment-orders/{id}/release` would be accepted — never for `awaiting_stock`. */
-    release: boolean;
-}
-
-/**
- * A group of an order's lines that should leave together, made by rule when the order is paid (Shopify's `FulfillmentOrder`). One order, one payment, one invoice, as many fulfillment orders as the rule makes.
- */
-export interface FulfillmentOrder {
-    id: Id;
-    orderId: Id;
-    /**
-     * 1-based position within the order — `#1` is the one that ships now.
-     * @minimum 1
-     */
-    number: number;
-    kind: FulfillmentOrderKind;
-    status: FulfillmentOrderStatus;
-    lines: FulfillmentOrderLine[];
-    holdNotice?: FulfillmentHoldNotice;
-    /**
-     * What staff wrote for the buyer about the hold. Everyone who reads the fulfillment order sees it.
-     * @maxLength 500
-     */
-    holdMessage?: string;
-    holdReason?: FulfillmentHoldReason;
-    /**
-     * Staff's free text about the hold. Left out for anyone who cannot update fulfilment.
-     * @maxLength 1000
-     */
-    holdNote?: string;
-    /** The date promised when ordering, frozen from the line snapshot (CRD Art. 18). */
-    agreedAt?: string;
-    /** When it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected. */
-    expectedAt?: string;
-    /** When the buyer was last told the date had moved or would be missed. */
-    lastNoticeAt?: string;
-    cancelReason?: FulfillmentCancelReason;
-    actions: FulfillmentOrderActions;
-    createdAt: string;
-    updatedAt?: string;
-}
-
-/**
- * What the requesting caller may do to this shipment, decided by the server.
- */
-export interface ShipmentActions {
-    /** Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`. */
-    deliver: boolean;
-    /** Whether `POST /delivery/shipments/{id}/deliver` with `forced: true` would be accepted: the arrival is open (as for `deliver`) and the caller also holds `override:Order`. True beside `deliver`, not instead of it: forcing records the arrival without a carrier confirmation and needs a `reason`. */
-    forceDeliver: boolean;
-    /** Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — still `shipped`. */
-    update: boolean;
-}
-
-/**
- * The tail of the order's lifecycle, as the carrier sees it.
- */
-export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
-
-export const ShipmentStatus = {
-    shipped: 'shipped',
-    delivered: 'delivered'
-} as const;
-
-/**
- * What actually left, at one time, with one tracking code (Shopify's `Fulfillment`). Born `shipped`; a digital fulfilment is born `delivered`.
- */
-export interface Shipment {
-    id: Id;
-    orderId: Id;
-    fulfillmentOrderId: Id;
-    /**
-     * 1-based position within the order, in the order shipments were cut.
-     * @minimum 1
-     */
-    number: number;
-    /** The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false), and for a digital fulfilment. */
-    trackingCode?: string;
-    /** The tail of the order's lifecycle, as the carrier sees it. */
-    status: ShipmentStatus;
-    lines: ShipmentLine[];
-    /** Whether staff skipped a step to record it (shipped from `paid` without `start`). */
-    forced: boolean;
-    shippedAt: string;
-    deliveredAt?: string;
-    actions: ShipmentActions;
-    createdAt?: string;
-    updatedAt?: string;
-}
-
-/**
- * An order's fulfilment — both lists empty until the order is paid.
- */
-export interface OrderFulfillment {
-    fulfillmentOrders: FulfillmentOrder[];
-    shipments: Shipment[];
 }
 
 /**
@@ -9724,6 +9724,34 @@ export const processOrder = (id: string, options?: SecondParameter<typeof orvalM
 };
 
 /**
+ * The plan for an order's goods: its fulfillment orders, the groups of lines that leave together, made by rule when the order is paid. Each carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers `items: []` — absence is the answer, never a 404. A hold reads to the buyer as `holdNotice` and staff's `holdMessage`; `holdReason` and `holdNote` are staff's own and are left out for anyone else. Unpaged: one order holds a handful. Each item has its own read at `GET /delivery/fulfillment-orders/{id}`.
+ * @summary List the fulfillment orders of an order
+ */
+export const listOrderFulfillmentOrders = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<OrderFulfillmentOrdersResponse>>
+) => {
+    return orvalMutator<OrderFulfillmentOrdersResponse>(
+        { url: `/orders/${id}/fulfillment-orders`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * What actually left for an order: the shipments cut from its fulfillment orders, oldest first, with tracking code and delivered date. Each carries its own `actions`, decided per caller. Scoped like the order: a buyer reads their own, staff holding `display:Order` read any; someone else's order is a 404, and an order with nothing shipped is `items: []`. Unpaged. Each item has its own read at `GET /delivery/shipments/{id}`, which is also where the `Location` of a newly cut shipment points.
+ * @summary List the shipments of an order
+ */
+export const listOrderShipments = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<OrderShipmentsResponse>>
+) => {
+    return orvalMutator<OrderShipmentsResponse>(
+        { url: `/orders/${id}/shipments`, method: 'GET' },
+        options
+    );
+};
+
+/**
  * Which methods this deployment offers, so the frontend hard-codes none. `card` is present only when a card payment provider is configured; `bank_transfer` only once its beneficiary and IBAN are configured. With neither the list is empty, and checkout is off until a method is configured. Public — like `GET /delivery/methods`, this is pre-purchase information.
  * @summary List payment methods
  */
@@ -9841,20 +9869,6 @@ export const listShippingMethods = (
 ) => {
     return orvalMutator<ShippingMethodsResponse>(
         { url: `/delivery/methods`, method: 'GET' },
-        options
-    );
-};
-
-/**
- * Where an order's goods stand: its fulfillment orders (the groups of lines that leave together, made by rule when the order is paid) and the shipments cut from them (what actually left, with its tracking code). Each record carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers both lists empty — absence is the answer, never a 404. A hold reads to the buyer as `holdNotice` and staff's `holdMessage`; `holdReason` and `holdNote` are staff's own and are left out for anyone else.
- * @summary Get the fulfilment of an order
- */
-export const getFulfillmentByOrder = (
-    orderId: string,
-    options?: SecondParameter<typeof orvalMutator<OrderFulfillment>>
-) => {
-    return orvalMutator<OrderFulfillment>(
-        { url: `/delivery/orders/${orderId}`, method: 'GET' },
         options
     );
 };
@@ -11678,6 +11692,10 @@ export type GetOrderCreditNoteResult = NonNullable<Awaited<ReturnType<typeof get
 export type ListOrderPaymentsResult = NonNullable<Awaited<ReturnType<typeof listOrderPayments>>>;
 export type RecordOrderPaymentResult = NonNullable<Awaited<ReturnType<typeof recordOrderPayment>>>;
 export type ProcessOrderResult = NonNullable<Awaited<ReturnType<typeof processOrder>>>;
+export type ListOrderFulfillmentOrdersResult = NonNullable<
+    Awaited<ReturnType<typeof listOrderFulfillmentOrders>>
+>;
+export type ListOrderShipmentsResult = NonNullable<Awaited<ReturnType<typeof listOrderShipments>>>;
 export type ListPaymentMethodsResult = NonNullable<Awaited<ReturnType<typeof listPaymentMethods>>>;
 export type CreateRefundResult = NonNullable<Awaited<ReturnType<typeof createRefund>>>;
 export type GetRefundResult = NonNullable<Awaited<ReturnType<typeof getRefund>>>;
@@ -11689,9 +11707,6 @@ export type ReceivePaymentWebhookResult = NonNullable<
 >;
 export type ListShippingMethodsResult = NonNullable<
     Awaited<ReturnType<typeof listShippingMethods>>
->;
-export type GetFulfillmentByOrderResult = NonNullable<
-    Awaited<ReturnType<typeof getFulfillmentByOrder>>
 >;
 export type ListPreorderFulfillmentOrdersResult = NonNullable<
     Awaited<ReturnType<typeof listPreorderFulfillmentOrders>>

@@ -70,10 +70,8 @@ beforeEach(() => {
     responses = {
         'GET /delivery/methods': { methods: METHODS },
         'GET /shop': aShop({ shipToCountries: ['IT'] }),
-        'GET /delivery/orders/o1': {
-            fulfillmentOrders: [aFulfillmentOrder()],
-            shipments: [aShipment({ trackingCode: 'TRK-1' })]
-        },
+        'GET /orders/o1/fulfillment-orders': { items: [aFulfillmentOrder()] },
+        'GET /orders/o1/shipments': { items: [aShipment({ trackingCode: 'TRK-1' })] },
         'POST /delivery/fulfillment-orders/fo1/shipments': aShipment({
             id: 's2',
             trackingCode: 'TRK-2'
@@ -167,10 +165,8 @@ describe('fetchFulfillmentForOrder', () => {
      * An order not paid yet answers 200 with two empty lists: absence is the answer.
      */
     it('reads two empty lists as "nothing to ship yet"', () => {
-        responses['GET /delivery/orders/o1'] = {
-            fulfillmentOrders: [],
-            shipments: []
-        };
+        responses['GET /orders/o1/fulfillment-orders'] = { items: [] };
+        responses['GET /orders/o1/shipments'] = { items: [] };
         const store = useDeliveryStore();
         return store.fetchFulfillmentForOrder('o1').then(() => {
             expect(store.fulfillmentOrders).toEqual([]);
@@ -183,9 +179,24 @@ describe('fetchFulfillmentForOrder', () => {
      * transit, the one wrong answer this panel can give.
      */
     it('lets a failure through instead of calling it "nothing to ship"', () => {
-        responses['GET /delivery/orders/o1'] = new Error('Internal Server Error');
+        responses['GET /orders/o1/shipments'] = new Error('Internal Server Error');
         const store = useDeliveryStore();
         return expect(store.fetchFulfillmentForOrder('o1')).rejects.toMatchObject({ status: 500 });
+    });
+
+    /**
+     * The two lists land together: a failed shipments read must not leave the new fulfillment
+     * orders next to the old shipments.
+     */
+    it('keeps the previous state when one of the two reads fails', async () => {
+        const store = useDeliveryStore();
+        await store.fetchFulfillmentForOrder('o1');
+        responses['GET /orders/o1/fulfillment-orders'] = { items: [] };
+        responses['GET /orders/o1/shipments'] = new Error('Internal Server Error');
+
+        await expect(store.fetchFulfillmentForOrder('o1')).rejects.toMatchObject({ status: 500 });
+
+        expect(store.fulfillmentOrders.map(({ id }) => id)).toEqual(['fo1']);
     });
 });
 

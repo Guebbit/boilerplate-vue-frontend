@@ -25,7 +25,7 @@ interface OrderLike {
 
 /** The slice of the delivery view this story reads. */
 interface DeliveryLike {
-    fulfillmentOrders: { status: string; holdReason?: string }[];
+    items: { status: string; holdReason?: string }[];
 }
 
 describe('BO2 · An expired hold serves the buyer who waits', () => {
@@ -69,11 +69,15 @@ describe('BO2 · An expired hold serves the buyer who waits', () => {
 
                 cy.step('the paid buyer’s wait is released, not left for a stranger');
                 eventually(
-                    () => cy.apiAs<DeliveryLike>('admin', 'GET', `/delivery/orders/${waitingId}`),
+                    () =>
+                        cy.apiAs<DeliveryLike>(
+                            'admin',
+                            'GET',
+                            `/orders/${waitingId}/fulfillment-orders`
+                        ),
                     (view) =>
-                        (view?.fulfillmentOrders.length ?? 0) > 0 &&
-                        (view?.fulfillmentOrders.every(({ status }) => status !== 'on_hold') ??
-                            false)
+                        (view?.items.length ?? 0) > 0 &&
+                        (view?.items.every(({ status }) => status !== 'on_hold') ?? false)
                 );
             });
         });
