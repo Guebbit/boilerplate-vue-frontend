@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import { translate } from '@/i18n';
 import {
+    cancelReturnBodyNoteMax,
     closeReturnBodyNoteMax,
     createReturnBodyNoteMax,
     declineReturnBodyReasonMax
@@ -39,6 +40,20 @@ export const closeNoteSchema = z
     });
 
 /**
+ * Staff's optional note when canceling an approved return, within the cancel operation's cap. Empty
+ * is fine: the audit row only keeps a note when there is one.
+ */
+export const cancelNoteSchema = z
+    .string()
+    .trim()
+    .max(cancelReturnBodyNoteMax, {
+        error: () =>
+            translate('return-staff-actions.error-note-too-long', {
+                max: cancelReturnBodyNoteMax
+            })
+    });
+
+/**
  * The buyer's optional note on a return request, within the create operation's cap.
  */
 export const returnNoteSchema = z
@@ -54,6 +69,7 @@ export const returnNoteSchema = z
  * because a component does not import `@api/schemas`.
  */
 export {
+    cancelReturnBodyNoteMax as cancelNoteMax,
     closeReturnBodyNoteMax as closeNoteMax,
     declineReturnBodyReasonMax as declineReasonMax,
     createReturnBodyNoteMax as returnNoteMax

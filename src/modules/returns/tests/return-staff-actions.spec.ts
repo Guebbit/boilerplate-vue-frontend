@@ -29,6 +29,7 @@ const mountActions = (item: Return) => {
     vi.spyOn(store, 'decline').mockResolvedValue(aReturn());
     vi.spyOn(store, 'receive').mockResolvedValue(aReturn());
     vi.spyOn(store, 'close').mockResolvedValue(aReturn());
+    vi.spyOn(store, 'cancel').mockResolvedValue(aReturn());
     const wrapper = mount(ReturnStaffActions, {
         props: { item },
         global: { plugins: [vuetify, i18n] }
@@ -54,7 +55,13 @@ describe('ReturnStaffActions', () => {
         const { wrapper, store } = mountActions(
             aReturn({
                 status: 'requested',
-                actions: { approve: true, decline: true, receive: false, close: false }
+                actions: {
+                    approve: true,
+                    decline: true,
+                    receive: false,
+                    close: false,
+                    cancel: false
+                }
             })
         );
 
@@ -69,7 +76,13 @@ describe('ReturnStaffActions', () => {
         const { wrapper, store } = mountActions(
             aReturn({
                 status: 'requested',
-                actions: { approve: true, decline: true, receive: false, close: false }
+                actions: {
+                    approve: true,
+                    decline: true,
+                    receive: false,
+                    close: false,
+                    cancel: false
+                }
             })
         );
 
@@ -83,7 +96,13 @@ describe('ReturnStaffActions', () => {
         const { wrapper, store } = mountActions(
             aReturn({
                 status: 'requested',
-                actions: { approve: true, decline: true, receive: false, close: false }
+                actions: {
+                    approve: true,
+                    decline: true,
+                    receive: false,
+                    close: false,
+                    cancel: false
+                }
             })
         );
 
@@ -96,7 +115,15 @@ describe('ReturnStaffActions', () => {
 
     it('receives with no body when nothing is kept back', async () => {
         const { wrapper, store } = mountActions(
-            aReturn({ actions: { approve: false, decline: false, receive: true, close: false } })
+            aReturn({
+                actions: {
+                    approve: false,
+                    decline: false,
+                    receive: true,
+                    close: false,
+                    cancel: false
+                }
+            })
         );
 
         await wrapper.get('[data-test=return-receive-form]').trigger('submit');
@@ -107,7 +134,15 @@ describe('ReturnStaffActions', () => {
 
     it('says the money is still owed when the receipt answers received', async () => {
         const { wrapper, store } = mountActions(
-            aReturn({ actions: { approve: false, decline: false, receive: true, close: false } })
+            aReturn({
+                actions: {
+                    approve: false,
+                    decline: false,
+                    receive: true,
+                    close: false,
+                    cancel: false
+                }
+            })
         );
         vi.mocked(store.receive).mockResolvedValue(aReturn({ status: 'received' }));
 
@@ -120,7 +155,15 @@ describe('ReturnStaffActions', () => {
 
     it('receives with the handling deduction as a number', async () => {
         const { wrapper, store } = mountActions(
-            aReturn({ actions: { approve: false, decline: false, receive: true, close: false } })
+            aReturn({
+                actions: {
+                    approve: false,
+                    decline: false,
+                    receive: true,
+                    close: false,
+                    cancel: false
+                }
+            })
         );
 
         await wrapper.get('[data-test=return-receive-deduction] input').setValue('4.5');
@@ -134,7 +177,13 @@ describe('ReturnStaffActions', () => {
         const { wrapper, store } = mountActions(
             aReturn({
                 status: 'requested',
-                actions: { approve: true, decline: false, receive: false, close: false }
+                actions: {
+                    approve: true,
+                    decline: false,
+                    receive: false,
+                    close: false,
+                    cancel: false
+                }
             })
         );
         vi.mocked(store.approve).mockRejectedValue(new Error('already decided'));
@@ -150,7 +199,13 @@ describe('ReturnStaffActions', () => {
         const { wrapper, store } = mountActions(
             aReturn({
                 status: 'requested',
-                actions: { approve: false, decline: true, receive: false, close: false }
+                actions: {
+                    approve: false,
+                    decline: true,
+                    receive: false,
+                    close: false,
+                    cancel: false
+                }
             })
         );
         vi.mocked(store.decline).mockRejectedValue(new Error('connection lost'));
@@ -165,7 +220,15 @@ describe('ReturnStaffActions', () => {
 
     it('shows the general error when a receive is rejected with no field errors', async () => {
         const { wrapper, store } = mountActions(
-            aReturn({ actions: { approve: false, decline: false, receive: true, close: false } })
+            aReturn({
+                actions: {
+                    approve: false,
+                    decline: false,
+                    receive: true,
+                    close: false,
+                    cancel: false
+                }
+            })
         );
         vi.mocked(store.receive).mockRejectedValue(new Error('already received'));
 
@@ -177,7 +240,15 @@ describe('ReturnStaffActions', () => {
 
     it('puts a field error the server names on its field, with no general error', async () => {
         const { wrapper, store } = mountActions(
-            aReturn({ actions: { approve: false, decline: false, receive: true, close: false } })
+            aReturn({
+                actions: {
+                    approve: false,
+                    decline: false,
+                    receive: true,
+                    close: false,
+                    cancel: false
+                }
+            })
         );
         vi.mocked(store.receive).mockRejectedValue(
             aProblem(422, [
@@ -205,7 +276,13 @@ describe('ReturnStaffActions', () => {
         const open = mountActions(
             aReturn({
                 status: 'received',
-                actions: { approve: false, decline: false, receive: false, close: true }
+                actions: {
+                    approve: false,
+                    decline: false,
+                    receive: false,
+                    close: true,
+                    cancel: false
+                }
             })
         );
 
@@ -217,7 +294,13 @@ describe('ReturnStaffActions', () => {
         const { wrapper, store } = mountActions(
             aReturn({
                 status: 'received',
-                actions: { approve: false, decline: false, receive: false, close: true }
+                actions: {
+                    approve: false,
+                    decline: false,
+                    receive: false,
+                    close: true,
+                    cancel: false
+                }
             })
         );
 
@@ -232,7 +315,13 @@ describe('ReturnStaffActions', () => {
         const { wrapper, store } = mountActions(
             aReturn({
                 status: 'received',
-                actions: { approve: false, decline: false, receive: false, close: true }
+                actions: {
+                    approve: false,
+                    decline: false,
+                    receive: false,
+                    close: true,
+                    cancel: false
+                }
             })
         );
 
@@ -247,7 +336,13 @@ describe('ReturnStaffActions', () => {
         const { wrapper, store } = mountActions(
             aReturn({
                 status: 'received',
-                actions: { approve: false, decline: false, receive: false, close: true }
+                actions: {
+                    approve: false,
+                    decline: false,
+                    receive: false,
+                    close: true,
+                    cancel: false
+                }
             })
         );
         vi.mocked(store.close).mockRejectedValue(
@@ -258,6 +353,91 @@ describe('ReturnStaffActions', () => {
         await flushPromises();
 
         expect(wrapper.get('[data-test=return-move-error]').text()).toContain('Already closed.');
+        expect(wrapper.emitted('changed')).toBeUndefined();
+    });
+
+    it('offers the cancel only when the server says it would work', () => {
+        const idle = mountActions(aReturn());
+        const open = mountActions(
+            aReturn({
+                status: 'approved',
+                actions: {
+                    approve: false,
+                    decline: false,
+                    receive: false,
+                    close: false,
+                    cancel: true
+                }
+            })
+        );
+
+        expect(idle.wrapper.find('[data-test=return-cancel-form]').exists()).toBe(false);
+        expect(open.wrapper.find('[data-test=return-cancel-form]').exists()).toBe(true);
+    });
+
+    it('cancels with no note when none is written, and tells the page', async () => {
+        const { wrapper, store } = mountActions(
+            aReturn({
+                status: 'approved',
+                actions: {
+                    approve: false,
+                    decline: false,
+                    receive: false,
+                    close: false,
+                    cancel: true
+                }
+            })
+        );
+
+        await wrapper.get('[data-test=return-cancel-form]').trigger('submit');
+        await flushPromises();
+
+        expect(store.cancel).toHaveBeenCalledWith('r1', undefined);
+        expect(wrapper.emitted('changed')).toHaveLength(1);
+    });
+
+    it('cancels with the note the staff member wrote', async () => {
+        const { wrapper, store } = mountActions(
+            aReturn({
+                status: 'approved',
+                actions: {
+                    approve: false,
+                    decline: false,
+                    receive: false,
+                    close: false,
+                    cancel: true
+                }
+            })
+        );
+
+        await wrapper.get('[data-test=return-cancel-note] input').setValue('Never sent');
+        await wrapper.get('[data-test=return-cancel-form]').trigger('submit');
+        await flushPromises();
+
+        expect(store.cancel).toHaveBeenCalledWith('r1', 'Never sent');
+    });
+
+    it('shows a refused cancel in place and tells nobody', async () => {
+        const { wrapper, store } = mountActions(
+            aReturn({
+                status: 'approved',
+                actions: {
+                    approve: false,
+                    decline: false,
+                    receive: false,
+                    close: false,
+                    cancel: true
+                }
+            })
+        );
+        vi.mocked(store.cancel).mockRejectedValue(
+            aProblem(409, [{ code: 'RETURN_NOT_CANCELABLE', message: 'Already canceled.' }])
+        );
+
+        await wrapper.get('[data-test=return-cancel-form]').trigger('submit');
+        await flushPromises();
+
+        expect(wrapper.get('[data-test=return-move-error]').text()).toContain('Already canceled.');
         expect(wrapper.emitted('changed')).toBeUndefined();
     });
 });

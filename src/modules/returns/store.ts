@@ -2,7 +2,7 @@
  * @module
  * Pinia store for the returns module: a paginated search and a by-id read on
  * `useStructureCrudApi`, plus hand-written actions for the endpoints that are moves rather than
- * record edits — open (the withdrawal button), approve, decline, receive, close.
+ * record edits — open (the withdrawal button), approve, decline, receive, close, cancel.
  */
 import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
@@ -10,6 +10,7 @@ import { queryClient } from '@/infrastructure/query-client.ts';
 import { useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
 import {
     approveReturn,
+    cancelReturn,
     closeReturn,
     createReturn,
     declineReturn,
@@ -204,6 +205,17 @@ export const useReturnsStore = defineStore('returns', () => {
     const close = (returnId: string, note?: string) =>
         updateTarget(() => closeReturn(returnId, note ? { note } : undefined), {}, returnId);
 
+    /**
+     * Staff end an approved return whose goods never came. Nothing is paid, restocked or emailed;
+     * the same lines can be returned again.
+     *
+     * @param returnId - Which return.
+     * @param note - Why, optional; kept in the audit log only.
+     * @returns A promise resolving with the canceled return.
+     */
+    const cancel = (returnId: string, note?: string) =>
+        updateTarget(() => cancelReturn(returnId, note ? { note } : undefined), {}, returnId);
+
     return {
         returns,
         returnsList,
@@ -226,6 +238,7 @@ export const useReturnsStore = defineStore('returns', () => {
         approve,
         decline,
         receive,
-        close
+        close,
+        cancel
     };
 });

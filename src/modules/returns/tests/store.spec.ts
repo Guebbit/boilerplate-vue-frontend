@@ -177,6 +177,31 @@ describe('close', () => {
     });
 });
 
+describe('cancel', () => {
+    it('posts the note and mirrors the canceled return', () => {
+        responses['POST /returns/r1/cancel'] = aReturn({ status: 'canceled' });
+        const store = useReturnsStore();
+
+        return store.cancel('r1', 'never sent').then(() => {
+            expect(sent[0].url).toBe('/returns/r1/cancel');
+            expect(contractRequest(schemas.CancelReturnBody, sent[0].data)).toEqual({
+                note: 'never sent'
+            });
+            expect(store.returns.r1?.status).toBe('canceled');
+        });
+    });
+
+    it('sends no body at all when there is no note', () => {
+        responses['POST /returns/r1/cancel'] = aReturn({ status: 'canceled' });
+
+        return useReturnsStore()
+            .cancel('r1')
+            .then(() => {
+                expect(sent[0].data).toBeUndefined();
+            });
+    });
+});
+
 describe('fetchOrderReturns', () => {
     it('asks for one order’s returns and caches them', () => {
         responses['GET /returns'] = {

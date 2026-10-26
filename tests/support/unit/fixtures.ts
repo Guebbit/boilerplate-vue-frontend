@@ -178,7 +178,7 @@ export const aReturn = (overrides: Partial<Return> = {}): Return => ({
     lines: [{ productId: 'p1', quantity: 1, title: 'Shirt', unitPrice: 30 }],
     returnPostage: 'consumer',
     createdAt: '2026-09-01T10:00:00.000Z',
-    actions: { approve: false, decline: false, receive: false, close: false },
+    actions: { approve: false, decline: false, receive: false, close: false, cancel: false },
     ...overrides
 });
 

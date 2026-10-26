@@ -9228,7 +9228,7 @@ paths:
       tags:
         - Returns
       summary: Close a return by hand
-      description: "Staff finish a `received` return whose refund will not follow the usual way: it was canceled, or the money went back outside the application. The return becomes `closed` and the order's timeline and the audit row `admin.return.closed` say so, with the note in the audit row only. No money moves, no stock moves (the units went back on sale when the goods were received), no credit note is issued and the customer is not mailed that their money went back: closing is bookkeeping, not a refund. A return that is not `received` (a `requested` one is declined, not closed) answers 409 `RETURN_NOT_CLOSABLE`. Needs `receive:Return`, the key that receives the goods, which carries a fresh-session requirement."
+      description: "Staff finish a `received` return whose refund will not follow the usual way: it was canceled, or the money went back outside the application. The return becomes `closed` and the order's timeline and the audit row `admin.return.closed` say so, with the note in the audit row only. No money moves, no stock moves (the units went back on sale when the goods were received), no credit note is issued and the customer is not mailed that their money went back: closing is bookkeeping, not a refund. A return that is not `received` (a `requested` one is declined, an `approved` one whose goods never came is canceled, not closed) answers 409 `RETURN_NOT_CLOSABLE`. Needs `receive:Return`, the key that receives the goods, which carries a fresh-session requirement."
       operationId: closeReturn
       security:
         - bearerAuth: []
@@ -9244,6 +9244,57 @@ paths:
       responses:
         "200":
           description: The return, `closed`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Return"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: returns
+  /returns/{id}/cancel:
+    post:
+      tags:
+        - Returns
+      summary: Cancel an approved return whose goods never came
+      description: |-
+        Staff end an `approved` return whose goods will never arrive: the buyer never sent them, or changed their mind. The return becomes `canceled`, a final state that is not `closed`: it holds no units (the same lines can be returned again) and counts as no goods back, so the order's return status leaves `in_progress` and the delivery refund is not taken by it. A withdrawal, born `approved`, can be canceled too.
+        Bookkeeping only. No money moves, no stock moves, no event is published and the customer is not mailed. The order's timeline and the audit row `admin.return.canceled` say so, with the note in the audit row only. A return that is not `approved` answers 409 `RETURN_NOT_CANCELABLE`: a `requested` one is declined, a `received` one is closed.
+        A parcel lost on its way back is NOT canceled: the shop bears that risk, so the refund may be owed. Receive it with a restock count of 0 instead. Needs `update:Return`; no fresh session, since nothing moves.
+      operationId: cancelReturn
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelReturnRequest"
+      responses:
+        "200":
+          description: The return, `canceled`
           content:
             application/json:
               schema:
@@ -13567,12 +13618,13 @@ components:
         - return_declined
         - return_received
         - return_closed
+        - return_canceled
         - invoice_issued
         - credit_note_issued
         - release_date_moved
         - delay_notice_sent
         - address_corrected
-      description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`."
+      description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`."
     OrderTimelineExportEntry:
       type: object
       additionalProperties: false
@@ -13939,7 +13991,8 @@ components:
         - declined
         - received
         - closed
-      description: "Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`."
+        - canceled
+      description: "Where a return stands: `requested → approved → received → closed`, or `requested → declined`, or `approved → canceled` (the goods never came). `canceled` is final and is not `closed`: it holds no units and counts as no goods back. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`."
     ReturnReason:
       type: string
       enum:
@@ -17412,6 +17465,7 @@ components:
         - decline
         - receive
         - close
+        - cancel
       description: What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the key that names the act and a status the act can run from.
       properties:
         approve:
@@ -17426,6 +17480,9 @@ components:
         close:
           type: boolean
           description: Whether `POST /returns/{id}/close` would be accepted.
+        cancel:
+          type: boolean
+          description: Whether `POST /returns/{id}/cancel` would be accepted.
     Return:
       type: object
       additionalProperties: false
@@ -17497,6 +17554,10 @@ components:
           type: string
           format: date-time
           description: When the money went back and the return finished.
+        canceledAt:
+          type: string
+          format: date-time
+          description: When staff canceled the return. Present only on a `canceled` return.
         actions:
           $ref: "#/components/schemas/ReturnActions"
         createdAt:
@@ -18777,6 +18838,15 @@ components:
           minLength: 1
           maxLength: 1000
           description: Why the return is closed by hand. Optional, staff-only free text, kept in the audit row and nowhere the customer reads.
+    CancelReturnRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        note:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Why the return is canceled. Optional, staff-only free text, kept in the audit row and nowhere the customer reads.
     StatsInterval:
       type: string
       enum:
@@ -19790,6 +19860,9 @@ x-error-codes:
   RETURN_NOTHING_TO_CANCEL:
     status: 409
     description: The fulfillment order has nothing left to cancel, or nothing has shipped from the order yet (cancel the whole order instead).
+  RETURN_NOT_CANCELABLE:
+    status: 409
+    description: The return is not an approved one awaiting goods that never came, so it cannot be canceled.
   RETURN_NOT_CLOSABLE:
     status: 409
     description: The return is not one that was received and still awaits its money, so it cannot be closed by hand.

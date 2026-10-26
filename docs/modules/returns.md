@@ -110,11 +110,13 @@ excluded line, a closed window) and its message shows in the form. Staff then ap
 return like any other.
 
 **Staff moves come from `Return.actions`.** `ReturnStaffActions` renders approve, decline (with the
-reason the customer is told), receive (with an optional handling deduction) and close (with an
-optional note) from the four booleans, and re-implements none of the lifecycle. Receiving and
+reason the customer is told), receive (with an optional handling deduction), close and cancel (each with an
+optional note) from the five booleans, and re-implements none of the lifecycle. Receiving and
 closing are step-up gated: the http layer prompts for the password when the server answers
 `REAUTH_REQUIRED`. Close is for a received return whose refund was canceled or paid outside the app:
-it moves no money and no stock, and the customer is not told their money is back.
+it moves no money and no stock, and the customer is not told their money is back. Cancel is for an
+approved return whose goods never came: it is not a close, moves nothing, mails nobody, and frees the
+same items to be returned again.
 
 ```mermaid
 stateDiagram-v2
@@ -123,6 +125,7 @@ stateDiagram-v2
     requested --> approved: staff approve
     requested --> declined: staff decline
     approved --> received: goods arrive
+    approved --> canceled: staff cancel it, the goods never came
     received --> closed: the money went back
     received --> closed: staff close it by hand
 ```

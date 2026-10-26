@@ -1926,7 +1926,7 @@ export interface ExportOrder {
 }
 
 /**
- * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`.
+ * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`.
  */
 export type OrderTimelineType = (typeof OrderTimelineType)[keyof typeof OrderTimelineType];
 
@@ -1953,6 +1953,7 @@ export const OrderTimelineType = {
     return_declined: 'return_declined',
     return_received: 'return_received',
     return_closed: 'return_closed',
+    return_canceled: 'return_canceled',
     invoice_issued: 'invoice_issued',
     credit_note_issued: 'credit_note_issued',
     release_date_moved: 'release_date_moved',
@@ -2239,7 +2240,7 @@ export interface ExportFulfillmentOrder {
 }
 
 /**
- * Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`.
+ * Where a return stands: `requested → approved → received → closed`, or `requested → declined`, or `approved → canceled` (the goods never came). `canceled` is final and is not `closed`: it holds no units and counts as no goods back. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`.
  */
 export type ReturnStatus = (typeof ReturnStatus)[keyof typeof ReturnStatus];
 
@@ -2248,7 +2249,8 @@ export const ReturnStatus = {
     approved: 'approved',
     declined: 'declined',
     received: 'received',
-    closed: 'closed'
+    closed: 'closed',
+    canceled: 'canceled'
 } as const;
 
 /**
@@ -4521,6 +4523,8 @@ export interface ReturnActions {
     receive: boolean;
     /** Whether `POST /returns/{id}/close` would be accepted. */
     close: boolean;
+    /** Whether `POST /returns/{id}/cancel` would be accepted. */
+    cancel: boolean;
 }
 
 export interface Return {
@@ -4561,6 +4565,8 @@ export interface Return {
     refundAmount?: number;
     /** When the money went back and the return finished. */
     closedAt?: string;
+    /** When staff canceled the return. Present only on a `canceled` return. */
+    canceledAt?: string;
     actions: ReturnActions;
     createdAt: string;
     updatedAt?: string;
@@ -5357,6 +5363,15 @@ export interface CloseReturnRequest {
      * Why the return is closed by hand. Optional, staff-only free text, kept in the audit row and nowhere the customer reads.
      * @minLength 1
      * @maxLength 1000
+     */
+    note?: string;
+}
+
+export interface CancelReturnRequest {
+    /**
+     * Why the return is canceled. Optional, staff-only free text, kept in the audit row and nowhere the customer reads.
+     * @minLength 1
+     * @maxLength 500
      */
     note?: string;
 }
@@ -11012,7 +11027,7 @@ export const getFulfillmentOrder = (
 };
 
 /**
- * Staff finish a `received` return whose refund will not follow the usual way: it was canceled, or the money went back outside the application. The return becomes `closed` and the order's timeline and the audit row `admin.return.closed` say so, with the note in the audit row only. No money moves, no stock moves (the units went back on sale when the goods were received), no credit note is issued and the customer is not mailed that their money went back: closing is bookkeeping, not a refund. A return that is not `received` (a `requested` one is declined, not closed) answers 409 `RETURN_NOT_CLOSABLE`. Needs `receive:Return`, the key that receives the goods, which carries a fresh-session requirement.
+ * Staff finish a `received` return whose refund will not follow the usual way: it was canceled, or the money went back outside the application. The return becomes `closed` and the order's timeline and the audit row `admin.return.closed` say so, with the note in the audit row only. No money moves, no stock moves (the units went back on sale when the goods were received), no credit note is issued and the customer is not mailed that their money went back: closing is bookkeeping, not a refund. A return that is not `received` (a `requested` one is declined, an `approved` one whose goods never came is canceled, not closed) answers 409 `RETURN_NOT_CLOSABLE`. Needs `receive:Return`, the key that receives the goods, which carries a fresh-session requirement.
  * @summary Close a return by hand
  */
 export const closeReturn = (
@@ -11026,6 +11041,28 @@ export const closeReturn = (
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: closeReturnRequest
+        },
+        options
+    );
+};
+
+/**
+ * Staff end an `approved` return whose goods will never arrive: the buyer never sent them, or changed their mind. The return becomes `canceled`, a final state that is not `closed`: it holds no units (the same lines can be returned again) and counts as no goods back, so the order's return status leaves `in_progress` and the delivery refund is not taken by it. A withdrawal, born `approved`, can be canceled too.
+ * Bookkeeping only. No money moves, no stock moves, no event is published and the customer is not mailed. The order's timeline and the audit row `admin.return.canceled` say so, with the note in the audit row only. A return that is not `approved` answers 409 `RETURN_NOT_CANCELABLE`: a `requested` one is declined, a `received` one is closed.
+ * A parcel lost on its way back is NOT canceled: the shop bears that risk, so the refund may be owed. Receive it with a restock count of 0 instead. Needs `update:Return`; no fresh session, since nothing moves.
+ * @summary Cancel an approved return whose goods never came
+ */
+export const cancelReturn = (
+    id: string,
+    cancelReturnRequest?: CancelReturnRequest,
+    options?: SecondParameter<typeof orvalMutator<Return>>
+) => {
+    return orvalMutator<Return>(
+        {
+            url: `/returns/${id}/cancel`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: cancelReturnRequest
         },
         options
     );
@@ -11930,6 +11967,7 @@ export type GetFulfillmentOrderResult = NonNullable<
     Awaited<ReturnType<typeof getFulfillmentOrder>>
 >;
 export type CloseReturnResult = NonNullable<Awaited<ReturnType<typeof closeReturn>>>;
+export type CancelReturnResult = NonNullable<Awaited<ReturnType<typeof cancelReturn>>>;
 export type GetSalesStatsResult = NonNullable<Awaited<ReturnType<typeof getSalesStats>>>;
 export type GetProductStatsResult = NonNullable<Awaited<ReturnType<typeof getProductStats>>>;
 export type GetProductSalesSeriesResult = NonNullable<

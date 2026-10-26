@@ -3147,6 +3147,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 'return_declined',
                 'return_received',
                 'return_closed',
+                'return_canceled',
                 'invoice_issued',
                 'credit_note_issued',
                 'release_date_moved',
@@ -3374,7 +3375,14 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .min(1)
                 .max(downloadAccountExportResponseReturnsItemOrderIdMax)
                 .regex(downloadAccountExportResponseReturnsItemOrderIdRegExp),
-            status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
+            status: zod.enum([
+                'requested',
+                'approved',
+                'declined',
+                'received',
+                'closed',
+                'canceled'
+            ]),
             reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
             note: zod.string().optional(),
             declineReason: zod.string().optional(),
@@ -10919,7 +10927,9 @@ export const ListReturnsQueryParams = zod.strictObject({
         .max(listReturnsQueryOrderIdMax)
         .regex(listReturnsQueryOrderIdRegExp)
         .optional(),
-    status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']).optional(),
+    status: zod
+        .enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled'])
+        .optional(),
     reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']).optional(),
     sort: zod
         .array(zod.enum(['createdAt', '-createdAt', 'status', '-status']))
@@ -10960,7 +10970,14 @@ export const ListReturnsResponse = zod.strictObject({
                 .regex(listReturnsResponseItemsItemOrderIdRegExp),
             orderNumber: zod.string(),
             currency: zod.string(),
-            status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
+            status: zod.enum([
+                'requested',
+                'approved',
+                'declined',
+                'received',
+                'closed',
+                'canceled'
+            ]),
             reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
             kind: zod.enum(['return', 'cancellation']),
             fulfillmentOrderId: zod
@@ -10992,11 +11009,13 @@ export const ListReturnsResponse = zod.strictObject({
                 .optional(),
             refundAmount: zod.number().min(listReturnsResponseItemsItemRefundAmountMin).optional(),
             closedAt: zod.iso.datetime({ offset: true }).optional(),
+            canceledAt: zod.iso.datetime({ offset: true }).optional(),
             actions: zod.strictObject({
                 approve: zod.boolean(),
                 decline: zod.boolean(),
                 receive: zod.boolean(),
-                close: zod.boolean()
+                close: zod.boolean(),
+                cancel: zod.boolean()
             }),
             createdAt: zod.iso.datetime({ offset: true }),
             updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -11091,7 +11110,7 @@ export const CreateReturnResponse = zod.strictObject({
         .regex(createReturnResponseOrderIdRegExp),
     orderNumber: zod.string(),
     currency: zod.string(),
-    status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
+    status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled']),
     reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
     kind: zod.enum(['return', 'cancellation']),
     fulfillmentOrderId: zod
@@ -11120,11 +11139,13 @@ export const CreateReturnResponse = zod.strictObject({
     handlingDeduction: zod.number().min(createReturnResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(createReturnResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
+    canceledAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
         approve: zod.boolean(),
         decline: zod.boolean(),
         receive: zod.boolean(),
-        close: zod.boolean()
+        close: zod.boolean(),
+        cancel: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -11233,7 +11254,7 @@ export const GetReturnByIdResponse = zod.strictObject({
         .regex(getReturnByIdResponseOrderIdRegExp),
     orderNumber: zod.string(),
     currency: zod.string(),
-    status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
+    status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled']),
     reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
     kind: zod.enum(['return', 'cancellation']),
     fulfillmentOrderId: zod
@@ -11262,11 +11283,13 @@ export const GetReturnByIdResponse = zod.strictObject({
     handlingDeduction: zod.number().min(getReturnByIdResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(getReturnByIdResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
+    canceledAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
         approve: zod.boolean(),
         decline: zod.boolean(),
         receive: zod.boolean(),
-        close: zod.boolean()
+        close: zod.boolean(),
+        cancel: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -11301,7 +11324,7 @@ export const ApproveReturnResponse = zod.strictObject({
         .regex(approveReturnResponseOrderIdRegExp),
     orderNumber: zod.string(),
     currency: zod.string(),
-    status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
+    status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled']),
     reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
     kind: zod.enum(['return', 'cancellation']),
     fulfillmentOrderId: zod
@@ -11330,11 +11353,13 @@ export const ApproveReturnResponse = zod.strictObject({
     handlingDeduction: zod.number().min(approveReturnResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(approveReturnResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
+    canceledAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
         approve: zod.boolean(),
         decline: zod.boolean(),
         receive: zod.boolean(),
-        close: zod.boolean()
+        close: zod.boolean(),
+        cancel: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -11373,7 +11398,7 @@ export const DeclineReturnResponse = zod.strictObject({
         .regex(declineReturnResponseOrderIdRegExp),
     orderNumber: zod.string(),
     currency: zod.string(),
-    status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
+    status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled']),
     reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
     kind: zod.enum(['return', 'cancellation']),
     fulfillmentOrderId: zod
@@ -11402,11 +11427,13 @@ export const DeclineReturnResponse = zod.strictObject({
     handlingDeduction: zod.number().min(declineReturnResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(declineReturnResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
+    canceledAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
         approve: zod.boolean(),
         decline: zod.boolean(),
         receive: zod.boolean(),
-        close: zod.boolean()
+        close: zod.boolean(),
+        cancel: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -11456,7 +11483,7 @@ export const ReceiveReturnResponse = zod.strictObject({
         .regex(receiveReturnResponseOrderIdRegExp),
     orderNumber: zod.string(),
     currency: zod.string(),
-    status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
+    status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled']),
     reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
     kind: zod.enum(['return', 'cancellation']),
     fulfillmentOrderId: zod
@@ -11485,11 +11512,13 @@ export const ReceiveReturnResponse = zod.strictObject({
     handlingDeduction: zod.number().min(receiveReturnResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(receiveReturnResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
+    canceledAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
         approve: zod.boolean(),
         decline: zod.boolean(),
         receive: zod.boolean(),
-        close: zod.boolean()
+        close: zod.boolean(),
+        cancel: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -13292,6 +13321,7 @@ export const GetOrderTimelineResponse = zod.strictObject({
                 'return_declined',
                 'return_received',
                 'return_closed',
+                'return_canceled',
                 'invoice_issued',
                 'credit_note_issued',
                 'release_date_moved',
@@ -14559,7 +14589,7 @@ export const GetFulfillmentOrderResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Staff finish a `received` return whose refund will not follow the usual way: it was canceled, or the money went back outside the application. The return becomes `closed` and the order's timeline and the audit row `admin.return.closed` say so, with the note in the audit row only. No money moves, no stock moves (the units went back on sale when the goods were received), no credit note is issued and the customer is not mailed that their money went back: closing is bookkeeping, not a refund. A return that is not `received` (a `requested` one is declined, not closed) answers 409 `RETURN_NOT_CLOSABLE`. Needs `receive:Return`, the key that receives the goods, which carries a fresh-session requirement.
+ * Staff finish a `received` return whose refund will not follow the usual way: it was canceled, or the money went back outside the application. The return becomes `closed` and the order's timeline and the audit row `admin.return.closed` say so, with the note in the audit row only. No money moves, no stock moves (the units went back on sale when the goods were received), no credit note is issued and the customer is not mailed that their money went back: closing is bookkeeping, not a refund. A return that is not `received` (a `requested` one is declined, an `approved` one whose goods never came is canceled, not closed) answers 409 `RETURN_NOT_CLOSABLE`. Needs `receive:Return`, the key that receives the goods, which carries a fresh-session requirement.
  * @summary Close a return by hand
  */
 export const closeReturnPathIdMax = 64;
@@ -14592,7 +14622,7 @@ export const CloseReturnResponse = zod.strictObject({
         .regex(closeReturnResponseOrderIdRegExp),
     orderNumber: zod.string(),
     currency: zod.string(),
-    status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
+    status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled']),
     reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
     kind: zod.enum(['return', 'cancellation']),
     fulfillmentOrderId: zod
@@ -14621,11 +14651,89 @@ export const CloseReturnResponse = zod.strictObject({
     handlingDeduction: zod.number().min(closeReturnResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(closeReturnResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
+    canceledAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
         approve: zod.boolean(),
         decline: zod.boolean(),
         receive: zod.boolean(),
-        close: zod.boolean()
+        close: zod.boolean(),
+        cancel: zod.boolean()
+    }),
+    createdAt: zod.iso.datetime({ offset: true }),
+    updatedAt: zod.iso.datetime({ offset: true }).optional()
+});
+/**
+ * Staff end an `approved` return whose goods will never arrive: the buyer never sent them, or changed their mind. The return becomes `canceled`, a final state that is not `closed`: it holds no units (the same lines can be returned again) and counts as no goods back, so the order's return status leaves `in_progress` and the delivery refund is not taken by it. A withdrawal, born `approved`, can be canceled too.
+ * Bookkeeping only. No money moves, no stock moves, no event is published and the customer is not mailed. The order's timeline and the audit row `admin.return.canceled` say so, with the note in the audit row only. A return that is not `approved` answers 409 `RETURN_NOT_CANCELABLE`: a `requested` one is declined, a `received` one is closed.
+ * A parcel lost on its way back is NOT canceled: the shop bears that risk, so the refund may be owed. Receive it with a restock count of 0 instead. Needs `update:Return`; no fresh session, since nothing moves.
+ * @summary Cancel an approved return whose goods never came
+ */
+export const cancelReturnPathIdMax = 64;
+export const cancelReturnPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const CancelReturnParams = zod.strictObject({
+    id: zod.string().min(1).max(cancelReturnPathIdMax).regex(cancelReturnPathIdRegExp)
+});
+export const cancelReturnBodyNoteMax = 500;
+export const CancelReturnBody = zod.strictObject({
+    note: zod.string().min(1).max(cancelReturnBodyNoteMax).optional()
+});
+export const cancelReturnResponseIdMax = 64;
+export const cancelReturnResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const cancelReturnResponseOrderIdMax = 64;
+export const cancelReturnResponseOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const cancelReturnResponseFulfillmentOrderIdMax = 64;
+export const cancelReturnResponseFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const cancelReturnResponseNoteMax = 1000;
+export const cancelReturnResponseLinesItemProductIdMax = 64;
+export const cancelReturnResponseLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const cancelReturnResponseLinesItemUnitPriceMin = 0;
+export const cancelReturnResponseHandlingDeductionMin = 0;
+export const cancelReturnResponseRefundAmountMin = 0;
+export const CancelReturnResponse = zod.strictObject({
+    id: zod.string().min(1).max(cancelReturnResponseIdMax).regex(cancelReturnResponseIdRegExp),
+    orderId: zod
+        .string()
+        .min(1)
+        .max(cancelReturnResponseOrderIdMax)
+        .regex(cancelReturnResponseOrderIdRegExp),
+    orderNumber: zod.string(),
+    currency: zod.string(),
+    status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled']),
+    reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
+    kind: zod.enum(['return', 'cancellation']),
+    fulfillmentOrderId: zod
+        .string()
+        .min(1)
+        .max(cancelReturnResponseFulfillmentOrderIdMax)
+        .regex(cancelReturnResponseFulfillmentOrderIdRegExp)
+        .optional(),
+    note: zod.string().max(cancelReturnResponseNoteMax).optional(),
+    lines: zod.array(
+        zod.strictObject({
+            productId: zod
+                .string()
+                .min(1)
+                .max(cancelReturnResponseLinesItemProductIdMax)
+                .regex(cancelReturnResponseLinesItemProductIdRegExp),
+            quantity: zod.number().min(1),
+            title: zod.string(),
+            unitPrice: zod.number().min(cancelReturnResponseLinesItemUnitPriceMin)
+        })
+    ),
+    returnPostage: zod.enum(['consumer', 'shop']),
+    declineReason: zod.string().optional(),
+    decidedAt: zod.iso.datetime({ offset: true }).optional(),
+    receivedAt: zod.iso.datetime({ offset: true }).optional(),
+    handlingDeduction: zod.number().min(cancelReturnResponseHandlingDeductionMin).optional(),
+    refundAmount: zod.number().min(cancelReturnResponseRefundAmountMin).optional(),
+    closedAt: zod.iso.datetime({ offset: true }).optional(),
+    canceledAt: zod.iso.datetime({ offset: true }).optional(),
+    actions: zod.strictObject({
+        approve: zod.boolean(),
+        decline: zod.boolean(),
+        receive: zod.boolean(),
+        close: zod.boolean(),
+        cancel: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional()

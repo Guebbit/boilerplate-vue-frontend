@@ -184,6 +184,7 @@
         "type-return_declined": "Return declined",
         "type-return_received": "Returned goods received",
         "type-return_closed": "Return closed",
+        "type-return_canceled": "Return canceled",
         "type-invoice_issued": "Invoice issued",
         "type-credit_note_issued": "Credit note issued",
         "type-release_date_moved": "Release date changed",

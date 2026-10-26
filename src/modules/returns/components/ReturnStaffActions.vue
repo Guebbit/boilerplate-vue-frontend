@@ -11,9 +11,9 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * The staff's four moves on a return — approve, decline (with the reason the customer is told),
+ * The staff's five moves on a return — approve, decline (with the reason the customer is told),
  * receive (with an optional handling deduction), close by hand (with an optional note, when the
- * money will not follow the usual way). Which of them is open is the server's
+ * money will not follow the usual way), cancel (with an optional note, when the goods never came). Which of them is open is the server's
  * `Return.actions`; this component renders that answer and re-implements none of the lifecycle.
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
@@ -26,6 +26,8 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
 import {
+    cancelNoteMax,
+    cancelNoteSchema,
     closeNoteMax,
     closeNoteSchema,
     declineReasonSchema,
@@ -62,9 +64,9 @@ const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * The three moves.
+ * The five moves.
  */
-const { approve, decline, receive, close } = useReturnsStore();
+const { approve, decline, receive, close, cancel } = useReturnsStore();
 
 /**
  * True while any move is in flight; disables every button so two cannot race from one screen.
@@ -72,7 +74,7 @@ const { approve, decline, receive, close } = useReturnsStore();
 const { loading } = storeToRefs(useReturnsStore());
 
 /**
- * One blocked state for the three moves: a lost race (409) or a refused amount (422) arrives as the
+ * One blocked state for the moves: a lost race (409) or a refused amount (422) arrives as the
  * server's own message and stays in place.
  */
 const { message: moveError, report: reportMoveError, clear: clearMoveError } = useBlockingError();
@@ -157,6 +159,33 @@ const {
     applyServerErrors: applyCloseErrors
 } = useStructureFormValidation({ note: '' }, closeSchema, {
     formElement: closeElement,
+    revalidateOn: locale,
+    onInvalid: () => addMessage(t('generic.fix-errors'))
+});
+
+/**
+ * The cancel form's element.
+ */
+const cancelElement = ref<HTMLFormElement>();
+
+/**
+ * Canceling takes an optional note: the audit row keeps it, nothing else reads it.
+ */
+const cancelSchema = z.object({
+    note: cancelNoteSchema
+});
+
+/**
+ * The cancel form's state, errors and submit gating.
+ */
+const {
+    form: cancelForm,
+    formErrors: cancelErrors,
+    showFormErrors: showCancelErrors,
+    handleSubmit: handleCancelSubmit,
+    applyServerErrors: applyCancelErrors
+} = useStructureFormValidation({ note: '' }, cancelSchema, {
+    formElement: cancelElement,
     revalidateOn: locale,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
@@ -255,6 +284,20 @@ const submitClose = () =>
             applyCloseErrors
         )
     );
+
+/**
+ * Validates the optional note, then cancels the return.
+ *
+ * @returns A promise settling once the move finished.
+ */
+const submitCancel = () =>
+    handleCancelSubmit(({ note }) =>
+        run(
+            () => cancel(props.item.id, note === '' ? undefined : note),
+            'return-staff-actions.success-cancel',
+            applyCancelErrors
+        )
+    );
 </script>
 
 <template>
@@ -346,6 +389,36 @@ const submitClose = () =>
             />
             <v-btn type="submit" variant="tonal" data-test="return-close" :disabled="loading">
                 {{ t('return-staff-actions.button-close') }}
+            </v-btn>
+        </form>
+
+        <form
+            v-if="item.actions?.cancel"
+            ref="cancelElement"
+            novalidate
+            class="flex flex-wrap items-start gap-3"
+            data-test="return-cancel-form"
+            @submit.prevent="submitCancel"
+        >
+            <v-text-field
+                v-model="cancelForm.note"
+                :label="t('return-staff-actions.label-cancel-note')"
+                :hint="t('return-staff-actions.hint-cancel')"
+                persistent-hint
+                v-bind="fieldErrorProps(showCancelErrors ? (cancelErrors.note ?? []) : [])"
+                :maxlength="cancelNoteMax"
+                class="w-full grow sm:w-auto sm:min-w-64"
+                hide-details="auto"
+                data-test="return-cancel-note"
+            />
+            <v-btn
+                type="submit"
+                color="error"
+                variant="tonal"
+                data-test="return-cancel"
+                :disabled="loading"
+            >
+                {{ t('return-staff-actions.button-cancel') }}
             </v-btn>
         </form>
 
