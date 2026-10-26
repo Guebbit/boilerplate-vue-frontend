@@ -3,7 +3,7 @@
  * Turns the entity-translations editor's drafts into the PATCH body the API merges.
  */
 import { TranslationOrigin } from '@/types/enums.ts';
-import type { MergeTranslationsRequest } from '@types';
+import type { UpdateEntityTranslationsRequest } from '@types';
 
 /**
  * The editor's draft shape: one entry per open locale, an object of field values to save, or
@@ -20,7 +20,9 @@ export type TranslationDrafts = Record<string, Record<string, string> | null>;
  * @param drafts - Every open locale's field values, or `null` for a removed one.
  * @returns A body for `PATCH /locales/translations/{entityType}/{id}`.
  */
-export const toMergeTranslationsBody = (drafts: TranslationDrafts): MergeTranslationsRequest =>
+export const toUpdateEntityTranslationsBody = (
+    drafts: TranslationDrafts
+): UpdateEntityTranslationsRequest =>
     Object.fromEntries(
         Object.entries(drafts).map(([tag, fields]) => [
             tag,

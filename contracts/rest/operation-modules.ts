@@ -249,6 +249,8 @@ export const OPERATION_MODULES: Record<string, string> = {
     updateAddressWithMultipart: 'addresses',
     updateCartItemById: 'cart',
     updateCartItemByIdWithMultipart: 'cart',
+    updateEntityTranslations: 'locales',
+    updateEntityTranslationsWithMultipart: 'locales',
     updateExampleById: 'example',
     updateExampleByIdWithMultipart: 'example',
     updateFeedbackRequestStatus: 'feedback',
@@ -266,7 +268,5 @@ export const OPERATION_MODULES: Record<string, string> = {
     updateUserById: 'users',
     updateUserByIdWithMultipart: 'users',
     updateWebhookSubscription: 'webhooks',
-    updateWebhookSubscriptionWithMultipart: 'webhooks',
-    upsertEntityTranslations: 'locales',
-    upsertEntityTranslationsWithMultipart: 'locales'
+    updateWebhookSubscriptionWithMultipart: 'webhooks'
 };

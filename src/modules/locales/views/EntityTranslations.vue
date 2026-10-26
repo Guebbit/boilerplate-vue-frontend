@@ -37,7 +37,7 @@ import { useTranslationTabOrder } from '@/ui/composables/use-translation-tab-ord
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { Translation } from '@types';
-import { toMergeTranslationsBody } from '../domain/translation-drafts.ts';
+import { toUpdateEntityTranslationsBody } from '../domain/translation-drafts.ts';
 
 /**
  * Localized dictionary helper.
@@ -101,8 +101,8 @@ const fieldNames = ref<string[]>([]);
 
 /**
  * The editable draft, one entry per open locale: an object to upsert, or `null` for a tab marked
- * for removal — the same three-way shape `MergeTranslationsRequest` uses; blank fields become `null`
- * on the way out ({@link toMergeTranslationsBody}).
+ * for removal — the same three-way shape `UpdateEntityTranslationsRequest` uses; blank fields become `null`
+ * on the way out ({@link toUpdateEntityTranslationsBody}).
  */
 const drafts = ref<Record<string, Record<string, string> | null>>({});
 
@@ -236,7 +236,7 @@ const { message: saveError, report: reportSaveError, clear: clearSaveError } = u
  *  failure blocks the button in place ({@link saveError}).
  */
 const handleSave = () => {
-    const body = toMergeTranslationsBody(drafts.value);
+    const body = toUpdateEntityTranslationsBody(drafts.value);
 
     clearSaveError();
     return localesStore

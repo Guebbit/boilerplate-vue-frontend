@@ -662,43 +662,43 @@ export interface EntityTranslations {
 /**
  * The locale's WHOLE set of fields. Every key MUST be one the `translatables` registry declares for this `entityType`; an unknown key is a 422, not a silently dropped one. Empty is a 422 too — enforced at write time, not by this schema, since `minProperties` is not something the generated client validates. A declared field this object leaves out is cleared: a PUT states the whole locale.
  */
-export type UpsertTranslationRequestFields = { [key: string]: string };
+export type ReplaceEntityTranslationsEntryFields = { [key: string]: string };
 
 /**
  * One locale's words for one entity. `origin` defaults to `human` — the door this write shape is exposed on is the `translator`'s, and a machine-produced draft is the exception, not the rule.
  */
-export interface UpsertTranslationRequest {
+export interface ReplaceEntityTranslationsEntry {
     /** The locale's WHOLE set of fields. Every key MUST be one the `translatables` registry declares for this `entityType`; an unknown key is a 422, not a silently dropped one. Empty is a 422 too — enforced at write time, not by this schema, since `minProperties` is not something the generated client validates. A declared field this object leaves out is cleared: a PUT states the whole locale. */
-    fields: UpsertTranslationRequestFields;
+    fields: ReplaceEntityTranslationsEntryFields;
     origin?: TranslationOrigin;
 }
 
 /**
  * One or more locales for one entity, keyed by locale tag. See the operation description for what an object, a `null`, and an absent key each mean. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on. A `PUT` deletes the stored locales it leaves out, drafts included.
  */
-export interface UpsertTranslationsRequest {
-    [key: string]: UpsertTranslationRequest | null;
+export interface ReplaceEntityTranslationsRequest {
+    [key: string]: ReplaceEntityTranslationsEntry | null;
 }
 
 /**
  * Each key MUST be one the `translatables` registry declares for this `entityType`. A string sets that field, `null` clears it, a field left out keeps what it has. An empty object is a 422 — enforced at write time.
  */
-export type MergeTranslationRequestFields = { [key: string]: string | null };
+export type UpdateEntityTranslationsEntryFields = { [key: string]: string | null };
 
 /**
- * One locale's changes for one entity. `origin` defaults to `human`, as it does on `PUT`.
+ * One locale's changes for one entity. `origin` is required: a merge patch has no default to apply to a member it leaves out, and stating who produced the text keeps a machine import from being filed as human work. `PUT` defaults it to `human`.
  */
-export interface MergeTranslationRequest {
+export interface UpdateEntityTranslationsEntry {
     /** Each key MUST be one the `translatables` registry declares for this `entityType`. A string sets that field, `null` clears it, a field left out keeps what it has. An empty object is a 422 — enforced at write time. */
-    fields: MergeTranslationRequestFields;
-    origin?: TranslationOrigin;
+    fields: UpdateEntityTranslationsEntryFields;
+    origin: TranslationOrigin;
 }
 
 /**
  * One or more locales for one entity, keyed by locale tag. See the operation description for what an object, a `null`, and an absent key each mean.
  */
-export interface MergeTranslationsRequest {
-    [key: string]: MergeTranslationRequest | null;
+export interface UpdateEntityTranslationsRequest {
+    [key: string]: UpdateEntityTranslationsEntry | null;
 }
 
 /**
@@ -7332,7 +7332,7 @@ export const getEntityTranslations = (
 export const replaceEntityTranslations = (
     entityType: string,
     id: string,
-    upsertTranslationsRequest: UpsertTranslationsRequest,
+    replaceEntityTranslationsRequest: ReplaceEntityTranslationsRequest,
     options?: SecondParameter<typeof orvalMutator<EntityTranslations>>
 ) => {
     return orvalMutator<EntityTranslations>(
@@ -7340,7 +7340,7 @@ export const replaceEntityTranslations = (
             url: `/locales/translations/${entityType}/${id}`,
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            data: upsertTranslationsRequest
+            data: replaceEntityTranslationsRequest
         },
         options
     );
@@ -7374,10 +7374,10 @@ export const replaceEntityTranslations = (
  * failed.
  * @summary Merge one or more of an entity's translations
  */
-export const upsertEntityTranslations = (
+export const updateEntityTranslations = (
     entityType: string,
     id: string,
-    mergeTranslationsRequest: MergeTranslationsRequest,
+    updateEntityTranslationsRequest: UpdateEntityTranslationsRequest,
     options?: SecondParameter<typeof orvalMutator<EntityTranslations>>
 ) => {
     return orvalMutator<EntityTranslations>(
@@ -7385,7 +7385,7 @@ export const upsertEntityTranslations = (
             url: `/locales/translations/${entityType}/${id}`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            data: mergeTranslationsRequest
+            data: updateEntityTranslationsRequest
         },
         options
     );
@@ -7419,10 +7419,10 @@ export const upsertEntityTranslations = (
  * failed.
  * @summary Merge one or more of an entity's translations
  */
-export const upsertEntityTranslationsWithMergePatchJson = (
+export const updateEntityTranslationsWithMergePatchJson = (
     entityType: string,
     id: string,
-    mergeTranslationsRequest: MergeTranslationsRequest,
+    updateEntityTranslationsRequest: UpdateEntityTranslationsRequest,
     options?: SecondParameter<typeof orvalMutator<EntityTranslations>>
 ) => {
     return orvalMutator<EntityTranslations>(
@@ -7430,7 +7430,7 @@ export const upsertEntityTranslationsWithMergePatchJson = (
             url: `/locales/translations/${entityType}/${id}`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: mergeTranslationsRequest
+            data: updateEntityTranslationsRequest
         },
         options
     );
@@ -11648,11 +11648,11 @@ export type GetEntityTranslationsResult = NonNullable<
 export type ReplaceEntityTranslationsResult = NonNullable<
     Awaited<ReturnType<typeof replaceEntityTranslations>>
 >;
-export type UpsertEntityTranslationsResult = NonNullable<
-    Awaited<ReturnType<typeof upsertEntityTranslations>>
+export type UpdateEntityTranslationsResult = NonNullable<
+    Awaited<ReturnType<typeof updateEntityTranslations>>
 >;
-export type UpsertEntityTranslationsWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof upsertEntityTranslationsWithMergePatchJson>>
+export type UpdateEntityTranslationsWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateEntityTranslationsWithMergePatchJson>>
 >;
 export type GetObservabilityEventsResult = NonNullable<
     Awaited<ReturnType<typeof getObservabilityEvents>>

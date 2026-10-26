@@ -1076,89 +1076,86 @@ export const ReplaceEntityTranslationsResponse = zod.strictObject({
  * failed.
  * @summary Merge one or more of an entity's translations
  */
-export const upsertEntityTranslationsPathEntityTypeMax = 64;
-export const upsertEntityTranslationsPathIdMax = 64;
-export const upsertEntityTranslationsPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const UpsertEntityTranslationsParams = zod.strictObject({
-    entityType: zod.string().min(1).max(upsertEntityTranslationsPathEntityTypeMax),
+export const updateEntityTranslationsPathEntityTypeMax = 64;
+export const updateEntityTranslationsPathIdMax = 64;
+export const updateEntityTranslationsPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const UpdateEntityTranslationsParams = zod.strictObject({
+    entityType: zod.string().min(1).max(updateEntityTranslationsPathEntityTypeMax),
     id: zod
         .string()
         .min(1)
-        .max(upsertEntityTranslationsPathIdMax)
-        .regex(upsertEntityTranslationsPathIdRegExp)
+        .max(updateEntityTranslationsPathIdMax)
+        .regex(updateEntityTranslationsPathIdRegExp)
 });
-export const upsertEntityTranslationsBodyOneFieldsMaxOne = 10000;
-export const upsertEntityTranslationsBodyOneOriginDefault = `human`;
-export const UpsertEntityTranslationsBody = zod.record(
+export const updateEntityTranslationsBodyOneFieldsMaxOne = 10000;
+export const UpdateEntityTranslationsBody = zod.record(
     zod.string(),
     zod.union([
         zod.strictObject({
             fields: zod.record(
                 zod.string(),
-                zod.string().min(1).max(upsertEntityTranslationsBodyOneFieldsMaxOne).nullable()
+                zod.string().min(1).max(updateEntityTranslationsBodyOneFieldsMaxOne).nullable()
             ),
-            origin: zod
-                .enum(['machine', 'human'])
-                .default(upsertEntityTranslationsBodyOneOriginDefault)
+            origin: zod.enum(['machine', 'human'])
         }),
         zod.null()
     ])
 );
-export const upsertEntityTranslationsResponseEntityTypeMax = 64;
-export const upsertEntityTranslationsResponseEntityIdMax = 64;
-export const upsertEntityTranslationsResponseEntityIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const upsertEntityTranslationsResponseTranslationsItemIdMax = 64;
-export const upsertEntityTranslationsResponseTranslationsItemIdRegExp = new RegExp(
+export const updateEntityTranslationsResponseEntityTypeMax = 64;
+export const updateEntityTranslationsResponseEntityIdMax = 64;
+export const updateEntityTranslationsResponseEntityIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const updateEntityTranslationsResponseTranslationsItemIdMax = 64;
+export const updateEntityTranslationsResponseTranslationsItemIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const upsertEntityTranslationsResponseTranslationsItemEntityTypeMax = 64;
-export const upsertEntityTranslationsResponseTranslationsItemEntityIdMax = 64;
-export const upsertEntityTranslationsResponseTranslationsItemEntityIdRegExp = new RegExp(
+export const updateEntityTranslationsResponseTranslationsItemEntityTypeMax = 64;
+export const updateEntityTranslationsResponseTranslationsItemEntityIdMax = 64;
+export const updateEntityTranslationsResponseTranslationsItemEntityIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const upsertEntityTranslationsResponseTranslationsItemLocaleMax = 35;
-export const upsertEntityTranslationsResponseTranslationsItemLocaleRegExp = new RegExp(
+export const updateEntityTranslationsResponseTranslationsItemLocaleMax = 35;
+export const updateEntityTranslationsResponseTranslationsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
-export const upsertEntityTranslationsResponseTranslationsItemTranslatedByOneMax = 64;
-export const upsertEntityTranslationsResponseTranslationsItemTranslatedByOneRegExp = new RegExp(
+export const updateEntityTranslationsResponseTranslationsItemTranslatedByOneMax = 64;
+export const updateEntityTranslationsResponseTranslationsItemTranslatedByOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const UpsertEntityTranslationsResponse = zod.strictObject({
-    entityType: zod.string().min(1).max(upsertEntityTranslationsResponseEntityTypeMax),
+export const UpdateEntityTranslationsResponse = zod.strictObject({
+    entityType: zod.string().min(1).max(updateEntityTranslationsResponseEntityTypeMax),
     entityId: zod
         .string()
         .min(1)
-        .max(upsertEntityTranslationsResponseEntityIdMax)
-        .regex(upsertEntityTranslationsResponseEntityIdRegExp),
+        .max(updateEntityTranslationsResponseEntityIdMax)
+        .regex(updateEntityTranslationsResponseEntityIdRegExp),
     translations: zod.array(
         zod.strictObject({
             id: zod
                 .string()
                 .min(1)
-                .max(upsertEntityTranslationsResponseTranslationsItemIdMax)
-                .regex(upsertEntityTranslationsResponseTranslationsItemIdRegExp),
+                .max(updateEntityTranslationsResponseTranslationsItemIdMax)
+                .regex(updateEntityTranslationsResponseTranslationsItemIdRegExp),
             entityType: zod
                 .string()
                 .min(1)
-                .max(upsertEntityTranslationsResponseTranslationsItemEntityTypeMax),
+                .max(updateEntityTranslationsResponseTranslationsItemEntityTypeMax),
             entityId: zod
                 .string()
                 .min(1)
-                .max(upsertEntityTranslationsResponseTranslationsItemEntityIdMax)
-                .regex(upsertEntityTranslationsResponseTranslationsItemEntityIdRegExp),
+                .max(updateEntityTranslationsResponseTranslationsItemEntityIdMax)
+                .regex(updateEntityTranslationsResponseTranslationsItemEntityIdRegExp),
             locale: zod
                 .string()
-                .max(upsertEntityTranslationsResponseTranslationsItemLocaleMax)
-                .regex(upsertEntityTranslationsResponseTranslationsItemLocaleRegExp),
+                .max(updateEntityTranslationsResponseTranslationsItemLocaleMax)
+                .regex(updateEntityTranslationsResponseTranslationsItemLocaleRegExp),
             fields: zod.record(zod.string(), zod.string()),
             sourceDigest: zod.string().optional(),
             origin: zod.enum(['machine', 'human']),
             translatedBy: zod
                 .string()
                 .min(1)
-                .max(upsertEntityTranslationsResponseTranslationsItemTranslatedByOneMax)
-                .regex(upsertEntityTranslationsResponseTranslationsItemTranslatedByOneRegExp)
+                .max(updateEntityTranslationsResponseTranslationsItemTranslatedByOneMax)
+                .regex(updateEntityTranslationsResponseTranslationsItemTranslatedByOneRegExp)
                 .optional(),
             createdAt: zod.iso.datetime({ offset: true }),
             updatedAt: zod.iso.datetime({ offset: true })
