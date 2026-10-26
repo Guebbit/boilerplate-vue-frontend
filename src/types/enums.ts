@@ -26,8 +26,8 @@ export { RecordOfflinePaymentRequestMethod } from '@api';
 // Translation provenance: stamped onto a save, not read from one.
 export { TranslationOrigin } from '@api';
 
-// Ticket lifecycle: an inbox's status filter and status-change options.
-export { TicketStatus, TicketCategory } from '@api';
+// Ticket vocabulary: the inbox's status, category, kind and source filters.
+export { TicketStatus, TicketCategory, TicketKind, TicketSource } from '@api';
 
 // Return lifecycle and reasons: the returns list's filter selects.
 export { ReturnStatus, ReturnReason } from '@api';

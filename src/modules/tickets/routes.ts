@@ -1,7 +1,7 @@
 /**
  * @module
  * Route table for the tickets module: the public contact form and the
- * admin-only inbox that reads what lands in it.
+ * staff inbox that reads what lands in it and the page for one ticket.
  */
 import type { RouteRecordRaw } from 'vue-router';
 
@@ -25,5 +25,15 @@ export default [
             title: 'ticket-inbox-page.page-title'
         },
         component: () => import('./views/TicketInbox.vue')
+    },
+    {
+        path: 'tickets/:id',
+        name: 'TicketDetail',
+        meta: {
+            access: 'auth',
+            can: ['read', 'Ticket'],
+            title: 'ticket-detail-page.page-title'
+        },
+        component: () => import('./views/TicketDetail.vue')
     }
 ] satisfies RouteRecordRaw[];

@@ -11,11 +11,12 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Admin inbox: the store's paginated search wired to a filter form and a pager, like every other
- * admin list, with a per-row status select and delete.
+ * Staff inbox: the store's paginated search wired to a filter form and a pager, like every other
+ * admin list. Each row offers the status doors the server says the viewer may use (`actions`),
+ * and links to the detail page where the thread and the assignment live.
  */
 import ListEmptyState from '@/ui/molecules/ListEmptyState.vue';
-import { computed, reactive } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Inbox } from 'lucide-vue-next';
@@ -27,7 +28,6 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useOrderNumberLink } from '@/kernel/order-link.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
@@ -37,8 +37,8 @@ import SortSelect from '@/ui/molecules/SortSelect.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
-import { TicketCategory, TicketStatus } from '@/types/enums.ts';
-import type { Ticket, TicketStatus as TTicketStatus } from '@types';
+import { TicketCategory, TicketKind, TicketSource, TicketStatus } from '@/types/enums.ts';
+import type { Ticket } from '@types';
 
 /**
  * The admin inbox for the public contact form: every ticket, movable through its statuses.
@@ -46,20 +46,9 @@ import type { Ticket, TicketStatus as TTicketStatus } from '@types';
 const { t } = useI18n();
 
 /**
- * The session, for what a reader of the inbox may do with a ticket: `read:Ticket` alone
- * (the manager) sees tickets and notes, `.update` moves and annotates them, `.delete` erases.
+ * The session, for the viewer's own id: "take" assigns a ticket to them.
  */
 const session = useSessionStore();
-
-/**
- * Whether the viewer may change a ticket's status and notes.
- */
-const canUpdate = computed(() => session.can('update', 'Ticket'));
-
-/**
- * Whether the viewer may erase a ticket.
- */
-const canDelete = computed(() => session.can('delete', 'Ticket'));
 
 /**
  * A ticket's order number as a link to the staff orders list filtered to it, when the build ships one.
@@ -74,7 +63,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * The admin actions this page drives.
  */
-const { watchSearchRequests, updateRequest, deleteRequest } = useTicketsStore();
+const { watchSearchRequests, deleteRequest, resolve, markSpam, reopen, assign } = useTicketsStore();
 
 /**
  * Inbox reactive state — filters, the current page window and the pagination counters.
@@ -140,6 +129,67 @@ const categoryChoice = useAnyFilterChoice(
 );
 
 /**
+ * The assignee filter's choices: anyone, the viewer's own, or nobody yet.
+ */
+const filterAssigneeOptions = computed(() => [
+    { value: null, title: t('ticket-inbox-page.filter-assignee-any') },
+    { value: 'me', title: t('ticket-inbox-page.filter-assignee-me') },
+    { value: 'none', title: t('ticket-inbox-page.filter-assignee-none') }
+]);
+
+/**
+ * The assignee select's model: `null` (the "any" row) on screen, no `assignee` filter in the store.
+ */
+const assigneeChoice = useAnyFilterChoice(
+    () => filters.value.assignee,
+    (value) => {
+        filters.value.assignee = value;
+    }
+);
+
+/**
+ * The source filter's choices: a contact message from a visitor, or a ticket the system opened.
+ */
+const filterSourceOptions = computed(() => [
+    { value: null, title: t('ticket-inbox-page.filter-source-any') },
+    ...Object.values(TicketSource).map((source) => ({
+        value: source,
+        title: t(`ticket-inbox-page.source-${source}`)
+    }))
+]);
+
+/**
+ * The source select's model.
+ */
+const sourceChoice = useAnyFilterChoice(
+    () => filters.value.source,
+    (value) => {
+        filters.value.source = value;
+    }
+);
+
+/**
+ * The kind filter's choices: one row per situation a ticket can be about.
+ */
+const filterKindOptions = computed(() => [
+    { value: null, title: t('ticket-inbox-page.filter-kind-any') },
+    ...Object.values(TicketKind).map((kind) => ({
+        value: kind,
+        title: t(`ticket-inbox-page.kind-${kind}`)
+    }))
+]);
+
+/**
+ * The kind select's model.
+ */
+const kindChoice = useAnyFilterChoice(
+    () => filters.value.kind,
+    (value) => {
+        filters.value.kind = value;
+    }
+);
+
+/**
  * Whether any filter is narrowing the inbox — picks the empty state's wording.
  */
 const isFiltered = computed(() =>
@@ -158,6 +208,10 @@ const { sync: syncUrl } = useListUrlState({
         email: 'string',
         status: Object.values(TicketStatus),
         category: Object.values(TicketCategory),
+        source: Object.values(TicketSource),
+        kind: Object.values(TicketKind),
+        assignee: 'string',
+        overdue: 'boolean',
         sort: 'string'
     }
 });
@@ -193,6 +247,7 @@ const { choice: sortChoice } = useServerSort({ filters, apply: handleSearch });
  */
 const sortOptions = computed(() => [
     { value: 'createdAt', title: t('ticket-inbox-page.sort-oldest') },
+    { value: 'dueAt', title: t('ticket-inbox-page.sort-due') },
     { value: 'status', title: t('ticket-inbox-page.sort-status') },
     { value: 'email', title: t('ticket-inbox-page.sort-email') }
 ]);
@@ -219,54 +274,30 @@ const { run, runConfirmed } = useRowActions({
 });
 
 /**
- * Moves one ticket to a new status. The page is reloaded afterwards, since an active status
- * filter may no longer match the row.
+ * Runs one status door on a row, then reloads: an active filter may no longer match the row.
  *
+ * @param move - The door: resolve, mark as spam or reopen.
  * @param requestId - Which ticket.
- * @param status - Its next status.
  * @returns A promise settling once the write and the reload have finished; a failure blocks the
  *  list in place ({@link rowActionError}).
  */
-const handleStatus = (requestId: string, status: TTicketStatus) =>
+const handleDoor = (move: (id: string) => Promise<unknown>, requestId: string) =>
     run({
-        action: () => updateRequest(requestId, { status }),
+        action: () => move(requestId),
         success: t('ticket-inbox-page.success-status'),
         afterwards: () => search(true)
     });
 
 /**
- * Unsaved internal-notes edits, keyed by ticket id — separate from the record itself so typing
- * in one card's textarea never fights the row's own `adminNotes` while a save is in flight.
- */
-const noteDrafts = reactive<Record<string, string | undefined>>({});
-
-/**
- * What a ticket's notes textarea should show: the visitor's own unsaved edit if there is one,
- * otherwise the record's last saved value.
+ * Takes a ticket: assigns it to the viewer, which also starts it.
  *
- * @param request - The ticket the textarea belongs to.
- * @returns The current draft, or `''` when neither a draft nor a saved note exists.
+ * @param request - Which ticket.
+ * @returns A promise settling once the write and the reload have finished.
  */
-const noteValueOf = (request: Ticket) => noteDrafts[request.id] ?? request.adminNotes ?? '';
-
-/**
- * Saves one ticket's internal notes through the same PATCH the status move uses — an empty
- * textarea sends `null` ({@link toRequestBody} spells the clear: `''` on this nullable,
- * `minLength: 1` field is a 422).
- *
- * @param request - Which ticket, and its last saved notes (the fallback {@link noteValueOf} reads
- *  if this save was never actually edited).
- * @returns A promise settling once the write and the reload have finished; a failure blocks the
- *  list in place ({@link rowActionError}).
- */
-const handleSaveNotes = (request: Ticket) =>
+const handleTake = (request: Ticket) =>
     run({
-        // No baseline: the textarea is this save's whole intent, so an emptied one is always a clear.
-        action: () =>
-            toRequestBody('UpdateTicketStatusBody', {
-                adminNotes: noteValueOf(request).trim()
-            }).then((body) => updateRequest(request.id, body)),
-        success: t('ticket-inbox-page.success-notes'),
+        action: () => assign(request.id, session.viewer?.id ?? ''),
+        success: t('ticket-inbox-page.success-take'),
         afterwards: () => search(true)
     });
 
@@ -323,6 +354,39 @@ const handleDelete = (requestId: string, subject: string) =>
                         item-value="value"
                         hide-details
                     />
+                    <v-select
+                        v-model="assigneeChoice"
+                        data-test="filter-assignee"
+                        :label="t('ticket-inbox-page.filter-assignee')"
+                        :items="filterAssigneeOptions"
+                        item-title="title"
+                        item-value="value"
+                        hide-details
+                    />
+                    <v-select
+                        v-model="sourceChoice"
+                        data-test="filter-source"
+                        :label="t('ticket-inbox-page.filter-source')"
+                        :items="filterSourceOptions"
+                        item-title="title"
+                        item-value="value"
+                        hide-details
+                    />
+                    <v-select
+                        v-model="kindChoice"
+                        data-test="filter-kind"
+                        :label="t('ticket-inbox-page.filter-kind')"
+                        :items="filterKindOptions"
+                        item-title="title"
+                        item-value="value"
+                        hide-details
+                    />
+                    <v-checkbox
+                        v-model="filters.overdue"
+                        data-test="filter-overdue"
+                        :label="t('ticket-inbox-page.filter-overdue')"
+                        hide-details
+                    />
                     <SortSelect
                         v-model="sortChoice"
                         :label="t('ticket-inbox-page.sort-label')"
@@ -356,7 +420,8 @@ const handleDelete = (requestId: string, subject: string) =>
                         <h2 class="text-lg font-semibold">{{ request.subject }}</h2>
                         <p class="text-sm opacity-muted">
                             {{ request.name || t('ticket-inbox-page.anonymous') }} —
-                            {{ request.email }} · {{ formatDateTime(request.createdAt) }}
+                            {{ request.email ?? t(`ticket-inbox-page.kind-${request.kind}`) }} ·
+                            {{ formatDateTime(request.createdAt) }}
                         </p>
                         <p
                             v-if="request.category || request.orderNumber"
@@ -399,74 +464,118 @@ const handleDelete = (requestId: string, subject: string) =>
                             }}
                         </p>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <v-select
-                            :model-value="request.status"
-                            :items="statusOptions"
-                            :loading="loading"
-                            :disabled="!canUpdate"
-                            :aria-label="
-                                t('ticket-inbox-page.status-label', { subject: request.subject })
-                            "
-                            density="compact"
-                            hide-details
-                            class="max-w-45"
-                            data-test="ticket-status"
-                            @update:model-value="
-                                (status) => handleStatus(request.id, status as TTicketStatus)
-                            "
-                        />
-                        <v-btn
-                            v-if="canDelete"
+                    <div class="flex flex-wrap items-center gap-2">
+                        <v-chip size="small" variant="tonal" label data-test="ticket-status">
+                            {{ t(`ticket-inbox-page.status-${request.status}`) }}
+                        </v-chip>
+                        <v-chip
+                            v-if="request.dueAt"
                             size="small"
                             variant="tonal"
-                            color="error"
-                            data-test="ticket-delete"
-                            :aria-label="
-                                t('ticket-inbox-page.button-delete-named', {
-                                    subject: request.subject
-                                })
-                            "
-                            :disabled="loading"
-                            @click="handleDelete(request.id, request.subject)"
+                            label
+                            :color="request.overdue ? 'error' : undefined"
+                            data-test="ticket-due"
                         >
-                            {{ t('ticket-inbox-page.button-delete') }}
-                        </v-btn>
+                            {{
+                                t(
+                                    request.overdue
+                                        ? 'ticket-inbox-page.label-overdue'
+                                        : 'ticket-inbox-page.label-due',
+                                    { date: formatDateTime(request.dueAt) }
+                                )
+                            }}
+                        </v-chip>
+                        <v-chip
+                            v-if="request.assigneeName"
+                            size="small"
+                            variant="tonal"
+                            label
+                            data-test="ticket-assignee"
+                        >
+                            {{
+                                t('ticket-inbox-page.label-assignee', {
+                                    name: request.assigneeName
+                                })
+                            }}
+                        </v-chip>
                     </div>
                 </div>
                 <p class="mt-3 whitespace-pre-line">{{ request.message }}</p>
 
-                <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
-                    <v-textarea
-                        :model-value="noteValueOf(request)"
-                        :label="t('ticket-inbox-page.label-notes')"
-                        :aria-label="
-                            t('ticket-inbox-page.label-notes-named', { subject: request.subject })
-                        "
-                        maxlength="5000"
-                        :readonly="!canUpdate"
-                        rows="2"
-                        auto-grow
-                        density="compact"
-                        hide-details
-                        class="flex-1"
-                        data-test="ticket-notes"
-                        @update:model-value="(value) => (noteDrafts[request.id] = value)"
-                    />
+                <div class="mt-3 flex flex-wrap gap-2">
                     <v-btn
-                        v-if="canUpdate"
+                        v-if="request.actions.assign && !request.assigneeId"
                         size="small"
                         variant="tonal"
                         :disabled="loading"
-                        data-test="ticket-notes-save"
+                        data-test="ticket-take"
+                        @click="handleTake(request)"
+                    >
+                        {{ t('ticket-inbox-page.button-take') }}
+                    </v-btn>
+                    <v-btn
+                        v-if="request.actions.resolve"
+                        size="small"
+                        variant="tonal"
+                        :disabled="loading"
+                        data-test="ticket-resolve"
                         :aria-label="
-                            t('ticket-inbox-page.button-save-notes-named', {
+                            t('ticket-inbox-page.button-resolve-named', {
                                 subject: request.subject
                             })
                         "
-                        @click="handleSaveNotes(request)"
+                        @click="handleDoor(resolve, request.id)"
                     >
-                        {{ t('ticket-inbox-page.button-save-notes') }}
+                        {{ t('ticket-inbox-page.button-resolve') }}
+                    </v-btn>
+                    <v-btn
+                        v-if="request.actions.markSpam"
+                        size="small"
+                        variant="tonal"
+                        :disabled="loading"
+                        data-test="ticket-spam"
+                        :aria-label="
+                            t('ticket-inbox-page.button-spam-named', { subject: request.subject })
+                        "
+                        @click="handleDoor(markSpam, request.id)"
+                    >
+                        {{ t('ticket-inbox-page.button-spam') }}
+                    </v-btn>
+                    <v-btn
+                        v-if="request.actions.reopen"
+                        size="small"
+                        variant="tonal"
+                        :disabled="loading"
+                        data-test="ticket-reopen"
+                        :aria-label="
+                            t('ticket-inbox-page.button-reopen-named', { subject: request.subject })
+                        "
+                        @click="handleDoor(reopen, request.id)"
+                    >
+                        {{ t('ticket-inbox-page.button-reopen') }}
+                    </v-btn>
+                    <v-btn
+                        size="small"
+                        variant="text"
+                        :disabled="loading"
+                        data-test="ticket-open"
+                        :to="{ name: 'TicketDetail', params: { id: request.id } }"
+                    >
+                        {{ t('ticket-inbox-page.button-open') }}
+                    </v-btn>
+                    <v-btn
+                        v-if="request.actions.delete"
+                        size="small"
+                        variant="tonal"
+                        color="error"
+                        data-test="ticket-delete"
+                        :aria-label="
+                            t('ticket-inbox-page.button-delete-named', { subject: request.subject })
+                        "
+                        :disabled="loading"
+                        @click="handleDelete(request.id, request.subject)"
+                    >
+                        {{ t('ticket-inbox-page.button-delete') }}
                     </v-btn>
                 </div>
             </v-card>

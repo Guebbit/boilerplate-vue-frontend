@@ -11,7 +11,8 @@ import routes from '../routes';
 describe('tickets route access', () => {
     it.each([
         ['Contact', undefined, undefined, undefined],
-        ['TicketInbox', 'auth', 'read', 'Ticket']
+        ['TicketInbox', 'auth', 'read', 'Ticket'],
+        ['TicketDetail', 'auth', 'read', 'Ticket']
     ])('%s declares access %s, permission %s %s', (name, access, action, subject) => {
         const route = routes.find((record) => record.name === name);
         expect(route).toBeDefined();
@@ -21,7 +22,7 @@ describe('tickets route access', () => {
 
     it('declares no route this file does not know about', () => {
         expect(routes.map(({ name }) => name).toSorted()).toEqual(
-            ['Contact', 'TicketInbox'].toSorted()
+            ['Contact', 'TicketInbox', 'TicketDetail'].toSorted()
         );
     });
 });

@@ -2540,6 +2540,10 @@ export const downloadAccountExportResponseAddressesItemPhoneMax = 32;
 export const downloadAccountExportResponseTicketsItemIdMax = 64;
 export const downloadAccountExportResponseTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseTicketsItemEmailMax = 254;
+export const downloadAccountExportResponseSystemTicketsItemIdMax = 64;
+export const downloadAccountExportResponseSystemTicketsItemIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const downloadAccountExportResponseCartItemProductIdMax = 64;
 export const downloadAccountExportResponseCartItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseWishlistItemProductIdMax = 64;
@@ -2871,36 +2875,82 @@ export const DownloadAccountExportResponse = zod.strictObject({
             })
         )
     }),
-    tickets: zod
-        .array(
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
-                    .max(downloadAccountExportResponseTicketsItemIdMax)
-                    .regex(downloadAccountExportResponseTicketsItemIdRegExp),
-                name: zod.string().optional(),
-                email: zod.email().max(downloadAccountExportResponseTicketsItemEmailMax),
-                subject: zod.string(),
-                message: zod.string(),
-                category: zod
-                    .enum([
+    tickets: zod.array(
+        zod.strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(downloadAccountExportResponseTicketsItemIdMax)
+                .regex(downloadAccountExportResponseTicketsItemIdRegExp),
+            name: zod.string().optional(),
+            email: zod.email().max(downloadAccountExportResponseTicketsItemEmailMax),
+            subject: zod.string(),
+            message: zod.string(),
+            category: zod
+                .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
+                .optional(),
+            orderNumber: zod.string().optional(),
+            status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+            notes: zod.array(
+                zod.strictObject({
+                    body: zod.string(),
+                    at: zod.iso.datetime({ offset: true })
+                })
+            ),
+            respondedAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true }).optional()
+        })
+    ),
+    systemTickets: zod.array(
+        zod.strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(downloadAccountExportResponseSystemTicketsItemIdMax)
+                .regex(downloadAccountExportResponseSystemTicketsItemIdRegExp),
+            kind: zod.enum([
+                'contact',
+                'account_review',
+                'manual_refund_owed',
+                'amount_mismatch',
+                'paid_without_hold',
+                'export_failed',
+                'consent_due',
+                'refund_refused',
+                'dispute'
+            ]),
+            subject: zod.string(),
+            message: zod.string(),
+            link: zod
+                .strictObject({
+                    type: zod.enum([
                         'order',
-                        'cancellation',
-                        'return',
+                        'user',
                         'payment',
-                        'account',
-                        'privacy',
-                        'other'
-                    ])
-                    .optional(),
-                orderNumber: zod.string().optional(),
-                status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-                respondedAt: zod.iso.datetime({ offset: true }).optional(),
-                createdAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        )
-        .optional(),
+                        'refund',
+                        'fulfillment_order',
+                        'export'
+                    ]),
+                    id: zod.string()
+                })
+                .optional(),
+            routeSet: zod.string(),
+            status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+            resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
+            notes: zod.array(
+                zod.strictObject({
+                    body: zod.string(),
+                    at: zod.iso.datetime({ offset: true })
+                })
+            ),
+            dueAt: zod.iso.datetime({ offset: true }).optional(),
+            lastSeenAt: zod.iso.datetime({ offset: true }).optional(),
+            seenCount: zod.number().min(1).optional(),
+            respondedAt: zod.iso.datetime({ offset: true }).optional(),
+            closedAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true }).optional()
+        })
+    ),
     cart: zod.array(
         zod.strictObject({
             productId: zod
@@ -4613,7 +4663,7 @@ export const SearchUsersResponse = zod.strictObject({
     })
 });
 /**
- * Creates a contact ticket and notifies the support mailbox by email.
+ * Creates a contact ticket and notifies the support mailbox by email. Open to anyone. A valid session bearer token, when one is sent, records the sender's account on the ticket (`subjectId`), so the account's data export and erasure include it; an absent or expired token files it as anonymous.
  * @summary Submit contact request
  */
 export const createContactTicketHeaderAntibotChallengeTokenMax = 4096;
@@ -4650,29 +4700,121 @@ export const CreateContactTicketBody = zod.strictObject({
 });
 export const createContactTicketResponseIdMax = 64;
 export const createContactTicketResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createContactTicketResponseSubjectIdMax = 64;
+export const createContactTicketResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createContactTicketResponseEmailMax = 254;
+export const createContactTicketResponseAssigneeIdMax = 64;
+export const createContactTicketResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createContactTicketResponseNotesItemAuthorIdMax = 64;
+export const createContactTicketResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createContactTicketResponseEarlierTicketsItemIdMax = 64;
+export const createContactTicketResponseEarlierTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const CreateContactTicketResponse = zod.strictObject({
     id: zod
         .string()
         .min(1)
         .max(createContactTicketResponseIdMax)
         .regex(createContactTicketResponseIdRegExp),
+    source: zod.enum(['visitor', 'system']),
+    kind: zod.enum([
+        'contact',
+        'account_review',
+        'manual_refund_owed',
+        'amount_mismatch',
+        'paid_without_hold',
+        'export_failed',
+        'consent_due',
+        'refund_refused',
+        'dispute'
+    ]),
     name: zod.string().optional(),
-    email: zod.email().max(createContactTicketResponseEmailMax),
+    subjectId: zod
+        .string()
+        .min(1)
+        .max(createContactTicketResponseSubjectIdMax)
+        .regex(createContactTicketResponseSubjectIdRegExp)
+        .optional(),
+    email: zod.email().max(createContactTicketResponseEmailMax).optional(),
     subject: zod.string(),
     message: zod.string(),
     category: zod
         .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
         .optional(),
     orderNumber: zod.string().optional(),
+    link: zod
+        .strictObject({
+            type: zod.enum(['order', 'user', 'payment', 'refund', 'fulfillment_order', 'export']),
+            id: zod.string()
+        })
+        .optional(),
+    routeSet: zod.string(),
+    assigneeId: zod
+        .string()
+        .min(1)
+        .max(createContactTicketResponseAssigneeIdMax)
+        .regex(createContactTicketResponseAssigneeIdRegExp)
+        .optional(),
+    assigneeName: zod.string().optional(),
+    notes: zod.array(
+        zod.strictObject({
+            authorId: zod
+                .string()
+                .min(1)
+                .max(createContactTicketResponseNotesItemAuthorIdMax)
+                .regex(createContactTicketResponseNotesItemAuthorIdRegExp)
+                .optional(),
+            body: zod.string(),
+            at: zod.iso.datetime({ offset: true })
+        })
+    ),
+    dueAt: zod.iso.datetime({ offset: true }).optional(),
+    overdue: zod.boolean(),
+    lastSeenAt: zod.iso.datetime({ offset: true }).optional(),
+    seenCount: zod.number().min(1).optional(),
     status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-    adminNotes: zod.string().optional(),
+    closedAt: zod.iso.datetime({ offset: true }).optional(),
+    resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
     respondedAt: zod.iso.datetime({ offset: true }).optional(),
+    earlierTickets: zod
+        .array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(createContactTicketResponseEarlierTicketsItemIdMax)
+                    .regex(createContactTicketResponseEarlierTicketsItemIdRegExp),
+                kind: zod
+                    .enum([
+                        'contact',
+                        'account_review',
+                        'manual_refund_owed',
+                        'amount_mismatch',
+                        'paid_without_hold',
+                        'export_failed',
+                        'consent_due',
+                        'refund_refused',
+                        'dispute'
+                    ])
+                    .optional(),
+                status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        )
+        .optional(),
+    actions: zod.strictObject({
+        resolve: zod.boolean(),
+        markSpam: zod.boolean(),
+        reopen: zod.boolean(),
+        assign: zod.boolean(),
+        unassign: zod.boolean(),
+        note: zod.boolean(),
+        delete: zod.boolean()
+    }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Returns tickets for staff review.
+ * Returns the tickets the caller may work: every visitor message, and the system tickets whose route set the caller holds (an administrator holds them all). Open work first when sorted by `dueAt`.
  * @summary List tickets
  */
 export const listTicketsQueryPageDefault = 1;
@@ -4682,6 +4824,8 @@ export const listTicketsQueryPageSizeMax = 100;
 export const listTicketsQuerySortMax = 3;
 export const listTicketsQueryTextMax = 200;
 export const listTicketsQueryEmailMax = 254;
+export const listTicketsQueryAssigneeMin = 2;
+export const listTicketsQueryAssigneeMax = 24;
 export const ListTicketsQueryParams = zod.strictObject({
     page: zod.number().min(1).max(listTicketsQueryPageMax).default(listTicketsQueryPageDefault),
     pageSize: zod
@@ -4690,7 +4834,18 @@ export const ListTicketsQueryParams = zod.strictObject({
         .max(listTicketsQueryPageSizeMax)
         .default(listTicketsQueryPageSizeDefault),
     sort: zod
-        .array(zod.enum(['createdAt', '-createdAt', 'status', '-status', 'email', '-email']))
+        .array(
+            zod.enum([
+                'createdAt',
+                '-createdAt',
+                'dueAt',
+                '-dueAt',
+                'status',
+                '-status',
+                'email',
+                '-email'
+            ])
+        )
         .min(1)
         .max(listTicketsQuerySortMax)
         .optional(),
@@ -4699,11 +4854,41 @@ export const ListTicketsQueryParams = zod.strictObject({
     status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
     category: zod
         .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
-        .optional()
+        .optional(),
+    source: zod.enum(['visitor', 'system']).optional(),
+    kind: zod
+        .enum([
+            'contact',
+            'account_review',
+            'manual_refund_owed',
+            'amount_mismatch',
+            'paid_without_hold',
+            'export_failed',
+            'consent_due',
+            'refund_refused',
+            'dispute'
+        ])
+        .optional(),
+    assignee: zod
+        .string()
+        .min(listTicketsQueryAssigneeMin)
+        .max(listTicketsQueryAssigneeMax)
+        .optional(),
+    overdue: zod.boolean().optional()
 });
 export const listTicketsResponseItemsItemIdMax = 64;
 export const listTicketsResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listTicketsResponseItemsItemSubjectIdMax = 64;
+export const listTicketsResponseItemsItemSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listTicketsResponseItemsItemEmailMax = 254;
+export const listTicketsResponseItemsItemAssigneeIdMax = 64;
+export const listTicketsResponseItemsItemAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listTicketsResponseItemsItemNotesItemAuthorIdMax = 64;
+export const listTicketsResponseItemsItemNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listTicketsResponseItemsItemEarlierTicketsItemIdMax = 64;
+export const listTicketsResponseItemsItemEarlierTicketsItemIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const listTicketsResponseMetaPageDefault = 1;
 export const listTicketsResponseMetaPageMax = 10000;
 export const listTicketsResponseMetaPageSizeDefault = 10;
@@ -4718,17 +4903,108 @@ export const ListTicketsResponse = zod.strictObject({
                 .min(1)
                 .max(listTicketsResponseItemsItemIdMax)
                 .regex(listTicketsResponseItemsItemIdRegExp),
+            source: zod.enum(['visitor', 'system']),
+            kind: zod.enum([
+                'contact',
+                'account_review',
+                'manual_refund_owed',
+                'amount_mismatch',
+                'paid_without_hold',
+                'export_failed',
+                'consent_due',
+                'refund_refused',
+                'dispute'
+            ]),
             name: zod.string().optional(),
-            email: zod.email().max(listTicketsResponseItemsItemEmailMax),
+            subjectId: zod
+                .string()
+                .min(1)
+                .max(listTicketsResponseItemsItemSubjectIdMax)
+                .regex(listTicketsResponseItemsItemSubjectIdRegExp)
+                .optional(),
+            email: zod.email().max(listTicketsResponseItemsItemEmailMax).optional(),
             subject: zod.string(),
             message: zod.string(),
             category: zod
                 .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
                 .optional(),
             orderNumber: zod.string().optional(),
+            link: zod
+                .strictObject({
+                    type: zod.enum([
+                        'order',
+                        'user',
+                        'payment',
+                        'refund',
+                        'fulfillment_order',
+                        'export'
+                    ]),
+                    id: zod.string()
+                })
+                .optional(),
+            routeSet: zod.string(),
+            assigneeId: zod
+                .string()
+                .min(1)
+                .max(listTicketsResponseItemsItemAssigneeIdMax)
+                .regex(listTicketsResponseItemsItemAssigneeIdRegExp)
+                .optional(),
+            assigneeName: zod.string().optional(),
+            notes: zod.array(
+                zod.strictObject({
+                    authorId: zod
+                        .string()
+                        .min(1)
+                        .max(listTicketsResponseItemsItemNotesItemAuthorIdMax)
+                        .regex(listTicketsResponseItemsItemNotesItemAuthorIdRegExp)
+                        .optional(),
+                    body: zod.string(),
+                    at: zod.iso.datetime({ offset: true })
+                })
+            ),
+            dueAt: zod.iso.datetime({ offset: true }).optional(),
+            overdue: zod.boolean(),
+            lastSeenAt: zod.iso.datetime({ offset: true }).optional(),
+            seenCount: zod.number().min(1).optional(),
             status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-            adminNotes: zod.string().optional(),
+            closedAt: zod.iso.datetime({ offset: true }).optional(),
+            resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
             respondedAt: zod.iso.datetime({ offset: true }).optional(),
+            earlierTickets: zod
+                .array(
+                    zod.strictObject({
+                        id: zod
+                            .string()
+                            .min(1)
+                            .max(listTicketsResponseItemsItemEarlierTicketsItemIdMax)
+                            .regex(listTicketsResponseItemsItemEarlierTicketsItemIdRegExp),
+                        kind: zod
+                            .enum([
+                                'contact',
+                                'account_review',
+                                'manual_refund_owed',
+                                'amount_mismatch',
+                                'paid_without_hold',
+                                'export_failed',
+                                'consent_due',
+                                'refund_refused',
+                                'dispute'
+                            ])
+                            .optional(),
+                        status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+                        createdAt: zod.iso.datetime({ offset: true })
+                    })
+                )
+                .optional(),
+            actions: zod.strictObject({
+                resolve: zod.boolean(),
+                markSpam: zod.boolean(),
+                reopen: zod.boolean(),
+                assign: zod.boolean(),
+                unassign: zod.boolean(),
+                note: zod.boolean(),
+                delete: zod.boolean()
+            }),
             createdAt: zod.iso.datetime({ offset: true }),
             updatedAt: zod.iso.datetime({ offset: true }).optional()
         })
@@ -4758,6 +5034,8 @@ export const searchTicketsBodyPageSizeDefault = 10;
 export const searchTicketsBodyPageSizeMax = 100;
 export const searchTicketsBodySortMax = 3;
 export const searchTicketsBodyTextMax = 200;
+export const searchTicketsBodyAssigneeMin = 2;
+export const searchTicketsBodyAssigneeMax = 24;
 export const searchTicketsBodyEmailMax = 254;
 export const SearchTicketsBody = zod.strictObject({
     page: zod.number().min(1).max(searchTicketsBodyPageMax).default(searchTicketsBodyPageDefault),
@@ -4767,7 +5045,18 @@ export const SearchTicketsBody = zod.strictObject({
         .max(searchTicketsBodyPageSizeMax)
         .default(searchTicketsBodyPageSizeDefault),
     sort: zod
-        .array(zod.enum(['createdAt', '-createdAt', 'status', '-status', 'email', '-email']))
+        .array(
+            zod.enum([
+                'createdAt',
+                '-createdAt',
+                'dueAt',
+                '-dueAt',
+                'status',
+                '-status',
+                'email',
+                '-email'
+            ])
+        )
         .min(1)
         .max(searchTicketsBodySortMax)
         .optional(),
@@ -4776,11 +5065,41 @@ export const SearchTicketsBody = zod.strictObject({
     category: zod
         .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
         .optional(),
+    source: zod.enum(['visitor', 'system']).optional(),
+    kind: zod
+        .enum([
+            'contact',
+            'account_review',
+            'manual_refund_owed',
+            'amount_mismatch',
+            'paid_without_hold',
+            'export_failed',
+            'consent_due',
+            'refund_refused',
+            'dispute'
+        ])
+        .optional(),
+    assignee: zod
+        .string()
+        .min(searchTicketsBodyAssigneeMin)
+        .max(searchTicketsBodyAssigneeMax)
+        .optional(),
+    overdue: zod.boolean().optional(),
     email: zod.email().max(searchTicketsBodyEmailMax).optional()
 });
 export const searchTicketsResponseItemsItemIdMax = 64;
 export const searchTicketsResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const searchTicketsResponseItemsItemSubjectIdMax = 64;
+export const searchTicketsResponseItemsItemSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const searchTicketsResponseItemsItemEmailMax = 254;
+export const searchTicketsResponseItemsItemAssigneeIdMax = 64;
+export const searchTicketsResponseItemsItemAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const searchTicketsResponseItemsItemNotesItemAuthorIdMax = 64;
+export const searchTicketsResponseItemsItemNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const searchTicketsResponseItemsItemEarlierTicketsItemIdMax = 64;
+export const searchTicketsResponseItemsItemEarlierTicketsItemIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const searchTicketsResponseMetaPageDefault = 1;
 export const searchTicketsResponseMetaPageMax = 10000;
 export const searchTicketsResponseMetaPageSizeDefault = 10;
@@ -4795,17 +5114,108 @@ export const SearchTicketsResponse = zod.strictObject({
                 .min(1)
                 .max(searchTicketsResponseItemsItemIdMax)
                 .regex(searchTicketsResponseItemsItemIdRegExp),
+            source: zod.enum(['visitor', 'system']),
+            kind: zod.enum([
+                'contact',
+                'account_review',
+                'manual_refund_owed',
+                'amount_mismatch',
+                'paid_without_hold',
+                'export_failed',
+                'consent_due',
+                'refund_refused',
+                'dispute'
+            ]),
             name: zod.string().optional(),
-            email: zod.email().max(searchTicketsResponseItemsItemEmailMax),
+            subjectId: zod
+                .string()
+                .min(1)
+                .max(searchTicketsResponseItemsItemSubjectIdMax)
+                .regex(searchTicketsResponseItemsItemSubjectIdRegExp)
+                .optional(),
+            email: zod.email().max(searchTicketsResponseItemsItemEmailMax).optional(),
             subject: zod.string(),
             message: zod.string(),
             category: zod
                 .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
                 .optional(),
             orderNumber: zod.string().optional(),
+            link: zod
+                .strictObject({
+                    type: zod.enum([
+                        'order',
+                        'user',
+                        'payment',
+                        'refund',
+                        'fulfillment_order',
+                        'export'
+                    ]),
+                    id: zod.string()
+                })
+                .optional(),
+            routeSet: zod.string(),
+            assigneeId: zod
+                .string()
+                .min(1)
+                .max(searchTicketsResponseItemsItemAssigneeIdMax)
+                .regex(searchTicketsResponseItemsItemAssigneeIdRegExp)
+                .optional(),
+            assigneeName: zod.string().optional(),
+            notes: zod.array(
+                zod.strictObject({
+                    authorId: zod
+                        .string()
+                        .min(1)
+                        .max(searchTicketsResponseItemsItemNotesItemAuthorIdMax)
+                        .regex(searchTicketsResponseItemsItemNotesItemAuthorIdRegExp)
+                        .optional(),
+                    body: zod.string(),
+                    at: zod.iso.datetime({ offset: true })
+                })
+            ),
+            dueAt: zod.iso.datetime({ offset: true }).optional(),
+            overdue: zod.boolean(),
+            lastSeenAt: zod.iso.datetime({ offset: true }).optional(),
+            seenCount: zod.number().min(1).optional(),
             status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-            adminNotes: zod.string().optional(),
+            closedAt: zod.iso.datetime({ offset: true }).optional(),
+            resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
             respondedAt: zod.iso.datetime({ offset: true }).optional(),
+            earlierTickets: zod
+                .array(
+                    zod.strictObject({
+                        id: zod
+                            .string()
+                            .min(1)
+                            .max(searchTicketsResponseItemsItemEarlierTicketsItemIdMax)
+                            .regex(searchTicketsResponseItemsItemEarlierTicketsItemIdRegExp),
+                        kind: zod
+                            .enum([
+                                'contact',
+                                'account_review',
+                                'manual_refund_owed',
+                                'amount_mismatch',
+                                'paid_without_hold',
+                                'export_failed',
+                                'consent_due',
+                                'refund_refused',
+                                'dispute'
+                            ])
+                            .optional(),
+                        status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+                        createdAt: zod.iso.datetime({ offset: true })
+                    })
+                )
+                .optional(),
+            actions: zod.strictObject({
+                resolve: zod.boolean(),
+                markSpam: zod.boolean(),
+                reopen: zod.boolean(),
+                assign: zod.boolean(),
+                unassign: zod.boolean(),
+                note: zod.boolean(),
+                delete: zod.boolean()
+            }),
             createdAt: zod.iso.datetime({ offset: true }),
             updatedAt: zod.iso.datetime({ offset: true }).optional()
         })
@@ -4826,7 +5236,21 @@ export const SearchTicketsResponse = zod.strictObject({
     })
 });
 /**
- * One ticket of the admin queue, by id. The same rows `GET /tickets` lists, so anyone who may read the list reads any of them. An unknown or malformed id is a 404.
+ * How much work the caller's jurisdiction holds: open tickets, the caller's own, the overdue ones and the unassigned ones. Never cached: it is one person's view.
+ * @summary Counts for the staff badge
+ */
+export const getTicketSummaryResponseOpenMin = 0;
+export const getTicketSummaryResponseMineMin = 0;
+export const getTicketSummaryResponseOverdueMin = 0;
+export const getTicketSummaryResponseUnassignedMin = 0;
+export const GetTicketSummaryResponse = zod.strictObject({
+    open: zod.number().min(getTicketSummaryResponseOpenMin),
+    mine: zod.number().min(getTicketSummaryResponseMineMin),
+    overdue: zod.number().min(getTicketSummaryResponseOverdueMin),
+    unassigned: zod.number().min(getTicketSummaryResponseUnassignedMin)
+});
+/**
+ * One ticket with its notes, assignee and the earlier tickets about the same record. A visitor ticket names a person, so staff reading it is audited. An unknown, malformed or out-of-jurisdiction id is a 404.
  * @summary Get a ticket
  */
 export const getTicketPathIdMax = 64;
@@ -4836,63 +5260,118 @@ export const GetTicketParams = zod.strictObject({
 });
 export const getTicketResponseIdMax = 64;
 export const getTicketResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getTicketResponseSubjectIdMax = 64;
+export const getTicketResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getTicketResponseEmailMax = 254;
+export const getTicketResponseAssigneeIdMax = 64;
+export const getTicketResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getTicketResponseNotesItemAuthorIdMax = 64;
+export const getTicketResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getTicketResponseEarlierTicketsItemIdMax = 64;
+export const getTicketResponseEarlierTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const GetTicketResponse = zod.strictObject({
     id: zod.string().min(1).max(getTicketResponseIdMax).regex(getTicketResponseIdRegExp),
+    source: zod.enum(['visitor', 'system']),
+    kind: zod.enum([
+        'contact',
+        'account_review',
+        'manual_refund_owed',
+        'amount_mismatch',
+        'paid_without_hold',
+        'export_failed',
+        'consent_due',
+        'refund_refused',
+        'dispute'
+    ]),
     name: zod.string().optional(),
-    email: zod.email().max(getTicketResponseEmailMax),
-    subject: zod.string(),
-    message: zod.string(),
-    category: zod
-        .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
-        .optional(),
-    orderNumber: zod.string().optional(),
-    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-    adminNotes: zod.string().optional(),
-    respondedAt: zod.iso.datetime({ offset: true }).optional(),
-    createdAt: zod.iso.datetime({ offset: true }),
-    updatedAt: zod.iso.datetime({ offset: true }).optional()
-});
-/**
- * Merges a status and/or notes change into a ticket. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
- * @summary Update ticket status
- */
-export const updateTicketStatusPathIdMax = 64;
-export const updateTicketStatusPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const UpdateTicketStatusParams = zod.strictObject({
-    id: zod.string().min(1).max(updateTicketStatusPathIdMax).regex(updateTicketStatusPathIdRegExp)
-});
-export const updateTicketStatusBodyAdminNotesMax = 5000;
-export const UpdateTicketStatusBody = zod.strictObject({
-    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
-    adminNotes: zod.string().min(1).max(updateTicketStatusBodyAdminNotesMax).nullish()
-});
-export const updateTicketStatusResponseIdMax = 64;
-export const updateTicketStatusResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const updateTicketStatusResponseEmailMax = 254;
-export const UpdateTicketStatusResponse = zod.strictObject({
-    id: zod
+    subjectId: zod
         .string()
         .min(1)
-        .max(updateTicketStatusResponseIdMax)
-        .regex(updateTicketStatusResponseIdRegExp),
-    name: zod.string().optional(),
-    email: zod.email().max(updateTicketStatusResponseEmailMax),
+        .max(getTicketResponseSubjectIdMax)
+        .regex(getTicketResponseSubjectIdRegExp)
+        .optional(),
+    email: zod.email().max(getTicketResponseEmailMax).optional(),
     subject: zod.string(),
     message: zod.string(),
     category: zod
         .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
         .optional(),
     orderNumber: zod.string().optional(),
+    link: zod
+        .strictObject({
+            type: zod.enum(['order', 'user', 'payment', 'refund', 'fulfillment_order', 'export']),
+            id: zod.string()
+        })
+        .optional(),
+    routeSet: zod.string(),
+    assigneeId: zod
+        .string()
+        .min(1)
+        .max(getTicketResponseAssigneeIdMax)
+        .regex(getTicketResponseAssigneeIdRegExp)
+        .optional(),
+    assigneeName: zod.string().optional(),
+    notes: zod.array(
+        zod.strictObject({
+            authorId: zod
+                .string()
+                .min(1)
+                .max(getTicketResponseNotesItemAuthorIdMax)
+                .regex(getTicketResponseNotesItemAuthorIdRegExp)
+                .optional(),
+            body: zod.string(),
+            at: zod.iso.datetime({ offset: true })
+        })
+    ),
+    dueAt: zod.iso.datetime({ offset: true }).optional(),
+    overdue: zod.boolean(),
+    lastSeenAt: zod.iso.datetime({ offset: true }).optional(),
+    seenCount: zod.number().min(1).optional(),
     status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-    adminNotes: zod.string().optional(),
+    closedAt: zod.iso.datetime({ offset: true }).optional(),
+    resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
     respondedAt: zod.iso.datetime({ offset: true }).optional(),
+    earlierTickets: zod
+        .array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(getTicketResponseEarlierTicketsItemIdMax)
+                    .regex(getTicketResponseEarlierTicketsItemIdRegExp),
+                kind: zod
+                    .enum([
+                        'contact',
+                        'account_review',
+                        'manual_refund_owed',
+                        'amount_mismatch',
+                        'paid_without_hold',
+                        'export_failed',
+                        'consent_due',
+                        'refund_refused',
+                        'dispute'
+                    ])
+                    .optional(),
+                status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        )
+        .optional(),
+    actions: zod.strictObject({
+        resolve: zod.boolean(),
+        markSpam: zod.boolean(),
+        reopen: zod.boolean(),
+        assign: zod.boolean(),
+        unassign: zod.boolean(),
+        note: zod.boolean(),
+        delete: zod.boolean()
+    }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Permanently removes the ticket identified by `{id}`.
- * @summary Delete ticket
+ * Permanently removes the ticket identified by `{id}`. Needs `delete:Ticket` and, for a system ticket, the ticket's route set.
+ * @summary Delete a ticket
  */
 export const deleteTicketPathIdMax = 64;
 export const deleteTicketPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -4900,6 +5379,739 @@ export const DeleteTicketParams = zod.strictObject({
     id: zod.string().min(1).max(deleteTicketPathIdMax).regex(deleteTicketPathIdRegExp)
 });
 export const DeleteTicketResponse = zod.void();
+/**
+ * From `new`, `in_progress` or `spam` to `resolved`, with `resolution: staff`. Stamps `closedAt` (kept when it was already closed) and `respondedAt` (once), and releases the dedup key. No body. Needs `update:Ticket` and, for a system ticket, its route set. The move is conditional on the status read, so a repeat answers 409.
+ * @summary Resolve a ticket
+ */
+export const resolveTicketPathIdMax = 64;
+export const resolveTicketPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ResolveTicketParams = zod.strictObject({
+    id: zod.string().min(1).max(resolveTicketPathIdMax).regex(resolveTicketPathIdRegExp)
+});
+export const resolveTicketResponseIdMax = 64;
+export const resolveTicketResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const resolveTicketResponseSubjectIdMax = 64;
+export const resolveTicketResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const resolveTicketResponseEmailMax = 254;
+export const resolveTicketResponseAssigneeIdMax = 64;
+export const resolveTicketResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const resolveTicketResponseNotesItemAuthorIdMax = 64;
+export const resolveTicketResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const resolveTicketResponseEarlierTicketsItemIdMax = 64;
+export const resolveTicketResponseEarlierTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ResolveTicketResponse = zod.strictObject({
+    id: zod.string().min(1).max(resolveTicketResponseIdMax).regex(resolveTicketResponseIdRegExp),
+    source: zod.enum(['visitor', 'system']),
+    kind: zod.enum([
+        'contact',
+        'account_review',
+        'manual_refund_owed',
+        'amount_mismatch',
+        'paid_without_hold',
+        'export_failed',
+        'consent_due',
+        'refund_refused',
+        'dispute'
+    ]),
+    name: zod.string().optional(),
+    subjectId: zod
+        .string()
+        .min(1)
+        .max(resolveTicketResponseSubjectIdMax)
+        .regex(resolveTicketResponseSubjectIdRegExp)
+        .optional(),
+    email: zod.email().max(resolveTicketResponseEmailMax).optional(),
+    subject: zod.string(),
+    message: zod.string(),
+    category: zod
+        .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
+        .optional(),
+    orderNumber: zod.string().optional(),
+    link: zod
+        .strictObject({
+            type: zod.enum(['order', 'user', 'payment', 'refund', 'fulfillment_order', 'export']),
+            id: zod.string()
+        })
+        .optional(),
+    routeSet: zod.string(),
+    assigneeId: zod
+        .string()
+        .min(1)
+        .max(resolveTicketResponseAssigneeIdMax)
+        .regex(resolveTicketResponseAssigneeIdRegExp)
+        .optional(),
+    assigneeName: zod.string().optional(),
+    notes: zod.array(
+        zod.strictObject({
+            authorId: zod
+                .string()
+                .min(1)
+                .max(resolveTicketResponseNotesItemAuthorIdMax)
+                .regex(resolveTicketResponseNotesItemAuthorIdRegExp)
+                .optional(),
+            body: zod.string(),
+            at: zod.iso.datetime({ offset: true })
+        })
+    ),
+    dueAt: zod.iso.datetime({ offset: true }).optional(),
+    overdue: zod.boolean(),
+    lastSeenAt: zod.iso.datetime({ offset: true }).optional(),
+    seenCount: zod.number().min(1).optional(),
+    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+    closedAt: zod.iso.datetime({ offset: true }).optional(),
+    resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
+    respondedAt: zod.iso.datetime({ offset: true }).optional(),
+    earlierTickets: zod
+        .array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(resolveTicketResponseEarlierTicketsItemIdMax)
+                    .regex(resolveTicketResponseEarlierTicketsItemIdRegExp),
+                kind: zod
+                    .enum([
+                        'contact',
+                        'account_review',
+                        'manual_refund_owed',
+                        'amount_mismatch',
+                        'paid_without_hold',
+                        'export_failed',
+                        'consent_due',
+                        'refund_refused',
+                        'dispute'
+                    ])
+                    .optional(),
+                status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        )
+        .optional(),
+    actions: zod.strictObject({
+        resolve: zod.boolean(),
+        markSpam: zod.boolean(),
+        reopen: zod.boolean(),
+        assign: zod.boolean(),
+        unassign: zod.boolean(),
+        note: zod.boolean(),
+        delete: zod.boolean()
+    }),
+    createdAt: zod.iso.datetime({ offset: true }),
+    updatedAt: zod.iso.datetime({ offset: true }).optional()
+});
+/**
+ * From `new`, `in_progress` or `resolved` to `spam`, with `resolution: spam`. Same stamps as a resolve, without `respondedAt`. Also undoes a false resolve. No body. Needs `update:Ticket` and, for a system ticket, its route set.
+ * @summary Mark a ticket as spam
+ */
+export const markTicketSpamPathIdMax = 64;
+export const markTicketSpamPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const MarkTicketSpamParams = zod.strictObject({
+    id: zod.string().min(1).max(markTicketSpamPathIdMax).regex(markTicketSpamPathIdRegExp)
+});
+export const markTicketSpamResponseIdMax = 64;
+export const markTicketSpamResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const markTicketSpamResponseSubjectIdMax = 64;
+export const markTicketSpamResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const markTicketSpamResponseEmailMax = 254;
+export const markTicketSpamResponseAssigneeIdMax = 64;
+export const markTicketSpamResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const markTicketSpamResponseNotesItemAuthorIdMax = 64;
+export const markTicketSpamResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const markTicketSpamResponseEarlierTicketsItemIdMax = 64;
+export const markTicketSpamResponseEarlierTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const MarkTicketSpamResponse = zod.strictObject({
+    id: zod.string().min(1).max(markTicketSpamResponseIdMax).regex(markTicketSpamResponseIdRegExp),
+    source: zod.enum(['visitor', 'system']),
+    kind: zod.enum([
+        'contact',
+        'account_review',
+        'manual_refund_owed',
+        'amount_mismatch',
+        'paid_without_hold',
+        'export_failed',
+        'consent_due',
+        'refund_refused',
+        'dispute'
+    ]),
+    name: zod.string().optional(),
+    subjectId: zod
+        .string()
+        .min(1)
+        .max(markTicketSpamResponseSubjectIdMax)
+        .regex(markTicketSpamResponseSubjectIdRegExp)
+        .optional(),
+    email: zod.email().max(markTicketSpamResponseEmailMax).optional(),
+    subject: zod.string(),
+    message: zod.string(),
+    category: zod
+        .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
+        .optional(),
+    orderNumber: zod.string().optional(),
+    link: zod
+        .strictObject({
+            type: zod.enum(['order', 'user', 'payment', 'refund', 'fulfillment_order', 'export']),
+            id: zod.string()
+        })
+        .optional(),
+    routeSet: zod.string(),
+    assigneeId: zod
+        .string()
+        .min(1)
+        .max(markTicketSpamResponseAssigneeIdMax)
+        .regex(markTicketSpamResponseAssigneeIdRegExp)
+        .optional(),
+    assigneeName: zod.string().optional(),
+    notes: zod.array(
+        zod.strictObject({
+            authorId: zod
+                .string()
+                .min(1)
+                .max(markTicketSpamResponseNotesItemAuthorIdMax)
+                .regex(markTicketSpamResponseNotesItemAuthorIdRegExp)
+                .optional(),
+            body: zod.string(),
+            at: zod.iso.datetime({ offset: true })
+        })
+    ),
+    dueAt: zod.iso.datetime({ offset: true }).optional(),
+    overdue: zod.boolean(),
+    lastSeenAt: zod.iso.datetime({ offset: true }).optional(),
+    seenCount: zod.number().min(1).optional(),
+    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+    closedAt: zod.iso.datetime({ offset: true }).optional(),
+    resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
+    respondedAt: zod.iso.datetime({ offset: true }).optional(),
+    earlierTickets: zod
+        .array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(markTicketSpamResponseEarlierTicketsItemIdMax)
+                    .regex(markTicketSpamResponseEarlierTicketsItemIdRegExp),
+                kind: zod
+                    .enum([
+                        'contact',
+                        'account_review',
+                        'manual_refund_owed',
+                        'amount_mismatch',
+                        'paid_without_hold',
+                        'export_failed',
+                        'consent_due',
+                        'refund_refused',
+                        'dispute'
+                    ])
+                    .optional(),
+                status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        )
+        .optional(),
+    actions: zod.strictObject({
+        resolve: zod.boolean(),
+        markSpam: zod.boolean(),
+        reopen: zod.boolean(),
+        assign: zod.boolean(),
+        unassign: zod.boolean(),
+        note: zod.boolean(),
+        delete: zod.boolean()
+    }),
+    createdAt: zod.iso.datetime({ offset: true }),
+    updatedAt: zod.iso.datetime({ offset: true }).optional()
+});
+/**
+ * From `resolved` or `spam` to `in_progress` when it has an assignee, else `new`. Clears `closedAt` and `resolution` (the retention clock stops) and restores the dedup key of a linked ticket. `dueAt` is kept: the deadline belongs to the situation, not to the reopen. When a newer open ticket already covers the same situation the answer is 409 `TICKET_SUPERSEDED` with `details.ticketId`. No body. Needs `update:Ticket` and, for a system ticket, its route set.
+ * @summary Reopen a ticket
+ */
+export const reopenTicketPathIdMax = 64;
+export const reopenTicketPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ReopenTicketParams = zod.strictObject({
+    id: zod.string().min(1).max(reopenTicketPathIdMax).regex(reopenTicketPathIdRegExp)
+});
+export const reopenTicketResponseIdMax = 64;
+export const reopenTicketResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const reopenTicketResponseSubjectIdMax = 64;
+export const reopenTicketResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const reopenTicketResponseEmailMax = 254;
+export const reopenTicketResponseAssigneeIdMax = 64;
+export const reopenTicketResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const reopenTicketResponseNotesItemAuthorIdMax = 64;
+export const reopenTicketResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const reopenTicketResponseEarlierTicketsItemIdMax = 64;
+export const reopenTicketResponseEarlierTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ReopenTicketResponse = zod.strictObject({
+    id: zod.string().min(1).max(reopenTicketResponseIdMax).regex(reopenTicketResponseIdRegExp),
+    source: zod.enum(['visitor', 'system']),
+    kind: zod.enum([
+        'contact',
+        'account_review',
+        'manual_refund_owed',
+        'amount_mismatch',
+        'paid_without_hold',
+        'export_failed',
+        'consent_due',
+        'refund_refused',
+        'dispute'
+    ]),
+    name: zod.string().optional(),
+    subjectId: zod
+        .string()
+        .min(1)
+        .max(reopenTicketResponseSubjectIdMax)
+        .regex(reopenTicketResponseSubjectIdRegExp)
+        .optional(),
+    email: zod.email().max(reopenTicketResponseEmailMax).optional(),
+    subject: zod.string(),
+    message: zod.string(),
+    category: zod
+        .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
+        .optional(),
+    orderNumber: zod.string().optional(),
+    link: zod
+        .strictObject({
+            type: zod.enum(['order', 'user', 'payment', 'refund', 'fulfillment_order', 'export']),
+            id: zod.string()
+        })
+        .optional(),
+    routeSet: zod.string(),
+    assigneeId: zod
+        .string()
+        .min(1)
+        .max(reopenTicketResponseAssigneeIdMax)
+        .regex(reopenTicketResponseAssigneeIdRegExp)
+        .optional(),
+    assigneeName: zod.string().optional(),
+    notes: zod.array(
+        zod.strictObject({
+            authorId: zod
+                .string()
+                .min(1)
+                .max(reopenTicketResponseNotesItemAuthorIdMax)
+                .regex(reopenTicketResponseNotesItemAuthorIdRegExp)
+                .optional(),
+            body: zod.string(),
+            at: zod.iso.datetime({ offset: true })
+        })
+    ),
+    dueAt: zod.iso.datetime({ offset: true }).optional(),
+    overdue: zod.boolean(),
+    lastSeenAt: zod.iso.datetime({ offset: true }).optional(),
+    seenCount: zod.number().min(1).optional(),
+    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+    closedAt: zod.iso.datetime({ offset: true }).optional(),
+    resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
+    respondedAt: zod.iso.datetime({ offset: true }).optional(),
+    earlierTickets: zod
+        .array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(reopenTicketResponseEarlierTicketsItemIdMax)
+                    .regex(reopenTicketResponseEarlierTicketsItemIdRegExp),
+                kind: zod
+                    .enum([
+                        'contact',
+                        'account_review',
+                        'manual_refund_owed',
+                        'amount_mismatch',
+                        'paid_without_hold',
+                        'export_failed',
+                        'consent_due',
+                        'refund_refused',
+                        'dispute'
+                    ])
+                    .optional(),
+                status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        )
+        .optional(),
+    actions: zod.strictObject({
+        resolve: zod.boolean(),
+        markSpam: zod.boolean(),
+        reopen: zod.boolean(),
+        assign: zod.boolean(),
+        unassign: zod.boolean(),
+        note: zod.boolean(),
+        delete: zod.boolean()
+    }),
+    createdAt: zod.iso.datetime({ offset: true }),
+    updatedAt: zod.iso.datetime({ offset: true }).optional()
+});
+/**
+ * Hands the ticket to one person (taking it is assigning yourself). A `new` ticket becomes `in_progress`. The person must hold the permission set that works the ticket. Replaces any earlier assignee. A closed ticket answers 409 `TICKET_NOT_OPEN`.
+ * @summary Assign a ticket
+ */
+export const assignTicketPathIdMax = 64;
+export const assignTicketPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const AssignTicketParams = zod.strictObject({
+    id: zod.string().min(1).max(assignTicketPathIdMax).regex(assignTicketPathIdRegExp)
+});
+export const assignTicketBodyUserIdMax = 64;
+export const assignTicketBodyUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const AssignTicketBody = zod.strictObject({
+    userId: zod.string().min(1).max(assignTicketBodyUserIdMax).regex(assignTicketBodyUserIdRegExp)
+});
+export const assignTicketResponseIdMax = 64;
+export const assignTicketResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const assignTicketResponseSubjectIdMax = 64;
+export const assignTicketResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const assignTicketResponseEmailMax = 254;
+export const assignTicketResponseAssigneeIdMax = 64;
+export const assignTicketResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const assignTicketResponseNotesItemAuthorIdMax = 64;
+export const assignTicketResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const assignTicketResponseEarlierTicketsItemIdMax = 64;
+export const assignTicketResponseEarlierTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const AssignTicketResponse = zod.strictObject({
+    id: zod.string().min(1).max(assignTicketResponseIdMax).regex(assignTicketResponseIdRegExp),
+    source: zod.enum(['visitor', 'system']),
+    kind: zod.enum([
+        'contact',
+        'account_review',
+        'manual_refund_owed',
+        'amount_mismatch',
+        'paid_without_hold',
+        'export_failed',
+        'consent_due',
+        'refund_refused',
+        'dispute'
+    ]),
+    name: zod.string().optional(),
+    subjectId: zod
+        .string()
+        .min(1)
+        .max(assignTicketResponseSubjectIdMax)
+        .regex(assignTicketResponseSubjectIdRegExp)
+        .optional(),
+    email: zod.email().max(assignTicketResponseEmailMax).optional(),
+    subject: zod.string(),
+    message: zod.string(),
+    category: zod
+        .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
+        .optional(),
+    orderNumber: zod.string().optional(),
+    link: zod
+        .strictObject({
+            type: zod.enum(['order', 'user', 'payment', 'refund', 'fulfillment_order', 'export']),
+            id: zod.string()
+        })
+        .optional(),
+    routeSet: zod.string(),
+    assigneeId: zod
+        .string()
+        .min(1)
+        .max(assignTicketResponseAssigneeIdMax)
+        .regex(assignTicketResponseAssigneeIdRegExp)
+        .optional(),
+    assigneeName: zod.string().optional(),
+    notes: zod.array(
+        zod.strictObject({
+            authorId: zod
+                .string()
+                .min(1)
+                .max(assignTicketResponseNotesItemAuthorIdMax)
+                .regex(assignTicketResponseNotesItemAuthorIdRegExp)
+                .optional(),
+            body: zod.string(),
+            at: zod.iso.datetime({ offset: true })
+        })
+    ),
+    dueAt: zod.iso.datetime({ offset: true }).optional(),
+    overdue: zod.boolean(),
+    lastSeenAt: zod.iso.datetime({ offset: true }).optional(),
+    seenCount: zod.number().min(1).optional(),
+    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+    closedAt: zod.iso.datetime({ offset: true }).optional(),
+    resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
+    respondedAt: zod.iso.datetime({ offset: true }).optional(),
+    earlierTickets: zod
+        .array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(assignTicketResponseEarlierTicketsItemIdMax)
+                    .regex(assignTicketResponseEarlierTicketsItemIdRegExp),
+                kind: zod
+                    .enum([
+                        'contact',
+                        'account_review',
+                        'manual_refund_owed',
+                        'amount_mismatch',
+                        'paid_without_hold',
+                        'export_failed',
+                        'consent_due',
+                        'refund_refused',
+                        'dispute'
+                    ])
+                    .optional(),
+                status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        )
+        .optional(),
+    actions: zod.strictObject({
+        resolve: zod.boolean(),
+        markSpam: zod.boolean(),
+        reopen: zod.boolean(),
+        assign: zod.boolean(),
+        unassign: zod.boolean(),
+        note: zod.boolean(),
+        delete: zod.boolean()
+    }),
+    createdAt: zod.iso.datetime({ offset: true }),
+    updatedAt: zod.iso.datetime({ offset: true }).optional()
+});
+/**
+ * Clears the assignee. An `in_progress` ticket goes back to `new`. Answers 200 whether or not anyone held it.
+ * @summary Give a ticket back
+ */
+export const unassignTicketPathIdMax = 64;
+export const unassignTicketPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const UnassignTicketParams = zod.strictObject({
+    id: zod.string().min(1).max(unassignTicketPathIdMax).regex(unassignTicketPathIdRegExp)
+});
+export const unassignTicketResponseIdMax = 64;
+export const unassignTicketResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const unassignTicketResponseSubjectIdMax = 64;
+export const unassignTicketResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const unassignTicketResponseEmailMax = 254;
+export const unassignTicketResponseAssigneeIdMax = 64;
+export const unassignTicketResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const unassignTicketResponseNotesItemAuthorIdMax = 64;
+export const unassignTicketResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const unassignTicketResponseEarlierTicketsItemIdMax = 64;
+export const unassignTicketResponseEarlierTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const UnassignTicketResponse = zod.strictObject({
+    id: zod.string().min(1).max(unassignTicketResponseIdMax).regex(unassignTicketResponseIdRegExp),
+    source: zod.enum(['visitor', 'system']),
+    kind: zod.enum([
+        'contact',
+        'account_review',
+        'manual_refund_owed',
+        'amount_mismatch',
+        'paid_without_hold',
+        'export_failed',
+        'consent_due',
+        'refund_refused',
+        'dispute'
+    ]),
+    name: zod.string().optional(),
+    subjectId: zod
+        .string()
+        .min(1)
+        .max(unassignTicketResponseSubjectIdMax)
+        .regex(unassignTicketResponseSubjectIdRegExp)
+        .optional(),
+    email: zod.email().max(unassignTicketResponseEmailMax).optional(),
+    subject: zod.string(),
+    message: zod.string(),
+    category: zod
+        .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
+        .optional(),
+    orderNumber: zod.string().optional(),
+    link: zod
+        .strictObject({
+            type: zod.enum(['order', 'user', 'payment', 'refund', 'fulfillment_order', 'export']),
+            id: zod.string()
+        })
+        .optional(),
+    routeSet: zod.string(),
+    assigneeId: zod
+        .string()
+        .min(1)
+        .max(unassignTicketResponseAssigneeIdMax)
+        .regex(unassignTicketResponseAssigneeIdRegExp)
+        .optional(),
+    assigneeName: zod.string().optional(),
+    notes: zod.array(
+        zod.strictObject({
+            authorId: zod
+                .string()
+                .min(1)
+                .max(unassignTicketResponseNotesItemAuthorIdMax)
+                .regex(unassignTicketResponseNotesItemAuthorIdRegExp)
+                .optional(),
+            body: zod.string(),
+            at: zod.iso.datetime({ offset: true })
+        })
+    ),
+    dueAt: zod.iso.datetime({ offset: true }).optional(),
+    overdue: zod.boolean(),
+    lastSeenAt: zod.iso.datetime({ offset: true }).optional(),
+    seenCount: zod.number().min(1).optional(),
+    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+    closedAt: zod.iso.datetime({ offset: true }).optional(),
+    resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
+    respondedAt: zod.iso.datetime({ offset: true }).optional(),
+    earlierTickets: zod
+        .array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(unassignTicketResponseEarlierTicketsItemIdMax)
+                    .regex(unassignTicketResponseEarlierTicketsItemIdRegExp),
+                kind: zod
+                    .enum([
+                        'contact',
+                        'account_review',
+                        'manual_refund_owed',
+                        'amount_mismatch',
+                        'paid_without_hold',
+                        'export_failed',
+                        'consent_due',
+                        'refund_refused',
+                        'dispute'
+                    ])
+                    .optional(),
+                status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        )
+        .optional(),
+    actions: zod.strictObject({
+        resolve: zod.boolean(),
+        markSpam: zod.boolean(),
+        reopen: zod.boolean(),
+        assign: zod.boolean(),
+        unassign: zod.boolean(),
+        note: zod.boolean(),
+        delete: zod.boolean()
+    }),
+    createdAt: zod.iso.datetime({ offset: true }),
+    updatedAt: zod.iso.datetime({ offset: true }).optional()
+});
+/**
+ * Appends a note to the staff thread: append-only, with its author and time. Notes are written and read by staff, and the data subject's export carries them without the author. Write each one as if the customer will read it.
+ * @summary Add a staff note
+ */
+export const createTicketNotePathIdMax = 64;
+export const createTicketNotePathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const CreateTicketNoteParams = zod.strictObject({
+    id: zod.string().min(1).max(createTicketNotePathIdMax).regex(createTicketNotePathIdRegExp)
+});
+export const createTicketNoteBodyBodyMax = 5000;
+export const CreateTicketNoteBody = zod.strictObject({
+    body: zod.string().min(1).max(createTicketNoteBodyBodyMax)
+});
+export const createTicketNoteResponseIdMax = 64;
+export const createTicketNoteResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createTicketNoteResponseSubjectIdMax = 64;
+export const createTicketNoteResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createTicketNoteResponseEmailMax = 254;
+export const createTicketNoteResponseAssigneeIdMax = 64;
+export const createTicketNoteResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createTicketNoteResponseNotesItemAuthorIdMax = 64;
+export const createTicketNoteResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createTicketNoteResponseEarlierTicketsItemIdMax = 64;
+export const createTicketNoteResponseEarlierTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const CreateTicketNoteResponse = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(createTicketNoteResponseIdMax)
+        .regex(createTicketNoteResponseIdRegExp),
+    source: zod.enum(['visitor', 'system']),
+    kind: zod.enum([
+        'contact',
+        'account_review',
+        'manual_refund_owed',
+        'amount_mismatch',
+        'paid_without_hold',
+        'export_failed',
+        'consent_due',
+        'refund_refused',
+        'dispute'
+    ]),
+    name: zod.string().optional(),
+    subjectId: zod
+        .string()
+        .min(1)
+        .max(createTicketNoteResponseSubjectIdMax)
+        .regex(createTicketNoteResponseSubjectIdRegExp)
+        .optional(),
+    email: zod.email().max(createTicketNoteResponseEmailMax).optional(),
+    subject: zod.string(),
+    message: zod.string(),
+    category: zod
+        .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
+        .optional(),
+    orderNumber: zod.string().optional(),
+    link: zod
+        .strictObject({
+            type: zod.enum(['order', 'user', 'payment', 'refund', 'fulfillment_order', 'export']),
+            id: zod.string()
+        })
+        .optional(),
+    routeSet: zod.string(),
+    assigneeId: zod
+        .string()
+        .min(1)
+        .max(createTicketNoteResponseAssigneeIdMax)
+        .regex(createTicketNoteResponseAssigneeIdRegExp)
+        .optional(),
+    assigneeName: zod.string().optional(),
+    notes: zod.array(
+        zod.strictObject({
+            authorId: zod
+                .string()
+                .min(1)
+                .max(createTicketNoteResponseNotesItemAuthorIdMax)
+                .regex(createTicketNoteResponseNotesItemAuthorIdRegExp)
+                .optional(),
+            body: zod.string(),
+            at: zod.iso.datetime({ offset: true })
+        })
+    ),
+    dueAt: zod.iso.datetime({ offset: true }).optional(),
+    overdue: zod.boolean(),
+    lastSeenAt: zod.iso.datetime({ offset: true }).optional(),
+    seenCount: zod.number().min(1).optional(),
+    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+    closedAt: zod.iso.datetime({ offset: true }).optional(),
+    resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
+    respondedAt: zod.iso.datetime({ offset: true }).optional(),
+    earlierTickets: zod
+        .array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(createTicketNoteResponseEarlierTicketsItemIdMax)
+                    .regex(createTicketNoteResponseEarlierTicketsItemIdRegExp),
+                kind: zod
+                    .enum([
+                        'contact',
+                        'account_review',
+                        'manual_refund_owed',
+                        'amount_mismatch',
+                        'paid_without_hold',
+                        'export_failed',
+                        'consent_due',
+                        'refund_refused',
+                        'dispute'
+                    ])
+                    .optional(),
+                status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        )
+        .optional(),
+    actions: zod.strictObject({
+        resolve: zod.boolean(),
+        markSpam: zod.boolean(),
+        reopen: zod.boolean(),
+        assign: zod.boolean(),
+        unassign: zod.boolean(),
+        note: zod.boolean(),
+        delete: zod.boolean()
+    }),
+    createdAt: zod.iso.datetime({ offset: true }),
+    updatedAt: zod.iso.datetime({ offset: true }).optional()
+});
 /**
  * Returns a paginated list of products.
  * @summary List products (paginated)

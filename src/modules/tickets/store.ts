@@ -5,23 +5,31 @@
  * a status update, a delete.
  */
 import { defineStore } from 'pinia';
+import { ref } from 'vue';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
 import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
 import {
+    assignTicket,
     createContactTicket,
+    createTicketNote,
     deleteTicket,
+    getTicket,
+    getTicketSummary,
+    markTicketSpam,
+    reopenTicket,
+    resolveTicket,
     searchTickets,
-    updateTicketStatus,
+    unassignTicket,
     TicketSortItem
 } from '@api';
 import type {
     CreateContactTicketRequest,
     Ticket,
     SearchTicketsRequest,
-    UpdateTicketStatusRequest
+    TicketSummary
 } from '@types';
 
 /**
@@ -34,8 +42,8 @@ type TicketFilters = Omit<SearchTicketsRequest, 'page' | 'pageSize' | 'sort'> & 
 };
 
 /**
- * The contact form's two audiences: anyone may submit, admins read the inbox and move tickets
- * through their statuses.
+ * The contact form's two audiences: anyone may submit, staff read the inbox and work tickets
+ * through the status doors.
  *
  * See the products store for the shape — the inbox is declared as a resource like every other
  * admin list, so paging and caching behave the same everywhere.
@@ -62,10 +70,9 @@ export const useTicketsStore = defineStore('tickets', () => {
 
         fetchPage: fetchPaginationRequests,
         watchList: watchSearchRequests,
-        updateOne: updateRequest,
         deleteOne: deleteRequest,
         fetchAny
-    } = useStructureCrudApi<Ticket, string, TicketFilters, never, UpdateTicketStatusRequest>(
+    } = useStructureCrudApi<Ticket, string, TicketFilters>(
         {
             search: (filters, page, pageSize) =>
                 searchTickets({
@@ -75,18 +82,69 @@ export const useTicketsStore = defineStore('tickets', () => {
                     sort: sortTokensOf(filters.sort, TicketSortItem),
                     status: filters.status,
                     category: filters.category,
+                    source: filters.source,
+                    kind: filters.kind,
+                    assignee: filters.assignee,
+                    overdue: filters.overdue,
                     email: filters.email
                 }).then((response) => ({
                     items: response.items,
                     totalItems: response.meta.totalItems
                 })),
 
-            update: (requestId, data) => updateTicketStatus(requestId, data),
-
             remove: (requestId) => deleteTicket(requestId)
         },
         { resourceKey: 'tickets', queryClient }
     );
+
+    /**
+     * The ticket the detail page shows. Every door answers the ticket as it now stands, so the page
+     * swaps this in and never re-reads.
+     */
+    const ticket = ref<Ticket>();
+
+    /**
+     * The staff badge's counts: open, mine, overdue and unassigned, inside the caller's jurisdiction.
+     */
+    const summary = ref<TicketSummary>();
+
+    /**
+     * Keeps the answer of a door as the current ticket.
+     *
+     * @param next - The ticket as the server now holds it.
+     * @returns The same ticket.
+     */
+    const keep = (next: Ticket): Ticket => {
+        ticket.value = next;
+        return next;
+    };
+
+    /**
+     * Reads one ticket for the detail page: notes, assignee and the earlier tickets on the same record.
+     *
+     * @param id - Which ticket.
+     */
+    const loadTicket = (id: string) => getTicket(id).then(keep);
+
+    /**
+     * Reads the badge's counts.
+     */
+    const loadSummary = () =>
+        getTicketSummary().then((counts) => {
+            summary.value = counts;
+            return counts;
+        });
+
+    /**
+     * The status doors and the staff thread. Each answers the ticket after the move; which ones
+     * are offered is the ticket's own `actions`, never recomputed here.
+     */
+    const resolve = (id: string) => resolveTicket(id).then(keep);
+    const markSpam = (id: string) => markTicketSpam(id).then(keep);
+    const reopen = (id: string) => reopenTicket(id).then(keep);
+    const assign = (id: string, userId: string) => assignTicket(id, { userId }).then(keep);
+    const unassign = (id: string) => unassignTicket(id).then(keep);
+    const addNote = (id: string, body: string) => createTicketNote(id, { body }).then(keep);
 
     /**
      * `Idempotency-Key` for `submitContact` — a network error or a 5xx resends the SAME
@@ -128,10 +186,20 @@ export const useTicketsStore = defineStore('tickets', () => {
         pageTotal,
         pageItemList,
 
+        ticket,
+        summary,
+
         submitContact,
         fetchPaginationRequests,
         watchSearchRequests,
-        updateRequest,
-        deleteRequest
+        deleteRequest,
+        loadTicket,
+        loadSummary,
+        resolve,
+        markSpam,
+        reopen,
+        assign,
+        unassign,
+        addNote
     };
 });

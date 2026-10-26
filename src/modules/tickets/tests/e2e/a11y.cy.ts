@@ -11,4 +11,22 @@ import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
 sweepA11y('tickets — public', [['contact', '/en/contact']]);
 
-sweepA11y('tickets — admin', [['ticket inbox', '/en/tickets']], 'admin');
+sweepA11y(
+    'tickets — admin',
+    [
+        ['ticket inbox', '/en/tickets'],
+        {
+            name: 'ticket detail',
+            // No seeded ticket: file one through the public door and open it.
+            route: () =>
+                cy
+                    .apiAs<{ id: string }>('admin', 'POST', '/tickets', {
+                        email: 'a11y@example.com',
+                        subject: 'A11y sweep ticket',
+                        message: 'Filed so the detail page has something to render.'
+                    })
+                    .then((ticket) => `/en/tickets/${String(ticket?.id)}`)
+        }
+    ],
+    'admin'
+);

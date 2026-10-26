@@ -287,7 +287,7 @@ const widgetRows: ResponseSchemaRoute[] = [
     {
         method: 'GET',
         pattern: /^\/widgets\/[^/]+$/,
-        schema: schemas.UpdateTicketStatusResponse
+        schema: schemas.ResolveTicketResponse
     }
 ];
 
@@ -314,9 +314,7 @@ describe('resolveResponseSchema', () => {
     });
 
     it('resolves a parameterised route', () => {
-        expect(resolveResponseSchema('GET', `/widgets/${ID}`)).toBe(
-            schemas.UpdateTicketStatusResponse
-        );
+        expect(resolveResponseSchema('GET', `/widgets/${ID}`)).toBe(schemas.ResolveTicketResponse);
     });
 
     it('accepts a lowercase method', () => {
@@ -335,7 +333,7 @@ describe('resolveResponseSchema', () => {
         const widget = resolveResponseSchema('GET', `/widgets/${ID}`);
 
         expect(detail).toBe(schemas.GetLocaleDictionaryResponse);
-        expect(widget).toBe(schemas.UpdateTicketStatusResponse);
+        expect(widget).toBe(schemas.ResolveTicketResponse);
         expect(detail).not.toBe(widget);
     });
 

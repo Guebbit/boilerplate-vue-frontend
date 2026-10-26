@@ -25,6 +25,20 @@ wireModulesIntoCore();
  */
 const TICKET = {
     id: 'f1',
+    source: 'visitor',
+    kind: 'contact',
+    routeSet: 'TicketDisplay',
+    notes: [],
+    overdue: false,
+    actions: {
+        resolve: true,
+        markSpam: true,
+        reopen: false,
+        assign: true,
+        unassign: false,
+        note: true,
+        delete: true
+    },
     email: 'curious@example.com',
     subject: 'A question',
     message: 'About the cats',
@@ -35,7 +49,7 @@ const TICKET = {
 };
 
 /**
- * The ticket as the mocked API's own state currently holds it — updated by `PATCH /tickets/f1`
+ * The ticket as the mocked API's own state currently holds it — updated by `POST /tickets/f1/resolve`
  * and cleared by `DELETE /tickets/f1` below, and read back by `POST /tickets/search`. A real
  * backend's list would reflect a write the moment it lands; a frozen `TICKET` snapshot would not,
  * and vue-toolkit 5's active `watchSearchRequests` genuinely refetches the search after every
@@ -46,7 +60,7 @@ let currentTicket: typeof TICKET | undefined;
 
 /**
  * Per-test static response table, keyed by `METHOD /url`; reset in `beforeEach`. The three routes
- * that read or change {@link currentTicket} (`search`, the `PATCH`, the `DELETE`) are handled
+ * that read or change {@link currentTicket} (`search`, the `resolve` door, the `DELETE`) are handled
  * ahead of this table instead of through it — see `orvalMutator`'s own mock below.
  */
 let responses: Record<string, unknown>;
@@ -68,7 +82,7 @@ const ticketStateEnvelope = (method: string | undefined, url: string | undefined
                 ? { page: 1, pageSize: 10, totalItems: 31, totalPages: 4 }
                 : { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 }
         };
-    if (method === 'PATCH' && url === '/tickets/f1' && currentTicket) {
+    if (method === 'POST' && url === '/tickets/f1/resolve' && currentTicket) {
         currentTicket = { ...currentTicket, status: 'resolved' };
         return currentTicket;
     }
@@ -233,28 +247,50 @@ describe('the inbox search', () => {
     });
 });
 
-describe('updateRequest', () => {
-    it("writes the status and caches the API's row, not a local guess", () => {
+describe('the status doors', () => {
+    it("posts the door with no body and keeps the API's ticket as the current one", () => {
         const store = useTicketsStore();
-        return store
-            .watchSearchRequests()
-            .search()
-            .then(() => store.updateRequest('f1', { status: 'resolved' }))
+        return store.resolve('f1').then(() => {
+            const [request] = vi
+                .mocked(orvalMutator)
+                .mock.calls.map(
+                    (call) => call[0] as { url: string; method: string; data?: unknown }
+                );
+            expect(request).toMatchObject({ url: '/tickets/f1/resolve', method: 'POST' });
+            expect(request.data).toBeUndefined();
+            expect(store.ticket?.status).toBe('resolved');
+        });
+    });
+
+    it('assigns by posting the user id to the ticket’s assignee', () => {
+        responses['PUT /tickets/f1/assignee'] = { ...TICKET, status: 'in_progress' };
+        const store = useTicketsStore();
+        return store.assign('f1', 'u1').then(() => {
+            const [request] = vi
+                .mocked(orvalMutator)
+                .mock.calls.map(
+                    (call) => call[0] as { url: string; method: string; data?: unknown }
+                );
+            expect(request).toMatchObject({
+                url: '/tickets/f1/assignee',
+                method: 'PUT',
+                data: { userId: 'u1' }
+            });
+            expect(contractRequest(schemas.AssignTicketBody, request.data)).toEqual({
+                userId: 'u1'
+            });
+        });
+    });
+
+    it('appends a note through the thread', () => {
+        responses['POST /tickets/f1/notes'] = TICKET;
+        return useTicketsStore()
+            .addNote('f1', 'Called back')
             .then(() => {
-                const [, request] = vi
-                    .mocked(orvalMutator)
-                    .mock.calls.map(
-                        (call) => call[0] as { url: string; method: string; data?: unknown }
-                    );
-                expect(request).toMatchObject({
-                    url: '/tickets/f1',
-                    method: 'PATCH',
-                    data: { status: 'resolved' }
+                const [request] = vi.mocked(orvalMutator).mock.calls[0] as [{ data?: unknown }];
+                expect(contractRequest(schemas.CreateTicketNoteBody, request.data)).toEqual({
+                    body: 'Called back'
                 });
-                expect(contractRequest(schemas.UpdateTicketStatusBody, request.data)).toEqual({
-                    status: 'resolved'
-                });
-                expect(store.requests.f1?.status).toBe('resolved');
             });
     });
 });
