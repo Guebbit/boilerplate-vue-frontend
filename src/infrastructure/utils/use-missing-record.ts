@@ -38,6 +38,7 @@ export const useMissingRecord = (): ((error: unknown) => void) => {
             return;
         }
         const { locale } = router.currentRoute.value.params;
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
         void router.replace({
             name: 'Error',
             params: {

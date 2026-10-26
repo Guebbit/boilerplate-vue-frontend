@@ -151,7 +151,7 @@
         "start-server-and-test": "^2.0.10",
         "tsx": "^4.21.0",
         "typescript": "^5.9.3",
-        "typescript-eslint": "^8.56.1",
+        "typescript-eslint": "^8.70.1",
         "vite": "^7.3.2",
         "vite-plugin-vue-devtools": "^8.0.7",
         "vite-plugin-vuetify": "^2.1.3",

@@ -137,6 +137,7 @@ const handleConnect = (provider: string) => {
 };
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- fetchProviders falls back to the providers already held
     void useOAuthProvidersStore().fetchProviders();
     return fetchLinks();
 });

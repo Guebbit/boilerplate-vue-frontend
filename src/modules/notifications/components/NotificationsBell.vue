@@ -82,6 +82,7 @@ const bellLabel = computed(() =>
 const onToggle = (isOpen: boolean) => {
     if (!isOpen) return;
     freshIds.value = new Set(items.value.filter(({ unread }) => unread).map(({ id }) => id));
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- the inbox store reports its own failure
     void inbox.markAllRead();
 };
 

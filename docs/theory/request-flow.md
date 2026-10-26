@@ -229,6 +229,40 @@ The status code decides nothing about the pairing above: a 404 lookup miss and a
 same workflow, so both are inline (just `warn` vs `report`); a 500 on a background poll still only
 toasts.
 
+### A call nobody awaits
+
+`void p` throws the value of `p` away and nothing else. If `p` rejects, no one is listening: the
+browser fires `unhandledrejection`, the app has no listener, and the visitor sees nothing, with the
+page left on placeholders or a stale list. Vue also forwards a promise _returned_ from a hook or
+watcher to `app.config.errorHandler` (`src/app/vue-error-handler.ts`), and `void` throws that net
+away too.
+
+`@typescript-eslint/no-floating-promises` therefore runs with `ignoreVoid: false`: `void p` is
+checked like `p`.
+
+```mermaid
+flowchart TD
+    A[A promise you will not await] --> B{Own .catch or .then with onRejected?}
+    B -- yes --> OK1[Handled]
+    B -- no --> C{Callee cannot fail unseen? Its JSDoc says Never rejects}
+    C -- yes --> OK2["void + eslint-disable-next-line ... -- why"]
+    C -- no --> E{A record load?}
+    E -- yes --> F[".catch(useMissingRecord()) or watchX onError"]
+    E -- no --> G[".catch(useAmbientError()): a toast"]
+```
+
+- **A record page** hands `useMissingRecord()` to `watchX(..., { onError })`, or to `.catch(...)`
+  where there is no `watch*` (`ProductEdit.vue`'s uncached admin read).
+- **Any other background read** ends in `.catch(onAmbientError)`, with
+  `const onAmbientError = useAmbientError()` (`src/infrastructure/utils/use-ambient-error.ts`).
+  A read shared by many components (`ensureWishlist`, `ensureStockAlerts`) toasts once inside the
+  store and never rejects, so a grid of hearts does not toast once per heart.
+- **A callee that cannot reject** (a router navigation, `nextTick`, a `load` that toasts its own
+  failure) keeps its `void` and opts out on the line, with the reason:
+  `// eslint-disable-next-line @typescript-eslint/no-floating-promises -- loadShop never rejects`.
+  The callee's JSDoc says "Never rejects." so the reason can be checked.
+- **A script's** top-level promise ends in `.catch(failScript)` (`scripts/fail-script.ts`).
+
 ## Why the flow matters
 
 When you change behavior, ask:

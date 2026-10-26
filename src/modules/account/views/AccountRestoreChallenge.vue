@@ -66,6 +66,7 @@ const {
  * Leaves for `Login` when there is no offer to answer: nothing here can be recovered.
  */
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
     if (!pending.value) void router.replace(routerLinkI18n({ name: 'Login' }));
 });
 

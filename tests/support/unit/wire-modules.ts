@@ -33,6 +33,15 @@ import { enabledModules } from '@/modules';
 export const wireModulesIntoCore = (): void => {
     registerLocaleContributors(collectModuleLocales(enabledModules));
     if (shouldValidateResponses()) {
-        void loadResponseSchemas(collectModuleResponseSchemas(enabledModules));
+        loadResponseSchemas(collectModuleResponseSchemas(enabledModules)).catch(
+            (error: unknown) => {
+                // Callers cannot await (174 specs call this at module scope). Rethrowing from the
+                // handler makes the failure an unhandled rejection, which Vitest fails the run on,
+                // instead of a suite quietly running without response validation.
+                throw new Error('Test setup: the response schemas could not be loaded.', {
+                    cause: error
+                });
+            }
+        );
     }
 };

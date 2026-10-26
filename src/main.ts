@@ -143,11 +143,13 @@ const bootstrapApplication = () =>
 
             // The shop's currency, for every price label and input; fire-and-forget, and never
             // rejects (a failure is logged and the next reader retries).
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises -- loadShop never rejects (it logs and leaves the shop empty)
             void loadShop();
 
             // How this deployment keeps people signed in, read once at boot: a sign-in on a fresh
             // tab adopts its session by this mode, and no `isAuth` cookie exists yet to trigger
             // the read in the restore guard. Shared with that guard's call; never rejects.
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises -- loadSessionMode never rejects (a failed read is dropped and retried)
             void useSessionStore().loadSessionMode();
 
             // The language manifest differs per caller (staff also see draft languages), but the
@@ -155,6 +157,7 @@ const bootstrapApplication = () =>
             // (sign-in, restore, sign-out); `isAuth` flips on all three. Never rejects.
             watch(
                 () => useSessionStore().isAuth,
+                // eslint-disable-next-line @typescript-eslint/no-floating-promises -- mergeRemoteLocales never rejects (an unreachable API keeps the bundled languages)
                 () => void mergeRemoteLocales()
             );
 

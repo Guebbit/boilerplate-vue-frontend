@@ -15,6 +15,7 @@ beforeEach(() => {
 describe('useDialogStore', () => {
     it('queues the question for the host to render', () => {
         const store = useDialogStore();
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- confirm settles with the viewer's answer and never rejects
         void store.confirm({ message: 'Delete it?', color: 'error' });
         expect(store.queue).toHaveLength(1);
         expect(store.queue[0]).toMatchObject({ message: 'Delete it?', color: 'error' });

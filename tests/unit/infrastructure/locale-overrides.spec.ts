@@ -191,6 +191,7 @@ describe('fetchRemoteLocales', () => {
      * must not sit on the client's ordinary 10s default while the first paint waits behind it.
      */
     it('asks with a short, boot-specific timeout', () => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- fetchRemoteLocales never rejects (an unreachable API resolves an empty list)
         void fetchRemoteLocales();
 
         expect(getLocalesMock).toHaveBeenCalledWith(

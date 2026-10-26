@@ -47,6 +47,7 @@ export const useReturnFocus = (isOpen: () => boolean): void => {
         const target = opener;
         opener = undefined;
         // After the update, so the closing dialog no longer owns focus when it is handed back.
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- nextTick only rejects if its callback throws, and this one cannot
         if (target?.isConnected) void nextTick(() => target.focus({ preventScroll: true }));
     });
 
@@ -55,6 +56,7 @@ export const useReturnFocus = (isOpen: () => boolean): void => {
     onScopeDispose(() => {
         const target = opener;
         opener = undefined;
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- nextTick only rejects if its callback throws, and this one cannot
         if (target?.isConnected) void nextTick(() => target.focus({ preventScroll: true }));
     });
 };

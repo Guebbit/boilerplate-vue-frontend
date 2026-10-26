@@ -174,6 +174,7 @@ const submitForm = () => {
             markSaved();
             addMessage(t('user-create-page.success-create'));
             // Fire-and-forget: a NavigationFailure must not convert a completed create into an error toast.
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
             void router.push(routerLinkI18n({ name: 'UserTarget', params: { id: newUser.id } }));
         })
     ).catch((error: unknown) => {

@@ -855,6 +855,9 @@ export default defineConfigWithVueTs(
 
         rules: {
             'no-restricted-syntax': ['error', ...bannedDoubleCasts],
+            // `void p` is checked like `p`: `void` alone hides a rejection.
+            // Handle it at the site, or opt out on the line with a reason.
+            '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: false }],
             /**
              * `src/infrastructure/logger.ts` is the single console boundary, and holds the only exemptions.
              * An error with one documented exception is a policy; a warning with a disable comment

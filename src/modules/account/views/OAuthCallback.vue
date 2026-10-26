@@ -137,12 +137,14 @@ onMounted(() => {
         addMessage(
             t('oauth.callback-page.linked', { provider: providerLabel(route.query.linked) })
         );
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- redirectAfterLogin only awaits a router navigation (failures reach router.onError)
         void redirectAfterLogin();
         return;
     }
 
     if (oauthDeletion.value) {
         useDeletionRestoreStore().beginOAuth(oauthDeletion.value);
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
         void router.push(
             routerLinkI18n({
                 name: 'AccountRestoreChallenge',
@@ -154,6 +156,7 @@ onMounted(() => {
 
     if (oauthChallenge.value) {
         useTwoFactorStore().beginOAuthChallenge(oauthChallenge.value);
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
         void router.push(
             routerLinkI18n({
                 name: 'TwoFactorChallenge',
@@ -163,6 +166,7 @@ onMounted(() => {
         return;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- redirectAfterLogin only awaits a router navigation (failures reach router.onError)
     void redirectAfterLogin();
 });
 </script>

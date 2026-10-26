@@ -126,6 +126,7 @@ export const onResponseRejectWithRefresh = (
         session.isAuth &&
         toPathname(originalRequest?.url ?? '') !== '/account/abilities'
     )
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- reloadAbilities never rejects (a failed read leaves the empty abilities)
         void session.reloadAbilities();
     return onResponseReject(error);
 };

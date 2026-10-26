@@ -161,6 +161,7 @@ export const useCheckoutRefusals = (hooks: CheckoutRefusalHooks) => {
         addMessage(t('cart-page.order-placed-after-error'));
         const orders = linkIfRouted(router, 'OrdersList') ?? { name: 'Home' };
         // Fire-and-forget: a NavigationFailure must not turn a written order into an error.
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
         void router.push(routerLinkI18n(orders));
     };
 
