@@ -11,7 +11,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { formatAddressLine, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useDeliveryStore } from '../store.ts';
 import type { Shipment } from '@types';
@@ -21,7 +21,18 @@ import type { Shipment } from '@types';
  */
 const props = defineProps<{
     shipment: Shipment;
+    /** The order's shipping address as one line; a destination equal to it needs no mention. */
+    orderAddress?: string | undefined;
 }>();
+
+/**
+ * Where this parcel went, when that differs from where the order ships now (the rest of the order
+ * was redirected after it left); absent otherwise.
+ */
+const redirectedFrom = computed(() => {
+    const sent = formatAddressLine(props.shipment.destination);
+    return sent && sent !== props.orderAddress ? sent : undefined;
+});
 
 /**
  * Emitted once a move landed, so the owning page re-reads the order.
@@ -152,6 +163,14 @@ const markDelivered = () =>
             >
                 {{ t(`shipment-row.status-${shipment.status}`) }}
             </v-chip>
+            <v-chip
+                v-if="shipment.awaitingTracking"
+                color="warning"
+                size="small"
+                data-test="shipment-awaiting-tracking"
+            >
+                {{ t('shipment-row.awaiting-tracking') }}
+            </v-chip>
             <span v-if="shipment.trackingCode" class="text-sm" data-test="shipment-tracking">
                 {{ t('shipment-row.tracking', { code: shipment.trackingCode }) }}
             </span>
@@ -169,6 +188,10 @@ const markDelivered = () =>
                 ·
                 {{ t('shipment-row.delivered-at', { date: formatDateTime(shipment.deliveredAt) }) }}
             </template>
+        </p>
+
+        <p v-if="redirectedFrom" class="m-0 text-sm" data-test="shipment-destination">
+            {{ t('shipment-row.sent-to', { address: redirectedFrom }) }}
         </p>
 
         <form

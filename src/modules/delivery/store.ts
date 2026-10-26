@@ -192,8 +192,8 @@ export const useDeliveryStore = defineStore('delivery', () => {
      * nothing remains anywhere; otherwise it is `partially_fulfilled`.
      *
      * @param fulfillmentOrderId - The fulfillment order shipping.
-     * @param input - `lines` (absent = everything remaining), `trackingCode`, and `forced` +
-     *  `reason` for an `override:Order` holder skipping the `start` step.
+     * @param input - `lines` (absent = everything remaining), and `trackingCode`. A `paid` order
+     *  starts itself.
      * @returns A promise resolving with the new shipment, after the lists are re-read.
      */
     const ship = (fulfillmentOrderId: string, input: ShipFulfillmentOrderRequest = {}) =>

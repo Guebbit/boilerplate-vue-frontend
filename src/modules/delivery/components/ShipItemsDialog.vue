@@ -2,8 +2,7 @@
 /**
  * @module
  * Staff cut a shipment from one fulfillment order: a quantity per remaining line (default: all),
- * a tracking code, and the forced door for an `override:Order` holder when the ordinary one
- * is closed. The dialog owns its call and reports the outcome in place; the server re-checks every
+ * and a tracking code. The dialog owns its call and reports the outcome in place; the server re-checks every
  * limit, so the form only keeps staff from asking for the impossible.
  */
 import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
@@ -24,8 +23,6 @@ import type { FulfillmentOrder } from '@types';
  */
 const props = defineProps<{
     fulfillmentOrder: FulfillmentOrder;
-    /** Whether the order's shipping method needs a tracking code on every shipment. */
-    trackingRequired?: boolean;
 }>();
 
 /**
@@ -74,16 +71,6 @@ const quantities = ref<Record<string, string>>({});
 const trackingCode = ref('');
 
 /**
- * Whether this shipment skips the `start` step.
- */
-const force = ref(false);
-
-/**
- * Why the normal door did not apply; required exactly when {@link force} is on.
- */
-const forceReason = ref('');
-
-/**
  * This dialog's own blocked state: a refusal (409, 422, a step-up failure) stays next to the form.
  */
 const { message: shipError, report: reportShipError, clear: clearShipError } = useBlockingError();
@@ -99,22 +86,10 @@ const lines = computed(() => shippableLines(props.fulfillmentOrder.lines));
 const verdict = computed(() => readShipLines(props.fulfillmentOrder.lines, quantities.value));
 
 /**
- * Whether the force controls show: the server says a forced ship would open while the ordinary
- * door is closed (`actions.forceShip`).
- */
-const offerForce = computed(
-    () => !props.fulfillmentOrder.actions.ship && props.fulfillmentOrder.actions.forceShip
-);
-
-/**
  * Whether the form can be sent right now.
  */
 const canSubmit = computed(
-    () =>
-        !loading.value &&
-        verdict.value.valid &&
-        (!props.trackingRequired || trackingCode.value.trim() !== '') &&
-        (props.fulfillmentOrder.actions.ship || (force.value && forceReason.value.trim() !== ''))
+    () => !loading.value && verdict.value.valid && props.fulfillmentOrder.actions.ship
 );
 
 /**
@@ -126,8 +101,6 @@ watch(isOpen, (open) => {
         lines.value.map(({ productId, remaining }) => [productId, String(remaining)])
     );
     trackingCode.value = '';
-    force.value = false;
-    forceReason.value = '';
     clearShipError();
 });
 
@@ -142,8 +115,7 @@ const submit = singleFlight(() => {
     return deliveryStore
         .ship(props.fulfillmentOrder.id, {
             lines: verdict.value.lines,
-            ...(trackingCode.value.trim() ? { trackingCode: trackingCode.value.trim() } : {}),
-            ...(force.value ? { forced: true, reason: forceReason.value.trim() } : {})
+            ...(trackingCode.value.trim() ? { trackingCode: trackingCode.value.trim() } : {})
         })
         .then(() => {
             addMessage(t('ship-items-dialog.success'));
@@ -187,33 +159,12 @@ const submit = singleFlight(() => {
                 <v-text-field
                     v-model="trackingCode"
                     :label="t('ship-items-dialog.label-tracking-code')"
-                    :hint="
-                        trackingRequired ? t('ship-items-dialog.tracking-code-required') : undefined
-                    "
+                    :hint="t('ship-items-dialog.tracking-code-hint')"
                     persistent-hint
                     maxlength="100"
                     density="compact"
                     data-test="ship-tracking-code"
                 />
-
-                <template v-if="offerForce">
-                    <v-checkbox
-                        v-model="force"
-                        :label="t('ship-items-dialog.label-force')"
-                        density="compact"
-                        hide-details
-                        data-test="ship-force-toggle"
-                    />
-                    <v-textarea
-                        v-if="force"
-                        v-model="forceReason"
-                        :label="t('ship-items-dialog.label-force-reason')"
-                        rows="2"
-                        maxlength="1000"
-                        density="compact"
-                        data-test="ship-force-reason"
-                    />
-                </template>
 
                 <InlineErrorAlert :message="shipError" data-test="ship-items-error" />
 
