@@ -8,9 +8,9 @@
  * INTERCEPTOR's park/replay mechanics, so the dialog's outcome is driven directly through
  * `useReauthPromptStore()`, exactly as the real component would call it.
  */
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { setupServer } from 'msw/node';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
+import { server } from '../../../support/unit/msw-server.ts';
 import { createPinia, setActivePinia } from 'pinia';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -53,14 +53,14 @@ const reauthRequired = () =>
         { status: 401 }
     );
 
-/** MSW server answering this file's stub endpoints (`setupServer` intercepts requests in Node). */
-const server = setupServer(
+/** This file's stub endpoints, registered on the shared MSW server before each test. */
+const handlers = [
     http.post(`${API}/checkout`, ({ request }) => {
         const authorization = request.headers.get('authorization') ?? undefined;
         requestLog.push({ route: 'POST /checkout', authorization });
         return scenario.requiresReauth ? reauthRequired() : HttpResponse.json({ orderId: 'o1' });
     })
-);
+];
 
 /** Loads a fresh copy of the http module, pointed at the stub API. */
 const loadHttp = () => {
@@ -84,11 +84,8 @@ const timesRequested = (route: string) => requestLog.filter((r) => r.route === r
  */
 const waitForPrompt = () => vi.waitFor(() => expect(useReauthPromptStore().isOpen).toBe(true));
 
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
-
 beforeEach(() => {
+    server.use(...handlers);
     setActivePinia(createPinia());
     requestLog = [];
     scenario = { requiresReauth: true };

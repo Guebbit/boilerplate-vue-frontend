@@ -75,6 +75,7 @@ const row = (id: string): Notification => ({
     id,
     code: 'notifications.cart-line-removed',
     params: { productId: 'p1', titles: { en: 'Collar', it: 'Collare' } },
+    audience: 'own',
     severity: 'info',
     createdAt: '2026-10-04T10:00:00.000Z'
 });

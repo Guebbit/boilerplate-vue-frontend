@@ -18,9 +18,9 @@
  * about. Assertions read {@link requestLog} — the server's own record of what arrived — because a
  * refresh attempt is not observable from the caller's side without stubbing the code under test.
  */
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { setupServer } from 'msw/node';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
+import { server } from '../../../support/unit/msw-server.ts';
 import { deleteCookie } from '@guebbit/js-toolkit';
 import { createPinia, setActivePinia } from 'pinia';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -109,8 +109,8 @@ let scenario: Scenario = defaultScenario();
 const unauthorized = (message: string) =>
     HttpResponse.json(aProblem(401, [{ code: 'UNAUTHORIZED', message }]), { status: 401 });
 
-/** MSW server answering this file's stub endpoints (`setupServer` intercepts requests in Node). */
-const server = setupServer(
+/** This file's stub endpoints, registered on the shared MSW server before each test. */
+const handlers = [
     /**
      * `POST /account/refresh` — succeeds while the budget lasts, then answers 401 like an expired
      * refresh cookie would.
@@ -191,7 +191,7 @@ const server = setupServer(
             ? new HttpResponse(null, { status: 204 })
             : unauthorized('Unauthorized');
     })
-);
+];
 
 /**
  * Imports the http plugin fresh, with the API base URL stubbed.
@@ -231,11 +231,8 @@ const routes = () => requestLog.map(({ route }) => route);
 const timesRequested = (route: string) =>
     requestLog.filter((request) => request.route === route).length;
 
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
-
 beforeEach(() => {
+    server.use(...handlers);
     setActivePinia(createPinia());
     requestLog = [];
     scenario = defaultScenario();

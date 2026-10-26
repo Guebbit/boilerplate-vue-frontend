@@ -2331,6 +2331,16 @@ export interface ExportExample {
     updatedAt?: string;
 }
 
+/**
+ * Whose message this is. `own`: about the caller as a person or buyer. `staff`: a work notice sent because the caller's role does that work, not because it concerns them.
+ */
+export type NotificationAudience = (typeof NotificationAudience)[keyof typeof NotificationAudience];
+
+export const NotificationAudience = {
+    own: 'own',
+    staff: 'staff'
+} as const;
+
 export interface ProductTitles {
     [key: string]: string;
 }
@@ -2364,6 +2374,7 @@ export const NotificationCartLineRemovedCode = {
  */
 export interface NotificationCartLineRemoved {
     id: Id;
+    audience: NotificationAudience;
     code: NotificationCartLineRemovedCode;
     params: CartLineRemovedParams;
     severity: NotificationSeverity;
@@ -2384,6 +2395,7 @@ export const NotificationWishlistItemRemovedCode = {
  */
 export interface NotificationWishlistItemRemoved {
     id: Id;
+    audience: NotificationAudience;
     code: NotificationWishlistItemRemovedCode;
     params: CartLineRemovedParams;
     severity: NotificationSeverity;
@@ -2416,6 +2428,7 @@ export const NotificationCartMergeRefusedCode = {
  */
 export interface NotificationCartMergeRefused {
     id: Id;
+    audience: NotificationAudience;
     code: NotificationCartMergeRefusedCode;
     params: CartMergeRefusedParams;
     severity: NotificationSeverity;
@@ -2448,6 +2461,7 @@ export const NotificationFulfillmentDelayedCode = {
  */
 export interface NotificationFulfillmentDelayed {
     id: Id;
+    audience: NotificationAudience;
     code: NotificationFulfillmentDelayedCode;
     params: FulfillmentDelayedParams;
     severity: NotificationSeverity;
@@ -2487,6 +2501,7 @@ export const NotificationFulfillmentHeldCode = {
  */
 export interface NotificationFulfillmentHeld {
     id: Id;
+    audience: NotificationAudience;
     code: NotificationFulfillmentHeldCode;
     params: FulfillmentHeldParams;
     severity: NotificationSeverity;
@@ -2507,8 +2522,67 @@ export const NotificationStockAlertCode = {
  */
 export interface NotificationStockAlert {
     id: Id;
+    audience: NotificationAudience;
     code: NotificationStockAlertCode;
     params: CartLineRemovedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+/**
+ * The shop's rule paused a buyer's checkout. Ids and instants only: the account's own page has the rest.
+ */
+export interface PurchaseHoldPlacedParams {
+    userId: Id;
+    /** When the pause ends by itself. */
+    until: string;
+}
+
+export type NotificationStaffPurchaseHoldPlacedCode =
+    (typeof NotificationStaffPurchaseHoldPlacedCode)[keyof typeof NotificationStaffPurchaseHoldPlacedCode];
+
+export const NotificationStaffPurchaseHoldPlacedCode = {
+    'notificationsstaffpurchase-hold-placed': 'notifications.staff.purchase-hold-placed'
+} as const;
+
+/**
+ * A buyer's checkout was paused by the shop's cancellation rule; staff who can ban decide whether to step in.
+ */
+export interface NotificationStaffPurchaseHoldPlaced {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffPurchaseHoldPlacedCode;
+    params: PurchaseHoldPlacedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+/**
+ * A webhook subscription was switched off after repeated delivery failures.
+ */
+export interface WebhookDisabledParams {
+    subscriptionId: Id;
+}
+
+export type NotificationStaffWebhookDisabledCode =
+    (typeof NotificationStaffWebhookDisabledCode)[keyof typeof NotificationStaffWebhookDisabledCode];
+
+export const NotificationStaffWebhookDisabledCode = {
+    'notificationsstaffwebhook-disabled': 'notifications.staff.webhook-disabled'
+} as const;
+
+/**
+ * A webhook subscription was switched off after repeated failures; staff who manage webhooks fix the endpoint and re-enable it.
+ */
+export interface NotificationStaffWebhookDisabled {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffWebhookDisabledCode;
+    params: WebhookDisabledParams;
     severity: NotificationSeverity;
     /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
     readAt?: string;
@@ -2521,7 +2595,18 @@ export type Notification =
     | NotificationCartMergeRefused
     | NotificationFulfillmentDelayed
     | NotificationFulfillmentHeld
-    | NotificationStockAlert;
+    | NotificationStockAlert
+    | NotificationStaffPurchaseHoldPlaced
+    | NotificationStaffWebhookDisabled;
+
+/**
+ * One work notice this account received as staff, without the facts it named.
+ */
+export interface StaffNoticeExport {
+    code: string;
+    createdAt: string;
+    readAt?: string;
+}
 
 export interface StockAlert {
     productId: Id;
@@ -2568,6 +2653,7 @@ export interface AccountExportResponse {
     roles: AccountExportResponseRolesItem[];
     examples: ExportExample[];
     notifications: Notification[];
+    staffNotifications: StaffNoticeExport[];
     stockAlerts: StockAlert[];
 }
 
@@ -11422,7 +11508,7 @@ export const replaceExampleCover = (
 };
 
 /**
- * The caller's own inbox, newest first. A notification stays until its owner deletes it (`DELETE /notifications/{id}`, `DELETE /notifications`), the per-user cap trims it, or the account goes. Never paginated: the inbox is bounded by that cap, so one read is the whole of it. Empty and absent are the same state — this never answers 404. A client keeps the list live with `GET /notifications/stream`; the stream carries only what is written while it is open, so this read is what a login, a reload or a dropped connection starts from.
+ * The caller's own inbox, newest first, plus the work notices (`audience: staff`) of their shop whose permission sets they hold right now: a staff member who loses a role stops seeing the notices that role earned, and a member promoted later sees only those written after. A notification stays until its owner deletes it (`DELETE /notifications/{id}`, `DELETE /notifications`), the per-user cap trims it, or the account goes. Never paginated: the inbox is bounded by that cap, so one read is the whole of it. Empty and absent are the same state — this never answers 404. A client keeps the list live with `GET /notifications/stream`; the stream carries only what is written while it is open, so this read is what a login, a reload or a dropped connection starts from.
  * @summary List notifications
  */
 export const listNotifications = (
@@ -11463,7 +11549,7 @@ export const readAllNotifications = (
 };
 
 /**
- * One of the caller's own notifications, the same shape the list carries. Someone else's, an unknown id and a malformed one are the same 404, so a probe cannot tell them apart.
+ * One of the caller's own notifications, the same shape the list carries (a work notice only while the caller still holds its permission sets). Someone else's, an unknown id and a malformed one are the same 404, so a probe cannot tell them apart.
  * @summary Get a notification
  */
 export const getNotificationById = (

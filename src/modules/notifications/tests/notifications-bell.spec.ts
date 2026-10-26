@@ -70,6 +70,7 @@ const row = (id: string, overrides: RowOverrides = {}): Notification => ({
     id,
     code: 'notifications.cart-line-removed',
     params: { productId: 'p1', titles: { en: `Collar ${id}` } },
+    audience: 'own',
     severity: 'info',
     createdAt: '2026-10-04T10:00:00.000Z',
     ...overrides
@@ -92,7 +93,13 @@ const signIn = () => {
 const router = createRouter({
     history: createMemoryHistory(),
     routes: [
-        { path: '/:locale/orders/:id', name: 'OrderTarget', component: { template: '<div />' } }
+        { path: '/:locale/orders/:id', name: 'OrderTarget', component: { template: '<div />' } },
+        {
+            path: '/:locale/users/:id',
+            name: 'UserTarget',
+            meta: { access: 'auth', can: ['read', 'User'] },
+            component: { template: '<div />' }
+        }
     ]
 });
 
@@ -343,6 +350,7 @@ describe('a notice about an order', () => {
                     agreedAt: '2027-03-01T00:00:00.000Z',
                     expectedAt: '2027-04-19T00:00:00.000Z'
                 },
+                audience: 'own',
                 severity: 'warning',
                 createdAt: '2026-10-04T10:00:00.000Z'
             },
@@ -356,5 +364,60 @@ describe('a notice about an order', () => {
         expect(links).toHaveLength(1);
         expect(links[0]?.getAttribute('href')).toBe('/en/orders/o7');
         expect(links[0]?.closest('[data-test=notification-n1]')).not.toBeNull();
+    });
+});
+
+/**
+ * A purchase-hold work notice about the buyer `u9`.
+ */
+const holdNotice: Notification = {
+    id: 'w1',
+    audience: 'staff',
+    code: 'notifications.staff.purchase-hold-placed',
+    params: { userId: 'u9', until: '2026-10-30T09:00:00.000Z' },
+    severity: 'warning',
+    createdAt: '2026-10-04T10:00:00.000Z'
+};
+
+describe('a work notice for staff', () => {
+    it('links to the screen it is about when the reader may open it', async () => {
+        signIn();
+        useSessionStore().tenantAbility = createMongoAbility([
+            { action: 'read', subject: 'Notification' },
+            { action: 'read', subject: 'User' }
+        ]);
+        inboxOnServer = [holdNotice];
+        await mountBell();
+        await openPanel();
+
+        const link = document.body.querySelector('[data-test=notification-target-link]');
+
+        expect(link?.getAttribute('href')).toBe('/en/users/u9');
+    });
+
+    it('offers no link where the reader would be refused', async () => {
+        signIn();
+        inboxOnServer = [holdNotice];
+        await mountBell();
+        await openPanel();
+
+        expect(document.body.querySelector('[data-test=notification-target-link]')).toBeNull();
+        expect(document.body.querySelector('[data-test=notification-w1]')).not.toBeNull();
+    });
+
+    it('offers no link when this build ships no such screen', async () => {
+        signIn();
+        inboxOnServer = [
+            {
+                ...holdNotice,
+                id: 'w2',
+                code: 'notifications.staff.webhook-disabled',
+                params: { subscriptionId: 's1' }
+            }
+        ];
+        await mountBell();
+        await openPanel();
+
+        expect(document.body.querySelector('[data-test=notification-target-link]')).toBeNull();
     });
 });

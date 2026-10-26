@@ -88,12 +88,14 @@ after 1, 2, 4 ... seconds (capped at 30), and every open is followed by a fresh 
 `Notification` is a union on `code`, and each variant carries its own typed `params`
 (`@types`), so the sentence builder narrows them with a plain `switch` and parses nothing:
 
-| Code                                  | `params`                                                           |
-| ------------------------------------- | ------------------------------------------------------------------ |
-| `notifications.cart-line-removed`     | `{ productId, titles }`                                            |
-| `notifications.wishlist-item-removed` | `{ productId, titles }`                                            |
-| `notifications.cart-merge-refused`    | `{ lines: [{ productId, requested, titles }] }`                    |
-| `notifications.fulfillment-delayed`   | `{ orderId, fulfillmentOrderId, titles[], agreedAt, expectedAt? }` |
+| Code                                       | `params`                                                           |
+| ------------------------------------------ | ------------------------------------------------------------------ |
+| `notifications.cart-line-removed`          | `{ productId, titles }`                                            |
+| `notifications.wishlist-item-removed`      | `{ productId, titles }`                                            |
+| `notifications.cart-merge-refused`         | `{ lines: [{ productId, requested, titles }] }`                    |
+| `notifications.fulfillment-delayed`        | `{ orderId, fulfillmentOrderId, titles[], agreedAt, expectedAt? }` |
+| `notifications.staff.purchase-hold-placed` | `{ userId, until }`                                                |
+| `notifications.staff.webhook-disabled`     | `{ subscriptionId }`                                               |
 
 The refused-merge sentence lists each line as "name × quantity the guest held": every line in it
 is a product that is no longer available, so the sentence says that once and the lines carry no
@@ -104,6 +106,14 @@ the store spells in the reader's locale (`formatDate`), with a variant for a mis
 (`fulfillment-delayed-undated`). It also names its order, so the bell links to it by route name
 (`OrderTarget`, resolved with `linkIfRouted`, since `orders` is not a sibling this module imports):
 that is where the reader can cancel. It asks nothing.
+
+**Work notices.** Every row also carries `audience`: `own`, or `staff` for a work notice the backend
+sent because the reader's role does that work (the backend decides who sees what, at read time: its `notifications` page,
+"Work notices for staff"). A staff row carries
+ids only, so the sentence is short and the row links to the screen it is about by route name
+(the buyer's account, the subscription, through `useNotificationLink`). The link appears only when this
+build ships the route and the session passes the route's own `meta.can`, so a row never links where
+the reader would be refused; the text stays either way.
 
 The code is its own dictionary key: the code `notifications.cart-line-removed` is the entry
 `cart-line-removed` inside the `notifications` group of `locales/*.json`. A product's name comes from
@@ -169,16 +179,17 @@ AsyncAPI schemas by `createSseClient` while validation is on.
 
 ## Files
 
-| File                                  | What it is                                                                          | Explained in                          |
-| ------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------- |
-| `module.ts`                           | The manifest. No routes; contributes the bell to the `app-bar` slot.                | [read](../theory/modules.md)          |
-| `store.ts`                            | The `inbox` store: server rows to toolkit messages, and every write the bell makes. | [read](../tools/state-and-routing.md) |
-| `composables/use-inbox-lifecycle.ts`  | Starts the read and the stream for the signed-in person and ends them with them.    | [read](../theory/layers.md)           |
-| `components/NotificationsBell.vue`    | The bell, its badge and its panel.                                                  | [read](../theory/layers.md)           |
-| `domain/describe.ts`                  | Pure: a `code` and its typed `params` to a sentence.                                | [read](../theory/domain-layer.md)     |
-| `types.ts`                            | The row the panel renders.                                                          | [read](../theory/layers.md)           |
-| `response-schemas.ts`                 | One Zod schema per endpoint called.                                                 | [read](../api/openapi-workflow.md)    |
-| `locales/en.json` · `locales/it.json` | The sentences, keyed by code, and the bell's labels.                                | [read](../tools/i18n.md)              |
+| File                                   | What it is                                                                          | Explained in                          |
+| -------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------- |
+| `module.ts`                            | The manifest. No routes; contributes the bell to the `app-bar` slot.                | [read](../theory/modules.md)          |
+| `store.ts`                             | The `inbox` store: server rows to toolkit messages, and every write the bell makes. | [read](../tools/state-and-routing.md) |
+| `composables/use-inbox-lifecycle.ts`   | Starts the read and the stream for the signed-in person and ends them with them.    | [read](../theory/layers.md)           |
+| `components/NotificationsBell.vue`     | The bell, its badge and its panel.                                                  | [read](../theory/layers.md)           |
+| `composables/use-notification-link.ts` | A work notice's screen as a link, if it exists here and the reader may open it.     | [read](../theory/layers.md)           |
+| `domain/describe.ts`                   | Pure: a `code` and its typed `params` to a sentence, and the screen it is about.    | [read](../theory/domain-layer.md)     |
+| `types.ts`                             | The row the panel renders.                                                          | [read](../theory/layers.md)           |
+| `response-schemas.ts`                  | One Zod schema per endpoint called.                                                 | [read](../api/openapi-workflow.md)    |
+| `locales/en.json` · `locales/it.json`  | The sentences, keyed by code, and the bell's labels.                                | [read](../tools/i18n.md)              |
 
 ## Libraries
 
