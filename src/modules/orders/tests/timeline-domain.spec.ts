@@ -58,6 +58,15 @@ describe('describeTimelineEntry', () => {
         expect(line.detail).toContain('order-timeline.failure-reason-declined');
     });
 
+    it('shows the amount and reason of a refund staff cancelled', () => {
+        const line = describeTimelineEntry(
+            { type: 'refund_canceled', data: { amount: 5, currency: 'EUR', reason: 'goodwill' } },
+            tools
+        );
+
+        expect(line.detail).toContain('5 EUR');
+    });
+
     it('shows a code the dictionary does not know as it is', () => {
         const line = describeTimelineEntry(
             { type: 'fulfillment_held', data: { reason: 'unknown_new_code' } },

@@ -173,6 +173,7 @@
         "type-refund_issued": "Refund started",
         "type-refund_settled": "Refund completed",
         "type-refund_failed": "Refund failed",
+        "type-refund_canceled": "Refund canceled by staff",
         "type-shipment_shipped": "Parcel shipped",
         "type-shipment_delivered": "Parcel delivered",
         "type-fulfillment_held": "Shipping put on hold",

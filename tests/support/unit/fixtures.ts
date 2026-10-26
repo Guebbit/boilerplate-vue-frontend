@@ -91,7 +91,7 @@ export const aPayment = (overrides: Partial<Payment> = {}): Payment => ({
     orderNumber: '2026-000001',
     email: 'ada@example.com',
     createdAt: '2026-03-04T10:00:00Z',
-    actions: { pay: false, sync: false, refund: false, settleByHand: [] },
+    actions: { pay: false, sync: false, refund: false, settleByHand: [], cancelRefund: [] },
     ...overrides
 });
 
@@ -178,7 +178,7 @@ export const aReturn = (overrides: Partial<Return> = {}): Return => ({
     lines: [{ productId: 'p1', quantity: 1, title: 'Shirt', unitPrice: 30 }],
     returnPostage: 'consumer',
     createdAt: '2026-09-01T10:00:00.000Z',
-    actions: { approve: false, decline: false, receive: false },
+    actions: { approve: false, decline: false, receive: false, close: false },
     ...overrides
 });
 

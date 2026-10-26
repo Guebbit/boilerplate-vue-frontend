@@ -354,7 +354,7 @@ describe('PaymentPanel — a waiting bank transfer', () => {
             reference: 'RF132EY8H44VJAVZKX80JRL',
             payBy: '2026-01-01T00:00:00.000Z'
         },
-        actions: { pay: true, sync: false, refund: false, settleByHand: [] }
+        actions: { pay: true, sync: false, refund: false, settleByHand: [], cancelRefund: [] }
     };
 
     it('shows the instructions, offers no "finish at your bank" step, and keeps the card form when payable', () => {
@@ -372,7 +372,7 @@ describe('PaymentPanel — a waiting bank transfer', () => {
         const { wrapper, store } = mountPanel({ orderPayable: false });
         store.payment = {
             ...waiting,
-            actions: { pay: false, sync: false, refund: false, settleByHand: [] }
+            actions: { pay: false, sync: false, refund: false, settleByHand: [], cancelRefund: [] }
         };
 
         return nextRenderTick(wrapper).then(() => {
@@ -389,7 +389,7 @@ describe('PaymentPanel — finishing at the provider', () => {
         orderId: 'order-1',
         status: 'requires_action',
         displayStatus: 'incomplete',
-        actions: { pay: false, sync: true, refund: false, settleByHand: [] }
+        actions: { pay: false, sync: true, refund: false, settleByHand: [], cancelRefund: [] }
     });
 
     it('offers the finish button when the server says sync would work', () => {
@@ -405,7 +405,7 @@ describe('PaymentPanel — finishing at the provider', () => {
         const { store, wrapper } = mountPanel({ orderPayable: false });
         store.payment = {
             ...inFlight,
-            actions: { pay: false, sync: false, refund: false, settleByHand: [] }
+            actions: { pay: false, sync: false, refund: false, settleByHand: [], cancelRefund: [] }
         };
 
         return nextRenderTick(wrapper).then(() => {

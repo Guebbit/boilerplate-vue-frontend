@@ -45,6 +45,14 @@
         "button-search": "Find order",
         "error-not-found": "No order matches this reference."
     },
+    "refund-cancel-form": {
+        "label-note": "Why is this refund canceled?",
+        "hint-note": "Kept in the audit log, never shown to the customer. Say who refunded it elsewhere, and where.",
+        "button-submit": "Cancel refund",
+        "button-dismiss": "Keep it",
+        "error-note-required": "A note is required",
+        "error-note-too-long": "The note is too long ({max} characters at most)"
+    },
     "record-offline-payment-form": {
         "label-method": "How it arrived",
         "method-bank_transfer": "Bank transfer",
@@ -122,9 +130,12 @@
         "failure-reason-provider_removed": "The payment provider is no longer installed",
         "failure-reason-provider_unavailable": "The payment provider was unavailable",
         "failure-reason-unknown": "The provider gave no usable reason",
+        "failure-reason-canceled": "Canceled by staff: nothing was sent",
         "attention-kind-stale_refund": "Waiting for the provider's answer",
         "attention-kind-refused_refund": "Refused: return the money another way",
         "attention-kind-manual_refund_owed": "Money to hand back outside the system",
+        "attention-deadline-left": "Last day to pay this back | {count} day left to pay this back | {count} days left to pay this back",
+        "attention-deadline-over": "Pay-back deadline passed {count} day ago | Pay-back deadline passed {count} days ago",
         "attention-hint": "Only problems still recorded on a payment or an order. A fixed one disappears on the next read.",
         "button-reload": "Reload",
         "attention-audit-note": "A payment whose amount did not match its order is not listed here: it was cancelled and refunded automatically, and recorded in the audit log as payment.amount_mismatch.",
@@ -144,6 +155,8 @@
         "confirm-mark-returned": "Confirm you returned {amount} to the customer outside the app? Nothing is sent.",
         "confirm-mark-returned-card": "Confirm you returned {amount} to the customer another way? Do this only after the money has left: the app stops retrying this refund and tells the customer it is back.",
         "mark-returned-done": "Marked as returned",
+        "button-cancel-refund": "Cancel refund",
+        "cancel-refund-done": "Refund canceled. Nothing was sent and nobody was notified.",
         "button-open-payment": "Open payment",
         "button-open-order": "Open the order",
         "confirm-refund": "Refund everything still refundable on order {order}? The money goes back to the customer.",

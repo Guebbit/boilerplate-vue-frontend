@@ -173,6 +173,7 @@
         "type-refund_issued": "Rimborso avviato",
         "type-refund_settled": "Rimborso completato",
         "type-refund_failed": "Rimborso non riuscito",
+        "type-refund_canceled": "Rimborso annullato dallo staff",
         "type-shipment_shipped": "Pacco spedito",
         "type-shipment_delivered": "Pacco consegnato",
         "type-fulfillment_held": "Spedizione messa in attesa",

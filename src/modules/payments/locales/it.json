@@ -45,6 +45,14 @@
         "button-search": "Trova ordine",
         "error-not-found": "Nessun ordine corrisponde a questo riferimento."
     },
+    "refund-cancel-form": {
+        "label-note": "Perché questo rimborso viene annullato?",
+        "hint-note": "Resta nel registro di controllo, mai mostrato al cliente. Indica chi lo ha rimborsato altrove, e dove.",
+        "button-submit": "Annulla rimborso",
+        "button-dismiss": "Mantienilo",
+        "error-note-required": "La nota è obbligatoria",
+        "error-note-too-long": "La nota è troppo lunga (massimo {max} caratteri)"
+    },
     "record-offline-payment-form": {
         "label-method": "Come è arrivato",
         "method-bank_transfer": "Bonifico bancario",
@@ -122,9 +130,12 @@
         "failure-reason-provider_removed": "Il gestore dei pagamenti non è più installato",
         "failure-reason-provider_unavailable": "Il provider di pagamento non era disponibile",
         "failure-reason-unknown": "Il provider non ha indicato un motivo utilizzabile",
+        "failure-reason-canceled": "Annullato dallo staff: non è stato inviato nulla",
         "attention-kind-stale_refund": "In attesa della risposta del gestore",
         "attention-kind-refused_refund": "Rifiutato: restituisci il denaro in un altro modo",
         "attention-kind-manual_refund_owed": "Denaro da restituire fuori dal sistema",
+        "attention-deadline-left": "Ultimo giorno per restituire il denaro | Resta {count} giorno per restituire il denaro | Restano {count} giorni per restituire il denaro",
+        "attention-deadline-over": "Scadenza per restituire il denaro superata da {count} giorno | Scadenza per restituire il denaro superata da {count} giorni",
         "attention-hint": "Solo i problemi ancora registrati su un pagamento o un ordine. Uno risolto sparisce alla lettura successiva.",
         "button-reload": "Ricarica",
         "attention-audit-note": "Un pagamento il cui importo non corrispondeva all'ordine non compare qui: è stato annullato e rimborsato in automatico, e registrato nel registro di audit come payment.amount_mismatch.",
@@ -144,6 +155,8 @@
         "confirm-mark-returned": "Confermi di aver restituito {amount} al cliente fuori dall'app? Non viene inviato nulla.",
         "confirm-mark-returned-card": "Confermi di aver restituito {amount} al cliente in un altro modo? Fallo solo dopo che il denaro è uscito: l'app smette di ritentare questo rimborso e avvisa il cliente che è stato restituito.",
         "mark-returned-done": "Segnato come restituito",
+        "button-cancel-refund": "Annulla rimborso",
+        "cancel-refund-done": "Rimborso annullato. Non è stato inviato nulla e nessuno è stato avvisato.",
         "button-open-payment": "Apri pagamento",
         "button-open-order": "Apri l'ordine",
         "confirm-refund": "Rimborsare tutto ciò che è ancora rimborsabile sull'ordine {order}? Il denaro torna al cliente.",

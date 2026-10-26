@@ -45,7 +45,7 @@ const FULL: Payment = aPayment({
     cardLast4: '4242',
     amountRefunded: 10,
     displayStatus: 'refund_pending',
-    actions: { pay: false, sync: false, refund: true, settleByHand: [] },
+    actions: { pay: false, sync: false, refund: true, settleByHand: [], cancelRefund: [] },
     refunds: [
         {
             id: 'r1',
@@ -120,7 +120,13 @@ describe('PaymentDrawer', () => {
         expect(
             mountDrawer({
                 ...FULL,
-                actions: { pay: false, sync: false, refund: false, settleByHand: [] }
+                actions: {
+                    pay: false,
+                    sync: false,
+                    refund: false,
+                    settleByHand: [],
+                    cancelRefund: []
+                }
             })
                 .find('[data-test="drawer-refund"]')
                 .exists()
@@ -224,7 +230,13 @@ describe('PaymentDrawer', () => {
             method: 'cash',
             displayStatus: 'refund_pending',
             amountRefunded: 50,
-            actions: { pay: false, sync: false, refund: false, settleByHand: ['r-owed'] },
+            actions: {
+                pay: false,
+                sync: false,
+                refund: false,
+                settleByHand: ['r-owed'],
+                cancelRefund: []
+            },
             refunds: [
                 {
                     id: 'r-owed',
@@ -292,6 +304,107 @@ describe('PaymentDrawer', () => {
 
             expect(wrapper.get('[data-test="drawer-refund-error"]').text()).toContain(
                 'Already settled.'
+            );
+            expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+        });
+    });
+
+    describe('a refund the server lets staff cancel', () => {
+        const VOIDABLE: Payment = aPayment({
+            provider: 'manual',
+            method: 'cash',
+            displayStatus: 'refund_pending',
+            amountRefunded: 50,
+            actions: {
+                pay: false,
+                sync: false,
+                refund: false,
+                settleByHand: ['r-owed'],
+                cancelRefund: ['r-owed']
+            },
+            refunds: [
+                {
+                    id: 'r-owed',
+                    amount: 50,
+                    currency: 'EUR',
+                    status: 'pending',
+                    reason: 'goodwill',
+                    createdAt: '2026-03-05T10:00:00Z'
+                },
+                {
+                    id: 'r-other',
+                    amount: 5,
+                    currency: 'EUR',
+                    status: 'succeeded',
+                    reason: 'goodwill',
+                    createdAt: '2026-03-05T11:00:00Z'
+                }
+            ]
+        });
+
+        it('offers "Cancel refund" for the ids actions.cancelRefund names, and only those', () => {
+            const wrapper = mountDrawer(VOIDABLE);
+
+            expect(wrapper.find('[data-test="drawer-cancel-refund-r-owed"]').exists()).toBe(true);
+            expect(wrapper.find('[data-test="drawer-cancel-refund-r-other"]').exists()).toBe(false);
+        });
+
+        it('opens a note field first and sends nothing until it is filled', async () => {
+            const cancel = vi.spyOn(usePaymentsStore(), 'cancelRefund').mockResolvedValue(VOIDABLE);
+            const wrapper = mountDrawer(VOIDABLE);
+
+            await wrapper.get('[data-test="drawer-cancel-refund-r-owed"]').trigger('click');
+            await wrapper.get('[data-test="refund-cancel-form"]').trigger('submit');
+            await flushPromises();
+
+            expect(cancel).not.toHaveBeenCalled();
+            expect(wrapper.find('[data-test="refund-cancel-form"]').exists()).toBe(true);
+        });
+
+        it('cancels with the note, then tells the list and closes', async () => {
+            const cancel = vi.spyOn(usePaymentsStore(), 'cancelRefund').mockResolvedValue(VOIDABLE);
+            const wrapper = mountDrawer(VOIDABLE);
+
+            await wrapper.get('[data-test="drawer-cancel-refund-r-owed"]').trigger('click');
+            await wrapper
+                .get('[data-test="refund-cancel-note"] input')
+                .setValue('Refunded in the dashboard too');
+            await wrapper.get('[data-test="refund-cancel-form"]').trigger('submit');
+            await flushPromises();
+
+            expect(cancel).toHaveBeenCalledWith(
+                VOIDABLE,
+                'r-owed',
+                'Refunded in the dashboard too'
+            );
+            expect(wrapper.emitted('changed')).toHaveLength(1);
+            expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]);
+        });
+
+        it('closes the form without sending anything when staff keep the refund', async () => {
+            const cancel = vi.spyOn(usePaymentsStore(), 'cancelRefund').mockResolvedValue(VOIDABLE);
+            const wrapper = mountDrawer(VOIDABLE);
+
+            await wrapper.get('[data-test="drawer-cancel-refund-r-owed"]').trigger('click');
+            await wrapper.get('[data-test="refund-cancel-dismiss"]').trigger('click');
+
+            expect(cancel).not.toHaveBeenCalled();
+            expect(wrapper.find('[data-test="refund-cancel-form"]').exists()).toBe(false);
+        });
+
+        it('shows a refusal in the drawer, which stays open', async () => {
+            vi.spyOn(usePaymentsStore(), 'cancelRefund').mockRejectedValue(
+                aProblem(409, [{ code: 'PAYMENT_REFUND_IN_FLIGHT', message: 'Still in flight.' }])
+            );
+            const wrapper = mountDrawer(VOIDABLE);
+
+            await wrapper.get('[data-test="drawer-cancel-refund-r-owed"]').trigger('click');
+            await wrapper.get('[data-test="refund-cancel-note"] input').setValue('x');
+            await wrapper.get('[data-test="refund-cancel-form"]').trigger('submit');
+            await flushPromises();
+
+            expect(wrapper.get('[data-test="drawer-refund-error"]').text()).toContain(
+                'Still in flight.'
             );
             expect(wrapper.emitted('update:modelValue')).toBeUndefined();
         });

@@ -17,7 +17,9 @@ export default {
  * them whenever they are present and never asks who is looking. Refunding is the existing
  * `POST /payments/{id}/refunds`, offered only when `actions.refund` says it would work;
  * a hand-paid refund waiting for the operator gets a "Mark returned" button, offered for the ids
- * `actions.settleByHand` names.
+ * `actions.settleByHand` names. Beside it, "Cancel refund" voids a refund that must never be paid:
+ * it opens a note field (the audit needs the why) and is offered for the ids `actions.cancelRefund`
+ * names. The server decides what is offered; this renders it.
  */
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -36,6 +38,7 @@ import type { Payment } from '@types';
 import { usePaymentsStore } from '../store.ts';
 import { refundNotice } from '../composables/refund-notice.ts';
 import PaymentStatusChip from './PaymentStatusChip.vue';
+import RefundCancelForm from './RefundCancelForm.vue';
 
 /**
  * The drawer's width on a screen that has room for it, in CSS px.
@@ -116,6 +119,19 @@ const canRefund = computed(() => props.payment?.actions.refund === true);
  * @returns `true` when `actions.settleByHand` names it.
  */
 const canSettle = (refundId: string) => props.payment?.actions.settleByHand.includes(refundId);
+
+/**
+ * Whether the server would take this refund as "cancelled" from this caller.
+ *
+ * @param refundId - A record of the shown payment.
+ * @returns `true` when `actions.cancelRefund` names it.
+ */
+const canCancel = (refundId: string) => props.payment?.actions.cancelRefund.includes(refundId);
+
+/**
+ * The refund whose cancel form is open, if any. One at a time: opening another closes the first.
+ */
+const cancelling = ref<string>();
 
 /**
  * The order's own page — where partial refunds and the offline form live — or nothing when this
@@ -220,6 +236,34 @@ const handleMarkReturned = singleFlight((refund: Payment['refunds'][number]) => 
                 .finally(() => {
                     refunding.value = false;
                 });
+        });
+});
+
+/**
+ * Voids one refund with the staff member's note. Nothing is sent and nobody is mailed, so there is
+ * no confirm dialog: writing the note is the deliberate step. A second submit while the call is
+ * open does nothing.
+ *
+ * @param refund - The record the form was opened on.
+ * @param note - Why, as validated by the form.
+ * @returns A promise settling once the call finished; a failure is shown in the drawer.
+ */
+const handleCancelRefund = singleFlight((refund: Payment['refunds'][number], note: string) => {
+    const current = props.payment;
+    if (!current) return Promise.resolve();
+    clearRefundError();
+    refunding.value = true;
+    return store
+        .cancelRefund(current, refund.id, note)
+        .then(() => {
+            addMessage(t('payments-list-page.cancel-refund-done'));
+            cancelling.value = undefined;
+            emit('changed');
+            open.value = false;
+        })
+        .catch((error: unknown) => reportRefundError(error))
+        .finally(() => {
+            refunding.value = false;
         });
 });
 </script>
@@ -330,6 +374,23 @@ const handleMarkReturned = singleFlight((refund: Payment['refunds'][number]) => 
                     >
                         {{ t('payments-list-page.button-mark-returned') }}
                     </v-btn>
+                    <v-btn
+                        v-if="canCancel(refund.id) && cancelling !== refund.id"
+                        class="mt-2"
+                        size="small"
+                        variant="tonal"
+                        :disabled="refunding"
+                        :data-test="`drawer-cancel-refund-${refund.id}`"
+                        @click="cancelling = refund.id"
+                    >
+                        {{ t('payments-list-page.button-cancel-refund') }}
+                    </v-btn>
+                    <RefundCancelForm
+                        v-if="cancelling === refund.id"
+                        :busy="refunding"
+                        @submit="(note) => handleCancelRefund(refund, note)"
+                        @dismiss="cancelling = undefined"
+                    />
                 </li>
             </ul>
 

@@ -127,6 +127,17 @@ the click is the operator's word (`POST /payments/{id}/refunds/{refundId}/settle
 operator confirmed first answers 409 and the payment is re-read. The needs-attention list opens the
 drawer from a refund owed by hand.
 
+**Refunds that must never be paid are voided, not settled.** `actions.cancelRefund` names the records
+staff may cancel (the same set as `settleByHand`: the money provably did not move). The drawer
+shows a "Cancel refund" button per id; it opens a note field (required, the audit says why) and sends
+`POST /payments/{id}/refunds/{refundId}/cancel`. No question is asked: writing the note is the
+deliberate step. Nothing is sent to the provider and nobody is mailed. Like the hand settle, a lost
+race re-reads the payment before the error shows.
+
+**The legal clock is visible.** A refused refund that pays a withdrawal or a return carries
+`refundDueBy` (creation plus 14 days, Consumer Rights Directive Art. 13); the needs-attention list
+turns it into the days left, or how late the refund is. Any other refund shows its age only.
+
 **What the page does not show** is an amount mismatch: the order is cancelled and refunded
 automatically and the only trace is an audit row, so the tab points at the audit log.
 

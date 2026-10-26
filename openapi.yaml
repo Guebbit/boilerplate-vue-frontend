@@ -8987,6 +8987,64 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: payments
+  /payments/{id}/refunds/{refundId}/cancel:
+    post:
+      tags:
+        - Payments
+      summary: Cancel a refund that must never be paid
+      description: |-
+        A local void for a refund the shop will not pay: a duplicate opened by mistake, or one the provider's dashboard already covered. The record goes `failed` with `failureReason: canceled` and the amount it held returns to what is refundable. Nothing is sent to the provider, no credit note is issued and the buyer is not mailed: the money never moved, so there is nothing to report. The sweep never sends a canceled refund. The note says why, and is kept in the audit row `admin.payment.refund_canceled` with the order's timeline row `refund_canceled` (staff only) and the `payment.refund_canceled` event.
+        Which refunds may be canceled: exactly the ones `actions.cancelRefund` lists, the same set as `actions.settleByHand`: a hand-paid (`manual`) payment's `pending` refund, and a card refund the provider refused in a way that proves the money did not move (`RefundFailureReason`: `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card`, `provider_removed`). A `succeeded` refund, or one already canceled, answers 409 `PAYMENT_REFUND_NOT_OPEN`: the money moved, and cancelling it would falsify the books. A card refund that is `pending` (an attempt is running) or `failed` for an unclear reason (`provider_unavailable`, `unknown`) answers 409 `PAYMENT_REFUND_IN_FLIGHT`: the money may have moved. Needs `create:Refund`, with the same fresh-session requirement as creating one: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
+      operationId: cancelRefund
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+          description: The payment carrying the refund
+        - name: refundId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+          description: The refund record to cancel
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelRefundRequest"
+      responses:
+        "200":
+          description: "The refund as it now stands (`failed`, `failureReason: canceled`). `GET /payments/{id}` for the totals and the actions."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refund"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: payments
   /delivery/fulfillment-orders/release-date-impact:
     get:
       tags:
@@ -9130,6 +9188,54 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: delivery
+  /returns/{id}/close:
+    post:
+      tags:
+        - Returns
+      summary: Close a return by hand
+      description: "Staff finish a `received` return whose refund will not follow the usual way: it was canceled, or the money went back outside the application. The return becomes `closed` and the order's timeline and the audit row `admin.return.closed` say so, with the note in the audit row only. No money moves, no stock moves (the units went back on sale when the goods were received), no credit note is issued and the customer is not mailed that their money went back: closing is bookkeeping, not a refund. A return that is not `received` (a `requested` one is declined, not closed) answers 409 `RETURN_NOT_CLOSABLE`. Needs `receive:Return`, the key that receives the goods, which carries a fresh-session requirement."
+      operationId: closeReturn
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CloseReturnRequest"
+      responses:
+        "200":
+          description: The return, `closed`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Return"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: returns
   /stats/sales:
     get:
       tags:
@@ -13422,6 +13528,7 @@ components:
         - refund_issued
         - refund_settled
         - refund_failed
+        - refund_canceled
         - shipment_shipped
         - shipment_delivered
         - fulfillment_held
@@ -13437,7 +13544,7 @@ components:
         - release_date_moved
         - delay_notice_sent
         - address_corrected
-      description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`."
+      description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`."
     OrderTimelineExportEntry:
       type: object
       additionalProperties: false
@@ -13499,9 +13606,11 @@ components:
         - provider_removed
         - provider_unavailable
         - unknown
+        - canceled
       description: |-
         Why the provider last refused a refund, as a closed code. Staff only (`display:Payment`). `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
         Money did NOT move for `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` (the payment's provider is no longer installed, so nothing was asked): the refund may be marked returned by hand once the money went back another way. `declined`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` are final and are not retried; `insufficient_funds` (the shop's own provider balance is short) and the unclear `provider_unavailable` and `unknown` are retried with a growing delay. An unclear refusal may have gone through, so it is never offered for hand settlement.
+        `canceled` is not a refusal: staff voided the refund (`POST /payments/{id}/refunds/{refundId}/cancel`). Nothing was sent, it is never retried and it can neither be settled by hand nor canceled again.
     Refund:
       type: object
       additionalProperties: false
@@ -13527,7 +13636,7 @@ components:
         status:
           allOf:
             - $ref: "#/components/schemas/RefundStatus"
-          description: "`pending` while the provider is being asked (or, on a hand-paid payment, until an operator reports the money back); `failed` when it refused — the sweep retries it with the same idempotency key unless the refusal is final, and an operator may report it returned by hand when the money provably did not move (see `RefundFailureReason`); `succeeded` once the money is confirmed back, or reported back by the operator."
+          description: "`pending` while the provider is being asked (or, on a hand-paid payment, until an operator reports the money back); `failed` when it refused — the sweep retries it with the same idempotency key unless the refusal is final, and an operator may report it returned by hand when the money provably did not move (see `RefundFailureReason`); `succeeded` once the money is confirmed back, or reported back by the operator. A `failed` refund with `failureReason: canceled` was voided by staff and is closed for good."
         reason:
           $ref: "#/components/schemas/RefundReason"
         returnId:
@@ -16545,6 +16654,7 @@ components:
         - sync
         - refund
         - settleByHand
+        - cancelRefund
       description: What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself. Every response that carries a payment carries these, including the answer to each write, so a client never has to re-read to learn the next step.
       properties:
         pay:
@@ -16561,6 +16671,11 @@ components:
           items:
             $ref: "#/components/schemas/Id"
           description: "The ids of the refunds this caller may mark as returned with `POST /payments/{id}/refunds/{refundId}/settle`: the caller holds `create:Refund`, the payment is `succeeded`, and the refund is either a hand-paid payment's `pending` one or a card refund `failed` with a reason that proves the money did not move (`RefundFailureReason`). The server decides; a client never rebuilds this rule. An array because the route takes a target; empty when there is none."
+        cancelRefund:
+          type: array
+          items:
+            $ref: "#/components/schemas/Id"
+          description: "The ids of the refunds this caller may void with `POST /payments/{id}/refunds/{refundId}/cancel`: the same set as `settleByHand` (money that provably did not move), so a hand-paid `pending` refund or a card refund refused for a clear reason. The server decides. Empty when there is none."
     Payment:
       type: object
       additionalProperties: false
@@ -17264,6 +17379,7 @@ components:
         - approve
         - decline
         - receive
+        - close
       description: What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the key that names the act and a status the act can run from.
       properties:
         approve:
@@ -17275,6 +17391,9 @@ components:
         receive:
           type: boolean
           description: Whether `POST /returns/{id}/receive` would be accepted.
+        close:
+          type: boolean
+          description: Whether `POST /returns/{id}/close` would be accepted.
     Return:
       type: object
       additionalProperties: false
@@ -18581,6 +18700,10 @@ components:
           type: string
           format: date-time
           description: When the problem was recorded, so the page can sort by age.
+        refundDueBy:
+          type: string
+          format: date-time
+          description: "The legal deadline to give the money back, on a `refused_refund` that pays for a withdrawal or a return: the refund's creation plus 14 days (Consumer Rights Directive Art. 13). Absent for any other refund, which shows its age only. The client shows the days left; a past date means the deadline has gone."
     PaymentAttentionResponse:
       type: object
       additionalProperties: false
@@ -18591,6 +18714,17 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PaymentAttentionItem"
+    CancelRefundRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - note
+      properties:
+        note:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description: Why the refund is voided (who refunded it elsewhere and where, or that it was a duplicate). Staff-only free text, kept in the audit row and nowhere the buyer reads.
     ReleaseDateImpact:
       type: object
       additionalProperties: false
@@ -18602,6 +18736,15 @@ components:
           type: integer
           minimum: 0
           description: Orders that would get a delay email (the date moves later or is cleared); silence always means the buyer keeps waiting, and they can cancel any time before it ships.
+    CloseReturnRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        note:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description: Why the return is closed by hand. Optional, staff-only free text, kept in the audit row and nowhere the customer reads.
     StatsInterval:
       type: string
       enum:
@@ -19615,6 +19758,9 @@ x-error-codes:
   RETURN_NOTHING_TO_CANCEL:
     status: 409
     description: The fulfillment order has nothing left to cancel, or nothing has shipped from the order yet (cancel the whole order instead).
+  RETURN_NOT_CLOSABLE:
+    status: 409
+    description: The return is not one that was received and still awaits its money, so it cannot be closed by hand.
   RETURN_NOT_DECIDABLE:
     status: 409
     description: The return has already been decided.
