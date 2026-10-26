@@ -12,8 +12,8 @@ export default {
 /**
  * @module
  * Single-file component: `<script setup>` lists the order's fulfillment orders, each a card with
- * its own shipments, and the one order-level control left here — "Start fulfilment", offered
- * by the order's own `actions.process`. Every other control lives on the record it acts on and
+ * its own shipments, and the one order-level control left here — the optional "Mark in progress",
+ * offered by the order's own `actions.process`. Every other control lives on the record it acts on and
  * comes from that record's own `actions`: this panel never derives a lifecycle rule. The
  * tracking-code requirement is the one fact read off `GET /delivery/methods` (published, not a rule).
  */

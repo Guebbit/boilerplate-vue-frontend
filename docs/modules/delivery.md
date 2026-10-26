@@ -77,7 +77,7 @@ record with its own `actions` (the store reads both at once); the panel is a car
 
 ```mermaid
 flowchart TD
-    panel["ShipmentPanel<br/>start fulfilment · 'arrives in N shipments'"] --> card["FulfillmentOrderCard<br/>status · hold reason · lines"]
+    panel["ShipmentPanel<br/>mark in progress · 'arrives in N shipments'"] --> card["FulfillmentOrderCard<br/>status · hold reason · lines"]
     card --> row["ShipmentRow<br/>tracking · mark delivered"]
     card -- "actions.ship" --> ship["ShipItemsDialog<br/>quantity per line · tracking"]
     card -- "actions.hold" --> hold["HoldDialog<br/>reason · note"]
@@ -91,8 +91,8 @@ flowchart TD
 **Every button comes from the record's own `actions`.** The order's `actions` no longer carry ship,
 deliver or fulfill; a card offers ship, fulfil (digital), hold and release from the fulfillment
 order's flags, and a shipment row offers mark-delivered and edit-tracking from the shipment's. The one
-order-level control left is "Start fulfilment" (`Order.actions.start`). The forced ship follows
-`actions.forceShip`; the forced arrival is offered on a deliverable shipment (`actions.deliver`) to
+order-level control left is the optional "Mark in progress" (`Order.actions.process`): shipping a `paid`
+order starts it by itself. The forced arrival is offered on a deliverable shipment (`actions.deliver`) to
 an `override:Order` holder.
 
 **What the pure helpers do** (`domain/ship-lines.ts`): turn the ship dialog's quantity fields into the
@@ -166,8 +166,8 @@ Each row registers one Zod schema through the manifest, so enabling the domain t
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
 | `components/FulfillmentOrderCard.vue` | One card per fulfillment order: status, hold reason, a late preorder's dates and consent, lines, its shipments, and the buttons its `actions` offer.                                | [read](../theory/layers.md)           |
 | `components/HoldDialog.vue`           | Staff hold a fulfillment order back: a reason, an optional staff note and an optional message for the buyer.                                                                        | [read](../theory/layers.md)           |
-| `components/ShipItemsDialog.vue`      | Staff cut a shipment: a quantity per remaining line, a tracking code, and the forced door.                                                                                          | [read](../theory/layers.md)           |
-| `components/ShipmentPanel.vue`        | The order page's shipping corner: the cards, "arrives in N shipments" and "Start fulfilment". Published through the barrel.                                                         | [read](../theory/layers.md)           |
+| `components/ShipItemsDialog.vue`      | Staff cut a shipment: a quantity per remaining line, and a tracking code.                                                                                                           | [read](../theory/layers.md)           |
+| `components/ShipmentPanel.vue`        | The order page's shipping corner: the cards, "arrives in N shipments" and "Mark in progress". Published through the barrel.                                                         | [read](../theory/layers.md)           |
 | `components/ShipmentRow.vue`          | One shipment: lines, tracking, dates, mark delivered, edit tracking.                                                                                                                | [read](../theory/layers.md)           |
 | `components/ShippingSelector.vue`     | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                            | [read](../theory/layers.md)           |
 | `domain/ship-lines.ts`                | Pure helpers: the ship dialog's quantities as lines to send, and the shipment count.                                                                                                | [read](../theory/domain-layer.md)     |

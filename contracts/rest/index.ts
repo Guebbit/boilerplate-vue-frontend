@@ -4102,11 +4102,9 @@ export interface RecordOfflinePaymentRequest {
  * What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `update:Shipment`.
  */
 export interface FulfillmentOrderActions {
-    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining. */
+    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining, on an order that is `processing` — or `paid`, for a caller who also holds `start:Shipment`. */
     ship: boolean;
-    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` with `forced: true` would be accepted and the ordinary door would not: the caller holds `override:Order`, the order is `paid` (or otherwise not yet `processing`) and the fulfillment order still has units to ship. */
-    forceShip: boolean;
-    /** Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open. */
+    /** Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open, on an order that is `processing` or `paid` (the latter needs `start:Shipment` too). */
     fulfill: boolean;
     /** Whether `POST /delivery/fulfillment-orders/{id}/hold` would be accepted. */
     hold: boolean;
@@ -4195,7 +4193,7 @@ export interface Shipment {
     /** The tail of the order's lifecycle, as the carrier sees it. */
     status: ShipmentStatus;
     lines: ShipmentLine[];
-    /** Whether staff skipped a step to record it (shipped from `paid` without `start`). */
+    /** Whether an admin status override cut this shipment. */
     forced: boolean;
     shippedAt: string;
     deliveredAt?: string;
@@ -4399,14 +4397,6 @@ export interface ShipFulfillmentOrderRequest {
      * @maxLength 100
      */
     trackingCode?: string;
-    /** Skip the `start` step — ship from `paid`. The caller must hold `override:Order`, and `reason` is then required. Never ships from `on_hold`. */
-    forced?: boolean;
-    /**
-     * Required exactly when `forced` is `true` — why the normal door didn't apply. Recorded on the order's override history.
-     * @minLength 1
-     * @maxLength 1000
-     */
-    reason?: string;
 }
 
 /**
@@ -9978,7 +9968,7 @@ export const summarizePreorderFulfillmentOrders = (
 };
 
 /**
- * Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is required exactly when the order's shipping method is `tracked`. Refuses a fulfillment order that is on hold, closed or cancelled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is not `processing` (`ORDER_NOT_PROCESSING`) — unless `forced`, which lets a shipment skip the `start` step from `paid`. Never ships from `on_hold`, forced or not.
+ * Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is required exactly when the order's shipping method is `tracked`. Refuses a fulfillment order that is on hold, closed or cancelled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is neither `processing` nor `paid` (`ORDER_NOT_PROCESSING`). From `paid` it moves the order to `processing` itself, in the same transaction, so it also needs `start:Shipment` (403 without it); `POST /orders/{id}/process` stays as an optional "mark in progress". Never ships from `on_hold`.
  * @summary Ship some or all of a fulfillment order
  */
 export const shipFulfillmentOrder = (
@@ -9998,7 +9988,7 @@ export const shipFulfillmentOrder = (
 };
 
 /**
- * The digital act: a shipment with no tracking, born and delivered in the same write. A `digital` fulfillment order has nothing to carry, so this is its only door. Refuses a physical one with `DELIVERY_NOT_DIGITAL` (ship it instead). When it leaves nothing remaining and nothing undelivered the order moves to `delivered`, its withdrawal clock counted from payment (digital content, Art. 9(2)(c)).
+ * The digital act: a shipment with no tracking, born and delivered in the same write. A `digital` fulfillment order has nothing to carry, so this is its only door. Refuses a physical one with `DELIVERY_NOT_DIGITAL` (ship it instead). When it leaves nothing remaining and nothing undelivered the order moves to `delivered`, its withdrawal clock counted from payment (digital content, Art. 9(2)(c)). Works from `paid` too: it moves the order to `processing` itself, so it also needs `start:Shipment` (403 without it).
  * @summary Fulfil a digital fulfillment order
  */
 export const fulfillFulfillmentOrder = (

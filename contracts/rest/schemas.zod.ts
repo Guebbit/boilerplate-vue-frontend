@@ -9496,7 +9496,6 @@ export const ListOrderFulfillmentOrdersResponse = zod.strictObject({
             cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
             actions: zod.strictObject({
                 ship: zod.boolean(),
-                forceShip: zod.boolean(),
                 fulfill: zod.boolean(),
                 hold: zod.boolean(),
                 release: zod.boolean()
@@ -10414,7 +10413,7 @@ export const SummarizePreorderFulfillmentOrdersResponse = zod.strictObject({
     })
 });
 /**
- * Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is required exactly when the order's shipping method is `tracked`. Refuses a fulfillment order that is on hold, closed or cancelled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is not `processing` (`ORDER_NOT_PROCESSING`) — unless `forced`, which lets a shipment skip the `start` step from `paid`. Never ships from `on_hold`, forced or not.
+ * Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is required exactly when the order's shipping method is `tracked`. Refuses a fulfillment order that is on hold, closed or cancelled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is neither `processing` nor `paid` (`ORDER_NOT_PROCESSING`). From `paid` it moves the order to `processing` itself, in the same transaction, so it also needs `start:Shipment` (403 without it); `POST /orders/{id}/process` stays as an optional "mark in progress". Never ships from `on_hold`.
  * @summary Ship some or all of a fulfillment order
  */
 export const shipFulfillmentOrderPathIdMax = 64;
@@ -10429,7 +10428,6 @@ export const ShipFulfillmentOrderParams = zod.strictObject({
 export const shipFulfillmentOrderBodyLinesItemProductIdMax = 64;
 export const shipFulfillmentOrderBodyLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const shipFulfillmentOrderBodyTrackingCodeMax = 100;
-export const shipFulfillmentOrderBodyReasonMax = 1000;
 export const ShipFulfillmentOrderBody = zod.strictObject({
     lines: zod
         .array(
@@ -10444,9 +10442,7 @@ export const ShipFulfillmentOrderBody = zod.strictObject({
         )
         .min(1)
         .optional(),
-    trackingCode: zod.string().min(1).max(shipFulfillmentOrderBodyTrackingCodeMax).optional(),
-    forced: zod.boolean().optional(),
-    reason: zod.string().min(1).max(shipFulfillmentOrderBodyReasonMax).optional()
+    trackingCode: zod.string().min(1).max(shipFulfillmentOrderBodyTrackingCodeMax).optional()
 });
 export const shipFulfillmentOrderResponseIdMax = 64;
 export const shipFulfillmentOrderResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -10498,7 +10494,7 @@ export const ShipFulfillmentOrderResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * The digital act: a shipment with no tracking, born and delivered in the same write. A `digital` fulfillment order has nothing to carry, so this is its only door. Refuses a physical one with `DELIVERY_NOT_DIGITAL` (ship it instead). When it leaves nothing remaining and nothing undelivered the order moves to `delivered`, its withdrawal clock counted from payment (digital content, Art. 9(2)(c)).
+ * The digital act: a shipment with no tracking, born and delivered in the same write. A `digital` fulfillment order has nothing to carry, so this is its only door. Refuses a physical one with `DELIVERY_NOT_DIGITAL` (ship it instead). When it leaves nothing remaining and nothing undelivered the order moves to `delivered`, its withdrawal clock counted from payment (digital content, Art. 9(2)(c)). Works from `paid` too: it moves the order to `processing` itself, so it also needs `start:Shipment` (403 without it).
  * @summary Fulfil a digital fulfillment order
  */
 export const fulfillFulfillmentOrderPathIdMax = 64;
@@ -10636,7 +10632,6 @@ export const HoldFulfillmentOrderResponse = zod.strictObject({
     cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
     actions: zod.strictObject({
         ship: zod.boolean(),
-        forceShip: zod.boolean(),
         fulfill: zod.boolean(),
         hold: zod.boolean(),
         release: zod.boolean()
@@ -10712,7 +10707,6 @@ export const ReleaseFulfillmentOrderResponse = zod.strictObject({
     cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
     actions: zod.strictObject({
         ship: zod.boolean(),
-        forceShip: zod.boolean(),
         fulfill: zod.boolean(),
         hold: zod.boolean(),
         release: zod.boolean()
@@ -14550,7 +14544,6 @@ export const GetFulfillmentOrderResponse = zod.strictObject({
     cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
     actions: zod.strictObject({
         ship: zod.boolean(),
-        forceShip: zod.boolean(),
         fulfill: zod.boolean(),
         hold: zod.boolean(),
         release: zod.boolean()

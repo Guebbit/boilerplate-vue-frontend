@@ -110,7 +110,7 @@ describe('"arrives in N shipments"', () => {
 });
 
 describe('the start-fulfilment door', () => {
-    it('offers "Start fulfilment" only when `actions.process` says so', () => {
+    it('offers "Mark in progress" only when `actions.process` says so', () => {
         expect(
             mountPanel({ orderId: 'o1', canStart: true })
                 .wrapper.find('[data-test=mark-started]')

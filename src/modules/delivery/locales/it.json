@@ -9,7 +9,7 @@
     "shipment-panel": {
         "title": "Spedizione",
         "not-shipped-yet": "Ancora niente da spedire.",
-        "button-start": "Avvia evasione",
+        "button-start": "Segna in lavorazione",
         "started": "Evasione avviata.",
         "arrives-in": "Arriverà in {count} spedizioni"
     },
@@ -69,8 +69,6 @@
         "error-lines-invalid": "Spedisci almeno un articolo, e non più di quanti ne restano su ogni riga.",
         "label-tracking-code": "Codice di tracciamento",
         "tracking-code-required": "Richiesto per questo metodo di spedizione",
-        "label-force": "Forza (override)",
-        "label-force-reason": "Motivo dell'override",
         "button-ship": "Segna come spedita",
         "success": "Spedizione registrata."
     },

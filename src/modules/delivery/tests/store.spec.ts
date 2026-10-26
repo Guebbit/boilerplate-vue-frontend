@@ -228,18 +228,6 @@ describe('ship', () => {
         expect(store.fulfillmentOrders).toHaveLength(1);
     });
 
-    it('carries forced and its reason when overriding', async () => {
-        const store = useDeliveryStore();
-        await store.ship('fo1', { forced: true, reason: 'warehouse system was down' });
-
-        expect(
-            contractRequest(
-                schemas.ShipFulfillmentOrderBody,
-                await sentBody('POST', '/delivery/fulfillment-orders/fo1/shipments')
-            )
-        ).toEqual({ forced: true, reason: 'warehouse system was down' });
-    });
-
     it('rejects on a refusal', () => {
         responses['POST /delivery/fulfillment-orders/fo1/shipments'] = new Error(
             'DELIVERY_LINES_INVALID'
