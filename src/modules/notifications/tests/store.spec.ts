@@ -60,6 +60,7 @@ const row = (id: string, overrides: RowOverrides = {}): Notification => ({
     id,
     code: 'notifications.cart-line-removed',
     params: { productId: 'p1', titles: { en: 'Collar', it: 'Collare' } },
+    audience: 'own',
     severity: 'info',
     createdAt: '2026-10-04T10:00:00.000Z',
     ...overrides
@@ -278,6 +279,7 @@ describe('sync', () => {
                     { productId: 'p2', requested: 1, titles: { en: 'Leash' } }
                 ]
             },
+            audience: 'own',
             severity: 'warning',
             createdAt: '2026-10-04T10:00:00.000Z'
         };

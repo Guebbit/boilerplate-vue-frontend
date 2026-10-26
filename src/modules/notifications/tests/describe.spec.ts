@@ -7,7 +7,12 @@
  * dictionary entry was reached and with what, not the English wording (the store spec covers that).
  */
 import { describe, expect, it } from 'vitest';
-import { describeNotification, notificationOrderId, productName } from '../domain';
+import {
+    describeNotification,
+    notificationOrderId,
+    notificationTarget,
+    productName
+} from '../domain';
 import type { Translate } from '../domain';
 
 /**
@@ -247,5 +252,42 @@ describe('describeNotification', () => {
                 translate
             )
         ).toBe('notifications.unknown');
+    });
+});
+
+describe('a work notice for staff', () => {
+    const hold = {
+        code: 'notifications.staff.purchase-hold-placed',
+        params: { userId: 'u9', until: 'U' }
+    } as const;
+    const disabled = {
+        code: 'notifications.staff.webhook-disabled',
+        params: { subscriptionId: 's1' }
+    } as const;
+
+    it('says when the pause ends, in the reader’s date format', () => {
+        expect(describeNotification(hold, ['en'], translate, format)).toBe(
+            'notifications.staff.purchase-hold-placed|until=U!'
+        );
+    });
+
+    it('needs no facts to say a webhook was switched off', () => {
+        expect(describeNotification(disabled, ['en'], translate, format)).toBe(
+            'notifications.staff.webhook-disabled'
+        );
+    });
+
+    it('points a hold at the buyer’s account and a webhook at its subscription', () => {
+        expect(notificationTarget(hold)).toEqual({ screen: 'account', id: 'u9' });
+        expect(notificationTarget(disabled)).toEqual({ screen: 'webhook-subscription', id: 's1' });
+    });
+
+    it('points an ordinary message at no admin screen', () => {
+        expect(
+            notificationTarget({
+                code: 'notifications.cart-line-removed',
+                params: { productId: 'p1', titles: {} }
+            })
+        ).toBeUndefined();
     });
 });
