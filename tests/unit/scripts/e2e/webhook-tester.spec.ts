@@ -6,9 +6,20 @@
  */
 import { createServer, type Server } from 'node:https';
 import type { AddressInfo } from 'node:net';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { http, passthrough } from 'msw';
+import { server as mswServer } from '../../../support/unit/msw-server.ts';
 import { readWebhookTester } from '../../../../scripts/e2e/webhook-tester';
 import { WEBHOOK_SINK_TLS } from '../../../../scripts/e2e/webhook-tls';
+
+/**
+ * This spec talks to a real HTTPS listener on loopback, which the shared MSW server would refuse.
+ * Only that one origin shape is let through; a global loopback exemption would hide stray calls.
+ * https://mswjs.io/docs/api/passthrough
+ */
+beforeEach(() => {
+    mswServer.use(http.all(/^https:\/\/127\.0\.0\.1:\d+\//, () => passthrough()));
+});
 
 /** The fake tester server, closed after each case. */
 let server: Server | undefined;

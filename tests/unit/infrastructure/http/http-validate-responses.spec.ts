@@ -3,17 +3,14 @@
  * HTTP server the same way `http-refresh.spec.ts` tests the refresh flow — a stubbed axios
  * adapter wouldn't exercise the interceptor chain the mutator actually runs through.
  */
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { setupServer } from 'msw/node';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
+import { server } from '../../../support/unit/msw-server.ts';
 import { createPinia, setActivePinia } from 'pinia';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 
 /** Origin of the stub API. */
 const API = 'http://api.test';
-
-/** MSW server answering this file's stub endpoints (`setupServer` intercepts requests in Node). */
-const server = setupServer();
 
 /**
  * Load a fresh `@/infrastructure/http` and wire the enabled modules' response schemas into it, exactly as
@@ -46,10 +43,6 @@ const loadHttp = () => {
             loadResponseSchemas(collectModuleResponseSchemas(enabledModules)).then(() => httpModule)
     );
 };
-
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
 
 beforeEach(() => {
     setActivePinia(createPinia());

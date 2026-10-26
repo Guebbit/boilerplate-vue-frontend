@@ -1,11 +1,19 @@
 /**
  * `scripts/lighthouse/analytics-sink.ts`: answers analytics posts with nothing, on loopback only.
  */
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect } from 'vitest';
+import { http, passthrough } from 'msw';
+import { server } from '../../../support/unit/msw-server.ts';
 import type { AddressInfo } from 'node:net';
 import { startAnalyticsSink } from '../../../../scripts/lighthouse/analytics-sink';
 
 describe('startAnalyticsSink', () => {
+    // The sink is a real loopback listener; the shared MSW server would refuse the call otherwise.
+    // https://mswjs.io/docs/api/passthrough
+    beforeEach(() => {
+        server.use(http.all(/^http:\/\/127\.0\.0\.1:\d+\//, () => passthrough()));
+    });
+
     it('answers a POST with 204 and the script with an empty 200', async () => {
         const sink = await startAnalyticsSink(0);
         const { port, address } = sink.address() as AddressInfo;

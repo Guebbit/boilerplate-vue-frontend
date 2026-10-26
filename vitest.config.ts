@@ -35,6 +35,9 @@ export default mergeConfig(
             // See the file itself for why, and for how to go back to 'jsdom'.
             environment: './tests/support/unit/jsdom-quiet-css.environment.ts',
             setupFiles: ['tests/support/unit/setup.ts'],
+            // Pins the API base URL so logged URLs and relative MSW handlers read the same on every
+            // machine; a local .env would otherwise point it at a dev backend.
+            env: { VITE_API_URL: '' },
             // Vitest's 5 s default is tuned for a developer's machine. CI runs the whole suite
             // on a 4-vCPU runner, where mounting a full page spec takes 3-5x
             // longer and the last tests of a heavy file timed out on a green codebase.

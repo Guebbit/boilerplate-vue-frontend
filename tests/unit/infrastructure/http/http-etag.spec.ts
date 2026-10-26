@@ -8,9 +8,9 @@
  * shared instance — neither is observable from a stubbed adapter. `etag.spec.ts` covers the same
  * rules on the two interceptors alone.
  */
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { setupServer } from 'msw/node';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
+import { server } from '../../../support/unit/msw-server.ts';
 import { createPinia, setActivePinia } from 'pinia';
 import { aProblem } from '../../../support/unit/fixtures.ts';
 
@@ -30,8 +30,8 @@ let patchIfMatch: (string | undefined)[] = [];
  */
 const tag = (version: number) => `"${version.toString()}"`;
 
-/** MSW server answering this file's stub endpoints (`setupServer` intercepts requests in Node). */
-const server = setupServer(
+/** This file's stub endpoints, registered on the shared MSW server before each test. */
+const handlers = [
     /** The editor's read: answers the current tag. */
     http.get(`${API}/products/p1/admin`, () =>
         HttpResponse.json({ id: 'p1' }, { headers: { ETag: tag(serverVersion) } })
@@ -57,7 +57,7 @@ const server = setupServer(
         serverVersion += 100;
         return HttpResponse.json({ id: 'p1' });
     })
-);
+];
 
 /**
  * Imports the http plugin fresh, with the API base URL stubbed — the instance and its
@@ -69,11 +69,8 @@ const loadHttp = () => {
     return import('@/infrastructure/http');
 };
 
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
-
 beforeEach(() => {
+    server.use(...handlers);
     setActivePinia(createPinia());
     serverVersion = 100;
     patchIfMatch = [];

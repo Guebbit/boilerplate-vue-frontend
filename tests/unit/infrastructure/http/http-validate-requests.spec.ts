@@ -4,17 +4,14 @@
  * what it proves is that a call site which skipped `toRequestBody` is loud, and that a body which
  * was shaped properly is left exactly as it was.
  */
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { setupServer } from 'msw/node';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
+import { server } from '../../../support/unit/msw-server.ts';
 import { createPinia, setActivePinia } from 'pinia';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 
 /** Origin of the stub API. */
 const API = 'http://api.test';
-
-/** MSW server answering this file's stub endpoints (`setupServer` intercepts requests in Node). */
-const server = setupServer();
 
 /** What the stub endpoint received, so a test can prove the body went out untouched. */
 let received: unknown;
@@ -50,10 +47,6 @@ const loadHttp = () => {
  */
 const patchAccount = (data: unknown) =>
     loadHttp().then(({ orvalMutator }) => orvalMutator({ url: '/account', method: 'PATCH', data }));
-
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
 
 beforeEach(() => {
     setActivePinia(createPinia());
