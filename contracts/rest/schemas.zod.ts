@@ -7,12 +7,18 @@
  *
  * Language: every endpoint honours `Accept-Language` (q-weights and region tags
  * included). One language is picked per request, from the languages switched on in
- * `GET /locales`, and it selects the language of user-facing copy and of translated entity
+ * `GET /locales` (and, for that staff preview, the draft asked for), and it selects the language of user-facing copy and of translated entity
  * fields (a product's `title`, `description`) — `errors[].message` — never the response shape, the status code, or a machine-readable field such
  * as `errors[].code`. A message the API has no wording for in that language falls back to
  * the default language, one message at a time. An unknown or switched-off language falls
  * back instead of erroring; `Content-Language` states the language picked, the audience the
  * answer is written for (RFC 9110 section 8.5), and `Vary: Accept-Language` is always set.
+ * One exception, for staff: a caller allowed to read draft languages (`display:Locale`) whose
+ * FIRST `Accept-Language` choice is a switched-off language is answered in it by the product
+ * reads (`GET /products`, `POST /products/search`, `GET /products/{id}`) and the example
+ * read: draft text where it exists, the live chain field by field where it does not. That
+ * answer says `Content-Language: <draft tag>` and `Cache-Control: private, no-store`, and the
+ * server never stores it. Anyone else asking for a draft gets the normal pick.
  * `GET /locales` lists what a deployment offers.
  *
  * Successes: a 2xx answers the resource itself, with no wrapper. A list is an object, never a
@@ -384,8 +390,8 @@ export const DeleteLocaleResponse = zod.void();
  * that exists but is inactive — an inactive language is invisible to every public
  * route, which is the whole point of the flag. A caller holding `display:Locale`
  * (staff, or an API key minted with it) is the exception: they get an inactive
- * language's dictionary too, so a translation can be seen in the shop before it is
- * switched on for everyone.
+ * language's dictionary too, so a draft's interface strings can be read before it is
+ * switched on; the same caller previews its product text on the product reads.
  *
  * Public and cacheable, like every other locale read; a staff answer skips the
  * shared cache.
@@ -4918,7 +4924,7 @@ export const DeleteFeedbackRequestParams = zod.strictObject({
 });
 export const DeleteFeedbackRequestResponse = zod.void();
 /**
- * Returns a paginated list of products.
+ * Returns a paginated list of products. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached.
  * @summary List products (paginated)
  */
 export const listProductsQueryPageDefault = 1;
@@ -5167,7 +5173,7 @@ export const GetCatalogueFacetsResponse = zod.strictObject({
     )
 });
 /**
- * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`.
+ * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached.
  * @summary Product details
  */
 export const getProductByIdPathIdMax = 64;
@@ -5613,7 +5619,7 @@ export const HardDeleteProductByIdHeader = zod.strictObject({
 });
 export const HardDeleteProductByIdResponse = zod.void();
 /**
- * Searches and filters products via a JSON request body. Functionally equivalent to `GET /products` with query parameters.
+ * Searches and filters products via a JSON request body. Functionally equivalent to `GET /products` with query parameters. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached.
  * @summary Search products (DTO-friendly)
  */
 export const searchProductsBodyPageDefault = 1;
