@@ -424,6 +424,31 @@ describe('AttentionList', () => {
         expect(rows[2]?.text()).toContain('€12.00');
     });
 
+    it('counts the days left to the legal pay-back deadline of a refused return refund', async () => {
+        const inThreeDays = new Date(Date.now() + 3 * 86_400_000 - 3_600_000).toISOString();
+        answerAttentionWith([{ ...ITEMS[1], refundDueBy: inThreeDays }, ITEMS[0]]);
+        const wrapper = mount(AttentionList, { global: GLOBAL });
+        await flushPromises();
+
+        const rows = wrapper.findAll('[data-test="attention-row"]');
+        expect(rows[0]?.get('[data-test="attention-deadline"]').text()).toBe(
+            '3 days left to pay this back'
+        );
+        // A refund with no such deadline shows its age only.
+        expect(rows[1]?.find('[data-test="attention-deadline"]').exists()).toBe(false);
+    });
+
+    it('says how late a refund is once the deadline has gone', async () => {
+        const twoDaysAgo = new Date(Date.now() - 2 * 86_400_000 - 3_600_000).toISOString();
+        answerAttentionWith([{ ...ITEMS[1], refundDueBy: twoDaysAgo }]);
+        const wrapper = mount(AttentionList, { global: GLOBAL });
+        await flushPromises();
+
+        expect(wrapper.get('[data-test="attention-deadline"]').text()).toBe(
+            'Pay-back deadline passed 2 days ago'
+        );
+    });
+
     it('links each problem to its order', async () => {
         answerAttentionWith(ITEMS);
         const wrapper = mount(AttentionList, { global: GLOBAL });

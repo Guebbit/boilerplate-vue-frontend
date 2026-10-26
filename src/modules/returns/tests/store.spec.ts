@@ -152,6 +152,31 @@ describe('the staff moves', () => {
     });
 });
 
+describe('close', () => {
+    it('posts the note and mirrors the closed return', () => {
+        responses['POST /returns/r1/close'] = aReturn({ status: 'closed' });
+        const store = useReturnsStore();
+
+        return store.close('r1', 'paid back in cash').then(() => {
+            expect(sent[0].url).toBe('/returns/r1/close');
+            expect(contractRequest(schemas.CloseReturnBody, sent[0].data)).toEqual({
+                note: 'paid back in cash'
+            });
+            expect(store.returns.r1?.status).toBe('closed');
+        });
+    });
+
+    it('sends no body at all when there is no note', () => {
+        responses['POST /returns/r1/close'] = aReturn({ status: 'closed' });
+
+        return useReturnsStore()
+            .close('r1')
+            .then(() => {
+                expect(sent[0].data).toBeUndefined();
+            });
+    });
+});
+
 describe('fetchOrderReturns', () => {
     it('asks for one order’s returns and caches them', () => {
         responses['GET /returns'] = {

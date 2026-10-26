@@ -10,12 +10,14 @@
  * picker holds the page's `v-model` (readable as `data-selected`) and the address pickers choose
  * the way a shopper leaving them alone would.
  */
+import { vi } from 'vitest';
 import { defineComponent } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Cart from '@/modules/cart/views/Cart.vue';
 import { useCartStore } from '@/modules/cart/store.ts';
+import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { spyOnProductReads } from './products-store.ts';
 import { i18n } from '@/i18n';
 import vuetify from '@/ui/vuetify';
@@ -111,6 +113,10 @@ export const mountCartPage = (held?: CartResponse): Promise<MountedCartPage> => 
     const cart = useCartStore();
     if (held) cart.cart = held;
     spyOnProductReads().mockResolvedValue([]);
+    // The hold notice on the page reads the account on mount. Left to the network, `GET /account`
+    // reaches whatever listens on the dev API port (a dev server answering HTML, say), and the
+    // junk answer publishes an empty viewer: the cart then resets and the page shows it empty.
+    vi.spyOn(useProfileStore(), 'fetchProfile').mockResolvedValue(undefined);
     const wrapper = mount(Cart, {
         global: {
             plugins: [router, vuetify, i18n],
