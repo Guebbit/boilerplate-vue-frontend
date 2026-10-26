@@ -79,7 +79,7 @@ describe('OP17 · A warehouse shift', () => {
             expect(links).to.include('/en/inventory');
             for (const page of [
                 '/users',
-                '/feedback',
+                '/tickets',
                 '/locales',
                 '/audit',
                 '/admin',

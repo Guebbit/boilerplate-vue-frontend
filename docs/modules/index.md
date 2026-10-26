@@ -55,7 +55,7 @@ flowchart LR
         direction TB
         account["account"]
         apiKeys["api-keys"]
-        feedback["feedback"]
+        tickets["tickets"]
         locales["locales"]
         observability["observability"]
         users["users"]
@@ -82,7 +82,7 @@ flowchart LR
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     class cart,orders,products core;
     class delivery,inventory,notifications,payments,returns,stats,stockAlerts,wishlist supporting;
-    class account,apiKeys,feedback,locales,observability,users,webhooks generic;
+    class account,apiKeys,tickets,locales,observability,users,webhooks generic;
     style CORE fill:#faf8ff,stroke:#cbd5e1
     style SUPPORTING fill:#f8fafc,stroke:#cbd5e1
     style GENERIC fill:#f8fdfc,stroke:#cbd5e1
@@ -154,7 +154,7 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 | [`cart`](./cart.md)                                            | `core`       | `shop`       | 1       | `cart`                   | 8         | 4          | 2              |
 | [`delivery`](./delivery.md)                                    | `supporting` | `shop`       | 0       | `delivery`               | 13        | 0          | 3              |
 | [`example`](../theory/modules.md#adding-and-deleting-a-domain) | —            | `example`    | 5       | `example`                | 6         | 0          | 0              |
-| [`feedback`](./feedback.md)                                    | `generic`    | `foundation` | 2       | `feedback`               | 3         | 0          | 0              |
+| [`tickets`](./tickets.md)                                      | `generic`    | `foundation` | 2       | `tickets`                | 3         | 0          | 0              |
 | [`inventory`](./inventory.md)                                  | `supporting` | `shop`       | 2       | `inventory`              | 7         | 2          | 0              |
 | [`locales`](./locales.md)                                      | `generic`    | `foundation` | 4       | `locales`                | 9         | 0          | 0              |
 | [`notifications`](./notifications.md)                          | `supporting` | `shop`       | 0       | `inbox`                  | 4         | 0          | 0              |
@@ -188,7 +188,7 @@ job, not a checked one.
 | [`cart`](./cart.md)                                            | `cart`                            | —                                                                                                                                                                            |
 | [`delivery`](./delivery.md)                                    | `delivery`                        | —                                                                                                                                                                            |
 | [`example`](../theory/modules.md#adding-and-deleting-a-domain) | `example`                         | —                                                                                                                                                                            |
-| [`feedback`](./feedback.md)                                    | `feedback`                        | —                                                                                                                                                                            |
+| [`tickets`](./tickets.md)                                      | `tickets`                         | —                                                                                                                                                                            |
 | [`inventory`](./inventory.md)                                  | `inventory`                       | —                                                                                                                                                                            |
 | [`locales`](./locales.md)                                      | `locales`                         | —                                                                                                                                                                            |
 | [`notifications`](./notifications.md)                          | `notifications`                   | —                                                                                                                                                                            |

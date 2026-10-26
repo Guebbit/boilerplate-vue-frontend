@@ -35,8 +35,6 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`example`](./modules.md#adding-and-deleting-a-domain) | `examples/published/:id`               | `ExamplePublished`        | `public` | —                            | `views/ExamplePublished.vue`        |
 | [`example`](./modules.md#adding-and-deleting-a-domain) | `examples/:id`                         | `ExampleTarget`           | `auth`   | `read Example`               | `views/ExampleTarget.vue`           |
 | [`example`](./modules.md#adding-and-deleting-a-domain) | `examples/:id/edit`                    | `ExampleEdit`             | `auth`   | `update Example`             | `views/ExampleEdit.vue`             |
-| [`feedback`](../modules/feedback.md)                   | `contact`                              | `Contact`                 | `public` | —                            | `views/Contact.vue`                 |
-| [`feedback`](../modules/feedback.md)                   | `feedback`                             | `FeedbackInbox`           | `auth`   | `read Feedback`              | `views/FeedbackInbox.vue`           |
 | [`inventory`](../modules/inventory.md)                 | `inventory`                            | `InventoryLedger`         | `auth`   | `read StockLevel`            | `views/InventoryLedger.vue`         |
 | [`inventory`](../modules/inventory.md)                 | `sales/preorders`                      | `PreordersBoard`          | `auth`   | `display Order`              | `views/PreordersBoard.vue`          |
 | [`locales`](../modules/locales.md)                     | `locales`                              | `LocalesList`             | `auth`   | `update Locale`              | `views/LocalesList.vue`             |
@@ -60,6 +58,8 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`stats`](../modules/stats.md)                         | `sales/stats`                          | `StatsDashboard`          | `auth`   | `read Stats`                 | `views/StatsDashboard.vue`          |
 | [`stats`](../modules/stats.md)                         | `sales/stats/products/:productId`      | `StatsProductSales`       | `auth`   | `read Stats`                 | `views/ProductSales.vue`            |
 | [`stock-alerts`](../modules/stock-alerts.md)           | `stock-alerts`                         | `StockAlerts`             | `auth`   | —                            | `views/StockAlerts.vue`             |
+| [`tickets`](../modules/tickets.md)                     | `contact`                              | `Contact`                 | `public` | —                            | `views/Contact.vue`                 |
+| [`tickets`](../modules/tickets.md)                     | `tickets`                              | `TicketInbox`             | `auth`   | `read Ticket`                | `views/TicketInbox.vue`             |
 | [`users`](../modules/users.md)                         | `users`                                | `UsersList`               | `auth`   | `read User`                  | `views/UsersList.vue`               |
 | [`users`](../modules/users.md)                         | `users/create`                         | `UserCreate`              | `auth`   | `create User`                | `views/UserCreate.vue`              |
 | [`users`](../modules/users.md)                         | `users/:id`                            | `UserTarget`              | `auth`   | `read User`                  | `views/User.vue`                    |

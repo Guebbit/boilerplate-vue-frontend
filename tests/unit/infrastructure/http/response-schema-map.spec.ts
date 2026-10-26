@@ -277,8 +277,8 @@ describe('operations this app actually imports', () => {
 const widgetRows: ResponseSchemaRoute[] = [
     { method: 'GET', pattern: /^\/widgets$/, schema: schemas.GetHealthResponse },
     { method: 'POST', pattern: /^\/widgets$/, schema: schemas.GetLocalesResponse },
-    { method: 'PUT', pattern: /^\/widgets$/, schema: schemas.ListFeedbackRequestsResponse },
-    { method: 'DELETE', pattern: /^\/widgets$/, schema: schemas.CreateFeedbackRequestResponse },
+    { method: 'PUT', pattern: /^\/widgets$/, schema: schemas.ListTicketsResponse },
+    { method: 'DELETE', pattern: /^\/widgets$/, schema: schemas.CreateContactTicketResponse },
     {
         method: 'GET',
         pattern: /^\/widgets\/[^/]+\/detail$/,
@@ -287,7 +287,7 @@ const widgetRows: ResponseSchemaRoute[] = [
     {
         method: 'GET',
         pattern: /^\/widgets\/[^/]+$/,
-        schema: schemas.UpdateFeedbackRequestStatusResponse
+        schema: schemas.UpdateTicketStatusResponse
     }
 ];
 
@@ -307,15 +307,15 @@ describe('resolveResponseSchema', () => {
         // response against the list schema.
         expect(resolveResponseSchema('GET', '/widgets')).toBe(schemas.GetHealthResponse);
         expect(resolveResponseSchema('POST', '/widgets')).toBe(schemas.GetLocalesResponse);
-        expect(resolveResponseSchema('PUT', '/widgets')).toBe(schemas.ListFeedbackRequestsResponse);
+        expect(resolveResponseSchema('PUT', '/widgets')).toBe(schemas.ListTicketsResponse);
         expect(resolveResponseSchema('DELETE', '/widgets')).toBe(
-            schemas.CreateFeedbackRequestResponse
+            schemas.CreateContactTicketResponse
         );
     });
 
     it('resolves a parameterised route', () => {
         expect(resolveResponseSchema('GET', `/widgets/${ID}`)).toBe(
-            schemas.UpdateFeedbackRequestStatusResponse
+            schemas.UpdateTicketStatusResponse
         );
     });
 
@@ -335,7 +335,7 @@ describe('resolveResponseSchema', () => {
         const widget = resolveResponseSchema('GET', `/widgets/${ID}`);
 
         expect(detail).toBe(schemas.GetLocaleDictionaryResponse);
-        expect(widget).toBe(schemas.UpdateFeedbackRequestStatusResponse);
+        expect(widget).toBe(schemas.UpdateTicketStatusResponse);
         expect(detail).not.toBe(widget);
     });
 

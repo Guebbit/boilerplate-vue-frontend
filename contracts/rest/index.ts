@@ -1633,9 +1633,9 @@ export interface ExportSignInMethods {
     twoFactor: ExportTwoFactorMethod[];
 }
 
-export type FeedbackCategory = (typeof FeedbackCategory)[keyof typeof FeedbackCategory];
+export type TicketCategory = (typeof TicketCategory)[keyof typeof TicketCategory];
 
-export const FeedbackCategory = {
+export const TicketCategory = {
     order: 'order',
     cancellation: 'cancellation',
     return: 'return',
@@ -1645,25 +1645,24 @@ export const FeedbackCategory = {
     other: 'other'
 } as const;
 
-export type FeedbackRequestStatus =
-    (typeof FeedbackRequestStatus)[keyof typeof FeedbackRequestStatus];
+export type TicketStatus = (typeof TicketStatus)[keyof typeof TicketStatus];
 
-export const FeedbackRequestStatus = {
+export const TicketStatus = {
     new: 'new',
     in_progress: 'in_progress',
     resolved: 'resolved',
     spam: 'spam'
 } as const;
 
-export interface ExportFeedbackTicket {
+export interface ExportTicket {
     id: Id;
     name?: string;
     email: Email;
     subject: string;
     message: string;
-    category?: FeedbackCategory;
+    category?: TicketCategory;
     orderNumber?: string;
-    status: FeedbackRequestStatus;
+    status: TicketStatus;
     respondedAt?: string;
     createdAt?: string;
 }
@@ -2551,8 +2550,8 @@ export interface AccountExportResponse {
     sessions: ExportSession[];
     addresses: Address[];
     signInMethods: ExportSignInMethods;
-    /** Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`. */
-    feedback?: ExportFeedbackTicket[];
+    /** Present only when `NODE_EXPORT_INCLUDE_TICKETS=true`. */
+    tickets?: ExportTicket[];
     cart: CartItem[];
     wishlist: WishlistExportItem[];
     orders: ExportOrder[];
@@ -2918,7 +2917,45 @@ export interface SearchUsersRequest {
     purchaseHoldReview?: true;
 }
 
-export interface CreateFeedbackRequest {
+export type TicketSortItem = (typeof TicketSortItem)[keyof typeof TicketSortItem];
+
+export const TicketSortItem = {
+    createdAt: 'createdAt',
+    '-createdAt': '-createdAt',
+    status: 'status',
+    '-status': '-status',
+    email: 'email',
+    '-email': '-email'
+} as const;
+
+/**
+ * @minItems 1
+ * @maxItems 3
+ */
+export type TicketSort = TicketSortItem[];
+
+export interface Ticket {
+    id: Id;
+    name?: string;
+    email: Email;
+    subject: string;
+    message: string;
+    category?: TicketCategory;
+    /** The order the visitor said this is about, as they typed it. Not checked against any order. */
+    orderNumber?: string;
+    status: TicketStatus;
+    adminNotes?: string;
+    respondedAt?: string;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+export interface TicketsResponse {
+    items: Ticket[];
+    meta: PaginationMeta;
+}
+
+export interface CreateContactTicketRequest {
     /**
      * @minLength 1
      * @maxLength 120
@@ -2935,7 +2972,7 @@ export interface CreateFeedbackRequest {
      * @maxLength 5000
      */
     message: string;
-    category?: FeedbackCategory;
+    category?: TicketCategory;
     /**
      * The order the visitor says this is about, free text. Not checked against any order.
      * @minLength 1
@@ -2943,63 +2980,24 @@ export interface CreateFeedbackRequest {
      */
     orderNumber?: string;
     /**
-     * Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `FeedbackRequest`, which does not declare it.
+     * Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `Ticket`, which does not declare it.
      * @maxLength 200
      */
     website?: string;
 }
 
-export interface FeedbackRequest {
-    id: Id;
-    name?: string;
-    email: Email;
-    subject: string;
-    message: string;
-    category?: FeedbackCategory;
-    /** The order the visitor said this is about, as they typed it. Not checked against any order. */
-    orderNumber?: string;
-    status: FeedbackRequestStatus;
-    adminNotes?: string;
-    respondedAt?: string;
-    createdAt: string;
-    updatedAt?: string;
-}
-
-export type FeedbackRequestSortItem =
-    (typeof FeedbackRequestSortItem)[keyof typeof FeedbackRequestSortItem];
-
-export const FeedbackRequestSortItem = {
-    createdAt: 'createdAt',
-    '-createdAt': '-createdAt',
-    status: 'status',
-    '-status': '-status',
-    email: 'email',
-    '-email': '-email'
-} as const;
-
-/**
- * @minItems 1
- * @maxItems 3
- */
-export type FeedbackRequestSort = FeedbackRequestSortItem[];
-
-export interface FeedbackRequestsResponse {
-    items: FeedbackRequest[];
-    meta: PaginationMeta;
-}
-
-export interface SearchFeedbackRequestsRequest {
+export interface SearchTicketsRequest {
     page?: Page;
     pageSize?: PageSize;
-    sort?: FeedbackRequestSort;
+    sort?: TicketSort;
     text?: Text;
-    status?: FeedbackRequestStatus;
-    category?: FeedbackCategory;
+    status?: TicketStatus;
+    category?: TicketCategory;
     email?: Email;
 }
 
-export interface UpdateFeedbackRequestStatusRequest {
-    status?: FeedbackRequestStatus;
+export interface UpdateTicketStatusRequest {
+    status?: TicketStatus;
     /**
      * @minLength 1
      * @maxLength 5000
@@ -6107,7 +6105,7 @@ export type DeleteUserByIdParams = {
     hardDelete?: HardDeleteParamParameter;
 };
 
-export type ListFeedbackRequestsParams = {
+export type ListTicketsParams = {
     /**
      * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
      * @minimum 1
@@ -6120,7 +6118,7 @@ export type ListFeedbackRequestsParams = {
      * @maximum 100
      */
     pageSize?: PageSizeParamParameter;
-    sort?: FeedbackRequestSort;
+    sort?: TicketSort;
     /**
      * Free-text search string
      * @minLength 1
@@ -6128,8 +6126,8 @@ export type ListFeedbackRequestsParams = {
      */
     text?: TextParamParameter;
     email?: Email;
-    status?: FeedbackRequestStatus;
-    category?: FeedbackCategory;
+    status?: TicketStatus;
+    category?: TicketCategory;
 };
 
 export type ListProductsParams = {
@@ -8683,117 +8681,111 @@ export const searchUsers = (
 };
 
 /**
- * Creates a user feedback/contact request and notifies admins via email.
+ * Creates a contact ticket and notifies the support mailbox by email.
  * @summary Submit contact request
  */
-export const createFeedbackRequest = (
-    createFeedbackRequest: CreateFeedbackRequest,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequest>>
+export const createContactTicket = (
+    createContactTicketRequest: CreateContactTicketRequest,
+    options?: SecondParameter<typeof orvalMutator<Ticket>>
 ) => {
-    return orvalMutator<FeedbackRequest>(
+    return orvalMutator<Ticket>(
         {
-            url: `/feedback/contact`,
+            url: `/tickets`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: createFeedbackRequest
+            data: createContactTicketRequest
         },
         options
     );
 };
 
 /**
- * Returns feedback/contact requests for admin review.
- * @summary List feedback requests
+ * Returns tickets for staff review.
+ * @summary List tickets
  */
-export const listFeedbackRequests = (
-    params?: ListFeedbackRequestsParams,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequestsResponse>>
+export const listTickets = (
+    params?: ListTicketsParams,
+    options?: SecondParameter<typeof orvalMutator<TicketsResponse>>
 ) => {
-    return orvalMutator<FeedbackRequestsResponse>(
-        { url: `/feedback`, method: 'GET', params },
-        options
-    );
+    return orvalMutator<TicketsResponse>({ url: `/tickets`, method: 'GET', params }, options);
 };
 
 /**
- * Searches and filters feedback requests via a JSON request body. Functionally equivalent to `GET /feedback` with query parameters.
- * @summary Search feedback requests (DTO-friendly)
+ * Searches and filters tickets via a JSON request body. Functionally equivalent to `GET /tickets` with query parameters.
+ * @summary Search tickets (DTO-friendly)
  */
-export const searchFeedbackRequests = (
-    searchFeedbackRequestsRequest: SearchFeedbackRequestsRequest,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequestsResponse>>
+export const searchTickets = (
+    searchTicketsRequest: SearchTicketsRequest,
+    options?: SecondParameter<typeof orvalMutator<TicketsResponse>>
 ) => {
-    return orvalMutator<FeedbackRequestsResponse>(
+    return orvalMutator<TicketsResponse>(
         {
-            url: `/feedback/search`,
+            url: `/tickets/search`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: searchFeedbackRequestsRequest
+            data: searchTicketsRequest
         },
         options
     );
 };
 
 /**
- * One feedback request of the admin queue, by id. The same rows `GET /feedback` lists, so anyone who may read the list reads any of them. An unknown or malformed id is a 404.
- * @summary Get a feedback request
+ * One ticket of the admin queue, by id. The same rows `GET /tickets` lists, so anyone who may read the list reads any of them. An unknown or malformed id is a 404.
+ * @summary Get a ticket
  */
-export const getFeedbackRequest = (
-    id: string,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequest>>
-) => {
-    return orvalMutator<FeedbackRequest>({ url: `/feedback/${id}`, method: 'GET' }, options);
+export const getTicket = (id: string, options?: SecondParameter<typeof orvalMutator<Ticket>>) => {
+    return orvalMutator<Ticket>({ url: `/tickets/${id}`, method: 'GET' }, options);
 };
 
 /**
- * Merges a status and/or notes change into a feedback request. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
- * @summary Update feedback request status
+ * Merges a status and/or notes change into a ticket. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
+ * @summary Update ticket status
  */
-export const updateFeedbackRequestStatus = (
+export const updateTicketStatus = (
     id: string,
-    updateFeedbackRequestStatusRequest: UpdateFeedbackRequestStatusRequest,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequest>>
+    updateTicketStatusRequest: UpdateTicketStatusRequest,
+    options?: SecondParameter<typeof orvalMutator<Ticket>>
 ) => {
-    return orvalMutator<FeedbackRequest>(
+    return orvalMutator<Ticket>(
         {
-            url: `/feedback/${id}`,
+            url: `/tickets/${id}`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            data: updateFeedbackRequestStatusRequest
+            data: updateTicketStatusRequest
         },
         options
     );
 };
 
 /**
- * Merges a status and/or notes change into a feedback request. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
- * @summary Update feedback request status
+ * Merges a status and/or notes change into a ticket. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
+ * @summary Update ticket status
  */
-export const updateFeedbackRequestStatusWithMergePatchJson = (
+export const updateTicketStatusWithMergePatchJson = (
     id: string,
-    updateFeedbackRequestStatusRequest: UpdateFeedbackRequestStatusRequest,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequest>>
+    updateTicketStatusRequest: UpdateTicketStatusRequest,
+    options?: SecondParameter<typeof orvalMutator<Ticket>>
 ) => {
-    return orvalMutator<FeedbackRequest>(
+    return orvalMutator<Ticket>(
         {
-            url: `/feedback/${id}`,
+            url: `/tickets/${id}`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: updateFeedbackRequestStatusRequest
+            data: updateTicketStatusRequest
         },
         options
     );
 };
 
 /**
- * Permanently removes the feedback request identified by `{id}`.
- * @summary Delete feedback request
+ * Permanently removes the ticket identified by `{id}`.
+ * @summary Delete ticket
  */
-export const deleteFeedbackRequest = (
+export const deleteTicket = (
     id: string,
     options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<NoContentResponse>({ url: `/feedback/${id}`, method: 'DELETE' }, options);
+    return orvalMutator<NoContentResponse>({ url: `/tickets/${id}`, method: 'DELETE' }, options);
 };
 
 /**
@@ -11706,25 +11698,17 @@ export type DeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof deleteU
 export type RestoreUserByIdResult = NonNullable<Awaited<ReturnType<typeof restoreUserById>>>;
 export type HardDeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof hardDeleteUserById>>>;
 export type SearchUsersResult = NonNullable<Awaited<ReturnType<typeof searchUsers>>>;
-export type CreateFeedbackRequestResult = NonNullable<
-    Awaited<ReturnType<typeof createFeedbackRequest>>
+export type CreateContactTicketResult = NonNullable<
+    Awaited<ReturnType<typeof createContactTicket>>
 >;
-export type ListFeedbackRequestsResult = NonNullable<
-    Awaited<ReturnType<typeof listFeedbackRequests>>
+export type ListTicketsResult = NonNullable<Awaited<ReturnType<typeof listTickets>>>;
+export type SearchTicketsResult = NonNullable<Awaited<ReturnType<typeof searchTickets>>>;
+export type GetTicketResult = NonNullable<Awaited<ReturnType<typeof getTicket>>>;
+export type UpdateTicketStatusResult = NonNullable<Awaited<ReturnType<typeof updateTicketStatus>>>;
+export type UpdateTicketStatusWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateTicketStatusWithMergePatchJson>>
 >;
-export type SearchFeedbackRequestsResult = NonNullable<
-    Awaited<ReturnType<typeof searchFeedbackRequests>>
->;
-export type GetFeedbackRequestResult = NonNullable<Awaited<ReturnType<typeof getFeedbackRequest>>>;
-export type UpdateFeedbackRequestStatusResult = NonNullable<
-    Awaited<ReturnType<typeof updateFeedbackRequestStatus>>
->;
-export type UpdateFeedbackRequestStatusWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof updateFeedbackRequestStatusWithMergePatchJson>>
->;
-export type DeleteFeedbackRequestResult = NonNullable<
-    Awaited<ReturnType<typeof deleteFeedbackRequest>>
->;
+export type DeleteTicketResult = NonNullable<Awaited<ReturnType<typeof deleteTicket>>>;
 export type ListProductsResult = NonNullable<Awaited<ReturnType<typeof listProducts>>>;
 export type CreateProductResult = NonNullable<Awaited<ReturnType<typeof createProduct>>>;
 export type CreateProductWithMultipartResult = NonNullable<

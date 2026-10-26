@@ -1,4 +1,4 @@
-# feedback
+# tickets
 
 ::: tip At a glance
 **Owns** — the public contact form and the admin inbox behind it.
@@ -9,15 +9,15 @@
 | Fact                    | This module                                                         |
 | ----------------------- | ------------------------------------------------------------------- |
 | **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste. |
-| **Screens**             | 2 — `Contact` · `FeedbackInbox`                                     |
-| **Store**               | `feedback`                                                          |
-| **Menu entries**        | `Contact` · `FeedbackInbox`                                         |
+| **Screens**             | 2 — `Contact` · `TicketInbox`                                       |
+| **Store**               | `tickets`                                                           |
+| **Menu entries**        | `Contact` · `TicketInbox`                                           |
 | **API calls**           | 5                                                                   |
 | **Depends on**          | _nothing_                                                           |
 | **Depended on by**      | _nothing_                                                           |
 | **Languages**           | `en` · `it`                                                         |
 | **Publishes**           | _nothing_ — no barrel, so no sibling may import it                  |
-| **Backend counterpart** | `feedback` in `boilerplate-node-backend`                            |
+| **Backend counterpart** | `tickets` in `boilerplate-node-backend`                             |
 
 ::: info Stands alone
 No module depends on this one and it depends on none. Deleting the folder and its line in `src/modules.ts` costs nothing else.
@@ -25,7 +25,7 @@ No module depends on this one and it depends on none. Deleting the folder and it
 
 ## The map
 
-`feedback` sits on no edge of the context map — nothing imports it and it imports nothing.
+`tickets` sits on no edge of the context map — nothing imports it and it imports nothing.
 
 ## The story
 
@@ -33,7 +33,7 @@ A ticket references no other domain's records, and both screens talk only to thi
 endpoints — so it depends on nothing and nothing depends on it.
 
 The two screens are opposite ends of one workflow and share nothing but a store: `contact` is
-public, `feedback` needs `['read', 'Feedback']`. That split is a property of the routes' own
+public, `tickets` needs `['read', 'Ticket']`. That split is a property of the routes' own
 declarations, not of anything in this folder, which is why the menu entry can be contributed
 without restating a permission.
 
@@ -52,17 +52,17 @@ and a client module is one folder and one registry line away from using it.
 other admin list. `pageTotal` comes from the server's own `meta.totalPages` (`useServerPageTotal`),
 never from the rows already cached.
 
-Every page is read through `POST /feedback/search`, never `GET /feedback`: the GET answers
+Every page is read through `POST /tickets/search`, never `GET /tickets`: the GET answers
 `Cache-Control: private, max-age=30`, so a reload right after a delete could be a browser cache hit
 handing the deleted row back. A POST body is never browser-cached.
 
 ```mermaid
 flowchart LR
     subgraph public["contact — public"]
-        V["A visitor"] -->|"POST /feedback/contact"| T["A ticket, status: new"]
+        V["A visitor"] -->|"POST /tickets"| T["A ticket, status: new"]
     end
-    subgraph admin["feedback — admin"]
-        T --> L["Inbox page:<br/>POST /feedback/search<br/>(filters + page + pageSize)"]
+    subgraph admin["tickets — admin"]
+        T --> L["Inbox page:<br/>POST /tickets/search<br/>(filters + page + pageSize)"]
         L --> S{"Operator acts"}
         S -->|"updateRequest"| P["new → read → resolved<br/>row patched from the API's answer"]
         S -->|"deleteRequest"| D["row evicted from the page"]
@@ -73,7 +73,7 @@ flowchart LR
 
 ## State
 
-Store `feedback`, from `store.ts`. Only what the setup function returns is listed — an internal ref
+Store `tickets`, from `store.ts`. Only what the setup function returns is listed — an internal ref
 is not part of the surface.
 
 | Kind        | Members                                                                                                 | What it is                                                       |
@@ -84,10 +84,10 @@ is not part of the surface.
 
 ## Screens
 
-| Path       | Route name      | Access   | Permission      | View                      |
-| ---------- | --------------- | -------- | --------------- | ------------------------- |
-| `contact`  | `Contact`       | `public` | —               | `views/Contact.vue`       |
-| `feedback` | `FeedbackInbox` | `auth`   | `read Feedback` | `views/FeedbackInbox.vue` |
+| Path      | Route name    | Access   | Permission    | View                    |
+| --------- | ------------- | -------- | ------------- | ----------------------- |
+| `contact` | `Contact`     | `public` | —             | `views/Contact.vue`     |
+| `tickets` | `TicketInbox` | `auth`   | `read Ticket` | `views/TicketInbox.vue` |
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
@@ -95,13 +95,13 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 #### Endpoints called
 
-| Call                     | Response schema                       |
-| ------------------------ | ------------------------------------- |
-| `GET /feedback`          | `ListFeedbackRequestsResponse`        |
-| `POST /feedback/search`  | `SearchFeedbackRequestsResponse`      |
-| `PATCH /feedback/{id}`   | `UpdateFeedbackRequestStatusResponse` |
-| `DELETE /feedback/{id}`  | `DeleteFeedbackRequestResponse`       |
-| `POST /feedback/contact` | `CreateFeedbackRequestResponse`       |
+| Call                   | Response schema               |
+| ---------------------- | ----------------------------- |
+| `GET /tickets`         | `ListTicketsResponse`         |
+| `POST /tickets/search` | `SearchTicketsResponse`       |
+| `PATCH /tickets/{id}`  | `UpdateTicketStatusResponse`  |
+| `DELETE /tickets/{id}` | `DeleteTicketResponse`        |
+| `POST /tickets`        | `CreateContactTicketResponse` |
 
 Each row registers one Zod schema through the manifest, so enabling the domain turns its contract
 validation on and deleting the folder turns it off.
@@ -111,7 +111,7 @@ validation on and deleting the folder turns it off.
 | Route | Label key | Section | Order | Icon | Badge |
 | --------------- | --------------------------- | --- | --- | --- | --- | --- |
 | `Contact` | `navigation.label-contact` | `main` | 95 | yes | — |
-| `FeedbackInbox` | `navigation.label-feedback` | `admin` | 45 | yes | — |
+| `TicketInbox` | `navigation.label-tickets` | `admin` | 45 | yes | — |
 
 #### Analytics events
 
@@ -129,27 +129,27 @@ None.
 | `store.ts`                                    | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                              | [read](../tools/state-and-routing.md) |
 | `tests/e2e/__snapshots__/contact.desktop.png` | A committed visual-regression baseline.                                                                                                                                             | [read](../tools/visual-regression.md) |
 | `tests/e2e/a11y.cy.ts`                        | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                                                   | [read](../tools/component-testing.md) |
-| `tests/e2e/feedback.cy.ts`                    | Cypress suite — the `feedback` screens, in a browser.                                                                                                                               | [read](../tools/component-testing.md) |
-| `tests/e2e/feedback.visual.cy.ts`             | Cypress visual suite — pixel diffs against the committed baselines.                                                                                                                 | [read](../tools/component-testing.md) |
+| `tests/e2e/tickets.cy.ts`                     | Cypress suite — the `tickets` screens, in a browser.                                                                                                                                | [read](../tools/component-testing.md) |
+| `tests/e2e/tickets.visual.cy.ts`              | Cypress visual suite — pixel diffs against the committed baselines.                                                                                                                 | [read](../tools/component-testing.md) |
 | `tests/routes.spec.ts`                        | Vitest suite — the route records and the `meta.access` each one declares.                                                                                                           | [read](../tools/unit-testing.md)      |
 | `tests/store.spec.ts`                         | Vitest suite — this domain's store, with the transport mocked.                                                                                                                      | [read](../tools/unit-testing.md)      |
 | `views/Contact.vue`                           | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
-| `views/FeedbackInbox.vue`                     | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
+| `views/TicketInbox.vue`                       | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
 
 ## Working on it
 
-| Suite            | Files | Where                                           |
-| ---------------- | ----- | ----------------------------------------------- |
-| Vitest           | 2     | `src/modules/feedback/tests/`                   |
-| Cypress          | 3     | `src/modules/feedback/tests/e2e/`               |
-| Visual baselines | 1     | `src/modules/feedback/tests/e2e/__snapshots__/` |
+| Suite            | Files | Where                                          |
+| ---------------- | ----- | ---------------------------------------------- |
+| Vitest           | 2     | `src/modules/tickets/tests/`                   |
+| Cypress          | 3     | `src/modules/tickets/tests/e2e/`               |
+| Visual baselines | 1     | `src/modules/tickets/tests/e2e/__snapshots__/` |
 
 ```bash
 # this module's vitest suites
-npm run test:unit -- feedback
+npm run test:unit -- tickets
 
 # this module's cypress suites
-npm run test:e2e -- --spec 'src/modules/feedback/tests/e2e/*.cy.ts'
+npm run test:e2e -- --spec 'src/modules/tickets/tests/e2e/*.cy.ts'
 
 # after the backend changes an endpoint this module calls
 npm run regenerate

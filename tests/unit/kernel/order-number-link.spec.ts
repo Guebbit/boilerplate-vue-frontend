@@ -1,5 +1,5 @@
 /**
- * `useOrderNumberLink` — `src/kernel/order-link.ts` — the feedback inbox's way to the staff orders
+ * `useOrderNumberLink` — `src/kernel/order-link.ts` — the ticket inbox's way to the staff orders
  * list filtered to the number a ticket quotes, only when the build ships that list.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';

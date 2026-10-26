@@ -162,17 +162,17 @@ Full user management. Self-service actions (`GET /account`, `DELETE /account`) l
 | DELETE | `/users/:id`         | permission | Soft-delete a user     |
 | POST   | `/users/:id/restore` | permission | Undo a soft delete     |
 
-## Feedback
+## Tickets
 
-Contact form submissions from any visitor.
+Contact messages from any visitor, triaged by staff.
 
-| Method | Endpoint            | Auth       | Description                  |
-| ------ | ------------------- | ---------- | ---------------------------- |
-| POST   | `/feedback/contact` | none       | Submit a contact form        |
-| GET    | `/feedback`         | permission | List all feedback            |
-| POST   | `/feedback/search`  | permission | Search feedback              |
-| PATCH  | `/feedback/:id`     | permission | Update the feedback's status |
-| DELETE | `/feedback/:id`     | permission | Delete a feedback request    |
+| Method | Endpoint          | Auth       | Description                |
+| ------ | ----------------- | ---------- | -------------------------- |
+| POST   | `/tickets`        | none       | Submit a contact form      |
+| GET    | `/tickets`        | permission | List all tickets           |
+| POST   | `/tickets/search` | permission | Search tickets             |
+| PATCH  | `/tickets/:id`    | permission | Update the ticket's status |
+| DELETE | `/tickets/:id`    | permission | Delete a ticket            |
 
 ## SSE
 

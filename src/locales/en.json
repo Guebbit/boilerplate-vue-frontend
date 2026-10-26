@@ -330,7 +330,7 @@
                         },
                         {
                             "q": "What is on the admin side?",
-                            "a": "Users, products and orders management, the inventory ledger, the translations editor, the feedback inbox, and an observability console with health, metrics and an audit log."
+                            "a": "Users, products and orders management, the inventory ledger, the translations editor, the ticket inbox, and an observability console with health, metrics and an audit log."
                         },
                         {
                             "q": "Which languages does it speak?",

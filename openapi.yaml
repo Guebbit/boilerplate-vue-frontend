@@ -63,7 +63,7 @@ tags:
     description: The signed-in user's own account - profile, credentials, two-factor, data export and deletion.
   - name: Users
     description: Administration of user accounts and their roles.
-  - name: Feedback
+  - name: Tickets
     description: What visitors tell the shop, and the admin queue that reads it.
   - name: Products
     description: The catalogue - browsing, searching and managing products and their images.
@@ -3881,13 +3881,13 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
-  /feedback/contact:
+  /tickets:
     post:
       tags:
-        - Feedback
+        - Tickets
       summary: Submit contact request
-      description: Creates a user feedback/contact request and notifies admins via email.
-      operationId: createFeedbackRequest
+      description: Creates a contact ticket and notifies the support mailbox by email.
+      operationId: createContactTicket
       security: []
       parameters:
         - $ref: "#/components/parameters/AntibotChallengeTokenHeader"
@@ -3897,17 +3897,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateFeedbackRequest"
+              $ref: "#/components/schemas/CreateContactTicketRequest"
       responses:
         "201":
-          description: Created feedback request
+          description: Created ticket
           headers:
             Location:
               $ref: "#/components/headers/Location"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FeedbackRequest"
+                $ref: "#/components/schemas/Ticket"
         "400":
           $ref: "#/components/responses/BadRequest"
         "403":
@@ -3926,14 +3926,13 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: feedback
-  /feedback:
+      x-module: tickets
     get:
       tags:
-        - Feedback
-      summary: List feedback requests
-      description: Returns feedback/contact requests for admin review.
-      operationId: listFeedbackRequests
+        - Tickets
+      summary: List tickets
+      description: Returns tickets for staff review.
+      operationId: listTickets
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -3947,7 +3946,7 @@ paths:
           style: form
           explode: false
           schema:
-            $ref: "#/components/schemas/FeedbackRequestSort"
+            $ref: "#/components/schemas/TicketSort"
         - $ref: "#/components/parameters/TextParam"
         - name: email
           in: query
@@ -3958,19 +3957,19 @@ paths:
           in: query
           required: false
           schema:
-            $ref: "#/components/schemas/FeedbackRequestStatus"
+            $ref: "#/components/schemas/TicketStatus"
         - name: category
           in: query
           required: false
           schema:
-            $ref: "#/components/schemas/FeedbackCategory"
+            $ref: "#/components/schemas/TicketCategory"
       responses:
         "200":
-          description: Feedback request list
+          description: Ticket list
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FeedbackRequestsResponse"
+                $ref: "#/components/schemas/TicketsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3983,15 +3982,15 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: feedback
-  /feedback/search:
+      x-module: tickets
+  /tickets/search:
     post:
       tags:
-        - Feedback
-      summary: Search feedback requests (DTO-friendly)
-      description: Searches and filters feedback requests via a JSON request body. Functionally equivalent to `GET /feedback` with query parameters.
-      operationId: searchFeedbackRequests
-      x-alias-of: listFeedbackRequests
+        - Tickets
+      summary: Search tickets (DTO-friendly)
+      description: Searches and filters tickets via a JSON request body. Functionally equivalent to `GET /tickets` with query parameters.
+      operationId: searchTickets
+      x-alias-of: listTickets
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -4001,14 +4000,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SearchFeedbackRequestsRequest"
+              $ref: "#/components/schemas/SearchTicketsRequest"
       responses:
         "200":
-          description: Feedback request search results
+          description: Ticket search results
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FeedbackRequestsResponse"
+                $ref: "#/components/schemas/TicketsResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4027,14 +4026,14 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: feedback
-  /feedback/{id}:
+      x-module: tickets
+  /tickets/{id}:
     get:
       tags:
-        - Feedback
-      summary: Get a feedback request
-      description: One feedback request of the admin queue, by id. The same rows `GET /feedback` lists, so anyone who may read the list reads any of them. An unknown or malformed id is a 404.
-      operationId: getFeedbackRequest
+        - Tickets
+      summary: Get a ticket
+      description: One ticket of the admin queue, by id. The same rows `GET /tickets` lists, so anyone who may read the list reads any of them. An unknown or malformed id is a 404.
+      operationId: getTicket
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -4043,11 +4042,11 @@ paths:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
         "200":
-          description: The feedback request
+          description: The ticket
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FeedbackRequest"
+                $ref: "#/components/schemas/Ticket"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4060,13 +4059,13 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: feedback
+      x-module: tickets
     patch:
       tags:
-        - Feedback
-      summary: Update feedback request status
-      description: Merges a status and/or notes change into a feedback request. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
-      operationId: updateFeedbackRequestStatus
+        - Tickets
+      summary: Update ticket status
+      description: Merges a status and/or notes change into a ticket. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
+      operationId: updateTicketStatus
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -4078,17 +4077,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateFeedbackRequestStatusRequest"
+              $ref: "#/components/schemas/UpdateTicketStatusRequest"
           application/merge-patch+json:
             schema:
-              $ref: "#/components/schemas/UpdateFeedbackRequestStatusRequest"
+              $ref: "#/components/schemas/UpdateTicketStatusRequest"
       responses:
         "200":
-          description: Updated feedback request
+          description: Updated ticket
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FeedbackRequest"
+                $ref: "#/components/schemas/Ticket"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4109,13 +4108,13 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: feedback
+      x-module: tickets
     delete:
       tags:
-        - Feedback
-      summary: Delete feedback request
-      description: Permanently removes the feedback request identified by `{id}`.
-      operationId: deleteFeedbackRequest
+        - Tickets
+      summary: Delete ticket
+      description: Permanently removes the ticket identified by `{id}`.
+      operationId: deleteTicket
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -4139,7 +4138,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: feedback
+      x-module: tickets
   /products:
     get:
       tags:
@@ -13120,7 +13119,7 @@ components:
           description: The second factors armed on the account. A setup never confirmed is left out.
           items:
             $ref: "#/components/schemas/ExportTwoFactorMethod"
-    FeedbackCategory:
+    TicketCategory:
       type: string
       enum:
         - order
@@ -13130,14 +13129,14 @@ components:
         - account
         - privacy
         - other
-    FeedbackRequestStatus:
+    TicketStatus:
       type: string
       enum:
         - new
         - in_progress
         - resolved
         - spam
-    ExportFeedbackTicket:
+    ExportTicket:
       type: object
       additionalProperties: false
       required:
@@ -13158,11 +13157,11 @@ components:
         message:
           type: string
         category:
-          $ref: "#/components/schemas/FeedbackCategory"
+          $ref: "#/components/schemas/TicketCategory"
         orderNumber:
           type: string
         status:
-          $ref: "#/components/schemas/FeedbackRequestStatus"
+          $ref: "#/components/schemas/TicketStatus"
         respondedAt:
           type: string
           format: date-time
@@ -14416,11 +14415,11 @@ components:
             $ref: "#/components/schemas/Address"
         signInMethods:
           $ref: "#/components/schemas/ExportSignInMethods"
-        feedback:
+        tickets:
           type: array
-          description: Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`.
+          description: Present only when `NODE_EXPORT_INCLUDE_TICKETS=true`.
           items:
-            $ref: "#/components/schemas/ExportFeedbackTicket"
+            $ref: "#/components/schemas/ExportTicket"
         cart:
           type: array
           items:
@@ -14991,7 +14990,72 @@ components:
           type: boolean
           enum:
             - true
-    CreateFeedbackRequest:
+    TicketSort:
+      type: array
+      minItems: 1
+      maxItems: 3
+      items:
+        type: string
+        enum:
+          - createdAt
+          - -createdAt
+          - status
+          - -status
+          - email
+          - -email
+    Ticket:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - email
+        - subject
+        - message
+        - status
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+        email:
+          $ref: "#/components/schemas/Email"
+        subject:
+          type: string
+        message:
+          type: string
+        category:
+          $ref: "#/components/schemas/TicketCategory"
+        orderNumber:
+          type: string
+          description: The order the visitor said this is about, as they typed it. Not checked against any order.
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+        adminNotes:
+          type: string
+        respondedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    TicketsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - meta
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Ticket"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    CreateContactTicketRequest:
       type: object
       additionalProperties: false
       required:
@@ -15014,7 +15078,7 @@ components:
           minLength: 1
           maxLength: 5000
         category:
-          $ref: "#/components/schemas/FeedbackCategory"
+          $ref: "#/components/schemas/TicketCategory"
         orderNumber:
           type: string
           minLength: 1
@@ -15024,73 +15088,8 @@ components:
           type: string
           maxLength: 200
           description: |
-            Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `FeedbackRequest`, which does not declare it.
-    FeedbackRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - email
-        - subject
-        - message
-        - status
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        name:
-          type: string
-        email:
-          $ref: "#/components/schemas/Email"
-        subject:
-          type: string
-        message:
-          type: string
-        category:
-          $ref: "#/components/schemas/FeedbackCategory"
-        orderNumber:
-          type: string
-          description: The order the visitor said this is about, as they typed it. Not checked against any order.
-        status:
-          $ref: "#/components/schemas/FeedbackRequestStatus"
-        adminNotes:
-          type: string
-        respondedAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-    FeedbackRequestSort:
-      type: array
-      minItems: 1
-      maxItems: 3
-      items:
-        type: string
-        enum:
-          - createdAt
-          - -createdAt
-          - status
-          - -status
-          - email
-          - -email
-    FeedbackRequestsResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - items
-        - meta
-      properties:
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/FeedbackRequest"
-        meta:
-          $ref: "#/components/schemas/PaginationMeta"
-    SearchFeedbackRequestsRequest:
+            Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `Ticket`, which does not declare it.
+    SearchTicketsRequest:
       type: object
       additionalProperties: false
       properties:
@@ -15099,21 +15098,21 @@ components:
         pageSize:
           $ref: "#/components/schemas/PageSize"
         sort:
-          $ref: "#/components/schemas/FeedbackRequestSort"
+          $ref: "#/components/schemas/TicketSort"
         text:
           $ref: "#/components/schemas/Text"
         status:
-          $ref: "#/components/schemas/FeedbackRequestStatus"
+          $ref: "#/components/schemas/TicketStatus"
         category:
-          $ref: "#/components/schemas/FeedbackCategory"
+          $ref: "#/components/schemas/TicketCategory"
         email:
           $ref: "#/components/schemas/Email"
-    UpdateFeedbackRequestStatusRequest:
+    UpdateTicketStatusRequest:
       type: object
       additionalProperties: false
       properties:
         status:
-          $ref: "#/components/schemas/FeedbackRequestStatus"
+          $ref: "#/components/schemas/TicketStatus"
         adminNotes:
           type:
             - string

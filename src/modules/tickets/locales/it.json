@@ -23,8 +23,8 @@
         "category-privacy": "I miei dati personali",
         "category-other": "Altro"
     },
-    "feedback-inbox-page": {
-        "page-title": "Casella feedback",
+    "ticket-inbox-page": {
+        "page-title": "Casella ticket",
         "empty": "Nessun messaggio",
         "empty-search": "Nessun ticket corrisponde alla ricerca",
         "filter-text": "Cerca nel testo",
@@ -59,6 +59,6 @@
     },
     "navigation": {
         "label-contact": "Contatti",
-        "label-feedback": "Casella"
+        "label-tickets": "Casella"
     }
 }

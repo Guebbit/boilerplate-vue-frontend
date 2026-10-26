@@ -1,12 +1,12 @@
 /**
  * @module
- * Route table for the feedback module: the public contact form and the
+ * Route table for the tickets module: the public contact form and the
  * admin-only inbox that reads what lands in it.
  */
 import type { RouteRecordRaw } from 'vue-router';
 
 /**
- * Route records for the feedback module, mounted under the app's module registry.
+ * Route records for the tickets module, mounted under the app's module registry.
  */
 export default [
     {
@@ -17,13 +17,13 @@ export default [
         component: () => import('./views/Contact.vue')
     },
     {
-        path: 'feedback',
-        name: 'FeedbackInbox',
+        path: 'tickets',
+        name: 'TicketInbox',
         meta: {
             access: 'auth',
-            can: ['read', 'Feedback'],
-            title: 'feedback-inbox-page.page-title'
+            can: ['read', 'Ticket'],
+            title: 'ticket-inbox-page.page-title'
         },
-        component: () => import('./views/FeedbackInbox.vue')
+        component: () => import('./views/TicketInbox.vue')
     }
 ] satisfies RouteRecordRaw[];

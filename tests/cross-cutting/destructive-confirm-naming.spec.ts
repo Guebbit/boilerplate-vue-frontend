@@ -4,7 +4,7 @@
  * `useDialogStore().confirm({ color: 'error', ... })` is this app's one "are you sure?" — a
  * delete, a revoke, a removal. Two rows in a list share the same component and the same generic
  * wording ("delete this item?"); they do not share an identity, and a bare "this" answers a
- * question the visitor did not ask. `feedback-inbox-page.confirm-delete` got this right from the
+ * question the visitor did not ask. `ticket-inbox-page.confirm-delete` got this right from the
  * start (`t(key, { subject })`); users, api-keys, webhooks, products, orders and one address
  * confirm did not, until they were fixed — this sweep is what stops the next one from drifting
  * back.

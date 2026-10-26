@@ -180,7 +180,7 @@ two examples — reached through the cart and the order flow, never their own pa
 Otherwise write `tests/e2e/a11y.cy.ts`: an axe run that visits every `path` the module's `routes.ts`
 declares, at whatever authentication level that route needs. `tests/cross-cutting/a11y-coverage.spec.ts`
 reads both files and fails on any route its sweep does not reach — a routed page with no sweep
-cannot merge, and a sweep that outlives its module's routes cannot either. `feedback` is a short
+cannot merge, and a sweep that outlives its module's routes cannot either. `tickets` is a short
 reference: one public route, one `auth` route, one file.
 
 ### 5 · The page

@@ -2537,9 +2537,9 @@ export const downloadAccountExportResponseAddressesItemZipMax = 20;
 export const downloadAccountExportResponseAddressesItemCountryMax = 2;
 export const downloadAccountExportResponseAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const downloadAccountExportResponseAddressesItemPhoneMax = 32;
-export const downloadAccountExportResponseFeedbackItemIdMax = 64;
-export const downloadAccountExportResponseFeedbackItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const downloadAccountExportResponseFeedbackItemEmailMax = 254;
+export const downloadAccountExportResponseTicketsItemIdMax = 64;
+export const downloadAccountExportResponseTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const downloadAccountExportResponseTicketsItemEmailMax = 254;
 export const downloadAccountExportResponseCartItemProductIdMax = 64;
 export const downloadAccountExportResponseCartItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseWishlistItemProductIdMax = 64;
@@ -2856,16 +2856,16 @@ export const DownloadAccountExportResponse = zod.strictObject({
             })
         )
     }),
-    feedback: zod
+    tickets: zod
         .array(
             zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(downloadAccountExportResponseFeedbackItemIdMax)
-                    .regex(downloadAccountExportResponseFeedbackItemIdRegExp),
+                    .max(downloadAccountExportResponseTicketsItemIdMax)
+                    .regex(downloadAccountExportResponseTicketsItemIdRegExp),
                 name: zod.string().optional(),
-                email: zod.email().max(downloadAccountExportResponseFeedbackItemEmailMax),
+                email: zod.email().max(downloadAccountExportResponseTicketsItemEmailMax),
                 subject: zod.string(),
                 message: zod.string(),
                 category: zod
@@ -4540,52 +4540,52 @@ export const SearchUsersResponse = zod.strictObject({
     })
 });
 /**
- * Creates a user feedback/contact request and notifies admins via email.
+ * Creates a contact ticket and notifies the support mailbox by email.
  * @summary Submit contact request
  */
-export const createFeedbackRequestHeaderAntibotChallengeTokenMax = 4096;
-export const createFeedbackRequestHeaderIdempotencyKeyMax = 200;
-export const createFeedbackRequestHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
-export const CreateFeedbackRequestHeader = zod.strictObject({
+export const createContactTicketHeaderAntibotChallengeTokenMax = 4096;
+export const createContactTicketHeaderIdempotencyKeyMax = 200;
+export const createContactTicketHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const CreateContactTicketHeader = zod.strictObject({
     'Antibot-Challenge-Token': zod
         .string()
-        .max(createFeedbackRequestHeaderAntibotChallengeTokenMax)
+        .max(createContactTicketHeaderAntibotChallengeTokenMax)
         .optional(),
     'Idempotency-Key': zod
         .string()
         .min(1)
-        .max(createFeedbackRequestHeaderIdempotencyKeyMax)
-        .regex(createFeedbackRequestHeaderIdempotencyKeyRegExp)
+        .max(createContactTicketHeaderIdempotencyKeyMax)
+        .regex(createContactTicketHeaderIdempotencyKeyRegExp)
         .optional()
 });
-export const createFeedbackRequestBodyNameMax = 120;
-export const createFeedbackRequestBodyEmailMax = 254;
-export const createFeedbackRequestBodySubjectMax = 200;
-export const createFeedbackRequestBodyMessageMax = 5000;
-export const createFeedbackRequestBodyOrderNumberMax = 40;
-export const createFeedbackRequestBodyWebsiteMax = 200;
-export const CreateFeedbackRequestBody = zod.strictObject({
-    name: zod.string().min(1).max(createFeedbackRequestBodyNameMax).optional(),
-    email: zod.email().max(createFeedbackRequestBodyEmailMax),
-    subject: zod.string().min(1).max(createFeedbackRequestBodySubjectMax),
-    message: zod.string().min(1).max(createFeedbackRequestBodyMessageMax),
+export const createContactTicketBodyNameMax = 120;
+export const createContactTicketBodyEmailMax = 254;
+export const createContactTicketBodySubjectMax = 200;
+export const createContactTicketBodyMessageMax = 5000;
+export const createContactTicketBodyOrderNumberMax = 40;
+export const createContactTicketBodyWebsiteMax = 200;
+export const CreateContactTicketBody = zod.strictObject({
+    name: zod.string().min(1).max(createContactTicketBodyNameMax).optional(),
+    email: zod.email().max(createContactTicketBodyEmailMax),
+    subject: zod.string().min(1).max(createContactTicketBodySubjectMax),
+    message: zod.string().min(1).max(createContactTicketBodyMessageMax),
     category: zod
         .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
         .optional(),
-    orderNumber: zod.string().min(1).max(createFeedbackRequestBodyOrderNumberMax).optional(),
-    website: zod.string().max(createFeedbackRequestBodyWebsiteMax).optional()
+    orderNumber: zod.string().min(1).max(createContactTicketBodyOrderNumberMax).optional(),
+    website: zod.string().max(createContactTicketBodyWebsiteMax).optional()
 });
-export const createFeedbackRequestResponseIdMax = 64;
-export const createFeedbackRequestResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const createFeedbackRequestResponseEmailMax = 254;
-export const CreateFeedbackRequestResponse = zod.strictObject({
+export const createContactTicketResponseIdMax = 64;
+export const createContactTicketResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createContactTicketResponseEmailMax = 254;
+export const CreateContactTicketResponse = zod.strictObject({
     id: zod
         .string()
         .min(1)
-        .max(createFeedbackRequestResponseIdMax)
-        .regex(createFeedbackRequestResponseIdRegExp),
+        .max(createContactTicketResponseIdMax)
+        .regex(createContactTicketResponseIdRegExp),
     name: zod.string().optional(),
-    email: zod.email().max(createFeedbackRequestResponseEmailMax),
+    email: zod.email().max(createContactTicketResponseEmailMax),
     subject: zod.string(),
     message: zod.string(),
     category: zod
@@ -4599,58 +4599,54 @@ export const CreateFeedbackRequestResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Returns feedback/contact requests for admin review.
- * @summary List feedback requests
+ * Returns tickets for staff review.
+ * @summary List tickets
  */
-export const listFeedbackRequestsQueryPageDefault = 1;
-export const listFeedbackRequestsQueryPageMax = 10000;
-export const listFeedbackRequestsQueryPageSizeDefault = 10;
-export const listFeedbackRequestsQueryPageSizeMax = 100;
-export const listFeedbackRequestsQuerySortMax = 3;
-export const listFeedbackRequestsQueryTextMax = 200;
-export const listFeedbackRequestsQueryEmailMax = 254;
-export const ListFeedbackRequestsQueryParams = zod.strictObject({
-    page: zod
-        .number()
-        .min(1)
-        .max(listFeedbackRequestsQueryPageMax)
-        .default(listFeedbackRequestsQueryPageDefault),
+export const listTicketsQueryPageDefault = 1;
+export const listTicketsQueryPageMax = 10000;
+export const listTicketsQueryPageSizeDefault = 10;
+export const listTicketsQueryPageSizeMax = 100;
+export const listTicketsQuerySortMax = 3;
+export const listTicketsQueryTextMax = 200;
+export const listTicketsQueryEmailMax = 254;
+export const ListTicketsQueryParams = zod.strictObject({
+    page: zod.number().min(1).max(listTicketsQueryPageMax).default(listTicketsQueryPageDefault),
     pageSize: zod
         .number()
         .min(1)
-        .max(listFeedbackRequestsQueryPageSizeMax)
-        .default(listFeedbackRequestsQueryPageSizeDefault),
+        .max(listTicketsQueryPageSizeMax)
+        .default(listTicketsQueryPageSizeDefault),
     sort: zod
         .array(zod.enum(['createdAt', '-createdAt', 'status', '-status', 'email', '-email']))
         .min(1)
-        .max(listFeedbackRequestsQuerySortMax)
+        .max(listTicketsQuerySortMax)
         .optional(),
-    text: zod.string().min(1).max(listFeedbackRequestsQueryTextMax).optional(),
-    email: zod.email().max(listFeedbackRequestsQueryEmailMax).optional(),
+    text: zod.string().min(1).max(listTicketsQueryTextMax).optional(),
+    email: zod.email().max(listTicketsQueryEmailMax).optional(),
     status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
     category: zod
         .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
         .optional()
 });
-export const listFeedbackRequestsResponseItemsItemIdMax = 64;
-export const listFeedbackRequestsResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listFeedbackRequestsResponseItemsItemEmailMax = 254;
-export const listFeedbackRequestsResponseMetaPageDefault = 1;
-export const listFeedbackRequestsResponseMetaPageMax = 10000;
-export const listFeedbackRequestsResponseMetaPageSizeDefault = 10;
-export const listFeedbackRequestsResponseMetaPageSizeMax = 100;
-export const listFeedbackRequestsResponseMetaTotalItemsMin = 0;
-export const listFeedbackRequestsResponseMetaTotalPagesMin = 0;
-export const ListFeedbackRequestsResponse = zod.strictObject({
+export const listTicketsResponseItemsItemIdMax = 64;
+export const listTicketsResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listTicketsResponseItemsItemEmailMax = 254;
+export const listTicketsResponseMetaPageDefault = 1;
+export const listTicketsResponseMetaPageMax = 10000;
+export const listTicketsResponseMetaPageSizeDefault = 10;
+export const listTicketsResponseMetaPageSizeMax = 100;
+export const listTicketsResponseMetaTotalItemsMin = 0;
+export const listTicketsResponseMetaTotalPagesMin = 0;
+export const ListTicketsResponse = zod.strictObject({
     items: zod.array(
         zod.strictObject({
             id: zod
                 .string()
                 .min(1)
-                .max(listFeedbackRequestsResponseItemsItemIdMax)
-                .regex(listFeedbackRequestsResponseItemsItemIdRegExp),
+                .max(listTicketsResponseItemsItemIdMax)
+                .regex(listTicketsResponseItemsItemIdRegExp),
             name: zod.string().optional(),
-            email: zod.email().max(listFeedbackRequestsResponseItemsItemEmailMax),
+            email: zod.email().max(listTicketsResponseItemsItemEmailMax),
             subject: zod.string(),
             message: zod.string(),
             category: zod
@@ -4668,70 +4664,66 @@ export const ListFeedbackRequestsResponse = zod.strictObject({
         page: zod
             .number()
             .min(1)
-            .max(listFeedbackRequestsResponseMetaPageMax)
-            .default(listFeedbackRequestsResponseMetaPageDefault),
+            .max(listTicketsResponseMetaPageMax)
+            .default(listTicketsResponseMetaPageDefault),
         pageSize: zod
             .number()
             .min(1)
-            .max(listFeedbackRequestsResponseMetaPageSizeMax)
-            .default(listFeedbackRequestsResponseMetaPageSizeDefault),
-        totalItems: zod.number().min(listFeedbackRequestsResponseMetaTotalItemsMin),
-        totalPages: zod.number().min(listFeedbackRequestsResponseMetaTotalPagesMin)
+            .max(listTicketsResponseMetaPageSizeMax)
+            .default(listTicketsResponseMetaPageSizeDefault),
+        totalItems: zod.number().min(listTicketsResponseMetaTotalItemsMin),
+        totalPages: zod.number().min(listTicketsResponseMetaTotalPagesMin)
     })
 });
 /**
- * Searches and filters feedback requests via a JSON request body. Functionally equivalent to `GET /feedback` with query parameters.
- * @summary Search feedback requests (DTO-friendly)
+ * Searches and filters tickets via a JSON request body. Functionally equivalent to `GET /tickets` with query parameters.
+ * @summary Search tickets (DTO-friendly)
  */
-export const searchFeedbackRequestsBodyPageDefault = 1;
-export const searchFeedbackRequestsBodyPageMax = 10000;
-export const searchFeedbackRequestsBodyPageSizeDefault = 10;
-export const searchFeedbackRequestsBodyPageSizeMax = 100;
-export const searchFeedbackRequestsBodySortMax = 3;
-export const searchFeedbackRequestsBodyTextMax = 200;
-export const searchFeedbackRequestsBodyEmailMax = 254;
-export const SearchFeedbackRequestsBody = zod.strictObject({
-    page: zod
-        .number()
-        .min(1)
-        .max(searchFeedbackRequestsBodyPageMax)
-        .default(searchFeedbackRequestsBodyPageDefault),
+export const searchTicketsBodyPageDefault = 1;
+export const searchTicketsBodyPageMax = 10000;
+export const searchTicketsBodyPageSizeDefault = 10;
+export const searchTicketsBodyPageSizeMax = 100;
+export const searchTicketsBodySortMax = 3;
+export const searchTicketsBodyTextMax = 200;
+export const searchTicketsBodyEmailMax = 254;
+export const SearchTicketsBody = zod.strictObject({
+    page: zod.number().min(1).max(searchTicketsBodyPageMax).default(searchTicketsBodyPageDefault),
     pageSize: zod
         .number()
         .min(1)
-        .max(searchFeedbackRequestsBodyPageSizeMax)
-        .default(searchFeedbackRequestsBodyPageSizeDefault),
+        .max(searchTicketsBodyPageSizeMax)
+        .default(searchTicketsBodyPageSizeDefault),
     sort: zod
         .array(zod.enum(['createdAt', '-createdAt', 'status', '-status', 'email', '-email']))
         .min(1)
-        .max(searchFeedbackRequestsBodySortMax)
+        .max(searchTicketsBodySortMax)
         .optional(),
-    text: zod.string().min(1).max(searchFeedbackRequestsBodyTextMax).optional(),
+    text: zod.string().min(1).max(searchTicketsBodyTextMax).optional(),
     status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
     category: zod
         .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
         .optional(),
-    email: zod.email().max(searchFeedbackRequestsBodyEmailMax).optional()
+    email: zod.email().max(searchTicketsBodyEmailMax).optional()
 });
-export const searchFeedbackRequestsResponseItemsItemIdMax = 64;
-export const searchFeedbackRequestsResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const searchFeedbackRequestsResponseItemsItemEmailMax = 254;
-export const searchFeedbackRequestsResponseMetaPageDefault = 1;
-export const searchFeedbackRequestsResponseMetaPageMax = 10000;
-export const searchFeedbackRequestsResponseMetaPageSizeDefault = 10;
-export const searchFeedbackRequestsResponseMetaPageSizeMax = 100;
-export const searchFeedbackRequestsResponseMetaTotalItemsMin = 0;
-export const searchFeedbackRequestsResponseMetaTotalPagesMin = 0;
-export const SearchFeedbackRequestsResponse = zod.strictObject({
+export const searchTicketsResponseItemsItemIdMax = 64;
+export const searchTicketsResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const searchTicketsResponseItemsItemEmailMax = 254;
+export const searchTicketsResponseMetaPageDefault = 1;
+export const searchTicketsResponseMetaPageMax = 10000;
+export const searchTicketsResponseMetaPageSizeDefault = 10;
+export const searchTicketsResponseMetaPageSizeMax = 100;
+export const searchTicketsResponseMetaTotalItemsMin = 0;
+export const searchTicketsResponseMetaTotalPagesMin = 0;
+export const SearchTicketsResponse = zod.strictObject({
     items: zod.array(
         zod.strictObject({
             id: zod
                 .string()
                 .min(1)
-                .max(searchFeedbackRequestsResponseItemsItemIdMax)
-                .regex(searchFeedbackRequestsResponseItemsItemIdRegExp),
+                .max(searchTicketsResponseItemsItemIdMax)
+                .regex(searchTicketsResponseItemsItemIdRegExp),
             name: zod.string().optional(),
-            email: zod.email().max(searchFeedbackRequestsResponseItemsItemEmailMax),
+            email: zod.email().max(searchTicketsResponseItemsItemEmailMax),
             subject: zod.string(),
             message: zod.string(),
             category: zod
@@ -4749,37 +4741,33 @@ export const SearchFeedbackRequestsResponse = zod.strictObject({
         page: zod
             .number()
             .min(1)
-            .max(searchFeedbackRequestsResponseMetaPageMax)
-            .default(searchFeedbackRequestsResponseMetaPageDefault),
+            .max(searchTicketsResponseMetaPageMax)
+            .default(searchTicketsResponseMetaPageDefault),
         pageSize: zod
             .number()
             .min(1)
-            .max(searchFeedbackRequestsResponseMetaPageSizeMax)
-            .default(searchFeedbackRequestsResponseMetaPageSizeDefault),
-        totalItems: zod.number().min(searchFeedbackRequestsResponseMetaTotalItemsMin),
-        totalPages: zod.number().min(searchFeedbackRequestsResponseMetaTotalPagesMin)
+            .max(searchTicketsResponseMetaPageSizeMax)
+            .default(searchTicketsResponseMetaPageSizeDefault),
+        totalItems: zod.number().min(searchTicketsResponseMetaTotalItemsMin),
+        totalPages: zod.number().min(searchTicketsResponseMetaTotalPagesMin)
     })
 });
 /**
- * One feedback request of the admin queue, by id. The same rows `GET /feedback` lists, so anyone who may read the list reads any of them. An unknown or malformed id is a 404.
- * @summary Get a feedback request
+ * One ticket of the admin queue, by id. The same rows `GET /tickets` lists, so anyone who may read the list reads any of them. An unknown or malformed id is a 404.
+ * @summary Get a ticket
  */
-export const getFeedbackRequestPathIdMax = 64;
-export const getFeedbackRequestPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const GetFeedbackRequestParams = zod.strictObject({
-    id: zod.string().min(1).max(getFeedbackRequestPathIdMax).regex(getFeedbackRequestPathIdRegExp)
+export const getTicketPathIdMax = 64;
+export const getTicketPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetTicketParams = zod.strictObject({
+    id: zod.string().min(1).max(getTicketPathIdMax).regex(getTicketPathIdRegExp)
 });
-export const getFeedbackRequestResponseIdMax = 64;
-export const getFeedbackRequestResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getFeedbackRequestResponseEmailMax = 254;
-export const GetFeedbackRequestResponse = zod.strictObject({
-    id: zod
-        .string()
-        .min(1)
-        .max(getFeedbackRequestResponseIdMax)
-        .regex(getFeedbackRequestResponseIdRegExp),
+export const getTicketResponseIdMax = 64;
+export const getTicketResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getTicketResponseEmailMax = 254;
+export const GetTicketResponse = zod.strictObject({
+    id: zod.string().min(1).max(getTicketResponseIdMax).regex(getTicketResponseIdRegExp),
     name: zod.string().optional(),
-    email: zod.email().max(getFeedbackRequestResponseEmailMax),
+    email: zod.email().max(getTicketResponseEmailMax),
     subject: zod.string(),
     message: zod.string(),
     category: zod
@@ -4793,34 +4781,30 @@ export const GetFeedbackRequestResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Merges a status and/or notes change into a feedback request. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
- * @summary Update feedback request status
+ * Merges a status and/or notes change into a ticket. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
+ * @summary Update ticket status
  */
-export const updateFeedbackRequestStatusPathIdMax = 64;
-export const updateFeedbackRequestStatusPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const UpdateFeedbackRequestStatusParams = zod.strictObject({
-    id: zod
-        .string()
-        .min(1)
-        .max(updateFeedbackRequestStatusPathIdMax)
-        .regex(updateFeedbackRequestStatusPathIdRegExp)
+export const updateTicketStatusPathIdMax = 64;
+export const updateTicketStatusPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const UpdateTicketStatusParams = zod.strictObject({
+    id: zod.string().min(1).max(updateTicketStatusPathIdMax).regex(updateTicketStatusPathIdRegExp)
 });
-export const updateFeedbackRequestStatusBodyAdminNotesMax = 5000;
-export const UpdateFeedbackRequestStatusBody = zod.strictObject({
+export const updateTicketStatusBodyAdminNotesMax = 5000;
+export const UpdateTicketStatusBody = zod.strictObject({
     status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
-    adminNotes: zod.string().min(1).max(updateFeedbackRequestStatusBodyAdminNotesMax).nullish()
+    adminNotes: zod.string().min(1).max(updateTicketStatusBodyAdminNotesMax).nullish()
 });
-export const updateFeedbackRequestStatusResponseIdMax = 64;
-export const updateFeedbackRequestStatusResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const updateFeedbackRequestStatusResponseEmailMax = 254;
-export const UpdateFeedbackRequestStatusResponse = zod.strictObject({
+export const updateTicketStatusResponseIdMax = 64;
+export const updateTicketStatusResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const updateTicketStatusResponseEmailMax = 254;
+export const UpdateTicketStatusResponse = zod.strictObject({
     id: zod
         .string()
         .min(1)
-        .max(updateFeedbackRequestStatusResponseIdMax)
-        .regex(updateFeedbackRequestStatusResponseIdRegExp),
+        .max(updateTicketStatusResponseIdMax)
+        .regex(updateTicketStatusResponseIdRegExp),
     name: zod.string().optional(),
-    email: zod.email().max(updateFeedbackRequestStatusResponseEmailMax),
+    email: zod.email().max(updateTicketStatusResponseEmailMax),
     subject: zod.string(),
     message: zod.string(),
     category: zod
@@ -4834,19 +4818,15 @@ export const UpdateFeedbackRequestStatusResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Permanently removes the feedback request identified by `{id}`.
- * @summary Delete feedback request
+ * Permanently removes the ticket identified by `{id}`.
+ * @summary Delete ticket
  */
-export const deleteFeedbackRequestPathIdMax = 64;
-export const deleteFeedbackRequestPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const DeleteFeedbackRequestParams = zod.strictObject({
-    id: zod
-        .string()
-        .min(1)
-        .max(deleteFeedbackRequestPathIdMax)
-        .regex(deleteFeedbackRequestPathIdRegExp)
+export const deleteTicketPathIdMax = 64;
+export const deleteTicketPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const DeleteTicketParams = zod.strictObject({
+    id: zod.string().min(1).max(deleteTicketPathIdMax).regex(deleteTicketPathIdRegExp)
 });
-export const DeleteFeedbackRequestResponse = zod.void();
+export const DeleteTicketResponse = zod.void();
 /**
  * Returns a paginated list of products.
  * @summary List products (paginated)

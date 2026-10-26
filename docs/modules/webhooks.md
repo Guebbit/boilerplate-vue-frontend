@@ -138,7 +138,7 @@ Each row registers one Zod schema through the manifest, so enabling the domain t
 | `WebhooksList` | `navigation.label-webhooks` | `admin` | 48 | yes | — |
 | `WebhookDeliveries` | `navigation.label-webhook-deliveries` | `admin` | 49 | yes | — |
 
-Two entries from one manifest — the same split the `feedback` module uses for its public form vs. its admin inbox: subscriptions and the delivery log are different jobs an operator reaches for at different times.
+Two entries from one manifest — the same split the `tickets` module uses for its public form vs. its admin inbox: subscriptions and the delivery log are different jobs an operator reaches for at different times.
 
 ## Files
 
@@ -191,7 +191,7 @@ Nothing in this domain needs a page of its own — the story above is the whole 
 
 ## Related pages
 
-- [`feedback`](./feedback.md) — the other module with two navigation entries from one manifest
+- [`tickets`](./tickets.md) — the other module with two navigation entries from one manifest
 - [OpenAPI Workflow](../api/openapi-workflow.md) — where the generated request schemas come from
 - [Sitemap & Access Control](../theory/sitemap.md) — the `admin` gate on every route here
 - [State & Routing](../tools/state-and-routing.md) — the store behind the five screens

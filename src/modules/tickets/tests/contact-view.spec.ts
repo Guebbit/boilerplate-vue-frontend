@@ -2,14 +2,14 @@
  * @module
  * Mounts the real contact page: an order page's link pre-fills the category and the order number,
  * a link naming something the contract does not know is ignored, and what the visitor leaves
- * alone is not sent. `submitContact` is spied at the feedback store.
+ * alone is not sent. `submitContact` is spied at the tickets store.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Contact from '../views/Contact.vue';
-import { useFeedbackStore } from '../store.ts';
+import { useTicketsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
@@ -35,7 +35,7 @@ const router = createRouter({
  * @returns The wrapper and the spy each case configures.
  */
 const openContact = (address: string) => {
-    const submit = vi.spyOn(useFeedbackStore(), 'submitContact').mockResolvedValue(undefined);
+    const submit = vi.spyOn(useTicketsStore(), 'submitContact').mockResolvedValue(undefined);
 
     return router
         .push(address)

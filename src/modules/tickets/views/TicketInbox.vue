@@ -4,7 +4,7 @@
  * required alongside `<script setup>` since the latter cannot declare one itself.
  */
 export default {
-    name: 'FeedbackInboxPage'
+    name: 'TicketInboxPage'
 };
 </script>
 
@@ -20,7 +20,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Inbox } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useFeedbackStore } from '../store.ts';
+import { useTicketsStore } from '../store.ts';
 import { useRowActions } from '@/ui/composables/use-row-actions.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
@@ -37,8 +37,8 @@ import SortSelect from '@/ui/molecules/SortSelect.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
-import { FeedbackCategory, FeedbackRequestStatus } from '@/types/enums.ts';
-import type { FeedbackRequest, FeedbackRequestStatus as TFeedbackRequestStatus } from '@types';
+import { TicketCategory, TicketStatus } from '@/types/enums.ts';
+import type { Ticket, TicketStatus as TTicketStatus } from '@types';
 
 /**
  * The admin inbox for the public contact form: every ticket, movable through its statuses.
@@ -46,7 +46,7 @@ import type { FeedbackRequest, FeedbackRequestStatus as TFeedbackRequestStatus }
 const { t } = useI18n();
 
 /**
- * The session, for what a reader of the inbox may do with a ticket: `read:Feedback` alone
+ * The session, for what a reader of the inbox may do with a ticket: `read:Ticket` alone
  * (the manager) sees tickets and notes, `.update` moves and annotates them, `.delete` erases.
  */
 const session = useSessionStore();
@@ -54,12 +54,12 @@ const session = useSessionStore();
 /**
  * Whether the viewer may change a ticket's status and notes.
  */
-const canUpdate = computed(() => session.can('update', 'Feedback'));
+const canUpdate = computed(() => session.can('update', 'Ticket'));
 
 /**
  * Whether the viewer may erase a ticket.
  */
-const canDelete = computed(() => session.can('delete', 'Feedback'));
+const canDelete = computed(() => session.can('delete', 'Ticket'));
 
 /**
  * A ticket's order number as a link to the staff orders list filtered to it, when the build ships one.
@@ -74,13 +74,13 @@ const { addMessage } = useNotificationsStore();
 /**
  * The admin actions this page drives.
  */
-const { watchSearchRequests, updateRequest, deleteRequest } = useFeedbackStore();
+const { watchSearchRequests, updateRequest, deleteRequest } = useTicketsStore();
 
 /**
  * Inbox reactive state — filters, the current page window and the pagination counters.
  */
 const { filters, pageItemList, pageCurrent, pageSize, pageTotal, loading } =
-    storeToRefs(useFeedbackStore());
+    storeToRefs(useTicketsStore());
 
 /**
  * The status choices, labelled in the visitor's language.
@@ -88,9 +88,9 @@ const { filters, pageItemList, pageCurrent, pageSize, pageTotal, loading } =
  * @returns One select item per contract status.
  */
 const statusOptions = computed(() =>
-    Object.values(FeedbackRequestStatus).map((status) => ({
+    Object.values(TicketStatus).map((status) => ({
         value: status,
-        title: t(`feedback-inbox-page.status-${status}`)
+        title: t(`ticket-inbox-page.status-${status}`)
     }))
 );
 
@@ -103,7 +103,7 @@ const statusOptions = computed(() =>
  * @returns The filter's select items, re-translated on locale change.
  */
 const filterStatusOptions = computed(() => [
-    { value: null, title: t('feedback-inbox-page.filter-status-any') },
+    { value: null, title: t('ticket-inbox-page.filter-status-any') },
     ...statusOptions.value
 ]);
 
@@ -122,8 +122,8 @@ const statusChoice = useAnyFilterChoice(
  * as {@link filterStatusOptions}) and one row per category the contact form offers.
  */
 const filterCategoryOptions = computed(() => [
-    { value: null, title: t('feedback-inbox-page.filter-category-any') },
-    ...Object.values(FeedbackCategory).map((category) => ({
+    { value: null, title: t('ticket-inbox-page.filter-category-any') },
+    ...Object.values(TicketCategory).map((category) => ({
         value: category,
         title: t(`contact-page.category-${category}`)
     }))
@@ -156,8 +156,8 @@ const { sync: syncUrl } = useListUrlState({
     params: {
         text: 'string',
         email: 'string',
-        status: Object.values(FeedbackRequestStatus),
-        category: Object.values(FeedbackCategory),
+        status: Object.values(TicketStatus),
+        category: Object.values(TicketCategory),
         sort: 'string'
     }
 });
@@ -187,14 +187,14 @@ const { choice: sortChoice } = useServerSort({ filters, apply: handleSearch });
 
 /**
  * The orders the inbox offers on top of the default newest-first — a subset of the contract's
- * `FeedbackRequestSort` enum, the ones a triager reaches for.
+ * `TicketSort` enum, the ones a triager reaches for.
  *
  * @returns The select's options, re-translated on locale change.
  */
 const sortOptions = computed(() => [
-    { value: 'createdAt', title: t('feedback-inbox-page.sort-oldest') },
-    { value: 'status', title: t('feedback-inbox-page.sort-status') },
-    { value: 'email', title: t('feedback-inbox-page.sort-email') }
+    { value: 'createdAt', title: t('ticket-inbox-page.sort-oldest') },
+    { value: 'status', title: t('ticket-inbox-page.sort-status') },
+    { value: 'email', title: t('ticket-inbox-page.sort-email') }
 ]);
 
 /**
@@ -227,10 +227,10 @@ const { run, runConfirmed } = useRowActions({
  * @returns A promise settling once the write and the reload have finished; a failure blocks the
  *  list in place ({@link rowActionError}).
  */
-const handleStatus = (requestId: string, status: TFeedbackRequestStatus) =>
+const handleStatus = (requestId: string, status: TTicketStatus) =>
     run({
         action: () => updateRequest(requestId, { status }),
-        success: t('feedback-inbox-page.success-status'),
+        success: t('ticket-inbox-page.success-status'),
         afterwards: () => search(true)
     });
 
@@ -247,8 +247,7 @@ const noteDrafts = reactive<Record<string, string | undefined>>({});
  * @param request - The ticket the textarea belongs to.
  * @returns The current draft, or `''` when neither a draft nor a saved note exists.
  */
-const noteValueOf = (request: FeedbackRequest) =>
-    noteDrafts[request.id] ?? request.adminNotes ?? '';
+const noteValueOf = (request: Ticket) => noteDrafts[request.id] ?? request.adminNotes ?? '';
 
 /**
  * Saves one ticket's internal notes through the same PATCH the status move uses — an empty
@@ -260,14 +259,14 @@ const noteValueOf = (request: FeedbackRequest) =>
  * @returns A promise settling once the write and the reload have finished; a failure blocks the
  *  list in place ({@link rowActionError}).
  */
-const handleSaveNotes = (request: FeedbackRequest) =>
+const handleSaveNotes = (request: Ticket) =>
     run({
         // No baseline: the textarea is this save's whole intent, so an emptied one is always a clear.
         action: () =>
-            toRequestBody('UpdateFeedbackRequestStatusBody', {
+            toRequestBody('UpdateTicketStatusBody', {
                 adminNotes: noteValueOf(request).trim()
             }).then((body) => updateRequest(request.id, body)),
-        success: t('feedback-inbox-page.success-notes'),
+        success: t('ticket-inbox-page.success-notes'),
         afterwards: () => search(true)
     });
 
@@ -282,34 +281,34 @@ const handleSaveNotes = (request: FeedbackRequest) =>
  */
 const handleDelete = (requestId: string, subject: string) =>
     runConfirmed({
-        confirm: t('feedback-inbox-page.confirm-delete', { subject }),
+        confirm: t('ticket-inbox-page.confirm-delete', { subject }),
         action: () => deleteRequest(requestId),
-        success: t('feedback-inbox-page.success-delete')
+        success: t('ticket-inbox-page.success-delete')
     });
 </script>
 
 <template>
-    <div id="feedback-inbox-page">
+    <div id="ticket-inbox-page">
         <v-card class="mx-auto mb-6 w-full max-w-3xl p-5">
             <form novalidate @submit.prevent="handleSearch">
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
                     <v-text-field
                         v-model="filters.text"
                         data-test="filter-text"
-                        :label="t('feedback-inbox-page.filter-text')"
+                        :label="t('ticket-inbox-page.filter-text')"
                         maxlength="200"
                         hide-details
                     />
                     <v-text-field
                         v-model="filters.email"
                         data-test="filter-email"
-                        :label="t('feedback-inbox-page.filter-email')"
+                        :label="t('ticket-inbox-page.filter-email')"
                         hide-details
                     />
                     <v-select
                         v-model="statusChoice"
                         data-test="filter-status"
-                        :label="t('feedback-inbox-page.filter-status')"
+                        :label="t('ticket-inbox-page.filter-status')"
                         :items="filterStatusOptions"
                         item-title="title"
                         item-value="value"
@@ -318,7 +317,7 @@ const handleDelete = (requestId: string, subject: string) =>
                     <v-select
                         v-model="categoryChoice"
                         data-test="filter-category"
-                        :label="t('feedback-inbox-page.filter-category')"
+                        :label="t('ticket-inbox-page.filter-category')"
                         :items="filterCategoryOptions"
                         item-title="title"
                         item-value="value"
@@ -326,8 +325,8 @@ const handleDelete = (requestId: string, subject: string) =>
                     />
                     <SortSelect
                         v-model="sortChoice"
-                        :label="t('feedback-inbox-page.sort-label')"
-                        :default-label="t('feedback-inbox-page.sort-newest')"
+                        :label="t('ticket-inbox-page.sort-label')"
+                        :default-label="t('ticket-inbox-page.sort-newest')"
                         :options="sortOptions"
                     />
                     <PageSizeSelect v-model="pageSize" />
@@ -338,33 +337,31 @@ const handleDelete = (requestId: string, subject: string) =>
 
         <ListEmptyState
             v-if="pageItemList.length === 0"
-            :title="
-                isFiltered ? t('feedback-inbox-page.empty-search') : t('feedback-inbox-page.empty')
-            "
+            :title="isFiltered ? t('ticket-inbox-page.empty-search') : t('ticket-inbox-page.empty')"
             :icon="Inbox"
         >
         </ListEmptyState>
 
         <div v-else class="mx-auto flex w-full max-w-3xl flex-col gap-4">
-            <InlineErrorAlert :message="rowActionError" data-test="feedback-row-action-error" />
+            <InlineErrorAlert :message="rowActionError" data-test="ticket-row-action-error" />
 
             <v-card
                 v-for="request in pageItemList"
-                :key="'feedback-' + request.id"
-                data-test="feedback-item"
+                :key="'ticket-' + request.id"
+                data-test="ticket-item"
                 class="p-5"
             >
                 <div class="flex flex-wrap items-start justify-between gap-2">
                     <div>
                         <h2 class="text-lg font-semibold">{{ request.subject }}</h2>
                         <p class="text-sm opacity-muted">
-                            {{ request.name || t('feedback-inbox-page.anonymous') }} —
+                            {{ request.name || t('ticket-inbox-page.anonymous') }} —
                             {{ request.email }} · {{ formatDateTime(request.createdAt) }}
                         </p>
                         <p
                             v-if="request.category || request.orderNumber"
                             class="text-sm opacity-muted"
-                            data-test="feedback-category"
+                            data-test="ticket-category"
                         >
                             <v-chip v-if="request.category" size="x-small" variant="tonal" label>
                                 {{ t(`contact-page.category-${request.category}`) }}
@@ -373,17 +370,17 @@ const handleDelete = (requestId: string, subject: string) =>
                                 <router-link
                                     v-if="orderNumberLink(request.orderNumber)"
                                     :to="orderNumberLink(request.orderNumber)!"
-                                    data-test="feedback-order-link"
+                                    data-test="ticket-order-link"
                                 >
                                     {{
-                                        t('feedback-inbox-page.label-order', {
+                                        t('ticket-inbox-page.label-order', {
                                             number: request.orderNumber
                                         })
                                     }}
                                 </router-link>
                                 <template v-else>
                                     {{
-                                        t('feedback-inbox-page.label-order', {
+                                        t('ticket-inbox-page.label-order', {
                                             number: request.orderNumber
                                         })
                                     }}
@@ -393,10 +390,10 @@ const handleDelete = (requestId: string, subject: string) =>
                         <p
                             v-if="request.respondedAt"
                             class="text-sm opacity-muted"
-                            data-test="feedback-responded-at"
+                            data-test="ticket-responded-at"
                         >
                             {{
-                                t('feedback-inbox-page.label-responded-at', {
+                                t('ticket-inbox-page.label-responded-at', {
                                     date: formatDateTime(request.respondedAt)
                                 })
                             }}
@@ -409,15 +406,14 @@ const handleDelete = (requestId: string, subject: string) =>
                             :loading="loading"
                             :disabled="!canUpdate"
                             :aria-label="
-                                t('feedback-inbox-page.status-label', { subject: request.subject })
+                                t('ticket-inbox-page.status-label', { subject: request.subject })
                             "
                             density="compact"
                             hide-details
                             class="max-w-45"
-                            data-test="feedback-status"
+                            data-test="ticket-status"
                             @update:model-value="
-                                (status) =>
-                                    handleStatus(request.id, status as TFeedbackRequestStatus)
+                                (status) => handleStatus(request.id, status as TTicketStatus)
                             "
                         />
                         <v-btn
@@ -425,16 +421,16 @@ const handleDelete = (requestId: string, subject: string) =>
                             size="small"
                             variant="tonal"
                             color="error"
-                            data-test="feedback-delete"
+                            data-test="ticket-delete"
                             :aria-label="
-                                t('feedback-inbox-page.button-delete-named', {
+                                t('ticket-inbox-page.button-delete-named', {
                                     subject: request.subject
                                 })
                             "
                             :disabled="loading"
                             @click="handleDelete(request.id, request.subject)"
                         >
-                            {{ t('feedback-inbox-page.button-delete') }}
+                            {{ t('ticket-inbox-page.button-delete') }}
                         </v-btn>
                     </div>
                 </div>
@@ -443,9 +439,9 @@ const handleDelete = (requestId: string, subject: string) =>
                 <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
                     <v-textarea
                         :model-value="noteValueOf(request)"
-                        :label="t('feedback-inbox-page.label-notes')"
+                        :label="t('ticket-inbox-page.label-notes')"
                         :aria-label="
-                            t('feedback-inbox-page.label-notes-named', { subject: request.subject })
+                            t('ticket-inbox-page.label-notes-named', { subject: request.subject })
                         "
                         maxlength="5000"
                         :readonly="!canUpdate"
@@ -454,7 +450,7 @@ const handleDelete = (requestId: string, subject: string) =>
                         density="compact"
                         hide-details
                         class="flex-1"
-                        data-test="feedback-notes"
+                        data-test="ticket-notes"
                         @update:model-value="(value) => (noteDrafts[request.id] = value)"
                     />
                     <v-btn
@@ -462,15 +458,15 @@ const handleDelete = (requestId: string, subject: string) =>
                         size="small"
                         variant="tonal"
                         :disabled="loading"
-                        data-test="feedback-notes-save"
+                        data-test="ticket-notes-save"
                         :aria-label="
-                            t('feedback-inbox-page.button-save-notes-named', {
+                            t('ticket-inbox-page.button-save-notes-named', {
                                 subject: request.subject
                             })
                         "
                         @click="handleSaveNotes(request)"
                     >
-                        {{ t('feedback-inbox-page.button-save-notes') }}
+                        {{ t('ticket-inbox-page.button-save-notes') }}
                     </v-btn>
                 </div>
             </v-card>

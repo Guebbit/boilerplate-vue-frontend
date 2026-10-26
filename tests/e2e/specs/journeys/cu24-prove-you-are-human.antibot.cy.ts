@@ -1,4 +1,4 @@
-// requires-module: account, cart, delivery, feedback, inventory, orders, payments, products
+// requires-module: account, cart, delivery, tickets, inventory, orders, payments, products
 /**
  * @module
  * CU24 · Prove you are human. A backend with a human-check provider on does not nag an honest
@@ -28,7 +28,7 @@ interface TicketLike {
  */
 const ticketsAbout = (subject: string): Cypress.Chainable<TicketLike[]> =>
     cy
-        .apiAs<{ items: TicketLike[] }>('admin', 'POST', '/feedback/search', { text: subject })
+        .apiAs<{ items: TicketLike[] }>('admin', 'POST', '/tickets/search', { text: subject })
         .then((found) => found?.items ?? []);
 
 /**

@@ -78,7 +78,7 @@ The same argument settles what has **no** photograph: reflow at 320 px (WCAG 1.4
 | `wishlist`                                                                    | `wishlist`      | desktop                            | card list, authenticated                           |
 | `users-list`                                                                  | `users`         | desktop                            | admin data table                                   |
 | `inventory-ledger`                                                            | `inventory`     | desktop, phone                     | admin forms + table, on the warehouse floor        |
-| `contact`                                                                     | `feedback`      | desktop                            | public form                                        |
+| `contact`                                                                     | `tickets`       | desktop                            | public form                                        |
 | `locales-list`, `locales-dictionary`, `locale-entries`, `entity-translations` | `locales`       | desktop                            | admin tables, wide matrix, tabbed form             |
 | `admin-dashboard`                                                             | `observability` | desktop                            | KPI tiles, dense numbers                           |
 | `realtime-playground`                                                         | `observability` | desktop                            | live-updating panels                               |

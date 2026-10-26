@@ -1,6 +1,6 @@
 /**
  * @module
- * Cypress a11y sweep route list for the feedback module, run through the shared `sweepA11y` helper
+ * Cypress a11y sweep route list for the tickets module, run through the shared `sweepA11y` helper
  * against both the public and the admin surface.
  *
  * Co-located so deleting the module deletes its a11y coverage with it — a central list would be
@@ -9,6 +9,6 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
-sweepA11y('feedback — public', [['contact', '/en/contact']]);
+sweepA11y('tickets — public', [['contact', '/en/contact']]);
 
-sweepA11y('feedback — admin', [['feedback inbox', '/en/feedback']], 'admin');
+sweepA11y('tickets — admin', [['ticket inbox', '/en/tickets']], 'admin');

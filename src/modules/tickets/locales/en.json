@@ -23,8 +23,8 @@
         "category-privacy": "My personal data",
         "category-other": "Something else"
     },
-    "feedback-inbox-page": {
-        "page-title": "Feedback inbox",
+    "ticket-inbox-page": {
+        "page-title": "Ticket inbox",
         "empty": "No messages yet",
         "empty-search": "No tickets match this search",
         "filter-text": "Search text",
@@ -59,6 +59,6 @@
     },
     "navigation": {
         "label-contact": "Contact",
-        "label-feedback": "Inbox"
+        "label-tickets": "Inbox"
     }
 }
