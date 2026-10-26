@@ -12,17 +12,18 @@ export default {
 /**
  * @module
  * The staff's five moves on a return — approve, decline (with the reason the customer is told),
- * receive (with an optional handling deduction), close by hand (with an optional note, when the
+ * receive (with a restock count per line and an optional handling deduction), close by hand (with an optional note, when the
  * money will not follow the usual way), cancel (with an optional note, when the goods never came). Which of them is open is the server's
  * `Return.actions`; this component renders that answer and re-implements none of the lifecycle.
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
 import {
@@ -80,6 +81,22 @@ const { loading } = storeToRefs(useReturnsStore());
 const { message: moveError, report: reportMoveError, clear: clearMoveError } = useBlockingError();
 
 /**
+ * Signed-in caller, to tell staff (who read returns) from the buyer, who is never shown how many
+ * units went back on sale.
+ */
+const session = useSessionStore();
+
+/**
+ * Whether to list how many units of each line went back on sale: staff only, once the goods were
+ * received.
+ */
+const showRestocked = computed(
+    () =>
+        session.can('read', 'Return') &&
+        props.item.lines.some((line) => line.restocked !== undefined)
+);
+
+/**
  * The decline form's element, handed to the validation for its native-validity wiring.
  */
 const declineElement = ref<HTMLFormElement>();
@@ -112,13 +129,49 @@ const {
 const receiveElement = ref<HTMLFormElement>();
 
 /**
+ * How many units of one returned line go back on sale, as the field's string: a whole number from
+ * 0 (a broken unit) up to the line's quantity.
+ *
+ * @param quantity - The line's quantity.
+ * @param value - What the field holds.
+ * @returns `true` when it can be sent as is.
+ */
+const isValidRestock = (quantity: number, value: string | undefined): boolean => {
+    const count = Number(value);
+    return (
+        value !== undefined &&
+        value !== '' &&
+        Number.isInteger(count) &&
+        count >= 0 &&
+        count <= quantity
+    );
+};
+
+/**
+ * Every returned line, all of it going back on sale: staff lower the count of a broken one.
+ *
+ * @returns The line's product id → its quantity, as the fields' strings.
+ */
+const startingRestock = (): Record<string, string> =>
+    Object.fromEntries(props.item.lines.map((line) => [line.productId, String(line.quantity)]));
+
+/**
  * The handling deduction is a plain number field's string: empty (none kept) or a non-negative
- * amount in the return's currency.
+ * amount in the return's currency. The restock counts are one string per returned line.
  */
 const receiveSchema = z.object({
     handlingDeduction: z.string().refine((value) => value === '' || Number(value) >= 0, {
         error: () => t('return-staff-actions.error-deduction-invalid')
-    })
+    }),
+    restock: z
+        .record(z.string(), z.string())
+        .refine(
+            (counts) =>
+                props.item.lines.every((line) =>
+                    isValidRestock(line.quantity, counts[line.productId])
+                ),
+            { error: () => t('return-staff-actions.error-restock-invalid') }
+        )
 });
 
 /**
@@ -130,11 +183,25 @@ const {
     showFormErrors: showReceiveErrors,
     handleSubmit: handleReceiveSubmit,
     applyServerErrors: applyReceiveErrors
-} = useStructureFormValidation({ handlingDeduction: '' }, receiveSchema, {
-    formElement: receiveElement,
-    revalidateOn: locale,
-    onInvalid: () => addMessage(t('generic.fix-errors'))
-});
+} = useStructureFormValidation(
+    { handlingDeduction: '', restock: startingRestock() },
+    receiveSchema,
+    {
+        formElement: receiveElement,
+        revalidateOn: locale,
+        onInvalid: () => addMessage(t('generic.fix-errors'))
+    }
+);
+
+/**
+ * Sets the restock count of one line, replacing the record so the validation sees the change.
+ *
+ * @param productId - The line's product.
+ * @param value - What the field now holds.
+ */
+const setRestock = (productId: string, value: string) => {
+    receiveForm.value.restock = { ...receiveForm.value.restock, [productId]: value };
+};
 
 /**
  * The close form's element.
@@ -251,25 +318,30 @@ const submitDecline = () =>
     );
 
 /**
- * Validates the deduction, then records the goods as received.
+ * Validates the deduction and the restock counts, then records the goods as received. Only a line
+ * set below its quantity is sent: no body at all means everything goes back and nothing is kept.
  *
  * @returns A promise settling once the move finished.
  */
 const submitReceive = () =>
-    handleReceiveSubmit(({ handlingDeduction }) =>
-        run(
-            () =>
-                receive(
-                    props.item.id,
-                    handlingDeduction === ''
-                        ? undefined
-                        : { handlingDeduction: Number(handlingDeduction) }
-                ),
+    handleReceiveSubmit(({ handlingDeduction, restock }) => {
+        const lowered = props.item.lines
+            .filter((line) => Number(restock[line.productId]) !== line.quantity)
+            .map((line) => ({
+                productId: line.productId,
+                restock: Number(restock[line.productId])
+            }));
+        const body = {
+            ...(handlingDeduction === '' ? {} : { handlingDeduction: Number(handlingDeduction) }),
+            ...(lowered.length > 0 ? { lines: lowered } : {})
+        };
+        return run(
+            () => receive(props.item.id, Object.keys(body).length > 0 ? body : undefined),
             'return-staff-actions.success-receive',
             applyReceiveErrors,
             'refund-notice.receive-owed'
-        )
-    );
+        );
+    });
 
 /**
  * Validates the optional note, then closes the return by hand.
@@ -348,6 +420,40 @@ const submitCancel = () =>
             data-test="return-receive-form"
             @submit.prevent="submitReceive"
         >
+            <fieldset class="m-0 flex w-full flex-col gap-2 border-0 p-0">
+                <legend class="mb-1 text-sm font-semibold">
+                    {{ t('return-staff-actions.label-restock') }}
+                </legend>
+                <p class="m-0 text-sm opacity-75">{{ t('return-staff-actions.hint-restock') }}</p>
+                <v-text-field
+                    v-for="line in item.lines"
+                    :key="'restock-' + line.productId"
+                    :model-value="receiveForm.restock[line.productId]"
+                    type="number"
+                    min="0"
+                    :max="line.quantity"
+                    step="1"
+                    :label="
+                        t('return-staff-actions.label-restock-line', {
+                            title: line.title,
+                            max: line.quantity
+                        })
+                    "
+                    density="compact"
+                    hide-details
+                    class="max-w-72"
+                    :data-test="'return-receive-restock-' + line.productId"
+                    @update:model-value="setRestock(line.productId, String($event ?? ''))"
+                />
+                <p
+                    v-if="showReceiveErrors && receiveErrors.restock?.length"
+                    class="m-0 text-sm text-error"
+                    role="alert"
+                    data-test="return-receive-restock-error"
+                >
+                    {{ receiveErrors.restock[0] }}
+                </p>
+            </fieldset>
             <v-text-field
                 v-model="receiveForm.handlingDeduction"
                 type="number"
@@ -421,6 +527,22 @@ const submitCancel = () =>
                 {{ t('return-staff-actions.button-cancel') }}
             </v-btn>
         </form>
+
+        <ul
+            v-if="showRestocked"
+            class="m-0 flex list-none flex-col gap-1 p-0 text-sm"
+            data-test="return-restocked"
+        >
+            <li v-for="line in item.lines" :key="'restocked-' + line.productId">
+                {{
+                    t('return-staff-actions.restocked-line', {
+                        title: line.title,
+                        restocked: line.restocked ?? 0,
+                        quantity: line.quantity
+                    })
+                }}
+            </li>
+        </ul>
 
         <InlineErrorAlert :message="moveError" data-test="return-move-error" />
     </div>

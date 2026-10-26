@@ -4499,6 +4499,11 @@ export interface ReturnLine {
      * @minimum 0
      */
     unitPrice: number;
+    /**
+     * How many of the `quantity` went back on sale when the goods were received. Set at receipt, never more than `quantity`; absent before then.
+     * @minimum 0
+     */
+    restocked?: number;
 }
 
 /**
@@ -4662,12 +4667,20 @@ export interface DeclineReturnRequest {
     reason: string;
 }
 
+export type ReceiveReturnRequestLinesItem = {
+    productId: Id;
+    /** @minimum 0 */
+    restock: number;
+};
+
 export interface ReceiveReturnRequest {
     /**
      * Handling damage to keep back from the refund (Art. 14(2)), a decimal in the return's currency. Absent means none. More than the refund is worth is refused.
      * @minimum 0
      */
     handlingDeduction?: number;
+    /** How many units of each returned product go back on sale. A product not listed goes back in full, and absent `lines` puts everything back. A unit that is broken is set to 0. An unknown or repeated product, or a count over the line's quantity, is refused. */
+    lines?: ReceiveReturnRequestLinesItem[];
 }
 
 export interface InventoryLevel {
@@ -10219,7 +10232,7 @@ export const declineReturn = (
 
 /**
  * The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409.
- * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed (its refund record is already on the payment, follow it there and on `GET /payments/attention`), `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
+ * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). Which of the returned units go back on sale is staff's call, per line: `lines[].restock` (absent means all of them). A broken unit set to 0 never reaches the shelf, so it is never handed to a backorder buyer, and the refund does not change: restocking is about the goods, not the money. A parcel lost on its way back is received with 0 on every line: the shop bears that risk, so the refund is owed, and nothing goes on sale. The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed (its refund record is already on the payment, follow it there and on `GET /payments/attention`), `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
  * @summary Record that the returned goods arrived
  */
 export const receiveReturn = (

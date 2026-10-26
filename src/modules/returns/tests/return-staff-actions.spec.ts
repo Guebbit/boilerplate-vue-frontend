@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import ReturnStaffActions from '../components/ReturnStaffActions.vue';
 import { useReturnsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
@@ -439,5 +440,101 @@ describe('ReturnStaffActions', () => {
 
         expect(wrapper.get('[data-test=return-move-error]').text()).toContain('Already canceled.');
         expect(wrapper.emitted('changed')).toBeUndefined();
+    });
+
+    it('receives with a lowered restock count for a broken line, and nothing else', async () => {
+        const { wrapper, store } = mountActions(
+            aReturn({
+                actions: {
+                    approve: false,
+                    decline: false,
+                    receive: true,
+                    close: false,
+                    cancel: false
+                }
+            })
+        );
+
+        await wrapper.get('[data-test=return-receive-restock-p1] input').setValue('0');
+        await wrapper.get('[data-test=return-receive-form]').trigger('submit');
+        await flushPromises();
+
+        expect(store.receive).toHaveBeenCalledWith('r1', {
+            lines: [{ productId: 'p1', restock: 0 }]
+        });
+    });
+
+    it('prefills each line with its quantity and sends the deduction beside a lowered count', async () => {
+        const { wrapper, store } = mountActions(
+            aReturn({
+                lines: [
+                    { productId: 'p1', quantity: 3, title: 'Shirt', unitPrice: 30 },
+                    { productId: 'p2', quantity: 1, title: 'Mug', unitPrice: 10 }
+                ],
+                actions: {
+                    approve: false,
+                    decline: false,
+                    receive: true,
+                    close: false,
+                    cancel: false
+                }
+            })
+        );
+        expect(
+            (wrapper.get('[data-test=return-receive-restock-p1] input').element as HTMLInputElement)
+                .value
+        ).toBe('3');
+
+        await wrapper.get('[data-test=return-receive-restock-p1] input').setValue('2');
+        await wrapper.get('[data-test=return-receive-deduction] input').setValue('4.5');
+        await wrapper.get('[data-test=return-receive-form]').trigger('submit');
+        await flushPromises();
+
+        expect(store.receive).toHaveBeenCalledWith('r1', {
+            handlingDeduction: 4.5,
+            lines: [{ productId: 'p1', restock: 2 }]
+        });
+    });
+
+    it('refuses a restock count over the line, and sends nothing', async () => {
+        const { wrapper, store } = mountActions(
+            aReturn({
+                actions: {
+                    approve: false,
+                    decline: false,
+                    receive: true,
+                    close: false,
+                    cancel: false
+                }
+            })
+        );
+
+        await wrapper.get('[data-test=return-receive-restock-p1] input').setValue('2');
+        await wrapper.get('[data-test=return-receive-form]').trigger('submit');
+        await flushPromises();
+
+        expect(store.receive).not.toHaveBeenCalled();
+        expect(wrapper.get('[data-test=return-receive-restock-error]').text()).toContain(
+            'whole number from 0'
+        );
+    });
+
+    it('shows staff how many units went back on sale, and shows the buyer nothing', () => {
+        const received = aReturn({
+            status: 'closed',
+            lines: [{ productId: 'p1', quantity: 2, title: 'Shirt', unitPrice: 30, restocked: 1 }]
+        });
+        const buyerView = mountActions(received);
+        expect(buyerView.wrapper.find('[data-test=return-restocked]').exists()).toBe(false);
+
+        const session = useSessionStore();
+        session.accessToken = 'test-token';
+        session.viewer = { id: 'u2', email: 'staff@example.com', role: 'owner' };
+        session.setAbilities({ tenant: [['read', 'Return']], platform: [] });
+        const staffView = mountActions(received);
+
+        expect(staffView.wrapper.get('[data-test=return-restocked]').text()).toContain(
+            'Shirt: restocked 1 of 2'
+        );
     });
 });

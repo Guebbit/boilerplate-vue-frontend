@@ -60,7 +60,12 @@
         "error-deduction-invalid": "Enter zero or a positive amount",
         "success-approve": "Return approved.",
         "success-decline": "Return declined.",
-        "success-receive": "Goods received and the customer paid back."
+        "success-receive": "Goods received and the customer paid back.",
+        "label-restock": "Units to put back on sale",
+        "hint-restock": "Set a line to 0 for a broken unit: it never reaches the shelf. The refund does not change.",
+        "label-restock-line": "{title} (of {max})",
+        "error-restock-invalid": "Enter a whole number from 0 up to the line's quantity",
+        "restocked-line": "{title}: restocked {restocked} of {quantity}"
     },
     "returns-request": {
         "button-open": "Return goods",

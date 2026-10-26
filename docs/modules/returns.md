@@ -110,11 +110,15 @@ excluded line, a closed window) and its message shows in the form. Staff then ap
 return like any other.
 
 **Staff moves come from `Return.actions`.** `ReturnStaffActions` renders approve, decline (with the
-reason the customer is told), receive (with an optional handling deduction), close and cancel (each with an
+reason the customer is told), receive (with a restock count per line and an optional handling deduction), close and cancel (each with an
 optional note) from the five booleans, and re-implements none of the lifecycle. Receiving and
 closing are step-up gated: the http layer prompts for the password when the server answers
 `REAUTH_REQUIRED`. Close is for a received return whose refund was canceled or paid outside the app:
-it moves no money and no stock, and the customer is not told their money is back. Cancel is for an
+it moves no money and no stock, and the customer is not told their money is back. The receive form lists every
+returned line with a number field prefilled with its quantity: lower it for a broken unit (0 keeps
+it off the shelf, so it is never handed to a waiting backorder buyer; the refund does not change).
+Only a lowered line is sent, and after receipt the staff part shows "restocked n of m", never the
+buyer. Cancel is for an
 approved return whose goods never came: it is not a close, moves nothing, mails nobody, and frees the
 same items to be returned again.
 

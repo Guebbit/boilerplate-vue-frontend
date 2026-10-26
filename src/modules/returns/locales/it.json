@@ -60,7 +60,12 @@
         "error-deduction-invalid": "Inserisci zero o un importo positivo",
         "success-approve": "Reso approvato.",
         "success-decline": "Reso rifiutato.",
-        "success-receive": "Merce ricevuta e cliente rimborsato."
+        "success-receive": "Merce ricevuta e cliente rimborsato.",
+        "label-restock": "Unità da rimettere in vendita",
+        "hint-restock": "Imposta una riga a 0 per un'unità rotta: non arriva a scaffale. Il rimborso non cambia.",
+        "label-restock-line": "{title} (su {max})",
+        "error-restock-invalid": "Inserisci un numero intero da 0 fino alla quantità della riga",
+        "restocked-line": "{title}: rimesse in vendita {restocked} su {quantity}"
     },
     "returns-request": {
         "button-open": "Restituisci merce",

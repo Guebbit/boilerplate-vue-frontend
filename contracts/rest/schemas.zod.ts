@@ -10947,6 +10947,7 @@ export const listReturnsResponseItemsItemNoteMax = 1000;
 export const listReturnsResponseItemsItemLinesItemProductIdMax = 64;
 export const listReturnsResponseItemsItemLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listReturnsResponseItemsItemLinesItemUnitPriceMin = 0;
+export const listReturnsResponseItemsItemLinesItemRestockedMin = 0;
 export const listReturnsResponseItemsItemHandlingDeductionMin = 0;
 export const listReturnsResponseItemsItemRefundAmountMin = 0;
 export const listReturnsResponseMetaPageDefault = 1;
@@ -10996,7 +10997,11 @@ export const ListReturnsResponse = zod.strictObject({
                         .regex(listReturnsResponseItemsItemLinesItemProductIdRegExp),
                     quantity: zod.number().min(1),
                     title: zod.string(),
-                    unitPrice: zod.number().min(listReturnsResponseItemsItemLinesItemUnitPriceMin)
+                    unitPrice: zod.number().min(listReturnsResponseItemsItemLinesItemUnitPriceMin),
+                    restocked: zod
+                        .number()
+                        .min(listReturnsResponseItemsItemLinesItemRestockedMin)
+                        .optional()
                 })
             ),
             returnPostage: zod.enum(['consumer', 'shop']),
@@ -11099,6 +11104,7 @@ export const createReturnResponseNoteMax = 1000;
 export const createReturnResponseLinesItemProductIdMax = 64;
 export const createReturnResponseLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createReturnResponseLinesItemUnitPriceMin = 0;
+export const createReturnResponseLinesItemRestockedMin = 0;
 export const createReturnResponseHandlingDeductionMin = 0;
 export const createReturnResponseRefundAmountMin = 0;
 export const CreateReturnResponse = zod.strictObject({
@@ -11129,7 +11135,8 @@ export const CreateReturnResponse = zod.strictObject({
                 .regex(createReturnResponseLinesItemProductIdRegExp),
             quantity: zod.number().min(1),
             title: zod.string(),
-            unitPrice: zod.number().min(createReturnResponseLinesItemUnitPriceMin)
+            unitPrice: zod.number().min(createReturnResponseLinesItemUnitPriceMin),
+            restocked: zod.number().min(createReturnResponseLinesItemRestockedMin).optional()
         })
     ),
     returnPostage: zod.enum(['consumer', 'shop']),
@@ -11243,6 +11250,7 @@ export const getReturnByIdResponseNoteMax = 1000;
 export const getReturnByIdResponseLinesItemProductIdMax = 64;
 export const getReturnByIdResponseLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getReturnByIdResponseLinesItemUnitPriceMin = 0;
+export const getReturnByIdResponseLinesItemRestockedMin = 0;
 export const getReturnByIdResponseHandlingDeductionMin = 0;
 export const getReturnByIdResponseRefundAmountMin = 0;
 export const GetReturnByIdResponse = zod.strictObject({
@@ -11273,7 +11281,8 @@ export const GetReturnByIdResponse = zod.strictObject({
                 .regex(getReturnByIdResponseLinesItemProductIdRegExp),
             quantity: zod.number().min(1),
             title: zod.string(),
-            unitPrice: zod.number().min(getReturnByIdResponseLinesItemUnitPriceMin)
+            unitPrice: zod.number().min(getReturnByIdResponseLinesItemUnitPriceMin),
+            restocked: zod.number().min(getReturnByIdResponseLinesItemRestockedMin).optional()
         })
     ),
     returnPostage: zod.enum(['consumer', 'shop']),
@@ -11313,6 +11322,7 @@ export const approveReturnResponseNoteMax = 1000;
 export const approveReturnResponseLinesItemProductIdMax = 64;
 export const approveReturnResponseLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const approveReturnResponseLinesItemUnitPriceMin = 0;
+export const approveReturnResponseLinesItemRestockedMin = 0;
 export const approveReturnResponseHandlingDeductionMin = 0;
 export const approveReturnResponseRefundAmountMin = 0;
 export const ApproveReturnResponse = zod.strictObject({
@@ -11343,7 +11353,8 @@ export const ApproveReturnResponse = zod.strictObject({
                 .regex(approveReturnResponseLinesItemProductIdRegExp),
             quantity: zod.number().min(1),
             title: zod.string(),
-            unitPrice: zod.number().min(approveReturnResponseLinesItemUnitPriceMin)
+            unitPrice: zod.number().min(approveReturnResponseLinesItemUnitPriceMin),
+            restocked: zod.number().min(approveReturnResponseLinesItemRestockedMin).optional()
         })
     ),
     returnPostage: zod.enum(['consumer', 'shop']),
@@ -11387,6 +11398,7 @@ export const declineReturnResponseNoteMax = 1000;
 export const declineReturnResponseLinesItemProductIdMax = 64;
 export const declineReturnResponseLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const declineReturnResponseLinesItemUnitPriceMin = 0;
+export const declineReturnResponseLinesItemRestockedMin = 0;
 export const declineReturnResponseHandlingDeductionMin = 0;
 export const declineReturnResponseRefundAmountMin = 0;
 export const DeclineReturnResponse = zod.strictObject({
@@ -11417,7 +11429,8 @@ export const DeclineReturnResponse = zod.strictObject({
                 .regex(declineReturnResponseLinesItemProductIdRegExp),
             quantity: zod.number().min(1),
             title: zod.string(),
-            unitPrice: zod.number().min(declineReturnResponseLinesItemUnitPriceMin)
+            unitPrice: zod.number().min(declineReturnResponseLinesItemUnitPriceMin),
+            restocked: zod.number().min(declineReturnResponseLinesItemRestockedMin).optional()
         })
     ),
     returnPostage: zod.enum(['consumer', 'shop']),
@@ -11440,7 +11453,7 @@ export const DeclineReturnResponse = zod.strictObject({
 });
 /**
  * The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409.
- * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed (its refund record is already on the payment, follow it there and on `GET /payments/attention`), `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
+ * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). Which of the returned units go back on sale is staff's call, per line: `lines[].restock` (absent means all of them). A broken unit set to 0 never reaches the shelf, so it is never handed to a backorder buyer, and the refund does not change: restocking is about the goods, not the money. A parcel lost on its way back is received with 0 on every line: the shop bears that risk, so the refund is owed, and nothing goes on sale. The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed (its refund record is already on the payment, follow it there and on `GET /payments/attention`), `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
  * @summary Record that the returned goods arrived
  */
 export const receiveReturnPathIdMax = 64;
@@ -11459,8 +11472,23 @@ export const ReceiveReturnHeader = zod.strictObject({
         .optional()
 });
 export const receiveReturnBodyHandlingDeductionMin = 0;
+export const receiveReturnBodyLinesItemProductIdMax = 64;
+export const receiveReturnBodyLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const receiveReturnBodyLinesItemRestockMin = 0;
 export const ReceiveReturnBody = zod.strictObject({
-    handlingDeduction: zod.number().min(receiveReturnBodyHandlingDeductionMin).optional()
+    handlingDeduction: zod.number().min(receiveReturnBodyHandlingDeductionMin).optional(),
+    lines: zod
+        .array(
+            zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(receiveReturnBodyLinesItemProductIdMax)
+                    .regex(receiveReturnBodyLinesItemProductIdRegExp),
+                restock: zod.number().min(receiveReturnBodyLinesItemRestockMin)
+            })
+        )
+        .optional()
 });
 export const receiveReturnResponseIdMax = 64;
 export const receiveReturnResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -11472,6 +11500,7 @@ export const receiveReturnResponseNoteMax = 1000;
 export const receiveReturnResponseLinesItemProductIdMax = 64;
 export const receiveReturnResponseLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const receiveReturnResponseLinesItemUnitPriceMin = 0;
+export const receiveReturnResponseLinesItemRestockedMin = 0;
 export const receiveReturnResponseHandlingDeductionMin = 0;
 export const receiveReturnResponseRefundAmountMin = 0;
 export const ReceiveReturnResponse = zod.strictObject({
@@ -11502,7 +11531,8 @@ export const ReceiveReturnResponse = zod.strictObject({
                 .regex(receiveReturnResponseLinesItemProductIdRegExp),
             quantity: zod.number().min(1),
             title: zod.string(),
-            unitPrice: zod.number().min(receiveReturnResponseLinesItemUnitPriceMin)
+            unitPrice: zod.number().min(receiveReturnResponseLinesItemUnitPriceMin),
+            restocked: zod.number().min(receiveReturnResponseLinesItemRestockedMin).optional()
         })
     ),
     returnPostage: zod.enum(['consumer', 'shop']),
@@ -14611,6 +14641,7 @@ export const closeReturnResponseNoteMax = 1000;
 export const closeReturnResponseLinesItemProductIdMax = 64;
 export const closeReturnResponseLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const closeReturnResponseLinesItemUnitPriceMin = 0;
+export const closeReturnResponseLinesItemRestockedMin = 0;
 export const closeReturnResponseHandlingDeductionMin = 0;
 export const closeReturnResponseRefundAmountMin = 0;
 export const CloseReturnResponse = zod.strictObject({
@@ -14641,7 +14672,8 @@ export const CloseReturnResponse = zod.strictObject({
                 .regex(closeReturnResponseLinesItemProductIdRegExp),
             quantity: zod.number().min(1),
             title: zod.string(),
-            unitPrice: zod.number().min(closeReturnResponseLinesItemUnitPriceMin)
+            unitPrice: zod.number().min(closeReturnResponseLinesItemUnitPriceMin),
+            restocked: zod.number().min(closeReturnResponseLinesItemRestockedMin).optional()
         })
     ),
     returnPostage: zod.enum(['consumer', 'shop']),
@@ -14687,6 +14719,7 @@ export const cancelReturnResponseNoteMax = 1000;
 export const cancelReturnResponseLinesItemProductIdMax = 64;
 export const cancelReturnResponseLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const cancelReturnResponseLinesItemUnitPriceMin = 0;
+export const cancelReturnResponseLinesItemRestockedMin = 0;
 export const cancelReturnResponseHandlingDeductionMin = 0;
 export const cancelReturnResponseRefundAmountMin = 0;
 export const CancelReturnResponse = zod.strictObject({
@@ -14717,7 +14750,8 @@ export const CancelReturnResponse = zod.strictObject({
                 .regex(cancelReturnResponseLinesItemProductIdRegExp),
             quantity: zod.number().min(1),
             title: zod.string(),
-            unitPrice: zod.number().min(cancelReturnResponseLinesItemUnitPriceMin)
+            unitPrice: zod.number().min(cancelReturnResponseLinesItemUnitPriceMin),
+            restocked: zod.number().min(cancelReturnResponseLinesItemRestockedMin).optional()
         })
     ),
     returnPostage: zod.enum(['consumer', 'shop']),
