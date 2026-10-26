@@ -144,9 +144,11 @@ watch([state, lateOnly, dueSoonOnly, () => productId], () => {
     page.value = 1;
 });
 
+// eslint-disable-next-line @typescript-eslint/no-floating-promises -- load records or toasts its own failure
 watch(page, () => void load());
 
 onMounted(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- load records or toasts its own failure
     void load();
 });
 

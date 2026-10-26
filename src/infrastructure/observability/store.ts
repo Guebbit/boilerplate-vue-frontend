@@ -364,13 +364,18 @@ export const useObservabilityStore = defineStore('observability', () => {
             return;
         }
 
-        void initFaro().then((ready) => {
-            if (!ready) return;
-            // Faro `unpause()` undoes an earlier `pause()` (a no-op on a transport never paused);
-            // a consent withdrawn while Faro loaded pauses it instead.
-            if (faroConsent) faro?.unpause();
-            else faro?.pause();
-        });
+        initFaro()
+            .then((ready) => {
+                if (!ready) return;
+                // Faro `unpause()` undoes an earlier `pause()` (a no-op on a transport never paused);
+                // a consent withdrawn while Faro loaded pauses it instead.
+                if (faroConsent) faro?.unpause();
+                else faro?.pause();
+            })
+            // Telemetry must never reach the visitor: a failed (un)pause is a debug line.
+            .catch((error: unknown) => {
+                logger.debug('observability', '[Faro] Applying consent failed', error);
+            });
     };
 
     /**

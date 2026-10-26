@@ -60,6 +60,7 @@ const { useSessionStore } = await import('@/infrastructure/session.ts');
 const signedIn = () => {
     const store = useSessionStore();
     store.setAccessToken('token');
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- setViewer never rejects (both its reads swallow their failure)
     void store.setViewer({ id: '1', email: 'a@b.c', role: 'customer' });
     return store;
 };

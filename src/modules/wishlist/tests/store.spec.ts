@@ -10,6 +10,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { nextTick } from 'vue';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useWishlistStore } from '../store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
@@ -138,12 +139,25 @@ describe('ensureWishlist', () => {
             });
     });
 
+    it('toasts a failed read once however many hearts asked, and resolves', () => {
+        const toast = vi.spyOn(useNotificationsStore(), 'addMessage');
+        vi.mocked(orvalMutator).mockRejectedValueOnce({
+            status: 500,
+            errors: [{ message: 'down' }]
+        });
+        const store = useWishlistStore();
+
+        return Promise.all([store.ensureWishlist(), store.ensureWishlist()]).then(() => {
+            expect(toast).toHaveBeenCalledTimes(1);
+            expect(toast).toHaveBeenCalledWith('down');
+        });
+    });
+
     it('reads again after a failed read, so one bad answer is not cached for good', () => {
         responses['GET /wishlist'] = Promise.reject(new Error('down'));
         const store = useWishlistStore();
         return store
             .ensureWishlist()
-            .catch(() => undefined)
             .then(() => {
                 responses['GET /wishlist'] = {
                     items: [{ productId: 'p1', availability: 'in_stock' }]

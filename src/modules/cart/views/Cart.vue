@@ -323,6 +323,7 @@ const runCheckout = () =>
                 name: 'Home'
             };
             // Fire-and-forget: a NavigationFailure here must not convert a completed checkout into an error toast.
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
             void router.push(routerLinkI18n(target));
         })
         .catch(handleRefusal);

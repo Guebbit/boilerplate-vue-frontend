@@ -43,6 +43,7 @@ export const isAnchorHash = (hash: string): boolean => hash !== '' && !hash.incl
  */
 export const useLinkTokenCleanup = (route: RouteLocationNormalizedLoaded, router: Router): void => {
     onMounted(() => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
         void router.replace({ path: route.path, hash: '' });
     });
 };

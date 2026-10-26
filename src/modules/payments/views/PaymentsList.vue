@@ -86,6 +86,7 @@ const activeTab = ref<PaymentsTab>(initialTab());
  */
 const selectTab = (tab: PaymentsTab) => {
     activeTab.value = tab;
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
     void router.replace({ query: { ...route.query, tab: tab === 'all' ? undefined : tab } });
 };
 

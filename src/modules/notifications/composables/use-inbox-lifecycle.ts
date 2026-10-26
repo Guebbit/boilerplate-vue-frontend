@@ -80,6 +80,7 @@ export const useInboxLifecycle = (): ComputedRef<boolean> => {
      * Reads the inbox. The store reports a failed read itself, as an ambient one.
      */
     const refresh = () => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- the inbox store reports its own failure
         void inbox.sync();
     };
 

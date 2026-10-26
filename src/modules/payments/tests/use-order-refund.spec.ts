@@ -12,6 +12,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { loadLocale } from '@/i18n';
 import { ref } from 'vue';
+import { flushPromises } from '@vue/test-utils';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { orvalMutator } from '@/infrastructure/http';
 import { useOrderRefund } from '../composables/use-order-refund';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
@@ -82,6 +85,20 @@ beforeEach(() => {
 const settled = () => Promise.resolve().then(() => undefined);
 
 describe('useOrderRefund', () => {
+    it('toasts a payment read that failed, and keeps the refund control closed', () => {
+        const toast = vi.spyOn(useNotificationsStore(), 'addMessage');
+        vi.mocked(orvalMutator).mockRejectedValueOnce(
+            aProblem(500, [{ code: 'INTERNAL', message: 'payments are down' }])
+        );
+        const { canRefund } = useOrderRefund(ref('o1'));
+
+        return flushPromises().then(() => {
+            expect(toast).toHaveBeenCalledTimes(1);
+            expect(toast.mock.calls[0]?.[0]).toContain('payments are down');
+            expect(canRefund.value).toBe(false);
+        });
+    });
+
     it('offers the refund the server says is open', () => {
         const { canRefund } = useOrderRefund(ref('o1'));
 

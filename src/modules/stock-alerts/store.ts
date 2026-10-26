@@ -5,10 +5,11 @@
  */
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
-import { useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useNotificationsStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { listStockAlerts, createStockAlert, deleteStockAlert } from '@api';
 import type { StockAlert } from '@types';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
 
 /**
@@ -72,14 +73,17 @@ export const useStockAlertsStore = defineStore('stock-alerts', () => {
 
     /**
      * The list for a button that only needs to know what was asked: the first call reads it, every
-     * later call reuses that read.
+     * later call reuses that read. A failed read is toasted ONCE here, not once per button, and
+     * forgotten so the next button asks again.
      *
-     * @returns A promise resolving with the list.
+     * @returns A promise resolving with the list, or `undefined` when it could not be read. Never
+     *  rejects.
      */
     const ensureStockAlerts = () => {
         shared ??= fetchStockAlerts().catch((error: unknown) => {
             shared = undefined;
-            throw error;
+            notifyErrorMessages(useNotificationsStore().addMessage, error);
+            return undefined;
         });
         return shared;
     };

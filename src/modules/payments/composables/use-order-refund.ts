@@ -9,6 +9,7 @@ import { translate as t } from '@/i18n';
 import type { EToastType } from '@guebbit/vue-toolkit';
 import { usePaymentsStore } from '../store';
 import { refundNotice } from './refund-notice';
+import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**
  * The operator's refund control for one order — published where the store is not.
@@ -41,12 +42,17 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
      */
     const { payment, loading: refundLoading } = storeToRefs(paymentsStore);
 
+    /**
+     * Toasts a failed payment read; the refund controls just stay hidden without it.
+     */
+    const onAmbientError = useAmbientError();
+
     // Vue `watch(source, callback, { immediate })`: `immediate` fetches the payment for an order id
     // that is already set when the composable is created.
     watch(
         orderId,
         (id) => {
-            if (id) void paymentsStore.fetchPaymentForOrder(id);
+            if (id) paymentsStore.fetchPaymentForOrder(id).catch(onAmbientError);
         },
         { immediate: true }
     );

@@ -70,6 +70,7 @@ watch(
     (rendered, wasRendered) => {
         if (rendered || !wasRendered) return;
         if (!root.value?.contains(document.activeElement)) return;
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- nextTick only rejects if its callback throws, and this one cannot
         void nextTick(() => document.querySelector<HTMLElement>(focusFallback)?.focus());
     }
 );

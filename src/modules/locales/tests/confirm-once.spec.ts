@@ -92,8 +92,7 @@ describe('a double press on a locale delete', () => {
         await flushPromises();
         const button = wrapper.get('[data-test=row-delete]');
 
-        void button.trigger('click');
-        void button.trigger('click');
+        await Promise.all([button.trigger('click'), button.trigger('click')]);
         await flushPromises();
 
         expect(confirm).toHaveBeenCalledTimes(1);
@@ -105,14 +104,13 @@ describe('a double press on a locale delete', () => {
         store.capabilities = [SPANISH];
         vi.spyOn(store, 'fetchApps').mockResolvedValue(undefined);
         const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
-        void router.push('/en/locales/es');
+        await router.push('/en/locales/es');
         await router.isReady();
         const wrapper = mount(LocaleEntries, { global: { plugins: [router, vuetify, i18n] } });
         await flushPromises();
         const button = wrapper.get('[data-test=entry-delete]');
 
-        void button.trigger('click');
-        void button.trigger('click');
+        await Promise.all([button.trigger('click'), button.trigger('click')]);
         await flushPromises();
 
         const deletes = vi

@@ -44,6 +44,7 @@ export const useLanguageSwitch = () => {
      *  locale, or on `/` (locale recalculated) if that navigation fails.
      */
     const switchLanguage = (newLocale: string) => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- persistLocalePreference never rejects (a failed save is dropped)
         void persistLocalePreference(newLocale);
         return (
             router

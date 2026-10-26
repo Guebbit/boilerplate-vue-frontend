@@ -221,6 +221,7 @@ const truncateId = (value?: string, length = 8) =>
     value ? `${value.slice(0, length)}...` : EMPTY_VALUE;
 
 // The initial load: the first page, unfiltered.
+// eslint-disable-next-line @typescript-eslint/no-floating-promises -- load records or toasts its own failure
 void load();
 </script>
 

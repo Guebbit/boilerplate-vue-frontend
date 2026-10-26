@@ -261,6 +261,7 @@ const handleDelete = singleFlight(() => {
             return deleteSubscription(id)
                 .then(() => {
                     addMessage(t('webhook-target-page.success-delete'));
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
                     void router.push(routerLinkI18n({ name: 'WebhooksList' }));
                 })
                 .catch((error: unknown) => reportDeleteError(error));

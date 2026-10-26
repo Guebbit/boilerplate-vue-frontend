@@ -37,6 +37,7 @@ import TwoFactorBackupCodes from './TwoFactorBackupCodes.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { TwoFactorSetup } from '@api';
 import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 
 /**
  * Translation function.
@@ -145,14 +146,15 @@ const openEnroll = (method: string) => {
         startCodePrompt({ kind: 'enroll', method });
         return;
     }
-    void useDialogStore()
+    useDialogStore()
         .confirm({
             message: t('two-factor.confirm-reenroll', { method: methodLabel(method) }),
             color: 'error'
         })
         .then((accepted) => {
             if (accepted) startCodePrompt({ kind: 'enroll', method });
-        });
+        })
+        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
 };
 
 /**

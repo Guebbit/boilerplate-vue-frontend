@@ -673,8 +673,7 @@ describe('the Clear cart button asks before it empties the basket', () => {
         const { wrapper, clearSpy } = await mountCart();
         const button = wrapper.get('[data-test=cart-clear]');
 
-        void button.trigger('click');
-        void button.trigger('click');
+        await Promise.all([button.trigger('click'), button.trigger('click')]);
         await flushPromises();
 
         expect(confirm).toHaveBeenCalledTimes(1);

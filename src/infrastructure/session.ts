@@ -549,6 +549,7 @@ export const useSessionStore = defineStore('session', () => {
                         setAccessToken(token);
                         // The rules may have moved while the old token lived; the first restore
                         // has no viewer yet and reads them with `loadViewer` instead.
+                        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- reloadAbilities never rejects (a failed read leaves the empty abilities)
                         void reloadAbilities();
                     }
                     return token;
@@ -702,6 +703,7 @@ export const useSessionStore = defineStore('session', () => {
         const message = event.data as { type?: unknown; at?: unknown } | undefined;
         if (message?.type === 'logout') clearSessionLocally();
         // Another tab signed in: the shared session is now that person's, so this tab re-reads it.
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- rereadSession never rejects (a failed re-read is dropped)
         if (message?.type === 'login') void rereadSession();
         // Another tab acted: the server's one idle clock is shared by every tab of this session.
         if (message?.type === 'activity' && typeof message.at === 'number') markActive(message.at);

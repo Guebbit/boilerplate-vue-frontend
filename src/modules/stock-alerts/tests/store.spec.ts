@@ -7,6 +7,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useStockAlertsStore } from '../store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -73,5 +74,23 @@ describe('the stock-alerts store', () => {
         await store.ensureStockAlerts();
 
         expect(requestedUrls()).toEqual(['/stock-alerts']);
+    });
+
+    it('toasts a failed shared read once, resolves, and reads again for the next button', async () => {
+        const store = useStockAlertsStore();
+        const toast = vi.spyOn(useNotificationsStore(), 'addMessage');
+        vi.mocked(orvalMutator).mockRejectedValueOnce({
+            status: 500,
+            errors: [{ message: 'down' }]
+        });
+
+        await expect(
+            Promise.all([store.ensureStockAlerts(), store.ensureStockAlerts()])
+        ).resolves.toBeDefined();
+        await store.ensureStockAlerts();
+
+        expect(toast).toHaveBeenCalledTimes(1);
+        expect(toast).toHaveBeenCalledWith('down');
+        expect(requestedUrls()).toEqual(['/stock-alerts', '/stock-alerts']);
     });
 });

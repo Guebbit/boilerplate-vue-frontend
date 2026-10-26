@@ -23,6 +23,7 @@ import { storeToRefs } from 'pinia';
 import { Plus } from 'lucide-vue-next';
 import { useAddressesStore } from '../stores/addresses.ts';
 import AddressFormDialog from './AddressFormDialog.vue';
+import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**
  * The radio value standing for "same as the shipping address" — never a real entry id (those are
@@ -127,8 +128,13 @@ const choice = computed({
     }
 });
 
+/**
+ * Toasts a background read's failure; these reads have no form to host an inline error.
+ */
+const onAmbientError = useAmbientError();
+
 onMounted(() => {
-    if (addresses.value.length === 0) void addressesStore.fetchAddresses();
+    if (addresses.value.length === 0) addressesStore.fetchAddresses().catch(onAmbientError);
 });
 
 watch(dialogOpen, (open) => {
@@ -137,6 +143,7 @@ watch(dialogOpen, (open) => {
         return;
     }
     // After the address watcher below has had its turn for the save that closed the dialog.
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- nextTick only rejects if its callback throws, and this one cannot
     void nextTick(() => {
         addingHere = false;
     });

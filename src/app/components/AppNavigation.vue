@@ -112,6 +112,7 @@ const DRAWER_ID = 'app-drawer';
  * flips, and the element to focus does not exist yet when this runs.
  */
 watch(drawer, (isOpen) => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- nextTick only rejects if its callback throws, and this one cannot
     void nextTick(() => {
         if (isOpen) {
             document
@@ -270,6 +271,7 @@ const toursEnabled = readToursEnabled();
  * "Show me around": asks for the welcome tour through `?tour=`, the door `AppTourHost` listens at.
  */
 const showWelcomeTour = () =>
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
     void router.push({ query: { ...route.query, tour: WELCOME_TOUR_ID } });
 
 /**

@@ -14,6 +14,7 @@ import { useCartStore } from './store';
 import { clearCheckoutDrafts } from './composables/use-checkout-draft';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
+import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**
  * The shopping cart, and the checkout that turns it into an order.
@@ -59,6 +60,8 @@ export default {
                 const cartStore = useCartStore();
                 const session = useSessionStore();
                 const { isAuth } = storeToRefs(session);
+                // A failed seed leaves the badge at its last count; the visitor is told once.
+                const onAmbientError = useAmbientError();
                 /*
                  * Staff and administrators hold no cart key, so for them the summary read would be
                  * a 403. The abilities arrive a moment after the session does, so this watches the
@@ -74,7 +77,8 @@ export default {
                             ? session.viewer?.id
                             : undefined,
                     (shopperId) => {
-                        if (shopperId !== undefined) void cartStore.seedAfterSignIn();
+                        if (shopperId !== undefined)
+                            cartStore.seedAfterSignIn().catch(onAmbientError);
                     },
                     { immediate: true, flush: 'post' }
                 );
