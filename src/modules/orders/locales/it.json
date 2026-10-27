@@ -185,6 +185,7 @@
         "type-return_declined": "Reso rifiutato",
         "type-return_received": "Merce resa ricevuta",
         "type-return_closed": "Reso chiuso",
+        "type-return_canceled": "Reso annullato",
         "type-invoice_issued": "Fattura emessa",
         "type-credit_note_issued": "Nota di credito emessa",
         "type-release_date_moved": "Data di uscita cambiata",

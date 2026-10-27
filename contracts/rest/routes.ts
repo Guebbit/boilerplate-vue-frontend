@@ -228,6 +228,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "PATCH", pattern: /^\/products\/[^/]+$/, schemaName: "UpdateProductByIdResponse", bodySchemaName: "UpdateProductByIdBody", module: "products" },
     { method: "PUT", pattern: /^\/products\/[^/]+$/, schemaName: "ReplaceProductByIdResponse", bodySchemaName: "ReplaceProductByIdBody", module: "products" },
     { method: "POST", pattern: /^\/returns\/[^/]+\/approve$/, schemaName: "ApproveReturnResponse", bodySchemaName: undefined, module: "returns" },
+    { method: "POST", pattern: /^\/returns\/[^/]+\/cancel$/, schemaName: "CancelReturnResponse", bodySchemaName: "CancelReturnBody", module: "returns" },
     { method: "POST", pattern: /^\/returns\/[^/]+\/close$/, schemaName: "CloseReturnResponse", bodySchemaName: "CloseReturnBody", module: "returns" },
     { method: "POST", pattern: /^\/returns\/[^/]+\/decline$/, schemaName: "DeclineReturnResponse", bodySchemaName: "DeclineReturnBody", module: "returns" },
     { method: "POST", pattern: /^\/returns\/[^/]+\/receive$/, schemaName: "ReceiveReturnResponse", bodySchemaName: "ReceiveReturnBody", module: "returns" },
