@@ -2841,6 +2841,284 @@ export interface NotificationStaffTicketAssigned {
     createdAt: string;
 }
 
+/**
+ * A return request is waiting for a decision. Ids only, the return's page has the rest.
+ */
+export interface ReturnRequestedParams {
+    returnId: Id;
+    orderId: Id;
+}
+
+export type NotificationStaffReturnRequestedCode =
+    (typeof NotificationStaffReturnRequestedCode)[keyof typeof NotificationStaffReturnRequestedCode];
+
+export const NotificationStaffReturnRequestedCode = {
+    'notificationsstaffreturn-requested': 'notifications.staff.return-requested'
+} as const;
+
+/**
+ * A buyer asked to return goods; staff who decide returns take it.
+ */
+export interface NotificationStaffReturnRequested {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffReturnRequestedCode;
+    params: ReturnRequestedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+/**
+ * A domain event parked as dead. The name and the record it was about, the payload stays in the outbox.
+ */
+export interface OutboxDeadParams {
+    /** The domain event's name (`order.paid`). */
+    eventName: string;
+    /** What the event was about (an order or account id). */
+    aggregateId: string;
+}
+
+export type NotificationStaffOutboxDeadCode =
+    (typeof NotificationStaffOutboxDeadCode)[keyof typeof NotificationStaffOutboxDeadCode];
+
+export const NotificationStaffOutboxDeadCode = {
+    'notificationsstaffoutbox-dead': 'notifications.staff.outbox-dead'
+} as const;
+
+/**
+ * A domain event could not be delivered after every retry and was parked; administrators look at the record it names.
+ */
+export interface NotificationStaffOutboxDead {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffOutboxDeadCode;
+    params: OutboxDeadParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+/**
+ * A summary row of how many items need the reader today. The screen it points at lists them.
+ */
+export interface WorkCountParams {
+    /** @minimum 1 */
+    count: number;
+}
+
+export type NotificationStaffTransfersDueCode =
+    (typeof NotificationStaffTransfersDueCode)[keyof typeof NotificationStaffTransfersDueCode];
+
+export const NotificationStaffTransfersDueCode = {
+    'notificationsstafftransfers-due': 'notifications.staff.transfers-due'
+} as const;
+
+/**
+ * Bank transfers still unpaid whose pay-by date is near.
+ */
+export interface NotificationStaffTransfersDue {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffTransfersDueCode;
+    params: WorkCountParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationStaffPreordersLateCode =
+    (typeof NotificationStaffPreordersLateCode)[keyof typeof NotificationStaffPreordersLateCode];
+
+export const NotificationStaffPreordersLateCode = {
+    'notificationsstaffpreorders-late': 'notifications.staff.preorders-late'
+} as const;
+
+/**
+ * Preorders and backorders past their expected date with units still owed.
+ */
+export interface NotificationStaffPreordersLate {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffPreordersLateCode;
+    params: WorkCountParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationStaffDeliveryHoldsOpenCode =
+    (typeof NotificationStaffDeliveryHoldsOpenCode)[keyof typeof NotificationStaffDeliveryHoldsOpenCode];
+
+export const NotificationStaffDeliveryHoldsOpenCode = {
+    'notificationsstaffdelivery-holds-open': 'notifications.staff.delivery-holds-open'
+} as const;
+
+/**
+ * Fulfillment orders held for a reason other than waiting for stock, for longer than the shop allows.
+ */
+export interface NotificationStaffDeliveryHoldsOpen {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffDeliveryHoldsOpenCode;
+    params: WorkCountParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationStaffWithdrawalsAwaitingGoodsCode =
+    (typeof NotificationStaffWithdrawalsAwaitingGoodsCode)[keyof typeof NotificationStaffWithdrawalsAwaitingGoodsCode];
+
+export const NotificationStaffWithdrawalsAwaitingGoodsCode = {
+    'notificationsstaffwithdrawals-awaiting-goods': 'notifications.staff.withdrawals-awaiting-goods'
+} as const;
+
+/**
+ * Withdrawals after dispatch whose goods have not been received back.
+ */
+export interface NotificationStaffWithdrawalsAwaitingGoods {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffWithdrawalsAwaitingGoodsCode;
+    params: WorkCountParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationStaffReturnsUndecidedCode =
+    (typeof NotificationStaffReturnsUndecidedCode)[keyof typeof NotificationStaffReturnsUndecidedCode];
+
+export const NotificationStaffReturnsUndecidedCode = {
+    'notificationsstaffreturns-undecided': 'notifications.staff.returns-undecided'
+} as const;
+
+/**
+ * Return requests still awaiting a decision after the shop reminder time.
+ */
+export interface NotificationStaffReturnsUndecided {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffReturnsUndecidedCode;
+    params: WorkCountParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationStaffLowStockCode =
+    (typeof NotificationStaffLowStockCode)[keyof typeof NotificationStaffLowStockCode];
+
+export const NotificationStaffLowStockCode = {
+    'notificationsstafflow-stock': 'notifications.staff.low-stock'
+} as const;
+
+/**
+ * Products at or under the low-stock threshold.
+ */
+export interface NotificationStaffLowStock {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffLowStockCode;
+    params: WorkCountParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationStaffUnshippedCode =
+    (typeof NotificationStaffUnshippedCode)[keyof typeof NotificationStaffUnshippedCode];
+
+export const NotificationStaffUnshippedCode = {
+    notificationsstaffunshipped: 'notifications.staff.unshipped'
+} as const;
+
+/**
+ * Paid orders not handed to a carrier for longer than the shop allows.
+ */
+export interface NotificationStaffUnshipped {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffUnshippedCode;
+    params: WorkCountParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationStaffAwaitingTrackingCode =
+    (typeof NotificationStaffAwaitingTrackingCode)[keyof typeof NotificationStaffAwaitingTrackingCode];
+
+export const NotificationStaffAwaitingTrackingCode = {
+    'notificationsstaffawaiting-tracking': 'notifications.staff.awaiting-tracking'
+} as const;
+
+/**
+ * Shipped parcels on a tracked method that still have no tracking code.
+ */
+export interface NotificationStaffAwaitingTracking {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffAwaitingTrackingCode;
+    params: WorkCountParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationStaffUndeliveredCode =
+    (typeof NotificationStaffUndeliveredCode)[keyof typeof NotificationStaffUndeliveredCode];
+
+export const NotificationStaffUndeliveredCode = {
+    notificationsstaffundelivered: 'notifications.staff.undelivered'
+} as const;
+
+/**
+ * Parcels shipped and never marked arrived, the buyer withdrawal window and guarantee have not started.
+ */
+export interface NotificationStaffUndelivered {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffUndeliveredCode;
+    params: WorkCountParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationStaffStaleRefundsCode =
+    (typeof NotificationStaffStaleRefundsCode)[keyof typeof NotificationStaffStaleRefundsCode];
+
+export const NotificationStaffStaleRefundsCode = {
+    'notificationsstaffstale-refunds': 'notifications.staff.stale-refunds'
+} as const;
+
+/**
+ * Provider refunds open past the attention threshold.
+ */
+export interface NotificationStaffStaleRefunds {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffStaleRefundsCode;
+    params: WorkCountParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
 export type Notification =
     | NotificationCartLineRemoved
     | NotificationWishlistItemRemoved
@@ -2852,7 +3130,19 @@ export type Notification =
     | NotificationStaffPurchaseHoldPlaced
     | NotificationStaffWebhookDisabled
     | NotificationStaffTicketOpened
-    | NotificationStaffTicketAssigned;
+    | NotificationStaffTicketAssigned
+    | NotificationStaffReturnRequested
+    | NotificationStaffOutboxDead
+    | NotificationStaffTransfersDue
+    | NotificationStaffPreordersLate
+    | NotificationStaffDeliveryHoldsOpen
+    | NotificationStaffWithdrawalsAwaitingGoods
+    | NotificationStaffReturnsUndecided
+    | NotificationStaffLowStock
+    | NotificationStaffUnshipped
+    | NotificationStaffAwaitingTracking
+    | NotificationStaffUndelivered
+    | NotificationStaffStaleRefunds;
 
 /**
  * One work notice this account received as staff, without the facts it named.

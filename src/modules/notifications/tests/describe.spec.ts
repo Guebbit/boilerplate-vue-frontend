@@ -341,6 +341,65 @@ const opened = (parameters: { kind: string; category?: string }) =>
         params: { ticketId: 't1', ...parameters }
     }) as const;
 
+describe('a return request and a dead event for staff', () => {
+    const requested = {
+        code: 'notifications.staff.return-requested',
+        params: { returnId: 'r1', orderId: 'o1' }
+    } as const;
+    const dead = (eventName: string) =>
+        ({
+            code: 'notifications.staff.outbox-dead',
+            params: { eventName, aggregateId: 'x1' }
+        }) as const;
+
+    it('needs no facts to say a return waits for a decision, and opens the return', () => {
+        expect(describeNotification(requested, ['en'], translate)).toBe(
+            'notifications.staff.return-requested'
+        );
+        expect(notificationTarget(requested)).toEqual({ screen: 'return', id: 'r1' });
+    });
+
+    it('names the parked event, and opens the order or account it was about', () => {
+        expect(describeNotification(dead('order.paid'), ['en'], translate)).toBe(
+            'notifications.staff.outbox-dead|event=order.paid'
+        );
+        expect(notificationTarget(dead('order.paid'))).toEqual({ screen: 'order', id: 'x1' });
+        expect(notificationTarget(dead('user.registered'))).toEqual({
+            screen: 'account',
+            id: 'x1'
+        });
+    });
+
+    it('opens nothing for an event about neither', () => {
+        expect(notificationTarget(dead('stock.moved'))).toBeUndefined();
+    });
+});
+
+/**
+ * A summary notice of the given code, carrying a count of four.
+ *
+ * @param code - the notice's code
+ */
+const summary = (code: string) => ({ code, params: { count: 4 } }) as never;
+
+describe('a digest summary for staff', () => {
+    it.each([
+        ['notifications.staff.transfers-due', 'sales-orders'],
+        ['notifications.staff.preorders-late', 'preorders'],
+        ['notifications.staff.delivery-holds-open', 'sales-orders'],
+        ['notifications.staff.withdrawals-awaiting-goods', 'returns'],
+        ['notifications.staff.returns-undecided', 'returns'],
+        ['notifications.staff.low-stock', 'inventory'],
+        ['notifications.staff.unshipped', 'sales-orders'],
+        ['notifications.staff.awaiting-tracking', 'sales-orders'],
+        ['notifications.staff.undelivered', 'sales-orders'],
+        ['notifications.staff.stale-refunds', 'payments']
+    ])('says how many for %s and opens the list it counts', (code, screen) => {
+        expect(describeNotification(summary(code), ['en'], translate)).toBe(`${code}|n=4`);
+        expect(notificationTarget(summary(code))).toEqual({ screen });
+    });
+});
+
 describe('a ticket notice for staff', () => {
     it('names a contact message by its category', () => {
         expect(

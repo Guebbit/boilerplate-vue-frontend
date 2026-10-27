@@ -241,16 +241,56 @@ export const notificationOrderId = (notification: DescribableNotification): stri
  * kind, not a route name: naming a sibling's route is the link composable's job, next to the
  * `hasRoute` guard that makes it safe.
  */
-export interface NotificationTarget {
-    /**
-     * The screen: a buyer's account page, a webhook subscription's page, or a ticket's page.
-     */
-    screen: 'account' | 'webhook-subscription' | 'ticket';
-    /**
-     * The id of the account, subscription or ticket.
-     */
-    id: string;
-}
+export type NotificationTarget =
+    | {
+          /**
+           * A record's own page: a buyer's account, a webhook subscription, a ticket, a return or
+           * an order.
+           */
+          screen: 'account' | 'webhook-subscription' | 'ticket' | 'return' | 'order';
+          /**
+           * The id of that record.
+           */
+          id: string;
+      }
+    | {
+          /**
+           * A list a summary row counts: sales orders, payments, returns, the preorder board or
+           * the stock ledger. The row carries a count, not an id.
+           */
+          screen: 'sales-orders' | 'payments' | 'returns' | 'preorders' | 'inventory';
+      };
+
+/**
+ * The list each summary notice counts, as a target.
+ */
+const SUMMARY_SCREENS = {
+    'notifications.staff.transfers-due': 'sales-orders',
+    'notifications.staff.preorders-late': 'preorders',
+    'notifications.staff.delivery-holds-open': 'sales-orders',
+    'notifications.staff.withdrawals-awaiting-goods': 'returns',
+    'notifications.staff.returns-undecided': 'returns',
+    'notifications.staff.low-stock': 'inventory',
+    'notifications.staff.unshipped': 'sales-orders',
+    'notifications.staff.awaiting-tracking': 'sales-orders',
+    'notifications.staff.undelivered': 'sales-orders',
+    'notifications.staff.stale-refunds': 'payments'
+} as const;
+
+/**
+ * The screen of the record a parked event was about, read off the event name's first segment. An
+ * event of another kind has no screen here: a link to a guess would be worse than none.
+ *
+ * @param eventName - The parked event (`order.paid`).
+ * @param aggregateId - What it was about.
+ * @returns The target, or `undefined` for an event about neither an order nor an account.
+ */
+const outboxTarget = (eventName: string, aggregateId: string): NotificationTarget | undefined => {
+    const [kind] = eventName.split('.');
+    if (kind === 'order') return { screen: 'order', id: aggregateId };
+    if (kind === 'user') return { screen: 'account', id: aggregateId };
+    return undefined;
+};
 
 /**
  * The admin screen a work notice is about: the buyer's account for a purchase hold, the
@@ -273,6 +313,24 @@ export const notificationTarget = (
         case 'notifications.staff.ticket-opened':
         case 'notifications.staff.ticket-assigned': {
             return { screen: 'ticket', id: notification.params.ticketId };
+        }
+        case 'notifications.staff.return-requested': {
+            return { screen: 'return', id: notification.params.returnId };
+        }
+        case 'notifications.staff.outbox-dead': {
+            return outboxTarget(notification.params.eventName, notification.params.aggregateId);
+        }
+        case 'notifications.staff.transfers-due':
+        case 'notifications.staff.preorders-late':
+        case 'notifications.staff.delivery-holds-open':
+        case 'notifications.staff.withdrawals-awaiting-goods':
+        case 'notifications.staff.returns-undecided':
+        case 'notifications.staff.low-stock':
+        case 'notifications.staff.unshipped':
+        case 'notifications.staff.awaiting-tracking':
+        case 'notifications.staff.undelivered':
+        case 'notifications.staff.stale-refunds': {
+            return { screen: SUMMARY_SCREENS[notification.code] };
         }
         default: {
             return undefined;
@@ -367,8 +425,24 @@ export const describeNotification = (
         case 'notifications.staff.purchase-hold-placed': {
             return translate(notification.code, { until: formatDate(notification.params.until) });
         }
-        case 'notifications.staff.webhook-disabled': {
+        case 'notifications.staff.webhook-disabled':
+        case 'notifications.staff.return-requested': {
             return translate(notification.code);
+        }
+        case 'notifications.staff.outbox-dead': {
+            return translate(notification.code, { event: notification.params.eventName });
+        }
+        case 'notifications.staff.transfers-due':
+        case 'notifications.staff.preorders-late':
+        case 'notifications.staff.delivery-holds-open':
+        case 'notifications.staff.withdrawals-awaiting-goods':
+        case 'notifications.staff.returns-undecided':
+        case 'notifications.staff.low-stock':
+        case 'notifications.staff.unshipped':
+        case 'notifications.staff.awaiting-tracking':
+        case 'notifications.staff.undelivered':
+        case 'notifications.staff.stale-refunds': {
+            return translate(notification.code, { n: notification.params.count });
         }
         case 'notifications.staff.ticket-opened':
         case 'notifications.staff.ticket-assigned': {
