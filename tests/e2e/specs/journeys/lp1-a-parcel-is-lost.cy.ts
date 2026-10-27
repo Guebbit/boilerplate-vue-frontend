@@ -46,14 +46,14 @@ describe('LP1 · A parcel is lost', () => {
                 .should('equal', 'processing');
 
             cy.step('the buyer reads the message and never the note');
-            cy.loginAs('user');
+            cy.switchUser('user');
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=shipment-lost-message]').should('contain.text', MESSAGE);
             cy.get('[data-test=shipment-lost-note]').should('not.exist');
             cy.get('[data-test=open-report-lost]').should('not.exist');
 
             cy.step('the warehouse ships the same units again and the order is shipped once more');
-            cy.loginAs('warehouse');
+            cy.switchUser('warehouse');
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=open-ship]').first().click();
             cy.get('[data-test=ship-submit]').should('not.be.disabled').click();
