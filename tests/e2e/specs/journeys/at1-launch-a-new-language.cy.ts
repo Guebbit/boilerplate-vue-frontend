@@ -201,7 +201,7 @@ describe('AT1 · Launch a new language', () => {
             // A draft: the write is taken, and the public reads leave an inactive language out.
             loginDevice('editor').then((device) => {
                 requestAsDevice(device, 'PATCH', `/locales/translations/product/${product.id}`, {
-                    [TAG]: { fields: { title: 'Hundekorb 2' } }
+                    [TAG]: { fields: { title: 'Hundekorb 2' }, origin: 'human' }
                 })
                     .its('status')
                     .should('equal', 200);
