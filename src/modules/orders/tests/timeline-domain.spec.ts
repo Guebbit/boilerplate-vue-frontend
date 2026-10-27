@@ -34,6 +34,21 @@ describe('describeTimelineEntry', () => {
         );
     });
 
+    it('says a lost parcel refunded in full, and stays silent about causes it has no wording for', () => {
+        expect(
+            describeTimelineEntry(
+                { type: 'cancelled', data: { by: 'system', cause: 'lost', refund: false } },
+                tools
+            ).detail
+        ).toBe('order-timeline.detail-by(order-timeline.by-system) · order-timeline.cause-lost');
+        expect(
+            describeTimelineEntry(
+                { type: 'cancelled', data: { by: 'system', cause: 'unknown_cause' } },
+                tools
+            ).detail
+        ).toBe('order-timeline.detail-by(order-timeline.by-system)');
+    });
+
     it('gives every type a title and no detail when it has no data to add', () => {
         expect(describeTimelineEntry({ type: 'processing', data: {} }, tools)).toEqual({
             title: 'order-timeline.type-processing'
