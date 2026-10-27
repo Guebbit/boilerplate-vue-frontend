@@ -258,6 +258,13 @@ const STATUS_COLORS = {
                 <p v-if="item.failureReason" class="mt-1 text-xs" data-test="refund-failure-reason">
                     {{ t(`payments-list-page.failure-reason-${item.failureReason}`) }}
                 </p>
+                <p v-if="item.reversedAt" class="mt-1 text-xs" data-test="refund-reversed-on">
+                    {{
+                        t('payments-list-page.refund-reversed-on', {
+                            date: formatDateTime(item.reversedAt)
+                        })
+                    }}
+                </p>
             </template>
             <template v-slot:[`item.reason`]="{ item }">
                 {{ t(`payments-list-page.refund-reason-${item.reason}`) }}

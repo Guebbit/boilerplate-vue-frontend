@@ -227,6 +227,17 @@ const auditLink = computed(() => {
             </template>
             <template v-slot:[`item.amount`]="{ item }">
                 {{ formatCurrency(item.amount, item.currency) }}
+                <p
+                    v-if="item.exceedsBy !== undefined"
+                    class="mt-1 text-xs font-semibold text-error"
+                    data-test="attention-exceeds-by"
+                >
+                    {{
+                        t('payments-list-page.attention-exceeds-by', {
+                            amount: formatCurrency(item.exceedsBy, item.currency)
+                        })
+                    }}
+                </p>
             </template>
             <template v-slot:[`item.orderId`]="{ item }">
                 <router-link
