@@ -124,7 +124,7 @@ describe('ProfileExportData', () => {
     it('blocks in place when the request is refused, and claims no link is coming', () => {
         const { wrapper, request } = mountComponent();
         request.mockRejectedValue(
-            aProblem(500, [{ code: 'INTERNAL_ERROR', message: 'Something went wrong.' }])
+            aProblem(500, [{ code: 'INTERNAL_SERVER_ERROR', message: 'Something went wrong.' }])
         );
 
         return press(wrapper).then(() => {
@@ -140,7 +140,7 @@ describe('ProfileExportData', () => {
         request
             .mockResolvedValueOnce({ ...EXPORT, status: 'building' } as never)
             .mockRejectedValueOnce(
-                aProblem(500, [{ code: 'INTERNAL_ERROR', message: 'Something went wrong.' }])
+                aProblem(500, [{ code: 'INTERNAL_SERVER_ERROR', message: 'Something went wrong.' }])
             );
 
         return press(wrapper)

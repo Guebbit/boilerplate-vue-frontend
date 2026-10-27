@@ -290,7 +290,7 @@ describe('PaymentsTable', () => {
     it('toasts a failed read instead of breaking the page', async () => {
         const store = usePaymentsStore();
         vi.spyOn(store, 'fetchPaymentsPage').mockRejectedValue(
-            aProblem(500, [{ code: 'INTERNAL_ERROR', message: 'Server exploded' }])
+            aProblem(500, [{ code: 'INTERNAL_SERVER_ERROR', message: 'Server exploded' }])
         );
 
         const toast = vi.spyOn(useNotificationsStore(), 'addMessage');

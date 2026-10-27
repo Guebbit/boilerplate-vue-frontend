@@ -60,7 +60,9 @@ describe('requesting the account deletion when the API refuses', () => {
         vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
         vi.spyOn(useProfileStore(), 'requestAccountDelete').mockRejectedValue({
             status: 500,
-            errors: [{ code: 'INTERNAL_ERROR', message: 'Something went wrong, try again later.' }]
+            errors: [
+                { code: 'INTERNAL_SERVER_ERROR', message: 'Something went wrong, try again later.' }
+            ]
         });
         const wrapper = mount(ProfileDeleteAccount, {
             global: { plugins: [router, vuetify, i18n] }

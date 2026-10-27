@@ -48,7 +48,7 @@ const getFallbackMessage = (status: number, fallback: string) => {
 const getFallbackErrorCode = (status: number) => {
     if (status === 401) return 'UNAUTHORIZED';
     if (status === 403) return 'FORBIDDEN';
-    return status >= 500 ? 'INTERNAL_ERROR' : 'REQUEST_ERROR';
+    return status >= 500 ? 'INTERNAL_SERVER_ERROR' : 'CLIENT_ERROR';
 };
 
 /**

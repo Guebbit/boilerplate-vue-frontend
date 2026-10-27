@@ -11546,7 +11546,7 @@ components:
       properties:
         code:
           type: string
-          description: Stable machine-readable error code
+          description: Stable machine-readable error code. An error that names no cause of its own gets the official RFC 9110 name of its status, in UPPER_SNAKE (404 `NOT_FOUND`, 422 `UNPROCESSABLE_CONTENT`, 500 `INTERNAL_SERVER_ERROR`); a 4xx whose name is not catalogued is `CLIENT_ERROR`, a 5xx other than 503 is `INTERNAL_SERVER_ERROR`.
           example: VALIDATION_ERROR
         message:
           type: string
@@ -12083,7 +12083,7 @@ components:
         - value
       description: |-
         One translated string: one row per (language, app, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.
-        `app` is part of the identity, not a label on it: two apps may both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other.
+        `app` is part of the identity, not a label on it: two apps may both declare a top-level `generic`, so `generic.error-internal-server-error` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other.
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -21077,9 +21077,15 @@ x-error-codes:
   CART_TOTAL_CHANGED:
     status: 409
     description: The total the buyer was shown is not the total this checkout would charge — a price, a shipping cost or the cart itself changed. `errors[].details` carries `expected` (what the request named) and `actual` (what the order would cost now), each `{ amount, currency }` in minor units; show the new total and let the buyer confirm.
+  CLIENT_ERROR:
+    status: 400
+    description: A 4xx whose status has no code of its own in this catalogue (the derived name is not listed here), so no wording is invented for it. Never a 5xx.
   CONFLICT:
     status: 409
     description: The request is well-formed but conflicts with the resource's current state.
+  CONTENT_TOO_LARGE:
+    status: 413
+    description: The request body exceeds this deployment's size limit.
   DELIVERY_LINES_INVALID:
     status: 422
     description: A shipment line names a product that is not on the fulfillment order, asks for more than remains of it, or names the same product twice.
@@ -21146,12 +21152,9 @@ x-error-codes:
   IDEMPOTENCY_KEY_REQUIRED:
     status: 400
     description: This route requires an `Idempotency-Key` header and the request carries none.
-  INTERNAL_ERROR:
+  INTERNAL_SERVER_ERROR:
     status: 500
     description: An unexpected server-side failure. Never carries library or stack detail.
-  INVALID_REQUEST:
-    status: 422
-    description: "A 4xx nobody handled on the way, answered by the global error handler with no copy of its own: a driver failure that is really about the request (a refused write is a 422, a duplicate key a 409, a stale `If-Match` a 412) or a library declaring its own 4xx. A route that catches the failure answers with the status-derived code instead."
   INVENTORY_BELOW_RESERVED:
     status: 409
     description: The requested on-hand count is below what is already reserved by open orders.
@@ -21272,9 +21275,6 @@ x-error-codes:
   ORDER_SHIP_TO_COUNTRY_NOT_SUPPORTED:
     status: 422
     description: The corrected shipping address names a country outside the shop's ship-to list (`Shop.shipToCountries`), the list checkout refuses by; VAT is charged at the shop's own rates.
-  PAYLOAD_TOO_LARGE:
-    status: 413
-    description: The request body exceeds this deployment's size limit.
   PAYMENT_CARD_NOT_AVAILABLE:
     status: 409
     description: This deployment has no card payment provider, so a card payment cannot be started.
@@ -21313,16 +21313,13 @@ x-error-codes:
     description: A restore named a product that is not soft-deleted, so there is nothing to undo.
   RATE_LIMITED:
     status: 429
-    description: The caller exceeded a rate-limit budget. Carries a `Retry-After` hint.
+    description: "The caller spent a rate-limit budget: a request limiter, a mailbox's send budget, or an account's wrong-code budget (the 2FA lock). Carries `Retry-After` when the wait is known."
   REAUTH_REQUIRED:
     status: 401
     description: "This action requires a session fresher than the caller's current one — see `POST /account/reauth`. `details.maxAge` is the freshness asked for; `details.methods`, when present, lists what the re-authentication must also prove (`otp`: a code from an armed second factor)."
   REORDER_UNAVAILABLE:
     status: 409
     description: The past order named for reorder no longer has any purchasable lines.
-  REQUEST_ERROR:
-    status: 422
-    description: A 4xx with no more specific code of its own. Mostly a 422 refused for a reason that is not one field (a field-level failure is `VALIDATION_ERROR`); also a 429 and any other 4xx the status table does not name.
   RETURN_CANCELLATION_INVALID:
     status: 422
     description: "A cancellation names no fulfillment order of this order, or sends `lines` (the remainder is its lines), or a return names a fulfillment order. Also the reason does not fit the caller: the order's buyer cancels only as a `withdrawal`."
@@ -21395,12 +21392,18 @@ x-error-codes:
   TICKET_SUPERSEDED:
     status: 409
     description: A newer open ticket already covers the same situation, so this one cannot be reopened. `details.ticketId` names the newer one.
+  TOO_MANY_REQUESTS:
+    status: 429
+    description: The derived code of a status-only 429, one no budget named. Nothing sends it today; it keeps the status-to-code rule total.
   TWO_FACTOR_RESEND_TOO_SOON:
     status: 429
     description: A two-factor code was already sent recently — carries `details.retryAfter`.
   UNAUTHORIZED:
     status: 401
     description: No valid session — log in and retry.
+  UNPROCESSABLE_CONTENT:
+    status: 422
+    description: "A 422 with no more specific code of its own: refused for a reason that is not one field (a field-level failure is `VALIDATION_ERROR`). The derived code of a status-only 422."
   UNSUPPORTED_MEDIA_TYPE:
     status: 415
     description: The request's `Content-Type` is not one this operation accepts.

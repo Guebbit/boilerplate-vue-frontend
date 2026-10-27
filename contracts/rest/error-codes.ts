@@ -50,8 +50,12 @@ export const ERROR_CODES = {
     CART_SHIP_TO_COUNTRY_NOT_SUPPORTED: 'CART_SHIP_TO_COUNTRY_NOT_SUPPORTED',
     /** 409 — The total the buyer was shown is not the total this checkout would charge — a price, a shipping cost or the cart itself changed. `errors[].details` carries `expected` (what the request named) and `actual` (what the order would cost now), each `{ amount, currency }` in minor units; show the new total and let the buyer confirm. */
     CART_TOTAL_CHANGED: 'CART_TOTAL_CHANGED',
+    /** 400 — A 4xx whose status has no code of its own in this catalogue (the derived name is not listed here), so no wording is invented for it. Never a 5xx. */
+    CLIENT_ERROR: 'CLIENT_ERROR',
     /** 409 — The request is well-formed but conflicts with the resource's current state. */
     CONFLICT: 'CONFLICT',
+    /** 413 — The request body exceeds this deployment's size limit. */
+    CONTENT_TOO_LARGE: 'CONTENT_TOO_LARGE',
     /** 422 — A shipment line names a product that is not on the fulfillment order, asks for more than remains of it, or names the same product twice. */
     DELIVERY_LINES_INVALID: 'DELIVERY_LINES_INVALID',
     /** 409 — A `lost` shipment cannot be recorded as arrived because its units were already shipped again or cancelled: taking them back would count the goods twice. */
@@ -97,9 +101,7 @@ export const ERROR_CODES = {
     /** 400 — This route requires an `Idempotency-Key` header and the request carries none. */
     IDEMPOTENCY_KEY_REQUIRED: 'IDEMPOTENCY_KEY_REQUIRED',
     /** 500 — An unexpected server-side failure. Never carries library or stack detail. */
-    INTERNAL_ERROR: 'INTERNAL_ERROR',
-    /** 422 — A 4xx nobody handled on the way, answered by the global error handler with no copy of its own: a driver failure that is really about the request (a refused write is a 422, a duplicate key a 409, a stale `If-Match` a 412) or a library declaring its own 4xx. A route that catches the failure answers with the status-derived code instead. */
-    INVALID_REQUEST: 'INVALID_REQUEST',
+    INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
     /** 409 — The requested on-hand count is below what is already reserved by open orders. */
     INVENTORY_BELOW_RESERVED: 'INVENTORY_BELOW_RESERVED',
     /** 400 — A multipart upload carries too many non-file fields (multer). */
@@ -180,8 +182,6 @@ export const ERROR_CODES = {
     ORDER_PRODUCT_UNAVAILABLE: 'ORDER_PRODUCT_UNAVAILABLE',
     /** 422 — The corrected shipping address names a country outside the shop's ship-to list (`Shop.shipToCountries`), the list checkout refuses by; VAT is charged at the shop's own rates. */
     ORDER_SHIP_TO_COUNTRY_NOT_SUPPORTED: 'ORDER_SHIP_TO_COUNTRY_NOT_SUPPORTED',
-    /** 413 — The request body exceeds this deployment's size limit. */
-    PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
     /** 409 — This deployment has no card payment provider, so a card payment cannot be started. */
     PAYMENT_CARD_NOT_AVAILABLE: 'PAYMENT_CARD_NOT_AVAILABLE',
     /** 409 — The card issuer or gateway declined the charge. */
@@ -206,14 +206,12 @@ export const ERROR_CODES = {
     PRECONDITION_FAILED: 'PRECONDITION_FAILED',
     /** 409 — A restore named a product that is not soft-deleted, so there is nothing to undo. */
     PRODUCT_NOT_DELETED: 'PRODUCT_NOT_DELETED',
-    /** 429 — The caller exceeded a rate-limit budget. Carries a `Retry-After` hint. */
+    /** 429 — The caller spent a rate-limit budget: a request limiter, a mailbox's send budget, or an account's wrong-code budget (the 2FA lock). Carries `Retry-After` when the wait is known. */
     RATE_LIMITED: 'RATE_LIMITED',
     /** 401 — This action requires a session fresher than the caller's current one — see `POST /account/reauth`. `details.maxAge` is the freshness asked for; `details.methods`, when present, lists what the re-authentication must also prove (`otp`: a code from an armed second factor). */
     REAUTH_REQUIRED: 'REAUTH_REQUIRED',
     /** 409 — The past order named for reorder no longer has any purchasable lines. */
     REORDER_UNAVAILABLE: 'REORDER_UNAVAILABLE',
-    /** 422 — A 4xx with no more specific code of its own. Mostly a 422 refused for a reason that is not one field (a field-level failure is `VALIDATION_ERROR`); also a 429 and any other 4xx the status table does not name. */
-    REQUEST_ERROR: 'REQUEST_ERROR',
     /** 422 — A cancellation names no fulfillment order of this order, or sends `lines` (the remainder is its lines), or a return names a fulfillment order. Also the reason does not fit the caller: the order's buyer cancels only as a `withdrawal`. */
     RETURN_CANCELLATION_INVALID: 'RETURN_CANCELLATION_INVALID',
     /** 422 — The handling deduction is more than the refund is worth, or is kept back on a defect or a wrong item (a guarantee remedy is free of charge, Directive 2019/771 Art. 14(1)). */
@@ -262,10 +260,14 @@ export const ERROR_CODES = {
     TICKET_NOT_OPEN: 'TICKET_NOT_OPEN',
     /** 409 — A newer open ticket already covers the same situation, so this one cannot be reopened. `details.ticketId` names the newer one. */
     TICKET_SUPERSEDED: 'TICKET_SUPERSEDED',
+    /** 429 — The derived code of a status-only 429, one no budget named. Nothing sends it today; it keeps the status-to-code rule total. */
+    TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
     /** 429 — A two-factor code was already sent recently — carries `details.retryAfter`. */
     TWO_FACTOR_RESEND_TOO_SOON: 'TWO_FACTOR_RESEND_TOO_SOON',
     /** 401 — No valid session — log in and retry. */
     UNAUTHORIZED: 'UNAUTHORIZED',
+    /** 422 — A 422 with no more specific code of its own: refused for a reason that is not one field (a field-level failure is `VALIDATION_ERROR`). The derived code of a status-only 422. */
+    UNPROCESSABLE_CONTENT: 'UNPROCESSABLE_CONTENT',
     /** 415 — The request's `Content-Type` is not one this operation accepts. */
     UNSUPPORTED_MEDIA_TYPE: 'UNSUPPORTED_MEDIA_TYPE',
     /** 409 — The account is active already: `POST /users/{id}/activate` has nothing to do. */

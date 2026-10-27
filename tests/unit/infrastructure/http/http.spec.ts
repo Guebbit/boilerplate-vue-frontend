@@ -220,7 +220,7 @@ describe('onResponseReject — fallback normalisation', () => {
             )
             .then((result) => {
                 expect((result as { errors: unknown[] }).errors).toEqual([
-                    { code: 'REQUEST_ERROR', message: 'Error' }
+                    { code: 'CLIENT_ERROR', message: 'Error' }
                 ]);
             }));
 

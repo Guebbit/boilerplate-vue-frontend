@@ -188,7 +188,7 @@ describe('AccountExportDownload', () => {
     it('keeps the "kept for a few days" hint to a 404: a server failure is not an expired export', () => {
         const { wrapper, download } = mountPage();
         download.mockRejectedValue(
-            aProblem(500, [{ code: 'INTERNAL_ERROR', message: 'Something broke.' }])
+            aProblem(500, [{ code: 'INTERNAL_SERVER_ERROR', message: 'Something broke.' }])
         );
 
         return flushPromises()

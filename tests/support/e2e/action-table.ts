@@ -71,7 +71,7 @@ export interface ActionRow {
     kind: ActionKind;
     /** The status to answer; 500 by default. Must be declared by the contract for `intercept.operation`. */
     status?: number;
-    /** The error code to answer; `INTERNAL_ERROR` by default. */
+    /** The error code to answer; `INTERNAL_SERVER_ERROR` by default. */
     code?: ErrorCode;
     /** The sentence the page should show. */
     message?: string;
@@ -134,7 +134,7 @@ const SPINNER_TIMEOUT_MS = 10_000;
 const DEFAULT_STATUS = 500;
 
 /** The code a failure row answers when it names none. */
-const DEFAULT_CODE: ErrorCode = 'INTERNAL_ERROR';
+const DEFAULT_CODE: ErrorCode = 'INTERNAL_SERVER_ERROR';
 
 /**
  * Every typed value on the page right now, in document order.

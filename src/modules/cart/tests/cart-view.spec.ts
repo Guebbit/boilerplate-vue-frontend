@@ -241,7 +241,7 @@ describe('the checkout refusals', () => {
         mountCart().then(({ wrapper, checkoutSpy, cart }) => {
             checkoutSpy.mockRejectedValueOnce(checkoutRejection(409, 'CART_CHANGED'));
             vi.mocked(cart.fetchCart).mockRejectedValueOnce(
-                checkoutRejection(500, 'INTERNAL_ERROR')
+                checkoutRejection(500, 'INTERNAL_SERVER_ERROR')
             );
 
             return wrapper
@@ -698,7 +698,7 @@ describe('the Clear cart button asks before it empties the basket', () => {
         vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
 
         return mountCart().then(({ wrapper, clearSpy }) => {
-            clearSpy.mockRejectedValueOnce(checkoutRejection(500, 'INTERNAL_ERROR'));
+            clearSpy.mockRejectedValueOnce(checkoutRejection(500, 'INTERNAL_SERVER_ERROR'));
 
             return wrapper
                 .get('[data-test=cart-clear]')

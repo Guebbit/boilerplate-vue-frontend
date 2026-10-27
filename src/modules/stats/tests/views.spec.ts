@@ -138,7 +138,7 @@ describe('StatsDashboard', () => {
 
     it('shows a failed load as one alert above the blocks', () => {
         vi.spyOn(useStatsStore(), 'loadDashboard').mockRejectedValue(
-            aProblem(500, [{ code: 'INTERNAL_ERROR', message: 'Server exploded' }])
+            aProblem(500, [{ code: 'INTERNAL_SERVER_ERROR', message: 'Server exploded' }])
         );
         return mountDashboard(makeRouter()).then((wrapper) => {
             expect(wrapper.get('[data-test=stats-load-error]').text()).toContain('Server exploded');

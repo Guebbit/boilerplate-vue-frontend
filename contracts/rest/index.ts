@@ -153,7 +153,7 @@ export interface PaginationMeta {
 export type ErrorItemDetails = { [key: string]: unknown };
 
 export interface ErrorItem {
-    /** Stable machine-readable error code */
+    /** Stable machine-readable error code. An error that names no cause of its own gets the official RFC 9110 name of its status, in UPPER_SNAKE (404 `NOT_FOUND`, 422 `UNPROCESSABLE_CONTENT`, 500 `INTERNAL_SERVER_ERROR`); a 4xx whose name is not catalogued is `CLIENT_ERROR`, a 5xx other than 503 is `INTERNAL_SERVER_ERROR`. */
     code: string;
     /** Human-readable error detail */
     message: string;
@@ -516,7 +516,7 @@ export interface LocaleMessages {
 
 /**
  * One translated string: one row per (language, app, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.
- * `app` is part of the identity, not a label on it: two apps may both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other.
+ * `app` is part of the identity, not a label on it: two apps may both declare a top-level `generic`, so `generic.error-internal-server-error` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other.
  */
 export interface LocaleEntry {
     id: Id;
