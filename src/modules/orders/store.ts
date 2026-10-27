@@ -298,13 +298,10 @@ export const useOrdersStore = defineStore('orders', () => {
      * prompt is the HTTP layer's job; a 422 (too many rows) and a 429 reach the caller as is.
      *
      * @param filters - The page's current filters; paging does not apply.
-     * @returns A promise resolving with the CSV as a file-ready Blob.
+     * @returns A promise resolving with the CSV file, named by the server.
      */
     const exportOrdersCsv = (filters: OrdersFilters): Promise<Blob> =>
-        // `responseType: 'text'`: axios would otherwise try to JSON-parse the body first.
-        exportOrders(criteriaOf(filters), { responseType: 'text' }).then(
-            (csv) => new Blob([csv], { type: 'text/csv;charset=utf-8' })
-        );
+        exportOrders(criteriaOf(filters));
 
     /**
      * Fetches an order's invoice, rendered by the server on every request — there is no pending

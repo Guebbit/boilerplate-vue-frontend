@@ -481,10 +481,9 @@ export const useProfileStore = defineStore('accountProfile', () => {
 
     /**
      * Downloads the caller's finished export (an account has one) — the page the mailed link opens calls this. Same fresh-session
-     * rule as the request, handled the same way. The body is the export document itself, not an
-     * envelope around it.
+     * rule as the request, handled the same way. The answer is the file itself, named by the server.
      *
-     * @returns A promise resolving with the export document; a `404` (not yours, not ready, or
+     * @returns A promise resolving with the export file; a `404` (not yours, not ready, or
      *  gone) rejects.
      */
     const downloadAccountExport = () => fetchAny(() => apiDownloadAccountExport());

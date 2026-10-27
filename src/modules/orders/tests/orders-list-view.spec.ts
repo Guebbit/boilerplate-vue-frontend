@@ -640,7 +640,7 @@ describe('OrdersList — the CSV export', () => {
 
     it('downloads the file for the filters on screen', async () => {
         signInAsExporter();
-        const file = new Blob(['createdAt\n'], { type: 'text/csv' });
+        const file = new File(['createdAt\n'], 'orders-2026-10-27.csv', { type: 'text/csv' });
         const exportCsv = vi.spyOn(useOrdersStore(), 'exportOrdersCsv').mockResolvedValue(file);
         const wrapper = mountList('all');
         useOrdersStore().filters.status = 'paid';
@@ -649,7 +649,8 @@ describe('OrdersList — the CSV export', () => {
         await flushPromises();
 
         expect(exportCsv).toHaveBeenCalledWith(expect.objectContaining({ status: 'paid' }));
-        expect(downloadBlob).toHaveBeenCalledWith(file, expect.stringMatching(/^orders-.*\.csv$/));
+        // Saved under the name the server gave it, never one the page invented.
+        expect(downloadBlob).toHaveBeenCalledWith(file, 'orders-2026-10-27.csv');
     });
 
     it('says to narrow the filters when the server refuses a file that big', async () => {

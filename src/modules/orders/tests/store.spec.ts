@@ -94,7 +94,11 @@ vi.mock('@api', () => ({
     listOrderCreditNotes: vi.fn(() => Promise.resolve({ items: CREDIT_NOTES })),
     getOrderCreditNote: vi.fn(() => Promise.resolve(INVOICE)),
     getOrderTimeline: vi.fn(() => Promise.resolve({ items: TIMELINE })),
-    exportOrders: vi.fn(() => Promise.resolve('createdAt,orderNumber\n')),
+    exportOrders: vi.fn(() =>
+        Promise.resolve(
+            new File(['createdAt,orderNumber\n'], 'orders-2026-10-27.csv', { type: 'text/csv' })
+        )
+    ),
     // The contract's sort enum: the store reads it to drop a sort the API would refuse.
     OrderSortItem: { createdAt: 'createdAt', '-createdAt': '-createdAt', status: 'status' }
 }));
@@ -252,7 +256,7 @@ describe('useOrdersStore', () => {
                 })
                 .then((file) => {
                     expect(exportOrders).toHaveBeenCalledTimes(1);
-                    const [query, options] = vi.mocked(exportOrders).mock.calls[0] ?? [];
+                    const [query] = vi.mocked(exportOrders).mock.calls[0] ?? [];
                     expect(query).toMatchObject({
                         status: 'paid',
                         email: 'a@b.c',
@@ -263,8 +267,9 @@ describe('useOrdersStore', () => {
                     // The calendar day became an instant (its zone is the browser's, so only the shape is fixed).
                     expect(query?.createdFrom).toEqual(expect.stringContaining('T'));
                     expect(query).not.toHaveProperty('page');
-                    // The body is text, never JSON-parsed on its way in.
-                    expect(options).toEqual({ responseType: 'text' });
+                    // The server's file, name included, reaches the caller untouched.
+                    expect(file).toBeInstanceOf(File);
+                    expect(file).toHaveProperty('name', 'orders-2026-10-27.csv');
                     expect(file.type).toContain('text/csv');
                     return file.text();
                 })

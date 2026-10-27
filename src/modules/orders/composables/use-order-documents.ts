@@ -5,7 +5,7 @@
  * PDFs, and each action's own loading and blocked state. The page only renders what this returns.
  */
 import { computed, ref, watch, type Ref } from 'vue';
-import { downloadBlob } from '@guebbit/js-toolkit';
+import { saveDownload } from '@/infrastructure/http/download.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useOrdersStore } from '../store.ts';
 import type { CreditNoteSummary, Order } from '@types';
@@ -73,12 +73,11 @@ export const useOrderDocuments = (
     };
 
     /**
-     * Downloads the server-rendered invoice as a PDF file.
+     * Downloads the server-rendered invoice as a PDF file, under the name the server gives it.
      *
      * @returns A promise resolving once the download has been triggered.
      */
-    const downloadInvoice = () =>
-        withInvoice((blob) => downloadBlob(blob, `order-${targetId()}-invoice.pdf`));
+    const downloadInvoice = () => withInvoice(saveDownload);
 
     /**
      * Opens the server-rendered invoice in a new tab, for a look before deciding whether to keep
@@ -165,7 +164,7 @@ export const useOrderDocuments = (
         clearCreditNoteError();
         return fetchCreditNote(id, note.id)
             .then((blob) => {
-                if (blob) downloadBlob(blob, `order-${id}-credit-note-${note.number}.pdf`);
+                if (blob) saveDownload(blob);
             })
             .catch((error: unknown) => reportCreditNoteError(error))
             .finally(() => {

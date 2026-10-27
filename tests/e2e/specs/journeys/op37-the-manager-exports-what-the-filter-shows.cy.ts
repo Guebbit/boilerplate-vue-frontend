@@ -29,27 +29,31 @@ describe('OP37 · The manager exports what the filter shows', () => {
                 expect(response?.statusCode).to.equal(200);
                 // The server leads with a byte-order mark so a spreadsheet reads UTF-8; readFile drops it.
                 const served = String(response?.body).replace(/^\uFEFF/, '');
-                // The file name carries the browser's UTC day, as the page names it.
-                downloadedText(`orders-${new Date().toISOString().slice(0, 10)}.csv`).then(
-                    (saved) => {
-                        expect(saved, 'the saved file equals the served body').to.equal(served);
-
-                        cy.step('one line per listed order, plus the header');
-                        cy.apiAs<{ items: unknown[] }>(
-                            'manager',
-                            'GET',
-                            '/orders?status=paid&pageSize=100'
-                        )
-                            .its('items.length')
-                            .should('equal', saved.trim().split('\n').length - 1);
-
-                        cy.step('every order number on the screen is in the file');
-                        cy.get('[data-test=row-order-number]').each(($number) => {
-                            expect(saved).to.contain($number.text().trim());
-                        });
-                        expect(ids.length).to.be.greaterThan(0);
-                    }
+                // The server names the file (`orders-<shop date>.csv`); the page saves it as served.
+                const name = /filename="([^"]+)"/.exec(
+                    String(response?.headers['content-disposition'])
+                )?.[1];
+                expect(name, 'the server names the file').to.match(
+                    /^orders-\d{4}-\d{2}-\d{2}\.csv$/
                 );
+                downloadedText(String(name)).then((saved) => {
+                    expect(saved, 'the saved file equals the served body').to.equal(served);
+
+                    cy.step('one line per listed order, plus the header');
+                    cy.apiAs<{ items: unknown[] }>(
+                        'manager',
+                        'GET',
+                        '/orders?status=paid&pageSize=100'
+                    )
+                        .its('items.length')
+                        .should('equal', saved.trim().split('\n').length - 1);
+
+                    cy.step('every order number on the screen is in the file');
+                    cy.get('[data-test=row-order-number]').each(($number) => {
+                        expect(saved).to.contain($number.text().trim());
+                    });
+                    expect(ids.length).to.be.greaterThan(0);
+                });
             });
         });
     });

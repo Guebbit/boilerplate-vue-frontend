@@ -92,15 +92,23 @@ describe('AC6 · Give me my data', () => {
         });
         cy.get('[data-test=account-export-download]').click();
         cy.wait('@download')
-            .its('response.body')
-            .then((received) => {
-                const data = received as ExportData;
+            .its('response')
+            .then((answer) => {
+                const data = answer?.body as ExportData;
 
-                cy.step('a file lands on disk, named for the day, and says what the API sent');
-                const day = data.exportedAt.slice(0, 10);
-                cy.readFile(
-                    `${Cypress.config('downloadsFolder')}/account-export-${day}.json`
-                ).should('deep.equal', data);
+                cy.step(
+                    'a file lands on disk, under the name the server gave it, with what it sent'
+                );
+                const name = /filename="([^"]+)"/.exec(
+                    String(answer?.headers['content-disposition'])
+                )?.[1];
+                expect(name, 'the server names the file').to.match(
+                    /^account-export-\d{4}-\d{2}-\d{2}\.json$/
+                );
+                cy.readFile(`${Cypress.config('downloadsFolder')}/${String(name)}`).should(
+                    'deep.equal',
+                    data
+                );
 
                 cy.step('it is about this customer: profile, address book and orders');
                 cy.accountOf('user').then(({ email }) => {

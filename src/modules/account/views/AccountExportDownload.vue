@@ -20,7 +20,7 @@ export default {
  */
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { downloadBlob } from '@guebbit/js-toolkit';
+import { saveDownload } from '@/infrastructure/http/download.ts';
 import { useProfileStore } from '../stores/profile.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { absentIs } from '@/infrastructure/utils/errors.ts';
@@ -63,7 +63,7 @@ const exportGone = ref(false);
 const downloading = ref(false);
 
 /**
- * Fetches the export and saves it as a local JSON file, named by the day it was assembled.
+ * Fetches the export and saves it as the file the server names (`account-export-<date>.json`).
  *
  * @returns A promise resolving once the file is saved; a failure blocks in place
  *  ({@link downloadError}).
@@ -74,16 +74,10 @@ const handleDownload = () => {
     saved.value = false;
     downloading.value = true;
     return downloadAccountExport()
-        .then((data) => {
+        .then((file) => {
             // A success with no body: nothing to save, and nothing to claim was saved.
-            if (!data) return;
-            // js-toolkit `downloadBlob(data, filename, type)`: wraps the string in a Blob of
-            // MIME `type` and saves it under `filename` through a throwaway link.
-            downloadBlob(
-                JSON.stringify(data, null, 2),
-                `account-export-${data.exportedAt.slice(0, 10)}.json`,
-                'application/json'
-            );
+            if (!file) return;
+            saveDownload(file);
             saved.value = true;
         })
         .catch((error: unknown) => {

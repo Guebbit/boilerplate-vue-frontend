@@ -106,11 +106,11 @@ export const ERROR_CODES = {
     LIMIT_FIELD_COUNT: 'LIMIT_FIELD_COUNT',
     /** 400 — A multipart field name is too long (multer). */
     LIMIT_FIELD_KEY: 'LIMIT_FIELD_KEY',
-    /** 400 — A multipart field value is too long (multer). */
+    /** 413 — A multipart field value is too long (multer). */
     LIMIT_FIELD_VALUE: 'LIMIT_FIELD_VALUE',
     /** 400 — A multipart upload carries too many files (multer). */
     LIMIT_FILE_COUNT: 'LIMIT_FILE_COUNT',
-    /** 400 — An uploaded file exceeds this deployment's size limit (multer). */
+    /** 413 — An uploaded file exceeds this deployment's size limit (multer). */
     LIMIT_FILE_SIZE: 'LIMIT_FILE_SIZE',
     /** 400 — A multipart upload carries too many parts (multer). */
     LIMIT_PART_COUNT: 'LIMIT_PART_COUNT',

@@ -158,6 +158,30 @@ sequenceDiagram
   generated client gets the header for free; only a form that wants to _answer_ a 412 needs the
   composable.
 
+### Downloads are named by the server
+
+The invoice, a credit note, the orders CSV and the account export are files the server names
+(`Content-Disposition`, RFC 6266): `invoice-<number>.pdf`, `orders-<shop date>.csv`. The browser can
+read that header only because the API lists it in its CORS `exposedHeaders`.
+
+```mermaid
+sequenceDiagram
+    participant V as View
+    participant D as download.ts (interceptor)
+    participant A as API
+    V->>A: GET /orders/1/invoice
+    A-->>D: 200 blob + Content-Disposition: inline; filename="invoice-2026-0042.pdf"
+    Note over D: parses the header (content-disposition package),<br/>wraps the blob in a File of that name
+    D-->>V: File
+    Note over V: saveDownload(file) saves file.name
+```
+
+- **`src/infrastructure/http/download.ts`** is the whole of it: a success interceptor beside the
+  `ETag` one, and `saveDownload`, which narrows with `instanceof File` and refuses a plain `Blob`
+  rather than save it under a name the page invented.
+- **The header is parsed by the `content-disposition` package**, not by hand: `filename*` (RFC 8187)
+  and quoting are the parts people get wrong.
+
 ### Blocked vs ambient failures
 
 A caught error reaches the visitor one of two ways, chosen by what failed, not by the status code:

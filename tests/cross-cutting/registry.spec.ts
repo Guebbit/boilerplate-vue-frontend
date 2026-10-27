@@ -189,7 +189,11 @@ describe('locale dictionaries — unused keys', () => {
      * Dot-path prefixes a template literal builds a key from, e.g. `` `generic.${code}` `` → `generic.`.
      * Matched against the RAW source text rather than per-file, so a prefix used anywhere counts.
      */
-    const dynamicPrefixes = [...sourceText.matchAll(/`([\w.-]+)\${/g)].map(([, prefix]) => prefix);
+    const dynamicPrefixes = [
+        ...sourceText.matchAll(/`([\w.-]+)\${/g),
+        // A quoted prefix handed to a helper that appends the code (`'order-timeline.by-'`).
+        ...sourceText.matchAll(/["']([a-z][\w.-]*[.-])["']/g)
+    ].map(([, prefix]) => prefix);
 
     /**
      * Every leaf path a dictionary tree declares. An array (a static page's paragraph or FAQ

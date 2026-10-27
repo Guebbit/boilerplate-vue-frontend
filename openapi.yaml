@@ -125,6 +125,8 @@ paths:
                 $ref: "#/components/schemas/HealthPing"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /livez:
@@ -144,6 +146,8 @@ paths:
           description: The process is up.
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /readyz:
@@ -167,6 +171,8 @@ paths:
           description: Ready to receive traffic.
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           description: Booting, draining, or the database is unreachable.
   /.well-known/security.txt:
@@ -192,6 +198,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /locales:
@@ -1169,6 +1177,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: observability
@@ -1539,6 +1549,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
@@ -1727,6 +1739,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -1778,6 +1792,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
@@ -1947,6 +1963,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -2352,6 +2370,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -2382,6 +2402,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -2742,6 +2764,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -2775,6 +2799,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -2796,13 +2822,14 @@ paths:
           description: The caller's own data
           headers:
             Content-Disposition:
-              description: "`attachment`, with the file name `account-export.json`."
+              description: '`attachment; filename="account-export-<date>.json"`, e.g. `account-export-2026-10-27.json`; the date is the UTC day the export was requested.'
               schema:
                 type: string
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountExportResponse"
+                type: string
+                format: binary
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -2987,6 +3014,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -3267,6 +3296,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -3356,6 +3387,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
@@ -3412,6 +3445,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
@@ -3798,6 +3833,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4180,6 +4217,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4216,6 +4255,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4252,6 +4293,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4879,6 +4922,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -5464,6 +5509,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -5931,6 +5978,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -6081,7 +6130,7 @@ paths:
       tags:
         - Invoicing
       summary: Download the order's invoice (PDF)
-      description: "The frozen tax invoice for the order identified by `{id}`, as a binary PDF — numbered and issued once, the moment the order moved `pending → paid`, never re-rendered from today's config. Refuses with `404` for an order that has not been invoiced yet (never paid, or paid while its invoice listener failed: such an order is not invoiced yet, and takes no number from the gap-free series). The client should stream or save the response with an appropriate `Content-Disposition` header."
+      description: "The frozen tax invoice for the order identified by `{id}`, as a binary PDF — numbered and issued once, the moment the order moved `pending → paid`, never re-rendered from today's config. Refuses with `404` for an order that has not been invoiced yet (never paid, or paid while its invoice listener failed: such an order is not invoiced yet, and takes no number from the gap-free series). The server names the file: `Content-Disposition` carries `invoice-<invoice number>.pdf`, so a client saves it under that name rather than inventing one."
       operationId: getOrderInvoice
       security:
         - bearerAuth: []
@@ -6091,6 +6140,11 @@ paths:
       responses:
         "200":
           description: Invoice PDF
+          headers:
+            Content-Disposition:
+              description: '`inline; filename="invoice-<invoice number>.pdf"`, e.g. `invoice-2026-0042.pdf`.'
+              schema:
+                type: string
           content:
             application/pdf:
               schema:
@@ -6158,6 +6212,11 @@ paths:
       responses:
         "200":
           description: Credit note PDF
+          headers:
+            Content-Disposition:
+              description: '`inline; filename="credit-note-<credit note number>.pdf"`, e.g. `credit-note-2026-0007.pdf`.'
+              schema:
+                type: string
           content:
             application/pdf:
               schema:
@@ -6294,6 +6353,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -6602,6 +6663,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -6882,6 +6945,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -6966,6 +7031,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -7307,6 +7374,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -7730,6 +7799,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -8049,6 +8120,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -8182,6 +8255,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -8421,6 +8496,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -8465,6 +8542,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -8495,6 +8574,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -8525,6 +8606,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -8667,6 +8750,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -8702,6 +8787,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -8845,7 +8932,7 @@ paths:
           description: The orders, as CSV
           headers:
             Content-Disposition:
-              description: '`attachment; filename="orders.csv"`'
+              description: "`attachment; filename=\"orders-<shop date>.csv\"`, e.g. `orders-2026-10-27.csv`; the date is the shop's calendar day."
               schema:
                 type: string
             Cache-Control:
@@ -8856,6 +8943,7 @@ paths:
             text/csv:
               schema:
                 type: string
+                format: binary
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9276,6 +9364,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -10011,6 +10101,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -10050,6 +10142,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -10428,6 +10522,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -10462,6 +10558,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -10496,6 +10594,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -10624,6 +10724,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: notifications
@@ -10644,6 +10746,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -11153,6 +11257,16 @@ components:
       description: "The resource's current version as a strong entity-tag (RFC 9110 §8.8.3). Send it back as `If-Match` on `PUT`, `PATCH` or `DELETE` to refuse the write if someone else changed the resource in between. Opaque: compare it, never parse it. It validates writes only — a read never answers `304` from it."
       schema:
         type: string
+    RateLimit-Policy:
+      required: false
+      description: "The rate-limit budgets this request passed, as a list in the current IETF draft's syntax (`draft-ietf-httpapi-ratelimit-headers`): `\"login\";q=5;w=900` is a budget named `login` that allows `q` requests per `w` seconds. One list item per budget the request passed, named as in the budget table. Any response may carry it; no identifier of the caller is ever included."
+      schema:
+        type: string
+    RateLimit:
+      required: false
+      description: 'What is left of each budget in `RateLimit-Policy`, same names and order: `"login";r=3;t=600` is 3 requests remaining, and the window resets in 600 seconds. Back off before `r` reaches 0. Any response may carry it.'
+      schema:
+        type: string
     Retry-After:
       required: false
       description: How long to wait before trying again, in whole seconds (RFC 9110 §10.2.3). A `503` always carries a rough hint, not a promise. A `429` carries the time until the budget resets where the refusal knows it; one that does not (a spent per-account allowance) sends none, and the wait is then in the error `details`.
@@ -11213,7 +11327,7 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
     PayloadTooLarge:
-      description: The request body is larger than this deployment accepts (`NODE_JSON_BODY_LIMIT`, 100kb by default; multipart uploads are bounded separately by `NODE_MAX_UPLOAD_BYTES`). Refused by the body parser before any route runs, which is why it is declared for every body-accepting operation rather than by hand.
+      description: "The request body is larger than this deployment accepts: a JSON body over `NODE_JSON_BODY_LIMIT` (100kb by default), an uploaded file over `NODE_MAX_UPLOAD_BYTES`, or a multipart field value over 100 KB. Refused by the body parser or the upload middleware, which is why it is declared for every body-accepting operation rather than by hand. The other multipart limits (counts, shapes) answer `400`."
       content:
         application/problem+json:
           schema:
@@ -11229,6 +11343,10 @@ components:
       headers:
         Retry-After:
           $ref: "#/components/headers/Retry-After"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
       content:
         application/problem+json:
           schema:
@@ -13471,1819 +13589,6 @@ components:
         token:
           type: string
           description: New access JWT
-    ExportSession:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - createdAt
-        - expiration
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        createdAt:
-          type: string
-          format: date-time
-        expiration:
-          type: string
-          format: date-time
-        lastUsedAt:
-          type: string
-          format: date-time
-        device:
-          type: string
-          description: The coarse device label stored at sign-in (`cookie` mode only).
-    ExportLinkedProvider:
-      type: object
-      additionalProperties: false
-      required:
-        - provider
-        - providerId
-        - connectedAt
-      properties:
-        provider:
-          type: string
-          description: Registry name of the provider, e.g. `google`.
-        providerId:
-          type: string
-          description: The provider's own stable identifier for the account (its `sub`), an online identifier under GDPR Art. 4(1).
-        connectedAt:
-          type: string
-          format: date-time
-    ExportTwoFactorMethod:
-      type: object
-      additionalProperties: false
-      required:
-        - method
-        - enrolledAt
-      properties:
-        method:
-          type: string
-          description: Wire name of the factor, e.g. `totp` or `email`.
-        enrolledAt:
-          type: string
-          format: date-time
-          description: When the factor was armed.
-    ExportSignInMethods:
-      type: object
-      additionalProperties: false
-      required:
-        - providers
-        - twoFactor
-      properties:
-        providers:
-          type: array
-          description: The identity providers linked to the account.
-          items:
-            $ref: "#/components/schemas/ExportLinkedProvider"
-        twoFactor:
-          type: array
-          description: The second factors armed on the account. A setup never confirmed is left out.
-          items:
-            $ref: "#/components/schemas/ExportTwoFactorMethod"
-    TicketCategory:
-      type: string
-      enum:
-        - order
-        - cancellation
-        - return
-        - payment
-        - account
-        - privacy
-        - other
-    TicketStatus:
-      type: string
-      enum:
-        - new
-        - in_progress
-        - resolved
-        - spam
-    ExportTicketNote:
-      type: object
-      additionalProperties: false
-      required:
-        - body
-        - at
-      properties:
-        body:
-          type: string
-        at:
-          type: string
-          format: date-time
-    ExportTicket:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - email
-        - subject
-        - message
-        - status
-        - notes
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        name:
-          type: string
-        email:
-          $ref: "#/components/schemas/Email"
-        subject:
-          type: string
-        message:
-          type: string
-        category:
-          $ref: "#/components/schemas/TicketCategory"
-        orderNumber:
-          type: string
-        status:
-          $ref: "#/components/schemas/TicketStatus"
-        notes:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportTicketNote"
-        respondedAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-    TicketKind:
-      type: string
-      enum:
-        - contact
-        - account_review
-        - manual_refund_owed
-        - amount_mismatch
-        - paid_without_hold
-        - export_failed
-        - consent_due
-        - refund_refused
-        - dispute
-    TicketLinkType:
-      type: string
-      enum:
-        - order
-        - user
-        - payment
-        - refund
-        - fulfillment_order
-        - export
-    TicketLink:
-      type: object
-      additionalProperties: false
-      required:
-        - type
-        - id
-      description: The record a system ticket is about.
-      properties:
-        type:
-          $ref: "#/components/schemas/TicketLinkType"
-        id:
-          type: string
-    TicketResolution:
-      type: string
-      enum:
-        - staff
-        - cleared
-        - spam
-    ExportSystemTicket:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - kind
-        - subject
-        - message
-        - status
-        - routeSet
-        - notes
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        kind:
-          $ref: "#/components/schemas/TicketKind"
-        subject:
-          type: string
-        message:
-          type: string
-        link:
-          $ref: "#/components/schemas/TicketLink"
-        routeSet:
-          type: string
-        status:
-          $ref: "#/components/schemas/TicketStatus"
-        resolution:
-          $ref: "#/components/schemas/TicketResolution"
-        notes:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportTicketNote"
-        dueAt:
-          type: string
-          format: date-time
-        lastSeenAt:
-          type: string
-          format: date-time
-        seenCount:
-          type: integer
-          minimum: 1
-        respondedAt:
-          type: string
-          format: date-time
-        closedAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-    CartItem:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-        - quantity
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
-        quantity:
-          type: integer
-          minimum: 1
-    WishlistExportItem:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
-    Sku:
-      type: string
-      maxLength: 64
-      minLength: 1
-      description: "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
-    ReleaseDate:
-      type: string
-      format: date-time
-      description: When a product ships from, as an ISO 8601 date-time with a zone. A product with a future date that is active and purchasable is a preorder. At most one year ahead (Google's `availability_date` rule); a date in the past is accepted and simply means "released". Moving it later notifies the buyers who already paid (`delivery`).
-    RateType:
-      type: string
-      enum:
-        - standard
-        - zero-rated
-        - exempt
-      description: "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
-    OrderLineProduct:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - title
-        - price
-        - taxRate
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        title:
-          type: string
-        price:
-          type: number
-          format: double
-          minimum: 0
-          description: Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.
-        description:
-          type: string
-        requiresShipping:
-          type: boolean
-          default: true
-        noWithdrawal:
-          type: boolean
-        sku:
-          $ref: "#/components/schemas/Sku"
-        weight:
-          type: integer
-          minimum: 0
-        releaseDate:
-          $ref: "#/components/schemas/ReleaseDate"
-        preorder:
-          type: boolean
-          description: "The line was sold before its release date, frozen at checkout. `delivery` reads it, never the catalogue, to decide which fulfillment order the line belongs to: a bank transfer may be paid a week after the order was placed."
-        categories:
-          type: array
-          items:
-            type: string
-        tags:
-          type: array
-          items:
-            type: string
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        deletedAt:
-          type: string
-          format: date-time
-        taxRate:
-          type: number
-          format: double
-          minimum: 0
-          maximum: 1
-          description: The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.
-        rateType:
-          $ref: "#/components/schemas/RateType"
-    OrderLineCurrent:
-      type: object
-      additionalProperties: false
-      properties:
-        imageUrl:
-          $ref: "#/components/schemas/ImageUrl"
-        thumbnailUrl:
-          $ref: "#/components/schemas/ThumbnailUrl"
-    OrderItem:
-      type: object
-      additionalProperties: false
-      required:
-        - product
-        - quantity
-        - locale
-        - current
-        - taxAmount
-        - netAmount
-      properties:
-        product:
-          $ref: "#/components/schemas/OrderLineProduct"
-        quantity:
-          type: integer
-          minimum: 1
-        locale:
-          $ref: "#/components/schemas/Locale"
-        backorderedQuantity:
-          type: integer
-          minimum: 1
-          description: How many of `quantity` were owed rather than on the shelf when the order was placed. Absent when the shelf covered the whole line.
-        promisedAt:
-          type: string
-          format: date-time
-          description: "When the owed units were promised: the product's `restockDate`, or the day the order was placed plus 30 days when it had none. Present with `backorderedQuantity` and frozen with it, so a later change to the catalogue moves no promise."
-        promiseDated:
-          type: boolean
-          description: Whether `promisedAt` was a date the product named. `false` means the buyer was promised delivery "within 30 days" of the order. Present with `promisedAt`.
-        current:
-          oneOf:
-            - $ref: "#/components/schemas/OrderLineCurrent"
-            - type: "null"
-          description: The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`.
-        taxAmount:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: VAT included in this line's total, at its own frozen `taxRate`.
-        netAmount:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: This line's total excluding VAT — `price × quantity` minus `taxAmount`.
-    OrderTaxSummaryRow:
-      type: object
-      additionalProperties: false
-      required:
-        - rate
-        - netAmount
-        - taxAmount
-        - grossAmount
-      properties:
-        rate:
-          type: number
-          format: double
-          minimum: 0
-          description: The decimal rate this row is for (`0.22` for 22%) — never repeated across rows.
-        netAmount:
-          type: number
-          format: double
-          minimum: 0
-        taxAmount:
-          type: number
-          format: double
-          minimum: 0
-        grossAmount:
-          type: number
-          format: double
-          minimum: 0
-          description: "`netAmount + taxAmount`, not re-derived from a price."
-    OrderAddress:
-      type: object
-      additionalProperties: false
-      required:
-        - fullName
-        - street
-        - city
-        - zip
-        - country
-      properties:
-        fullName:
-          $ref: "#/components/schemas/AddressFullName"
-        street:
-          $ref: "#/components/schemas/AddressStreet"
-        city:
-          $ref: "#/components/schemas/AddressCity"
-        zip:
-          $ref: "#/components/schemas/AddressZip"
-        country:
-          $ref: "#/components/schemas/CountryCode"
-        phone:
-          $ref: "#/components/schemas/AddressPhone"
-    PaymentMethodId:
-      type: string
-      enum:
-        - card
-        - bank_transfer
-      description: How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.
-    OrderStatus:
-      type: string
-      enum:
-        - pending
-        - paid
-        - processing
-        - shipped
-        - delivered
-        - cancelled
-      description: Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`.
-    OrderPaymentStatus:
-      type: string
-      enum:
-        - unpaid
-        - paid
-        - partially_refunded
-        - refunded
-      description: "Where the order's MONEY stands, beside `status` — Shopify's `financial_status`. `unpaid` until a payment lands; `paid`; then `partially_refunded` once some but not all of it went back, and `refunded` once all of it did. Read-only: `payments` stamps the refund states, `orders` derives the first two."
-    OrderFulfillmentStatus:
-      type: string
-      enum:
-        - unfulfilled
-        - in_progress
-        - on_hold
-        - partially_fulfilled
-        - shipped
-        - fulfilled
-      description: "Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from the status and the fulfilment summary delivery reports. First match wins: `fulfilled` once everything arrived; `shipped` once everything has left; `partially_fulfilled` once something left and more remains; `on_hold` while every remaining unit is held back; `in_progress` while being prepared; `unfulfilled` before work starts, and for a pending or cancelled order. Read-only."
-    OrderReturnStatus:
-      type: string
-      enum:
-        - none
-        - requested
-        - in_progress
-        - partially_returned
-        - returned
-      description: "Where any return on the order stands — Shopify's `returnStatus`. `none` when no return holds goods; `requested` while one awaits staff; `in_progress` once approved and awaiting its goods; `partially_returned` / `returned` once received goods cover some / every unit on the order. Read-only: `returns` stamps it, and `delivered` stays terminal — a return is its own object, not an order status."
-    ExportOrder:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - email
-        - items
-        - totalItems
-        - totalQuantity
-        - totalPrice
-        - status
-        - paymentStatus
-        - fulfillmentStatus
-        - returnStatus
-        - currency
-        - orderNumber
-        - netTotal
-        - taxTotal
-        - shippingNetAmount
-        - shippingTaxAmount
-        - taxSummary
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        userId:
-          $ref: "#/components/schemas/Id"
-        email:
-          $ref: "#/components/schemas/Email"
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/OrderItem"
-        totalItems:
-          type: integer
-          minimum: 0
-          description: Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
-          example: 2
-        totalQuantity:
-          type: integer
-          minimum: 0
-          description: Sum of `quantity` across every line item.
-          example: 5
-        totalPrice:
-          type: number
-          format: double
-          minimum: 0
-          description: Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
-          example: 149.97
-        currency:
-          type: string
-          readOnly: true
-          description: ISO-4217 currency code this order was priced in (e.g. EUR).
-        netTotal:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
-        taxTotal:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
-        shippingNetAmount:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
-        shippingTaxAmount:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
-        taxSummary:
-          type: array
-          readOnly: true
-          items:
-            $ref: "#/components/schemas/OrderTaxSummaryRow"
-          description: "One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines."
-        notes:
-          type: string
-          description: Optional order notes
-        shippingMethod:
-          type: string
-          description: The shipping method's id as the checkout froze it (e.g. standard, express, pickup).
-        shippingCost:
-          type: number
-          format: double
-          minimum: 0
-          description: What that method cost at checkout time — a later rate change cannot re-price history.
-        shippingAddress:
-          $ref: "#/components/schemas/OrderAddress"
-        billingAddress:
-          $ref: "#/components/schemas/OrderAddress"
-        paymentMethod:
-          $ref: "#/components/schemas/PaymentMethodId"
-        payBy:
-          type: string
-          format: date-time
-        orderNumber:
-          type: string
-          readOnly: true
-          example: 2026-000041
-        status:
-          $ref: "#/components/schemas/OrderStatus"
-        paymentStatus:
-          $ref: "#/components/schemas/OrderPaymentStatus"
-        fulfillmentStatus:
-          $ref: "#/components/schemas/OrderFulfillmentStatus"
-        returnStatus:
-          $ref: "#/components/schemas/OrderReturnStatus"
-        withdrawUntil:
-          type: string
-          format: date-time
-          readOnly: true
-          description: "The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet."
-        paidAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        deletedAt:
-          type: string
-          format: date-time
-    OrderTimelineType:
-      type: string
-      enum:
-        - created
-        - paid
-        - processing
-        - shipped
-        - delivered
-        - cancelled
-        - status_overridden
-        - payment_declined
-        - refund_issued
-        - refund_settled
-        - refund_failed
-        - refund_canceled
-        - refund_reversed
-        - shipment_shipped
-        - shipment_delivered
-        - shipment_lost
-        - fulfillment_held
-        - fulfillment_released
-        - remainder_cancelled
-        - return_requested
-        - return_approved
-        - return_declined
-        - return_received
-        - return_closed
-        - return_canceled
-        - invoice_issued
-        - credit_note_issued
-        - release_date_moved
-        - delay_notice_sent
-        - address_corrected
-      description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`. Shipments: `shipment_shipped`, `shipment_delivered`, `shipment_lost`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`, `refund_reversed`."
-    OrderTimelineExportEntry:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - at
-        - type
-        - audience
-        - data
-        - orderId
-      properties:
-        orderId:
-          $ref: "#/components/schemas/Id"
-        id:
-          $ref: "#/components/schemas/Id"
-        at:
-          type: string
-          format: date-time
-        type:
-          $ref: "#/components/schemas/OrderTimelineType"
-        audience:
-          type: string
-          enum:
-            - buyer
-            - staff
-          description: "Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both."
-        actor:
-          allOf:
-            - $ref: "#/components/schemas/Id"
-          description: The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id.
-        text:
-          type: string
-          description: Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays.
-        data:
-          type: object
-          additionalProperties: true
-          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
-    RefundStatus:
-      type: string
-      enum:
-        - pending
-        - succeeded
-        - failed
-    RefundReason:
-      type: string
-      enum:
-        - cancellation
-        - goodwill
-        - return
-        - late_payment
-        - external
-      description: "Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to; `late_payment` — the money arrived after the order could no longer be paid (its stock reservation had expired or it was cancelled), so the sale was lost and the money went back. The buyer is mailed it like a cancellation's refund. `external` — the refund was made in the payment provider's own dashboard, not here: the application found it and recorded it so the credit note, the buyer's mail and the order's state follow; it is `succeeded` from the start and carries the provider's own amount and date."
-    RefundFailureReason:
-      type: string
-      enum:
-        - declined
-        - insufficient_funds
-        - expired_or_canceled_card
-        - lost_or_stolen_card
-        - provider_removed
-        - provider_unavailable
-        - unknown
-        - canceled
-        - disputed
-      description: |-
-        Why the provider last refused a refund, as a closed code. Staff only (`display:Payment`). `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
-        Money did NOT move for `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` (the payment's provider is no longer installed, so nothing was asked): the refund may be marked returned by hand once the money went back another way. `declined`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` are final and are not retried; `insufficient_funds` (the shop's own provider balance is short) and the unclear `provider_unavailable` and `unknown` are retried with a growing delay. An unclear refusal may have gone through, so it is never offered for hand settlement.
-        `disputed`: the buyer's bank took the money back in a dispute (chargeback). It is final like the refusals above, and it is never offered for hand settlement: the bank already returned the money.
-        `canceled` is not a refusal: staff voided the refund (`POST /payments/{id}/refunds/{refundId}/cancel`). Nothing was sent, it is never retried and it can neither be settled by hand nor canceled again.
-    Refund:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - amount
-        - currency
-        - status
-        - reason
-        - createdAt
-      description: One attempt to give money back — a record per attempt, not a field on the payment. The idempotency key is stored but never published. The provider's refund id and a failed refund's `failureReason` go to staff only (`display:Payment`); the provider's own error wording stays in the logs.
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        amount:
-          type: number
-          format: double
-          minimum: 0
-          description: The amount returned, in the payment's own `currency`.
-        currency:
-          type: string
-          description: ISO-4217 currency code, copied from the payment.
-        status:
-          allOf:
-            - $ref: "#/components/schemas/RefundStatus"
-          description: "`pending` while the provider is being asked (or, on a hand-paid payment, until an operator reports the money back); `failed` when it refused — the sweep retries it with the same idempotency key unless the refusal is final, and an operator may report it returned by hand when the money provably did not move (see `RefundFailureReason`); `succeeded` once the money is confirmed back, or reported back by the operator. A `failed` refund with `failureReason: canceled` was voided by staff and is closed for good."
-        reason:
-          $ref: "#/components/schemas/RefundReason"
-        returnId:
-          $ref: "#/components/schemas/Id"
-        settledAt:
-          type: string
-          format: date-time
-          description: When the refund succeeded. Absent while it has not.
-        settledByHand:
-          type: boolean
-          description: "`true` when an operator reported this refund's money returned outside the application (`POST /payments/{id}/refunds/{refundId}/settle`): a hand-paid payment's refund, or a card refund the provider refused. Per refund. Absent otherwise."
-        providerRefundRef:
-          type: string
-          description: The provider's id for the refund (Stripe's `re_…`). Staff only.
-        failureReason:
-          $ref: "#/components/schemas/RefundFailureReason"
-        owedAnotherWay:
-          type: boolean
-          description: '`true` while this refund is open and the money cannot go back to the card: the provider refused it for good, or took it back after settling it. The buyer is emailed to agree how they would like to receive it, at no cost to them (Consumer Rights Directive Art. 13(1)), and the order page says so instead of "retried automatically". Carries no reason: that stays staff-only. Absent otherwise.'
-        reversedAt:
-          type: string
-          format: date-time
-          description: "When the provider took this refund back (a bank sent the money back, or the provider reported the refund failed). Set once; a reversed refund is `failed` again, counts against what is left, and is owed another way: an operator pays it and presses mark-returned (`actions.settleByHand`). The credit note issued when it first settled stays. Absent otherwise."
-        createdAt:
-          type: string
-          format: date-time
-    ExportPayment:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - amount
-        - currency
-        - status
-        - provider
-        - amountRefunded
-        - refunds
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        amount:
-          type: number
-          format: double
-          minimum: 0
-        currency:
-          type: string
-        amountRefunded:
-          type: number
-          format: double
-          minimum: 0
-        refunds:
-          type: array
-          items:
-            $ref: "#/components/schemas/Refund"
-        status:
-          type: string
-          enum:
-            - requires_confirmation
-            - requires_action
-            - processing
-            - succeeded
-            - declined
-            - cancelled
-        provider:
-          type: string
-        cardLast4:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-    ExportInvoiceDocument:
-      type: object
-      additionalProperties: false
-      required:
-        - orderId
-        - number
-        - issuedAt
-        - currency
-        - grandTotal
-      properties:
-        orderId:
-          $ref: "#/components/schemas/Id"
-        number:
-          type: string
-        issuedAt:
-          type: string
-          format: date-time
-        currency:
-          type: string
-        grandTotal:
-          type: number
-          format: double
-          minimum: 0
-    ShipmentStatus:
-      type: string
-      enum:
-        - shipped
-        - delivered
-        - lost
-      description: "The tail of the order's lifecycle, as the carrier sees it. `lost`: staff reported the parcel lost or damaged in transit, so its units are open again; it can still become `delivered` if it turns up and nothing was shipped or cancelled meanwhile."
-    ShipmentLine:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-        - title
-        - quantity
-      description: One product in a shipment.
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
-        title:
-          type: string
-        quantity:
-          type: integer
-          minimum: 1
-    ShipmentLostReason:
-      type: string
-      enum:
-        - lost
-        - damaged
-      description: "Why the parcel will not arrive. `lost`: the carrier lost it. `damaged`: it was damaged in transit, reported before its arrival was recorded (damage found after the buyer has the goods is a return)."
-    ExportShipment:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - fulfillmentOrderId
-        - number
-        - status
-        - lines
-        - shippedAt
-      description: A shipment as an account export carries it — the record, without the caller's `actions`.
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        fulfillmentOrderId:
-          $ref: "#/components/schemas/Id"
-        number:
-          type: integer
-          minimum: 1
-        trackingCode:
-          type: string
-        status:
-          $ref: "#/components/schemas/ShipmentStatus"
-        lines:
-          type: array
-          items:
-            $ref: "#/components/schemas/ShipmentLine"
-        destination:
-          $ref: "#/components/schemas/OrderAddress"
-          description: Where this parcel went — the order's shipping address as it stood when the shipment was cut, so a later correction of the order's address never rewrites it. Absent for a pickup, a digital fulfilment, and once the order's own address has been scrubbed.
-        shippedAt:
-          type: string
-          format: date-time
-        deliveredAt:
-          type: string
-          format: date-time
-        lostAt:
-          type: string
-          format: date-time
-          description: When staff reported it lost or damaged. Kept as history when the parcel turns up and is then delivered.
-        lostReason:
-          $ref: "#/components/schemas/ShipmentLostReason"
-        lostMessage:
-          type: string
-          maxLength: 500
-          description: What staff wrote for the buyer when they reported the loss; never reaped.
-        lostNote:
-          type: string
-          maxLength: 1000
-          description: Staff's free text about the loss. Reaped with the other free text.
-    FulfillmentOrderKind:
-      type: string
-      enum:
-        - physical
-        - digital
-      description: "`digital` when no line rides in a parcel; its act is `fulfill`, not a shipment."
-    FulfillmentOrderStatus:
-      type: string
-      enum:
-        - open
-        - in_progress
-        - on_hold
-        - closed
-        - cancelled
-      description: Where a fulfillment order stands (Shopify's names). `open` until something ships; `in_progress` once part of it has shipped and lines remain; `on_hold` while staff, or the stock it awaits, holds it back; `closed` once nothing remains and something shipped from it; `cancelled` once nothing remains and nothing ever shipped from it.
-    FulfillmentOrderLine:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-        - title
-        - quantity
-        - shippedQuantity
-        - cancelledQuantity
-        - remaining
-      description: One product on a fulfillment order, with how much has shipped, been cancelled and still remains.
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
-        title:
-          type: string
-          description: The product's title as the order froze it.
-        quantity:
-          type: integer
-          minimum: 1
-          description: Units this fulfillment order carries.
-        shippedQuantity:
-          type: integer
-          minimum: 0
-        cancelledQuantity:
-          type: integer
-          minimum: 0
-          description: Units cancelled before they shipped — a remainder cancel.
-        remaining:
-          type: integer
-          minimum: 0
-          description: "`quantity − shippedQuantity − cancelledQuantity`, computed here so no client counts."
-    FulfillmentHoldNotice:
-      type: string
-      enum:
-        - awaiting_stock
-        - check_address
-        - delayed
-      description: "What a hold means to the BUYER, whatever staff's reason: `awaiting_stock` (the goods are not here yet), `check_address` (the buyer can act: the address needs a look), `delayed` (held for a check, said plainly). A reason that must stay quiet, such as `high_risk`, reads as `delayed`, so a notice never reveals a screening result. The reason itself (`FulfillmentHoldReason`) is staff's."
-    FulfillmentHoldReason:
-      type: string
-      enum:
-        - awaiting_stock
-        - incorrect_address
-        - high_risk
-        - other
-      description: Why a fulfillment order is on hold (Shopify's hold reasons). `awaiting_stock` is set only by the allocation of stock, and released only by it; the other three are staff's.
-    FulfillmentCancelReason:
-      type: string
-      enum:
-        - buyer
-        - staff
-        - order
-        - found
-      description: "Who cancelled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `order`: the whole order was cancelled. `found`: the lost parcel turned up, so the units owed for it are no longer owed (no refund)."
-    ExportFulfillmentOrder:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - number
-        - kind
-        - status
-        - lines
-      description: A fulfillment order as an account export carries it, with staff's hold note (their assessment of the buyer is the buyer's data) and without who wrote it.
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        number:
-          type: integer
-          minimum: 1
-        kind:
-          $ref: "#/components/schemas/FulfillmentOrderKind"
-        status:
-          $ref: "#/components/schemas/FulfillmentOrderStatus"
-        lines:
-          type: array
-          items:
-            $ref: "#/components/schemas/FulfillmentOrderLine"
-        holdNotice:
-          $ref: "#/components/schemas/FulfillmentHoldNotice"
-        holdMessage:
-          type: string
-          maxLength: 500
-        holdReason:
-          $ref: "#/components/schemas/FulfillmentHoldReason"
-        holdNote:
-          type: string
-          maxLength: 1000
-          description: Staff's free text about the hold. Present until the retention sweep unsets it.
-        agreedAt:
-          type: string
-          format: date-time
-        expectedAt:
-          type: string
-          format: date-time
-        lastNoticeAt:
-          type: string
-          format: date-time
-          description: When the buyer was last told the date had moved or would be missed.
-        cancelReason:
-          $ref: "#/components/schemas/FulfillmentCancelReason"
-    ReturnStatus:
-      type: string
-      enum:
-        - requested
-        - approved
-        - declined
-        - received
-        - closed
-        - canceled
-      description: "Where a return stands: `requested → approved → received → closed`, or `requested → declined`, or `approved → canceled` (the goods never came). `canceled` is final and is not `closed`: it holds no units and counts as no goods back. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`."
-    ReturnReason:
-      type: string
-      enum:
-        - withdrawal
-        - defective
-        - wrong_item
-        - other
-      description: Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
-    ReturnDeclineReason:
-      type: string
-      enum:
-        - return_period_ended
-        - not_returnable
-        - no_defect_found
-        - other
-      description: "Why staff declined, as a code the buyer reads in their own language and a shop can count: `return_period_ended` — past the window; `not_returnable` — exempt from returns (an Art. 16 exception) or sold as final sale; `no_defect_found` — a guarantee claim where the goods conform; `other` — see the message."
-    ExportReturn:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - status
-        - reason
-        - lines
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        status:
-          $ref: "#/components/schemas/ReturnStatus"
-        reason:
-          $ref: "#/components/schemas/ReturnReason"
-        note:
-          type: string
-        declineReason:
-          $ref: "#/components/schemas/ReturnDeclineReason"
-        declineMessage:
-          type: string
-        lines:
-          type: array
-          items:
-            type: object
-            additionalProperties: false
-            required:
-              - productId
-              - quantity
-              - title
-            properties:
-              productId:
-                $ref: "#/components/schemas/Id"
-              quantity:
-                type: integer
-                minimum: 1
-              title:
-                type: string
-        createdAt:
-          type: string
-          format: date-time
-    ApiKeyStatus:
-      type: string
-      enum:
-        - active
-        - expired
-        - revoked
-        - suspended
-      description: "Whether the credential works right now, decided by the server. `revoked` and `expired` are final. `suspended` means the person who minted it can no longer sign in (banned, soft-deleted or erased): the key is refused with 401 and comes back by itself if they do. Checked in that order, so a revoked key never reads as `suspended`."
-    ExportApiKey:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - name
-        - publicPrefix
-        - permissions
-        - status
-        - expiresAt
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        name:
-          type: string
-        publicPrefix:
-          type: string
-        status:
-          $ref: "#/components/schemas/ApiKeyStatus"
-        permissions:
-          type: array
-          items:
-            type: string
-          minItems: 1
-        lastUsedAt:
-          type: string
-          format: date-time
-        expiresAt:
-          type: string
-          format: date-time
-        revokedAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-    ExampleStatus:
-      type: string
-      enum:
-        - draft
-        - published
-        - archived
-    ExportExample:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - title
-        - body
-        - status
-        - userId
-        - ownerName
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        title:
-          type: string
-        body:
-          type: string
-        status:
-          $ref: "#/components/schemas/ExampleStatus"
-        userId:
-          $ref: "#/components/schemas/Id"
-        ownerName:
-          type: string
-        imageUrl:
-          $ref: "#/components/schemas/ImageUrl"
-        thumbnailUrl:
-          $ref: "#/components/schemas/ThumbnailUrl"
-        publishedAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-    NotificationAudience:
-      type: string
-      enum:
-        - own
-        - staff
-      description: "Whose message this is. `own`: about the caller as a person or buyer. `staff`: a work notice sent because the caller's role does that work, not because it concerns them."
-    ProductTitles:
-      type: object
-      additionalProperties:
-        type: string
-    CartLineRemovedParams:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-        - titles
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
-        titles:
-          $ref: "#/components/schemas/ProductTitles"
-    NotificationSeverity:
-      type: string
-      description: Meaning, not look — a client picks the colour. The four words most notification APIs share (Ant Design, Atlassian flags).
-      enum:
-        - info
-        - success
-        - warning
-        - error
-    NotificationCartLineRemoved:
-      type: object
-      additionalProperties: false
-      description: A product left the catalogue and left the caller's cart with it.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.cart-line-removed
-        params:
-          $ref: "#/components/schemas/CartLineRemovedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    NotificationWishlistItemRemoved:
-      type: object
-      additionalProperties: false
-      description: A product left the catalogue and left the caller's wishlist with it.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.wishlist-item-removed
-        params:
-          $ref: "#/components/schemas/CartLineRemovedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    CartMergeRefusedParams:
-      type: object
-      additionalProperties: false
-      required:
-        - lines
-      properties:
-        lines:
-          type: array
-          description: The guest-cart lines `POST /cart/merge` could not add at all.
-          items:
-            type: object
-            additionalProperties: false
-            required:
-              - productId
-              - requested
-              - titles
-            properties:
-              productId:
-                $ref: "#/components/schemas/Id"
-              requested:
-                type: integer
-                minimum: 1
-              titles:
-                $ref: "#/components/schemas/ProductTitles"
-    NotificationCartMergeRefused:
-      type: object
-      additionalProperties: false
-      description: Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.cart-merge-refused
-        params:
-          $ref: "#/components/schemas/CartMergeRefusedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    FulfillmentDelayedParams:
-      type: object
-      additionalProperties: false
-      required:
-        - orderId
-        - fulfillmentOrderId
-        - titles
-        - agreedAt
-      description: "What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised and the date now expected (absent when there is none)."
-      properties:
-        orderId:
-          $ref: "#/components/schemas/Id"
-        fulfillmentOrderId:
-          $ref: "#/components/schemas/Id"
-        titles:
-          type: array
-          description: The waiting products' titles, as the order froze them.
-          items:
-            type: string
-        agreedAt:
-          type: string
-          format: date-time
-        expectedAt:
-          type: string
-          format: date-time
-    NotificationFulfillmentDelayed:
-      type: object
-      additionalProperties: false
-      description: A preorder the caller paid for will arrive later than promised; cancelling is open and silence keeps waiting.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.fulfillment-delayed
-        params:
-          $ref: "#/components/schemas/FulfillmentDelayedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    FulfillmentHeldParams:
-      type: object
-      additionalProperties: false
-      required:
-        - orderId
-        - fulfillmentOrderId
-        - notice
-      description: "What the buyer needs to read a hold notice: which order and fulfillment order, whether the address needs a look (`check_address`) or the order is only `delayed`, and the sentence staff wrote for them, if any. Never staff's reason."
-      properties:
-        orderId:
-          $ref: "#/components/schemas/Id"
-        fulfillmentOrderId:
-          $ref: "#/components/schemas/Id"
-        notice:
-          type: string
-          enum:
-            - check_address
-            - delayed
-        message:
-          type: string
-          maxLength: 500
-    NotificationFulfillmentHeld:
-      type: object
-      additionalProperties: false
-      description: Part of an order the caller bought is held back, and they can act (check the address) or have a message from the shop.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.fulfillment-held
-        params:
-          $ref: "#/components/schemas/FulfillmentHeldParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    ShipmentLostParams:
-      type: object
-      additionalProperties: false
-      required:
-        - orderId
-        - shipmentId
-        - reason
-      description: "What the buyer needs to read a lost-parcel notice: which order and shipment, whether it was lost or damaged in transit, the sentence staff wrote for them if any, and the units the shelf could not cover again with the date they are now expected (absent when everything is being sent again from the shelf)."
-      properties:
-        orderId:
-          $ref: "#/components/schemas/Id"
-        shipmentId:
-          $ref: "#/components/schemas/Id"
-        reason:
-          type: string
-          enum:
-            - lost
-            - damaged
-        message:
-          type: string
-          maxLength: 500
-        owed:
-          type: array
-          description: The titles of the products still to be restocked, as the order froze them.
-          items:
-            type: string
-        expectedAt:
-          type: string
-          format: date-time
-    NotificationShipmentLost:
-      type: object
-      additionalProperties: false
-      description: A parcel the caller was waiting for was reported lost or damaged in transit; the shop sends it again or refunds.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.shipment-lost
-        params:
-          $ref: "#/components/schemas/ShipmentLostParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    NotificationStockAlert:
-      type: object
-      additionalProperties: false
-      description: A product the caller asked to be told about can be ordered again. Sent once, then the request is gone.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.stock-alert
-        params:
-          $ref: "#/components/schemas/CartLineRemovedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    PurchaseHoldPlacedParams:
-      type: object
-      additionalProperties: false
-      required:
-        - userId
-        - until
-      description: "The shop's rule paused a buyer's checkout. Ids and instants only: the account's own page has the rest."
-      properties:
-        userId:
-          $ref: "#/components/schemas/Id"
-        until:
-          type: string
-          format: date-time
-          description: When the pause ends by itself.
-    NotificationStaffPurchaseHoldPlaced:
-      type: object
-      additionalProperties: false
-      description: A buyer's checkout was paused by the shop's cancellation rule; staff who can ban decide whether to step in.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.staff.purchase-hold-placed
-        params:
-          $ref: "#/components/schemas/PurchaseHoldPlacedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    WebhookDisabledParams:
-      type: object
-      additionalProperties: false
-      required:
-        - subscriptionId
-      description: A webhook subscription was switched off after repeated delivery failures.
-      properties:
-        subscriptionId:
-          $ref: "#/components/schemas/Id"
-    NotificationStaffWebhookDisabled:
-      type: object
-      additionalProperties: false
-      description: A webhook subscription was switched off after repeated failures; staff who manage webhooks fix the endpoint and re-enable it.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.staff.webhook-disabled
-        params:
-          $ref: "#/components/schemas/WebhookDisabledParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    Notification:
-      oneOf:
-        - $ref: "#/components/schemas/NotificationCartLineRemoved"
-        - $ref: "#/components/schemas/NotificationWishlistItemRemoved"
-        - $ref: "#/components/schemas/NotificationCartMergeRefused"
-        - $ref: "#/components/schemas/NotificationFulfillmentDelayed"
-        - $ref: "#/components/schemas/NotificationFulfillmentHeld"
-        - $ref: "#/components/schemas/NotificationShipmentLost"
-        - $ref: "#/components/schemas/NotificationStockAlert"
-        - $ref: "#/components/schemas/NotificationStaffPurchaseHoldPlaced"
-        - $ref: "#/components/schemas/NotificationStaffWebhookDisabled"
-      discriminator:
-        propertyName: code
-        mapping:
-          notifications.cart-line-removed: "#/components/schemas/NotificationCartLineRemoved"
-          notifications.wishlist-item-removed: "#/components/schemas/NotificationWishlistItemRemoved"
-          notifications.cart-merge-refused: "#/components/schemas/NotificationCartMergeRefused"
-          notifications.fulfillment-delayed: "#/components/schemas/NotificationFulfillmentDelayed"
-          notifications.fulfillment-held: "#/components/schemas/NotificationFulfillmentHeld"
-          notifications.shipment-lost: "#/components/schemas/NotificationShipmentLost"
-          notifications.stock-alert: "#/components/schemas/NotificationStockAlert"
-          notifications.staff.purchase-hold-placed: "#/components/schemas/NotificationStaffPurchaseHoldPlaced"
-          notifications.staff.webhook-disabled: "#/components/schemas/NotificationStaffWebhookDisabled"
-    StaffNoticeExport:
-      type: object
-      additionalProperties: false
-      required:
-        - code
-        - createdAt
-      description: One work notice this account received as staff, without the facts it named.
-      properties:
-        code:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-        readAt:
-          type: string
-          format: date-time
-    StockAlert:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-        - createdAt
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
-        createdAt:
-          type: string
-          format: date-time
-    AccountExportResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - exportedAt
-        - profile
-        - auditLog
-        - sessions
-        - addresses
-        - signInMethods
-        - tickets
-        - systemTickets
-        - cart
-        - wishlist
-        - orders
-        - orderTimeline
-        - payments
-        - invoicing
-        - shipments
-        - fulfillmentOrders
-        - returns
-        - apiKeys
-        - roles
-        - examples
-        - notifications
-        - staffNotifications
-        - stockAlerts
-      properties:
-        exportedAt:
-          type: string
-          format: date-time
-        profile:
-          $ref: "#/components/schemas/Account"
-        auditLog:
-          type: array
-          items:
-            $ref: "#/components/schemas/AuditEntryItem"
-        sessions:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportSession"
-        addresses:
-          type: array
-          items:
-            $ref: "#/components/schemas/Address"
-        signInMethods:
-          $ref: "#/components/schemas/ExportSignInMethods"
-        tickets:
-          type: array
-          description: |
-            The contact messages this person owns: what they sent while signed in, plus what was sent under their verified email address. Staff notes are included without their author. Always present, empty when there are none.
-          items:
-            $ref: "#/components/schemas/ExportTicket"
-        systemTickets:
-          type: array
-          description: |
-            The tickets the system opened about this person (a refund owed, an account under review, an export that failed). Every field except the staff who handled them. Always present, empty when there are none.
-          items:
-            $ref: "#/components/schemas/ExportSystemTicket"
-        cart:
-          type: array
-          items:
-            $ref: "#/components/schemas/CartItem"
-        wishlist:
-          type: array
-          items:
-            $ref: "#/components/schemas/WishlistExportItem"
-        orders:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportOrder"
-        orderTimeline:
-          type: array
-          items:
-            $ref: "#/components/schemas/OrderTimelineExportEntry"
-        payments:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportPayment"
-        invoicing:
-          type: object
-          additionalProperties: false
-          required:
-            - invoices
-            - creditNotes
-          properties:
-            invoices:
-              type: array
-              items:
-                $ref: "#/components/schemas/ExportInvoiceDocument"
-            creditNotes:
-              type: array
-              items:
-                $ref: "#/components/schemas/ExportInvoiceDocument"
-        shipments:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportShipment"
-        fulfillmentOrders:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportFulfillmentOrder"
-        returns:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportReturn"
-        apiKeys:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportApiKey"
-        roles:
-          type: array
-          items:
-            type: object
-            additionalProperties: false
-            required:
-              - role
-              - scope
-            properties:
-              role:
-                type: string
-              scope:
-                type: string
-                enum:
-                  - tenant
-                  - platform
-        examples:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportExample"
-        notifications:
-          type: array
-          items:
-            $ref: "#/components/schemas/Notification"
-        staffNotifications:
-          type: array
-          items:
-            $ref: "#/components/schemas/StaffNoticeExport"
-        stockAlerts:
-          type: array
-          items:
-            $ref: "#/components/schemas/StockAlert"
     AccountExportRequest:
       type: object
       additionalProperties: false
@@ -15790,15 +14095,65 @@ components:
           - -status
           - email
           - -email
+    TicketStatus:
+      type: string
+      enum:
+        - new
+        - in_progress
+        - resolved
+        - spam
+    TicketCategory:
+      type: string
+      enum:
+        - order
+        - cancellation
+        - return
+        - payment
+        - account
+        - privacy
+        - other
     TicketSource:
       type: string
       enum:
         - visitor
         - system
+    TicketKind:
+      type: string
+      enum:
+        - contact
+        - account_review
+        - manual_refund_owed
+        - amount_mismatch
+        - paid_without_hold
+        - export_failed
+        - consent_due
+        - refund_refused
+        - dispute
     TicketAssigneeFilter:
       type: string
       minLength: 2
       maxLength: 24
+    TicketLinkType:
+      type: string
+      enum:
+        - order
+        - user
+        - payment
+        - refund
+        - fulfillment_order
+        - export
+    TicketLink:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - id
+      description: The record a system ticket is about.
+      properties:
+        type:
+          $ref: "#/components/schemas/TicketLinkType"
+        id:
+          type: string
     TicketNote:
       type: object
       additionalProperties: false
@@ -15814,6 +14169,12 @@ components:
         at:
           type: string
           format: date-time
+    TicketResolution:
+      type: string
+      enum:
+        - staff
+        - cleared
+        - spam
     TicketRef:
       type: object
       additionalProperties: false
@@ -16089,6 +14450,22 @@ components:
         - reduced
         - zero
       description: A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate.
+    RateType:
+      type: string
+      enum:
+        - standard
+        - zero-rated
+        - exempt
+      description: "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
+    Sku:
+      type: string
+      maxLength: 64
+      minLength: 1
+      description: "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+    ReleaseDate:
+      type: string
+      format: date-time
+      description: When a product ships from, as an ISO 8601 date-time with a zone. A product with a future date that is active and purchasable is a preorder. At most one year ahead (Google's `availability_date` rule); a date in the past is accepted and simply means "released". Moving it later notifies the buyers who already paid (`delivery`).
     RestockDate:
       type: string
       format: date-time
@@ -17062,6 +15439,12 @@ components:
           maxLength: 64
           minLength: 1
           description: Which shipping method (see `GET /delivery/methods`) the cart plans to ship by. `null` clears the choice. An id that matches no method refuses with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`; one that does not apply to the basket refuses with 409 (`CART_SHIPPING_NOT_APPLICABLE`, `CART_SHIPPING_METHOD_WEIGHT`).
+    PaymentMethodId:
+      type: string
+      enum:
+        - card
+        - bank_transfer
+      description: How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.
     CheckoutRequest:
       type: object
       additionalProperties: false
@@ -17088,6 +15471,206 @@ components:
             - $ref: "#/components/schemas/PaymentMethodId"
           default: card
           description: "How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`. That includes the default: a request that names no method asks for `card`, so a deployment with no card provider refuses it the same way."
+    OrderLineProduct:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - price
+        - taxRate
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+        price:
+          type: number
+          format: double
+          minimum: 0
+          description: Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.
+        description:
+          type: string
+        requiresShipping:
+          type: boolean
+          default: true
+        noWithdrawal:
+          type: boolean
+        sku:
+          $ref: "#/components/schemas/Sku"
+        weight:
+          type: integer
+          minimum: 0
+        releaseDate:
+          $ref: "#/components/schemas/ReleaseDate"
+        preorder:
+          type: boolean
+          description: "The line was sold before its release date, frozen at checkout. `delivery` reads it, never the catalogue, to decide which fulfillment order the line belongs to: a bank transfer may be paid a week after the order was placed."
+        categories:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+        taxRate:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.
+        rateType:
+          $ref: "#/components/schemas/RateType"
+    OrderLineCurrent:
+      type: object
+      additionalProperties: false
+      properties:
+        imageUrl:
+          $ref: "#/components/schemas/ImageUrl"
+        thumbnailUrl:
+          $ref: "#/components/schemas/ThumbnailUrl"
+    OrderItem:
+      type: object
+      additionalProperties: false
+      required:
+        - product
+        - quantity
+        - locale
+        - current
+        - taxAmount
+        - netAmount
+      properties:
+        product:
+          $ref: "#/components/schemas/OrderLineProduct"
+        quantity:
+          type: integer
+          minimum: 1
+        locale:
+          $ref: "#/components/schemas/Locale"
+        backorderedQuantity:
+          type: integer
+          minimum: 1
+          description: How many of `quantity` were owed rather than on the shelf when the order was placed. Absent when the shelf covered the whole line.
+        promisedAt:
+          type: string
+          format: date-time
+          description: "When the owed units were promised: the product's `restockDate`, or the day the order was placed plus 30 days when it had none. Present with `backorderedQuantity` and frozen with it, so a later change to the catalogue moves no promise."
+        promiseDated:
+          type: boolean
+          description: Whether `promisedAt` was a date the product named. `false` means the buyer was promised delivery "within 30 days" of the order. Present with `promisedAt`.
+        current:
+          oneOf:
+            - $ref: "#/components/schemas/OrderLineCurrent"
+            - type: "null"
+          description: The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`.
+        taxAmount:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: VAT included in this line's total, at its own frozen `taxRate`.
+        netAmount:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: This line's total excluding VAT — `price × quantity` minus `taxAmount`.
+    OrderTaxSummaryRow:
+      type: object
+      additionalProperties: false
+      required:
+        - rate
+        - netAmount
+        - taxAmount
+        - grossAmount
+      properties:
+        rate:
+          type: number
+          format: double
+          minimum: 0
+          description: The decimal rate this row is for (`0.22` for 22%) — never repeated across rows.
+        netAmount:
+          type: number
+          format: double
+          minimum: 0
+        taxAmount:
+          type: number
+          format: double
+          minimum: 0
+        grossAmount:
+          type: number
+          format: double
+          minimum: 0
+          description: "`netAmount + taxAmount`, not re-derived from a price."
+    OrderAddress:
+      type: object
+      additionalProperties: false
+      required:
+        - fullName
+        - street
+        - city
+        - zip
+        - country
+      properties:
+        fullName:
+          $ref: "#/components/schemas/AddressFullName"
+        street:
+          $ref: "#/components/schemas/AddressStreet"
+        city:
+          $ref: "#/components/schemas/AddressCity"
+        zip:
+          $ref: "#/components/schemas/AddressZip"
+        country:
+          $ref: "#/components/schemas/CountryCode"
+        phone:
+          $ref: "#/components/schemas/AddressPhone"
+    OrderStatus:
+      type: string
+      enum:
+        - pending
+        - paid
+        - processing
+        - shipped
+        - delivered
+        - cancelled
+      description: Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`.
+    OrderPaymentStatus:
+      type: string
+      enum:
+        - unpaid
+        - paid
+        - partially_refunded
+        - refunded
+      description: "Where the order's MONEY stands, beside `status` — Shopify's `financial_status`. `unpaid` until a payment lands; `paid`; then `partially_refunded` once some but not all of it went back, and `refunded` once all of it did. Read-only: `payments` stamps the refund states, `orders` derives the first two."
+    OrderFulfillmentStatus:
+      type: string
+      enum:
+        - unfulfilled
+        - in_progress
+        - on_hold
+        - partially_fulfilled
+        - shipped
+        - fulfilled
+      description: "Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from the status and the fulfilment summary delivery reports. First match wins: `fulfilled` once everything arrived; `shipped` once everything has left; `partially_fulfilled` once something left and more remains; `on_hold` while every remaining unit is held back; `in_progress` while being prepared; `unfulfilled` before work starts, and for a pending or cancelled order. Read-only."
+    OrderReturnStatus:
+      type: string
+      enum:
+        - none
+        - requested
+        - in_progress
+        - partially_returned
+        - returned
+      description: "Where any return on the order stands — Shopify's `returnStatus`. `none` when no return holds goods; `requested` while one awaits staff; `in_progress` once approved and awaiting its goods; `partially_returned` / `returned` once received goods cover some / every unit on the order. Read-only: `returns` stamps it, and `delivered` stays terminal — a return is its own object, not an order status."
     WithdrawBlockedReason:
       type: string
       enum:
@@ -17576,6 +16159,90 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CreditNoteSummary"
+    RefundStatus:
+      type: string
+      enum:
+        - pending
+        - succeeded
+        - failed
+    RefundReason:
+      type: string
+      enum:
+        - cancellation
+        - goodwill
+        - return
+        - late_payment
+        - external
+      description: "Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to; `late_payment` — the money arrived after the order could no longer be paid (its stock reservation had expired or it was cancelled), so the sale was lost and the money went back. The buyer is mailed it like a cancellation's refund. `external` — the refund was made in the payment provider's own dashboard, not here: the application found it and recorded it so the credit note, the buyer's mail and the order's state follow; it is `succeeded` from the start and carries the provider's own amount and date."
+    RefundFailureReason:
+      type: string
+      enum:
+        - declined
+        - insufficient_funds
+        - expired_or_canceled_card
+        - lost_or_stolen_card
+        - provider_removed
+        - provider_unavailable
+        - unknown
+        - canceled
+        - disputed
+      description: |-
+        Why the provider last refused a refund, as a closed code. Staff only (`display:Payment`). `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
+        Money did NOT move for `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` (the payment's provider is no longer installed, so nothing was asked): the refund may be marked returned by hand once the money went back another way. `declined`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` are final and are not retried; `insufficient_funds` (the shop's own provider balance is short) and the unclear `provider_unavailable` and `unknown` are retried with a growing delay. An unclear refusal may have gone through, so it is never offered for hand settlement.
+        `disputed`: the buyer's bank took the money back in a dispute (chargeback). It is final like the refusals above, and it is never offered for hand settlement: the bank already returned the money.
+        `canceled` is not a refusal: staff voided the refund (`POST /payments/{id}/refunds/{refundId}/cancel`). Nothing was sent, it is never retried and it can neither be settled by hand nor canceled again.
+    Refund:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - amount
+        - currency
+        - status
+        - reason
+        - createdAt
+      description: One attempt to give money back — a record per attempt, not a field on the payment. The idempotency key is stored but never published. The provider's refund id and a failed refund's `failureReason` go to staff only (`display:Payment`); the provider's own error wording stays in the logs.
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        amount:
+          type: number
+          format: double
+          minimum: 0
+          description: The amount returned, in the payment's own `currency`.
+        currency:
+          type: string
+          description: ISO-4217 currency code, copied from the payment.
+        status:
+          allOf:
+            - $ref: "#/components/schemas/RefundStatus"
+          description: "`pending` while the provider is being asked (or, on a hand-paid payment, until an operator reports the money back); `failed` when it refused — the sweep retries it with the same idempotency key unless the refusal is final, and an operator may report it returned by hand when the money provably did not move (see `RefundFailureReason`); `succeeded` once the money is confirmed back, or reported back by the operator. A `failed` refund with `failureReason: canceled` was voided by staff and is closed for good."
+        reason:
+          $ref: "#/components/schemas/RefundReason"
+        returnId:
+          $ref: "#/components/schemas/Id"
+        settledAt:
+          type: string
+          format: date-time
+          description: When the refund succeeded. Absent while it has not.
+        settledByHand:
+          type: boolean
+          description: "`true` when an operator reported this refund's money returned outside the application (`POST /payments/{id}/refunds/{refundId}/settle`): a hand-paid payment's refund, or a card refund the provider refused. Per refund. Absent otherwise."
+        providerRefundRef:
+          type: string
+          description: The provider's id for the refund (Stripe's `re_…`). Staff only.
+        failureReason:
+          $ref: "#/components/schemas/RefundFailureReason"
+        owedAnotherWay:
+          type: boolean
+          description: '`true` while this refund is open and the money cannot go back to the card: the provider refused it for good, or took it back after settling it. The buyer is emailed to agree how they would like to receive it, at no cost to them (Consumer Rights Directive Art. 13(1)), and the order page says so instead of "retried automatically". Carries no reason: that stays staff-only. Absent otherwise.'
+        reversedAt:
+          type: string
+          format: date-time
+          description: "When the provider took this refund back (a bank sent the money back, or the provider reported the refund failed). Set once; a reversed refund is `failed` again, counts against what is left, and is owed another way: an operator pays it and presses mark-returned (`actions.settleByHand`). The credit note issued when it first settled stays. Absent otherwise."
+        createdAt:
+          type: string
+          format: date-time
     PaymentDisplayStatus:
       type: string
       enum:
@@ -17782,6 +16449,76 @@ components:
           type: string
           format: date-time
           description: When the money arrived. Must not be in the future. Defaults to now.
+    FulfillmentOrderKind:
+      type: string
+      enum:
+        - physical
+        - digital
+      description: "`digital` when no line rides in a parcel; its act is `fulfill`, not a shipment."
+    FulfillmentOrderStatus:
+      type: string
+      enum:
+        - open
+        - in_progress
+        - on_hold
+        - closed
+        - cancelled
+      description: Where a fulfillment order stands (Shopify's names). `open` until something ships; `in_progress` once part of it has shipped and lines remain; `on_hold` while staff, or the stock it awaits, holds it back; `closed` once nothing remains and something shipped from it; `cancelled` once nothing remains and nothing ever shipped from it.
+    FulfillmentOrderLine:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - title
+        - quantity
+        - shippedQuantity
+        - cancelledQuantity
+        - remaining
+      description: One product on a fulfillment order, with how much has shipped, been cancelled and still remains.
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+          description: The product's title as the order froze it.
+        quantity:
+          type: integer
+          minimum: 1
+          description: Units this fulfillment order carries.
+        shippedQuantity:
+          type: integer
+          minimum: 0
+        cancelledQuantity:
+          type: integer
+          minimum: 0
+          description: Units cancelled before they shipped — a remainder cancel.
+        remaining:
+          type: integer
+          minimum: 0
+          description: "`quantity − shippedQuantity − cancelledQuantity`, computed here so no client counts."
+    FulfillmentHoldNotice:
+      type: string
+      enum:
+        - awaiting_stock
+        - check_address
+        - delayed
+      description: "What a hold means to the BUYER, whatever staff's reason: `awaiting_stock` (the goods are not here yet), `check_address` (the buyer can act: the address needs a look), `delayed` (held for a check, said plainly). A reason that must stay quiet, such as `high_risk`, reads as `delayed`, so a notice never reveals a screening result. The reason itself (`FulfillmentHoldReason`) is staff's."
+    FulfillmentHoldReason:
+      type: string
+      enum:
+        - awaiting_stock
+        - incorrect_address
+        - high_risk
+        - other
+      description: Why a fulfillment order is on hold (Shopify's hold reasons). `awaiting_stock` is set only by the allocation of stock, and released only by it; the other three are staff's.
+    FulfillmentCancelReason:
+      type: string
+      enum:
+        - buyer
+        - staff
+        - order
+        - found
+      description: "Who cancelled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `order`: the whole order was cancelled. `found`: the lost parcel turned up, so the units owed for it are no longer owed (no refund)."
     FulfillmentOrderActions:
       type: object
       additionalProperties: false
@@ -17878,6 +16615,35 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/FulfillmentOrder"
+    ShipmentStatus:
+      type: string
+      enum:
+        - shipped
+        - delivered
+        - lost
+      description: "The tail of the order's lifecycle, as the carrier sees it. `lost`: staff reported the parcel lost or damaged in transit, so its units are open again; it can still become `delivered` if it turns up and nothing was shipped or cancelled meanwhile."
+    ShipmentLine:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - title
+        - quantity
+      description: One product in a shipment.
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+    ShipmentLostReason:
+      type: string
+      enum:
+        - lost
+        - damaged
+      description: "Why the parcel will not arrive. `lost`: the carrier lost it. `damaged`: it was damaged in transit, reported before its arrival was recorded (damage found after the buyer has the goods is a return)."
     ShipmentActions:
       type: object
       additionalProperties: false
@@ -18321,6 +17087,24 @@ components:
           maxLength: 1000
           minLength: 1
           description: Required exactly when `forced` is `true`.
+    ReturnStatus:
+      type: string
+      enum:
+        - requested
+        - approved
+        - declined
+        - received
+        - closed
+        - canceled
+      description: "Where a return stands: `requested → approved → received → closed`, or `requested → declined`, or `approved → canceled` (the goods never came). `canceled` is final and is not `closed`: it holds no units and counts as no goods back. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`."
+    ReturnReason:
+      type: string
+      enum:
+        - withdrawal
+        - defective
+        - wrong_item
+        - other
+      description: Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
     ReturnSort:
       type: array
       minItems: 1
@@ -18392,6 +17176,14 @@ components:
         - window_closed
         - excluded_goods
       description: "A rule staff waived when they opened the return for a buyer: `window_closed` — the reason's deadline had passed when the buyer asked; `excluded_goods` — a line is goods Art. 16 takes the right of withdrawal away from."
+    ReturnDeclineReason:
+      type: string
+      enum:
+        - return_period_ended
+        - not_returnable
+        - no_defect_found
+        - other
+      description: "Why staff declined, as a code the buyer reads in their own language and a shop can count: `return_period_ended` — past the window; `not_returnable` — exempt from returns (an Art. 16 exception) or sold as final sale; `no_defect_found` — a guarantee claim where the goods conform; `other` — see the message."
     ReturnActions:
       type: object
       additionalProperties: false
@@ -19325,6 +18117,14 @@ components:
           - -expiresAt
           - lastUsedAt
           - -lastUsedAt
+    ApiKeyStatus:
+      type: string
+      enum:
+        - active
+        - expired
+        - revoked
+        - suspended
+      description: "Whether the credential works right now, decided by the server. `revoked` and `expired` are final. `suspended` means the person who minted it can no longer sign in (banned, soft-deleted or erased): the key is refused with 401 and comes back by itself if they do. Checked in that order, so a revoked key never reads as `suspended`."
     ApiKeyActions:
       type: object
       additionalProperties: false
@@ -19555,6 +18355,40 @@ components:
           description: One result per submitted line, in request order.
           items:
             $ref: "#/components/schemas/MergeLineResult"
+    OrderTimelineType:
+      type: string
+      enum:
+        - created
+        - paid
+        - processing
+        - shipped
+        - delivered
+        - cancelled
+        - status_overridden
+        - payment_declined
+        - refund_issued
+        - refund_settled
+        - refund_failed
+        - refund_canceled
+        - refund_reversed
+        - shipment_shipped
+        - shipment_delivered
+        - shipment_lost
+        - fulfillment_held
+        - fulfillment_released
+        - remainder_cancelled
+        - return_requested
+        - return_approved
+        - return_declined
+        - return_received
+        - return_closed
+        - return_canceled
+        - invoice_issued
+        - credit_note_issued
+        - release_date_moved
+        - delay_notice_sent
+        - address_corrected
+      description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`. Shipments: `shipment_shipped`, `shipment_delivered`, `shipment_lost`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`, `refund_reversed`."
     OrderTimelineEntry:
       type: object
       additionalProperties: false
@@ -20303,6 +19137,12 @@ components:
           - -title
           - status
           - -status
+    ExampleStatus:
+      type: string
+      enum:
+        - draft
+        - published
+        - archived
     ExampleActions:
       type: object
       additionalProperties: false
@@ -20450,6 +19290,459 @@ components:
         imageUpload:
           type: string
           format: binary
+    NotificationAudience:
+      type: string
+      enum:
+        - own
+        - staff
+      description: "Whose message this is. `own`: about the caller as a person or buyer. `staff`: a work notice sent because the caller's role does that work, not because it concerns them."
+    ProductTitles:
+      type: object
+      additionalProperties:
+        type: string
+    CartLineRemovedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - titles
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        titles:
+          $ref: "#/components/schemas/ProductTitles"
+    NotificationSeverity:
+      type: string
+      description: Meaning, not look — a client picks the colour. The four words most notification APIs share (Ant Design, Atlassian flags).
+      enum:
+        - info
+        - success
+        - warning
+        - error
+    NotificationCartLineRemoved:
+      type: object
+      additionalProperties: false
+      description: A product left the catalogue and left the caller's cart with it.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - notifications.cart-line-removed
+        params:
+          $ref: "#/components/schemas/CartLineRemovedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationWishlistItemRemoved:
+      type: object
+      additionalProperties: false
+      description: A product left the catalogue and left the caller's wishlist with it.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - notifications.wishlist-item-removed
+        params:
+          $ref: "#/components/schemas/CartLineRemovedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    CartMergeRefusedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - lines
+      properties:
+        lines:
+          type: array
+          description: The guest-cart lines `POST /cart/merge` could not add at all.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - productId
+              - requested
+              - titles
+            properties:
+              productId:
+                $ref: "#/components/schemas/Id"
+              requested:
+                type: integer
+                minimum: 1
+              titles:
+                $ref: "#/components/schemas/ProductTitles"
+    NotificationCartMergeRefused:
+      type: object
+      additionalProperties: false
+      description: Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - notifications.cart-merge-refused
+        params:
+          $ref: "#/components/schemas/CartMergeRefusedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    FulfillmentDelayedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - fulfillmentOrderId
+        - titles
+        - agreedAt
+      description: "What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised and the date now expected (absent when there is none)."
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+        titles:
+          type: array
+          description: The waiting products' titles, as the order froze them.
+          items:
+            type: string
+        agreedAt:
+          type: string
+          format: date-time
+        expectedAt:
+          type: string
+          format: date-time
+    NotificationFulfillmentDelayed:
+      type: object
+      additionalProperties: false
+      description: A preorder the caller paid for will arrive later than promised; cancelling is open and silence keeps waiting.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - notifications.fulfillment-delayed
+        params:
+          $ref: "#/components/schemas/FulfillmentDelayedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    FulfillmentHeldParams:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - fulfillmentOrderId
+        - notice
+      description: "What the buyer needs to read a hold notice: which order and fulfillment order, whether the address needs a look (`check_address`) or the order is only `delayed`, and the sentence staff wrote for them, if any. Never staff's reason."
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+        notice:
+          type: string
+          enum:
+            - check_address
+            - delayed
+        message:
+          type: string
+          maxLength: 500
+    NotificationFulfillmentHeld:
+      type: object
+      additionalProperties: false
+      description: Part of an order the caller bought is held back, and they can act (check the address) or have a message from the shop.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - notifications.fulfillment-held
+        params:
+          $ref: "#/components/schemas/FulfillmentHeldParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    ShipmentLostParams:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - shipmentId
+        - reason
+      description: "What the buyer needs to read a lost-parcel notice: which order and shipment, whether it was lost or damaged in transit, the sentence staff wrote for them if any, and the units the shelf could not cover again with the date they are now expected (absent when everything is being sent again from the shelf)."
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        shipmentId:
+          $ref: "#/components/schemas/Id"
+        reason:
+          type: string
+          enum:
+            - lost
+            - damaged
+        message:
+          type: string
+          maxLength: 500
+        owed:
+          type: array
+          description: The titles of the products still to be restocked, as the order froze them.
+          items:
+            type: string
+        expectedAt:
+          type: string
+          format: date-time
+    NotificationShipmentLost:
+      type: object
+      additionalProperties: false
+      description: A parcel the caller was waiting for was reported lost or damaged in transit; the shop sends it again or refunds.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - notifications.shipment-lost
+        params:
+          $ref: "#/components/schemas/ShipmentLostParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationStockAlert:
+      type: object
+      additionalProperties: false
+      description: A product the caller asked to be told about can be ordered again. Sent once, then the request is gone.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - notifications.stock-alert
+        params:
+          $ref: "#/components/schemas/CartLineRemovedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    PurchaseHoldPlacedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - userId
+        - until
+      description: "The shop's rule paused a buyer's checkout. Ids and instants only: the account's own page has the rest."
+      properties:
+        userId:
+          $ref: "#/components/schemas/Id"
+        until:
+          type: string
+          format: date-time
+          description: When the pause ends by itself.
+    NotificationStaffPurchaseHoldPlaced:
+      type: object
+      additionalProperties: false
+      description: A buyer's checkout was paused by the shop's cancellation rule; staff who can ban decide whether to step in.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - notifications.staff.purchase-hold-placed
+        params:
+          $ref: "#/components/schemas/PurchaseHoldPlacedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    WebhookDisabledParams:
+      type: object
+      additionalProperties: false
+      required:
+        - subscriptionId
+      description: A webhook subscription was switched off after repeated delivery failures.
+      properties:
+        subscriptionId:
+          $ref: "#/components/schemas/Id"
+    NotificationStaffWebhookDisabled:
+      type: object
+      additionalProperties: false
+      description: A webhook subscription was switched off after repeated failures; staff who manage webhooks fix the endpoint and re-enable it.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - notifications.staff.webhook-disabled
+        params:
+          $ref: "#/components/schemas/WebhookDisabledParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    Notification:
+      oneOf:
+        - $ref: "#/components/schemas/NotificationCartLineRemoved"
+        - $ref: "#/components/schemas/NotificationWishlistItemRemoved"
+        - $ref: "#/components/schemas/NotificationCartMergeRefused"
+        - $ref: "#/components/schemas/NotificationFulfillmentDelayed"
+        - $ref: "#/components/schemas/NotificationFulfillmentHeld"
+        - $ref: "#/components/schemas/NotificationShipmentLost"
+        - $ref: "#/components/schemas/NotificationStockAlert"
+        - $ref: "#/components/schemas/NotificationStaffPurchaseHoldPlaced"
+        - $ref: "#/components/schemas/NotificationStaffWebhookDisabled"
+      discriminator:
+        propertyName: code
+        mapping:
+          notifications.cart-line-removed: "#/components/schemas/NotificationCartLineRemoved"
+          notifications.wishlist-item-removed: "#/components/schemas/NotificationWishlistItemRemoved"
+          notifications.cart-merge-refused: "#/components/schemas/NotificationCartMergeRefused"
+          notifications.fulfillment-delayed: "#/components/schemas/NotificationFulfillmentDelayed"
+          notifications.fulfillment-held: "#/components/schemas/NotificationFulfillmentHeld"
+          notifications.shipment-lost: "#/components/schemas/NotificationShipmentLost"
+          notifications.stock-alert: "#/components/schemas/NotificationStockAlert"
+          notifications.staff.purchase-hold-placed: "#/components/schemas/NotificationStaffPurchaseHoldPlaced"
+          notifications.staff.webhook-disabled: "#/components/schemas/NotificationStaffWebhookDisabled"
     NotificationsResponse:
       type: object
       additionalProperties: false
@@ -20546,6 +19839,18 @@ components:
     SitemapDocument:
       type: string
       description: "A sitemap file (sitemaps.org 0.9): an `urlset` of `url` entries, or a `sitemapindex` of `sitemap` entries. Served as `application/xml`, not JSON."
+    StockAlert:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - createdAt
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        createdAt:
+          type: string
+          format: date-time
     StockAlertsResponse:
       type: object
       additionalProperties: false
@@ -20716,13 +20021,13 @@ x-error-codes:
     status: 400
     description: A multipart field name is too long (multer).
   LIMIT_FIELD_VALUE:
-    status: 400
+    status: 413
     description: A multipart field value is too long (multer).
   LIMIT_FILE_COUNT:
     status: 400
     description: A multipart upload carries too many files (multer).
   LIMIT_FILE_SIZE:
-    status: 400
+    status: 413
     description: An uploaded file exceeds this deployment's size limit (multer).
   LIMIT_PART_COUNT:
     status: 400
