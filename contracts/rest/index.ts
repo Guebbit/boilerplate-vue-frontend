@@ -369,11 +369,21 @@ export interface LanguageActions {
 }
 
 /**
- * One language as the manifest describes it: a merge of whatever the two tiers each know about it. A tag present in both appears once, carrying both apps.
+ * One language, as `GET /locales` lists it, `GET /locales/{locale}` reads it and every write on that URL answers it: a merge of whatever the two tiers each know about the tag. A tag present in both appears once, carrying both apps.
+ * A language that exists only as a deployed file has no row, hence no `id` and no timestamps, and every `actions` flag is `false`. Its existence means entries can be translated into it and a client can download the result — whether the API can answer a request in it is decided by a deployed file and nothing else.
  */
-export interface LocaleCapability {
+export interface Language {
+    id?: Id;
     tag: Locale;
+    /**
+     * The ISO 639-1 code at the front of `tag` — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.
+     * Derived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.
+     * @pattern ^[a-z]{2}$
+     */
+    baseLanguage: string;
+    /** English name, for an admin list. */
     name: string;
+    /** The language's own name, for a client's language picker. */
     nativeName: string;
     direction: LocaleDirection;
     active: boolean;
@@ -388,6 +398,8 @@ export interface LocaleCapability {
     /** @minimum 0 */
     revision: number;
     actions: LanguageActions;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 /**
@@ -395,7 +407,7 @@ export interface LocaleCapability {
  */
 export interface LocaleCapabilities {
     /** Every language, ordered by tag so the response is stable. */
-    locales: LocaleCapability[];
+    locales: Language[];
     default: Locale;
     fallback: Locale;
 }
@@ -414,31 +426,6 @@ export interface CreateLocaleRequest {
     nativeName: string;
     direction?: LocaleDirection;
     active?: boolean;
-}
-
-/**
- * A language registered in the DYNAMIC tier. Its existence means entries can be translated into it and a client can download the result — never that the API can answer a request in it, which is decided by a deployed file and nothing else.
- */
-export interface Language {
-    id: Id;
-    tag: Locale;
-    /**
-     * The ISO 639-1 code at the front of `tag` — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.
-     * Derived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.
-     * @pattern ^[a-z]{2}$
-     */
-    baseLanguage: string;
-    /** English name, for an admin list. */
-    name: string;
-    /** The language's own name, for a client's language picker. */
-    nativeName: string;
-    direction: LocaleDirection;
-    active: boolean;
-    /** @minimum 0 */
-    revision: number;
-    actions: LanguageActions;
-    createdAt?: string;
-    updatedAt?: string;
 }
 
 /**
@@ -464,20 +451,6 @@ export interface LocaleAppDescriptor {
 export interface LocaleApps {
     /** @minItems 1 */
     apps: LocaleAppDescriptor[];
-}
-
-/**
- * Nested key/value dictionary, the same shape the API loads.
- */
-export type LocaleDictionaryMessages = { [key: string]: unknown };
-
-/**
- * The API's OWN message dictionary for one language — its API-response copy and nothing else. It is never a client's UI dictionary: the two are authored and deployed in separate repositories, and mixing them would put view copy in the API's keyspace. A client that wants these merges them under a namespace it reserves for the API, never at the root.
- */
-export interface LocaleDictionary {
-    locale: Locale;
-    /** Nested key/value dictionary, the same shape the API loads. */
-    messages: LocaleDictionaryMessages;
 }
 
 export interface ReplaceLocaleRequest {
@@ -509,6 +482,20 @@ export interface UpdateLocaleRequest {
      */
     nativeName?: string;
     direction?: LocaleDirection;
+}
+
+/**
+ * Nested key/value dictionary, the same shape the API loads.
+ */
+export type LocaleDictionaryMessages = { [key: string]: unknown };
+
+/**
+ * The API's OWN message dictionary for one language — its API-response copy and nothing else. It is never a client's UI dictionary: the two are authored and deployed in separate repositories, and mixing them would put view copy in the API's keyspace. A client that wants these merges them under a namespace it reserves for the API, never at the root.
+ */
+export interface LocaleDictionary {
+    locale: Locale;
+    /** Nested key/value dictionary, the same shape the API loads. */
+    messages: LocaleDictionaryMessages;
 }
 
 /**
@@ -1606,6 +1593,41 @@ export interface PasswordResetConfirmRequest {
 export interface RefreshTokenResponse {
     /** New access JWT */
     token: string;
+}
+
+/**
+ * `building` until the background job settles, then `ready` or `failed`. A `building` export older than the build limit reads as `failed`. Asking again after `ready` or `failed` replaces the export with a new `building` one.
+ */
+export type AccountExportStatus = (typeof AccountExportStatus)[keyof typeof AccountExportStatus];
+
+export const AccountExportStatus = {
+    building: 'building',
+    ready: 'ready',
+    failed: 'failed'
+} as const;
+
+/**
+ * What the caller may do with the export right now.
+ */
+export type AccountExportActions = {
+    /** `GET /account/export/file` will answer the file: the export is `ready`. */
+    download: boolean;
+    /** `POST /account/export` would start a new build. `false` while one is `building`: asking then only returns that one. */
+    request: boolean;
+};
+
+/**
+ * The caller's data export and where it stands. `POST /account/export` answers it (always `building`) and `GET /account/export` reads it.
+ */
+export interface AccountExport {
+    id: Id;
+    /** `building` until the background job settles, then `ready` or `failed`. A `building` export older than the build limit reads as `failed`. Asking again after `ready` or `failed` replaces the export with a new `building` one. */
+    status: AccountExportStatus;
+    createdAt: string;
+    /** When the file is deleted: the retention (`NODE_ACCOUNT_EXPORT_TTL_DAYS`) counted from the moment the build finished. Present only when `status` is `ready`. */
+    expiresAt?: string;
+    /** What the caller may do with the export right now. */
+    actions: AccountExportActions;
 }
 
 export interface ExportSession {
@@ -2824,22 +2846,6 @@ export interface AccountExportResponse {
     notifications: Notification[];
     staffNotifications: StaffNoticeExport[];
     stockAlerts: StockAlert[];
-}
-
-/**
- * `building` on a fresh request. A request never answers `ready` or `failed`: asking again after either REPLACES the export with a new `building` one.
- */
-export type AccountExportRequestStatus =
-    (typeof AccountExportRequestStatus)[keyof typeof AccountExportRequestStatus];
-
-export const AccountExportRequestStatus = {
-    building: 'building'
-} as const;
-
-export interface AccountExportRequest {
-    id: Id;
-    /** `building` on a fresh request. A request never answers `ready` or `failed`: asking again after either REPLACES the export with a new `building` one. */
-    status: AccountExportRequestStatus;
 }
 
 export interface LoginTwoFactorRequest {
@@ -7323,21 +7329,23 @@ export const listLocaleApps = (options?: SecondParameter<typeof orvalMutator<Loc
 };
 
 /**
- * This API's own dictionary for one language — tier 1, the deployed files.
+ * One language, in the shape `GET /locales` lists it and every write on this URL
+ * answers: a merge of what the two tiers know about the tag.
  *
- * Normally unnecessary: the API resolves its keys itself and puts finished text on
- * the wire. It earns its place when no response arrives at all (a network failure, a
- * bare 502) and the client must produce the copy itself, in the active language.
+ * Answered under the same caller scoping as the list. A registered language that is
+ * switched off is `404` to a visitor and shown to a holder of `display:Locale`; a
+ * language with only a deployed file is `200` with `source: static`, no `id` or
+ * timestamps (it has no row) and every `actions` flag `false`.
  *
- * Not to be confused with `GET /locales/{locale}/messages`, which serves the client's
- * own copy out of the database.
- * @summary API message dictionary
+ * `POST /locales` answers `Location` at this URL, so following it reads what was
+ * created.
+ * @summary Read a language
  */
-export const getLocaleDictionary = (
-    locale: Locale,
-    options?: SecondParameter<typeof orvalMutator<LocaleDictionary>>
+export const getLocale = (
+    locale: string,
+    options?: SecondParameter<typeof orvalMutator<Language>>
 ) => {
-    return orvalMutator<LocaleDictionary>({ url: `/locales/${locale}`, method: 'GET' }, options);
+    return orvalMutator<Language>({ url: `/locales/${locale}`, method: 'GET' }, options);
 };
 
 /**
@@ -7438,8 +7446,29 @@ export const deleteLocale = (
 };
 
 /**
+ * This API's own dictionary for one language — tier 1, the deployed files.
+ *
+ * Normally unnecessary: the API resolves its keys itself and puts finished text on
+ * the wire. It earns its place when no response arrives at all (a network failure, a
+ * bare 502) and the client must produce the copy itself, in the active language.
+ *
+ * Not to be confused with `GET /locales/{locale}/messages`, which serves the client's
+ * own copy out of the database.
+ * @summary API message dictionary
+ */
+export const getLocaleDictionary = (
+    locale: Locale,
+    options?: SecondParameter<typeof orvalMutator<LocaleDictionary>>
+) => {
+    return orvalMutator<LocaleDictionary>(
+        { url: `/locales/${locale}/dictionary`, method: 'GET' },
+        options
+    );
+};
+
+/**
  * The dynamic dictionary for one language, built from its stored entries into the
- * same nested shape `GET /locales/{locale}` serves — so a client has ONE merge path
+ * same nested shape `GET /locales/{locale}/dictionary` serves — so a client has ONE merge path
  * for both tiers rather than two.
  *
  * ONE frontend app's rows — the client's own keyspace, the one named by `app`
@@ -8389,14 +8418,14 @@ export const updateAddressWithMergePatchJson = (
 };
 
 /**
- * Removes one entry of the caller's own book. Removing the default promotes the oldest remaining entry, so a non-empty book always has exactly one default.
+ * Removes one entry of the caller's own book. Removing the default promotes the oldest remaining entry, so a non-empty book always has exactly one default; a client showing the book refetches it.
  * @summary Remove an address
  */
 export const removeAddress = (
     addressId: Id,
-    options?: SecondParameter<typeof orvalMutator<AddressesResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<AddressesResponse>(
+    return orvalMutator<NoContentResponse>(
         { url: `/account/addresses/${addressId}`, method: 'DELETE' },
         options
     );
@@ -8611,27 +8640,39 @@ export const refreshToken = (
 };
 
 /**
- * Starts "give me my data" (Art. 15, 20) and answers at once with `202` and the export's `id` and `status`. The file is built in the background from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail — and a LINK to it is mailed to the account's address when it is ready, never the data itself. Fetch it with `GET /account/export`.
+ * Starts "give me my data" (Art. 15, 20) and answers at once with `202`, the export's status (`AccountExport`) and `Location: /account/export`, the status monitor to poll (RFC 9110 §15.3.3). The file is built in the background from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail — and a LINK to it is mailed to the account's address when it is ready, never the data itself. Check on it with `GET /account/export`, fetch it with `GET /account/export/file`.
  *
  * One live export per account. Asking while one is `building` returns that one; asking after one is `ready` or `failed` replaces it (the old file and record are deleted first). A file is kept for `NODE_ACCOUNT_EXPORT_TTL_DAYS` days. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
  *
- * Starting a NEW build costs one mail from the per-mailbox mail budget, since it ends in a mailed link: a spent budget answers `429`, and the previous export is left in place. Asking while one is `building` is not charged. Needs a fresh session (sensitive tier: `401 REAUTH_REQUIRED`), as does downloading the file.
+ * Starting a NEW build costs one mail from the per-mailbox mail budget, since it ends in a mailed link: a spent budget answers `429`, and the previous export is left in place. Asking while one is `building` is not charged. Needs a fresh session (sensitive tier: `401 REAUTH_REQUIRED`), as does downloading the file; reading the status does not.
  * @summary Request an export of the caller's own data
  */
 export const requestAccountExport = (
-    options?: SecondParameter<typeof orvalMutator<AccountExportRequest>>
+    options?: SecondParameter<typeof orvalMutator<AccountExport>>
 ) => {
-    return orvalMutator<AccountExportRequest>({ url: `/account/export`, method: 'POST' }, options);
+    return orvalMutator<AccountExport>({ url: `/account/export`, method: 'POST' }, options);
 };
 
 /**
- * Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. An account has one live export, so there is no id to name: the caller's own is the one served. A FRESH session (`requireFreshAuth`), same as the request. `404` when the caller has none, it is still `building`, `failed`, or already gone (past its retention): the caller cannot tell these apart, by design.
+ * The status of the caller's export: `building`, `ready` or `failed`, with `createdAt`, and `expiresAt` once it is `ready`. Reading it is not a download, so it needs a session but not a fresh one: it carries dates and a state, no personal data.
+ * An account has one export, so there is no id to name. `404` only when there is none: never asked for, already deleted, or past its retention and not yet swept (that last one counts as none). A `building` export older than the build limit reads as `failed`. The file itself is at `GET /account/export/file`.
+ * @summary Check on the caller's own data export
+ */
+export const getAccountExport = (options?: SecondParameter<typeof orvalMutator<AccountExport>>) => {
+    return orvalMutator<AccountExport>({ url: `/account/export`, method: 'GET' }, options);
+};
+
+/**
+ * Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. An account has one export, so there is no id to name: the caller's own is the one served. A FRESH session (`requireFreshAuth`), same as the request. `404` unless the export is `ready` and within its retention. A `ready` export whose file is missing from the store answers `404` too: the file honestly does not exist.
  * @summary Download an export of the caller's own data
  */
 export const downloadAccountExport = (
     options?: SecondParameter<typeof orvalMutator<AccountExportResponse>>
 ) => {
-    return orvalMutator<AccountExportResponse>({ url: `/account/export`, method: 'GET' }, options);
+    return orvalMutator<AccountExportResponse>(
+        { url: `/account/export/file`, method: 'GET' },
+        options
+    );
 };
 
 /**
@@ -12115,15 +12156,16 @@ export type GetSecurityTxtResult = NonNullable<Awaited<ReturnType<typeof getSecu
 export type GetLocalesResult = NonNullable<Awaited<ReturnType<typeof getLocales>>>;
 export type CreateLocaleResult = NonNullable<Awaited<ReturnType<typeof createLocale>>>;
 export type ListLocaleAppsResult = NonNullable<Awaited<ReturnType<typeof listLocaleApps>>>;
-export type GetLocaleDictionaryResult = NonNullable<
-    Awaited<ReturnType<typeof getLocaleDictionary>>
->;
+export type GetLocaleResult = NonNullable<Awaited<ReturnType<typeof getLocale>>>;
 export type ReplaceLocaleResult = NonNullable<Awaited<ReturnType<typeof replaceLocale>>>;
 export type UpdateLocaleResult = NonNullable<Awaited<ReturnType<typeof updateLocale>>>;
 export type UpdateLocaleWithMergePatchJsonResult = NonNullable<
     Awaited<ReturnType<typeof updateLocaleWithMergePatchJson>>
 >;
 export type DeleteLocaleResult = NonNullable<Awaited<ReturnType<typeof deleteLocale>>>;
+export type GetLocaleDictionaryResult = NonNullable<
+    Awaited<ReturnType<typeof getLocaleDictionary>>
+>;
 export type GetLocaleMessagesResult = NonNullable<Awaited<ReturnType<typeof getLocaleMessages>>>;
 export type ListLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof listLocaleEntries>>>;
 export type ListAppLocaleEntriesResult = NonNullable<
@@ -12240,6 +12282,7 @@ export type RefreshTokenResult = NonNullable<Awaited<ReturnType<typeof refreshTo
 export type RequestAccountExportResult = NonNullable<
     Awaited<ReturnType<typeof requestAccountExport>>
 >;
+export type GetAccountExportResult = NonNullable<Awaited<ReturnType<typeof getAccountExport>>>;
 export type DownloadAccountExportResult = NonNullable<
     Awaited<ReturnType<typeof downloadAccountExport>>
 >;

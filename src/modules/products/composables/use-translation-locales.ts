@@ -16,7 +16,7 @@
 import { ref } from 'vue';
 import { getLocales, LocaleDirection, LocaleSource } from '@api';
 import { runtimeValue } from '@/infrastructure/runtime-config';
-import type { LocaleCapability } from '@types';
+import type { Language } from '@types';
 
 /**
  * `GET /locales` is 404 once `locales` is uninstalled — the same
@@ -32,8 +32,9 @@ const configuredFallbackLocale = (): string =>
  * confirm the language exists (`@/i18n` has it bundled), not what apps or rows
  * the (unreachable) `locales` collection would otherwise report.
  */
-const fallbackOnlyManifest = (tag: string): LocaleCapability => ({
+const fallbackOnlyManifest = (tag: string): Language => ({
     tag,
+    baseLanguage: tag.slice(0, 2),
     name: tag,
     nativeName: tag,
     direction: LocaleDirection.ltr,
@@ -54,7 +55,7 @@ export const useTranslationLocales = () => {
      * Every locale the caller was offered — live ones and, for staff, draft ones (`active: false`).
      * What `TranslationTabs`'s `locales` prop renders.
      */
-    const locales = ref<LocaleCapability[]>([]);
+    const locales = ref<Language[]>([]);
 
     /**
      * The deployment's fallback locale — the tab that is always present and never removable.

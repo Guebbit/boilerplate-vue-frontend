@@ -32,7 +32,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useDictionaryAggregation } from '../composables/use-dictionary-aggregation.ts';
 import { useDictionaryCellEditor } from '../composables/use-dictionary-cell-editor.ts';
-import type { LocaleCapability } from '@types';
+import type { Language } from '@types';
 
 /**
  * The dictionary board: every key down the side, every language across the top, one cell each.
@@ -362,7 +362,7 @@ const handleCreateLanguage = (fields: {
     tag: string;
     name: string;
     nativeName: string;
-    direction: LocaleCapability['direction'];
+    direction: Language['direction'];
     active: boolean;
 }) => {
     clearCreateLanguageError();

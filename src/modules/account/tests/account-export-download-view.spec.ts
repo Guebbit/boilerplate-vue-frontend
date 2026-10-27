@@ -1,12 +1,14 @@
 /**
  * @module
- * Mounts the page the "your data export is ready" mail links to: it fetches nothing until the
- * visitor presses the button, saves what the API sends as a dated JSON file, and blocks in place
- * when the export is gone. `downloadAccountExport` is spied at the profile store.
+ * Mounts the page the "your data export is ready" mail links to: it reads the export's status
+ * (over the shared MSW server) but downloads nothing until the visitor presses the button, saves
+ * what the API sends as a dated JSON file, and blocks in place when the file is gone.
+ * `downloadAccountExport` is spied at the profile store.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
+import { http, HttpResponse } from 'msw';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import AccountExportDownload from '../views/AccountExportDownload.vue';
@@ -16,6 +18,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { server } from '../../../../tests/support/unit/msw-server.ts';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
@@ -48,15 +51,92 @@ const mountPage = () => {
     return { wrapper, download };
 };
 
+/**
+ * Answers the status read with an export, or with the 404 of an account that has none.
+ *
+ * @param body - The export, or `undefined` for none.
+ */
+const statusIs = (body?: Record<string, unknown>) =>
+    server.use(
+        http.get('*/account/export', () =>
+            body
+                ? HttpResponse.json(body)
+                : HttpResponse.json(aProblem(404, [{ code: 'NOT_FOUND', message: 'No export.' }]), {
+                      status: 404,
+                      headers: { 'Content-Type': 'application/problem+json' }
+                  })
+        )
+    );
+
+/** A ready export, kept for a week. */
+const READY = {
+    id: 'e1',
+    status: 'ready',
+    actions: { download: true, request: true },
+    createdAt: '2026-09-07T09:00:00.000Z',
+    expiresAt: '2026-09-14T10:00:00.000Z'
+};
+
 /** An export document with only the fields the page reads. */
 const DOCUMENT = { exportedAt: '2026-09-07T10:00:00.000Z', profile: { id: 'u1' } };
 
 beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    statusIs(READY);
     return loadLocale('en').then(() =>
         router.push('/en/account-export').then(() => router.isReady())
     );
+});
+
+describe('AccountExportDownload status', () => {
+    it('offers the download, and says until when, for a ready export', () => {
+        const { wrapper } = mountPage();
+
+        return flushPromises().then(() => {
+            expect(wrapper.text()).toContain('kept until');
+            expect(
+                wrapper.get('[data-test=account-export-download]').attributes('disabled')
+            ).toBeUndefined();
+        });
+    });
+
+    it('says it is still being built, with the download held back', () => {
+        statusIs({ ...READY, status: 'building', expiresAt: undefined });
+        const { wrapper } = mountPage();
+
+        return flushPromises().then(() => {
+            expect(wrapper.find('[data-test=account-export-building]').exists()).toBe(true);
+            expect(
+                wrapper.get('[data-test=account-export-download]').attributes('disabled')
+            ).toBeDefined();
+        });
+    });
+
+    it('says the last export failed, with the download held back', () => {
+        statusIs({ ...READY, status: 'failed', expiresAt: undefined });
+        const { wrapper } = mountPage();
+
+        return flushPromises().then(() => {
+            expect(wrapper.find('[data-test=account-export-failed]').exists()).toBe(true);
+            expect(
+                wrapper.get('[data-test=account-export-download]').attributes('disabled')
+            ).toBeDefined();
+        });
+    });
+
+    it('says an export is kept for a few days only once it knows there is none', () => {
+        statusIs();
+        const { wrapper } = mountPage();
+
+        expect(wrapper.find('[data-test=account-export-none]').exists()).toBe(false);
+        return flushPromises().then(() => {
+            expect(wrapper.find('[data-test=account-export-none]').exists()).toBe(true);
+            expect(
+                wrapper.get('[data-test=account-export-download]').attributes('disabled')
+            ).toBeDefined();
+        });
+    });
 });
 
 describe('AccountExportDownload', () => {
@@ -70,9 +150,8 @@ describe('AccountExportDownload', () => {
         const { wrapper, download } = mountPage();
         download.mockResolvedValue(DOCUMENT as never);
 
-        return wrapper
-            .get('[data-test=account-export-download]')
-            .trigger('click')
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=account-export-download]').trigger('click'))
             .then(flushPromises)
             .then(() => {
                 expect(download).toHaveBeenCalledExactlyOnceWith();
@@ -92,9 +171,8 @@ describe('AccountExportDownload', () => {
             aProblem(404, [{ code: 'NOT_FOUND', message: 'Export not found.' }])
         );
 
-        return wrapper
-            .get('[data-test=account-export-download]')
-            .trigger('click')
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=account-export-download]').trigger('click'))
             .then(flushPromises)
             .then(() => {
                 expect(downloadBlob).not.toHaveBeenCalled();
@@ -112,9 +190,8 @@ describe('AccountExportDownload', () => {
             aProblem(500, [{ code: 'INTERNAL_ERROR', message: 'Something broke.' }])
         );
 
-        return wrapper
-            .get('[data-test=account-export-download]')
-            .trigger('click')
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=account-export-download]').trigger('click'))
             .then(flushPromises)
             .then(() => {
                 expect(wrapper.get('[data-test=account-export-error]').text()).toContain(
@@ -128,9 +205,8 @@ describe('AccountExportDownload', () => {
         const { wrapper, download } = mountPage();
         download.mockResolvedValue(undefined);
 
-        return wrapper
-            .get('[data-test=account-export-download]')
-            .trigger('click')
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=account-export-download]').trigger('click'))
             .then(flushPromises)
             .then(() => {
                 expect(downloadBlob).not.toHaveBeenCalled();
@@ -149,8 +225,8 @@ describe('AccountExportDownload', () => {
         );
         const button = wrapper.get('[data-test=account-export-download]');
 
-        return button
-            .trigger('click')
+        return flushPromises()
+            .then(() => button.trigger('click'))
             .then(() => {
                 expect(button.attributes('disabled')).toBeDefined();
                 return button.trigger('click');

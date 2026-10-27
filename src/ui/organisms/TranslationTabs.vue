@@ -23,7 +23,7 @@ import { Plus, X } from 'lucide-vue-next';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 
 /**
- * One language the tab bar can offer — a `LocaleCapability`, narrowed to the fields this component
+ * One language the tab bar can offer — a `Language`, narrowed to the fields this component
  * reads. `active: false` is a DRAFT language: text typed into it is saved and kept, and not shown
  * to shoppers until the language is switched on. Absent means live.
  */

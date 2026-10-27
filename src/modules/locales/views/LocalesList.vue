@@ -12,7 +12,7 @@ export default {
 /**
  * @module
  * Route view: the languages board, a thin CRUD screen over the manifest — reads
- * `LocaleCapability` rows, writes through the store's explicit language wrappers, and opens the
+ * `Language` rows, writes through the store's explicit language wrappers, and opens the
  * shared create/edit dialog.
  */
 import ListEmptyState from '@/ui/molecules/ListEmptyState.vue';
@@ -28,7 +28,7 @@ import LanguageFormDialog from '../components/LanguageFormDialog.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
-import type { LocaleCapability } from '@types';
+import type { Language } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
@@ -38,7 +38,7 @@ import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
  * The languages board: every language the deployment offers, from both tiers, each stating what
  * it can actually do.
  *
- * The rows are `LocaleCapability` — the merged manifest — so a row is not always editable: a
+ * The rows are `Language` — the merged manifest — so a row is not always editable: a
  * `static`-only language exists as deployed files alone, with no dynamic record behind it for the
  * admin routes to touch. Those rows show their facts and no buttons, which is the honest
  * rendering of "the API can answer in this, and nobody has registered it for translation".
@@ -86,7 +86,7 @@ const languageDialog = ref<{
 /**
  * The row being edited; absent means the dialog is creating one.
  */
-const editing = ref<LocaleCapability | undefined>();
+const editing = ref<Language | undefined>();
 
 /**
  * The create/edit dialog's own blocked state — the form already validated clean, so anything here
@@ -97,7 +97,7 @@ const { message: saveError, report: reportSaveError, clear: clearSaveError } = u
 /**
  * Columns of the languages board.
  */
-const tableHeaders = computed<CoreDataTableHeader<LocaleCapability>[]>(() => [
+const tableHeaders = computed<CoreDataTableHeader<Language>[]>(() => [
     { title: t('locales-list-page.column-tag'), key: 'tag' },
     { title: t('locales-list-page.column-name'), key: 'name' },
     { title: t('locales-list-page.column-native-name'), key: 'nativeName' },
@@ -123,7 +123,7 @@ const openCreate = () => {
 /**
  * Opens the dialog against one row.
  */
-const openEdit = (language: LocaleCapability) => {
+const openEdit = (language: Language) => {
     editing.value = language;
     formOpen.value = true;
     clearSaveError();
@@ -140,7 +140,7 @@ const handleSave = (fields: {
     tag: string;
     name: string;
     nativeName: string;
-    direction: LocaleCapability['direction'];
+    direction: Language['direction'];
     active: boolean;
 }) => {
     const request = editing.value
@@ -189,7 +189,7 @@ const {
  * @returns A promise settling once the write has; a failure blocks the board in place
  *  ({@link deleteError}).
  */
-const handleSwitch = singleFlight((language: LocaleCapability, active: boolean) => {
+const handleSwitch = singleFlight((language: Language, active: boolean) => {
     clearDeleteError();
     return (
         active
@@ -222,7 +222,7 @@ const handleSwitch = singleFlight((language: LocaleCapability, active: boolean) 
  * @returns A promise settling once the viewer has answered and, if they accepted, the deletion
  *  has finished; a failure blocks the board in place ({@link deleteError}).
  */
-const handleDelete = singleFlight((language: LocaleCapability) => {
+const handleDelete = singleFlight((language: Language) => {
     return useDialogStore()
         .confirm({
             message: t(
