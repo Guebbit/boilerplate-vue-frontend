@@ -39,7 +39,7 @@ import {
     contractResponse
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import { anOrder, aProblem } from '../../../../tests/support/unit/fixtures.ts';
-import { answered, type Answer } from '../../../../tests/support/unit/cart-fixtures.ts';
+import { answered, type Answer } from '../../../../tests/support/unit/async-answers.ts';
 
 /**
  * The cart every read answers with: one line of two units.

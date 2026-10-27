@@ -17,15 +17,15 @@ import { getCart, updateCartItemById, setCartShippingMethod, checkout as apiChec
 import { useSessionStore, type SessionViewer } from '@/infrastructure/session.ts';
 import { loadLocale } from '@/i18n';
 import { asStub } from '../../../../tests/support/stub.ts';
+import { aCart } from './cart-fixtures.ts';
 import {
-    aCart,
     gate,
     lostAnswer,
     answered,
     type Answer
-} from '../../../../tests/support/unit/cart-fixtures.ts';
+} from '../../../../tests/support/unit/async-answers.ts';
 import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
-import { mountCartPage, router } from '../../../../tests/support/unit/mount-cart-page.ts';
+import { mountCartPage, router } from './mount-cart-page.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
 wireModulesIntoCore();

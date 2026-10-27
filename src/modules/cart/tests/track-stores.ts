@@ -3,7 +3,7 @@
  * from `cart-interleave.ts` because that one imports the generated client, which a spec that
  * mocks `@api` partially cannot afford.
  */
-import { useCartStore } from '@/modules/cart/store';
+import { useCartStore } from '../store';
 
 /**
  * The cart store, as a type.

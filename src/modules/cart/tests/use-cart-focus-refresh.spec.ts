@@ -11,8 +11,9 @@ import type { EffectScope } from 'vue';
 import { useCartFocusRefresh } from '../composables/use-cart-focus-refresh';
 import { useCartStore } from '../store';
 import { getCart } from '@api';
-import { aCart, answered } from '../../../../tests/support/unit/cart-fixtures.ts';
-import { ACTIONS, issue } from '../../../../tests/support/unit/cart-interleave.ts';
+import { aCart } from './cart-fixtures.ts';
+import { answered } from '../../../../tests/support/unit/async-answers.ts';
+import { ACTIONS, issue } from './cart-interleave.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
 wireModulesIntoCore();

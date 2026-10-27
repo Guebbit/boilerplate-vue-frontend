@@ -59,7 +59,7 @@ page reads.
 The barrel offers narrow handles on the store, never the store: `useProductLines` joins id-only
 lines to their records, `shelfStateOf` ranks the flags the API sent into one badge, and
 `invalidateProductsCache` drops the cached catalogue after a stock-moving write. Specs seed the
-dictionary through `tests/support/unit/products-store.ts`, so no production sibling holds the store.
+dictionary through `src/modules/products/tests/products-store.ts`, so no production sibling holds the store.
 :::
 
 ## How fresh the numbers are
