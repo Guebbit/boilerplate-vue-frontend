@@ -57,3 +57,27 @@ export const liveShardFiles = (
         throw new RangeError(`live shard ${String(index)}/${String(total)} is not a valid slice`);
     return liveShardSlices(files, durations, total)[index - 1];
 };
+
+/**
+ * What `E2E_SLICE` asks one runner to do: the antibot run, or slice `index` of `total`.
+ */
+export type SliceRequest = { kind: 'antibot' } | { kind: 'slice'; index: number; total: number };
+
+/**
+ * Reads the `E2E_SLICE` value a CI matrix job passes to the sharded runner.
+ *
+ * @param value - `antibot`, or `<index>/<total>` with a 1-based index; unset or blank means "no slicing"
+ * @returns the request, or undefined when the variable is unset (the local all-slices run)
+ * @throws {RangeError} when the value is neither form, or the index lies outside `1..total`
+ */
+export const parseSliceRequest = (value: string | undefined): SliceRequest | undefined => {
+    const text = value?.trim();
+    if (!text) return undefined;
+    if (text === 'antibot') return { kind: 'antibot' };
+    const match = /^(\d+)\/(\d+)$/.exec(text);
+    const index = Number(match?.[1]);
+    const total = Number(match?.[2]);
+    if (!match || index < 1 || total < 1 || index > total)
+        throw new RangeError(`E2E_SLICE=${text} is neither "antibot" nor "<index>/<total>"`);
+    return { kind: 'slice', index, total };
+};

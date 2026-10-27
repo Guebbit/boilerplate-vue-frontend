@@ -22,6 +22,13 @@ inputs:
         description: Where the checkout lands, relative to the workspace.
         required: false
         default: .backend
+    ref:
+        description: >-
+            Commit to check out. A matrix of jobs that must agree on the sibling (the e2e slices
+            compute one split from it) passes the sha one earlier job resolved; empty is the
+            repository's default branch.
+        required: false
+        default: ''
     report-failure:
         description: >-
             'true' to continue past a failed checkout and fail the job with a message naming the
@@ -67,6 +74,7 @@ runs:
               repository: ${{ inputs.repository }}
               path: ${{ inputs.path }}
               token: ${{ inputs.token }}
+              ref: ${{ inputs.ref }}
               # The token reads the backend repo once, here; the backend's own npm install runs
               # next and must not find it in `.git/config`.
               persist-credentials: false

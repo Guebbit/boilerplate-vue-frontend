@@ -3,7 +3,11 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { liveShardFiles, liveShardSlices } from '../../../../scripts/e2e/live-shard';
+import {
+    liveShardFiles,
+    liveShardSlices,
+    parseSliceRequest
+} from '../../../../scripts/e2e/live-shard';
 
 /** Five spec files to slice. */
 const FILES = ['a.cy.ts', 'b.cy.ts', 'c.cy.ts', 'd.cy.ts', 'e.cy.ts'];
@@ -55,4 +59,25 @@ describe('liveShardSlices', () => {
         expect(() => liveShardSlices(FILES, DURATIONS, 0)).toThrow(RangeError);
         expect(() => liveShardSlices(FILES, DURATIONS, 2.5)).toThrow(RangeError);
     });
+});
+
+describe('parseSliceRequest', () => {
+    it.each([undefined, '', '   '])('means "no slicing" for %j', (value) => {
+        expect(parseSliceRequest(value)).toBeUndefined();
+    });
+
+    it('reads the antibot run', () => {
+        expect(parseSliceRequest('antibot')).toEqual({ kind: 'antibot' });
+    });
+
+    it('reads <index>/<total>', () => {
+        expect(parseSliceRequest(' 3/5 ')).toEqual({ kind: 'slice', index: 3, total: 5 });
+    });
+
+    it.each(['0/5', '6/5', '1/0', '2', 'a/b', '1/2/3', '-1/5', 'Antibot'])(
+        'refuses %j',
+        (value) => {
+            expect(() => parseSliceRequest(value)).toThrow(RangeError);
+        }
+    );
 });

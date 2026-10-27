@@ -496,9 +496,31 @@ jobs:
                   BACKEND_PATH: .spec-sibling
               run: npx tsx scripts/pairing/check-spec-identity.ts
 
+    resolve-backend:
+        # One `git ls-remote` for the whole push, so every `test-e2e` slice checks out the SAME
+        # backend commit. Slices start minutes apart (the account runs 20 jobs at a time), and a
+        # backend that moved in between would change the demo backend under some slices only.
+        runs-on: ubuntu-latest
+        timeout-minutes: 2
+        permissions:
+            contents: read
+        outputs:
+            sha: ${{ steps.resolve.outputs.sha }}
+        steps:
+            - name: Resolve the paired backend's default branch
+              id: resolve
+              env:
+                  REPOSITORY: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
+                  TOKEN: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
+              run: |
+                  # `HEAD` is the remote's default branch; an unreachable repo leaves the output
+                  # empty, and the checkout step then reports it with the usual SPEC_SIBLING advice.
+                  sha=$(git ls-remote "https://x-access-token:${TOKEN}@github.com/${REPOSITORY}.git" HEAD | cut -f1 || true)
+                  echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+
     test-e2e:
         # Cypress against the paired backend's DEMO profile: the real API on an in-memory Mongo,
-        # one instance per shard, cache and queue disabled. Fast because nothing persists and
+        # one instance per slice, cache and queue disabled. Fast because nothing persists and
         # nothing is composed — `test-e2e-live` below is the job that attaches the real datastores,
         # and when the two disagree it wins. See docs/tools/demo-profile.md.
         #
@@ -506,24 +528,34 @@ jobs:
         # as `spec-identity` above does — with its dependencies installed, since the demo profile
         # runs through tsx.
         #
-        # Three shards, not the default four: each is a Chrome plus a demo backend plus a mongod,
-        # and four on this 4-vCPU runner starved each other (the paired backend's own e2e job saw
-        # eight specs miss a 15-second wait). 75 minutes covers the longer wall-clock.
-        #
-        # Twice, once per session mode (`GET /account/session-config`): the backend boots with
-        # `NODE_SESSION_MODE` set to the matrix value and the journeys read the same name, so
-        # both ways of staying signed in are driven through the real UI.
+        # A matrix, ONE SLICE PER RUNNER: the whole suite on one 4-vCPU runner measured ~178 min of
+        # Cypress time against a 75-minute limit. `E2E_SLICE` tells the runner which slice it owns
+        # (docs/tools/live-e2e.md#ci-slices). Two axes:
+        #   - session-mode: `GET /account/session-config`. The backend boots with `NODE_SESSION_MODE`
+        #     set to the value and the journeys read the same name, so both ways of staying signed
+        #     in are driven through the real UI.
+        #   - shard: 1..5 of the balanced split, plus `antibot`, the specs that need the
+        #     human-challenge provider on. Antibot runs in BOTH modes: the cookie leg has failures
+        #     of its own there that a jwt-only entry would hide.
+        # The slice count (5) is also in `E2E_SLICE` below; change both. Size it from a measured run.
+        needs: resolve-backend
         runs-on: ubuntu-latest
-        timeout-minutes: 75
+        timeout-minutes: 45
         strategy:
             fail-fast: false
             matrix:
                 session-mode: [jwt, cookie]
+                shard: [1, 2, 3, 4, 5]
+                include:
+                    - shard: antibot
+                      session-mode: jwt
+                    - shard: antibot
+                      session-mode: cookie
         permissions:
             contents: read
         env:
             E2E_SESSION_MODE: ${{ matrix.session-mode }}
-            E2E_SHARDS: 3
+            E2E_SLICE: ${{ matrix.shard == 'antibot' && 'antibot' || format('{0}/5', matrix.shard) }}
             # Where the backend checkout lands, and what scripts/pairing/paired-backend-path.ts resolves. Same
             # name and same value as e2e-live.yml, so the two e2e jobs describe one layout.
             BACKEND_PATH: .backend
@@ -567,24 +599,25 @@ jobs:
                   repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
                   token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
                   path: ${{ env.BACKEND_PATH }}
+                  ref: ${{ needs.resolve-backend.outputs.sha }}
                   report-failure: 'true'
                   no-backend-mode: 'The e2e suite boots its demo profile, so there is no backend-less mode'
-                  # Five demo backends start at once; see the input's own description.
+                  # Slice backends start together; see the input's own description.
                   setup-mongod: 'true'
 
             - name: Run e2e tests
               run: npm run test:e2e
 
             - name: Upload failing-shard logs
-              # `run-e2e-shards.ts` writes a failed shard's full Cypress output here. Uploaded because
+              # `run-shards.ts` writes a failed shard's full Cypress output here. Uploaded because
               # stderr is the one copy that can be lost to a truncated log, and once it is the
-              # failure is undiagnosable. `cancelled()` too: the job's 75-minute budget cancels it, and
+              # failure is undiagnosable. `cancelled()` too: the job's 45-minute budget cancels it, and
               # a plain `failure()` skips the upload on exactly the run that most needs the logs
               # (which shard was still running, and on which spec).
               if: failure() || cancelled()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: e2e-shard-logs-${{ matrix.session-mode }}
+                  name: e2e-shard-logs-${{ matrix.session-mode }}-${{ matrix.shard }}
                   path: reports/e2e/
                   retention-days: 14
                   if-no-files-found: ignore
@@ -596,7 +629,7 @@ jobs:
               if: always()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: a11y-reports-${{ matrix.session-mode }}
+                  name: a11y-reports-${{ matrix.session-mode }}-${{ matrix.shard }}
                   path: reports/a11y/
                   retention-days: 14
                   if-no-files-found: ignore
@@ -605,7 +638,7 @@ jobs:
               if: failure()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: cypress-screenshots-${{ matrix.session-mode }}
+                  name: cypress-screenshots-${{ matrix.session-mode }}-${{ matrix.shard }}
                   path: tests/e2e/screenshots
                   retention-days: 14
                   if-no-files-found: ignore
@@ -614,7 +647,7 @@ jobs:
               if: failure()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: cypress-videos-${{ matrix.session-mode }}
+                  name: cypress-videos-${{ matrix.session-mode }}-${{ matrix.shard }}
                   path: tests/e2e/videos
                   retention-days: 14
                   if-no-files-found: ignore
@@ -660,6 +693,7 @@ jobs:
             - typecheck
             - build
             - test-unit
+            - resolve-backend
             - test-e2e
             - test-e2e-live
             - spec-identity

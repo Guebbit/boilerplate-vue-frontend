@@ -35,6 +35,12 @@
  *
  * Wall-clock cannot go below the longest single spec, so the floor is `uploads.cy.ts` at ~86s no
  * matter how many shards are used.
+ *
+ * ── ONE SLICE PER RUNNER (CI) ────────────────────────────────────────────────────────────────────
+ * A CI runner has 4 vCPUs, so the whole suite on one runner starves its own shards and overruns
+ * the job limit. `E2E_SLICE=<i>/<N>` (or `antibot`) makes this process run only slice `i` of the
+ * same balanced split the nightly live matrix uses, as one local shard; the workflow's matrix
+ * supplies the other slices on other runners. See docs/tools/live-e2e.md#ci-slices.
  */
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -54,6 +60,7 @@ import { readSpecDurations } from './spec-durations';
 import { runWatched } from './shard-process';
 import { failScript } from '../fail-script';
 import { countFinishedSpecs, judgeShard } from './shard-verdict';
+import { liveShardFiles, parseSliceRequest } from './live-shard';
 
 /*
  * Two levels: this file is `scripts/e2e/run-shards.ts`, so one `..` reaches `scripts/`, where
@@ -156,19 +163,66 @@ const antibotSpecs = globSync(ANTIBOT_SPEC_GLOBS, { cwd: REPO_ROOT })
     .map((entry) => entry.split(path.sep).join('/'))
     .toSorted();
 
+/**
+ * `E2E_SLICE`: run ONE slice of the suite as the whole run, for a CI matrix job.
+ *
+ * `<index>/<total>` takes slice `index` of the same balanced split `print-live-shard.ts` prints
+ * (the nightly's), and `antibot` takes the antibot run. Every job in a matrix computes the same
+ * partition from the same inputs, so the slices cover the suite once between them. Unset is the
+ * local run: all slices, in parallel, on this machine.
+ */
+const sliceRequest = parseSliceRequest(process.env.E2E_SLICE);
+
+/**
+ * The functional shard for slice `index` of `total`, with its predicted load.
+ *
+ * @param index - this job's slice, 1-based
+ * @param total - how many slices the matrix has
+ */
+const sliceShard = (index: number, total: number) => {
+    const files = liveShardFiles(
+        specs.map(({ file }) => file),
+        durations,
+        index,
+        total
+    );
+    const load = weighted
+        .filter(({ file }) => files.includes(file))
+        .reduce((sum, { weight }) => sum + weight, 0);
+    return { files, load };
+};
+
+/** The functional shards this run owns: all of them locally, one slice (or none, for antibot) under `E2E_SLICE`. */
+const ownedFunctionalShards =
+    sliceRequest?.kind === 'slice'
+        ? [sliceShard(sliceRequest.index, sliceRequest.total)]
+        : sliceRequest?.kind === 'antibot'
+          ? []
+          : functionalShards;
+
 /** Every shard to run: the functional ones, then the antibot run when it has specs. */
 const active = [
-    ...functionalShards.map((shard) => ({ ...shard, antibot: false })),
-    ...(antibotSpecs.length > 0 ? [{ files: antibotSpecs, load: 0, antibot: true }] : [])
+    ...ownedFunctionalShards.map((shard) => ({ ...shard, antibot: false })),
+    ...(antibotSpecs.length > 0 && (sliceRequest === undefined || sliceRequest.kind === 'antibot')
+        ? [{ files: antibotSpecs, load: 0, antibot: true }]
+        : [])
 ];
 
+// An empty slice would "pass" having run nothing, the silent direction this runner guards against.
+if (active.length === 0 || active.some((shard) => shard.files.length === 0)) {
+    console.error(`\n[e2e-shard] E2E_SLICE=${process.env.E2E_SLICE ?? ''} selects no specs.\n`);
+    process.exit(2);
+}
+
 console.log(
-    `[e2e-shard] ${specs.length + antibotSpecs.length} specs across ${active.length} shard(s)` +
-        (antibotSpecs.length > 0
+    `[e2e-shard] ${active.reduce((sum, shard) => sum + shard.files.length, 0)} specs across ${active.length} shard(s)` +
+        (antibotSpecs.length > 0 && active.some((shard) => shard.antibot)
             ? ` (the last is the antibot run, ${antibotSpecs.length} spec(s))`
             : '') +
-        `; predicted wall-clock ~${Math.round(Math.max(...functionalShards.map((shard) => shard.load)))}s ` +
-        `(sequential is ~${Math.round(weighted.reduce((sum, spec) => sum + spec.weight, 0))}s)`
+        (ownedFunctionalShards.length > 0
+            ? `; predicted wall-clock ~${Math.round(Math.max(...ownedFunctionalShards.map((shard) => shard.load)))}s ` +
+              `(sequential is ~${Math.round(weighted.reduce((sum, spec) => sum + spec.weight, 0))}s)`
+            : '')
 );
 
 /**

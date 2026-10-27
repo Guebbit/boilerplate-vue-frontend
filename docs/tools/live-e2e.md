@@ -98,6 +98,23 @@ flowchart LR
 
 A spec that needs the backend booted differently gets its own backend, as the antibot run does: name the spec `<name>.antibot.cy.ts`-style, keep it out of the functional glob, and boot one more shard (`scripts/e2e/run-shards.ts`, the antibot entry). There is no mechanism beyond that. Idle goes through `cy.travelEverywhere`, and an oversize upload through a stubbed 413, so neither needs a knob.
 
+## CI slices
+
+The push gate's demo run (`ci.yml` `test-e2e`) is a matrix, one slice per runner, because the whole suite on one 4-vCPU runner measured ~178 min of Cypress time against a 75 min limit.
+
+```mermaid
+flowchart LR
+    R["resolve-backend<br/>pins the sibling sha"] --> M["matrix: shard 1..5, antibot<br/>x jwt, cookie"]
+    M --> S["E2E_SLICE=i/5 or antibot<br/>npm run test:e2e"]
+    S --> B["run-shards.ts:<br/>slice i of liveShardSlices,<br/>one local shard, own backend"]
+```
+
+- `E2E_SLICE=<i>/<N>` makes `run-shards.ts` run only slice `i` of `liveShardSlices` (the split `print-live-shard.ts` prints for the nightly). `E2E_SLICE=antibot` runs the antibot specs on a backend with the provider on. Unset is the local all-slices run, and `E2E_SHARDS` still sizes that.
+- A malformed value or an empty slice exits non-zero instead of passing having run nothing.
+- The antibot run is a matrix entry in both session modes: the cookie leg has its own antibot failures, and a jwt-only entry would hide them.
+- Every slice of one push must see the same sibling commit, or two slices compute different splits and a spec runs twice or never. `resolve-backend` runs `git ls-remote` once and each slice checks out that sha.
+- `N` (5) is written twice in the workflow, in the `shard` list and in `E2E_SLICE`; change both. Size it from one uncontended measured run, aiming at ~30 min per slice under the 45 min limit.
+
 ## Why the push tier is only a subset
 
 A full live run is minutes to hours, not seconds, and live CI must stay a signal people read. So the push tier is the smallest set that answers "does the real infrastructure work" — a real Mongo replica set, Redis, a real broker, a cookie over a real network — and the nightly is the full sweep. The price: a live-only break outside `@smoke` shows up the next morning, not on the push. Everything else is covered on the push by the demo run, which already runs every journey.
