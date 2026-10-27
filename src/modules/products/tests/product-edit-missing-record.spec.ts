@@ -51,11 +51,13 @@ const replace = vi.spyOn(router, 'replace').mockResolvedValue(undefined);
 /**
  * Mounts the edit page with the admin read rejecting the given way.
  *
- * @param rejection - what `GET /products/p1/admin` rejects with
+ * @param rejection - what `GET /products/p1` rejects with
  */
 const mountWithAdminRead = (rejection: Error) => {
-    vi.mocked(orvalMutator).mockImplementation((config: { url?: string }) =>
-        config.url === '/products/p1/admin' ? Promise.reject(rejection) : Promise.resolve(undefined)
+    vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) =>
+        config.url === '/products/p1' && config.method === 'GET'
+            ? Promise.reject(rejection)
+            : Promise.resolve(undefined)
     );
     return router.push('/en/products/p1/edit').then(() => {
         mount(ProductEdit, { props: { id: 'p1' }, global: { plugins: [router, vuetify, i18n] } });

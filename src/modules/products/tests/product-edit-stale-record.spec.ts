@@ -82,7 +82,9 @@ const PRECONDITION_FAILED = aProblem(412, [
  * How many times the admin record was read.
  */
 const adminReads = () =>
-    vi.mocked(orvalMutator).mock.calls.filter(([config]) => config.url === '/products/p1/admin')
+    vi
+        .mocked(orvalMutator)
+        .mock.calls.filter(([config]) => config.url === '/products/p1' && config.method === 'GET')
         .length;
 
 /**
@@ -92,8 +94,8 @@ const mountRefused = () => {
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) => {
         if (config.url === '/locales')
             return Promise.resolve(parseOrvalFixture('GET', '/locales', LOCALES_RESPONSE));
-        if (config.url === '/products/p1/admin')
-            return Promise.resolve(parseOrvalFixture('GET', '/products/p1/admin', echo({})));
+        if (config.url === '/products/p1' && config.method === 'GET')
+            return Promise.resolve(parseOrvalFixture('GET', '/products/p1', echo({})));
         // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
         if (config.method === 'PATCH') return Promise.reject(PRECONDITION_FAILED);
         return Promise.resolve(undefined);

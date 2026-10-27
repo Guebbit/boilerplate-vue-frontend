@@ -9,7 +9,7 @@
  *   matching `/orders/abc/invoice`, so an invoice response gets validated against the
  *   *order* schema — which fails, loudly, on a perfectly valid response.
  *
- *   **Order.** `find()` returns the first match, so a literal sibling (`/products/categories`)
+ *   **Order.** `find()` returns the first match, so a literal sibling (`/products/facets`)
  *   must be listed before a same-depth `{param}` one (`/products/{id}`) that would otherwise
  *   absorb it. Generated (`scripts/contracts/generate-route-table.ts`), sorted by
  *   ascending param count — this file no longer has to re-prove that ordering by hand, only that

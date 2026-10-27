@@ -98,19 +98,18 @@ JWT-based authentication. Login returns an `accessToken` in the body and sets a 
 
 Read endpoints are public. Write endpoints require a permission. `PUT` replaces a record whole; `PATCH` merges the fields it sends.
 
-| Method | Endpoint                | Auth       | Description                                    |
-| ------ | ----------------------- | ---------- | ---------------------------------------------- |
-| GET    | `/products`             | none       | List products                                  |
-| POST   | `/products/search`      | none       | Search with filters, or read a batch of ids    |
-| GET    | `/products/categories`  | none       | Catalogue facets: categories and tags, counted |
-| GET    | `/products/:id`         | none       | Single product detail                          |
-| GET    | `/products/:id/admin`   | permission | Every language a product has a row for         |
-| POST   | `/products`             | permission | Create product                                 |
-| PUT    | `/products/:id`         | permission | Replace a product                              |
-| PATCH  | `/products/:id`         | permission | Update the fields sent                         |
-| DELETE | `/products/:id`         | permission | Soft-delete a product                          |
-| POST   | `/products/:id/restore` | permission | Undo a soft delete                             |
-| DELETE | `/products/:id/hard`    | permission | Delete for good                                |
+| Method | Endpoint                | Auth       | Description                                                                   |
+| ------ | ----------------------- | ---------- | ----------------------------------------------------------------------------- |
+| GET    | `/products`             | none       | List products                                                                 |
+| POST   | `/products/search`      | none       | Search with filters, or read a batch of ids                                   |
+| GET    | `/products/facets`      | none       | Catalogue facets: categories and tags, counted                                |
+| GET    | `/products/:id`         | none       | Single product detail; `translations` (every language) for `read:Translation` |
+| POST   | `/products`             | permission | Create product                                                                |
+| PUT    | `/products/:id`         | permission | Replace a product                                                             |
+| PATCH  | `/products/:id`         | permission | Update the fields sent                                                        |
+| DELETE | `/products/:id`         | permission | Soft-delete a product                                                         |
+| POST   | `/products/:id/restore` | permission | Undo a soft delete                                                            |
+| DELETE | `/products/:id/hard`    | permission | Delete for good                                                               |
 
 ## Cart
 

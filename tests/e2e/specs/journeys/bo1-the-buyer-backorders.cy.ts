@@ -49,7 +49,7 @@ describe('BO1 · The buyer backorders', () => {
                 restockDate: new Date(Date.parse(releaseDateIn(20))).toISOString()
             });
             cy.step('the admin puts one unit on the shelf and opens room for backorders');
-            cy.apiAs('admin', 'PUT', `/inventory/levels/${id}/backorder-limit`, {
+            cy.apiAs('admin', 'PATCH', `/inventory/levels/${id}`, {
                 backorderLimit: 5
             });
             cy.apiAs('admin', 'POST', `/inventory/levels/${id}/receive`, { quantity: 1 });

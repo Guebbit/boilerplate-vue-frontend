@@ -33,7 +33,7 @@ const tag = (version: number) => `"${version.toString()}"`;
 /** This file's stub endpoints, registered on the shared MSW server before each test. */
 const handlers = [
     /** The editor's read: answers the current tag. */
-    http.get(`${API}/products/p1/admin`, () =>
+    http.get(`${API}/products/p1`, () =>
         HttpResponse.json({ id: 'p1' }, { headers: { ETag: tag(serverVersion) } })
     ),
 
@@ -80,7 +80,7 @@ beforeEach(() => {
 describe('conditional writes over the wire', () => {
     it('sends the tag the editor read as If-Match on the write', () =>
         loadHttp().then(({ orvalMutator }) =>
-            orvalMutator({ url: '/products/p1/admin', method: 'GET' })
+            orvalMutator({ url: '/products/p1', method: 'GET' })
                 .then(() => orvalMutator({ url: '/products/p1', method: 'PATCH', data: {} }))
                 .then(() => {
                     expect(patchIfMatch).toEqual([tag(100)]);
@@ -89,7 +89,7 @@ describe('conditional writes over the wire', () => {
 
     it("chains a second edit on the first edit's own answer", () =>
         loadHttp().then(({ orvalMutator }) =>
-            orvalMutator({ url: '/products/p1/admin', method: 'GET' })
+            orvalMutator({ url: '/products/p1', method: 'GET' })
                 .then(() => orvalMutator({ url: '/products/p1', method: 'PATCH', data: {} }))
                 .then(() => orvalMutator({ url: '/products/p1', method: 'PATCH', data: {} }))
                 .then(() => {
@@ -106,7 +106,7 @@ describe('conditional writes over the wire', () => {
 
     it("reaches the caller as the API's 412 when the record moved after it was read", () =>
         loadHttp().then(({ orvalMutator }) =>
-            orvalMutator({ url: '/products/p1/admin', method: 'GET' })
+            orvalMutator({ url: '/products/p1', method: 'GET' })
                 .then(() => {
                     serverVersion = 500;
                 })
@@ -126,7 +126,7 @@ describe('conditional writes over the wire', () => {
 
     it('forgets the tag after an action that answers none, so the next edit is not refused for it', () =>
         loadHttp().then(({ orvalMutator }) =>
-            orvalMutator({ url: '/products/p1/admin', method: 'GET' })
+            orvalMutator({ url: '/products/p1', method: 'GET' })
                 .then(() => orvalMutator({ url: '/products/p1/restore', method: 'POST' }))
                 .then(() => orvalMutator({ url: '/products/p1', method: 'PATCH', data: {} }))
                 .then(() => {

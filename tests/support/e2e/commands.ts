@@ -44,7 +44,7 @@ declare global {
              *   `{scenario}` placeholder in that command, and throws without one.
              *
              * Either way the browser's HTTP cache is emptied too (Chromium only): `setCache` reads
-             * such as `GET /products/categories` would otherwise replay the previous data.
+             * such as `GET /products/facets` would otherwise replay the previous data.
              *
              * Both land on a scenario in the backend's own registry, which is why the same specs
              * work against either. Afterwards `cy.subjectId()` answers for the scenario just
@@ -305,7 +305,7 @@ const resetLiveDatabase = (command: string) =>
 /**
  * Empties the browser's HTTP cache, which a database restore does not touch.
  *
- * `GET /products/categories` (and every other `setCache` read) answers with
+ * `GET /products/facets` (and every other `setCache` read) answers with
  * `Cache-Control: public, max-age=<ttl>`, so the browser replays the PREVIOUS spec's facets for up
  * to an hour after the data under them is gone. A retry, or the next spec, must start clean.
  *
@@ -391,7 +391,7 @@ Cypress.Commands.add(
                     cy.request({ method: 'DELETE', url: `${String(mailpitUrl)}/api/v1/messages` });
                 return resetLiveDatabase(withScenario(liveResetCommand, scenario));
             })
-            // A replayed `GET /products/categories` would still carry the old data's chips.
+            // A replayed `GET /products/facets` would still carry the old data's chips.
             .then(() => clearBrowserHttpCache())
             // A demo restore reset the replay mark of every authenticator code too; a live reseed
             // did not, and its own staff logins spent the current step.
