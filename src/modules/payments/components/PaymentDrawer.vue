@@ -39,6 +39,7 @@ import { usePaymentsStore } from '../store.ts';
 import { refundNotice } from '../composables/refund-notice.ts';
 import PaymentStatusChip from './PaymentStatusChip.vue';
 import RefundCancelForm from './RefundCancelForm.vue';
+import DisputeBanner from './DisputeBanner.vue';
 
 /**
  * The drawer's width on a screen that has room for it, in CSS px.
@@ -329,6 +330,14 @@ const handleCancelRefund = singleFlight((refund: Payment['refunds'][number], not
                 <dt class="opacity-muted">{{ t('payments-list-page.column-refunded') }}</dt>
                 <dd>{{ formatCurrency(payment.amountRefunded, payment.currency) }}</dd>
             </dl>
+
+            <h3
+                v-if="payment.disputes && payment.disputes.length > 0"
+                class="mb-2 text-base font-semibold"
+            >
+                {{ t('payments-list-page.drawer-disputes') }}
+            </h3>
+            <DisputeBanner :disputes="payment.disputes ?? []" />
 
             <h3 class="mb-2 text-base font-semibold">
                 {{ t('payments-list-page.drawer-refunds') }}

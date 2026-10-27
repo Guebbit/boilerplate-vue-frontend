@@ -112,6 +112,35 @@ describe('PaymentDrawer', () => {
         );
     });
 
+    it('shows the disputes of the payment, above its refunds', () => {
+        const wrapper = mountDrawer({
+            ...FULL,
+            actions: { ...FULL.actions, refund: false },
+            disputes: [
+                {
+                    disputeRef: 'dp_1',
+                    kind: 'chargeback',
+                    status: 'needs_response',
+                    reason: 'fraudulent',
+                    amount: 50,
+                    currency: 'EUR',
+                    fundsWithdrawn: true,
+                    openedAt: '2026-03-05T10:00:00Z',
+                    observedAt: '2026-03-05T10:00:00Z'
+                }
+            ]
+        });
+
+        expect(wrapper.get('[data-test="dispute-banner"]').text()).toContain('Chargeback');
+        expect(wrapper.find('[data-test="drawer-refund"]').exists()).toBe(false);
+    });
+
+    it('shows no dispute banner for a payment without one', () => {
+        const wrapper = mountDrawer(FULL);
+
+        expect(wrapper.find('[data-test="dispute-banner"]').exists()).toBe(false);
+    });
+
     it('says so when the payment has no refund', () => {
         const wrapper = mountDrawer(aPayment());
 

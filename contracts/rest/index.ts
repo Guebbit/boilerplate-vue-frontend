@@ -2019,7 +2019,7 @@ export interface ExportOrder {
 }
 
 /**
- * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`. Shipments: `shipment_shipped`, `shipment_delivered`, `shipment_lost`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`, `refund_reversed`.
+ * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`, `dispute_opened`, `dispute_closed`. Shipments: `shipment_shipped`, `shipment_delivered`, `shipment_lost`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`, `refund_reversed`, `dispute_opened`, `dispute_closed`.
  */
 export type OrderTimelineType = (typeof OrderTimelineType)[keyof typeof OrderTimelineType];
 
@@ -2037,6 +2037,8 @@ export const OrderTimelineType = {
     refund_failed: 'refund_failed',
     refund_canceled: 'refund_canceled',
     refund_reversed: 'refund_reversed',
+    dispute_opened: 'dispute_opened',
+    dispute_closed: 'dispute_closed',
     shipment_shipped: 'shipment_shipped',
     shipment_delivered: 'shipment_delivered',
     shipment_lost: 'shipment_lost',
@@ -2068,7 +2070,7 @@ export const OrderTimelineExportEntryAudience = {
 } as const;
 
 /**
- * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
+ * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
  */
 export type OrderTimelineExportEntryData = { [key: string]: unknown };
 
@@ -2083,7 +2085,7 @@ export interface OrderTimelineExportEntry {
     actor?: Id;
     /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
     text?: string;
-    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
+    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
     data: OrderTimelineExportEntryData;
 }
 
@@ -2111,7 +2113,7 @@ export const RefundReason = {
 /**
  * Why the provider last refused a refund, as a closed code. Staff only (`display:Payment`). `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
  * Money did NOT move for `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` (the payment's provider is no longer installed, so nothing was asked): the refund may be marked returned by hand once the money went back another way. `declined`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` are final and are not retried; `insufficient_funds` (the shop's own provider balance is short) and the unclear `provider_unavailable` and `unknown` are retried with a growing delay. An unclear refusal may have gone through, so it is never offered for hand settlement.
- * `disputed`: the buyer's bank took the money back in a dispute (chargeback). It is final like the refusals above, and it is never offered for hand settlement: the bank already returned the money.
+ * `disputed`: the buyer's bank took the money back in a dispute (chargeback). It is final like the refusals above, and it is not offered for hand settlement while the chargeback is open: the bank already returned the money. Once the chargeback is lost for an amount that covers the refund, the refund may be marked returned (the bank paid the buyer); once the dispute is decided in the shop's favour the refund may only be canceled.
  * `canceled` is not a refusal: staff voided the refund (`POST /payments/{id}/refunds/{refundId}/cancel`). Nothing was sent, it is never retried and it can neither be settled by hand nor canceled again.
  */
 export type RefundFailureReason = (typeof RefundFailureReason)[keyof typeof RefundFailureReason];
@@ -4337,6 +4339,75 @@ export interface PaymentBankTransferAction {
 export type PaymentNextAction = PaymentBankTransferAction;
 
 /**
+ * `inquiry` — the bank asks for information before taking any money (Stripe's `warning_*` states); refunds stay allowed, and a full refund ends it. `chargeback` — the bank took the money back and the shop may send evidence.
+ */
+export type DisputeKind = (typeof DisputeKind)[keyof typeof DisputeKind];
+
+export const DisputeKind = {
+    inquiry: 'inquiry',
+    chargeback: 'chargeback'
+} as const;
+
+/**
+ * `needs_response` — waiting for the shop's evidence; `under_review` — evidence sent, the bank decides; `won` — decided for the shop (funds reinstated); `lost` — decided against it; `accepted` — the shop gave up and accepted the chargeback; `closed` — an inquiry that ended without a charge. `needs_response` and `under_review` are open. A closed dispute can still flip (a late win, a second chargeback).
+ */
+export type DisputeStatus = (typeof DisputeStatus)[keyof typeof DisputeStatus];
+
+export const DisputeStatus = {
+    needs_response: 'needs_response',
+    under_review: 'under_review',
+    won: 'won',
+    lost: 'lost',
+    accepted: 'accepted',
+    closed: 'closed'
+} as const;
+
+/**
+ * Why the buyer's bank says the charge is disputed — Stripe's closed list, which an adapter for another provider maps its own codes onto.
+ */
+export type DisputeReason = (typeof DisputeReason)[keyof typeof DisputeReason];
+
+export const DisputeReason = {
+    bank_cannot_process: 'bank_cannot_process',
+    check_returned: 'check_returned',
+    credit_not_processed: 'credit_not_processed',
+    customer_initiated: 'customer_initiated',
+    debit_not_authorized: 'debit_not_authorized',
+    duplicate: 'duplicate',
+    fraudulent: 'fraudulent',
+    general: 'general',
+    incorrect_account_details: 'incorrect_account_details',
+    insufficient_funds: 'insufficient_funds',
+    product_not_received: 'product_not_received',
+    product_unacceptable: 'product_unacceptable',
+    subscription_canceled: 'subscription_canceled',
+    unrecognized: 'unrecognized'
+} as const;
+
+/**
+ * A dispute on a payment, as the last delivery left it. Staff only. Answered in the provider's dashboard: this API shows it and alerts, it never sends evidence.
+ */
+export interface Dispute {
+    /** The provider's dispute id. */
+    disputeRef: string;
+    kind: DisputeKind;
+    status: DisputeStatus;
+    reason: DisputeReason;
+    /** @minimum 0 */
+    amount: number;
+    currency: string;
+    evidenceDueBy?: string;
+    fundsWithdrawn: boolean;
+    /** The provider's time of the first report of this dispute. */
+    openedAt: string;
+    /** When it last reached a closed status (`won`, `lost`, `accepted`, `closed`). Absent while open, and cleared if a closed one reopens. */
+    closedAt?: string;
+    /** The provider's time of the newest report applied. */
+    observedAt: string;
+    dashboardUrl?: string;
+}
+
+/**
  * What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself. Every response that carries a payment carries these, including the answer to each write, so a client never has to re-read to learn the next step.
  */
 export interface PaymentActions {
@@ -4344,7 +4415,7 @@ export interface PaymentActions {
     pay: boolean;
     /** Whether the buyer may finish at the provider with `POST /payments/{id}/sync` — the payment is `requires_action` or `processing`, it went through the provider, and the caller is the payer holding `checkout:Cart`. Narrower than the route on purpose: the route also accepts a payment that is awaiting confirmation or was declined, whose next step is `pay`. Never true together with `pay`. */
     sync: boolean;
-    /** Whether `POST /payments/{id}/refunds` would be accepted: the caller holds `create:Refund`, the payment is `succeeded` and something is left to refund. False once nothing is left (fully refunded, or the rest already asked back), which is what greys the control out rather than letting the operator discover it by clicking. A refund still open counts against what is left but does not hide the control while money remains. On a hand-paid payment the refund only opens a record; `settleByHand` confirms it. */
+    /** Whether `POST /payments/{id}/refunds` would be accepted: the caller holds `create:Refund`, the payment is `succeeded` and something is left to refund. False once nothing is left (fully refunded, or the rest already asked back, or a lost chargeback took the rest) or a chargeback is open on the payment (`PAYMENT_DISPUTED`), which is what greys the control out rather than letting the operator discover it by clicking. A refund still open counts against what is left but does not hide the control while money remains. On a hand-paid payment the refund only opens a record; `settleByHand` confirms it. */
     refund: boolean;
     /** The ids of the refunds this caller may mark as returned with `POST /payments/{id}/refunds/{refundId}/settle`: the caller holds `create:Refund`, the payment is `succeeded`, and the refund is either a hand-paid payment's `pending` one or a card refund `failed` with a reason that proves the money did not move (`RefundFailureReason`). The server decides; a client never rebuilds this rule. An array because the route takes a target; empty when there is none. */
     settleByHand: Id[];
@@ -4421,6 +4492,8 @@ export interface Payment {
     clientSecret?: string;
     /** The only card digits a payment system may remember. Survives a refund — refunding does not clear it. */
     cardLast4?: string;
+    /** Disputes the buyer's bank opened on this card payment, oldest first. Sent only to a caller holding `display:Payment`. A payment with none omits the field. An open chargeback blocks refunds (`actions.refund` is false and the refund door answers 409 `PAYMENT_DISPUTED`); a lost one shrinks what is left to refund by its amount. `displayStatus` does not change: a dispute is a separate fact. */
+    disputes?: Dispute[];
     actions: PaymentActions;
     createdAt?: string;
     updatedAt?: string;
@@ -4517,8 +4590,6 @@ export interface OrderFulfillmentOrdersResponse {
 export interface ShipmentActions {
     /** Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`, or `lost` with every unit on it still open (see the operation). */
     deliver: boolean;
-    /** Whether `POST /delivery/shipments/{id}/deliver` with `forced: true` would be accepted: the arrival is open (as for `deliver`) and the caller also holds `override:Order`. True beside `deliver`, not instead of it: forcing records the arrival without a carrier confirmation and needs a `reason`. */
-    forceDeliver: boolean;
     /** Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — any physical shipment, shipped, delivered or lost. */
     update: boolean;
     /** Whether `POST /delivery/shipments/{id}/lost` would be accepted — a physical shipment still `shipped`, on an order that is `processing` or `shipped`. */
@@ -4608,7 +4679,42 @@ export interface ConfirmPaymentRequest {
 }
 
 /**
- * One delivery, in this module's normalised shape: which event it is, which intent it names and, for a refund event (`refund.created`, `refund.updated`, `refund.failed`, `charge.refunded`), which refund, and nothing about what happened. A refund made in the provider's own dashboard arrives the same way and is imported. A real provider sends its OWN event shape and its implementation of the provider port translates it into this. The outcome is never read from the body: once the delivery is authenticated, the server asks the provider for the payment's state, because providers do not guarantee the order events arrive in.
+ * One dispute as the provider reports it, inside a webhook delivery. It is not re-read: some providers cannot be asked about a dispute, so the body of a verified delivery is the state. A report is applied only if `observedAt` is newer than the one already stored for the same `disputeRef`, so an out-of-order delivery changes nothing.
+ */
+export interface DisputeReport {
+    /**
+     * The provider's dispute id (Stripe's `dp_…`). One dispute per id on a payment.
+     * @maxLength 200
+     */
+    disputeRef: string;
+    kind: DisputeKind;
+    status: DisputeStatus;
+    reason: DisputeReason;
+    /**
+     * The disputed amount, in `currency`.
+     * @minimum 0
+     */
+    amount: number;
+    /**
+     * ISO-4217 code, upper case.
+     * @maxLength 3
+     */
+    currency: string;
+    /** When the provider stops accepting evidence. Absent when it gave no deadline. */
+    evidenceDueBy?: string;
+    /** Whether the bank has taken the money out of the shop's balance (`false` for an inquiry, and again after a win reinstated it). */
+    fundsWithdrawn: boolean;
+    /** The provider's own time for this event, which orders deliveries. */
+    observedAt: string;
+    /**
+     * Where staff answer the dispute, in the provider's dashboard.
+     * @maxLength 500
+     */
+    dashboardUrl?: string;
+}
+
+/**
+ * One delivery, in this module's normalised shape: which event it is, which intent it names and, for a refund event (`refund.created`, `refund.updated`, `refund.failed`, `charge.refunded`), which refund, and nothing about what happened — except a dispute event (`charge.dispute.created`, `.updated`, `.closed`), which carries the dispute's own state because a provider such as Adyen cannot be asked about one. A refund made in the provider's own dashboard arrives the same way and is imported. A real provider sends its OWN event shape and its implementation of the provider port translates it into this. The outcome is never read from the body: once the delivery is authenticated, the server asks the provider for the payment's state, because providers do not guarantee the order events arrive in.
  */
 export interface PaymentWebhookEvent {
     /**
@@ -4626,6 +4732,7 @@ export interface PaymentWebhookEvent {
      * @maxLength 200
      */
     refundRef?: string;
+    dispute?: DisputeReport;
 }
 
 export interface ShippingMethod {
@@ -4805,17 +4912,6 @@ export interface UpdateShipmentRequest {
      * @maxLength 100
      */
     trackingCode?: string;
-}
-
-export interface DeliverShipmentRequest {
-    /** Record the arrival without a carrier confirmation — the caller must hold `override:Order`, and `reason` is then required. */
-    forced?: boolean;
-    /**
-     * Required exactly when `forced` is `true`.
-     * @minLength 1
-     * @maxLength 1000
-     */
-    reason?: string;
 }
 
 export type ReturnSortItem = (typeof ReturnSortItem)[keyof typeof ReturnSortItem];
@@ -5652,7 +5748,7 @@ export const OrderTimelineEntryAudience = {
 } as const;
 
 /**
- * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
+ * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
  */
 export type OrderTimelineEntryData = { [key: string]: unknown };
 
@@ -5666,7 +5762,7 @@ export interface OrderTimelineEntry {
     actor?: Id;
     /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
     text?: string;
-    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
+    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
     data: OrderTimelineEntryData;
 }
 
@@ -5732,6 +5828,8 @@ export interface SearchPaymentsRequest {
     /** @minimum 0 */
     amountMax?: number;
     orderId?: Id;
+    /** `true` keeps only payments with a dispute still open. `false` or absent is no filter. */
+    disputed?: boolean;
     /** @maxLength 120 */
     reference?: string;
     /**
@@ -5764,7 +5862,7 @@ export interface RefundsResponse {
 }
 
 /**
- * `stale_refund` — a provider refund open past the threshold, still waiting for the provider's answer or its next retry; `refused_refund` — a card refund the provider refused for good (a final `RefundFailureReason`), shown at once: the money has to go back another way; `reversed_refund` — a refund the provider took back after settling it (a bank sent it back), shown at once with `since` = when it was reversed: the money is owed another way, agreed with the buyer; `refund_exceeds_remaining` — a refund made in the provider's dashboard took the room an open refund here counted on: the open one is held unsent (the provider would refuse it) and `exceedsBy` says by how much. Staff cancel it or mark it returned; `manual_refund_owed` — money to hand back outside the system on a `manual` payment. Both are an open refund record on a payment: a cancel or a refund opens it before anything is asked of a provider, so no refund is owed without one.
+ * `stale_refund` — a provider refund open past the threshold, still waiting for the provider's answer or its next retry; `refused_refund` — a card refund the provider refused for good (a final `RefundFailureReason`), shown at once: the money has to go back another way; `reversed_refund` — a refund the provider took back after settling it (a bank sent it back), shown at once with `since` = when it was reversed: the money is owed another way, agreed with the buyer; `refund_exceeds_remaining` — a refund made in the provider's dashboard took the room an open refund here counted on: the open one is held unsent (the provider would refuse it) and `exceedsBy` says by how much. Staff cancel it or mark it returned; `manual_refund_owed` — money to hand back outside the system on a `manual` payment. Each of those is an open refund record on a payment: a cancel or a refund opens it before anything is asked of a provider, so no refund is owed without one; `dispute_needs_response` — the buyer's bank opened a dispute the shop has to answer in the provider's own dashboard before `dueBy`. It names the dispute (`disputeId`), not a refund, and says what was already refunded (`alreadyRefunded`) because that refund is the evidence for a refund-then-chargeback.
  */
 export type PaymentAttentionKind = (typeof PaymentAttentionKind)[keyof typeof PaymentAttentionKind];
 
@@ -5773,14 +5871,27 @@ export const PaymentAttentionKind = {
     refused_refund: 'refused_refund',
     reversed_refund: 'reversed_refund',
     refund_exceeds_remaining: 'refund_exceeds_remaining',
-    manual_refund_owed: 'manual_refund_owed'
+    manual_refund_owed: 'manual_refund_owed',
+    dispute_needs_response: 'dispute_needs_response'
 } as const;
 
 export interface PaymentAttentionItem {
     kind: PaymentAttentionKind;
     orderId: Id;
     paymentId: Id;
-    refundId: Id;
+    refundId?: Id;
+    /**
+     * The provider's dispute id, on a `dispute_needs_response` row (which has no `refundId`).
+     * @maxLength 200
+     */
+    disputeId?: string;
+    /** On a `dispute_needs_response` row, when the provider's evidence window closes. Absent when the provider gave none. A past date means the window has gone. */
+    dueBy?: string;
+    /**
+     * On a `dispute_needs_response` row, how much of the payment was already refunded successfully, in its currency. Above zero it is a refund-then-chargeback: send the refund as evidence. Absent when nothing was refunded.
+     * @minimum 0
+     */
+    alreadyRefunded?: number;
     /** @minimum 0 */
     amount: number;
     currency: string;
@@ -7056,6 +7167,10 @@ export type ListPaymentsParams = {
      */
     amountMax?: number;
     orderId?: Id;
+    /**
+     * `true` keeps only payments with a dispute still open (an inquiry or a chargeback the shop has not answered or the bank has not decided). `false` or absent is no filter.
+     */
+    disputed?: boolean;
     /**
      * @maxLength 120
      */
@@ -10265,7 +10380,7 @@ export const cancelOrderById = (
 };
 
 /**
- * Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door, with their own `forced` option). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `override:Order`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does.
+ * Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `override:Order`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does.
  * @summary Force-correct an order's status by hand
  */
 export const overrideOrderStatus = (
@@ -10415,7 +10530,9 @@ export const listPaymentMethods = (
 /**
  * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 201 with the new `Refund` record and its address in `Location`; read the payment again (`GET /payments/{id}`) for the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left to refund) or 422 (asks for more than is left). A refund still open counts against what is left, so a second partial refund beside it is allowed while money remains.
  * The 201 is the answer for every outcome of the record the request wrote; its `status` carries the result. `succeeded`: the money is back. `failed`: the provider refused, the record is kept and counts against what is left, and it is either retried by the refund sweep or, when `actions.settleByHand` lists it, final and waiting for the money to be returned another way. `pending`: hand-paid money waiting for an operator. A refusal is never a 5xx. The reason of a refusal (`failureReason`) is sent to `display:Payment` callers only.
- * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it. Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it.
+ * There is no list at this path: a payment's refunds are listed by `GET /payments/{id}` (`refunds`), and one by `GET /payments/{id}/refunds/{refundId}`.
+ * Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund a payment
  */
 export const createRefund = (
@@ -10565,6 +10682,9 @@ export const summarizePreorderFulfillmentOrders = (
 
 /**
  * Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is optional: a `tracked` method may get its code later, with `PATCH /delivery/shipments/{id}` (`Shipment.awaitingTracking` says who is still waiting). Refuses a fulfillment order that is on hold, closed or cancelled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is neither `processing` nor `paid` (`ORDER_NOT_PROCESSING`). From `paid` it moves the order to `processing` itself, in the same transaction, so it also needs `start:Shipment` (403 without it); `POST /orders/{id}/process` stays as an optional "mark in progress". Never ships from `on_hold`.
+ * There is no list at this path: an order's shipments are listed by `GET /orders/{id}/shipments`, and one by `GET /delivery/shipments/{id}`.
+ *
+ * Send an `Idempotency-Key`: a partial ship creates a NEW shipment, so a retry without one (a dropped connection, a double click) would cut a second parcel and take the stock twice. The same key replays the first answer; a 409 means the first request is still running, a 422 means the key was reused with another body.
  * @summary Ship some or all of a fulfillment order
  */
 export const shipFulfillmentOrder = (
@@ -10584,7 +10704,7 @@ export const shipFulfillmentOrder = (
 };
 
 /**
- * The digital act: a shipment with no tracking, born and delivered in the same write. A `digital` fulfillment order has nothing to carry, so this is its only door. Refuses a physical one with `DELIVERY_NOT_DIGITAL` (ship it instead). When it leaves nothing remaining and nothing undelivered the order moves to `delivered`, its withdrawal clock counted from payment (digital content, Art. 9(2)(c)). Works from `paid` too: it moves the order to `processing` itself, so it also needs `start:Shipment` (403 without it).
+ * The digital act: a shipment with no tracking, born and delivered in the same write. A `digital` fulfillment order has nothing to carry, so this is its only door. Refuses a physical one with `DELIVERY_NOT_DIGITAL` (ship it instead). When it leaves nothing remaining and nothing undelivered the order moves to `delivered`, its withdrawal clock counted from payment (digital content, Art. 9(2)(c)). Works from `paid` too: it moves the order to `processing` itself, so it also needs `start:Shipment` (403 without it). Answers like the create it is: 201 with `Location` pointing at the new shipment. Send an `Idempotency-Key`, as for shipping (a 409 is the first request still running, a 422 the key reused with another body).
  * @summary Fulfil a digital fulfillment order
  */
 export const fulfillFulfillmentOrder = (
@@ -10690,16 +10810,10 @@ export const updateShipmentWithMergePatchJson = (
  */
 export const deliverShipment = (
     id: string,
-    deliverShipmentRequest?: DeliverShipmentRequest,
     options?: SecondParameter<typeof orvalMutator<Shipment>>
 ) => {
     return orvalMutator<Shipment>(
-        {
-            url: `/delivery/shipments/${id}/deliver`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: deliverShipmentRequest
-        },
+        { url: `/delivery/shipments/${id}/deliver`, method: 'POST' },
         options
     );
 };
