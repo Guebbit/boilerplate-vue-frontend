@@ -61,9 +61,9 @@ describe('OP1 · Fulfil a paid order the ordinary way', { tags: '@smoke' }, () =
             cy.get('[data-test=mark-delivered]').should('not.exist');
             customerSees(orderId, 'processing');
 
-            cy.step('express is tracked, so "ship" stays shut without a code');
+            cy.step('express is tracked, but the code may come later: the submit stays open');
             cy.get('[data-test=open-ship]').click();
-            cy.get('[data-test=ship-submit]').should('be.disabled');
+            cy.get('[data-test=ship-submit]').should('not.be.disabled');
             cy.get('[data-test=ship-tracking-code] input').type(TRACKING_CODE);
             cy.get('[data-test=ship-submit]').should('not.be.disabled').click();
             cy.get('[data-test=shipment-tracking]').should('contain.text', TRACKING_CODE);
