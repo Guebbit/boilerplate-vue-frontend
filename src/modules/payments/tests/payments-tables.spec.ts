@@ -204,6 +204,19 @@ describe('PaymentsTable', () => {
         expect(query?.receivedTo).toBeUndefined();
     });
 
+    it('asks only for payments with an open dispute when the box is ticked, and says nothing when it is not', async () => {
+        const read = answerPaymentsWith([]);
+        const wrapper = mount(PaymentsTable, { global: GLOBAL });
+        await flushPromises();
+        expect(read.mock.calls.at(-1)?.[0].disputed).toBeUndefined();
+
+        await wrapper.get('[data-test="filter-disputed"] input').setValue(true);
+        await wrapper.get('[data-test="payments-search-submit"]').trigger('submit');
+        await flushPromises();
+
+        expect(read.mock.calls.at(-1)?.[0].disputed).toBe(true);
+    });
+
     it('drops an amount that is not a number rather than sending NaN', async () => {
         const read = answerPaymentsWith([]);
         const wrapper = mount(PaymentsTable, { global: GLOBAL });
@@ -437,6 +450,60 @@ describe('AttentionList', () => {
         const row = wrapper.get('[data-test="attention-row"]');
         expect(row.get('[data-test="attention-kind"]').text()).toContain('left no room');
         expect(row.get('[data-test="attention-exceeds-by"]').text()).toBe('Over by €30.00');
+    });
+
+    it('shows a dispute to answer with its evidence deadline and what was already refunded', async () => {
+        const inFiveDays = new Date(Date.now() + 5 * 86_400_000 - 3_600_000).toISOString();
+        answerAttentionWith([
+            {
+                kind: 'dispute_needs_response',
+                orderId: 'o6',
+                paymentId: 'pay-6',
+                disputeId: 'dp_1',
+                amount: 70,
+                currency: 'EUR',
+                since: '2026-03-09T10:00:00Z',
+                dueBy: inFiveDays,
+                alreadyRefunded: 30
+            }
+        ]);
+        const wrapper = mount(AttentionList, { global: GLOBAL });
+        await flushPromises();
+
+        const row = wrapper.get('[data-test="attention-row"]');
+        expect(row.get('[data-test="attention-kind"]').text()).toBe(
+            "Dispute to answer in the provider's dashboard"
+        );
+        expect(row.get('[data-test="attention-deadline"]').text()).toBe(
+            '5 days left to send evidence'
+        );
+        expect(row.get('[data-test="attention-already-refunded"]').text()).toBe(
+            'Already refunded €30.00: send the refund as evidence'
+        );
+        expect(row.text()).toContain('€70.00');
+    });
+
+    it('says an evidence deadline has passed, and omits the refunded line when nothing went back', async () => {
+        const threeDaysAgo = new Date(Date.now() - 3 * 86_400_000 - 3_600_000).toISOString();
+        answerAttentionWith([
+            {
+                kind: 'dispute_needs_response',
+                orderId: 'o6',
+                paymentId: 'pay-6',
+                disputeId: 'dp_1',
+                amount: 70,
+                currency: 'EUR',
+                since: '2026-03-09T10:00:00Z',
+                dueBy: threeDaysAgo
+            }
+        ]);
+        const wrapper = mount(AttentionList, { global: GLOBAL });
+        await flushPromises();
+
+        expect(wrapper.get('[data-test="attention-deadline"]').text()).toBe(
+            'Evidence deadline passed 3 days ago'
+        );
+        expect(wrapper.find('[data-test="attention-already-refunded"]').exists()).toBe(false);
     });
 
     it('names a refund the bank sent back, with the reason it bounced', async () => {

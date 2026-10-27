@@ -105,7 +105,7 @@ const openPayment = (paymentId: string) =>
 const rows = computed(() =>
     attention.value.map((item, index) => ({
         ...item,
-        rowKey: `${item.kind}-${item.orderId}-${item.refundId}-${index}`
+        rowKey: `${item.kind}-${item.orderId}-${item.refundId ?? item.disputeId}-${index}`
     }))
 );
 
@@ -125,25 +125,28 @@ const headers = computed<CoreDataTableHeader<(typeof rows.value)[number]>[]>(() 
 const DAY_MS = 86_400_000;
 
 /**
- * What the legal pay-back deadline of a refused refund reads today (Consumer Rights Directive
- * Art. 13): the days left, or how many days late. Nothing for a refund that has no such deadline,
- * which shows its age only. The server sends the date; the count is the page's, because it changes
- * every day while the row does not.
+ * What a deadline reads today: the days left, or how many days late. Two kinds share it: the legal
+ * pay-back deadline of a refused refund (Consumer Rights Directive Art. 13, `refundDueBy`), and the
+ * evidence deadline of a dispute (`dueBy`). Nothing for a row that has neither, which shows its age
+ * only. The server sends the date; the count is the page's, because it changes every day while the
+ * row does not.
  *
- * @param refundDueBy - The item's `refundDueBy`, absent when the law sets no deadline.
+ * @param item - The attention row.
  * @returns The sentence and whether it is overdue, or `undefined` for no deadline.
  */
-const deadlineOf = (refundDueBy: string | undefined) => {
-    if (!refundDueBy) return undefined;
-    const days = Math.ceil((new Date(refundDueBy).getTime() - Date.now()) / DAY_MS);
+const deadlineOf = (item: { refundDueBy?: string; dueBy?: string }) => {
+    const date = item.refundDueBy ?? item.dueBy;
+    if (!date) return undefined;
+    const prefix = item.dueBy ? 'attention-dispute-due' : 'attention-deadline';
+    const days = Math.ceil((new Date(date).getTime() - Date.now()) / DAY_MS);
     return days >= 0
         ? {
               overdue: false,
-              text: t('payments-list-page.attention-deadline-left', { count: days }, days)
+              text: t(`payments-list-page.${prefix}-left`, { count: days }, days)
           }
         : {
               overdue: true,
-              text: t('payments-list-page.attention-deadline-over', { count: -days }, -days)
+              text: t(`payments-list-page.${prefix}-over`, { count: -days }, -days)
           };
 };
 
@@ -217,12 +220,12 @@ const auditLink = computed(() => {
             <template v-slot:[`item.since`]="{ item }">
                 {{ formatDateTime(item.since) }}
                 <p
-                    v-if="deadlineOf(item.refundDueBy)"
+                    v-if="deadlineOf(item)"
                     class="mt-1 text-xs font-semibold"
-                    :class="deadlineOf(item.refundDueBy)?.overdue ? 'text-error' : 'text-warning'"
+                    :class="deadlineOf(item)?.overdue ? 'text-error' : 'text-warning'"
                     data-test="attention-deadline"
                 >
-                    {{ deadlineOf(item.refundDueBy)?.text }}
+                    {{ deadlineOf(item)?.text }}
                 </p>
             </template>
             <template v-slot:[`item.amount`]="{ item }">
@@ -235,6 +238,17 @@ const auditLink = computed(() => {
                     {{
                         t('payments-list-page.attention-exceeds-by', {
                             amount: formatCurrency(item.exceedsBy, item.currency)
+                        })
+                    }}
+                </p>
+                <p
+                    v-if="item.alreadyRefunded !== undefined"
+                    class="mt-1 text-xs font-semibold"
+                    data-test="attention-already-refunded"
+                >
+                    {{
+                        t('payments-list-page.attention-already-refunded', {
+                            amount: formatCurrency(item.alreadyRefunded, item.currency)
                         })
                     }}
                 </p>

@@ -93,6 +93,26 @@ describe('describeTimelineEntry', () => {
         expect(line.detail).toContain('5 EUR');
     });
 
+    it('shows what a dispute disputes and where it stands, for staff', () => {
+        const line = describeTimelineEntry(
+            {
+                type: 'dispute_opened',
+                data: {
+                    amount: 40,
+                    currency: 'EUR',
+                    status: 'needs_response',
+                    reason: 'fraudulent'
+                }
+            },
+            tools
+        );
+
+        expect(line.title).toBe('order-timeline.type-dispute_opened');
+        expect(line.detail).toBe(
+            '40 EUR · order-timeline.detail-dispute(order-timeline.dispute-status-needs_response) · order-timeline.detail-reason(order-timeline.dispute-reason-fraudulent)'
+        );
+    });
+
     it('shows a code the dictionary does not know as it is', () => {
         const line = describeTimelineEntry(
             { type: 'fulfillment_held', data: { reason: 'unknown_new_code' } },
