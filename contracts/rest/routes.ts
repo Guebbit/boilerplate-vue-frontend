@@ -257,7 +257,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "GET", pattern: /^\/webhooks\/deliveries\/[^/]+$/, schemaName: "GetWebhookDeliveryResponse", bodySchemaName: undefined, module: "webhooks" },
     { method: "POST", pattern: /^\/webhooks\/subscriptions\/[^/]+\/disable$/, schemaName: "DisableWebhookSubscriptionResponse", bodySchemaName: undefined, module: "webhooks" },
     { method: "POST", pattern: /^\/webhooks\/subscriptions\/[^/]+\/enable$/, schemaName: "EnableWebhookSubscriptionResponse", bodySchemaName: undefined, module: "webhooks" },
-    { method: "POST", pattern: /^\/webhooks\/subscriptions\/[^/]+\/rotate-secret$/, schemaName: "RotateWebhookSubscriptionSecretResponse", bodySchemaName: undefined, module: "webhooks" },
+    { method: "POST", pattern: /^\/webhooks\/subscriptions\/[^/]+\/secrets$/, schemaName: "CreateWebhookSubscriptionSecretResponse", bodySchemaName: undefined, module: "webhooks" },
     { method: "DELETE", pattern: /^\/webhooks\/subscriptions\/[^/]+$/, schemaName: "DeleteWebhookSubscriptionResponse", bodySchemaName: undefined, module: "webhooks" },
     { method: "GET", pattern: /^\/webhooks\/subscriptions\/[^/]+$/, schemaName: "GetWebhookSubscriptionResponse", bodySchemaName: undefined, module: "webhooks" },
     { method: "PATCH", pattern: /^\/webhooks\/subscriptions\/[^/]+$/, schemaName: "UpdateWebhookSubscriptionResponse", bodySchemaName: "UpdateWebhookSubscriptionBody", module: "webhooks" },
