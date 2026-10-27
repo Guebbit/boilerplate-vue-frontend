@@ -113,11 +113,15 @@ describe('PaymentPanel', () => {
     it('offers the test cards in a development build, once the picker has loaded', () => {
         const { wrapper } = mountPanel();
 
-        // The picker is a lazy chunk, so it arrives a few ticks after the panel renders.
-        return vi.waitFor(() => {
-            expect(wrapper.find('[data-test=payment-method-select]').exists()).toBe(true);
-        });
-    });
+        // The picker is a lazy chunk: its first import compiles the SFC, which under CPU load
+        // outlasts vi.waitFor's default 1s. 15s bounds a hang, it is not a pause.
+        return vi.waitFor(
+            () => {
+                expect(wrapper.find('[data-test=payment-method-select]').exists()).toBe(true);
+            },
+            { timeout: 15_000 }
+        );
+    }, 20_000);
 
     /**
      * Every order that holds stock freezes a real `payBy`, card orders included — the
