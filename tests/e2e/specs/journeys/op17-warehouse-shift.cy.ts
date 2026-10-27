@@ -70,7 +70,7 @@ describe('OP17 · A warehouse shift', () => {
         aPaidDigitalOrder().as('digitalId');
         cy.subjectId('return.requested').as('returnId');
         cy.get<string>('@returnId').then((returnId) => {
-            cy.apiAs('support', 'POST', `/returns/${returnId}/approve`, {});
+            cy.apiAs('support', 'POST', `/returns/${returnId}/approve`);
         });
 
         cy.step('the warehouse’s menu is the stock room, and the other staff pages turn it back');

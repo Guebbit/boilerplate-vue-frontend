@@ -483,10 +483,17 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * Downloads the caller's finished export (an account has one) — the page the mailed link opens calls this. Same fresh-session
      * rule as the request, handled the same way. The answer is the file itself, named by the server.
      *
+     * Asked for as a blob: the contract types the body as the export document, but the file the
+     * browser saves is the server's bytes under the server's `Content-Disposition` name, so the
+     * HTTP layer hands it over as a `File`. Anything else is not a download and is dropped.
+     *
      * @returns A promise resolving with the export file; a `404` (not yours, not ready, or
      *  gone) rejects.
      */
-    const downloadAccountExport = () => fetchAny(() => apiDownloadAccountExport());
+    const downloadAccountExport = () =>
+        fetchAny(() => apiDownloadAccountExport({ responseType: 'blob' })).then(
+            (answer): File | undefined => (answer instanceof File ? answer : undefined)
+        );
 
     /**
      * Cancels a scheduled account deletion with the mailed link's one-time token. It signs nobody
