@@ -21,7 +21,7 @@ const TRACKING_CODE = 'TRK-E2E-OP24';
 interface OrderLike {
     status: string;
     fulfillmentStatus: string;
-    actions?: { withdrawUntil?: string };
+    withdrawUntil?: string;
 }
 
 /**
@@ -94,10 +94,9 @@ describe('OP24 · Ship an order in two goes', () => {
                 );
             });
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
-                expect(
-                    order?.actions?.withdrawUntil,
-                    'a deadline once the last shipment arrived'
-                ).to.be.a('string');
+                expect(order?.withdrawUntil, 'a deadline once the last shipment arrived').to.be.a(
+                    'string'
+                );
             });
 
             cy.step('the customer sees two shipments and the tracking code, and nothing to press');
