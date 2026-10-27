@@ -42,7 +42,7 @@ const SUBSCRIPTION: WebhookSubscription = {
         delete: true,
         enable: false,
         disable: true,
-        rotateSecret: true,
+        createSecret: true,
         removeSecret: true
     },
     createdAt: '2026-01-01T00:00:00.000Z',
@@ -158,7 +158,7 @@ describe('what the page offers, by the record’s own actions', () => {
                 delete: false,
                 enable: false,
                 disable: false,
-                rotateSecret: false,
+                createSecret: false,
                 removeSecret: false
             }
         });
