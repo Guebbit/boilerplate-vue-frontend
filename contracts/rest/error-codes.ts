@@ -68,6 +68,8 @@ export const ERROR_CODES = {
     DELIVERY_NOT_PHYSICAL: 'DELIVERY_NOT_PHYSICAL',
     /** 409 — The fulfillment order is not on hold, or waits for stock and is released only by the stock arriving. */
     DELIVERY_NOT_RELEASABLE: 'DELIVERY_NOT_RELEASABLE',
+    /** 409 — The units of a replacement under the guarantee cannot be sent again: the order shipped fewer physical units than come back, or is cancelled or unpaid. */
+    DELIVERY_NOT_REOPENABLE: 'DELIVERY_NOT_REOPENABLE',
     /** 409 — The fulfillment order cannot ship now: it is on hold, closed or cancelled, or the order is cancelled, or still `pending` (never paid: start or pay it first). */
     DELIVERY_NOT_SHIPPABLE: 'DELIVERY_NOT_SHIPPABLE',
     /** 422 — A forced shipment or delivery requires a reason and none was supplied. */
@@ -214,7 +216,7 @@ export const ERROR_CODES = {
     REQUEST_ERROR: 'REQUEST_ERROR',
     /** 422 — A cancellation names no fulfillment order of this order, or sends `lines` (the remainder is its lines), or a return names a fulfillment order. Also the reason does not fit the caller: the order's buyer cancels only as a `withdrawal`. */
     RETURN_CANCELLATION_INVALID: 'RETURN_CANCELLATION_INVALID',
-    /** 422 — The handling deduction is more than the refund is worth. */
+    /** 422 — The handling deduction is more than the refund is worth, or is kept back on a defect or a wrong item (a guarantee remedy is free of charge, Directive 2019/771 Art. 14(1)). */
     RETURN_DEDUCTION_INVALID: 'RETURN_DEDUCTION_INVALID',
     /** 422 — A line names a product that is not on the order, asks for more than is left of it, is excluded from the right of withdrawal (Art. 16), or nothing on the order is left to return. */
     RETURN_LINES_INVALID: 'RETURN_LINES_INVALID',
@@ -230,6 +232,8 @@ export const ERROR_CODES = {
     RETURN_NOT_RECEIVABLE: 'RETURN_NOT_RECEIVABLE',
     /** 409 — The order is not in a state a return can be opened on — cancelled, or (for a reason other than withdrawal) still in the shop's hands. */
     RETURN_ORDER_NOT_RETURNABLE: 'RETURN_ORDER_NOT_RETURNABLE',
+    /** 422 — A remedy other than a refund is named for a reason that has no guarantee behind it (only a `defective` or `wrong_item` return can be repaired or replaced), or a preferred remedy is named for such a reason. */
+    RETURN_REMEDY_INVALID: 'RETURN_REMEDY_INVALID',
     /** 422 — A restock count names a product that is not on the return, names one twice, or is more than the line holds. */
     RETURN_RESTOCK_INVALID: 'RETURN_RESTOCK_INVALID',
     /** 422 — The date or the channel of what the buyer stated is missing where staff must give it (a withdrawal recorded for the buyer), given where it does not belong (by the buyer, or on a reason that is not a withdrawal), in the future, or before the order was made. */

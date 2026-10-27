@@ -12,7 +12,8 @@ export default {
 /**
  * @module
  * The staff's five moves on a return — approve, decline (with the reason the customer is told),
- * receive (with a restock count per line and an optional handling deduction), close by hand (with an optional note, when the
+ * receive (with a restock count per line, the remedy for a faulty or wrong item and an optional
+ * handling deduction), close by hand (with an optional note, when the
  * money will not follow the usual way), cancel (with an optional note, when the goods never came). Which of them is open is the server's
  * `Return.actions`; this component renders that answer and re-implements none of the lifecycle.
  */
@@ -36,6 +37,7 @@ import {
     declineMessageSchema,
     declineReasonSchema
 } from '../schemas.ts';
+import { hasRemedyChoice, REMEDIES } from '../domain/remedy.ts';
 import type { Return } from '@types';
 
 /**
@@ -148,6 +150,22 @@ const {
 const receiveElement = ref<HTMLFormElement>();
 
 /**
+ * Whether the buyer's reason is under the legal guarantee: staff then choose the remedy, and no
+ * handling deduction applies (a guarantee remedy is free of charge).
+ */
+const underGuarantee = computed(() => hasRemedyChoice(props.item.reason));
+
+/**
+ * The remedy choices, translated, in the law's order.
+ */
+const remedyOptions = computed(() =>
+    REMEDIES.map((remedy) => ({
+        value: remedy,
+        title: t(`return-staff-actions.remedy-${remedy}`)
+    }))
+);
+
+/**
  * How many units of one returned line go back on sale, as the field's string: a whole number from
  * 0 (a broken unit) up to the line's quantity.
  *
@@ -182,6 +200,7 @@ const receiveSchema = z.object({
     handlingDeduction: z.string().refine((value) => value === '' || Number(value) >= 0, {
         error: () => t('return-staff-actions.error-deduction-invalid')
     }),
+    remedy: z.string(),
     restock: z
         .record(z.string(), z.string())
         .refine(
@@ -203,7 +222,12 @@ const {
     handleSubmit: handleReceiveSubmit,
     applyServerErrors: applyReceiveErrors
 } = useStructureFormValidation(
-    { handlingDeduction: '', restock: startingRestock() },
+    {
+        handlingDeduction: '',
+        // The buyer's wish is preselected; staff may give another (Art. 13(3)).
+        remedy: props.item.preferredRemedy ?? 'refund',
+        restock: startingRestock()
+    },
     receiveSchema,
     {
         formElement: receiveElement,
@@ -346,7 +370,9 @@ const submitDecline = () =>
  * @returns A promise settling once the move finished.
  */
 const submitReceive = () =>
-    handleReceiveSubmit(({ handlingDeduction, restock }) => {
+    handleReceiveSubmit(({ handlingDeduction, remedy, restock }) => {
+        // The schema keeps `remedy` a string; the contract's union is narrowed from the list.
+        const chosen = REMEDIES.find((candidate) => candidate === remedy);
         const lowered = props.item.lines
             .filter((line) => Number(restock[line.productId]) !== line.quantity)
             .map((line) => ({
@@ -354,12 +380,20 @@ const submitReceive = () =>
                 restock: Number(restock[line.productId])
             }));
         const body = {
-            ...(handlingDeduction === '' ? {} : { handlingDeduction: Number(handlingDeduction) }),
+            // A deduction is not offered under the guarantee, so none is ever sent for it.
+            ...(handlingDeduction === '' || underGuarantee.value
+                ? {}
+                : { handlingDeduction: Number(handlingDeduction) }),
+            ...(underGuarantee.value && chosen ? { remedy: chosen } : {}),
             ...(lowered.length > 0 ? { lines: lowered } : {})
         };
+        // A repair or a replacement moves no money, so there is no refund to wait for.
+        const moneyStays = body.remedy === 'repair' || body.remedy === 'replace';
         return run(
             () => receive(props.item.id, Object.keys(body).length > 0 ? body : undefined),
-            'return-staff-actions.success-receive',
+            moneyStays
+                ? 'return-staff-actions.success-receive-remedy'
+                : 'return-staff-actions.success-receive',
             applyReceiveErrors,
             'refund-notice.receive-owed'
         );
@@ -490,7 +524,26 @@ const submitCancel = () =>
                     {{ receiveErrors.restock[0] }}
                 </p>
             </fieldset>
+            <v-radio-group
+                v-if="underGuarantee"
+                v-model="receiveForm.remedy"
+                :label="t('return-staff-actions.label-remedy')"
+                :hint="t('return-staff-actions.hint-remedy')"
+                persistent-hint
+                inline
+                class="w-full"
+                data-test="return-receive-remedy"
+            >
+                <v-radio
+                    v-for="option in remedyOptions"
+                    :key="'remedy-' + option.value"
+                    :label="option.title"
+                    :value="option.value"
+                    :data-test="'return-receive-remedy-' + option.value"
+                />
+            </v-radio-group>
             <v-text-field
+                v-if="!underGuarantee"
                 v-model="receiveForm.handlingDeduction"
                 type="number"
                 min="0"

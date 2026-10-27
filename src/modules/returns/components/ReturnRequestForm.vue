@@ -30,6 +30,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
 import { returnNoteSchema, returnNoteMax } from '../schemas.ts';
 import { isStatedInTime, localToIso } from '../domain/statement.ts';
+import { hasRemedyChoice, REMEDIES } from '../domain/remedy.ts';
 import StatedAtFields from './StatedAtFields.vue';
 import type { ReturnOptionLine, ReturnReason } from '@types';
 
@@ -151,6 +152,8 @@ const schema = z.object({
         error: () => t('returns-request.error-reason-required')
     }),
     note: returnNoteSchema,
+    // Optional wish for a faulty or wrong item; empty means none stated.
+    preferredRemedy: z.string(),
     // Empty means now; a typed day must be readable and not in the future.
     requestedAt: z.string().refine((value) => value === '' || isStatedInTime(value), {
         error: () => t('returns-request.error-date-invalid')
@@ -174,11 +177,31 @@ const schema = z.object({
  * would be a claim the customer never made.
  */
 const { form, formErrors, showFormErrors, handleSubmit, applyServerErrors, resetForm } =
-    useStructureFormValidation({ reason: '', note: '', requestedAt: '', lines: {} }, schema, {
-        formElement,
-        revalidateOn: locale,
-        onInvalid: () => addMessage(t('generic.fix-errors'))
-    });
+    useStructureFormValidation(
+        { reason: '', note: '', preferredRemedy: '', requestedAt: '', lines: {} },
+        schema,
+        {
+            formElement,
+            revalidateOn: locale,
+            onInvalid: () => addMessage(t('generic.fix-errors'))
+        }
+    );
+
+/**
+ * Whether the chosen reason is under the legal guarantee: the buyer then says which remedy they
+ * would like, and is told what a repair adds.
+ */
+const choosesRemedy = computed(() => hasRemedyChoice(form.value.reason));
+
+/**
+ * The remedy choices, translated, in the law's order.
+ */
+const remedyOptions = computed(() =>
+    REMEDIES.map((remedy) => ({
+        value: remedy,
+        title: t(`returns-request.remedy-${remedy}`)
+    }))
+);
 
 /**
  * Whether a line cannot come back for the reason now chosen: goods Art. 16 excludes from the
@@ -260,8 +283,12 @@ const collapse = () => {
  * @returns A promise settling once the call finished.
  */
 const submit = () =>
-    handleSubmit(({ reason, note, requestedAt, lines }) => {
+    handleSubmit(({ reason, note, preferredRemedy, requestedAt, lines }) => {
         clearOpenError();
+        // A wish is sent only for a reason that has a choice; the select's string is narrowed.
+        const wish = choosesRemedy.value
+            ? REMEDIES.find((candidate) => candidate === preferredRemedy)
+            : undefined;
         const trimmedNote = note.trim();
         const askedAt = props.staff ? localToIso(requestedAt) : undefined;
         return openReturn({
@@ -269,6 +296,7 @@ const submit = () =>
             // Narrows the select's string to the reason union; the schema already refused anything else.
             reason: REASONS.find((choice) => choice === reason) ?? 'other',
             ...(trimmedNote === '' ? {} : { note: trimmedNote }),
+            ...(wish ? { preferredRemedy: wish } : {}),
             ...(askedAt ? { requestedAt: askedAt } : {}),
             lines: Object.entries(lines).map(([productId, quantity]) => ({
                 productId,
@@ -366,6 +394,24 @@ const submit = () =>
                 hide-details="auto"
                 data-test="return-reason"
             />
+
+            <v-radio-group
+                v-if="choosesRemedy"
+                v-model="form.preferredRemedy"
+                :label="t('returns-request.label-remedy')"
+                :hint="t('returns-request.remedy-notice')"
+                persistent-hint
+                inline
+                data-test="return-remedy"
+            >
+                <v-radio
+                    v-for="option in remedyOptions"
+                    :key="'remedy-' + option.value"
+                    :label="option.title"
+                    :value="option.value"
+                    :data-test="'return-remedy-' + option.value"
+                />
+            </v-radio-group>
 
             <p
                 v-if="staff && reasonIsException"
