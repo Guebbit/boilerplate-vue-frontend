@@ -97,12 +97,12 @@ route asks `['display', 'Payment']`, because `read:Payment` answers a plain `can
 
 Four tabs, saved views over what the backend already holds (the active one is `?tab=`):
 
-| Tab               | Reads                                                                    | Notes                                                                                                                              |
-| ----------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| All               | `POST /payments/search`                                                  | Filters (status, method, provider, dates, amounts, order, reference) and sort by date or amount; a row opens the drawer.           |
-| Awaiting transfer | `GET /payments?method=bank_transfer&displayStatus=incomplete&sort=payBy` | Soonest deadline first: `payBy`, the RF reference and the amount; a row opens the drawer, which links to the order's offline form. |
-| Refunds           | `GET /payments/refunds`                                                  | One row per refund across every payment; read-only.                                                                                |
-| Needs attention   | `GET /payments/attention`                                                | Only problems still recorded on a document: a fixed one disappears. Repairs nothing.                                               |
+| Tab               | Reads                                                                    | Notes                                                                                                                                  |
+| ----------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| All               | `POST /payments/search`                                                  | Filters (status, method, provider, dates, amounts, order, reference, open dispute) and sort by date or amount; a row opens the drawer. |
+| Awaiting transfer | `GET /payments?method=bank_transfer&displayStatus=incomplete&sort=payBy` | Soonest deadline first: `payBy`, the RF reference and the amount; a row opens the drawer, which links to the order's offline form.     |
+| Refunds           | `GET /payments/refunds`                                                  | One row per refund across every payment; read-only.                                                                                    |
+| Needs attention   | `GET /payments/attention`                                                | Only problems still recorded on a document: a fixed one disappears. Repairs nothing.                                                   |
 
 ```mermaid
 flowchart LR
@@ -137,6 +137,17 @@ race re-reads the payment before the error shows.
 **The legal clock is visible.** A refused refund that pays a withdrawal or a return carries
 `refundDueBy` (creation plus 14 days, Consumer Rights Directive Art. 13); the needs-attention list
 turns it into the days left, or how late the refund is. Any other refund shows its age only.
+
+**A buyer's dispute is shown, not fought.** When the bank disputes a card payment the server sends
+`Payment.disputes` to staff only. The drawer and the order's edit page (`OrderDisputes`, which reads the payment
+`useOrderRefund` already fetched) show a `DisputeBanner` per dispute: its kind, where it stands, the
+reason, the amount, the days left to send evidence and a link to the provider's dashboard (only an
+`https` address; the shop answers there, this page sends no evidence). While a chargeback is open the
+banner says refunds are paused; the refund button itself is already gone because `actions.refund` is
+false, so the page decides nothing. Needs attention gets a `dispute_needs_response` row with the
+evidence deadline and, when part of the payment was already refunded, how much (that refund is the
+evidence). The All tab filters to payments with an open dispute, and the order's timeline gets two
+staff-only rows, `dispute_opened` and `dispute_closed`.
 
 **What the page does not show** is an amount mismatch: the order is cancelled and refunded
 automatically and the only trace is an audit row, so the tab points at the audit log.

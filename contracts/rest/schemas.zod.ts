@@ -3353,6 +3353,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 'refund_failed',
                 'refund_canceled',
                 'refund_reversed',
+                'dispute_opened',
+                'dispute_closed',
                 'shipment_shipped',
                 'shipment_delivered',
                 'shipment_lost',
@@ -10439,6 +10441,7 @@ export const listOrderPaymentsResponseItemsItemRefundsItemReturnIdRegExp = new R
     '^[0-9A-Za-z_-]+$'
 );
 export const listOrderPaymentsResponseItemsItemReferenceMax = 120;
+export const listOrderPaymentsResponseItemsItemDisputesItemAmountMin = 0;
 export const listOrderPaymentsResponseItemsItemActionsSettleByHandItemMax = 64;
 export const listOrderPaymentsResponseItemsItemActionsSettleByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -10552,6 +10555,48 @@ export const ListOrderPaymentsResponse = zod.strictObject({
             receivedAt: zod.iso.datetime({ offset: true }).optional(),
             clientSecret: zod.string().optional(),
             cardLast4: zod.string().optional(),
+            disputes: zod
+                .array(
+                    zod.strictObject({
+                        disputeRef: zod.string(),
+                        kind: zod.enum(['inquiry', 'chargeback']),
+                        status: zod.enum([
+                            'needs_response',
+                            'under_review',
+                            'won',
+                            'lost',
+                            'accepted',
+                            'closed'
+                        ]),
+                        reason: zod.enum([
+                            'bank_cannot_process',
+                            'check_returned',
+                            'credit_not_processed',
+                            'customer_initiated',
+                            'debit_not_authorized',
+                            'duplicate',
+                            'fraudulent',
+                            'general',
+                            'incorrect_account_details',
+                            'insufficient_funds',
+                            'product_not_received',
+                            'product_unacceptable',
+                            'subscription_canceled',
+                            'unrecognized'
+                        ]),
+                        amount: zod
+                            .number()
+                            .min(listOrderPaymentsResponseItemsItemDisputesItemAmountMin),
+                        currency: zod.string(),
+                        evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+                        fundsWithdrawn: zod.boolean(),
+                        openedAt: zod.iso.datetime({ offset: true }),
+                        closedAt: zod.iso.datetime({ offset: true }).optional(),
+                        observedAt: zod.iso.datetime({ offset: true }),
+                        dashboardUrl: zod.string().optional()
+                    })
+                )
+                .optional(),
             actions: zod.strictObject({
                 pay: zod.boolean(),
                 sync: zod.boolean(),
@@ -10617,6 +10662,7 @@ export const recordOrderPaymentResponseRefundsItemAmountMin = 0;
 export const recordOrderPaymentResponseRefundsItemReturnIdMax = 64;
 export const recordOrderPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const recordOrderPaymentResponseReferenceMax = 120;
+export const recordOrderPaymentResponseDisputesItemAmountMin = 0;
 export const recordOrderPaymentResponseActionsSettleByHandItemMax = 64;
 export const recordOrderPaymentResponseActionsSettleByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -10720,6 +10766,46 @@ export const RecordOrderPaymentResponse = zod.strictObject({
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
     clientSecret: zod.string().optional(),
     cardLast4: zod.string().optional(),
+    disputes: zod
+        .array(
+            zod.strictObject({
+                disputeRef: zod.string(),
+                kind: zod.enum(['inquiry', 'chargeback']),
+                status: zod.enum([
+                    'needs_response',
+                    'under_review',
+                    'won',
+                    'lost',
+                    'accepted',
+                    'closed'
+                ]),
+                reason: zod.enum([
+                    'bank_cannot_process',
+                    'check_returned',
+                    'credit_not_processed',
+                    'customer_initiated',
+                    'debit_not_authorized',
+                    'duplicate',
+                    'fraudulent',
+                    'general',
+                    'incorrect_account_details',
+                    'insufficient_funds',
+                    'product_not_received',
+                    'product_unacceptable',
+                    'subscription_canceled',
+                    'unrecognized'
+                ]),
+                amount: zod.number().min(recordOrderPaymentResponseDisputesItemAmountMin),
+                currency: zod.string(),
+                evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+                fundsWithdrawn: zod.boolean(),
+                openedAt: zod.iso.datetime({ offset: true }),
+                closedAt: zod.iso.datetime({ offset: true }).optional(),
+                observedAt: zod.iso.datetime({ offset: true }),
+                dashboardUrl: zod.string().optional()
+            })
+        )
+        .optional(),
     actions: zod.strictObject({
         pay: zod.boolean(),
         sync: zod.boolean(),
@@ -11292,6 +11378,7 @@ export const getPaymentResponseRefundsItemAmountMin = 0;
 export const getPaymentResponseRefundsItemReturnIdMax = 64;
 export const getPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getPaymentResponseReferenceMax = 120;
+export const getPaymentResponseDisputesItemAmountMin = 0;
 export const getPaymentResponseActionsSettleByHandItemMax = 64;
 export const getPaymentResponseActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getPaymentResponseActionsCancelRefundItemMax = 64;
@@ -11387,6 +11474,46 @@ export const GetPaymentResponse = zod.strictObject({
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
     clientSecret: zod.string().optional(),
     cardLast4: zod.string().optional(),
+    disputes: zod
+        .array(
+            zod.strictObject({
+                disputeRef: zod.string(),
+                kind: zod.enum(['inquiry', 'chargeback']),
+                status: zod.enum([
+                    'needs_response',
+                    'under_review',
+                    'won',
+                    'lost',
+                    'accepted',
+                    'closed'
+                ]),
+                reason: zod.enum([
+                    'bank_cannot_process',
+                    'check_returned',
+                    'credit_not_processed',
+                    'customer_initiated',
+                    'debit_not_authorized',
+                    'duplicate',
+                    'fraudulent',
+                    'general',
+                    'incorrect_account_details',
+                    'insufficient_funds',
+                    'product_not_received',
+                    'product_unacceptable',
+                    'subscription_canceled',
+                    'unrecognized'
+                ]),
+                amount: zod.number().min(getPaymentResponseDisputesItemAmountMin),
+                currency: zod.string(),
+                evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+                fundsWithdrawn: zod.boolean(),
+                openedAt: zod.iso.datetime({ offset: true }),
+                closedAt: zod.iso.datetime({ offset: true }).optional(),
+                observedAt: zod.iso.datetime({ offset: true }),
+                dashboardUrl: zod.string().optional()
+            })
+        )
+        .optional(),
     actions: zod.strictObject({
         pay: zod.boolean(),
         sync: zod.boolean(),
@@ -11452,6 +11579,7 @@ export const confirmPaymentResponseRefundsItemAmountMin = 0;
 export const confirmPaymentResponseRefundsItemReturnIdMax = 64;
 export const confirmPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const confirmPaymentResponseReferenceMax = 120;
+export const confirmPaymentResponseDisputesItemAmountMin = 0;
 export const confirmPaymentResponseActionsSettleByHandItemMax = 64;
 export const confirmPaymentResponseActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const confirmPaymentResponseActionsCancelRefundItemMax = 64;
@@ -11547,6 +11675,46 @@ export const ConfirmPaymentResponse = zod.strictObject({
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
     clientSecret: zod.string().optional(),
     cardLast4: zod.string().optional(),
+    disputes: zod
+        .array(
+            zod.strictObject({
+                disputeRef: zod.string(),
+                kind: zod.enum(['inquiry', 'chargeback']),
+                status: zod.enum([
+                    'needs_response',
+                    'under_review',
+                    'won',
+                    'lost',
+                    'accepted',
+                    'closed'
+                ]),
+                reason: zod.enum([
+                    'bank_cannot_process',
+                    'check_returned',
+                    'credit_not_processed',
+                    'customer_initiated',
+                    'debit_not_authorized',
+                    'duplicate',
+                    'fraudulent',
+                    'general',
+                    'incorrect_account_details',
+                    'insufficient_funds',
+                    'product_not_received',
+                    'product_unacceptable',
+                    'subscription_canceled',
+                    'unrecognized'
+                ]),
+                amount: zod.number().min(confirmPaymentResponseDisputesItemAmountMin),
+                currency: zod.string(),
+                evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+                fundsWithdrawn: zod.boolean(),
+                openedAt: zod.iso.datetime({ offset: true }),
+                closedAt: zod.iso.datetime({ offset: true }).optional(),
+                observedAt: zod.iso.datetime({ offset: true }),
+                dashboardUrl: zod.string().optional()
+            })
+        )
+        .optional(),
     actions: zod.strictObject({
         pay: zod.boolean(),
         sync: zod.boolean(),
@@ -11592,6 +11760,7 @@ export const syncPaymentResponseRefundsItemAmountMin = 0;
 export const syncPaymentResponseRefundsItemReturnIdMax = 64;
 export const syncPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const syncPaymentResponseReferenceMax = 120;
+export const syncPaymentResponseDisputesItemAmountMin = 0;
 export const syncPaymentResponseActionsSettleByHandItemMax = 64;
 export const syncPaymentResponseActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const syncPaymentResponseActionsCancelRefundItemMax = 64;
@@ -11687,6 +11856,46 @@ export const SyncPaymentResponse = zod.strictObject({
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
     clientSecret: zod.string().optional(),
     cardLast4: zod.string().optional(),
+    disputes: zod
+        .array(
+            zod.strictObject({
+                disputeRef: zod.string(),
+                kind: zod.enum(['inquiry', 'chargeback']),
+                status: zod.enum([
+                    'needs_response',
+                    'under_review',
+                    'won',
+                    'lost',
+                    'accepted',
+                    'closed'
+                ]),
+                reason: zod.enum([
+                    'bank_cannot_process',
+                    'check_returned',
+                    'credit_not_processed',
+                    'customer_initiated',
+                    'debit_not_authorized',
+                    'duplicate',
+                    'fraudulent',
+                    'general',
+                    'incorrect_account_details',
+                    'insufficient_funds',
+                    'product_not_received',
+                    'product_unacceptable',
+                    'subscription_canceled',
+                    'unrecognized'
+                ]),
+                amount: zod.number().min(syncPaymentResponseDisputesItemAmountMin),
+                currency: zod.string(),
+                evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+                fundsWithdrawn: zod.boolean(),
+                openedAt: zod.iso.datetime({ offset: true }),
+                closedAt: zod.iso.datetime({ offset: true }).optional(),
+                observedAt: zod.iso.datetime({ offset: true }),
+                dashboardUrl: zod.string().optional()
+            })
+        )
+        .optional(),
     actions: zod.strictObject({
         pay: zod.boolean(),
         sync: zod.boolean(),
@@ -11726,10 +11935,53 @@ export const ReceivePaymentWebhookHeader = zod.strictObject({
 export const receivePaymentWebhookBodyIdMax = 200;
 export const receivePaymentWebhookBodyProviderRefMax = 200;
 export const receivePaymentWebhookBodyRefundRefMax = 200;
+export const receivePaymentWebhookBodyDisputeDisputeRefMax = 200;
+export const receivePaymentWebhookBodyDisputeAmountMin = 0;
+export const receivePaymentWebhookBodyDisputeCurrencyMax = 3;
+export const receivePaymentWebhookBodyDisputeDashboardUrlMax = 500;
 export const ReceivePaymentWebhookBody = zod.strictObject({
     id: zod.string().max(receivePaymentWebhookBodyIdMax),
     providerRef: zod.string().max(receivePaymentWebhookBodyProviderRefMax).optional(),
-    refundRef: zod.string().max(receivePaymentWebhookBodyRefundRefMax).optional()
+    refundRef: zod.string().max(receivePaymentWebhookBodyRefundRefMax).optional(),
+    dispute: zod
+        .strictObject({
+            disputeRef: zod.string().max(receivePaymentWebhookBodyDisputeDisputeRefMax),
+            kind: zod.enum(['inquiry', 'chargeback']),
+            status: zod.enum([
+                'needs_response',
+                'under_review',
+                'won',
+                'lost',
+                'accepted',
+                'closed'
+            ]),
+            reason: zod.enum([
+                'bank_cannot_process',
+                'check_returned',
+                'credit_not_processed',
+                'customer_initiated',
+                'debit_not_authorized',
+                'duplicate',
+                'fraudulent',
+                'general',
+                'incorrect_account_details',
+                'insufficient_funds',
+                'product_not_received',
+                'product_unacceptable',
+                'subscription_canceled',
+                'unrecognized'
+            ]),
+            amount: zod.number().min(receivePaymentWebhookBodyDisputeAmountMin),
+            currency: zod.string().max(receivePaymentWebhookBodyDisputeCurrencyMax),
+            evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+            fundsWithdrawn: zod.boolean(),
+            observedAt: zod.iso.datetime({ offset: true }),
+            dashboardUrl: zod
+                .string()
+                .max(receivePaymentWebhookBodyDisputeDashboardUrlMax)
+                .optional()
+        })
+        .optional()
 });
 export const ReceivePaymentWebhookResponse = zod.void();
 /**
@@ -15103,6 +15355,8 @@ export const GetOrderTimelineResponse = zod.strictObject({
                 'refund_failed',
                 'refund_canceled',
                 'refund_reversed',
+                'dispute_opened',
+                'dispute_closed',
                 'shipment_shipped',
                 'shipment_delivered',
                 'shipment_lost',
@@ -15452,6 +15706,7 @@ export const ListPaymentsQueryParams = zod.strictObject({
         .max(listPaymentsQueryOrderIdMax)
         .regex(listPaymentsQueryOrderIdRegExp)
         .optional(),
+    disputed: zod.boolean().optional(),
     reference: zod.string().max(listPaymentsQueryReferenceMax).optional(),
     transferReference: zod.string().max(listPaymentsQueryTransferReferenceMax).optional()
 });
@@ -15471,6 +15726,7 @@ export const listPaymentsResponseItemsItemRefundsItemReturnIdRegExp = new RegExp
     '^[0-9A-Za-z_-]+$'
 );
 export const listPaymentsResponseItemsItemReferenceMax = 120;
+export const listPaymentsResponseItemsItemDisputesItemAmountMin = 0;
 export const listPaymentsResponseItemsItemActionsSettleByHandItemMax = 64;
 export const listPaymentsResponseItemsItemActionsSettleByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -15588,6 +15844,48 @@ export const ListPaymentsResponse = zod.strictObject({
             receivedAt: zod.iso.datetime({ offset: true }).optional(),
             clientSecret: zod.string().optional(),
             cardLast4: zod.string().optional(),
+            disputes: zod
+                .array(
+                    zod.strictObject({
+                        disputeRef: zod.string(),
+                        kind: zod.enum(['inquiry', 'chargeback']),
+                        status: zod.enum([
+                            'needs_response',
+                            'under_review',
+                            'won',
+                            'lost',
+                            'accepted',
+                            'closed'
+                        ]),
+                        reason: zod.enum([
+                            'bank_cannot_process',
+                            'check_returned',
+                            'credit_not_processed',
+                            'customer_initiated',
+                            'debit_not_authorized',
+                            'duplicate',
+                            'fraudulent',
+                            'general',
+                            'incorrect_account_details',
+                            'insufficient_funds',
+                            'product_not_received',
+                            'product_unacceptable',
+                            'subscription_canceled',
+                            'unrecognized'
+                        ]),
+                        amount: zod
+                            .number()
+                            .min(listPaymentsResponseItemsItemDisputesItemAmountMin),
+                        currency: zod.string(),
+                        evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+                        fundsWithdrawn: zod.boolean(),
+                        openedAt: zod.iso.datetime({ offset: true }),
+                        closedAt: zod.iso.datetime({ offset: true }).optional(),
+                        observedAt: zod.iso.datetime({ offset: true }),
+                        dashboardUrl: zod.string().optional()
+                    })
+                )
+                .optional(),
             actions: zod.strictObject({
                 pay: zod.boolean(),
                 sync: zod.boolean(),
@@ -15653,6 +15951,7 @@ export const createPaymentResponseRefundsItemAmountMin = 0;
 export const createPaymentResponseRefundsItemReturnIdMax = 64;
 export const createPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createPaymentResponseReferenceMax = 120;
+export const createPaymentResponseDisputesItemAmountMin = 0;
 export const createPaymentResponseActionsSettleByHandItemMax = 64;
 export const createPaymentResponseActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createPaymentResponseActionsCancelRefundItemMax = 64;
@@ -15748,6 +16047,46 @@ export const CreatePaymentResponse = zod.strictObject({
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
     clientSecret: zod.string().optional(),
     cardLast4: zod.string().optional(),
+    disputes: zod
+        .array(
+            zod.strictObject({
+                disputeRef: zod.string(),
+                kind: zod.enum(['inquiry', 'chargeback']),
+                status: zod.enum([
+                    'needs_response',
+                    'under_review',
+                    'won',
+                    'lost',
+                    'accepted',
+                    'closed'
+                ]),
+                reason: zod.enum([
+                    'bank_cannot_process',
+                    'check_returned',
+                    'credit_not_processed',
+                    'customer_initiated',
+                    'debit_not_authorized',
+                    'duplicate',
+                    'fraudulent',
+                    'general',
+                    'incorrect_account_details',
+                    'insufficient_funds',
+                    'product_not_received',
+                    'product_unacceptable',
+                    'subscription_canceled',
+                    'unrecognized'
+                ]),
+                amount: zod.number().min(createPaymentResponseDisputesItemAmountMin),
+                currency: zod.string(),
+                evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+                fundsWithdrawn: zod.boolean(),
+                openedAt: zod.iso.datetime({ offset: true }),
+                closedAt: zod.iso.datetime({ offset: true }).optional(),
+                observedAt: zod.iso.datetime({ offset: true }),
+                dashboardUrl: zod.string().optional()
+            })
+        )
+        .optional(),
     actions: zod.strictObject({
         pay: zod.boolean(),
         sync: zod.boolean(),
@@ -15824,6 +16163,7 @@ export const SearchPaymentsBody = zod.strictObject({
         .max(searchPaymentsBodyOrderIdMax)
         .regex(searchPaymentsBodyOrderIdRegExp)
         .optional(),
+    disputed: zod.boolean().optional(),
     reference: zod.string().max(searchPaymentsBodyReferenceMax).optional(),
     transferReference: zod.string().max(searchPaymentsBodyTransferReferenceMax).optional()
 });
@@ -15843,6 +16183,7 @@ export const searchPaymentsResponseItemsItemRefundsItemReturnIdRegExp = new RegE
     '^[0-9A-Za-z_-]+$'
 );
 export const searchPaymentsResponseItemsItemReferenceMax = 120;
+export const searchPaymentsResponseItemsItemDisputesItemAmountMin = 0;
 export const searchPaymentsResponseItemsItemActionsSettleByHandItemMax = 64;
 export const searchPaymentsResponseItemsItemActionsSettleByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -15960,6 +16301,48 @@ export const SearchPaymentsResponse = zod.strictObject({
             receivedAt: zod.iso.datetime({ offset: true }).optional(),
             clientSecret: zod.string().optional(),
             cardLast4: zod.string().optional(),
+            disputes: zod
+                .array(
+                    zod.strictObject({
+                        disputeRef: zod.string(),
+                        kind: zod.enum(['inquiry', 'chargeback']),
+                        status: zod.enum([
+                            'needs_response',
+                            'under_review',
+                            'won',
+                            'lost',
+                            'accepted',
+                            'closed'
+                        ]),
+                        reason: zod.enum([
+                            'bank_cannot_process',
+                            'check_returned',
+                            'credit_not_processed',
+                            'customer_initiated',
+                            'debit_not_authorized',
+                            'duplicate',
+                            'fraudulent',
+                            'general',
+                            'incorrect_account_details',
+                            'insufficient_funds',
+                            'product_not_received',
+                            'product_unacceptable',
+                            'subscription_canceled',
+                            'unrecognized'
+                        ]),
+                        amount: zod
+                            .number()
+                            .min(searchPaymentsResponseItemsItemDisputesItemAmountMin),
+                        currency: zod.string(),
+                        evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+                        fundsWithdrawn: zod.boolean(),
+                        openedAt: zod.iso.datetime({ offset: true }),
+                        closedAt: zod.iso.datetime({ offset: true }).optional(),
+                        observedAt: zod.iso.datetime({ offset: true }),
+                        dashboardUrl: zod.string().optional()
+                    })
+                )
+                .optional(),
             actions: zod.strictObject({
                 pay: zod.boolean(),
                 sync: zod.boolean(),
@@ -16113,6 +16496,8 @@ export const listPaymentAttentionResponseItemsItemPaymentIdMax = 64;
 export const listPaymentAttentionResponseItemsItemPaymentIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listPaymentAttentionResponseItemsItemRefundIdMax = 64;
 export const listPaymentAttentionResponseItemsItemRefundIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listPaymentAttentionResponseItemsItemDisputeIdMax = 200;
+export const listPaymentAttentionResponseItemsItemAlreadyRefundedMin = 0;
 export const listPaymentAttentionResponseItemsItemAmountMin = 0;
 export const listPaymentAttentionResponseItemsItemExceedsByMin = 0;
 export const ListPaymentAttentionResponse = zod.strictObject({
@@ -16123,7 +16508,8 @@ export const ListPaymentAttentionResponse = zod.strictObject({
                 'refused_refund',
                 'reversed_refund',
                 'refund_exceeds_remaining',
-                'manual_refund_owed'
+                'manual_refund_owed',
+                'dispute_needs_response'
             ]),
             orderId: zod
                 .string()
@@ -16139,7 +16525,17 @@ export const ListPaymentAttentionResponse = zod.strictObject({
                 .string()
                 .min(1)
                 .max(listPaymentAttentionResponseItemsItemRefundIdMax)
-                .regex(listPaymentAttentionResponseItemsItemRefundIdRegExp),
+                .regex(listPaymentAttentionResponseItemsItemRefundIdRegExp)
+                .optional(),
+            disputeId: zod
+                .string()
+                .max(listPaymentAttentionResponseItemsItemDisputeIdMax)
+                .optional(),
+            dueBy: zod.iso.datetime({ offset: true }).optional(),
+            alreadyRefunded: zod
+                .number()
+                .min(listPaymentAttentionResponseItemsItemAlreadyRefundedMin)
+                .optional(),
             amount: zod.number().min(listPaymentAttentionResponseItemsItemAmountMin),
             currency: zod.string(),
             failureReason: zod
