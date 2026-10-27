@@ -106,8 +106,11 @@ describe('CU32 · A faulty item is replaced', () => {
                         'GET',
                         `/orders/${orderId}/fulfillment-orders`
                     ).then((plan) => {
-                        const open = plan?.items.find(({ status }) => status === 'open');
-                        expect(open?.id, 'the reopened fulfillment order is open').to.be.a(
+                        // The order has a second line that already shipped, so the reopened order reads in progress.
+                        const open = plan?.items.find(
+                            ({ status }) => status === 'open' || status === 'in_progress'
+                        );
+                        expect(open?.id, 'the reopened fulfillment order can ship').to.be.a(
                             'string'
                         );
                         cy.apiAs(
