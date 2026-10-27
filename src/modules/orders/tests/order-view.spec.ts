@@ -39,7 +39,10 @@ vi.mock('@api', async (importOriginal) => {
         ...actual,
         reorder: vi.fn(actual.reorder),
         listOrderCreditNotes: vi.fn(() => Promise.resolve({ items: [] })),
-        getOrderCreditNote: vi.fn(() => Promise.resolve(new Blob(['%PDF-1.4'])))
+        // The server names the file (`Content-Disposition`); the HTTP layer hands it over as a File.
+        getOrderCreditNote: vi.fn(() =>
+            Promise.resolve(new File(['%PDF-1.4'], 'credit-note-CN-2026-0002.pdf'))
+        )
     };
 });
 
@@ -248,8 +251,8 @@ describe('the credit notes', () => {
 
         expect(getOrderCreditNote).toHaveBeenCalledExactlyOnceWith('o1', 'cn2');
         expect(downloadBlob).toHaveBeenCalledExactlyOnceWith(
-            expect.any(Blob),
-            'order-o1-credit-note-CN-2026-0002.pdf'
+            expect.any(File),
+            'credit-note-CN-2026-0002.pdf'
         );
 
         wrapper.unmount();

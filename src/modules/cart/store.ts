@@ -22,8 +22,8 @@ import {
     reorder as apiReorder
 } from '@api';
 import type {
-    CartItem,
     CartResponse,
+    CartResponseItem,
     CartShipping,
     CartSummaryResponse,
     CheckoutRequest,
@@ -71,7 +71,7 @@ export const useCartStore = defineStore('cart', () => {
      * Generic REST helper: wraps every mutating call in `fetchAny` so `loading` toggles
      * automatically around each request.
      */
-    const { loading, fetchAny } = useStructureRestApi<CartItem, string>({
+    const { loading, fetchAny } = useStructureRestApi<CartResponseItem, string>({
         resourceKey: 'cart',
         queryClient
     });

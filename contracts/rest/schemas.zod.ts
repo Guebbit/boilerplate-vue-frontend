@@ -10413,7 +10413,7 @@ export const OverrideOrderStatusResponse = zod.strictObject({
     deletedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * The frozen tax invoice for the order identified by `{id}`, as a binary PDF — numbered and issued once, the moment the order moved `pending → paid`, never re-rendered from today's config. Refuses with `404` for an order that has not been invoiced yet (never paid, or paid while its invoice listener failed: such an order is not invoiced yet, and takes no number from the gap-free series). The client should stream or save the response with an appropriate `Content-Disposition` header.
+ * The frozen tax invoice for the order identified by `{id}`, as a binary PDF — numbered and issued once, the moment the order moved `pending → paid`, never re-rendered from today's config. Refuses with `404` for an order that has not been invoiced yet (never paid, or paid while its invoice listener failed: such an order is not invoiced yet, and takes no number from the gap-free series). The server names the file: `Content-Disposition` carries `invoice-<invoice number>.pdf`, so a client saves it under that name rather than inventing one.
  * @summary Download the order's invoice (PDF)
  */
 export const getOrderInvoicePathIdMax = 64;

@@ -6441,7 +6441,7 @@ export type PreconditionFailedResponse = Problem;
 export type ValidationErrorResponse = Problem;
 
 /**
- * The request body is larger than this deployment accepts (`NODE_JSON_BODY_LIMIT`, 100kb by default; multipart uploads are bounded separately by `NODE_MAX_UPLOAD_BYTES`). Refused by the body parser before any route runs, which is why it is declared for every body-accepting operation rather than by hand.
+ * The request body is larger than this deployment accepts: a JSON body over `NODE_JSON_BODY_LIMIT` (100kb by default), an uploaded file over `NODE_MAX_UPLOAD_BYTES`, or a multipart field value over 100 KB. Refused by the body parser or the upload middleware, which is why it is declared for every body-accepting operation rather than by hand. The other multipart limits (counts, shapes) answer `400`.
  */
 export type PayloadTooLargeResponse = Problem;
 
@@ -10464,7 +10464,7 @@ export const overrideOrderStatus = (
 };
 
 /**
- * The frozen tax invoice for the order identified by `{id}`, as a binary PDF — numbered and issued once, the moment the order moved `pending → paid`, never re-rendered from today's config. Refuses with `404` for an order that has not been invoiced yet (never paid, or paid while its invoice listener failed: such an order is not invoiced yet, and takes no number from the gap-free series). The client should stream or save the response with an appropriate `Content-Disposition` header.
+ * The frozen tax invoice for the order identified by `{id}`, as a binary PDF — numbered and issued once, the moment the order moved `pending → paid`, never re-rendered from today's config. Refuses with `404` for an order that has not been invoiced yet (never paid, or paid while its invoice listener failed: such an order is not invoiced yet, and takes no number from the gap-free series). The server names the file: `Content-Disposition` carries `invoice-<invoice number>.pdf`, so a client saves it under that name rather than inventing one.
  * @summary Download the order's invoice (PDF)
  */
 export const getOrderInvoice = (
@@ -11545,9 +11545,12 @@ export const mergeCart = (
  */
 export const exportOrders = (
     params?: ExportOrdersParams,
-    options?: SecondParameter<typeof orvalMutator<string>>
+    options?: SecondParameter<typeof orvalMutator<Blob>>
 ) => {
-    return orvalMutator<string>({ url: `/orders/export`, method: 'GET', params }, options);
+    return orvalMutator<Blob>(
+        { url: `/orders/export`, method: 'GET', params, responseType: 'blob' },
+        options
+    );
 };
 
 /**

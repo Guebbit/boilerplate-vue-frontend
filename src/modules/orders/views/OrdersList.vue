@@ -25,7 +25,7 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Download } from 'lucide-vue-next';
-import { downloadBlob } from '@guebbit/js-toolkit';
+import { saveDownload } from '@/infrastructure/http/download.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '../store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -487,7 +487,7 @@ const handleExport = () => {
     clearExportError();
     return exportOrdersCsv(filters.value)
         .then((file) => {
-            downloadBlob(file, `orders-${new Date().toISOString().slice(0, 10)}.csv`);
+            saveDownload(file);
             addMessage(t('orders-export.done'));
         })
         .catch(showExportFailure)

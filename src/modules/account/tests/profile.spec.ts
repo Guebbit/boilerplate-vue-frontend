@@ -96,26 +96,13 @@ beforeEach(() => {
         // The request answers `202` with the export and its status; the data comes later, by link.
         'POST /account/export': EXPORT,
         'GET /account/export': EXPORT,
-        // The download body IS the export document, not an envelope. Every collection is an array
-        // the fixture is free to leave empty; only `exportedAt` and `profile` are required scalars
-        // on `AccountExportResponse`. `invoicing` is the one exception — an object of two empty
-        // arrays, never absent, for an account with no paid orders yet.
-        'GET /account/export/file': {
-            exportedAt: '2026-09-07T00:00:00.000Z',
-            profile: USER,
-            roles: [],
-            addresses: [],
-            orders: [],
-            payments: [],
-            shipments: [],
-            cart: [],
-            wishlist: [],
-            sessions: [],
-            signInMethods: { providers: [], twoFactor: [] },
-            auditLog: [],
-            apiKeys: [],
-            invoicing: { invoices: [], creditNotes: [] }
-        }
+        // The download is a file, not an envelope: the HTTP layer hands it over as a `File` named
+        // by the server's `Content-Disposition`. The document inside is the user's own data.
+        'GET /account/export/file': new File(
+            [JSON.stringify({ exportedAt: '2026-09-07T00:00:00.000Z', profile: USER })],
+            'account-export-2026-09-07.json',
+            { type: 'application/json' }
+        )
     };
 });
 
@@ -274,13 +261,13 @@ describe('fetchAccountExport', () => {
 });
 
 describe('downloadAccountExport', () => {
-    it('returns the export document from GET /account/export/file', () =>
+    it('returns the file GET /account/export/file sends, under the server-chosen name', () =>
         useProfileStore()
             .downloadAccountExport()
-            .then((data) => {
+            .then((file) => {
                 expect(requestedUrls().at(-1)).toBe('/account/export/file');
-                expect(data?.profile).toEqual(USER);
-                expect(data?.exportedAt).toBe('2026-09-07T00:00:00.000Z');
+                expect(file).toBeInstanceOf(File);
+                expect(file).toHaveProperty('name', 'account-export-2026-09-07.json');
             }));
 });
 

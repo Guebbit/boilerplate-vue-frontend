@@ -164,7 +164,7 @@ describe('OP20 · Staff prove it’s still them', () => {
 
         cy.step('the warehouse receiving a returned parcel asks, and the return closes once');
         cy.subjectId('return.requested').then((returnId) => {
-            cy.apiAs('support', 'POST', `/returns/${returnId}/approve`, {});
+            cy.apiAs('support', 'POST', `/returns/${returnId}/approve`);
             cy.switchUser('warehouse');
             cy.travel(PAST_CRITICAL_MS);
             cy.visit(`/en/returns/${returnId}`);

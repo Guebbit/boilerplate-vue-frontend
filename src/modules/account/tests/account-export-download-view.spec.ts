@@ -2,7 +2,7 @@
  * @module
  * Mounts the page the "your data export is ready" mail links to: it reads the export's status
  * (over the shared MSW server) but downloads nothing until the visitor presses the button, saves
- * what the API sends as a dated JSON file, and blocks in place when the file is gone.
+ * what the API sends under the server's file name, and blocks in place when the file is gone.
  * `downloadAccountExport` is spied at the profile store.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
@@ -51,6 +51,11 @@ const mountPage = () => {
     return { wrapper, download };
 };
 
+/** The export as the HTTP layer hands it over: a file, named by the server. */
+const EXPORT_FILE = new File(['{"profile":{"id":"u1"}}'], 'account-export-2026-09-07.json', {
+    type: 'application/json'
+});
+
 /**
  * Answers the status read with an export, or with the 404 of an account that has none.
  *
@@ -76,9 +81,6 @@ const READY = {
     createdAt: '2026-09-07T09:00:00.000Z',
     expiresAt: '2026-09-14T10:00:00.000Z'
 };
-
-/** An export document with only the fields the page reads. */
-const DOCUMENT = { exportedAt: '2026-09-07T10:00:00.000Z', profile: { id: 'u1' } };
 
 beforeEach(() => {
     setActivePinia(createPinia());
@@ -146,9 +148,9 @@ describe('AccountExportDownload', () => {
         expect(download).not.toHaveBeenCalled();
     });
 
-    it('fetches the export the link names and saves it as a JSON file named for the day', () => {
+    it('fetches the export the link names and saves it under the name the server gave it', () => {
         const { wrapper, download } = mountPage();
-        download.mockResolvedValue(DOCUMENT as never);
+        download.mockResolvedValue(EXPORT_FILE);
 
         return flushPromises()
             .then(() => wrapper.get('[data-test=account-export-download]').trigger('click'))
@@ -156,9 +158,8 @@ describe('AccountExportDownload', () => {
             .then(() => {
                 expect(download).toHaveBeenCalledExactlyOnceWith();
                 expect(downloadBlob).toHaveBeenCalledExactlyOnceWith(
-                    JSON.stringify(DOCUMENT, null, 2),
-                    'account-export-2026-09-07.json',
-                    'application/json'
+                    EXPORT_FILE,
+                    'account-export-2026-09-07.json'
                 );
                 expect(wrapper.find('[data-test=account-export-saved]').exists()).toBe(true);
                 expect(wrapper.find('[data-test=account-export-error]').exists()).toBe(false);
@@ -217,9 +218,9 @@ describe('AccountExportDownload', () => {
 
     it('disables the button while the download is in flight, so a double click asks once', () => {
         const { wrapper, download } = mountPage();
-        let finish: ((value: never) => void) | undefined;
+        let finish: ((value: File) => void) | undefined;
         download.mockReturnValue(
-            new Promise<never>((resolve) => {
+            new Promise<File>((resolve) => {
                 finish = resolve;
             })
         );
@@ -233,7 +234,7 @@ describe('AccountExportDownload', () => {
             })
             .then(() => {
                 expect(download).toHaveBeenCalledTimes(1);
-                finish?.(DOCUMENT as never);
+                finish?.(EXPORT_FILE);
                 return flushPromises();
             })
             .then(() => {

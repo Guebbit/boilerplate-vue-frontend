@@ -125,6 +125,8 @@ paths:
                 $ref: "#/components/schemas/HealthPing"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /livez:
@@ -144,6 +146,8 @@ paths:
           description: The process is up.
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /readyz:
@@ -167,6 +171,8 @@ paths:
           description: Ready to receive traffic.
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           description: Booting, draining, or the database is unreachable.
   /.well-known/security.txt:
@@ -192,6 +198,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /locales:
@@ -1210,6 +1218,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: observability
@@ -1580,6 +1590,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
@@ -1768,6 +1780,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -1819,6 +1833,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
@@ -1988,6 +2004,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -2389,6 +2407,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -2419,6 +2439,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -2779,6 +2801,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -2815,6 +2839,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -2866,7 +2892,7 @@ paths:
           description: The caller's own data
           headers:
             Content-Disposition:
-              description: "`attachment`, with the file name `account-export.json`."
+              description: '`attachment; filename="account-export-<date>.json"`, e.g. `account-export-2026-10-27.json`; the date is the UTC day the export was requested.'
               schema:
                 type: string
           content:
@@ -3057,6 +3083,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -3337,6 +3365,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -3426,6 +3456,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
@@ -3482,6 +3514,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
@@ -3868,6 +3902,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4250,6 +4286,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4286,6 +4324,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4322,6 +4362,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4949,6 +4991,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -5534,6 +5578,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -6001,6 +6047,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -6151,7 +6199,7 @@ paths:
       tags:
         - Invoicing
       summary: Download the order's invoice (PDF)
-      description: "The frozen tax invoice for the order identified by `{id}`, as a binary PDF — numbered and issued once, the moment the order moved `pending → paid`, never re-rendered from today's config. Refuses with `404` for an order that has not been invoiced yet (never paid, or paid while its invoice listener failed: such an order is not invoiced yet, and takes no number from the gap-free series). The client should stream or save the response with an appropriate `Content-Disposition` header."
+      description: "The frozen tax invoice for the order identified by `{id}`, as a binary PDF — numbered and issued once, the moment the order moved `pending → paid`, never re-rendered from today's config. Refuses with `404` for an order that has not been invoiced yet (never paid, or paid while its invoice listener failed: such an order is not invoiced yet, and takes no number from the gap-free series). The server names the file: `Content-Disposition` carries `invoice-<invoice number>.pdf`, so a client saves it under that name rather than inventing one."
       operationId: getOrderInvoice
       security:
         - bearerAuth: []
@@ -6161,6 +6209,11 @@ paths:
       responses:
         "200":
           description: Invoice PDF
+          headers:
+            Content-Disposition:
+              description: '`inline; filename="invoice-<invoice number>.pdf"`, e.g. `invoice-2026-0042.pdf`.'
+              schema:
+                type: string
           content:
             application/pdf:
               schema:
@@ -6228,6 +6281,11 @@ paths:
       responses:
         "200":
           description: Credit note PDF
+          headers:
+            Content-Disposition:
+              description: '`inline; filename="credit-note-<credit note number>.pdf"`, e.g. `credit-note-2026-0007.pdf`.'
+              schema:
+                type: string
           content:
             application/pdf:
               schema:
@@ -6364,6 +6422,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -6674,6 +6734,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -6963,6 +7025,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -7049,6 +7113,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -7171,6 +7237,10 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -7376,6 +7446,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -7799,6 +7871,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -8209,6 +8283,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -8448,6 +8524,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -8492,6 +8570,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -8522,6 +8602,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -8552,6 +8634,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -8694,6 +8778,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -8729,6 +8815,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -8872,7 +8960,7 @@ paths:
           description: The orders, as CSV
           headers:
             Content-Disposition:
-              description: '`attachment; filename="orders.csv"`'
+              description: "`attachment; filename=\"orders-<shop date>.csv\"`, e.g. `orders-2026-10-27.csv`; the date is the shop's calendar day."
               schema:
                 type: string
             Cache-Control:
@@ -8883,6 +8971,7 @@ paths:
             text/csv:
               schema:
                 type: string
+                format: binary
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9308,6 +9397,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -10043,6 +10134,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -10082,6 +10175,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -10124,6 +10219,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -10502,6 +10599,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -10536,6 +10635,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -10570,6 +10671,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -10698,6 +10801,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: notifications
@@ -10718,6 +10823,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -11227,6 +11334,16 @@ components:
       description: "The resource's current version as a strong entity-tag (RFC 9110 §8.8.3). Send it back as `If-Match` on `PUT`, `PATCH` or `DELETE` to refuse the write if someone else changed the resource in between. Opaque: compare it, never parse it. It validates writes only — a read never answers `304` from it."
       schema:
         type: string
+    RateLimit-Policy:
+      required: false
+      description: "The rate-limit budgets this request passed, as a list in the current IETF draft's syntax (`draft-ietf-httpapi-ratelimit-headers`): `\"login\";q=5;w=900` is a budget named `login` that allows `q` requests per `w` seconds. One list item per budget the request passed, named as in the budget table. Any response may carry it; no identifier of the caller is ever included."
+      schema:
+        type: string
+    RateLimit:
+      required: false
+      description: 'What is left of each budget in `RateLimit-Policy`, same names and order: `"login";r=3;t=600` is 3 requests remaining, and the window resets in 600 seconds. Back off before `r` reaches 0. Any response may carry it.'
+      schema:
+        type: string
     Retry-After:
       required: false
       description: How long to wait before trying again, in whole seconds (RFC 9110 §10.2.3). A `503` always carries a rough hint, not a promise. A `429` carries the time until the budget resets where the refusal knows it; one that does not (a spent per-account allowance) sends none, and the wait is then in the error `details`.
@@ -11287,7 +11404,7 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
     PayloadTooLarge:
-      description: The request body is larger than this deployment accepts (`NODE_JSON_BODY_LIMIT`, 100kb by default; multipart uploads are bounded separately by `NODE_MAX_UPLOAD_BYTES`). Refused by the body parser before any route runs, which is why it is declared for every body-accepting operation rather than by hand.
+      description: "The request body is larger than this deployment accepts: a JSON body over `NODE_JSON_BODY_LIMIT` (100kb by default), an uploaded file over `NODE_MAX_UPLOAD_BYTES`, or a multipart field value over 100 KB. Refused by the body parser or the upload middleware, which is why it is declared for every body-accepting operation rather than by hand. The other multipart limits (counts, shapes) answer `400`."
       content:
         application/problem+json:
           schema:
@@ -11303,6 +11420,10 @@ components:
       headers:
         Retry-After:
           $ref: "#/components/headers/Retry-After"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
       content:
         application/problem+json:
           schema:
@@ -21041,13 +21162,13 @@ x-error-codes:
     status: 400
     description: A multipart field name is too long (multer).
   LIMIT_FIELD_VALUE:
-    status: 400
+    status: 413
     description: A multipart field value is too long (multer).
   LIMIT_FILE_COUNT:
     status: 400
     description: A multipart upload carries too many files (multer).
   LIMIT_FILE_SIZE:
-    status: 400
+    status: 413
     description: An uploaded file exceeds this deployment's size limit (multer).
   LIMIT_PART_COUNT:
     status: 400
