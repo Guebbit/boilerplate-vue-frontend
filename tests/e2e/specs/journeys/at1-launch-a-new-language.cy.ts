@@ -206,6 +206,28 @@ describe('AT1 · Launch a new language', () => {
                     .its('status')
                     .should('equal', 200);
             });
+            // The editor previews the draft: the switcher marks it, and the page reads the German title.
+            cy.visit('/en');
+            cy.get('[data-test=language-switcher]').first().click();
+            cy.get(`[data-test=language-draft-${TAG}]`).should('exist');
+            cy.visit(`/${TAG}/products/${product.id}`);
+            cy.contains('Hundekorb 2').should('exist');
+            // A guest asking for the draft language gets the fallback text, labelled as English.
+            cy.env(['apiUrl'])
+                .then(({ apiUrl }) =>
+                    cy.task<{
+                        body: { title: string };
+                        headers: Record<string, string>;
+                    }>('guestApi', {
+                        apiUrl: String(apiUrl),
+                        path: `/products/${product.id}`,
+                        headers: { 'Accept-Language': TAG }
+                    })
+                )
+                .then((response) => {
+                    expect(response.body.title).not.to.equal('Hundekorb 2');
+                    expect(response.headers['content-language']).to.equal('en');
+                });
             // Switched back on so the deletion below keeps its place in the story.
             cy.get(`[data-language=${TAG}] [data-test=row-activate]`).click();
             cy.get(`[data-language=${TAG}] [data-test=row-deactivate]`).should('exist');

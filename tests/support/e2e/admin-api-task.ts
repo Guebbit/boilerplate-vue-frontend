@@ -183,20 +183,27 @@ export const adminApi = <T>(request: AdminApiRequest): Promise<T | null> => {
 /**
  * Cypress task: one call with no credential, made from Node. `cy.request` would carry the
  * browser's session cookie in cookie mode, so a "guest" check through it is not a guest.
- * Resolves the status and the parsed body (`null` when the answer is not JSON).
+ * Resolves the status, the parsed body (`null` when the answer is not JSON) and the response
+ * headers (names lower-cased). `headers` are sent as given, e.g. an `Accept-Language`.
  */
 export const guestApi = ({
     apiUrl,
     path,
-    method = 'GET'
+    method = 'GET',
+    headers
 }: {
     apiUrl: string;
     path: string;
     method?: string;
-}): Promise<{ status: number; body: unknown }> =>
-    fetch(`${apiUrl}${path}`, { method }).then((response) =>
+    headers?: Record<string, string>;
+}): Promise<{ status: number; body: unknown; headers: Record<string, string> }> =>
+    fetch(`${apiUrl}${path}`, { method, headers }).then((response) =>
         response
             .json()
             .catch(() => null)
-            .then((body: unknown) => ({ status: response.status, body }))
+            .then((body: unknown) => ({
+                status: response.status,
+                body,
+                headers: Object.fromEntries(response.headers.entries())
+            }))
     );
