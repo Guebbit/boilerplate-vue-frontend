@@ -156,7 +156,7 @@ describe('The journey harness', () => {
                     cy.step('signs out everywhere, and its next refresh is refused');
                     requestAsDevice(refreshed.device, 'DELETE', '/account/sessions')
                         .its('status')
-                        .should('equal', 200);
+                        .should('equal', 204);
                     refreshDevice(refreshed.device).its('status').should('equal', 401);
                 });
             });
@@ -165,7 +165,7 @@ describe('The journey harness', () => {
 
     describe('a payment-provider webhook', () => {
         it('is accepted when signed, and refused when the signature is stale', () => {
-            postPaymentWebhook({ id: 'evt-harness-ignored' }).should('equal', 200);
+            postPaymentWebhook({ id: 'evt-harness-ignored' }).should('equal', 204);
 
             const anHourAgo = Math.floor(Date.now() / 1000) - HOUR_MS / 1000;
             postPaymentWebhook({ id: 'evt-harness-stale' }, anHourAgo).should('equal', 400);
