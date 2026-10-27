@@ -2,7 +2,7 @@
  * @module
  * `ShipItemsDialog.vue` — staff cutting a shipment. Mounts the real dialog with `v-dialog` stubbed
  * to render inline and the store's `ship` spied. Covered: quantities default to everything
- * remaining and gate the submit, the tracked-method rule, the forced door and its reason, and a
+ * remaining and gate the submit, the optional tracking code and a
  * refusal staying in the dialog. The arithmetic is `ship-lines.spec.ts`'s.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
@@ -23,23 +23,19 @@ wireModulesIntoCore();
  * An open group with one line, 2 units remaining, and the ordinary ship door on.
  */
 const SHIPPABLE = aFulfillmentOrder({
-    actions: { ship: true, forceShip: false, fulfill: false, hold: true, release: false }
+    actions: { ship: true, fulfill: false, hold: true, release: false }
 });
 
 /**
  * Mounts the dialog closed, then opens it through `v-model` — the transition the form re-seeds on.
  *
  * @param fulfillmentOrder - The group being shipped from.
- * @param extra - `trackingRequired`.
  * @returns The wrapper and the spied `ship`.
  */
-const openDialog = (
-    fulfillmentOrder: FulfillmentOrder,
-    extra: { trackingRequired?: boolean } = {}
-) => {
+const openDialog = (fulfillmentOrder: FulfillmentOrder) => {
     const ship = vi.spyOn(useDeliveryStore(), 'ship').mockResolvedValue(aShipment());
     const wrapper = mount(ShipItemsDialog, {
-        props: { modelValue: false, fulfillmentOrder, ...extra },
+        props: { modelValue: false, fulfillmentOrder },
         global: {
             plugins: [vuetify, i18n],
             stubs: { VDialog: { template: '<div><slot /></div>' } }
@@ -109,55 +105,10 @@ describe('the tracking code', () => {
                 });
         }));
 
-    it('is required on a tracked method', () =>
-        openDialog(SHIPPABLE, { trackingRequired: true }).then(({ wrapper }) => {
-            expect(wrapper.get('[data-test=ship-submit]').attributes('disabled')).toBeDefined();
-            return wrapper
-                .get('[data-test=ship-tracking-code] input')
-                .setValue('TRK-1')
-                .then(() => {
-                    expect(
-                        wrapper.get('[data-test=ship-submit]').attributes('disabled')
-                    ).toBeUndefined();
-                });
-        }));
-});
-
-describe('the forced door', () => {
-    /**
-     * An open group whose ordinary door is closed (the order is still `paid`).
-     */
-    const CLOSED = aFulfillmentOrder();
-
-    /**
-     * The same group when the server says a forced ship would open (`actions.forceShip`).
-     */
-    const FORCEABLE = aFulfillmentOrder({
-        actions: { ship: false, forceShip: true, fulfill: false, hold: true, release: false }
-    });
-
-    it('is not offered while the ordinary door is open, or without the override', () =>
-        Promise.all([openDialog(SHIPPABLE), openDialog(CLOSED)]).then(([ordinary, noOverride]) => {
-            expect(ordinary.wrapper.find('[data-test=ship-force-toggle]').exists()).toBe(false);
-            expect(noOverride.wrapper.find('[data-test=ship-force-toggle]').exists()).toBe(false);
-        }));
-
-    it('needs the toggle and a reason, then sends forced with it', () =>
-        openDialog(FORCEABLE).then(({ wrapper, ship }) => {
-            expect(wrapper.get('[data-test=ship-submit]').attributes('disabled')).toBeDefined();
-            return wrapper
-                .get('[data-test=ship-force-toggle] input')
-                .setValue(true)
-                .then(() =>
-                    wrapper.get('[data-test=ship-force-reason] textarea').setValue('system down')
-                )
-                .then(() => wrapper.get('form').trigger('submit'))
-                .then(() => {
-                    expect(ship).toHaveBeenCalledWith(
-                        'fo1',
-                        expect.objectContaining({ forced: true, reason: 'system down' })
-                    );
-                });
+    it('never blocks the submit, even on a tracked method: the code may come later', () =>
+        openDialog(SHIPPABLE).then(({ wrapper }) => {
+            expect(wrapper.get('[data-test=ship-submit]').attributes('disabled')).toBeUndefined();
+            expect(wrapper.text()).toContain('Express is tracked: add the code now');
         }));
 });
 

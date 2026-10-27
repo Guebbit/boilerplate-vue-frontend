@@ -8,6 +8,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import ShipmentRow from '../components/ShipmentRow.vue';
+import { formatAddressLine } from '@/infrastructure/utils/formatters.ts';
 import { useDeliveryStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
@@ -24,10 +25,10 @@ wireModulesIntoCore();
  * @param shipment - The record under test.
  * @returns The wrapper and the store.
  */
-const mountRow = (shipment: Shipment) => {
+const mountRow = (shipment: Shipment, orderAddress?: string) => {
     const store = useDeliveryStore();
     const wrapper = mount(ShipmentRow, {
-        props: { shipment },
+        props: { shipment, orderAddress },
         global: { plugins: [vuetify, i18n] }
     });
     return { wrapper, store };
@@ -52,6 +53,65 @@ describe('what a row shows', () => {
         expect(wrapper.get('[data-test=shipment-tracking]').text()).toContain('TRK-1');
         expect(wrapper.get('[data-test=shipment-dates]').text()).toContain('Delivered');
         expect(wrapper.get('[data-test=shipment-lines]').text()).toContain('1 × Shirt');
+    });
+});
+
+describe('where the parcel went', () => {
+    const OLD = {
+        fullName: 'Ada Lovelace',
+        street: '12 Analytical Engine Rd',
+        city: 'Milano',
+        zip: '20100',
+        country: 'IT'
+    };
+
+    it('names the destination when the order now ships elsewhere', () => {
+        const { wrapper } = mountRow(aShipment({ destination: OLD }), 'Someone, 1 New St, Roma');
+
+        expect(wrapper.get('[data-test=shipment-destination]').text()).toContain(
+            '12 Analytical Engine Rd'
+        );
+    });
+
+    it('says nothing while the destination is still where the order ships, or when there is none', () => {
+        const matching = mountRow(aShipment({ destination: OLD }), formatAddressLine(OLD));
+
+        expect(matching.wrapper.find('[data-test=shipment-destination]').exists()).toBe(false);
+        expect(
+            mountRow(aShipment()).wrapper.find('[data-test=shipment-destination]').exists()
+        ).toBe(false);
+    });
+});
+
+describe('a tracked parcel still waiting for its code', () => {
+    it('shows the missing-code chip only while the server says it is awaiting one', () => {
+        const waiting = mountRow(aShipment({ awaitingTracking: true }));
+        const coded = mountRow(aShipment({ trackingCode: 'TRK-1' }));
+
+        expect(waiting.wrapper.get('[data-test=shipment-awaiting-tracking]').text()).toBe(
+            'Tracking code missing'
+        );
+        expect(coded.wrapper.find('[data-test=shipment-awaiting-tracking]').exists()).toBe(false);
+    });
+
+    it('sets the first code from the same form, even once delivered', () => {
+        const { wrapper, store } = mountRow(
+            aShipment({
+                status: 'delivered',
+                awaitingTracking: false,
+                actions: { deliver: false, forceDeliver: false, update: true }
+            })
+        );
+        const edit = vi.spyOn(store, 'editTracking').mockResolvedValue(aShipment());
+
+        return wrapper
+            .get('[data-test=shipment-tracking-input] input')
+            .setValue('TRK-NEW')
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(() => nextRenderTick(wrapper))
+            .then(() => {
+                expect(edit).toHaveBeenCalledWith('s1', 'TRK-NEW');
+            });
     });
 });
 

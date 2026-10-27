@@ -143,7 +143,7 @@
         "confirm-mark-returned": "Confermi di aver restituito {amount} fuori dall'app? Non viene inviato nulla.",
         "mark-returned-done": "Segnato come restituito.",
         "shipping-address-title": "Correggi l'indirizzo di spedizione",
-        "shipping-address-hint": "Sostituisce dove viene spedito l'ordine. Possibile solo finché nulla è partito. L'acquirente vede il nuovo indirizzo sull'ordine.",
+        "shipping-address-hint": "Sostituisce dove vanno gli articoli non ancora spediti, finché ne restano. Un pacco già partito conserva l'indirizzo a cui è andato. L'acquirente vede il nuovo indirizzo sull'ordine.",
         "override-title": "Correggi stato",
         "override-hint": "Forza uno spostamento oltre la regola ordinaria, con un motivo registrato sull'ordine. Non viene creata alcuna spedizione né inviata l'email di spedizione.",
         "label-override-reason": "Motivo",

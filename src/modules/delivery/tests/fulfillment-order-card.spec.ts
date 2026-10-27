@@ -2,7 +2,7 @@
  * @module
  * `FulfillmentOrderCard.vue` — one card per fulfillment order. Mounts the real card with the
  * store's writes spied. Covered: what each status shows, that every staff button comes from the
- * record's own `actions` (plus the one forced-ship exception), and that a move is reported to
+ * record's own `actions`, and that a move is reported to
  * the page. The dialogs' own forms are `ship-items-dialog.spec.ts`'s.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
@@ -67,7 +67,6 @@ describe('what a card shows', () => {
                 holdNotice: 'awaiting_stock',
                 actions: {
                     ship: false,
-                    forceShip: false,
                     fulfill: false,
                     hold: false,
                     release: false
@@ -217,7 +216,6 @@ describe('the buttons come from `actions`', () => {
             aFulfillmentOrder({
                 actions: {
                     ship: true,
-                    forceShip: false,
                     fulfill: false,
                     hold: true,
                     release: false
@@ -229,23 +227,7 @@ describe('the buttons come from `actions`', () => {
         expect(wrapper.find('[data-test=open-hold]').exists()).toBe(true);
     });
 
-    it('offers the forced ship when the server says forceShip, the ordinary door closed', () => {
-        const { wrapper } = mountCard(
-            aFulfillmentOrder({
-                actions: {
-                    ship: false,
-                    forceShip: true,
-                    fulfill: false,
-                    hold: true,
-                    release: false
-                }
-            })
-        );
-
-        expect(wrapper.find('[data-test=open-ship]').exists()).toBe(true);
-    });
-
-    it('offers no ship without ship or forceShip, whatever the group looks like', () => {
+    it('offers no ship without `actions.ship`, whatever the group looks like', () => {
         for (const order of [
             aFulfillmentOrder({ status: 'on_hold' }),
             aFulfillmentOrder({ status: 'closed' }),
@@ -260,7 +242,6 @@ describe('the buttons come from `actions`', () => {
                 kind: 'digital',
                 actions: {
                     ship: false,
-                    forceShip: false,
                     fulfill: true,
                     hold: false,
                     release: false
@@ -286,7 +267,6 @@ describe('the buttons come from `actions`', () => {
                 holdReason: 'other',
                 actions: {
                     ship: false,
-                    forceShip: false,
                     fulfill: false,
                     hold: false,
                     release: true
@@ -311,7 +291,6 @@ describe('the buttons come from `actions`', () => {
                 kind: 'digital',
                 actions: {
                     ship: false,
-                    forceShip: false,
                     fulfill: true,
                     hold: false,
                     release: false

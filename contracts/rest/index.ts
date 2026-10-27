@@ -2126,6 +2126,8 @@ export interface ExportShipment {
     trackingCode?: string;
     status: ExportShipmentStatus;
     lines: ShipmentLine[];
+    /** Where this parcel went — the order's shipping address as it stood when the shipment was cut, so a later correction of the order's address never rewrites it. Absent for a pickup, a digital fulfilment, and once the order's own address has been scrubbed. */
+    destination?: OrderAddress;
     shippedAt: string;
     deliveredAt?: string;
 }
@@ -3763,7 +3765,7 @@ export interface OrderActions {
     process: boolean;
     /** The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `override:Order`, or once the order has left every overridable status. */
     override: OrderStatus[];
-    /** Whether `PUT /orders/{id}/shipping-address` would be accepted for this caller: they hold `update:Order`, the order has a shipping address, and nothing has shipped. */
+    /** Whether `PUT /orders/{id}/shipping-address` would be accepted for this caller: they hold `update:Order`, the order has a shipping address, and units remain to send. */
     correctAddress: boolean;
     /** Whether the "withdraw from contract here" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`. A mixed order is not a reason to hide it: before dispatch the withdrawal takes the eligible goods (the whole order while it is unpaid or paid, the eligible shipment groups once it is `processing`); only an order made wholly of excluded goods is blocked. */
     withdraw: boolean;
@@ -4194,11 +4196,9 @@ export interface RecordOfflinePaymentRequest {
  * What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `update:Shipment`.
  */
 export interface FulfillmentOrderActions {
-    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining. */
+    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining, on an order that is `processing` — or `paid`, for a caller who also holds `start:Shipment`. */
     ship: boolean;
-    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` with `forced: true` would be accepted and the ordinary door would not: the caller holds `override:Order`, the order is `paid` (or otherwise not yet `processing`) and the fulfillment order still has units to ship. */
-    forceShip: boolean;
-    /** Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open. */
+    /** Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open, on an order that is `processing` or `paid` (the latter needs `start:Shipment` too). */
     fulfill: boolean;
     /** Whether `POST /delivery/fulfillment-orders/{id}/hold` would be accepted. */
     hold: boolean;
@@ -4256,7 +4256,7 @@ export interface ShipmentActions {
     deliver: boolean;
     /** Whether `POST /delivery/shipments/{id}/deliver` with `forced: true` would be accepted: the arrival is open (as for `deliver`) and the caller also holds `override:Order`. True beside `deliver`, not instead of it: forcing records the arrival without a carrier confirmation and needs a `reason`. */
     forceDeliver: boolean;
-    /** Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — still `shipped`. */
+    /** Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — any physical shipment, shipped or delivered. */
     update: boolean;
 }
 
@@ -4287,8 +4287,12 @@ export interface Shipment {
     /** The tail of the order's lifecycle, as the carrier sees it. */
     status: ShipmentStatus;
     lines: ShipmentLine[];
-    /** Whether staff skipped a step to record it (shipped from `paid` without `start`). */
+    /** Where this parcel went — the order's shipping address as it stood when the shipment was cut, so a later correction of the order's address never rewrites it. Absent for a pickup, a digital fulfilment, and once the order's own address has been scrubbed. */
+    destination?: OrderAddress;
+    /** Whether an admin status override cut this shipment. */
     forced: boolean;
+    /** Whether the parcel left on a `tracked` method, is still `shipped` and has no tracking code yet (tracked, still waiting for it). Read-only, decided by the server. */
+    awaitingTracking: boolean;
     shippedAt: string;
     deliveredAt?: string;
     actions: ShipmentActions;
@@ -4367,7 +4371,7 @@ export interface ShippingMethod {
      * @minimum 0
      */
     freeAbove?: number;
-    /** Whether a parcel sent by this method carries a tracking code. Looked up live by the order's shippingMethod id when it ships — not frozen at checkout — so a rate change also changes what the shipping door requires. */
+    /** Whether the carrier gives a code the buyer can follow for a parcel sent by this method. Looked up live by the order's shippingMethod id — not frozen at checkout. The code may be added at ship time or later. */
     tracked: boolean;
     /** Whether this method needs a shipping address to deliver to (a courier does; a counter pickup does not). Checkout enforces it — a basket needing shipping refuses with `CART_ADDRESS_REQUIRED` when the chosen method requires one and none is on file. */
     requiresAddress: boolean;
@@ -4486,19 +4490,11 @@ export interface ShipFulfillmentOrderRequest {
      */
     lines?: ShipFulfillmentOrderRequestLinesItem[];
     /**
-     * The carrier's handle on the parcel. Required when the order's shipping method is tracked; optional otherwise.
+     * The carrier's handle on the parcel. Optional — for a tracked method, add it now or later with `PATCH /delivery/shipments/{id}`.
      * @minLength 1
      * @maxLength 100
      */
     trackingCode?: string;
-    /** Skip the `start` step — ship from `paid`. The caller must hold `override:Order`, and `reason` is then required. Never ships from `on_hold`. */
-    forced?: boolean;
-    /**
-     * Required exactly when `forced` is `true` — why the normal door didn't apply. Recorded on the order's override history.
-     * @minLength 1
-     * @maxLength 1000
-     */
-    reason?: string;
 }
 
 /**
@@ -4532,7 +4528,7 @@ export interface HoldFulfillmentOrderRequest {
 
 export interface UpdateShipmentRequest {
     /**
-     * The corrected tracking code.
+     * The tracking code to set — the first one for a parcel that left without, or a correction.
      * @minLength 1
      * @maxLength 100
      */
@@ -9583,7 +9579,7 @@ export const listOrders = (
 
 /**
  * Creates a new order directly from the supplied payload, for the account named in `userId`. Raising one for oneself is allowed.
- * It sells the shelf a shopper buys from: a hidden, off-sale or soft-deleted product is refused with `409 ORDER_PRODUCT_UNAVAILABLE`, exactly as checkout refuses it, and stock is held the same way (`409 ORDER_INSUFFICIENT_STOCK`).
+ * Staff may sell a hidden (`active: false`) or off-sale (`purchasable: false`) product by hand, as Solidus and Shopify draft orders allow; only a removed (soft-deleted) one is refused, with `409 ORDER_PRODUCT_UNAVAILABLE`. A product the caller may not read (hidden, to a role without `display:Product`) answers `404` like an unknown id, so an order never widens what the caller reads. Stock is held as at checkout (`409 ORDER_INSUFFICIENT_STOCK`).
  * A body is bounded twice. The schema caps it at 1000 lines of at most 999999 units (what the contract promises); a deployment may set a lower limit in `NODE_ADMIN_ORDER_MAX_LINES` and `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`, and a body over it answers `422` with `ORDER_LINE_LIMIT_EXCEEDED`.
  * @summary Create order
  */
@@ -10070,7 +10066,7 @@ export const summarizePreorderFulfillmentOrders = (
 };
 
 /**
- * Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is required exactly when the order's shipping method is `tracked`. Refuses a fulfillment order that is on hold, closed or cancelled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is not `processing` (`ORDER_NOT_PROCESSING`) — unless `forced`, which lets a shipment skip the `start` step from `paid`. Never ships from `on_hold`, forced or not.
+ * Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is optional: a `tracked` method may get its code later, with `PATCH /delivery/shipments/{id}` (`Shipment.awaitingTracking` says who is still waiting). Refuses a fulfillment order that is on hold, closed or cancelled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is neither `processing` nor `paid` (`ORDER_NOT_PROCESSING`). From `paid` it moves the order to `processing` itself, in the same transaction, so it also needs `start:Shipment` (403 without it); `POST /orders/{id}/process` stays as an optional "mark in progress". Never ships from `on_hold`.
  * @summary Ship some or all of a fulfillment order
  */
 export const shipFulfillmentOrder = (
@@ -10090,7 +10086,7 @@ export const shipFulfillmentOrder = (
 };
 
 /**
- * The digital act: a shipment with no tracking, born and delivered in the same write. A `digital` fulfillment order has nothing to carry, so this is its only door. Refuses a physical one with `DELIVERY_NOT_DIGITAL` (ship it instead). When it leaves nothing remaining and nothing undelivered the order moves to `delivered`, its withdrawal clock counted from payment (digital content, Art. 9(2)(c)).
+ * The digital act: a shipment with no tracking, born and delivered in the same write. A `digital` fulfillment order has nothing to carry, so this is its only door. Refuses a physical one with `DELIVERY_NOT_DIGITAL` (ship it instead). When it leaves nothing remaining and nothing undelivered the order moves to `delivered`, its withdrawal clock counted from payment (digital content, Art. 9(2)(c)). Works from `paid` too: it moves the order to `processing` itself, so it also needs `start:Shipment` (403 without it).
  * @summary Fulfil a digital fulfillment order
  */
 export const fulfillFulfillmentOrder = (
@@ -10149,7 +10145,7 @@ export const getShipment = (
 };
 
 /**
- * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change (a typo), and only while the shipment is still `shipped`. The tracking code of a tracked method cannot be cleared.
+ * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped` or `delivered`; a digital fulfilment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.
  * @summary Correct a shipment's tracking code
  */
 export const updateShipment = (
@@ -10169,7 +10165,7 @@ export const updateShipment = (
 };
 
 /**
- * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change (a typo), and only while the shipment is still `shipped`. The tracking code of a tracked method cannot be cleared.
+ * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped` or `delivered`; a digital fulfilment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.
  * @summary Correct a shipment's tracking code
  */
 export const updateShipmentWithMergePatchJson = (
@@ -10912,7 +10908,7 @@ export const getOrderTimeline = (
 };
 
 /**
- * Replaces the order's shipping address, as staff do when a fulfillment order was held for `incorrect_address` and the buyer wrote back. Needs `update:Order`. Allowed only while nothing has shipped and the order has a shipping address at all: after that the parcel went where it went (`409 ORDER_ADDRESS_LOCKED`). Leaves a staff-only timeline row, `address_corrected`, and an audit row naming who changed it, never what it says. `OrderActions.correctAddress` says whether this would be accepted.
+ * Replaces the order's shipping address, as staff do when a fulfillment order was held for `incorrect_address` and the buyer wrote back. Needs `update:Order`. Allowed while units remain to send (held and awaiting-stock ones included) and the order has a shipping address at all (`409 ORDER_ADDRESS_LOCKED` otherwise). A parcel already cut keeps the address it went to: each shipment stores its own `destination`. The country must be on the shop's ship-to list (`422 ORDER_SHIP_TO_COUNTRY_NOT_SUPPORTED`). Leaves a staff-only timeline row, `address_corrected`, and an audit row naming who changed it, never what it says. `OrderActions.correctAddress` says whether this would be accepted.
  * @summary Correct where an unshipped order ships (staff)
  */
 export const correctOrderShippingAddress = (

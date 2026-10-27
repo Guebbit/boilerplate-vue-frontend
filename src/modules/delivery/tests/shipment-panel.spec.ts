@@ -31,7 +31,6 @@ wireModulesIntoCore();
  */
 const mountPanel = (props: { orderId: string; canStart?: boolean }) => {
     const store = useDeliveryStore();
-    vi.spyOn(store, 'fetchMethods').mockResolvedValue(undefined);
     vi.spyOn(store, 'fetchFulfillmentForOrder').mockResolvedValue(undefined);
 
     const wrapper = mount(ShipmentPanel, {
@@ -110,7 +109,7 @@ describe('"arrives in N shipments"', () => {
 });
 
 describe('the start-fulfilment door', () => {
-    it('offers "Start fulfilment" only when `actions.process` says so', () => {
+    it('offers "Mark in progress" only when `actions.process` says so', () => {
         expect(
             mountPanel({ orderId: 'o1', canStart: true })
                 .wrapper.find('[data-test=mark-started]')
