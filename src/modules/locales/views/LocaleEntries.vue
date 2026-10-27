@@ -213,9 +213,9 @@ watch(tag, (nextTag) => {
  */
 const onAmbientError = useAmbientError();
 
-// The header needs the manifest and the selects the registry; harmless when the list page
-// already loaded them.
-if (capabilities.value.length === 0) localesStore.fetchLanguages().catch(onAmbientError);
+// The header needs this one language (not the whole manifest) and the selects the registry;
+// harmless when the list page already loaded them. Again whenever the route names another tag.
+watch(tag, (next) => localesStore.fetchLanguage(next).catch(onAmbientError), { immediate: true });
 // Likewise for the app registry.
 if (apps.value.length === 0) localesStore.fetchApps().catch(onAmbientError);
 
@@ -357,7 +357,7 @@ const handleImport = (payload: {
                 addMessage(t('locale-entries-page.error-merge-removed'));
             return Promise.all([
                 search(true),
-                localesStore.fetchLanguages(),
+                localesStore.fetchLanguage(tag.value),
                 refreshRunningLocale(tag.value)
             ]);
         })

@@ -78,7 +78,7 @@ describe('AC6 · Give me my data', () => {
         cy.get('[data-test=profile-export-data-requested]').should('be.visible');
 
         cy.step('the link is mailed, and opening it offers the file');
-        cy.intercept('GET', '**/account/export').as('download');
+        cy.intercept('GET', '**/account/export/file').as('download');
         cy.accountOf('user').then(({ email }) => {
             cy.wrap(email).as('email');
             // No template filter: a live mail sink cannot say which template a mail came from, and
@@ -151,16 +151,17 @@ describe('AC6 · Give me my data', () => {
                 }
             });
 
-        cy.step('asking again mails a new link, and that file downloads too');
+        cy.step('after a reload the profile still says the export is ready, and until when');
         cy.visit('/en/profile');
+        cy.get('[data-test=profile-export-data-ready]').should('be.visible');
+
+        cy.step('asking again builds a new export, and that file downloads too');
         cy.get('[data-test=profile-export-data] button').click();
         cy.wait('@export').its('response.statusCode').should('equal', 202);
-        cy.get<string>('@email').then((email) => {
-            cy.get<string>('@firstLink').then((firstLink) => {
-                cy.emailTo(email, (mail) => exportLinkOf(mail) !== firstLink).then((mail) => {
-                    cy.visit(exportLinkOf(mail));
-                });
-            });
+        // The link no longer names an export (an account has one), so the new mail carries the
+        // same address as the first: the page behind it is what proves the new export.
+        cy.get<string>('@firstLink').then((firstLink) => {
+            cy.visit(firstLink);
         });
         cy.get('[data-test=account-export-download]').click();
         cy.wait('@download').its('response.statusCode').should('equal', 200);
@@ -186,27 +187,27 @@ describe('AC6 · Give me my data', () => {
         cy.travel(7 * DAY_MS + HOUR_MS);
         cy.runJob('reap-account-exports').its('job').should('equal', 'reap-account-exports');
 
-        cy.step('signed in again, the old link says the export is gone');
+        cy.step('signed in again, the old link says there is no export');
         cy.logout();
         cy.loginAs('user');
         cy.get<string>('@firstLink').then((firstLink) => {
             cy.visit(firstLink);
         });
-        cy.get('[data-test=account-export-download]').click();
-        cy.get('[data-test=account-export-error]').should('be.visible');
+        // The page reads the status first: with the export swept there is none, and the download
+        // is held back rather than offered to fail.
+        cy.get('[data-test=account-export-none]').should('be.visible');
         cy.contains('An export is kept for a few days').should('be.visible');
+        cy.get('[data-test=account-export-download]').should('be.disabled');
 
-        cy.step('asking again mails a new link, and that file downloads');
+        cy.step('asking again builds a new export, and that file downloads');
         cy.visit('/en/profile');
         cy.get('[data-test=profile-export-data] button').click();
         cy.wait('@export').its('response.statusCode').should('equal', 202);
-        cy.intercept('GET', '**/account/export').as('download');
-        cy.get<string>('@email').then((email) => {
-            cy.get<string>('@firstLink').then((firstLink) => {
-                cy.emailTo(email, (mail) => exportLinkOf(mail) !== firstLink).then((mail) => {
-                    cy.visit(exportLinkOf(mail));
-                });
-            });
+        cy.intercept('GET', '**/account/export/file').as('download');
+        // The link no longer names an export (an account has one), so the new mail carries the
+        // same address as the first: the page behind it is what proves the new export.
+        cy.get<string>('@firstLink').then((firstLink) => {
+            cy.visit(firstLink);
         });
         cy.get('[data-test=account-export-download]').click();
         cy.wait('@download').its('response.statusCode').should('equal', 200);

@@ -15,7 +15,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import type { LanguageActions, LocaleCapability } from '@types';
+import type { LanguageActions, Language } from '@types';
 
 wireModulesIntoCore();
 
@@ -26,12 +26,9 @@ wireModulesIntoCore();
  * @param active - Whether it is switched on.
  * @param actions - The flags the server would send.
  */
-const language = (
-    tag: string,
-    active: boolean,
-    actions: Partial<LanguageActions>
-): LocaleCapability => ({
+const language = (tag: string, active: boolean, actions: Partial<LanguageActions>): Language => ({
     tag,
+    baseLanguage: tag.slice(0, 2),
     name: tag,
     nativeName: tag,
     direction: 'ltr',
@@ -57,7 +54,7 @@ const router = createRouter({
  * @param rows - The manifest rows.
  * @returns The wrapper and the store.
  */
-const mountBoard = async (rows: LocaleCapability[]) => {
+const mountBoard = async (rows: Language[]) => {
     const store = useLocalesStore();
     store.capabilities = rows;
     vi.spyOn(store, 'fetchLanguages').mockResolvedValue(undefined);

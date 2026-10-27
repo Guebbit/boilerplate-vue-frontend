@@ -15,15 +15,22 @@ export default {
  * is `auth`, and the download route asks for a FRESH one — the step-up interceptor prompts for it
  * transparently), so a forwarded mail hands nobody the file.
  *
+ * The page reads the export's status first (building, ready until a date, failed, or none) and
+ * offers the download only when it is ready, so a link opened after asking again says what is
+ * true now instead of a generic "kept for a few days".
+ *
  * A button, not a download on mount: a mail scanner that prefetches the link must not be the one
  * to trigger it, and a browser is more willing to save a file the visitor asked for.
  */
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { saveDownload } from '@/infrastructure/http/download.ts';
 import { useProfileStore } from '../stores/profile.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { absentIs } from '@/infrastructure/utils/errors.ts';
+import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
+import { formatDate } from '@/infrastructure/utils/formatters.ts';
+import type { AccountExport } from '@types';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
@@ -32,14 +39,38 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 const { t } = useI18n();
 
 /**
- * Fetches the finished export.
+ * Reads where the export stands, and fetches the finished one.
  */
-const { downloadAccountExport } = useProfileStore();
+const { downloadAccountExport, fetchAccountExport } = useProfileStore();
+
+/**
+ * Where the export stands; `undefined` once the read found none.
+ */
+const exportStatus = ref<AccountExport>();
+
+/**
+ * Whether the status read has answered, so "none" is not claimed before it has.
+ */
+const statusKnown = ref(false);
+
+/**
+ * Toasts a failed status read: this page has no form to host an inline error.
+ */
+const onAmbientError = useAmbientError();
+
+onMounted(() => {
+    void fetchAccountExport()
+        .then((next) => {
+            exportStatus.value = next;
+            statusKnown.value = true;
+        })
+        .catch(onAmbientError);
+});
 
 /**
  * This page's own blocked state — a failed download lands here, next to the button that asked.
- * A 404 covers an export that is gone (past its retention, replaced), still `building`, `failed`
- * or not this account's: the API does not tell them apart, by design.
+ * A 404 here means the file is not there to send (the status said `ready`, then it expired or
+ * was replaced).
  */
 const {
     message: downloadError,
@@ -93,13 +124,37 @@ const handleDownload = () => {
 <template>
     <div id="account-export-download-page">
         <v-card class="mx-auto mt-10 w-full max-w-md p-8">
-            <p class="mb-4 opacity-80">{{ t('account-export-page.intro') }}</p>
+            <p v-if="exportStatus?.status === 'ready'" class="mb-4 opacity-80">
+                {{ t('account-export-page.intro') }}
+                {{
+                    t('account-export-page.ready-until', {
+                        date: formatDate(exportStatus.expiresAt)
+                    })
+                }}
+            </p>
+            <p
+                v-else-if="exportStatus?.status === 'building'"
+                class="mb-4 opacity-80"
+                data-test="account-export-building"
+            >
+                {{ t('account-export-page.building') }}
+            </p>
+            <p
+                v-else-if="exportStatus?.status === 'failed'"
+                class="mb-4 opacity-80"
+                data-test="account-export-failed"
+            >
+                {{ t('account-export-page.failed') }}
+            </p>
+            <p v-else-if="statusKnown" class="mb-4 opacity-80" data-test="account-export-none">
+                {{ t('account-export-page.gone-hint') }}
+            </p>
             <v-btn
                 color="primary"
                 block
                 data-test="account-export-download"
                 :loading="downloading"
-                :disabled="downloading"
+                :disabled="downloading || exportStatus?.status !== 'ready'"
                 @click="handleDownload"
             >
                 {{ t('account-export-page.button-download') }}

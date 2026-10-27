@@ -27,6 +27,16 @@ import * as schemas from '@api/schemas';
 wireModulesIntoCore();
 
 /**
+ * The caller's export, as `POST` and `GET /account/export` describe it.
+ */
+const EXPORT = {
+    id: 'e1',
+    status: 'building',
+    createdAt: '2026-09-07T00:00:00.000Z',
+    actions: { download: false, request: false }
+};
+
+/**
  * A representative user record, used across the fetch/update/role assertions below.
  */
 const USER = { id: 'u1', username: 'ada', email: 'ada@example.com', role: 'customer' };
@@ -83,11 +93,12 @@ beforeEach(() => {
         'POST /account/email-verification/confirm': undefined,
         'POST /account/email-change/confirm': undefined,
         'POST /account/email-change/undo': undefined,
-        // The request answers `202` with the export's id and status; the data comes later, by link.
-        'POST /account/export': { id: 'e1', status: 'building' },
+        // The request answers `202` with the export and its status; the data comes later, by link.
+        'POST /account/export': EXPORT,
+        'GET /account/export': EXPORT,
         // The download is a file, not an envelope: the HTTP layer hands it over as a `File` named
         // by the server's `Content-Disposition`. The document inside is the user's own data.
-        'GET /account/export': new File(
+        'GET /account/export/file': new File(
             [JSON.stringify({ exportedAt: '2026-09-07T00:00:00.000Z', profile: USER })],
             'account-export-2026-09-07.json',
             { type: 'application/json' }
@@ -230,21 +241,31 @@ describe('the account deletion flow', () => {
 });
 
 describe('requestAccountExport', () => {
-    it('answers the export id and status from POST /account/export, and carries no data', () =>
+    it('answers the export and its status from POST /account/export, and carries no data', () =>
         useProfileStore()
             .requestAccountExport()
             .then((data) => {
                 expect(requestedUrls().at(-1)).toBe('/account/export');
-                expect(data).toEqual({ id: 'e1', status: 'building' });
+                expect(data).toEqual(EXPORT);
+            }));
+});
+
+describe('fetchAccountExport', () => {
+    it('reads where the export stands from GET /account/export', () =>
+        useProfileStore()
+            .fetchAccountExport()
+            .then((data) => {
+                expect(requestedUrls().at(-1)).toBe('/account/export');
+                expect(data).toEqual(EXPORT);
             }));
 });
 
 describe('downloadAccountExport', () => {
-    it('returns the file GET /account/export sends, under the server-chosen name', () =>
+    it('returns the file GET /account/export/file sends, under the server-chosen name', () =>
         useProfileStore()
             .downloadAccountExport()
             .then((file) => {
-                expect(requestedUrls().at(-1)).toBe('/account/export');
+                expect(requestedUrls().at(-1)).toBe('/account/export/file');
                 expect(file).toBeInstanceOf(File);
                 expect(file).toHaveProperty('name', 'account-export-2026-09-07.json');
             }));

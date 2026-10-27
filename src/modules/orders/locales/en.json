@@ -205,6 +205,7 @@
         "by-system": "the system",
         "by-withdrawal": "a withdrawal",
         "by-fulfilment": "fulfilment",
+        "cause-lost": "Lost in transit, refunded",
         "refund-reason-cancellation": "Cancellation",
         "refund-reason-goodwill": "Goodwill",
         "refund-reason-return": "Return",

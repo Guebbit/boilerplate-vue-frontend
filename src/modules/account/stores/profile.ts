@@ -26,6 +26,7 @@ import {
     confirmEmailChange as apiConfirmEmailChange,
     undoEmailChange as apiUndoEmailChange,
     requestAccountExport as apiRequestAccountExport,
+    getAccountExport as apiGetAccountExport,
     downloadAccountExport as apiDownloadAccountExport
 } from '@api';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
@@ -34,6 +35,7 @@ import {
     isAnalyticsConsentEnabled
 } from '@/infrastructure/analytics-consent.ts';
 import { warn } from '@/infrastructure/utils/logger.ts';
+import { absentIs } from '@/infrastructure/utils/errors.ts';
 
 /**
  * Which `isLoading`/mutation key `updateProfile` runs under: one per avatar path, and `save` for
@@ -473,11 +475,25 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * not handle that itself: an expired session falls through the step-up interceptor
      * (`infrastructure/http/step-up.ts`), which prompts for the password and retries transparently.
      *
-     * @returns A promise resolving with the export's `id` and `status`, or `undefined` when the
-     *  response carries none.
+     * @returns A promise resolving with the export, which is `building` until the job settles.
      */
     const requestAccountExport = () =>
         fetchAny(() => apiRequestAccountExport().then((data) => data));
+
+    /**
+     * Where the caller's export stands: `building`, `ready` (with `expiresAt`) or `failed`. A
+     * session is enough, no fresh one: it holds dates and a state, no personal data.
+     *
+     * @returns A promise resolving with the export, or `undefined` when there is none (never asked
+     *  for, deleted, or past its retention).
+     */
+    const fetchAccountExport = () =>
+        fetchAny(() =>
+            apiGetAccountExport().catch((error: unknown) => {
+                if (absentIs(error, 404)) return undefined;
+                throw error;
+            })
+        );
 
     /**
      * Downloads the caller's finished export (an account has one) — the page the mailed link opens calls this. Same fresh-session
@@ -487,8 +503,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * browser saves is the server's bytes under the server's `Content-Disposition` name, so the
      * HTTP layer hands it over as a `File`. Anything else is not a download and is dropped.
      *
-     * @returns A promise resolving with the export file; a `404` (not yours, not ready, or
-     *  gone) rejects.
+     * @returns A promise resolving with the export file; a `404` (not yours, not `ready`, past
+     *  its retention, or its file missing) rejects.
      */
     const downloadAccountExport = () =>
         fetchAny(() => apiDownloadAccountExport({ responseType: 'blob' })).then(
@@ -544,6 +560,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         restoreAccount,
         endLocalSession,
         requestAccountExport,
+        fetchAccountExport,
         downloadAccountExport
     };
 });
