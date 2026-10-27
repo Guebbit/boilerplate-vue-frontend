@@ -17,7 +17,10 @@ import type { ReceivedWebhook } from '../../../scripts/e2e/webhook-tester';
 import type { E2ERole } from '../scenario-description';
 
 export type { Device, DeviceResponse, SessionMode } from '../../../scripts/e2e/device-session';
-export type { PaymentWebhookEvent } from '../../../scripts/e2e/payment-webhook';
+export type {
+    PaymentWebhookDispute,
+    PaymentWebhookEvent
+} from '../../../scripts/e2e/payment-webhook';
 export type { SinkRequest } from '../../../scripts/e2e/webhook-sink';
 export type { ReceivedWebhook } from '../../../scripts/e2e/webhook-tester';
 
@@ -265,30 +268,6 @@ export const otherTab = {
             })
         )
 };
-
-/**
- * The buyer's bank disputes an order's card payment, or moves the same dispute along — the demo
- * backend's `POST /__test/payments/dispute`. Defaults to a chargeback for the whole payment waiting
- * for the shop's evidence. Demo only.
- *
- * @param orderId - the order whose payment is disputed
- * @param dispute - the parts to set: `status` (`needs_response`, `won`, `lost`, …), `kind`, `amount`
- */
-export const disputePaymentOf = (
-    orderId: string,
-    dispute: { status?: string; kind?: string; amount?: number } = {}
-): Cypress.Chainable<number> =>
-    cy
-        .env(['apiUrl'])
-        .then(({ apiUrl }) =>
-            cy.request({
-                method: 'POST',
-                url: `${String(apiUrl)}/__test/payments/dispute`,
-                body: { orderId, ...dispute }
-            })
-        )
-        .its('status')
-        .should('equal', 204);
 
 /**
  * Makes every refund of an order's payment refuse with a provider reason, or lets them through
