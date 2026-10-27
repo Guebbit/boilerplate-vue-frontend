@@ -172,7 +172,7 @@ for that caller:
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 30, 'rankSpacing': 40}}}%%
 flowchart LR
-    API["API decides<br/><i>per caller, per record</i>"] --> A["actions: { transitions,<br/>cancel, pay, refund }"]
+    API["API decides<br/><i>per caller, per record</i>"] --> A["actions: { publish,<br/>cancel, pay, refund }"]
     A --> D["v-select :items"]
     A --> B["v-btn :disabled"]
     A --> F["card form v-if"]

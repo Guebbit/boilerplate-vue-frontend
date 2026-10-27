@@ -7,13 +7,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { getCartSummary, mergeCart } from '@api';
-import {
-    aCart,
-    gate,
-    answered,
-    type Answer
-} from '../../../../tests/support/unit/cart-fixtures.ts';
-import { trackStores } from '../../../../tests/support/unit/track-stores.ts';
+import { aCart } from './cart-fixtures.ts';
+import { gate, answered, type Answer } from '../../../../tests/support/unit/async-answers.ts';
+import { trackStores } from './track-stores.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
 wireModulesIntoCore();

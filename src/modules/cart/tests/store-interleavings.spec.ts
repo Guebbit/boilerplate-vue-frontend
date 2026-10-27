@@ -26,14 +26,10 @@ import {
     reorder,
     checkout as apiCheckout
 } from '@api';
-import { aCart, lostAnswer, answered } from '../../../../tests/support/unit/cart-fixtures.ts';
-import {
-    ACTIONS,
-    issue,
-    signInAs,
-    type CartStore
-} from '../../../../tests/support/unit/cart-interleave.ts';
-import { trackStores } from '../../../../tests/support/unit/track-stores.ts';
+import { aCart } from './cart-fixtures.ts';
+import { lostAnswer, answered } from '../../../../tests/support/unit/async-answers.ts';
+import { ACTIONS, issue, signInAs, type CartStore } from './cart-interleave.ts';
+import { trackStores } from './track-stores.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
 

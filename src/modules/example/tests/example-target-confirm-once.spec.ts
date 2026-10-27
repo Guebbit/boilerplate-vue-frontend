@@ -37,7 +37,7 @@ const EXAMPLE: Example = {
     ownerName: 'ada',
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
-    actions: { transitions: [], update: true, delete: true }
+    actions: { publish: false, archive: false, unarchive: false, update: true, delete: true }
 };
 
 beforeEach(() => {

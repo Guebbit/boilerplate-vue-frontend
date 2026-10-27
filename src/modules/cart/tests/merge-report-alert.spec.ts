@@ -14,7 +14,7 @@ import axe from 'axe-core';
 import MergeReportAlert from '../components/MergeReportAlert.vue';
 import { useCartStore } from '../store';
 import type { MergeReportLine } from '../domain';
-import { seedProducts, spyOnProductReads } from '../../../../tests/support/unit/products-store.ts';
+import { seedProducts, spyOnProductReads } from '@/modules/products/tests/products-store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { aProduct } from '../../../../tests/support/unit/fixtures.ts';

@@ -14,7 +14,7 @@ import axe from 'axe-core';
 import Cart from '../views/Cart.vue';
 import { useCartStore } from '../store.ts';
 import type { MergeReportLine } from '../domain';
-import { seedProducts, spyOnProductReads } from '../../../../tests/support/unit/products-store.ts';
+import { seedProducts, spyOnProductReads } from '@/modules/products/tests/products-store.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { checkout as apiCheckout, getAccount } from '@api';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -25,7 +25,7 @@ import { readCheckoutDraft, writeCheckoutDraft } from '../composables/use-checko
 import { asStub } from '../../../../tests/support/stub.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
-import { AddressPickerStub, router } from '../../../../tests/support/unit/mount-cart-page.ts';
+import { AddressPickerStub, router } from './mount-cart-page.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { emitOn, nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import type { CartResponse, Order, Product } from '@types';

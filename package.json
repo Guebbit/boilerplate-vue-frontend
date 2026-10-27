@@ -80,11 +80,11 @@
         "driver.js": "1.10.1",
         "lodash-es": "^4.18.1",
         "lucide-vue-next": "^1.0.0",
-        "mermaid": "^11.15.0",
+        "mermaid": "^11.17.0",
         "pinia": "^3.0.4",
         "qrcode": "1.5.4",
         "tailwindcss": "^4.3.3",
-        "vue": "^3.5.29",
+        "vue": "^3.5.44",
         "vue-i18n": "^11.3.0",
         "vue-router": "^5.0.3",
         "vuetify": "^4.1.5",
@@ -162,22 +162,25 @@
         "vue-tsc": "^3.2.5",
         "yaml": "^2.8.1"
     },
+    "overrides": {
+        "katex": "^0.18.2"
+    },
     "engines": {
         "node": "^24",
         "npm": ">=11.16.0"
     },
     "allowScripts": {
-        "@hyperjump/json-pointer@0.9.8": true,
-        "@hyperjump/json-schema@0.23.5": true,
-        "@hyperjump/json-schema-core@0.28.5": true,
-        "@hyperjump/pact@0.2.5": true,
-        "cypress@15.18.1": true,
-        "esbuild@0.28.1": true,
-        "esbuild@0.21.5": true,
-        "fsevents@2.3.3": true,
-        "msw@2.15.0": true,
-        "unrs-resolver@1.12.2": true,
-        "vue-demi@0.14.10": true,
+        "@hyperjump/json-pointer": true,
+        "@hyperjump/json-schema": true,
+        "@hyperjump/json-schema-core": true,
+        "@hyperjump/pact": true,
+        "cypress": true,
+        "esbuild": true,
+        "fsevents": true,
+        "msw": true,
+        "unrs-resolver": true,
+        "vue-demi": true,
+        "@parcel/watcher": false,
         "@scarf/scarf": false
     }
 }

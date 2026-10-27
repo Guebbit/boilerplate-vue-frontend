@@ -79,9 +79,9 @@ describe('provideExample', () => {
         const changeStatus = vi.fn().mockResolvedValue(undefined);
         mountPair({ example: ref(AN_EXAMPLE), changeStatus });
 
-        await childContext?.changeStatus('published');
+        await childContext?.changeStatus('publish');
 
-        expect(changeStatus).toHaveBeenCalledWith('published');
+        expect(changeStatus).toHaveBeenCalledWith('publish');
     });
 });
 

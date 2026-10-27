@@ -80,17 +80,39 @@ describe('formatDate', () => {
     });
 });
 
-describe('formatUtcDate', () => {
-    const originalZone = process.env.TZ;
+/**
+ * Makes every date formatted without an explicit `timeZone` read in `zone`.
+ *
+ * `process.env.TZ` cannot do this: Stryker runs Vitest in worker threads, where `process.env` is
+ * a copy and the zone never changes. Both formatting paths of `formatDateTime` are covered:
+ * `Intl.DateTimeFormat` (with a `format`) and `Date#toLocaleString` (without one).
+ * @param zone - IANA zone the browser is pretended to be in.
+ */
+const pretendBrowserZone = (zone: string) => {
+    const RealDateTimeFormat = Intl.DateTimeFormat;
+    vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(function (
+        locales?: Intl.LocalesArgument,
+        options?: Intl.DateTimeFormatOptions
+    ) {
+        return new RealDateTimeFormat(locales, { timeZone: zone, ...options });
+    });
+    const realToLocaleString = Date.prototype.toLocaleString;
+    vi.spyOn(Date.prototype, 'toLocaleString').mockImplementation(function (
+        this: Date,
+        locales,
+        options
+    ) {
+        return realToLocaleString.call(this, locales, { timeZone: zone, ...options });
+    });
+};
 
+describe('formatUtcDate', () => {
     afterEach(() => {
-        // Node re-reads `TZ` on assignment; `undefined` would write the string "undefined".
-        if (originalZone === undefined) delete process.env.TZ;
-        else process.env.TZ = originalZone;
+        vi.restoreAllMocks();
     });
 
     it('prints the UTC day of a deadline east of UTC, where the local date is already the next', () => {
-        process.env.TZ = 'Pacific/Auckland';
+        pretendBrowserZone('Pacific/Auckland');
         const deadline = '2026-10-30T23:59:59.999Z';
 
         expect(formatDate(deadline)).toContain('31');
@@ -99,7 +121,7 @@ describe('formatUtcDate', () => {
     });
 
     it('prints the month in words and no time of day, whatever zone the browser is in', () => {
-        process.env.TZ = 'Pacific/Auckland';
+        pretendBrowserZone('Pacific/Auckland');
 
         const printed = formatUtcDate('2026-12-05T23:59:59.999Z');
 

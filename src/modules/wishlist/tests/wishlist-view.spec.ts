@@ -18,7 +18,7 @@ import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Wishlist from '../views/Wishlist.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useWishlistStore } from '../store';
-import { seedProducts, spyOnProductReads } from '../../../../tests/support/unit/products-store.ts';
+import { seedProducts, spyOnProductReads } from '@/modules/products/tests/products-store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';

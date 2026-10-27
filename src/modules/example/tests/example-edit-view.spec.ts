@@ -42,7 +42,7 @@ const EXAMPLE: Example = {
     ownerName: 'ada',
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
-    actions: { transitions: [], update: true, delete: true }
+    actions: { publish: false, archive: false, unarchive: false, update: true, delete: true }
 };
 
 /**
@@ -161,7 +161,7 @@ describe('ExampleEdit', () => {
     it('renders the moves the server listed, and none it did not', () => {
         const { wrapper } = mountPage({
             ...EXAMPLE,
-            actions: { transitions: ['published', 'archived'], update: true, delete: true }
+            actions: { publish: true, archive: true, unarchive: false, update: true, delete: true }
         });
 
         return flushPromises().then(() => {
@@ -191,7 +191,13 @@ describe('ExampleEdit', () => {
     it('disables the form and says why when the row says update is not allowed', () => {
         const { wrapper } = mountPage({
             ...EXAMPLE,
-            actions: { transitions: [], update: false, delete: false }
+            actions: {
+                publish: false,
+                archive: false,
+                unarchive: false,
+                update: false,
+                delete: false
+            }
         });
 
         return flushPromises().then(() => {

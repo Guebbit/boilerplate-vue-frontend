@@ -16,7 +16,7 @@ import {
     apiRejection,
     lostAnswer,
     answered
-} from '../../../../tests/support/unit/cart-fixtures.ts';
+} from '../../../../tests/support/unit/async-answers.ts';
 import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
 
 vi.mock('@api', () => ({ checkout: vi.fn() }));

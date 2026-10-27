@@ -15,16 +15,16 @@ import { defineComponent } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
-import Cart from '@/modules/cart/views/Cart.vue';
-import { useCartStore } from '@/modules/cart/store.ts';
+import Cart from '../views/Cart.vue';
+import { useCartStore } from '../store.ts';
+// eslint-disable-next-line boundaries/dependencies -- the page reads the account on mount; the account barrel publishes no store, and this spy is the only way to keep that read off the network
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
-import { spyOnProductReads } from './products-store.ts';
+import { spyOnProductReads } from '@/modules/products/tests/products-store.ts';
 import { i18n } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
-import { staticPageRouteName } from '@/app/utils/static-pages.ts';
-import { emitOn, nextRenderTick } from './mounted-vm';
+import { emitOn, nextRenderTick } from '../../../../tests/support/unit/mounted-vm';
 import type { CartResponse } from '@types';
 
 /**
@@ -42,7 +42,9 @@ export const router = createRouter({
                 // The shell's two legal pages, which the order button links to.
                 ...(['terms', 'privacy'] as const).map((page) => ({
                     path: page,
-                    name: staticPageRouteName(page),
+                    // The router's names for these pages (`src/app/utils/static-pages.ts`), spelled out: a module's
+                    // test harness cannot reach the app tier.
+                    name: page === 'terms' ? 'StaticTerms' : 'StaticPrivacy',
                     component: { template: '<div />' }
                 }))
             ]

@@ -8,7 +8,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import Cart from '../views/Cart.vue';
-import { router } from '../../../../tests/support/unit/mount-cart-page.ts';
+import { router } from './mount-cart-page.ts';
 import { useCartStore } from '../store.ts';
 import { searchProducts } from '@api';
 import * as schemas from '@api/schemas';

@@ -11,6 +11,8 @@ import lighthouse, { type Result } from 'lighthouse';
 import type { Page } from 'puppeteer-core';
 import type { LighthouseCase } from '../../tests/support/lighthouse/case';
 import { AUDIT_APP_ORIGIN } from '../../tests/support/lighthouse/case';
+import { loginTotpCodeFor } from '../e2e/totp';
+import { AUDIT_API_URL } from './audit-environment';
 import type { ScenarioDescription } from '../../tests/support/scenario-description';
 import type { AuditBrowser } from './chrome';
 import type { Report } from './evaluate';
@@ -28,12 +30,32 @@ export interface MeasuredRun {
 }
 
 /**
- * Signs in through the real form, the way `submitLoginForm` does in the Cypress support.
+ * Answers the two-factor challenge page a staff account lands on after the password, the way
+ * `answerChallengePage` does in the Cypress support.
+ *
+ * @param page - the page standing on the challenge
+ * @param totpSecret - the account's base32 authenticator secret
+ */
+const answerChallenge = (page: Page, totpSecret: string): Promise<void> =>
+    // Puppeteer: wait for the element to appear in the DOM.
+    // https://pptr.dev/api/puppeteer.page.waitforselector
+    page
+        .waitForSelector('#two-factor-challenge-page')
+        .then(() => loginTotpCodeFor(totpSecret, AUDIT_API_URL))
+        .then((code) => page.type('[data-test=two-factor-challenge-code] input', code))
+        .then(() => page.click('[data-test=two-factor-challenge-submit]'));
+
+/**
+ * Signs in through the real form, the way `submitLoginForm` does in the Cypress support. A staff
+ * account (one with a `totpSecret`) then answers the challenge page.
  *
  * @param page - a fresh page of the case's context
  * @param credentials - the seeded account
  */
-const signIn = (page: Page, credentials: { email: string; password: string }): Promise<void> =>
+const signIn = (
+    page: Page,
+    credentials: { email: string; password: string; totpSecret?: string }
+): Promise<void> =>
     page
         .goto(`${AUDIT_APP_ORIGIN}/en/login`)
         .then(() => page.waitForSelector('[type=email]'))
@@ -45,10 +67,20 @@ const signIn = (page: Page, credentials: { email: string; password: string }): P
                 form.requestSubmit();
             })
         )
-        // Puppeteer: poll in the page until the address has left /login.
+        .then(() =>
+            credentials.totpSecret ? answerChallenge(page, credentials.totpSecret) : undefined
+        )
+        // Puppeteer: poll in the page until the address has left /login (the challenge page
+        // lives under it too, so a refused code times out here, naming the account).
         // https://pptr.dev/api/puppeteer.page.waitforfunction
         .then(() => page.waitForFunction(() => !location.pathname.includes('/login')))
-        .then(() => undefined);
+        .then(() => undefined)
+        .catch((error: unknown) => {
+            throw new Error(
+                `signing in as ${credentials.email}${credentials.totpSecret ? ' (with the two-factor challenge)' : ''} failed: ${String(error)}`,
+                { cause: error }
+            );
+        });
 
 /**
  * Narrows a Lighthouse result to what `evaluate` reads.

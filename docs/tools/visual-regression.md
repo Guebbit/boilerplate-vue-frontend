@@ -123,7 +123,7 @@ src/modules/products/tests/e2e/
   __snapshots__/products-list.phone.png
 ```
 
-`cy.compareSnapshot()` resolves the directory from `Cypress.spec.relative`, so nothing is configured per module — a new module's first baseline lands in the right place by existing. **The point is deletion**: `rm -rf src/modules/products` takes its photographs with it, where a central folder would be left holding a picture of a screen the app no longer serves and nothing would ever notice.
+`cy.compareSnapshot()` resolves the directory from `Cypress.spec.relative`, so nothing is configured per module — a new module's baseline, once recorded by update mode, lands in the right place by existing. **The point is deletion**: `rm -rf src/modules/products` takes its photographs with it, where a central folder would be left holding a picture of a screen the app no longer serves and nothing would ever notice.
 
 Diffs go the other way, to `reports/visual-diff/` — one gitignored folder, because a diff is throwaway output of a failed run and CI uploads it from one place.
 
@@ -214,11 +214,11 @@ sequenceDiagram
 
 The lesson generalises: **a readiness flag that persists across navigations is not a readiness flag.** It has to be scoped to the navigation it describes.
 
-## The three outcomes of a comparison
+## The outcomes of a comparison
 
-### No baseline yet → write it and **pass**
+### No baseline yet → **fail**, and write nothing
 
-A first run cannot fail, because there is nothing to compare against; failing would only mean "this is new". The baseline is committed, so the diff that matters is the one a reviewer sees in the pull request when the image changes — that is where a human actually looks at the picture.
+A comparison that records its own missing baseline passes vacuously: in CI the written file is discarded, so every night would be green with nothing checked. Only update mode (`update-baselines`, `npm run test:e2e:visual:update`) writes into `__snapshots__`, in the pinned image — a host run would record a host baseline. The shot of the failed comparison goes to `reports/visual-diff/<name>.new.png`, which CI already uploads, so the reviewer sees what is missing; the baseline PNG is then reviewed in the diff of the update commit.
 
 ### Different dimensions → **fail immediately**
 
@@ -363,20 +363,20 @@ Visual regression plugins wrap roughly this much code around `pixelmatch`. The p
 
 ## File map
 
-| Path                                               | Contents                                                                                                                                       |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tests/e2e/visual/visual.cy.ts`                    | The shell's screens, the readiness selectors, the determinism `beforeEach`                                                                     |
-| `tests/support/e2e/visual-sweep.ts`                | `sweepVisual`: a case expands over viewports and theme, then drives the shot                                                                   |
-| `tests/support/e2e/apply-viewport.ts`              | `applyViewport(name)`: size and touch for a `VIEWPORTS` entry                                                                                  |
-| `tests/support/e2e/sweep-state.ts`                 | The route type, `resolveRoute` and `switchToDarkTheme`, shared with the other sweeps                                                           |
-| `tests/support/e2e/visual-task.ts`                 | The comparison itself — thresholds, the three outcomes, diff output. Runs in **Node**, because the browser cannot read the committed baselines |
-| `tests/support/e2e/commands.ts`                    | `cy.freezeForVisual()`, `cy.compareSnapshot()`, and the `visit` override with its per-visit token                                              |
-| `cypress.config.ts`                                | Registers the `compareSnapshot` task, pins the desktop viewport and registers the one `before:browser:launch` handler                          |
-| `scripts/e2e/viewports.ts`                         | The device sizes (`VIEWPORTS`), cy-free, so Node tools can import them                                                                         |
-| `scripts/e2e/browser-launch.ts`                    | Pure: `windowFor` and `withWindowSize`, the headless window size                                                                               |
-| `scripts/e2e/shot-size.ts`                         | Pure: `shotSizeProblem`, the guard against a clamped screenshot                                                                                |
-| `src/modules/<name>/tests/e2e/__snapshots__/*.png` | The committed baselines, `<name>.<viewport>[.dark].png` — reviewed as images, in the PR diff                                                   |
-| `reports/visual-diff/`                             | Diff images written on failure. Not committed                                                                                                  |
+| Path                                               | Contents                                                                                                                                 |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/e2e/visual/visual.cy.ts`                    | The shell's screens, the readiness selectors, the determinism `beforeEach`                                                               |
+| `tests/support/e2e/visual-sweep.ts`                | `sweepVisual`: a case expands over viewports and theme, then drives the shot                                                             |
+| `tests/support/e2e/apply-viewport.ts`              | `applyViewport(name)`: size and touch for a `VIEWPORTS` entry                                                                            |
+| `tests/support/e2e/sweep-state.ts`                 | The route type, `resolveRoute` and `switchToDarkTheme`, shared with the other sweeps                                                     |
+| `tests/support/e2e/visual-task.ts`                 | The comparison itself — thresholds, the outcomes, diff output. Runs in **Node**, because the browser cannot read the committed baselines |
+| `tests/support/e2e/commands.ts`                    | `cy.freezeForVisual()`, `cy.compareSnapshot()`, and the `visit` override with its per-visit token                                        |
+| `cypress.config.ts`                                | Registers the `compareSnapshot` task, pins the desktop viewport and registers the one `before:browser:launch` handler                    |
+| `scripts/e2e/viewports.ts`                         | The device sizes (`VIEWPORTS`), cy-free, so Node tools can import them                                                                   |
+| `scripts/e2e/browser-launch.ts`                    | Pure: `windowFor` and `withWindowSize`, the headless window size                                                                         |
+| `scripts/e2e/shot-size.ts`                         | Pure: `shotSizeProblem`, the guard against a clamped screenshot                                                                          |
+| `src/modules/<name>/tests/e2e/__snapshots__/*.png` | The committed baselines, `<name>.<viewport>[.dark].png` — reviewed as images, in the PR diff                                             |
+| `reports/visual-diff/`                             | Diff images written on failure. Not committed                                                                                            |
 
 Note the directory split: the visual spec lives under `tests/e2e/visual/` rather than `tests/e2e/specs/`, because the ordinary `npm run test:e2e` run must not record or compare screenshots. Each npm script scopes itself with `--spec`.
 
