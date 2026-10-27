@@ -3161,6 +3161,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 'refund_settled',
                 'refund_failed',
                 'refund_canceled',
+                'refund_reversed',
                 'shipment_shipped',
                 'shipment_delivered',
                 'fulfillment_held',
@@ -3217,7 +3218,13 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .min(downloadAccountExportResponsePaymentsItemRefundsItemAmountMin),
                     currency: zod.string(),
                     status: zod.enum(['pending', 'succeeded', 'failed']),
-                    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+                    reason: zod.enum([
+                        'cancellation',
+                        'goodwill',
+                        'return',
+                        'late_payment',
+                        'external'
+                    ]),
                     returnId: zod
                         .string()
                         .min(1)
@@ -3236,9 +3243,12 @@ export const DownloadAccountExportResponse = zod.strictObject({
                             'provider_removed',
                             'provider_unavailable',
                             'unknown',
-                            'canceled'
+                            'canceled',
+                            'disputed'
                         ])
                         .optional(),
+                    owedAnotherWay: zod.boolean().optional(),
+                    reversedAt: zod.iso.datetime({ offset: true }).optional(),
                     createdAt: zod.iso.datetime({ offset: true })
                 })
             ),
@@ -9081,7 +9091,13 @@ export const ListOrderPaymentsResponse = zod.strictObject({
                         .min(listOrderPaymentsResponseItemsItemRefundsItemAmountMin),
                     currency: zod.string(),
                     status: zod.enum(['pending', 'succeeded', 'failed']),
-                    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+                    reason: zod.enum([
+                        'cancellation',
+                        'goodwill',
+                        'return',
+                        'late_payment',
+                        'external'
+                    ]),
                     returnId: zod
                         .string()
                         .min(1)
@@ -9100,9 +9116,12 @@ export const ListOrderPaymentsResponse = zod.strictObject({
                             'provider_removed',
                             'provider_unavailable',
                             'unknown',
-                            'canceled'
+                            'canceled',
+                            'disputed'
                         ])
                         .optional(),
+                    owedAnotherWay: zod.boolean().optional(),
+                    reversedAt: zod.iso.datetime({ offset: true }).optional(),
                     createdAt: zod.iso.datetime({ offset: true })
                 })
             ),
@@ -9246,7 +9265,7 @@ export const RecordOrderPaymentResponse = zod.strictObject({
             amount: zod.number().min(recordOrderPaymentResponseRefundsItemAmountMin),
             currency: zod.string(),
             status: zod.enum(['pending', 'succeeded', 'failed']),
-            reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+            reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
             returnId: zod
                 .string()
                 .min(1)
@@ -9265,9 +9284,12 @@ export const RecordOrderPaymentResponse = zod.strictObject({
                     'provider_removed',
                     'provider_unavailable',
                     'unknown',
-                    'canceled'
+                    'canceled',
+                    'disputed'
                 ])
                 .optional(),
+            owedAnotherWay: zod.boolean().optional(),
+            reversedAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true })
         })
     ),
@@ -9771,7 +9793,7 @@ export const CreateRefundResponse = zod.strictObject({
     amount: zod.number().min(createRefundResponseAmountMin),
     currency: zod.string(),
     status: zod.enum(['pending', 'succeeded', 'failed']),
-    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
     returnId: zod
         .string()
         .min(1)
@@ -9790,9 +9812,12 @@ export const CreateRefundResponse = zod.strictObject({
             'provider_removed',
             'provider_unavailable',
             'unknown',
-            'canceled'
+            'canceled',
+            'disputed'
         ])
         .optional(),
+    owedAnotherWay: zod.boolean().optional(),
+    reversedAt: zod.iso.datetime({ offset: true }).optional(),
     createdAt: zod.iso.datetime({ offset: true })
 });
 /**
@@ -9817,7 +9842,7 @@ export const GetRefundResponse = zod.strictObject({
     amount: zod.number().min(getRefundResponseAmountMin),
     currency: zod.string(),
     status: zod.enum(['pending', 'succeeded', 'failed']),
-    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
     returnId: zod
         .string()
         .min(1)
@@ -9836,9 +9861,12 @@ export const GetRefundResponse = zod.strictObject({
             'provider_removed',
             'provider_unavailable',
             'unknown',
-            'canceled'
+            'canceled',
+            'disputed'
         ])
         .optional(),
+    owedAnotherWay: zod.boolean().optional(),
+    reversedAt: zod.iso.datetime({ offset: true }).optional(),
     createdAt: zod.iso.datetime({ offset: true })
 });
 /**
@@ -9894,7 +9922,7 @@ export const GetPaymentResponse = zod.strictObject({
             amount: zod.number().min(getPaymentResponseRefundsItemAmountMin),
             currency: zod.string(),
             status: zod.enum(['pending', 'succeeded', 'failed']),
-            reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+            reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
             returnId: zod
                 .string()
                 .min(1)
@@ -9913,9 +9941,12 @@ export const GetPaymentResponse = zod.strictObject({
                     'provider_removed',
                     'provider_unavailable',
                     'unknown',
-                    'canceled'
+                    'canceled',
+                    'disputed'
                 ])
                 .optional(),
+            owedAnotherWay: zod.boolean().optional(),
+            reversedAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true })
         })
     ),
@@ -10051,7 +10082,7 @@ export const ConfirmPaymentResponse = zod.strictObject({
             amount: zod.number().min(confirmPaymentResponseRefundsItemAmountMin),
             currency: zod.string(),
             status: zod.enum(['pending', 'succeeded', 'failed']),
-            reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+            reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
             returnId: zod
                 .string()
                 .min(1)
@@ -10070,9 +10101,12 @@ export const ConfirmPaymentResponse = zod.strictObject({
                     'provider_removed',
                     'provider_unavailable',
                     'unknown',
-                    'canceled'
+                    'canceled',
+                    'disputed'
                 ])
                 .optional(),
+            owedAnotherWay: zod.boolean().optional(),
+            reversedAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true })
         })
     ),
@@ -10188,7 +10222,7 @@ export const SyncPaymentResponse = zod.strictObject({
             amount: zod.number().min(syncPaymentResponseRefundsItemAmountMin),
             currency: zod.string(),
             status: zod.enum(['pending', 'succeeded', 'failed']),
-            reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+            reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
             returnId: zod
                 .string()
                 .min(1)
@@ -10207,9 +10241,12 @@ export const SyncPaymentResponse = zod.strictObject({
                     'provider_removed',
                     'provider_unavailable',
                     'unknown',
-                    'canceled'
+                    'canceled',
+                    'disputed'
                 ])
                 .optional(),
+            owedAnotherWay: zod.boolean().optional(),
+            reversedAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true })
         })
     ),
@@ -10274,18 +10311,25 @@ export const SyncPaymentResponse = zod.strictObject({
 });
 /**
  * Where the provider says a payment changed — a thin event naming the intent. The server then asks the provider for the payment's state and settles that answer, so the authority is the provider's own, never the browser's and never this body's. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. A provider retrying for days settles once: the delivery is a pointer, the provider is re-read, and every write of the settlement is conditional.
- * Answers 200 to anything it has authenticated, including events it does not act on: a provider reads a non-2xx as a failure and retries harder. Answers 404 when no card payment provider is configured: nobody can sign a delivery, so the route does not exist for that deployment.
+ * One endpoint per provider, named in the path and resolved from the registry of installed adapters, not from `NODE_PAYMENT_PROVIDER`: a provider that is no longer the one new checkouts use still delivers its in-flight payments' events, and each adapter verifies its own signature with its own secret.
+ * Answers 204 to anything it has authenticated, including events it does not act on and a delivery naming a payment another provider took (logged, left alone): a provider reads a non-2xx as a failure and retries harder. Answers 404 when no adapter is installed under that name, and 400 for a signature that does not verify or a body that is not an event. An unverifiable delivery is never acknowledged.
  * @summary Provider webhook
  */
+export const receivePaymentWebhookPathProviderMax = 100;
+export const ReceivePaymentWebhookParams = zod.strictObject({
+    provider: zod.string().max(receivePaymentWebhookPathProviderMax)
+});
 export const receivePaymentWebhookHeaderPaymentSignatureMax = 200;
 export const ReceivePaymentWebhookHeader = zod.strictObject({
-    'Payment-Signature': zod.string().max(receivePaymentWebhookHeaderPaymentSignatureMax)
+    'Payment-Signature': zod.string().max(receivePaymentWebhookHeaderPaymentSignatureMax).optional()
 });
 export const receivePaymentWebhookBodyIdMax = 200;
 export const receivePaymentWebhookBodyProviderRefMax = 200;
+export const receivePaymentWebhookBodyRefundRefMax = 200;
 export const ReceivePaymentWebhookBody = zod.strictObject({
     id: zod.string().max(receivePaymentWebhookBodyIdMax),
-    providerRef: zod.string().max(receivePaymentWebhookBodyProviderRefMax).optional()
+    providerRef: zod.string().max(receivePaymentWebhookBodyProviderRefMax).optional(),
+    refundRef: zod.string().max(receivePaymentWebhookBodyRefundRefMax).optional()
 });
 export const ReceivePaymentWebhookResponse = zod.void();
 /**
@@ -13540,6 +13584,7 @@ export const GetOrderTimelineResponse = zod.strictObject({
                 'refund_settled',
                 'refund_failed',
                 'refund_canceled',
+                'refund_reversed',
                 'shipment_shipped',
                 'shipment_delivered',
                 'fulfillment_held',
@@ -13952,7 +13997,13 @@ export const ListPaymentsResponse = zod.strictObject({
                     amount: zod.number().min(listPaymentsResponseItemsItemRefundsItemAmountMin),
                     currency: zod.string(),
                     status: zod.enum(['pending', 'succeeded', 'failed']),
-                    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+                    reason: zod.enum([
+                        'cancellation',
+                        'goodwill',
+                        'return',
+                        'late_payment',
+                        'external'
+                    ]),
                     returnId: zod
                         .string()
                         .min(1)
@@ -13971,9 +14022,12 @@ export const ListPaymentsResponse = zod.strictObject({
                             'provider_removed',
                             'provider_unavailable',
                             'unknown',
-                            'canceled'
+                            'canceled',
+                            'disputed'
                         ])
                         .optional(),
+                    owedAnotherWay: zod.boolean().optional(),
+                    reversedAt: zod.iso.datetime({ offset: true }).optional(),
                     createdAt: zod.iso.datetime({ offset: true })
                 })
             ),
@@ -14109,7 +14163,7 @@ export const CreatePaymentResponse = zod.strictObject({
             amount: zod.number().min(createPaymentResponseRefundsItemAmountMin),
             currency: zod.string(),
             status: zod.enum(['pending', 'succeeded', 'failed']),
-            reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+            reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
             returnId: zod
                 .string()
                 .min(1)
@@ -14128,9 +14182,12 @@ export const CreatePaymentResponse = zod.strictObject({
                     'provider_removed',
                     'provider_unavailable',
                     'unknown',
-                    'canceled'
+                    'canceled',
+                    'disputed'
                 ])
                 .optional(),
+            owedAnotherWay: zod.boolean().optional(),
+            reversedAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true })
         })
     ),
@@ -14312,7 +14369,13 @@ export const SearchPaymentsResponse = zod.strictObject({
                     amount: zod.number().min(searchPaymentsResponseItemsItemRefundsItemAmountMin),
                     currency: zod.string(),
                     status: zod.enum(['pending', 'succeeded', 'failed']),
-                    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+                    reason: zod.enum([
+                        'cancellation',
+                        'goodwill',
+                        'return',
+                        'late_payment',
+                        'external'
+                    ]),
                     returnId: zod
                         .string()
                         .min(1)
@@ -14331,9 +14394,12 @@ export const SearchPaymentsResponse = zod.strictObject({
                             'provider_removed',
                             'provider_unavailable',
                             'unknown',
-                            'canceled'
+                            'canceled',
+                            'disputed'
                         ])
                         .optional(),
+                    owedAnotherWay: zod.boolean().optional(),
+                    reversedAt: zod.iso.datetime({ offset: true }).optional(),
                     createdAt: zod.iso.datetime({ offset: true })
                 })
             ),
@@ -14430,7 +14496,7 @@ export const ListRefundsQueryParams = zod.strictObject({
         .max(listRefundsQueryPageSizeMax)
         .default(listRefundsQueryPageSizeDefault),
     status: zod.enum(['pending', 'succeeded', 'failed']).optional(),
-    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']).optional(),
+    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']).optional(),
     orderId: zod
         .string()
         .min(1)
@@ -14476,7 +14542,7 @@ export const ListRefundsResponse = zod.strictObject({
             amount: zod.number().min(listRefundsResponseItemsItemAmountMin),
             currency: zod.string(),
             status: zod.enum(['pending', 'succeeded', 'failed']),
-            reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+            reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
             returnId: zod
                 .string()
                 .min(1)
@@ -14493,10 +14559,12 @@ export const ListRefundsResponse = zod.strictObject({
                     'provider_removed',
                     'provider_unavailable',
                     'unknown',
-                    'canceled'
+                    'canceled',
+                    'disputed'
                 ])
                 .optional(),
             settledAt: zod.iso.datetime({ offset: true }).optional(),
+            reversedAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true })
         })
     ),
@@ -14526,10 +14594,17 @@ export const listPaymentAttentionResponseItemsItemPaymentIdRegExp = new RegExp('
 export const listPaymentAttentionResponseItemsItemRefundIdMax = 64;
 export const listPaymentAttentionResponseItemsItemRefundIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listPaymentAttentionResponseItemsItemAmountMin = 0;
+export const listPaymentAttentionResponseItemsItemExceedsByMin = 0;
 export const ListPaymentAttentionResponse = zod.strictObject({
     items: zod.array(
         zod.strictObject({
-            kind: zod.enum(['stale_refund', 'refused_refund', 'manual_refund_owed']),
+            kind: zod.enum([
+                'stale_refund',
+                'refused_refund',
+                'reversed_refund',
+                'refund_exceeds_remaining',
+                'manual_refund_owed'
+            ]),
             orderId: zod
                 .string()
                 .min(1)
@@ -14556,10 +14631,15 @@ export const ListPaymentAttentionResponse = zod.strictObject({
                     'provider_removed',
                     'provider_unavailable',
                     'unknown',
-                    'canceled'
+                    'canceled',
+                    'disputed'
                 ])
                 .optional(),
             since: zod.iso.datetime({ offset: true }),
+            exceedsBy: zod
+                .number()
+                .min(listPaymentAttentionResponseItemsItemExceedsByMin)
+                .optional(),
             refundDueBy: zod.iso.datetime({ offset: true }).optional()
         })
     )
@@ -14605,7 +14685,7 @@ export const SettleRefundByHandResponse = zod.strictObject({
     amount: zod.number().min(settleRefundByHandResponseAmountMin),
     currency: zod.string(),
     status: zod.enum(['pending', 'succeeded', 'failed']),
-    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
     returnId: zod
         .string()
         .min(1)
@@ -14624,9 +14704,12 @@ export const SettleRefundByHandResponse = zod.strictObject({
             'provider_removed',
             'provider_unavailable',
             'unknown',
-            'canceled'
+            'canceled',
+            'disputed'
         ])
         .optional(),
+    owedAnotherWay: zod.boolean().optional(),
+    reversedAt: zod.iso.datetime({ offset: true }).optional(),
     createdAt: zod.iso.datetime({ offset: true })
 });
 /**
@@ -14670,7 +14753,7 @@ export const CancelRefundResponse = zod.strictObject({
     amount: zod.number().min(cancelRefundResponseAmountMin),
     currency: zod.string(),
     status: zod.enum(['pending', 'succeeded', 'failed']),
-    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
     returnId: zod
         .string()
         .min(1)
@@ -14689,9 +14772,12 @@ export const CancelRefundResponse = zod.strictObject({
             'provider_removed',
             'provider_unavailable',
             'unknown',
-            'canceled'
+            'canceled',
+            'disputed'
         ])
         .optional(),
+    owedAnotherWay: zod.boolean().optional(),
+    reversedAt: zod.iso.datetime({ offset: true }).optional(),
     createdAt: zod.iso.datetime({ offset: true })
 });
 /**

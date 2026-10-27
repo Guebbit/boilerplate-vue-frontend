@@ -93,7 +93,7 @@ export const requestAsDevice = (
     cy.task<DeviceResponse>('deviceRequest', { device, method, path, body });
 
 /**
- * Sign a payment-provider event and post it to `/payments/webhook`, as the provider would.
+ * Sign a payment-provider event and post it to `/payments/webhook/fake`, as the provider would.
  *
  * @param event - the normalised event; `id` is deduplicated by the backend
  * @param timestamp - unix seconds for the signature; an old one proves a stale delivery is refused

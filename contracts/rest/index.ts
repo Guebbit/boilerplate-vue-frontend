@@ -1926,7 +1926,7 @@ export interface ExportOrder {
 }
 
 /**
- * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`.
+ * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`, `refund_reversed`.
  */
 export type OrderTimelineType = (typeof OrderTimelineType)[keyof typeof OrderTimelineType];
 
@@ -1943,6 +1943,7 @@ export const OrderTimelineType = {
     refund_settled: 'refund_settled',
     refund_failed: 'refund_failed',
     refund_canceled: 'refund_canceled',
+    refund_reversed: 'refund_reversed',
     shipment_shipped: 'shipment_shipped',
     shipment_delivered: 'shipment_delivered',
     fulfillment_held: 'fulfillment_held',
@@ -2000,7 +2001,7 @@ export const RefundStatus = {
 } as const;
 
 /**
- * Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to; `late_payment` — the money arrived after the order could no longer be paid (its stock reservation had expired or it was cancelled), so the sale was lost and the money went back. The buyer is mailed it like a cancellation's refund.
+ * Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to; `late_payment` — the money arrived after the order could no longer be paid (its stock reservation had expired or it was cancelled), so the sale was lost and the money went back. The buyer is mailed it like a cancellation's refund. `external` — the refund was made in the payment provider's own dashboard, not here: the application found it and recorded it so the credit note, the buyer's mail and the order's state follow; it is `succeeded` from the start and carries the provider's own amount and date.
  */
 export type RefundReason = (typeof RefundReason)[keyof typeof RefundReason];
 
@@ -2008,12 +2009,14 @@ export const RefundReason = {
     cancellation: 'cancellation',
     goodwill: 'goodwill',
     return: 'return',
-    late_payment: 'late_payment'
+    late_payment: 'late_payment',
+    external: 'external'
 } as const;
 
 /**
  * Why the provider last refused a refund, as a closed code. Staff only (`display:Payment`). `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
  * Money did NOT move for `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` (the payment's provider is no longer installed, so nothing was asked): the refund may be marked returned by hand once the money went back another way. `declined`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` are final and are not retried; `insufficient_funds` (the shop's own provider balance is short) and the unclear `provider_unavailable` and `unknown` are retried with a growing delay. An unclear refusal may have gone through, so it is never offered for hand settlement.
+ * `disputed`: the buyer's bank took the money back in a dispute (chargeback). It is final like the refusals above, and it is never offered for hand settlement: the bank already returned the money.
  * `canceled` is not a refusal: staff voided the refund (`POST /payments/{id}/refunds/{refundId}/cancel`). Nothing was sent, it is never retried and it can neither be settled by hand nor canceled again.
  */
 export type RefundFailureReason = (typeof RefundFailureReason)[keyof typeof RefundFailureReason];
@@ -2026,7 +2029,8 @@ export const RefundFailureReason = {
     provider_removed: 'provider_removed',
     provider_unavailable: 'provider_unavailable',
     unknown: 'unknown',
-    canceled: 'canceled'
+    canceled: 'canceled',
+    disputed: 'disputed'
 } as const;
 
 /**
@@ -2052,6 +2056,10 @@ export interface Refund {
     /** The provider's id for the refund (Stripe's `re_…`). Staff only. */
     providerRefundRef?: string;
     failureReason?: RefundFailureReason;
+    /** `true` while this refund is open and the money cannot go back to the card: the provider refused it for good, or took it back after settling it. The buyer is emailed to agree how they would like to receive it, at no cost to them (Consumer Rights Directive Art. 13(1)), and the order page says so instead of "retried automatically". Carries no reason: that stays staff-only. Absent otherwise. */
+    owedAnotherWay?: boolean;
+    /** When the provider took this refund back (a bank sent the money back, or the provider reported the refund failed). Set once; a reversed refund is `failed` again, counts against what is left, and is owed another way: an operator pays it and presses mark-returned (`actions.settleByHand`). The credit note issued when it first settled stays. Absent otherwise. */
+    reversedAt?: string;
     createdAt: string;
 }
 
@@ -4335,7 +4343,7 @@ export interface ConfirmPaymentRequest {
 }
 
 /**
- * One delivery, in this module's normalised shape: which event it is and which intent it names, and nothing about what happened. A real provider sends its OWN event shape and its implementation of the provider port translates it into this. The outcome is never read from the body: once the delivery is authenticated, the server asks the provider for the payment's state, because providers do not guarantee the order events arrive in.
+ * One delivery, in this module's normalised shape: which event it is, which intent it names and, for a refund event (`refund.created`, `refund.updated`, `refund.failed`, `charge.refunded`), which refund, and nothing about what happened. A refund made in the provider's own dashboard arrives the same way and is imported. A real provider sends its OWN event shape and its implementation of the provider port translates it into this. The outcome is never read from the body: once the delivery is authenticated, the server asks the provider for the payment's state, because providers do not guarantee the order events arrive in.
  */
 export interface PaymentWebhookEvent {
     /**
@@ -4348,6 +4356,11 @@ export interface PaymentWebhookEvent {
      * @maxLength 200
      */
     providerRef?: string;
+    /**
+     * Which refund the event is about, when it is about one (Stripe's `refund.updated`, `refund.failed`, `charge.refunded`). Still only a pointer: the server re-reads that refund's own status from the provider, so a refund that settled and then bounced is noticed even days later.
+     * @maxLength 200
+     */
+    refundRef?: string;
 }
 
 export interface ShippingMethod {
@@ -5376,6 +5389,7 @@ export interface RefundListItem {
     providerRefundRef?: string;
     failureReason?: RefundFailureReason;
     settledAt?: string;
+    reversedAt?: string;
     createdAt: string;
 }
 
@@ -5385,13 +5399,15 @@ export interface RefundsResponse {
 }
 
 /**
- * `stale_refund` — a provider refund open past the threshold, still waiting for the provider's answer or its next retry; `refused_refund` — a card refund the provider refused for good (a final `RefundFailureReason`), shown at once: the money has to go back another way; `manual_refund_owed` — money to hand back outside the system on a `manual` payment. Both are an open refund record on a payment: a cancel or a refund opens it before anything is asked of a provider, so no refund is owed without one.
+ * `stale_refund` — a provider refund open past the threshold, still waiting for the provider's answer or its next retry; `refused_refund` — a card refund the provider refused for good (a final `RefundFailureReason`), shown at once: the money has to go back another way; `reversed_refund` — a refund the provider took back after settling it (a bank sent it back), shown at once with `since` = when it was reversed: the money is owed another way, agreed with the buyer; `refund_exceeds_remaining` — a refund made in the provider's dashboard took the room an open refund here counted on: the open one is held unsent (the provider would refuse it) and `exceedsBy` says by how much. Staff cancel it or mark it returned; `manual_refund_owed` — money to hand back outside the system on a `manual` payment. Both are an open refund record on a payment: a cancel or a refund opens it before anything is asked of a provider, so no refund is owed without one.
  */
 export type PaymentAttentionKind = (typeof PaymentAttentionKind)[keyof typeof PaymentAttentionKind];
 
 export const PaymentAttentionKind = {
     stale_refund: 'stale_refund',
     refused_refund: 'refused_refund',
+    reversed_refund: 'reversed_refund',
+    refund_exceeds_remaining: 'refund_exceeds_remaining',
     manual_refund_owed: 'manual_refund_owed'
 } as const;
 
@@ -5406,6 +5422,11 @@ export interface PaymentAttentionItem {
     failureReason?: RefundFailureReason;
     /** When the problem was recorded, so the page can sort by age. */
     since: string;
+    /**
+     * On a `refund_exceeds_remaining` row, by how much this open refund overshoots what the provider can still give back, in the payment's currency.
+     * @minimum 0
+     */
+    exceedsBy?: number;
     /** The legal deadline to give the money back, on a `refused_refund` that pays for a withdrawal or a return: the refund's creation plus 14 days (Consumer Rights Directive Art. 13). Absent for any other refund, which shows its age only. The client shows the days left; a past date means the deadline has gone. */
     refundDueBy?: string;
 }
@@ -9988,16 +10009,18 @@ export const syncPayment = (
 
 /**
  * Where the provider says a payment changed — a thin event naming the intent. The server then asks the provider for the payment's state and settles that answer, so the authority is the provider's own, never the browser's and never this body's. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. A provider retrying for days settles once: the delivery is a pointer, the provider is re-read, and every write of the settlement is conditional.
- * Answers 200 to anything it has authenticated, including events it does not act on: a provider reads a non-2xx as a failure and retries harder. Answers 404 when no card payment provider is configured: nobody can sign a delivery, so the route does not exist for that deployment.
+ * One endpoint per provider, named in the path and resolved from the registry of installed adapters, not from `NODE_PAYMENT_PROVIDER`: a provider that is no longer the one new checkouts use still delivers its in-flight payments' events, and each adapter verifies its own signature with its own secret.
+ * Answers 204 to anything it has authenticated, including events it does not act on and a delivery naming a payment another provider took (logged, left alone): a provider reads a non-2xx as a failure and retries harder. Answers 404 when no adapter is installed under that name, and 400 for a signature that does not verify or a body that is not an event. An unverifiable delivery is never acknowledged.
  * @summary Provider webhook
  */
 export const receivePaymentWebhook = (
+    provider: string,
     paymentWebhookEvent: PaymentWebhookEvent,
     options?: SecondParameter<typeof orvalMutator<void>>
 ) => {
     return orvalMutator<void>(
         {
-            url: `/payments/webhook`,
+            url: `/payments/webhook/${provider}`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: paymentWebhookEvent
