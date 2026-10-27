@@ -103,6 +103,7 @@
         "label-menu": "Menu",
         "label-theme": "Toggle theme",
         "label-language": "Language",
+        "label-draft-language": "(draft)",
         "label-logo": "Guebbit home",
         "label-about": "About",
         "label-drawer": "Navigation menu",

@@ -25,7 +25,7 @@ import {
     replaceLocaleEntries,
     updateLocaleEntries,
     getEntityTranslations,
-    upsertEntityTranslations as apiUpsertEntityTranslations,
+    updateEntityTranslations as apiUpdateEntityTranslations,
     LocaleAppKind
 } from '@api';
 import type {
@@ -37,7 +37,7 @@ import type {
     CreateLocaleEntryRequest,
     LocaleImportResult,
     EntityTranslations,
-    MergeTranslationsRequest
+    UpdateEntityTranslationsRequest
 } from '@types';
 import { flattenDictionary, type DictionaryRow } from './dictionaries.ts';
 import { loadBundledDictionary, type TranslationDictionaries } from '@/i18n';
@@ -451,10 +451,10 @@ export const useLocalesStore = defineStore('locales', () => {
     const saveEntityTranslations = (
         entityType: string,
         entityId: string,
-        body: MergeTranslationsRequest
+        body: UpdateEntityTranslationsRequest
     ): Promise<Pick<EntityTranslations, 'translations' | 'fields'> | undefined> =>
         fetchAny(
-            () => apiUpsertEntityTranslations(entityType, entityId, body),
+            () => apiUpdateEntityTranslations(entityType, entityId, body),
             // Own bucket so the save button spins apart from every read; `forced` because a keyed
             // fetchAny would otherwise be served from cache.
             { key: ['entity-translations-save'], forced: true }

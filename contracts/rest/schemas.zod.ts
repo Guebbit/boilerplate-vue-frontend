@@ -7,12 +7,18 @@
  *
  * Language: every endpoint honours `Accept-Language` (q-weights and region tags
  * included). One language is picked per request, from the languages switched on in
- * `GET /locales`, and it selects the language of user-facing copy and of translated entity
+ * `GET /locales` (and, for that staff preview, the draft asked for), and it selects the language of user-facing copy and of translated entity
  * fields (a product's `title`, `description`) — `errors[].message` — never the response shape, the status code, or a machine-readable field such
  * as `errors[].code`. A message the API has no wording for in that language falls back to
  * the default language, one message at a time. An unknown or switched-off language falls
  * back instead of erroring; `Content-Language` states the language picked, the audience the
  * answer is written for (RFC 9110 section 8.5), and `Vary: Accept-Language` is always set.
+ * One exception, for staff: a caller allowed to read draft languages (`display:Locale`) whose
+ * FIRST `Accept-Language` choice is a switched-off language is answered in it by the product
+ * reads (`GET /products`, `POST /products/search`, `GET /products/{id}`) and the example
+ * read: draft text where it exists, the live chain field by field where it does not. That
+ * answer says `Content-Language: <draft tag>` and `Cache-Control: private, no-store`, and the
+ * server never stores it. Anyone else asking for a draft gets the normal pick.
  * `GET /locales` lists what a deployment offers.
  *
  * Successes: a 2xx answers the resource itself, with no wrapper. A list is an object, never a
@@ -384,8 +390,8 @@ export const DeleteLocaleResponse = zod.void();
  * that exists but is inactive — an inactive language is invisible to every public
  * route, which is the whole point of the flag. A caller holding `display:Locale`
  * (staff, or an API key minted with it) is the exception: they get an inactive
- * language's dictionary too, so a translation can be seen in the shop before it is
- * switched on for everyone.
+ * language's dictionary too, so a draft's interface strings can be read before it is
+ * switched on; the same caller previews its product text on the product reads.
  *
  * Public and cacheable, like every other locale read; a staff answer skips the
  * shared cache.
@@ -1076,89 +1082,86 @@ export const ReplaceEntityTranslationsResponse = zod.strictObject({
  * failed.
  * @summary Merge one or more of an entity's translations
  */
-export const upsertEntityTranslationsPathEntityTypeMax = 64;
-export const upsertEntityTranslationsPathIdMax = 64;
-export const upsertEntityTranslationsPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const UpsertEntityTranslationsParams = zod.strictObject({
-    entityType: zod.string().min(1).max(upsertEntityTranslationsPathEntityTypeMax),
+export const updateEntityTranslationsPathEntityTypeMax = 64;
+export const updateEntityTranslationsPathIdMax = 64;
+export const updateEntityTranslationsPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const UpdateEntityTranslationsParams = zod.strictObject({
+    entityType: zod.string().min(1).max(updateEntityTranslationsPathEntityTypeMax),
     id: zod
         .string()
         .min(1)
-        .max(upsertEntityTranslationsPathIdMax)
-        .regex(upsertEntityTranslationsPathIdRegExp)
+        .max(updateEntityTranslationsPathIdMax)
+        .regex(updateEntityTranslationsPathIdRegExp)
 });
-export const upsertEntityTranslationsBodyOneFieldsMaxOne = 10000;
-export const upsertEntityTranslationsBodyOneOriginDefault = `human`;
-export const UpsertEntityTranslationsBody = zod.record(
+export const updateEntityTranslationsBodyOneFieldsMaxOne = 10000;
+export const UpdateEntityTranslationsBody = zod.record(
     zod.string(),
     zod.union([
         zod.strictObject({
             fields: zod.record(
                 zod.string(),
-                zod.string().min(1).max(upsertEntityTranslationsBodyOneFieldsMaxOne).nullable()
+                zod.string().min(1).max(updateEntityTranslationsBodyOneFieldsMaxOne).nullable()
             ),
-            origin: zod
-                .enum(['machine', 'human'])
-                .default(upsertEntityTranslationsBodyOneOriginDefault)
+            origin: zod.enum(['machine', 'human'])
         }),
         zod.null()
     ])
 );
-export const upsertEntityTranslationsResponseEntityTypeMax = 64;
-export const upsertEntityTranslationsResponseEntityIdMax = 64;
-export const upsertEntityTranslationsResponseEntityIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const upsertEntityTranslationsResponseTranslationsItemIdMax = 64;
-export const upsertEntityTranslationsResponseTranslationsItemIdRegExp = new RegExp(
+export const updateEntityTranslationsResponseEntityTypeMax = 64;
+export const updateEntityTranslationsResponseEntityIdMax = 64;
+export const updateEntityTranslationsResponseEntityIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const updateEntityTranslationsResponseTranslationsItemIdMax = 64;
+export const updateEntityTranslationsResponseTranslationsItemIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const upsertEntityTranslationsResponseTranslationsItemEntityTypeMax = 64;
-export const upsertEntityTranslationsResponseTranslationsItemEntityIdMax = 64;
-export const upsertEntityTranslationsResponseTranslationsItemEntityIdRegExp = new RegExp(
+export const updateEntityTranslationsResponseTranslationsItemEntityTypeMax = 64;
+export const updateEntityTranslationsResponseTranslationsItemEntityIdMax = 64;
+export const updateEntityTranslationsResponseTranslationsItemEntityIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const upsertEntityTranslationsResponseTranslationsItemLocaleMax = 35;
-export const upsertEntityTranslationsResponseTranslationsItemLocaleRegExp = new RegExp(
+export const updateEntityTranslationsResponseTranslationsItemLocaleMax = 35;
+export const updateEntityTranslationsResponseTranslationsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
-export const upsertEntityTranslationsResponseTranslationsItemTranslatedByOneMax = 64;
-export const upsertEntityTranslationsResponseTranslationsItemTranslatedByOneRegExp = new RegExp(
+export const updateEntityTranslationsResponseTranslationsItemTranslatedByOneMax = 64;
+export const updateEntityTranslationsResponseTranslationsItemTranslatedByOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const UpsertEntityTranslationsResponse = zod.strictObject({
-    entityType: zod.string().min(1).max(upsertEntityTranslationsResponseEntityTypeMax),
+export const UpdateEntityTranslationsResponse = zod.strictObject({
+    entityType: zod.string().min(1).max(updateEntityTranslationsResponseEntityTypeMax),
     entityId: zod
         .string()
         .min(1)
-        .max(upsertEntityTranslationsResponseEntityIdMax)
-        .regex(upsertEntityTranslationsResponseEntityIdRegExp),
+        .max(updateEntityTranslationsResponseEntityIdMax)
+        .regex(updateEntityTranslationsResponseEntityIdRegExp),
     translations: zod.array(
         zod.strictObject({
             id: zod
                 .string()
                 .min(1)
-                .max(upsertEntityTranslationsResponseTranslationsItemIdMax)
-                .regex(upsertEntityTranslationsResponseTranslationsItemIdRegExp),
+                .max(updateEntityTranslationsResponseTranslationsItemIdMax)
+                .regex(updateEntityTranslationsResponseTranslationsItemIdRegExp),
             entityType: zod
                 .string()
                 .min(1)
-                .max(upsertEntityTranslationsResponseTranslationsItemEntityTypeMax),
+                .max(updateEntityTranslationsResponseTranslationsItemEntityTypeMax),
             entityId: zod
                 .string()
                 .min(1)
-                .max(upsertEntityTranslationsResponseTranslationsItemEntityIdMax)
-                .regex(upsertEntityTranslationsResponseTranslationsItemEntityIdRegExp),
+                .max(updateEntityTranslationsResponseTranslationsItemEntityIdMax)
+                .regex(updateEntityTranslationsResponseTranslationsItemEntityIdRegExp),
             locale: zod
                 .string()
-                .max(upsertEntityTranslationsResponseTranslationsItemLocaleMax)
-                .regex(upsertEntityTranslationsResponseTranslationsItemLocaleRegExp),
+                .max(updateEntityTranslationsResponseTranslationsItemLocaleMax)
+                .regex(updateEntityTranslationsResponseTranslationsItemLocaleRegExp),
             fields: zod.record(zod.string(), zod.string()),
             sourceDigest: zod.string().optional(),
             origin: zod.enum(['machine', 'human']),
             translatedBy: zod
                 .string()
                 .min(1)
-                .max(upsertEntityTranslationsResponseTranslationsItemTranslatedByOneMax)
-                .regex(upsertEntityTranslationsResponseTranslationsItemTranslatedByOneRegExp)
+                .max(updateEntityTranslationsResponseTranslationsItemTranslatedByOneMax)
+                .regex(updateEntityTranslationsResponseTranslationsItemTranslatedByOneRegExp)
                 .optional(),
             createdAt: zod.iso.datetime({ offset: true }),
             updatedAt: zod.iso.datetime({ offset: true })
@@ -6233,7 +6236,7 @@ export const CreateTicketNoteResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Returns a paginated list of products.
+ * Returns a paginated list of products. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached.
  * @summary List products (paginated)
  */
 export const listProductsQueryPageDefault = 1;
@@ -6482,7 +6485,7 @@ export const GetCatalogueFacetsResponse = zod.strictObject({
     )
 });
 /**
- * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`.
+ * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached.
  * @summary Product details
  */
 export const getProductByIdPathIdMax = 64;
@@ -6928,7 +6931,7 @@ export const HardDeleteProductByIdHeader = zod.strictObject({
 });
 export const HardDeleteProductByIdResponse = zod.void();
 /**
- * Searches and filters products via a JSON request body. Functionally equivalent to `GET /products` with query parameters.
+ * Searches and filters products via a JSON request body. Functionally equivalent to `GET /products` with query parameters. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached.
  * @summary Search products (DTO-friendly)
  */
 export const searchProductsBodyPageDefault = 1;

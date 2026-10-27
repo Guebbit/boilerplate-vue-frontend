@@ -269,7 +269,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "POST", pattern: /^\/locales\/[^/]+\/apps\/[^/]+\/entries$/, schemaName: "CreateLocaleEntryResponse", bodySchemaName: "CreateLocaleEntryBody", module: "locales" },
     { method: "PUT", pattern: /^\/locales\/[^/]+\/apps\/[^/]+\/entries$/, schemaName: "ReplaceLocaleEntriesResponse", bodySchemaName: "ReplaceLocaleEntriesBody", module: "locales" },
     { method: "GET", pattern: /^\/locales\/translations\/[^/]+\/[^/]+$/, schemaName: "GetEntityTranslationsResponse", bodySchemaName: undefined, module: "locales" },
-    { method: "PATCH", pattern: /^\/locales\/translations\/[^/]+\/[^/]+$/, schemaName: "UpsertEntityTranslationsResponse", bodySchemaName: "UpsertEntityTranslationsBody", module: "locales" },
+    { method: "PATCH", pattern: /^\/locales\/translations\/[^/]+\/[^/]+$/, schemaName: "UpdateEntityTranslationsResponse", bodySchemaName: "UpdateEntityTranslationsBody", module: "locales" },
     { method: "PUT", pattern: /^\/locales\/translations\/[^/]+\/[^/]+$/, schemaName: "ReplaceEntityTranslationsResponse", bodySchemaName: "ReplaceEntityTranslationsBody", module: "locales" },
     { method: "GET", pattern: /^\/orders\/[^/]+\/credit-notes\/[^/]+$/, schemaName: "GetOrderCreditNoteResponse", bodySchemaName: undefined, module: "invoicing" },
     { method: "POST", pattern: /^\/payments\/[^/]+\/refunds\/[^/]+\/cancel$/, schemaName: "CancelRefundResponse", bodySchemaName: "CancelRefundBody", module: "payments" },

@@ -277,7 +277,7 @@ const showWelcomeTour = () =>
 /**
  * The language choices for the phone drawer, which carries them below `sm`.
  */
-const { languages, locale, choiceLabel, switchLanguage } = useLanguageSwitch();
+const { languages, locale, choiceLabel, isDraft, switchLanguage } = useLanguageSwitch();
 
 /**
  * Vuetify theme controller, used to read/toggle light vs dark.
@@ -581,7 +581,16 @@ const toggleTheme = () => {
                 :data-test="`drawer-language-${choice}`"
                 @click="switchLanguage(choice)"
             >
-                <v-list-item-title>{{ choiceLabel(choice) }}</v-list-item-title>
+                <v-list-item-title>
+                    {{ choiceLabel(choice) }}
+                    <span
+                        v-if="isDraft(choice)"
+                        :lang="locale"
+                        :data-test="`drawer-draft-${choice}`"
+                    >
+                        {{ t('navigation.label-draft-language') }}
+                    </span>
+                </v-list-item-title>
             </v-list-item>
             <v-list-item
                 class="sm:hidden"

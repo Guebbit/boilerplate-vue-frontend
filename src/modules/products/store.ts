@@ -11,6 +11,7 @@ import type { AxiosRequestConfig } from 'axios';
 import { computed, ref } from 'vue';
 import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
 import { getCurrentLocale } from '@/i18n';
 import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
 import {
@@ -298,6 +299,17 @@ export const useProductsStore = defineStore('products', () => {
             staleTime: 5 * 60 * 1000
         }
     );
+
+    /**
+     * Forgets every cached product when the viewer changes.
+     *
+     * The cache scope is the language alone, but what an answer holds depends on who asked: a
+     * staff member's draft-language text and admin-only rows must not outlive their sign-out in
+     * the same tab.
+     */
+    useResetOnViewerChange(() => {
+        queryClient.removeQueries({ queryKey: [PRODUCTS_RESOURCE_KEY] });
+    });
 
     /**
      * Permanently deletes a product, bypassing the soft delete.

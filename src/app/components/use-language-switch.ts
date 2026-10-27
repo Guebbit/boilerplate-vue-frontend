@@ -7,6 +7,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { supportedLanguages } from '@/i18n';
 import { languageLabel } from '@/i18n/language-label.ts';
+import { isDraftLanguage } from '@/infrastructure/locale-overrides.ts';
 import { persistLocalePreference } from '@/infrastructure/locale-preference.ts';
 
 /**
@@ -26,7 +27,8 @@ import { persistLocalePreference } from '@/infrastructure/locale-preference.ts';
  * owns remembering the choice for whoever can have one remembered; this does not know whether
  * anyone is signed in.
  *
- * @returns The language codes, the active one, a choice's label, and the switch.
+ * @returns The language codes, the active one, a choice's label, whether a choice is a draft, and
+ *  the switch.
  */
 export const useLanguageSwitch = () => {
     const router = useRouter();
@@ -44,8 +46,10 @@ export const useLanguageSwitch = () => {
      *  locale, or on `/` (locale recalculated) if that navigation fails.
      */
     const switchLanguage = (newLocale: string) => {
+        // A draft is previewed for this session only, never saved as the account's language
+        // (mail and the next sign-in would follow it).
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- persistLocalePreference never rejects (a failed save is dropped)
-        void persistLocalePreference(newLocale);
+        if (!isDraftLanguage(newLocale)) void persistLocalePreference(newLocale);
         return (
             router
                 .replace({
@@ -65,5 +69,11 @@ export const useLanguageSwitch = () => {
     const choiceLabel = (choice: string) =>
         languageLabel(choice, locale.value, { t: (key) => t(key), te: (key) => i18n.te(key) });
 
-    return { languages: supportedLanguages, locale, choiceLabel, switchLanguage };
+    return {
+        languages: supportedLanguages,
+        locale,
+        choiceLabel,
+        isDraft: isDraftLanguage,
+        switchLanguage
+    };
 };

@@ -119,7 +119,7 @@ purpose — see the route table's own comment in `routes.ts`.
 | `PUT /locales/{id}/apps/{app}/entries/{id}`     | `UpdateLocaleEntryResponse`         |
 | `GET /locales/translations/{entityType}/{id}`   | `GetEntityTranslationsResponse`     |
 | `PUT /locales/translations/{entityType}/{id}`   | `ReplaceEntityTranslationsResponse` |
-| `PATCH /locales/translations/{entityType}/{id}` | `UpsertEntityTranslationsResponse`  |
+| `PATCH /locales/translations/{entityType}/{id}` | `UpdateEntityTranslationsResponse`  |
 
 Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 

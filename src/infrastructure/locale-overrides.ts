@@ -9,6 +9,7 @@
  * runtime must not depend on.
  */
 
+import { reactive } from 'vue';
 import { getLocales, getLocaleMessages } from '@api';
 import { runtimeValue } from '@/infrastructure/runtime-config';
 import {
@@ -75,9 +76,28 @@ interface RemoteLocales {
      * bundle a file for that the shop has since switched off, and that the caller cannot preview.
      */
     switchedOff: string[];
+    /** Offered languages that are switched off: drafts, which only a caller who may preview gets. */
+    drafts: string[];
     /** The deployment's default and fallback languages: never taken away, so a redirect has a target. */
     keep: string[];
 }
+
+/**
+ * The offered languages that are drafts for this caller, refilled on every manifest read so a
+ * sign-out empties it. Reactive, so a "(draft)" cue appears as soon as a re-read lands.
+ *
+ * Lives here, not in `@/i18n`: "draft" is this app's contract concept, and `@/i18n` is the
+ * extractable tier.
+ */
+const draftLanguages = reactive(new Set<string>());
+
+/**
+ * Whether the caller is previewing this language as a draft: it is offered, but switched off.
+ * Choosing it is the opt-in to see the product text in it, uncached (see docs/tools/i18n.md).
+ *
+ * @param tag - a language tag from the switcher
+ */
+export const isDraftLanguage = (tag: string): boolean => draftLanguages.has(tag);
 
 /**
  * Whether the manifest row is a language switched off that this caller cannot see into.
@@ -102,6 +122,7 @@ const readRemoteLocales = (): Promise<RemoteLocales> =>
         .then((response): RemoteLocales => {
             const offered: string[] = [];
             const switchedOff: string[] = [];
+            const drafts: string[] = [];
 
             for (const language of response.locales) {
                 // Any app at all is "offers some dictionary", which is all the switcher asks.
@@ -115,15 +136,17 @@ const readRemoteLocales = (): Promise<RemoteLocales> =>
                 localeDirections[language.tag] = language.direction;
                 localeNativeNames[language.tag] = language.nativeName;
                 offered.push(language.tag);
+                if (!language.active) drafts.push(language.tag);
             }
 
             return {
                 offered,
                 switchedOff,
+                drafts,
                 keep: [response.default, response.fallback]
             };
         })
-        .catch((): RemoteLocales => ({ offered: [], switchedOff: [], keep: [] }));
+        .catch((): RemoteLocales => ({ offered: [], switchedOff: [], drafts: [], keep: [] }));
 
 /**
  * Languages the deployment offers, from the API's manifest.
@@ -189,7 +212,10 @@ export const fetchLocaleOverrides = (locale: string): Promise<TranslationDiction
  * @returns The languages that were added, for logging or tests. Never rejects.
  */
 export const mergeRemoteLocales = (): Promise<string[]> =>
-    readRemoteLocales().then(({ offered, switchedOff, keep }) => {
+    readRemoteLocales().then(({ offered, switchedOff, drafts, keep }) => {
+        draftLanguages.clear();
+        for (const tag of drafts) draftLanguages.add(tag);
+
         // Rebuilt from the folder every time, so a re-read after sign-out drops what only a
         // signed-in caller (a draft language) was offered.
         const target = [...new Set([...bundledLocales, ...offered])].filter(

@@ -13,12 +13,18 @@ info:
 
     Language: every endpoint honours `Accept-Language` (q-weights and region tags
     included). One language is picked per request, from the languages switched on in
-    `GET /locales`, and it selects the language of user-facing copy and of translated entity
+    `GET /locales` (and, for that staff preview, the draft asked for), and it selects the language of user-facing copy and of translated entity
     fields (a product's `title`, `description`) — `errors[].message` — never the response shape, the status code, or a machine-readable field such
     as `errors[].code`. A message the API has no wording for in that language falls back to
     the default language, one message at a time. An unknown or switched-off language falls
     back instead of erroring; `Content-Language` states the language picked, the audience the
     answer is written for (RFC 9110 section 8.5), and `Vary: Accept-Language` is always set.
+    One exception, for staff: a caller allowed to read draft languages (`display:Locale`) whose
+    FIRST `Accept-Language` choice is a switched-off language is answered in it by the product
+    reads (`GET /products`, `POST /products/search`, `GET /products/{id}`) and the example
+    read: draft text where it exists, the live chain field by field where it does not. That
+    answer says `Content-Language: <draft tag>` and `Cache-Control: private, no-store`, and the
+    server never stores it. Anyone else asking for a draft gets the normal pick.
     `GET /locales` lists what a deployment offers.
 
     Successes: a 2xx answers the resource itself, with no wrapper. A list is an object, never a
@@ -540,8 +546,8 @@ paths:
         that exists but is inactive — an inactive language is invisible to every public
         route, which is the whole point of the flag. A caller holding `display:Locale`
         (staff, or an API key minted with it) is the exception: they get an inactive
-        language's dictionary too, so a translation can be seen in the shop before it is
-        switched on for everyone.
+        language's dictionary too, so a draft's interface strings can be read before it is
+        switched on; the same caller previews its product text on the product reads.
 
         Public and cacheable, like every other locale read; a staff answer skips the
         shared cache.
@@ -1035,7 +1041,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpsertTranslationsRequest"
+              $ref: "#/components/schemas/ReplaceEntityTranslationsRequest"
       responses:
         "200":
           description: Every locale this entity has a row for, after the write
@@ -1094,7 +1100,7 @@ paths:
         declare for this `entityType` — the pointer names the locale, e.g.
         `translations.it.title`, so an editor with several tabs open can tell which one
         failed.
-      operationId: upsertEntityTranslations
+      operationId: updateEntityTranslations
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -1107,10 +1113,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MergeTranslationsRequest"
+              $ref: "#/components/schemas/UpdateEntityTranslationsRequest"
           application/merge-patch+json:
             schema:
-              $ref: "#/components/schemas/MergeTranslationsRequest"
+              $ref: "#/components/schemas/UpdateEntityTranslationsRequest"
       responses:
         "200":
           description: Every locale this entity has a row for, after the write
@@ -4390,7 +4396,7 @@ paths:
       tags:
         - Products
       summary: List products (paginated)
-      description: Returns a paginated list of products.
+      description: Returns a paginated list of products. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached.
       operationId: listProducts
       security:
         - {}
@@ -4599,7 +4605,7 @@ paths:
       tags:
         - Products
       summary: Product details
-      description: Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`.
+      description: Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached.
       operationId: getProductById
       security:
         - {}
@@ -4924,7 +4930,7 @@ paths:
       tags:
         - Products
       summary: Search products (DTO-friendly)
-      description: Searches and filters products via a JSON request body. Functionally equivalent to `GET /products` with query parameters.
+      description: Searches and filters products via a JSON request body. Functionally equivalent to `GET /products` with query parameters. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached.
       operationId: searchProducts
       security:
         - {}
@@ -12114,7 +12120,7 @@ components:
           items:
             type: string
           description: Every field name the `translatables` registry declares for this `entityType` — the field set the generic translation screen offers, so it is never limited to whatever fields the fetched rows happen to carry already.
-    UpsertTranslationRequest:
+    ReplaceEntityTranslationsEntry:
       type: object
       additionalProperties: false
       required:
@@ -12132,11 +12138,11 @@ components:
           allOf:
             - $ref: "#/components/schemas/TranslationOrigin"
           default: human
-    UpsertTranslationsRequest:
+    ReplaceEntityTranslationsRequest:
       type: object
       additionalProperties:
         oneOf:
-          - $ref: "#/components/schemas/UpsertTranslationRequest"
+          - $ref: "#/components/schemas/ReplaceEntityTranslationsEntry"
           - type: "null"
         description: Upserts this locale's row when an object, deletes it when `null`. See the operation description for what a key this map does not name means for the verb in use.
       description: "One or more locales for one entity, keyed by locale tag. See the operation description for what an object, a `null`, and an absent key each mean. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on. A `PUT` deletes the stored locales it leaves out, drafts included."
@@ -12145,12 +12151,13 @@ components:
           fields:
             title: Cuccia ortopedica in memory foam
             description: Un supporto extra per le articolazioni durante il riposo.
-    MergeTranslationRequest:
+    UpdateEntityTranslationsEntry:
       type: object
       additionalProperties: false
       required:
         - fields
-      description: One locale's changes for one entity. `origin` defaults to `human`, as it does on `PUT`.
+        - origin
+      description: "One locale's changes for one entity. `origin` is required: a merge patch has no default to apply to a member it leaves out, and stating who produced the text keeps a machine import from being filed as human work. `PUT` defaults it to `human`."
       properties:
         fields:
           type: object
@@ -12164,12 +12171,11 @@ components:
         origin:
           allOf:
             - $ref: "#/components/schemas/TranslationOrigin"
-          default: human
-    MergeTranslationsRequest:
+    UpdateEntityTranslationsRequest:
       type: object
       additionalProperties:
         oneOf:
-          - $ref: "#/components/schemas/MergeTranslationRequest"
+          - $ref: "#/components/schemas/UpdateEntityTranslationsEntry"
           - type: "null"
         description: Merges into this locale's row when an object, deletes the row when `null`. A locale key this map does not name is left alone.
       description: One or more locales for one entity, keyed by locale tag. See the operation description for what an object, a `null`, and an absent key each mean.
@@ -12177,6 +12183,7 @@ components:
         it:
           fields:
             description: null
+          origin: human
     DependencyStatus:
       type: string
       enum:
@@ -20339,7 +20346,7 @@ components:
           $ref: "#/components/schemas/Id"
         title:
           type: string
-          description: The fallback-language title. Other languages are written through `/locales/translations/example/{id}`.
+          description: The title in the request's language, falling back field by field. Written through `/locales/translations/example/{id}`.
         body:
           type: string
         status:

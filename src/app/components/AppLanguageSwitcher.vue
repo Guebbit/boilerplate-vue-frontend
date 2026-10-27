@@ -18,7 +18,7 @@ const { t } = useI18n();
 /**
  * The language choices, the active one and the switch itself.
  */
-const { languages, locale, choiceLabel, switchLanguage } = useLanguageSwitch();
+const { languages, locale, choiceLabel, isDraft, switchLanguage } = useLanguageSwitch();
 
 /**
  * Whether `v-menu` currently considers itself open — see `AppNavMenu.vue`'s own copy of this
@@ -59,10 +59,14 @@ const focusFirstItemOnOpen = () => {
                 variant="text"
                 class="hidden px-2 sm:inline-flex"
                 data-test="language-switcher"
-                :aria-label="`${t('navigation.label-language')}: ${locale.toUpperCase()}`"
+                :aria-label="`${t('navigation.label-language')}: ${locale.toUpperCase()}${isDraft(locale) ? ` ${t('navigation.label-draft-language')}` : ''}`"
             >
                 <Languages :size="18" class="mr-1" aria-hidden="true" />
                 {{ locale.toUpperCase() }}
+                <!-- The viewer's language, not the item's: this marker is the app's own wording. -->
+                <span v-if="isDraft(locale)" class="ml-1" data-test="language-draft-cue">
+                    {{ t('navigation.label-draft-language') }}
+                </span>
             </v-btn>
         </template>
 
@@ -84,7 +88,17 @@ const focusFirstItemOnOpen = () => {
                 :data-test="`language-option-${sLocale}`"
                 @click="switchLanguage(sLocale)"
             >
-                <v-list-item-title>{{ choiceLabel(sLocale) }}</v-list-item-title>
+                <v-list-item-title>
+                    {{ choiceLabel(sLocale) }}
+                    <!-- Own `lang`: the item is in its language, the marker in the viewer's (WCAG 3.1.2). -->
+                    <span
+                        v-if="isDraft(sLocale)"
+                        :lang="locale"
+                        :data-test="`language-draft-${sLocale}`"
+                    >
+                        {{ t('navigation.label-draft-language') }}
+                    </span>
+                </v-list-item-title>
                 <template #append>
                     <Check v-if="locale === sLocale" :size="16" aria-hidden="true" />
                 </template>
