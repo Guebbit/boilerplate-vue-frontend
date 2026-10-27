@@ -243,14 +243,30 @@ export const notificationOrderId = (notification: DescribableNotification): stri
  */
 export interface NotificationTarget {
     /**
-     * The screen: a buyer's account page, a webhook subscription's page, or a ticket's page.
+     * The screen: a buyer's account page, a webhook subscription's page, a ticket's, a return's or
+     * an order's page.
      */
-    screen: 'account' | 'webhook-subscription' | 'ticket';
+    screen: 'account' | 'webhook-subscription' | 'ticket' | 'return' | 'order';
     /**
-     * The id of the account, subscription or ticket.
+     * The id of the account, subscription, ticket, return or order.
      */
     id: string;
 }
+
+/**
+ * The screen of the record a parked event was about, read off the event name's first segment. An
+ * event of another kind has no screen here: a link to a guess would be worse than none.
+ *
+ * @param eventName - The parked event (`order.paid`).
+ * @param aggregateId - What it was about.
+ * @returns The target, or `undefined` for an event about neither an order nor an account.
+ */
+const outboxTarget = (eventName: string, aggregateId: string): NotificationTarget | undefined => {
+    const [kind] = eventName.split('.');
+    if (kind === 'order') return { screen: 'order', id: aggregateId };
+    if (kind === 'user') return { screen: 'account', id: aggregateId };
+    return undefined;
+};
 
 /**
  * The admin screen a work notice is about: the buyer's account for a purchase hold, the
@@ -273,6 +289,12 @@ export const notificationTarget = (
         case 'notifications.staff.ticket-opened':
         case 'notifications.staff.ticket-assigned': {
             return { screen: 'ticket', id: notification.params.ticketId };
+        }
+        case 'notifications.staff.return-requested': {
+            return { screen: 'return', id: notification.params.returnId };
+        }
+        case 'notifications.staff.outbox-dead': {
+            return outboxTarget(notification.params.eventName, notification.params.aggregateId);
         }
         default: {
             return undefined;
@@ -367,8 +389,12 @@ export const describeNotification = (
         case 'notifications.staff.purchase-hold-placed': {
             return translate(notification.code, { until: formatDate(notification.params.until) });
         }
-        case 'notifications.staff.webhook-disabled': {
+        case 'notifications.staff.webhook-disabled':
+        case 'notifications.staff.return-requested': {
             return translate(notification.code);
+        }
+        case 'notifications.staff.outbox-dead': {
+            return translate(notification.code, { event: notification.params.eventName });
         }
         case 'notifications.staff.ticket-opened':
         case 'notifications.staff.ticket-assigned': {

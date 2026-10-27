@@ -15390,6 +15390,94 @@ components:
         createdAt:
           type: string
           format: date-time
+    ReturnRequestedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - returnId
+        - orderId
+      description: A return request is waiting for a decision. Ids only, the return's page has the rest.
+      properties:
+        returnId:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+    NotificationStaffReturnRequested:
+      type: object
+      additionalProperties: false
+      description: A buyer asked to return goods; staff who decide returns take it.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - notifications.staff.return-requested
+        params:
+          $ref: "#/components/schemas/ReturnRequestedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    OutboxDeadParams:
+      type: object
+      additionalProperties: false
+      required:
+        - eventName
+        - aggregateId
+      description: A domain event parked as dead. The name and the record it was about, the payload stays in the outbox.
+      properties:
+        eventName:
+          type: string
+          description: The domain event's name (`order.paid`).
+        aggregateId:
+          type: string
+          description: What the event was about (an order or account id).
+    NotificationStaffOutboxDead:
+      type: object
+      additionalProperties: false
+      description: A domain event could not be delivered after every retry and was parked; administrators look at the record it names.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - notifications.staff.outbox-dead
+        params:
+          $ref: "#/components/schemas/OutboxDeadParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
     Notification:
       oneOf:
         - $ref: "#/components/schemas/NotificationCartLineRemoved"
@@ -15403,6 +15491,8 @@ components:
         - $ref: "#/components/schemas/NotificationStaffWebhookDisabled"
         - $ref: "#/components/schemas/NotificationStaffTicketOpened"
         - $ref: "#/components/schemas/NotificationStaffTicketAssigned"
+        - $ref: "#/components/schemas/NotificationStaffReturnRequested"
+        - $ref: "#/components/schemas/NotificationStaffOutboxDead"
       discriminator:
         propertyName: code
         mapping:
@@ -15417,6 +15507,8 @@ components:
           notifications.staff.webhook-disabled: "#/components/schemas/NotificationStaffWebhookDisabled"
           notifications.staff.ticket-opened: "#/components/schemas/NotificationStaffTicketOpened"
           notifications.staff.ticket-assigned: "#/components/schemas/NotificationStaffTicketAssigned"
+          notifications.staff.return-requested: "#/components/schemas/NotificationStaffReturnRequested"
+          notifications.staff.outbox-dead: "#/components/schemas/NotificationStaffOutboxDead"
     StaffNoticeExport:
       type: object
       additionalProperties: false

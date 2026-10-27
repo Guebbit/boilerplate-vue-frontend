@@ -2841,6 +2841,66 @@ export interface NotificationStaffTicketAssigned {
     createdAt: string;
 }
 
+/**
+ * A return request is waiting for a decision. Ids only, the return's page has the rest.
+ */
+export interface ReturnRequestedParams {
+    returnId: Id;
+    orderId: Id;
+}
+
+export type NotificationStaffReturnRequestedCode =
+    (typeof NotificationStaffReturnRequestedCode)[keyof typeof NotificationStaffReturnRequestedCode];
+
+export const NotificationStaffReturnRequestedCode = {
+    'notificationsstaffreturn-requested': 'notifications.staff.return-requested'
+} as const;
+
+/**
+ * A buyer asked to return goods; staff who decide returns take it.
+ */
+export interface NotificationStaffReturnRequested {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffReturnRequestedCode;
+    params: ReturnRequestedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+/**
+ * A domain event parked as dead. The name and the record it was about, the payload stays in the outbox.
+ */
+export interface OutboxDeadParams {
+    /** The domain event's name (`order.paid`). */
+    eventName: string;
+    /** What the event was about (an order or account id). */
+    aggregateId: string;
+}
+
+export type NotificationStaffOutboxDeadCode =
+    (typeof NotificationStaffOutboxDeadCode)[keyof typeof NotificationStaffOutboxDeadCode];
+
+export const NotificationStaffOutboxDeadCode = {
+    'notificationsstaffoutbox-dead': 'notifications.staff.outbox-dead'
+} as const;
+
+/**
+ * A domain event could not be delivered after every retry and was parked; administrators look at the record it names.
+ */
+export interface NotificationStaffOutboxDead {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffOutboxDeadCode;
+    params: OutboxDeadParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
 export type Notification =
     | NotificationCartLineRemoved
     | NotificationWishlistItemRemoved
@@ -2852,7 +2912,9 @@ export type Notification =
     | NotificationStaffPurchaseHoldPlaced
     | NotificationStaffWebhookDisabled
     | NotificationStaffTicketOpened
-    | NotificationStaffTicketAssigned;
+    | NotificationStaffTicketAssigned
+    | NotificationStaffReturnRequested
+    | NotificationStaffOutboxDead;
 
 /**
  * One work notice this account received as staff, without the facts it named.

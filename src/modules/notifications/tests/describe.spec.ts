@@ -341,6 +341,40 @@ const opened = (parameters: { kind: string; category?: string }) =>
         params: { ticketId: 't1', ...parameters }
     }) as const;
 
+describe('a return request and a dead event for staff', () => {
+    const requested = {
+        code: 'notifications.staff.return-requested',
+        params: { returnId: 'r1', orderId: 'o1' }
+    } as const;
+    const dead = (eventName: string) =>
+        ({
+            code: 'notifications.staff.outbox-dead',
+            params: { eventName, aggregateId: 'x1' }
+        }) as const;
+
+    it('needs no facts to say a return waits for a decision, and opens the return', () => {
+        expect(describeNotification(requested, ['en'], translate)).toBe(
+            'notifications.staff.return-requested'
+        );
+        expect(notificationTarget(requested)).toEqual({ screen: 'return', id: 'r1' });
+    });
+
+    it('names the parked event, and opens the order or account it was about', () => {
+        expect(describeNotification(dead('order.paid'), ['en'], translate)).toBe(
+            'notifications.staff.outbox-dead|event=order.paid'
+        );
+        expect(notificationTarget(dead('order.paid'))).toEqual({ screen: 'order', id: 'x1' });
+        expect(notificationTarget(dead('user.registered'))).toEqual({
+            screen: 'account',
+            id: 'x1'
+        });
+    });
+
+    it('opens nothing for an event about neither', () => {
+        expect(notificationTarget(dead('stock.moved'))).toBeUndefined();
+    });
+});
+
 describe('a ticket notice for staff', () => {
     it('names a contact message by its category', () => {
         expect(
