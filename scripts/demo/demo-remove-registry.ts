@@ -41,20 +41,28 @@ const filterLines = (file: string, keep: (line: string) => boolean): void => {
 
 /**
  * Edit `src/modules.ts`: drop each demo module's import and its `enabledModules` array entry.
- * Every demo module name is a single word, so an import (`import cart from …`) and an array
- * element (`    cart,`) both spell it the same bare way — one filter catches both shapes.
+ * The array entry is spelled with the import's variable name, which is the folder name
+ * camel-cased for a hyphenated module (`stock-alerts` → `stockAlerts`), so it is read off the
+ * import line rather than guessed from the folder.
  *
  * @param root - the checkout root
  * @param names - the module names to remove
  */
 export const stripModuleRegistry = (root: string, names: readonly string[]): void => {
-    const alternatives = names.join('|');
-    const importPattern = new RegExp(`from '@/modules/(?:${alternatives})/module'`);
-    const entryPattern = new RegExp(String.raw`^\s*(?:${alternatives}),?\s*$`);
+    const file = path.join(root, 'src', 'modules.ts');
+    const importPattern = new RegExp(
+        String.raw`^import\s+(\w+)\s+from\s+'@/modules/(?:${names.join('|')})/module'`
+    );
+    const variables = new Set(
+        readFileSync(file, 'utf8')
+            .split('\n')
+            .map((line) => importPattern.exec(line)?.[1])
+            .filter((variable): variable is string => variable !== undefined)
+    );
 
     filterLines(
-        path.join(root, 'src', 'modules.ts'),
-        (line) => !importPattern.test(line) && !entryPattern.test(line)
+        file,
+        (line) => !importPattern.test(line) && !variables.has(line.replaceAll(/^\s+|,?\s*$/g, ''))
     );
 };
 
@@ -69,7 +77,10 @@ export const stripModuleRegistry = (root: string, names: readonly string[]): voi
  * @param names - the module names to remove
  */
 export const pruneModuleEdges = (root: string, names: readonly string[]): void => {
-    const entryPattern = new RegExp(String.raw`^\s{4}(?:${names.join('|')}):\s*\[.*],?\s*$`);
+    // A key is bare (`cart:`) or quoted when it holds a hyphen (`'stock-alerts':`).
+    const entryPattern = new RegExp(
+        String.raw`^\s{4}['"]?(?:${names.join('|')})['"]?:\s*\[.*],?\s*$`
+    );
 
     filterLines(path.join(root, 'scripts', 'module-edges.ts'), (line) => !entryPattern.test(line));
 };
