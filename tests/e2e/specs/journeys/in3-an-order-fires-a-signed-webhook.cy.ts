@@ -118,7 +118,7 @@ describe('IN3 · An order fires a webhook, and it arrives signed', () => {
                         cy.apiAs<{ newSecret: string }>(
                             'admin',
                             'POST',
-                            `/webhooks/subscriptions/${subscription.id}/rotate-secret`
+                            `/webhooks/subscriptions/${subscription.id}/secrets`
                         ).then((rotated) => {
                             const newSecret = rotated?.newSecret ?? '';
                             expect(newSecret, 'the new secret, shown once').to.match(/^whsec_/);

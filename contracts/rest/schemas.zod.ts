@@ -108,8 +108,11 @@ export const GetSecurityTxtResponse = zod.string();
  * with every flag `false`.
  * @summary Supported languages
  */
+export const getLocalesResponseLocalesItemIdMax = 64;
+export const getLocalesResponseLocalesItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getLocalesResponseLocalesItemTagMax = 35;
 export const getLocalesResponseLocalesItemTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getLocalesResponseLocalesItemBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
 export const getLocalesResponseLocalesItemAppsItemMax = 64;
 export const getLocalesResponseLocalesItemAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const getLocalesResponseLocalesItemEntryCountMin = 0;
@@ -121,10 +124,17 @@ export const getLocalesResponseFallbackRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-
 export const GetLocalesResponse = zod.strictObject({
     locales: zod.array(
         zod.strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(getLocalesResponseLocalesItemIdMax)
+                .regex(getLocalesResponseLocalesItemIdRegExp)
+                .optional(),
             tag: zod
                 .string()
                 .max(getLocalesResponseLocalesItemTagMax)
                 .regex(getLocalesResponseLocalesItemTagRegExp),
+            baseLanguage: zod.string().regex(getLocalesResponseLocalesItemBaseLanguageRegExp),
             name: zod.string(),
             nativeName: zod.string(),
             direction: zod.enum(['ltr', 'rtl']),
@@ -147,7 +157,9 @@ export const GetLocalesResponse = zod.strictObject({
                 deactivate: zod.boolean(),
                 delete: zod.boolean(),
                 deleteBlocked: zod.enum(['fallback']).optional()
-            })
+            }),
+            createdAt: zod.iso.datetime({ offset: true }).optional(),
+            updatedAt: zod.iso.datetime({ offset: true }).optional()
         })
     ),
     default: zod.string().max(getLocalesResponseDefaultMax).regex(getLocalesResponseDefaultRegExp),
@@ -182,15 +194,34 @@ export const createLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createLocaleResponseTagMax = 35;
 export const createLocaleResponseTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const createLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const createLocaleResponseAppsItemMax = 64;
+export const createLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const createLocaleResponseEntryCountMin = 0;
 export const createLocaleResponseRevisionMin = 0;
 export const CreateLocaleResponse = zod.strictObject({
-    id: zod.string().min(1).max(createLocaleResponseIdMax).regex(createLocaleResponseIdRegExp),
+    id: zod
+        .string()
+        .min(1)
+        .max(createLocaleResponseIdMax)
+        .regex(createLocaleResponseIdRegExp)
+        .optional(),
     tag: zod.string().max(createLocaleResponseTagMax).regex(createLocaleResponseTagRegExp),
     baseLanguage: zod.string().regex(createLocaleResponseBaseLanguageRegExp),
     name: zod.string(),
     nativeName: zod.string(),
     direction: zod.enum(['ltr', 'rtl']),
     active: zod.boolean(),
+    apps: zod
+        .array(
+            zod
+                .string()
+                .min(1)
+                .max(createLocaleResponseAppsItemMax)
+                .regex(createLocaleResponseAppsItemRegExp)
+        )
+        .min(1),
+    source: zod.enum(['static', 'dynamic', 'both']),
+    entryCount: zod.number().min(createLocaleResponseEntryCountMin),
     revision: zod.number().min(createLocaleResponseRevisionMin),
     actions: zod.strictObject({
         update: zod.boolean(),
@@ -233,32 +264,61 @@ export const ListLocaleAppsResponse = zod.strictObject({
         .min(1)
 });
 /**
- * This API's own dictionary for one language — tier 1, the deployed files.
+ * One language, in the shape `GET /locales` lists it and every write on this URL
+ * answers: a merge of what the two tiers know about the tag.
  *
- * Normally unnecessary: the API resolves its keys itself and puts finished text on
- * the wire. It earns its place when no response arrives at all (a network failure, a
- * bare 502) and the client must produce the copy itself, in the active language.
+ * Answered under the same caller scoping as the list. A registered language that is
+ * switched off is `404` to a visitor and shown to a holder of `display:Locale`; a
+ * language with only a deployed file is `200` with `source: static`, no `id` or
+ * timestamps (it has no row) and every `actions` flag `false`.
  *
- * Not to be confused with `GET /locales/{locale}/messages`, which serves the client's
- * own copy out of the database.
- * @summary API message dictionary
+ * `POST /locales` answers `Location` at this URL, so following it reads what was
+ * created.
+ * @summary Read a language
  */
-export const getLocaleDictionaryPathLocaleMax = 35;
-export const getLocaleDictionaryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const GetLocaleDictionaryParams = zod.strictObject({
-    locale: zod
-        .string()
-        .max(getLocaleDictionaryPathLocaleMax)
-        .regex(getLocaleDictionaryPathLocaleRegExp)
+export const getLocalePathLocaleMax = 35;
+export const getLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const GetLocaleParams = zod.strictObject({
+    locale: zod.string().max(getLocalePathLocaleMax).regex(getLocalePathLocaleRegExp)
 });
-export const getLocaleDictionaryResponseLocaleMax = 35;
-export const getLocaleDictionaryResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const GetLocaleDictionaryResponse = zod.strictObject({
-    locale: zod
-        .string()
-        .max(getLocaleDictionaryResponseLocaleMax)
-        .regex(getLocaleDictionaryResponseLocaleRegExp),
-    messages: zod.record(zod.string(), zod.unknown())
+export const getLocaleResponseIdMax = 64;
+export const getLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getLocaleResponseTagMax = 35;
+export const getLocaleResponseTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const getLocaleResponseAppsItemMax = 64;
+export const getLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const getLocaleResponseEntryCountMin = 0;
+export const getLocaleResponseRevisionMin = 0;
+export const GetLocaleResponse = zod.strictObject({
+    id: zod.string().min(1).max(getLocaleResponseIdMax).regex(getLocaleResponseIdRegExp).optional(),
+    tag: zod.string().max(getLocaleResponseTagMax).regex(getLocaleResponseTagRegExp),
+    baseLanguage: zod.string().regex(getLocaleResponseBaseLanguageRegExp),
+    name: zod.string(),
+    nativeName: zod.string(),
+    direction: zod.enum(['ltr', 'rtl']),
+    active: zod.boolean(),
+    apps: zod
+        .array(
+            zod
+                .string()
+                .min(1)
+                .max(getLocaleResponseAppsItemMax)
+                .regex(getLocaleResponseAppsItemRegExp)
+        )
+        .min(1),
+    source: zod.enum(['static', 'dynamic', 'both']),
+    entryCount: zod.number().min(getLocaleResponseEntryCountMin),
+    revision: zod.number().min(getLocaleResponseRevisionMin),
+    actions: zod.strictObject({
+        update: zod.boolean(),
+        activate: zod.boolean(),
+        deactivate: zod.boolean(),
+        delete: zod.boolean(),
+        deleteBlocked: zod.enum(['fallback']).optional()
+    }),
+    createdAt: zod.iso.datetime({ offset: true }).optional(),
+    updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
  * Replaces a language's display names and writing direction (RFC 9110 §9.3.4 — every
@@ -287,15 +347,34 @@ export const replaceLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const replaceLocaleResponseTagMax = 35;
 export const replaceLocaleResponseTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const replaceLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const replaceLocaleResponseAppsItemMax = 64;
+export const replaceLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const replaceLocaleResponseEntryCountMin = 0;
 export const replaceLocaleResponseRevisionMin = 0;
 export const ReplaceLocaleResponse = zod.strictObject({
-    id: zod.string().min(1).max(replaceLocaleResponseIdMax).regex(replaceLocaleResponseIdRegExp),
+    id: zod
+        .string()
+        .min(1)
+        .max(replaceLocaleResponseIdMax)
+        .regex(replaceLocaleResponseIdRegExp)
+        .optional(),
     tag: zod.string().max(replaceLocaleResponseTagMax).regex(replaceLocaleResponseTagRegExp),
     baseLanguage: zod.string().regex(replaceLocaleResponseBaseLanguageRegExp),
     name: zod.string(),
     nativeName: zod.string(),
     direction: zod.enum(['ltr', 'rtl']),
     active: zod.boolean(),
+    apps: zod
+        .array(
+            zod
+                .string()
+                .min(1)
+                .max(replaceLocaleResponseAppsItemMax)
+                .regex(replaceLocaleResponseAppsItemRegExp)
+        )
+        .min(1),
+    source: zod.enum(['static', 'dynamic', 'both']),
+    entryCount: zod.number().min(replaceLocaleResponseEntryCountMin),
     revision: zod.number().min(replaceLocaleResponseRevisionMin),
     actions: zod.strictObject({
         update: zod.boolean(),
@@ -334,15 +413,34 @@ export const updateLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const updateLocaleResponseTagMax = 35;
 export const updateLocaleResponseTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const updateLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const updateLocaleResponseAppsItemMax = 64;
+export const updateLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const updateLocaleResponseEntryCountMin = 0;
 export const updateLocaleResponseRevisionMin = 0;
 export const UpdateLocaleResponse = zod.strictObject({
-    id: zod.string().min(1).max(updateLocaleResponseIdMax).regex(updateLocaleResponseIdRegExp),
+    id: zod
+        .string()
+        .min(1)
+        .max(updateLocaleResponseIdMax)
+        .regex(updateLocaleResponseIdRegExp)
+        .optional(),
     tag: zod.string().max(updateLocaleResponseTagMax).regex(updateLocaleResponseTagRegExp),
     baseLanguage: zod.string().regex(updateLocaleResponseBaseLanguageRegExp),
     name: zod.string(),
     nativeName: zod.string(),
     direction: zod.enum(['ltr', 'rtl']),
     active: zod.boolean(),
+    apps: zod
+        .array(
+            zod
+                .string()
+                .min(1)
+                .max(updateLocaleResponseAppsItemMax)
+                .regex(updateLocaleResponseAppsItemRegExp)
+        )
+        .min(1),
+    source: zod.enum(['static', 'dynamic', 'both']),
+    entryCount: zod.number().min(updateLocaleResponseEntryCountMin),
     revision: zod.number().min(updateLocaleResponseRevisionMin),
     actions: zod.strictObject({
         update: zod.boolean(),
@@ -370,8 +468,36 @@ export const DeleteLocaleParams = zod.strictObject({
 });
 export const DeleteLocaleResponse = zod.void();
 /**
+ * This API's own dictionary for one language — tier 1, the deployed files.
+ *
+ * Normally unnecessary: the API resolves its keys itself and puts finished text on
+ * the wire. It earns its place when no response arrives at all (a network failure, a
+ * bare 502) and the client must produce the copy itself, in the active language.
+ *
+ * Not to be confused with `GET /locales/{locale}/messages`, which serves the client's
+ * own copy out of the database.
+ * @summary API message dictionary
+ */
+export const getLocaleDictionaryPathLocaleMax = 35;
+export const getLocaleDictionaryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const GetLocaleDictionaryParams = zod.strictObject({
+    locale: zod
+        .string()
+        .max(getLocaleDictionaryPathLocaleMax)
+        .regex(getLocaleDictionaryPathLocaleRegExp)
+});
+export const getLocaleDictionaryResponseLocaleMax = 35;
+export const getLocaleDictionaryResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const GetLocaleDictionaryResponse = zod.strictObject({
+    locale: zod
+        .string()
+        .max(getLocaleDictionaryResponseLocaleMax)
+        .regex(getLocaleDictionaryResponseLocaleRegExp),
+    messages: zod.record(zod.string(), zod.unknown())
+});
+/**
  * The dynamic dictionary for one language, built from its stored entries into the
- * same nested shape `GET /locales/{locale}` serves — so a client has ONE merge path
+ * same nested shape `GET /locales/{locale}/dictionary` serves — so a client has ONE merge path
  * for both tiers rather than two.
  *
  * ONE frontend app's rows — the client's own keyspace, the one named by `app`
@@ -2203,7 +2329,7 @@ export const UpdateAddressResponse = zod.strictObject({
     default: zod.boolean()
 });
 /**
- * Removes one entry of the caller's own book. Removing the default promotes the oldest remaining entry, so a non-empty book always has exactly one default.
+ * Removes one entry of the caller's own book. Removing the default promotes the oldest remaining entry, so a non-empty book always has exactly one default; a client showing the book refetches it.
  * @summary Remove an address
  */
 export const removeAddressPathAddressIdMax = 64;
@@ -2215,37 +2341,7 @@ export const RemoveAddressParams = zod.strictObject({
         .max(removeAddressPathAddressIdMax)
         .regex(removeAddressPathAddressIdRegExp)
 });
-export const removeAddressResponseAddressesItemIdMax = 64;
-export const removeAddressResponseAddressesItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const removeAddressResponseAddressesItemFullNameMax = 100;
-export const removeAddressResponseAddressesItemStreetMax = 200;
-export const removeAddressResponseAddressesItemCityMax = 100;
-export const removeAddressResponseAddressesItemZipMax = 20;
-export const removeAddressResponseAddressesItemCountryMax = 2;
-export const removeAddressResponseAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
-export const removeAddressResponseAddressesItemPhoneMax = 32;
-export const RemoveAddressResponse = zod.strictObject({
-    addresses: zod.array(
-        zod.strictObject({
-            id: zod
-                .string()
-                .min(1)
-                .max(removeAddressResponseAddressesItemIdMax)
-                .regex(removeAddressResponseAddressesItemIdRegExp),
-            label: zod.string().optional(),
-            fullName: zod.string().min(1).max(removeAddressResponseAddressesItemFullNameMax),
-            street: zod.string().min(1).max(removeAddressResponseAddressesItemStreetMax),
-            city: zod.string().min(1).max(removeAddressResponseAddressesItemCityMax),
-            zip: zod.string().min(1).max(removeAddressResponseAddressesItemZipMax),
-            country: zod
-                .string()
-                .max(removeAddressResponseAddressesItemCountryMax)
-                .regex(removeAddressResponseAddressesItemCountryRegExp),
-            phone: zod.string().min(1).max(removeAddressResponseAddressesItemPhoneMax).optional(),
-            default: zod.boolean()
-        })
-    )
-});
+export const RemoveAddressResponse = zod.void();
 /**
  * Makes one entry of the caller's own book the default — the one checkout ships to when no `addressId` is named — and demotes the previous holder in the same write. The URI is the whole statement, so there is no body and repeating it changes nothing (RFC 9110 §9.3.4). Answers the entry, now `default true`; the demoted entry is another row, so a client showing the book refetches it. Shopify's `PUT /customers/{id}/addresses/{address_id}/default` is the same shape.
  * @summary Make an address the default
@@ -2500,11 +2596,11 @@ export const RefreshTokenResponse = zod.strictObject({
     token: zod.string()
 });
 /**
- * Starts "give me my data" (Art. 15, 20) and answers at once with `202` and the export's `id` and `status`. The file is built in the background from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail — and a LINK to it is mailed to the account's address when it is ready, never the data itself. Fetch it with `GET /account/export`.
+ * Starts "give me my data" (Art. 15, 20) and answers at once with `202`, the export's status (`AccountExport`) and `Location: /account/export`, the status monitor to poll (RFC 9110 §15.3.3). The file is built in the background from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail — and a LINK to it is mailed to the account's address when it is ready, never the data itself. Check on it with `GET /account/export`, fetch it with `GET /account/export/file`.
  *
  * One live export per account. Asking while one is `building` returns that one; asking after one is `ready` or `failed` replaces it (the old file and record are deleted first). A file is kept for `NODE_ACCOUNT_EXPORT_TTL_DAYS` days. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
  *
- * Starting a NEW build costs one mail from the per-mailbox mail budget, since it ends in a mailed link: a spent budget answers `429`, and the previous export is left in place. Asking while one is `building` is not charged. Needs a fresh session (sensitive tier: `401 REAUTH_REQUIRED`), as does downloading the file.
+ * Starting a NEW build costs one mail from the per-mailbox mail budget, since it ends in a mailed link: a spent budget answers `429`, and the previous export is left in place. Asking while one is `building` is not charged. Needs a fresh session (sensitive tier: `401 REAUTH_REQUIRED`), as does downloading the file; reading the status does not.
  * @summary Request an export of the caller's own data
  */
 export const requestAccountExportResponseIdMax = 64;
@@ -2515,10 +2611,37 @@ export const RequestAccountExportResponse = zod.strictObject({
         .min(1)
         .max(requestAccountExportResponseIdMax)
         .regex(requestAccountExportResponseIdRegExp),
-    status: zod.enum(['building'])
+    status: zod.enum(['building', 'ready', 'failed']),
+    createdAt: zod.iso.datetime({ offset: true }),
+    expiresAt: zod.iso.datetime({ offset: true }).optional(),
+    actions: zod.strictObject({
+        download: zod.boolean(),
+        request: zod.boolean()
+    })
 });
 /**
- * Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. An account has one live export, so there is no id to name: the caller's own is the one served. A FRESH session (`requireFreshAuth`), same as the request. `404` when the caller has none, it is still `building`, `failed`, or already gone (past its retention): the caller cannot tell these apart, by design.
+ * The status of the caller's export: `building`, `ready` or `failed`, with `createdAt`, and `expiresAt` once it is `ready`. Reading it is not a download, so it needs a session but not a fresh one: it carries dates and a state, no personal data.
+ * An account has one export, so there is no id to name. `404` only when there is none: never asked for, already deleted, or past its retention and not yet swept (that last one counts as none). A `building` export older than the build limit reads as `failed`. The file itself is at `GET /account/export/file`.
+ * @summary Check on the caller's own data export
+ */
+export const getAccountExportResponseIdMax = 64;
+export const getAccountExportResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetAccountExportResponse = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(getAccountExportResponseIdMax)
+        .regex(getAccountExportResponseIdRegExp),
+    status: zod.enum(['building', 'ready', 'failed']),
+    createdAt: zod.iso.datetime({ offset: true }),
+    expiresAt: zod.iso.datetime({ offset: true }).optional(),
+    actions: zod.strictObject({
+        download: zod.boolean(),
+        request: zod.boolean()
+    })
+});
+/**
+ * Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. An account has one export, so there is no id to name: the caller's own is the one served. A FRESH session (`requireFreshAuth`), same as the request. `404` unless the export is `ready` and within its retention. A `ready` export whose file is missing from the store answers `404` too: the file honestly does not exist.
  * @summary Download an export of the caller's own data
  */
 export const downloadAccountExportResponseProfileIdMax = 64;
@@ -3246,6 +3369,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 'refund_failed',
                 'refund_canceled',
                 'refund_reversed',
+                'dispute_opened',
+                'dispute_closed',
                 'shipment_shipped',
                 'shipment_delivered',
                 'shipment_lost',
@@ -10068,7 +10193,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
     deletedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door, with their own `forced` option). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `override:Order`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does.
+ * Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `override:Order`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does.
  * @summary Force-correct an order's status by hand
  */
 export const overrideOrderStatusPathIdMax = 64;
@@ -10377,6 +10502,7 @@ export const listOrderPaymentsResponseItemsItemRefundsItemReturnIdRegExp = new R
     '^[0-9A-Za-z_-]+$'
 );
 export const listOrderPaymentsResponseItemsItemReferenceMax = 120;
+export const listOrderPaymentsResponseItemsItemDisputesItemAmountMin = 0;
 export const listOrderPaymentsResponseItemsItemActionsSettleByHandItemMax = 64;
 export const listOrderPaymentsResponseItemsItemActionsSettleByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -10490,6 +10616,48 @@ export const ListOrderPaymentsResponse = zod.strictObject({
             receivedAt: zod.iso.datetime({ offset: true }).optional(),
             clientSecret: zod.string().optional(),
             cardLast4: zod.string().optional(),
+            disputes: zod
+                .array(
+                    zod.strictObject({
+                        disputeRef: zod.string(),
+                        kind: zod.enum(['inquiry', 'chargeback']),
+                        status: zod.enum([
+                            'needs_response',
+                            'under_review',
+                            'won',
+                            'lost',
+                            'accepted',
+                            'closed'
+                        ]),
+                        reason: zod.enum([
+                            'bank_cannot_process',
+                            'check_returned',
+                            'credit_not_processed',
+                            'customer_initiated',
+                            'debit_not_authorized',
+                            'duplicate',
+                            'fraudulent',
+                            'general',
+                            'incorrect_account_details',
+                            'insufficient_funds',
+                            'product_not_received',
+                            'product_unacceptable',
+                            'subscription_canceled',
+                            'unrecognized'
+                        ]),
+                        amount: zod
+                            .number()
+                            .min(listOrderPaymentsResponseItemsItemDisputesItemAmountMin),
+                        currency: zod.string(),
+                        evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+                        fundsWithdrawn: zod.boolean(),
+                        openedAt: zod.iso.datetime({ offset: true }),
+                        closedAt: zod.iso.datetime({ offset: true }).optional(),
+                        observedAt: zod.iso.datetime({ offset: true }),
+                        dashboardUrl: zod.string().optional()
+                    })
+                )
+                .optional(),
             actions: zod.strictObject({
                 pay: zod.boolean(),
                 sync: zod.boolean(),
@@ -10555,6 +10723,7 @@ export const recordOrderPaymentResponseRefundsItemAmountMin = 0;
 export const recordOrderPaymentResponseRefundsItemReturnIdMax = 64;
 export const recordOrderPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const recordOrderPaymentResponseReferenceMax = 120;
+export const recordOrderPaymentResponseDisputesItemAmountMin = 0;
 export const recordOrderPaymentResponseActionsSettleByHandItemMax = 64;
 export const recordOrderPaymentResponseActionsSettleByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -10658,6 +10827,46 @@ export const RecordOrderPaymentResponse = zod.strictObject({
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
     clientSecret: zod.string().optional(),
     cardLast4: zod.string().optional(),
+    disputes: zod
+        .array(
+            zod.strictObject({
+                disputeRef: zod.string(),
+                kind: zod.enum(['inquiry', 'chargeback']),
+                status: zod.enum([
+                    'needs_response',
+                    'under_review',
+                    'won',
+                    'lost',
+                    'accepted',
+                    'closed'
+                ]),
+                reason: zod.enum([
+                    'bank_cannot_process',
+                    'check_returned',
+                    'credit_not_processed',
+                    'customer_initiated',
+                    'debit_not_authorized',
+                    'duplicate',
+                    'fraudulent',
+                    'general',
+                    'incorrect_account_details',
+                    'insufficient_funds',
+                    'product_not_received',
+                    'product_unacceptable',
+                    'subscription_canceled',
+                    'unrecognized'
+                ]),
+                amount: zod.number().min(recordOrderPaymentResponseDisputesItemAmountMin),
+                currency: zod.string(),
+                evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+                fundsWithdrawn: zod.boolean(),
+                openedAt: zod.iso.datetime({ offset: true }),
+                closedAt: zod.iso.datetime({ offset: true }).optional(),
+                observedAt: zod.iso.datetime({ offset: true }),
+                dashboardUrl: zod.string().optional()
+            })
+        )
+        .optional(),
     actions: zod.strictObject({
         pay: zod.boolean(),
         sync: zod.boolean(),
@@ -11070,7 +11279,6 @@ export const ListOrderShipmentsResponse = zod.strictObject({
             lostNote: zod.string().max(listOrderShipmentsResponseItemsItemLostNoteMax).optional(),
             actions: zod.strictObject({
                 deliver: zod.boolean(),
-                forceDeliver: zod.boolean(),
                 update: zod.boolean(),
                 markLost: zod.boolean()
             }),
@@ -11098,7 +11306,9 @@ export const ListPaymentMethodsResponse = zod.strictObject({
 /**
  * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 201 with the new `Refund` record and its address in `Location`; read the payment again (`GET /payments/{id}`) for the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left to refund) or 422 (asks for more than is left). A refund still open counts against what is left, so a second partial refund beside it is allowed while money remains.
  * The 201 is the answer for every outcome of the record the request wrote; its `status` carries the result. `succeeded`: the money is back. `failed`: the provider refused, the record is kept and counts against what is left, and it is either retried by the refund sweep or, when `actions.settleByHand` lists it, final and waiting for the money to be returned another way. `pending`: hand-paid money waiting for an operator. A refusal is never a 5xx. The reason of a refusal (`failureReason`) is sent to `display:Payment` callers only.
- * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it. Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it.
+ * There is no list at this path: a payment's refunds are listed by `GET /payments/{id}` (`refunds`), and one by `GET /payments/{id}/refunds/{refundId}`.
+ * Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund a payment
  */
 export const createRefundPathIdMax = 64;
@@ -11230,6 +11440,7 @@ export const getPaymentResponseRefundsItemAmountMin = 0;
 export const getPaymentResponseRefundsItemReturnIdMax = 64;
 export const getPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getPaymentResponseReferenceMax = 120;
+export const getPaymentResponseDisputesItemAmountMin = 0;
 export const getPaymentResponseActionsSettleByHandItemMax = 64;
 export const getPaymentResponseActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getPaymentResponseActionsCancelRefundItemMax = 64;
@@ -11325,6 +11536,46 @@ export const GetPaymentResponse = zod.strictObject({
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
     clientSecret: zod.string().optional(),
     cardLast4: zod.string().optional(),
+    disputes: zod
+        .array(
+            zod.strictObject({
+                disputeRef: zod.string(),
+                kind: zod.enum(['inquiry', 'chargeback']),
+                status: zod.enum([
+                    'needs_response',
+                    'under_review',
+                    'won',
+                    'lost',
+                    'accepted',
+                    'closed'
+                ]),
+                reason: zod.enum([
+                    'bank_cannot_process',
+                    'check_returned',
+                    'credit_not_processed',
+                    'customer_initiated',
+                    'debit_not_authorized',
+                    'duplicate',
+                    'fraudulent',
+                    'general',
+                    'incorrect_account_details',
+                    'insufficient_funds',
+                    'product_not_received',
+                    'product_unacceptable',
+                    'subscription_canceled',
+                    'unrecognized'
+                ]),
+                amount: zod.number().min(getPaymentResponseDisputesItemAmountMin),
+                currency: zod.string(),
+                evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+                fundsWithdrawn: zod.boolean(),
+                openedAt: zod.iso.datetime({ offset: true }),
+                closedAt: zod.iso.datetime({ offset: true }).optional(),
+                observedAt: zod.iso.datetime({ offset: true }),
+                dashboardUrl: zod.string().optional()
+            })
+        )
+        .optional(),
     actions: zod.strictObject({
         pay: zod.boolean(),
         sync: zod.boolean(),
@@ -11390,6 +11641,7 @@ export const confirmPaymentResponseRefundsItemAmountMin = 0;
 export const confirmPaymentResponseRefundsItemReturnIdMax = 64;
 export const confirmPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const confirmPaymentResponseReferenceMax = 120;
+export const confirmPaymentResponseDisputesItemAmountMin = 0;
 export const confirmPaymentResponseActionsSettleByHandItemMax = 64;
 export const confirmPaymentResponseActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const confirmPaymentResponseActionsCancelRefundItemMax = 64;
@@ -11485,6 +11737,46 @@ export const ConfirmPaymentResponse = zod.strictObject({
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
     clientSecret: zod.string().optional(),
     cardLast4: zod.string().optional(),
+    disputes: zod
+        .array(
+            zod.strictObject({
+                disputeRef: zod.string(),
+                kind: zod.enum(['inquiry', 'chargeback']),
+                status: zod.enum([
+                    'needs_response',
+                    'under_review',
+                    'won',
+                    'lost',
+                    'accepted',
+                    'closed'
+                ]),
+                reason: zod.enum([
+                    'bank_cannot_process',
+                    'check_returned',
+                    'credit_not_processed',
+                    'customer_initiated',
+                    'debit_not_authorized',
+                    'duplicate',
+                    'fraudulent',
+                    'general',
+                    'incorrect_account_details',
+                    'insufficient_funds',
+                    'product_not_received',
+                    'product_unacceptable',
+                    'subscription_canceled',
+                    'unrecognized'
+                ]),
+                amount: zod.number().min(confirmPaymentResponseDisputesItemAmountMin),
+                currency: zod.string(),
+                evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+                fundsWithdrawn: zod.boolean(),
+                openedAt: zod.iso.datetime({ offset: true }),
+                closedAt: zod.iso.datetime({ offset: true }).optional(),
+                observedAt: zod.iso.datetime({ offset: true }),
+                dashboardUrl: zod.string().optional()
+            })
+        )
+        .optional(),
     actions: zod.strictObject({
         pay: zod.boolean(),
         sync: zod.boolean(),
@@ -11530,6 +11822,7 @@ export const syncPaymentResponseRefundsItemAmountMin = 0;
 export const syncPaymentResponseRefundsItemReturnIdMax = 64;
 export const syncPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const syncPaymentResponseReferenceMax = 120;
+export const syncPaymentResponseDisputesItemAmountMin = 0;
 export const syncPaymentResponseActionsSettleByHandItemMax = 64;
 export const syncPaymentResponseActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const syncPaymentResponseActionsCancelRefundItemMax = 64;
@@ -11625,6 +11918,46 @@ export const SyncPaymentResponse = zod.strictObject({
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
     clientSecret: zod.string().optional(),
     cardLast4: zod.string().optional(),
+    disputes: zod
+        .array(
+            zod.strictObject({
+                disputeRef: zod.string(),
+                kind: zod.enum(['inquiry', 'chargeback']),
+                status: zod.enum([
+                    'needs_response',
+                    'under_review',
+                    'won',
+                    'lost',
+                    'accepted',
+                    'closed'
+                ]),
+                reason: zod.enum([
+                    'bank_cannot_process',
+                    'check_returned',
+                    'credit_not_processed',
+                    'customer_initiated',
+                    'debit_not_authorized',
+                    'duplicate',
+                    'fraudulent',
+                    'general',
+                    'incorrect_account_details',
+                    'insufficient_funds',
+                    'product_not_received',
+                    'product_unacceptable',
+                    'subscription_canceled',
+                    'unrecognized'
+                ]),
+                amount: zod.number().min(syncPaymentResponseDisputesItemAmountMin),
+                currency: zod.string(),
+                evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+                fundsWithdrawn: zod.boolean(),
+                openedAt: zod.iso.datetime({ offset: true }),
+                closedAt: zod.iso.datetime({ offset: true }).optional(),
+                observedAt: zod.iso.datetime({ offset: true }),
+                dashboardUrl: zod.string().optional()
+            })
+        )
+        .optional(),
     actions: zod.strictObject({
         pay: zod.boolean(),
         sync: zod.boolean(),
@@ -11664,10 +11997,53 @@ export const ReceivePaymentWebhookHeader = zod.strictObject({
 export const receivePaymentWebhookBodyIdMax = 200;
 export const receivePaymentWebhookBodyProviderRefMax = 200;
 export const receivePaymentWebhookBodyRefundRefMax = 200;
+export const receivePaymentWebhookBodyDisputeDisputeRefMax = 200;
+export const receivePaymentWebhookBodyDisputeAmountMin = 0;
+export const receivePaymentWebhookBodyDisputeCurrencyMax = 3;
+export const receivePaymentWebhookBodyDisputeDashboardUrlMax = 500;
 export const ReceivePaymentWebhookBody = zod.strictObject({
     id: zod.string().max(receivePaymentWebhookBodyIdMax),
     providerRef: zod.string().max(receivePaymentWebhookBodyProviderRefMax).optional(),
-    refundRef: zod.string().max(receivePaymentWebhookBodyRefundRefMax).optional()
+    refundRef: zod.string().max(receivePaymentWebhookBodyRefundRefMax).optional(),
+    dispute: zod
+        .strictObject({
+            disputeRef: zod.string().max(receivePaymentWebhookBodyDisputeDisputeRefMax),
+            kind: zod.enum(['inquiry', 'chargeback']),
+            status: zod.enum([
+                'needs_response',
+                'under_review',
+                'won',
+                'lost',
+                'accepted',
+                'closed'
+            ]),
+            reason: zod.enum([
+                'bank_cannot_process',
+                'check_returned',
+                'credit_not_processed',
+                'customer_initiated',
+                'debit_not_authorized',
+                'duplicate',
+                'fraudulent',
+                'general',
+                'incorrect_account_details',
+                'insufficient_funds',
+                'product_not_received',
+                'product_unacceptable',
+                'subscription_canceled',
+                'unrecognized'
+            ]),
+            amount: zod.number().min(receivePaymentWebhookBodyDisputeAmountMin),
+            currency: zod.string().max(receivePaymentWebhookBodyDisputeCurrencyMax),
+            evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+            fundsWithdrawn: zod.boolean(),
+            observedAt: zod.iso.datetime({ offset: true }),
+            dashboardUrl: zod
+                .string()
+                .max(receivePaymentWebhookBodyDisputeDashboardUrlMax)
+                .optional()
+        })
+        .optional()
 });
 export const ReceivePaymentWebhookResponse = zod.void();
 /**
@@ -11944,6 +12320,9 @@ export const SummarizePreorderFulfillmentOrdersResponse = zod.strictObject({
 });
 /**
  * Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is optional: a `tracked` method may get its code later, with `PATCH /delivery/shipments/{id}` (`Shipment.awaitingTracking` says who is still waiting). Refuses a fulfillment order that is on hold, closed or cancelled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is neither `processing` nor `paid` (`ORDER_NOT_PROCESSING`). From `paid` it moves the order to `processing` itself, in the same transaction, so it also needs `start:Shipment` (403 without it); `POST /orders/{id}/process` stays as an optional "mark in progress". Never ships from `on_hold`.
+ * There is no list at this path: an order's shipments are listed by `GET /orders/{id}/shipments`, and one by `GET /delivery/shipments/{id}`.
+ *
+ * Send an `Idempotency-Key`: a partial ship creates a NEW shipment, so a retry without one (a dropped connection, a double click) would cut a second parcel and take the stock twice. The same key replays the first answer; a 409 means the first request is still running, a 422 means the key was reused with another body.
  * @summary Ship some or all of a fulfillment order
  */
 export const shipFulfillmentOrderPathIdMax = 64;
@@ -11954,6 +12333,16 @@ export const ShipFulfillmentOrderParams = zod.strictObject({
         .min(1)
         .max(shipFulfillmentOrderPathIdMax)
         .regex(shipFulfillmentOrderPathIdRegExp)
+});
+export const shipFulfillmentOrderHeaderIdempotencyKeyMax = 200;
+export const shipFulfillmentOrderHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const ShipFulfillmentOrderHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(shipFulfillmentOrderHeaderIdempotencyKeyMax)
+        .regex(shipFulfillmentOrderHeaderIdempotencyKeyRegExp)
+        .optional()
 });
 export const shipFulfillmentOrderBodyLinesItemProductIdMax = 64;
 export const shipFulfillmentOrderBodyLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -12048,7 +12437,6 @@ export const ShipFulfillmentOrderResponse = zod.strictObject({
     lostNote: zod.string().max(shipFulfillmentOrderResponseLostNoteMax).optional(),
     actions: zod.strictObject({
         deliver: zod.boolean(),
-        forceDeliver: zod.boolean(),
         update: zod.boolean(),
         markLost: zod.boolean()
     }),
@@ -12056,7 +12444,7 @@ export const ShipFulfillmentOrderResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * The digital act: a shipment with no tracking, born and delivered in the same write. A `digital` fulfillment order has nothing to carry, so this is its only door. Refuses a physical one with `DELIVERY_NOT_DIGITAL` (ship it instead). When it leaves nothing remaining and nothing undelivered the order moves to `delivered`, its withdrawal clock counted from payment (digital content, Art. 9(2)(c)). Works from `paid` too: it moves the order to `processing` itself, so it also needs `start:Shipment` (403 without it).
+ * The digital act: a shipment with no tracking, born and delivered in the same write. A `digital` fulfillment order has nothing to carry, so this is its only door. Refuses a physical one with `DELIVERY_NOT_DIGITAL` (ship it instead). When it leaves nothing remaining and nothing undelivered the order moves to `delivered`, its withdrawal clock counted from payment (digital content, Art. 9(2)(c)). Works from `paid` too: it moves the order to `processing` itself, so it also needs `start:Shipment` (403 without it). Answers like the create it is: 201 with `Location` pointing at the new shipment. Send an `Idempotency-Key`, as for shipping (a 409 is the first request still running, a 422 the key reused with another body).
  * @summary Fulfil a digital fulfillment order
  */
 export const fulfillFulfillmentOrderPathIdMax = 64;
@@ -12067,6 +12455,16 @@ export const FulfillFulfillmentOrderParams = zod.strictObject({
         .min(1)
         .max(fulfillFulfillmentOrderPathIdMax)
         .regex(fulfillFulfillmentOrderPathIdRegExp)
+});
+export const fulfillFulfillmentOrderHeaderIdempotencyKeyMax = 200;
+export const fulfillFulfillmentOrderHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const FulfillFulfillmentOrderHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(fulfillFulfillmentOrderHeaderIdempotencyKeyMax)
+        .regex(fulfillFulfillmentOrderHeaderIdempotencyKeyRegExp)
+        .optional()
 });
 export const fulfillFulfillmentOrderResponseIdMax = 64;
 export const fulfillFulfillmentOrderResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -12149,7 +12547,6 @@ export const FulfillFulfillmentOrderResponse = zod.strictObject({
     lostNote: zod.string().max(fulfillFulfillmentOrderResponseLostNoteMax).optional(),
     actions: zod.strictObject({
         deliver: zod.boolean(),
-        forceDeliver: zod.boolean(),
         update: zod.boolean(),
         markLost: zod.boolean()
     }),
@@ -12386,7 +12783,6 @@ export const GetShipmentResponse = zod.strictObject({
     lostNote: zod.string().max(getShipmentResponseLostNoteMax).optional(),
     actions: zod.strictObject({
         deliver: zod.boolean(),
-        forceDeliver: zod.boolean(),
         update: zod.boolean(),
         markLost: zod.boolean()
     }),
@@ -12472,7 +12868,6 @@ export const UpdateShipmentResponse = zod.strictObject({
     lostNote: zod.string().max(updateShipmentResponseLostNoteMax).optional(),
     actions: zod.strictObject({
         deliver: zod.boolean(),
-        forceDeliver: zod.boolean(),
         update: zod.boolean(),
         markLost: zod.boolean()
     }),
@@ -12480,7 +12875,7 @@ export const UpdateShipmentResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Stamps the shipment delivered. The order moves `shipped → delivered` when this was the last undelivered shipment and nothing remains to ship; its withdrawal clock then starts from the LAST delivery (CRD Art. 9(2)(b)(i)). Refuses a shipment already delivered with `DELIVERY_NOT_DELIVERABLE`.
+ * Stamps the shipment delivered. The order moves `shipped → delivered` when this was the last undelivered shipment and nothing remains to ship; its withdrawal clock then starts from the LAST delivery (CRD Art. 9(2)(b)(i)). Only a `shipped` shipment can be delivered, or a `lost` one that turns up (below): any other answers `DELIVERY_NOT_DELIVERABLE`.
  *
  * A `lost` shipment that turns up is accepted too, but only while every unit on it is still open: not shipped again and not cancelled, the owed units of a short shelf included. All or nothing, in one transaction: the shipment becomes `delivered` (its `lostAt` and `lostReason` stay as history), the units go back on the fulfillment order, the top-up of the stock hold is given back and the owed fulfillment order is closed with no refund (`cancelReason: found`). Otherwise `DELIVERY_LOST_SUPERSEDED` (409).
  * @summary Record a shipment's arrival
@@ -12489,11 +12884,6 @@ export const deliverShipmentPathIdMax = 64;
 export const deliverShipmentPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const DeliverShipmentParams = zod.strictObject({
     id: zod.string().min(1).max(deliverShipmentPathIdMax).regex(deliverShipmentPathIdRegExp)
-});
-export const deliverShipmentBodyReasonMax = 1000;
-export const DeliverShipmentBody = zod.strictObject({
-    forced: zod.boolean().optional(),
-    reason: zod.string().min(1).max(deliverShipmentBodyReasonMax).optional()
 });
 export const deliverShipmentResponseIdMax = 64;
 export const deliverShipmentResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -12565,7 +12955,6 @@ export const DeliverShipmentResponse = zod.strictObject({
     lostNote: zod.string().max(deliverShipmentResponseLostNoteMax).optional(),
     actions: zod.strictObject({
         deliver: zod.boolean(),
-        forceDeliver: zod.boolean(),
         update: zod.boolean(),
         markLost: zod.boolean()
     }),
@@ -13666,7 +14055,7 @@ export const SweepReservationsResponse = zod.strictObject({
 /**
  * Newest first unless `sort` says otherwise. Never returns a secret — the ring's
  * plaintext exists only in the response of the call that minted it (`POST` here, or
- * `POST .../{id}/rotate-secret`).
+ * `POST .../{id}/secrets`).
  * @summary List this shop's webhook subscriptions
  */
 export const listWebhookSubscriptionsQueryPageDefault = 1;
@@ -13732,7 +14121,7 @@ export const ListWebhookSubscriptionsResponse = zod.strictObject({
                 delete: zod.boolean(),
                 enable: zod.boolean(),
                 disable: zod.boolean(),
-                rotateSecret: zod.boolean(),
+                createSecret: zod.boolean(),
                 removeSecret: zod.boolean()
             }),
             createdAt: zod.iso.datetime({ offset: true }),
@@ -13808,7 +14197,7 @@ export const CreateWebhookSubscriptionResponse = zod.strictObject({
         delete: zod.boolean(),
         enable: zod.boolean(),
         disable: zod.boolean(),
-        rotateSecret: zod.boolean(),
+        createSecret: zod.boolean(),
         removeSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
@@ -13859,7 +14248,7 @@ export const GetWebhookSubscriptionResponse = zod.strictObject({
         delete: zod.boolean(),
         enable: zod.boolean(),
         disable: zod.boolean(),
-        rotateSecret: zod.boolean(),
+        createSecret: zod.boolean(),
         removeSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
@@ -13923,7 +14312,7 @@ export const ReplaceWebhookSubscriptionResponse = zod.strictObject({
         delete: zod.boolean(),
         enable: zod.boolean(),
         disable: zod.boolean(),
-        rotateSecret: zod.boolean(),
+        createSecret: zod.boolean(),
         removeSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
@@ -13989,7 +14378,7 @@ export const UpdateWebhookSubscriptionResponse = zod.strictObject({
         delete: zod.boolean(),
         enable: zod.boolean(),
         disable: zod.boolean(),
-        rotateSecret: zod.boolean(),
+        createSecret: zod.boolean(),
         removeSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
@@ -14010,69 +14399,9 @@ export const DeleteWebhookSubscriptionParams = zod.strictObject({
 });
 export const DeleteWebhookSubscriptionResponse = zod.void();
 /**
- * Adds a new secret to the ring and returns its plaintext once, in `newSecret` — the
- * ring then carries two active secrets, and deliveries sign with both (two
- * space-separated `v1,` values in `webhook-signature`) until the old one is dropped
- * through `DELETE .../secrets/{secretId}` or its overlap window ends (24 hours by
- * default, `NODE_WEBHOOK_SECRET_OVERLAP_HOURS`; `retiringSecrets` names the exact
- * instant), after which it stops signing and disappears from `secretIds`. A ring holds at
- * most two: rotating again drops the oldest. Its own route rather than a flag on
- * `PATCH`'s body: a command, not state, so it does not share a route with
- * url/description/eventTypes.
- * @summary Rotate a webhook subscription's secret
- */
-export const rotateWebhookSubscriptionSecretPathIdMax = 64;
-export const rotateWebhookSubscriptionSecretPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const RotateWebhookSubscriptionSecretParams = zod.strictObject({
-    id: zod
-        .string()
-        .min(1)
-        .max(rotateWebhookSubscriptionSecretPathIdMax)
-        .regex(rotateWebhookSubscriptionSecretPathIdRegExp)
-});
-export const rotateWebhookSubscriptionSecretResponseIdMax = 64;
-export const rotateWebhookSubscriptionSecretResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const rotateWebhookSubscriptionSecretResponseUrlRegExp = new RegExp('(?:^https://)');
-export const rotateWebhookSubscriptionSecretResponseConsecutiveFailuresMin = 0;
-export const RotateWebhookSubscriptionSecretResponse = zod.strictObject({
-    id: zod
-        .string()
-        .min(1)
-        .max(rotateWebhookSubscriptionSecretResponseIdMax)
-        .regex(rotateWebhookSubscriptionSecretResponseIdRegExp),
-    url: zod.url().regex(rotateWebhookSubscriptionSecretResponseUrlRegExp),
-    description: zod.string().optional(),
-    eventTypes: zod.array(zod.string()).min(1),
-    enabled: zod.boolean(),
-    consecutiveFailures: zod
-        .number()
-        .min(rotateWebhookSubscriptionSecretResponseConsecutiveFailuresMin),
-    disabledAt: zod.iso.datetime({ offset: true }).optional(),
-    autoDisabledAt: zod.iso.datetime({ offset: true }).optional(),
-    secretIds: zod.array(zod.string()),
-    retiringSecrets: zod.array(
-        zod.strictObject({
-            id: zod.string(),
-            retiresAt: zod.iso.datetime({ offset: true })
-        })
-    ),
-    actions: zod.strictObject({
-        update: zod.boolean(),
-        delete: zod.boolean(),
-        enable: zod.boolean(),
-        disable: zod.boolean(),
-        rotateSecret: zod.boolean(),
-        removeSecret: zod.boolean()
-    }),
-    createdAt: zod.iso.datetime({ offset: true }),
-    updatedAt: zod.iso.datetime({ offset: true }),
-    secret: zod.string().optional(),
-    newSecret: zod.string().optional()
-});
-/**
  * The other half of a rotation, once every consumer has switched. Refuses to empty
  * the ring — a subscription with no secret can never sign a delivery. The remove twin
- * of `POST .../rotate-secret`, split out for the same reason.
+ * of `POST .../secrets`.
  * @summary Drop one secret from a subscription's ring
  */
 export const removeWebhookSubscriptionSecretPathIdMax = 64;
@@ -14117,7 +14446,7 @@ export const RemoveWebhookSubscriptionSecretResponse = zod.strictObject({
         delete: zod.boolean(),
         enable: zod.boolean(),
         disable: zod.boolean(),
-        rotateSecret: zod.boolean(),
+        createSecret: zod.boolean(),
         removeSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
@@ -14445,15 +14774,34 @@ export const activateLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const activateLocaleResponseTagMax = 35;
 export const activateLocaleResponseTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const activateLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const activateLocaleResponseAppsItemMax = 64;
+export const activateLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const activateLocaleResponseEntryCountMin = 0;
 export const activateLocaleResponseRevisionMin = 0;
 export const ActivateLocaleResponse = zod.strictObject({
-    id: zod.string().min(1).max(activateLocaleResponseIdMax).regex(activateLocaleResponseIdRegExp),
+    id: zod
+        .string()
+        .min(1)
+        .max(activateLocaleResponseIdMax)
+        .regex(activateLocaleResponseIdRegExp)
+        .optional(),
     tag: zod.string().max(activateLocaleResponseTagMax).regex(activateLocaleResponseTagRegExp),
     baseLanguage: zod.string().regex(activateLocaleResponseBaseLanguageRegExp),
     name: zod.string(),
     nativeName: zod.string(),
     direction: zod.enum(['ltr', 'rtl']),
     active: zod.boolean(),
+    apps: zod
+        .array(
+            zod
+                .string()
+                .min(1)
+                .max(activateLocaleResponseAppsItemMax)
+                .regex(activateLocaleResponseAppsItemRegExp)
+        )
+        .min(1),
+    source: zod.enum(['static', 'dynamic', 'both']),
+    entryCount: zod.number().min(activateLocaleResponseEntryCountMin),
     revision: zod.number().min(activateLocaleResponseRevisionMin),
     actions: zod.strictObject({
         update: zod.boolean(),
@@ -14487,19 +14835,34 @@ export const deactivateLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const deactivateLocaleResponseTagMax = 35;
 export const deactivateLocaleResponseTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const deactivateLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const deactivateLocaleResponseAppsItemMax = 64;
+export const deactivateLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const deactivateLocaleResponseEntryCountMin = 0;
 export const deactivateLocaleResponseRevisionMin = 0;
 export const DeactivateLocaleResponse = zod.strictObject({
     id: zod
         .string()
         .min(1)
         .max(deactivateLocaleResponseIdMax)
-        .regex(deactivateLocaleResponseIdRegExp),
+        .regex(deactivateLocaleResponseIdRegExp)
+        .optional(),
     tag: zod.string().max(deactivateLocaleResponseTagMax).regex(deactivateLocaleResponseTagRegExp),
     baseLanguage: zod.string().regex(deactivateLocaleResponseBaseLanguageRegExp),
     name: zod.string(),
     nativeName: zod.string(),
     direction: zod.enum(['ltr', 'rtl']),
     active: zod.boolean(),
+    apps: zod
+        .array(
+            zod
+                .string()
+                .min(1)
+                .max(deactivateLocaleResponseAppsItemMax)
+                .regex(deactivateLocaleResponseAppsItemRegExp)
+        )
+        .min(1),
+    source: zod.enum(['static', 'dynamic', 'both']),
+    entryCount: zod.number().min(deactivateLocaleResponseEntryCountMin),
     revision: zod.number().min(deactivateLocaleResponseRevisionMin),
     actions: zod.strictObject({
         update: zod.boolean(),
@@ -15067,6 +15430,8 @@ export const GetOrderTimelineResponse = zod.strictObject({
                 'refund_failed',
                 'refund_canceled',
                 'refund_reversed',
+                'dispute_opened',
+                'dispute_closed',
                 'shipment_shipped',
                 'shipment_delivered',
                 'shipment_lost',
@@ -15416,6 +15781,7 @@ export const ListPaymentsQueryParams = zod.strictObject({
         .max(listPaymentsQueryOrderIdMax)
         .regex(listPaymentsQueryOrderIdRegExp)
         .optional(),
+    disputed: zod.boolean().optional(),
     reference: zod.string().max(listPaymentsQueryReferenceMax).optional(),
     transferReference: zod.string().max(listPaymentsQueryTransferReferenceMax).optional()
 });
@@ -15435,6 +15801,7 @@ export const listPaymentsResponseItemsItemRefundsItemReturnIdRegExp = new RegExp
     '^[0-9A-Za-z_-]+$'
 );
 export const listPaymentsResponseItemsItemReferenceMax = 120;
+export const listPaymentsResponseItemsItemDisputesItemAmountMin = 0;
 export const listPaymentsResponseItemsItemActionsSettleByHandItemMax = 64;
 export const listPaymentsResponseItemsItemActionsSettleByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -15552,6 +15919,48 @@ export const ListPaymentsResponse = zod.strictObject({
             receivedAt: zod.iso.datetime({ offset: true }).optional(),
             clientSecret: zod.string().optional(),
             cardLast4: zod.string().optional(),
+            disputes: zod
+                .array(
+                    zod.strictObject({
+                        disputeRef: zod.string(),
+                        kind: zod.enum(['inquiry', 'chargeback']),
+                        status: zod.enum([
+                            'needs_response',
+                            'under_review',
+                            'won',
+                            'lost',
+                            'accepted',
+                            'closed'
+                        ]),
+                        reason: zod.enum([
+                            'bank_cannot_process',
+                            'check_returned',
+                            'credit_not_processed',
+                            'customer_initiated',
+                            'debit_not_authorized',
+                            'duplicate',
+                            'fraudulent',
+                            'general',
+                            'incorrect_account_details',
+                            'insufficient_funds',
+                            'product_not_received',
+                            'product_unacceptable',
+                            'subscription_canceled',
+                            'unrecognized'
+                        ]),
+                        amount: zod
+                            .number()
+                            .min(listPaymentsResponseItemsItemDisputesItemAmountMin),
+                        currency: zod.string(),
+                        evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+                        fundsWithdrawn: zod.boolean(),
+                        openedAt: zod.iso.datetime({ offset: true }),
+                        closedAt: zod.iso.datetime({ offset: true }).optional(),
+                        observedAt: zod.iso.datetime({ offset: true }),
+                        dashboardUrl: zod.string().optional()
+                    })
+                )
+                .optional(),
             actions: zod.strictObject({
                 pay: zod.boolean(),
                 sync: zod.boolean(),
@@ -15617,6 +16026,7 @@ export const createPaymentResponseRefundsItemAmountMin = 0;
 export const createPaymentResponseRefundsItemReturnIdMax = 64;
 export const createPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createPaymentResponseReferenceMax = 120;
+export const createPaymentResponseDisputesItemAmountMin = 0;
 export const createPaymentResponseActionsSettleByHandItemMax = 64;
 export const createPaymentResponseActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createPaymentResponseActionsCancelRefundItemMax = 64;
@@ -15712,6 +16122,46 @@ export const CreatePaymentResponse = zod.strictObject({
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
     clientSecret: zod.string().optional(),
     cardLast4: zod.string().optional(),
+    disputes: zod
+        .array(
+            zod.strictObject({
+                disputeRef: zod.string(),
+                kind: zod.enum(['inquiry', 'chargeback']),
+                status: zod.enum([
+                    'needs_response',
+                    'under_review',
+                    'won',
+                    'lost',
+                    'accepted',
+                    'closed'
+                ]),
+                reason: zod.enum([
+                    'bank_cannot_process',
+                    'check_returned',
+                    'credit_not_processed',
+                    'customer_initiated',
+                    'debit_not_authorized',
+                    'duplicate',
+                    'fraudulent',
+                    'general',
+                    'incorrect_account_details',
+                    'insufficient_funds',
+                    'product_not_received',
+                    'product_unacceptable',
+                    'subscription_canceled',
+                    'unrecognized'
+                ]),
+                amount: zod.number().min(createPaymentResponseDisputesItemAmountMin),
+                currency: zod.string(),
+                evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+                fundsWithdrawn: zod.boolean(),
+                openedAt: zod.iso.datetime({ offset: true }),
+                closedAt: zod.iso.datetime({ offset: true }).optional(),
+                observedAt: zod.iso.datetime({ offset: true }),
+                dashboardUrl: zod.string().optional()
+            })
+        )
+        .optional(),
     actions: zod.strictObject({
         pay: zod.boolean(),
         sync: zod.boolean(),
@@ -15788,6 +16238,7 @@ export const SearchPaymentsBody = zod.strictObject({
         .max(searchPaymentsBodyOrderIdMax)
         .regex(searchPaymentsBodyOrderIdRegExp)
         .optional(),
+    disputed: zod.boolean().optional(),
     reference: zod.string().max(searchPaymentsBodyReferenceMax).optional(),
     transferReference: zod.string().max(searchPaymentsBodyTransferReferenceMax).optional()
 });
@@ -15807,6 +16258,7 @@ export const searchPaymentsResponseItemsItemRefundsItemReturnIdRegExp = new RegE
     '^[0-9A-Za-z_-]+$'
 );
 export const searchPaymentsResponseItemsItemReferenceMax = 120;
+export const searchPaymentsResponseItemsItemDisputesItemAmountMin = 0;
 export const searchPaymentsResponseItemsItemActionsSettleByHandItemMax = 64;
 export const searchPaymentsResponseItemsItemActionsSettleByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -15924,6 +16376,48 @@ export const SearchPaymentsResponse = zod.strictObject({
             receivedAt: zod.iso.datetime({ offset: true }).optional(),
             clientSecret: zod.string().optional(),
             cardLast4: zod.string().optional(),
+            disputes: zod
+                .array(
+                    zod.strictObject({
+                        disputeRef: zod.string(),
+                        kind: zod.enum(['inquiry', 'chargeback']),
+                        status: zod.enum([
+                            'needs_response',
+                            'under_review',
+                            'won',
+                            'lost',
+                            'accepted',
+                            'closed'
+                        ]),
+                        reason: zod.enum([
+                            'bank_cannot_process',
+                            'check_returned',
+                            'credit_not_processed',
+                            'customer_initiated',
+                            'debit_not_authorized',
+                            'duplicate',
+                            'fraudulent',
+                            'general',
+                            'incorrect_account_details',
+                            'insufficient_funds',
+                            'product_not_received',
+                            'product_unacceptable',
+                            'subscription_canceled',
+                            'unrecognized'
+                        ]),
+                        amount: zod
+                            .number()
+                            .min(searchPaymentsResponseItemsItemDisputesItemAmountMin),
+                        currency: zod.string(),
+                        evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
+                        fundsWithdrawn: zod.boolean(),
+                        openedAt: zod.iso.datetime({ offset: true }),
+                        closedAt: zod.iso.datetime({ offset: true }).optional(),
+                        observedAt: zod.iso.datetime({ offset: true }),
+                        dashboardUrl: zod.string().optional()
+                    })
+                )
+                .optional(),
             actions: zod.strictObject({
                 pay: zod.boolean(),
                 sync: zod.boolean(),
@@ -16077,6 +16571,8 @@ export const listPaymentAttentionResponseItemsItemPaymentIdMax = 64;
 export const listPaymentAttentionResponseItemsItemPaymentIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listPaymentAttentionResponseItemsItemRefundIdMax = 64;
 export const listPaymentAttentionResponseItemsItemRefundIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listPaymentAttentionResponseItemsItemDisputeIdMax = 200;
+export const listPaymentAttentionResponseItemsItemAlreadyRefundedMin = 0;
 export const listPaymentAttentionResponseItemsItemAmountMin = 0;
 export const listPaymentAttentionResponseItemsItemExceedsByMin = 0;
 export const ListPaymentAttentionResponse = zod.strictObject({
@@ -16087,7 +16583,8 @@ export const ListPaymentAttentionResponse = zod.strictObject({
                 'refused_refund',
                 'reversed_refund',
                 'refund_exceeds_remaining',
-                'manual_refund_owed'
+                'manual_refund_owed',
+                'dispute_needs_response'
             ]),
             orderId: zod
                 .string()
@@ -16103,7 +16600,17 @@ export const ListPaymentAttentionResponse = zod.strictObject({
                 .string()
                 .min(1)
                 .max(listPaymentAttentionResponseItemsItemRefundIdMax)
-                .regex(listPaymentAttentionResponseItemsItemRefundIdRegExp),
+                .regex(listPaymentAttentionResponseItemsItemRefundIdRegExp)
+                .optional(),
+            disputeId: zod
+                .string()
+                .max(listPaymentAttentionResponseItemsItemDisputeIdMax)
+                .optional(),
+            dueBy: zod.iso.datetime({ offset: true }).optional(),
+            alreadyRefunded: zod
+                .number()
+                .min(listPaymentAttentionResponseItemsItemAlreadyRefundedMin)
+                .optional(),
             amount: zod.number().min(listPaymentAttentionResponseItemsItemAmountMin),
             currency: zod.string(),
             failureReason: zod
@@ -16473,7 +16980,6 @@ export const MarkShipmentLostResponse = zod.strictObject({
     lostNote: zod.string().max(markShipmentLostResponseLostNoteMax).optional(),
     actions: zod.strictObject({
         deliver: zod.boolean(),
-        forceDeliver: zod.boolean(),
         update: zod.boolean(),
         markLost: zod.boolean()
     }),
@@ -17043,7 +17549,7 @@ export const EnableWebhookSubscriptionResponse = zod.strictObject({
         delete: zod.boolean(),
         enable: zod.boolean(),
         disable: zod.boolean(),
-        rotateSecret: zod.boolean(),
+        createSecret: zod.boolean(),
         removeSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
@@ -17094,11 +17600,71 @@ export const DisableWebhookSubscriptionResponse = zod.strictObject({
         delete: zod.boolean(),
         enable: zod.boolean(),
         disable: zod.boolean(),
-        rotateSecret: zod.boolean(),
+        createSecret: zod.boolean(),
         removeSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true })
+});
+/**
+ * Adds a new secret to the ring and returns its plaintext once, in `newSecret` — the
+ * ring then carries two active secrets, and deliveries sign with both (two
+ * space-separated `v1,` values in `webhook-signature`) until the old one is dropped
+ * through `DELETE .../secrets/{secretId}` or its overlap window ends (24 hours by
+ * default, `NODE_WEBHOOK_SECRET_OVERLAP_HOURS`; `retiringSecrets` names the exact
+ * instant), after which it stops signing and disappears from `secretIds`. A ring holds at
+ * most two: adding a third drops the oldest, which is already superseded. A secret is a
+ * line of the subscription, so adding one is a `POST` on the line collection and answers
+ * 200 with the whole subscription (docs/api/write-methods.md).
+ * @summary Add a secret to a webhook subscription's ring (rotate)
+ */
+export const createWebhookSubscriptionSecretPathIdMax = 64;
+export const createWebhookSubscriptionSecretPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const CreateWebhookSubscriptionSecretParams = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(createWebhookSubscriptionSecretPathIdMax)
+        .regex(createWebhookSubscriptionSecretPathIdRegExp)
+});
+export const createWebhookSubscriptionSecretResponseIdMax = 64;
+export const createWebhookSubscriptionSecretResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createWebhookSubscriptionSecretResponseUrlRegExp = new RegExp('(?:^https://)');
+export const createWebhookSubscriptionSecretResponseConsecutiveFailuresMin = 0;
+export const CreateWebhookSubscriptionSecretResponse = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(createWebhookSubscriptionSecretResponseIdMax)
+        .regex(createWebhookSubscriptionSecretResponseIdRegExp),
+    url: zod.url().regex(createWebhookSubscriptionSecretResponseUrlRegExp),
+    description: zod.string().optional(),
+    eventTypes: zod.array(zod.string()).min(1),
+    enabled: zod.boolean(),
+    consecutiveFailures: zod
+        .number()
+        .min(createWebhookSubscriptionSecretResponseConsecutiveFailuresMin),
+    disabledAt: zod.iso.datetime({ offset: true }).optional(),
+    autoDisabledAt: zod.iso.datetime({ offset: true }).optional(),
+    secretIds: zod.array(zod.string()),
+    retiringSecrets: zod.array(
+        zod.strictObject({
+            id: zod.string(),
+            retiresAt: zod.iso.datetime({ offset: true })
+        })
+    ),
+    actions: zod.strictObject({
+        update: zod.boolean(),
+        delete: zod.boolean(),
+        enable: zod.boolean(),
+        disable: zod.boolean(),
+        createSecret: zod.boolean(),
+        removeSecret: zod.boolean()
+    }),
+    createdAt: zod.iso.datetime({ offset: true }),
+    updatedAt: zod.iso.datetime({ offset: true }),
+    secret: zod.string().optional(),
+    newSecret: zod.string().optional()
 });
 /**
  * One row of this shop's delivery log, the same shape the list gives it, with `actions.replay`. Another shop's delivery, an unknown id and a malformed one are the same 404.

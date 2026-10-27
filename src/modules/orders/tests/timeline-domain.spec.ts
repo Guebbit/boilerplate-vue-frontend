@@ -34,6 +34,21 @@ describe('describeTimelineEntry', () => {
         );
     });
 
+    it('says a lost parcel refunded in full, and stays silent about causes it has no wording for', () => {
+        expect(
+            describeTimelineEntry(
+                { type: 'cancelled', data: { by: 'system', cause: 'lost', refund: false } },
+                tools
+            ).detail
+        ).toBe('order-timeline.detail-by(order-timeline.by-system) · order-timeline.cause-lost');
+        expect(
+            describeTimelineEntry(
+                { type: 'cancelled', data: { by: 'system', cause: 'unknown_cause' } },
+                tools
+            ).detail
+        ).toBe('order-timeline.detail-by(order-timeline.by-system)');
+    });
+
     it('gives every type a title and no detail when it has no data to add', () => {
         expect(describeTimelineEntry({ type: 'processing', data: {} }, tools)).toEqual({
             title: 'order-timeline.type-processing'
@@ -76,6 +91,26 @@ describe('describeTimelineEntry', () => {
         );
 
         expect(line.detail).toContain('5 EUR');
+    });
+
+    it('shows what a dispute disputes and where it stands, for staff', () => {
+        const line = describeTimelineEntry(
+            {
+                type: 'dispute_opened',
+                data: {
+                    amount: 40,
+                    currency: 'EUR',
+                    status: 'needs_response',
+                    reason: 'fraudulent'
+                }
+            },
+            tools
+        );
+
+        expect(line.title).toBe('order-timeline.type-dispute_opened');
+        expect(line.detail).toBe(
+            '40 EUR · order-timeline.detail-dispute(order-timeline.dispute-status-needs_response) · order-timeline.detail-reason(order-timeline.dispute-reason-fraudulent)'
+        );
     });
 
     it('shows a code the dictionary does not know as it is', () => {

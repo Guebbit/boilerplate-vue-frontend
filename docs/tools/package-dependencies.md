@@ -73,7 +73,8 @@ and the ignore together when the plugin is replaced and mermaid 12 lands.
 - **Why not pinned:** dependabot's grouped bumps cannot re-approve a pin, so every bump failed
   `npm ci` with `ESTRICTALLOWSCRIPTS`.
 - **What still guards a version change:** the lockfile integrity hash and the human merge. The
-  7-day dependabot cooldown covers dependabot only, not a local `npm install`.
+  7-day dependabot cooldown covers dependabot only; `.npmrc` `min-release-age=7` gives a local
+  `npm install` the same cooldown (override once with `--min-release-age=0`).
 - **What guards production:** the backend image installs with `--ignore-scripts`.
 - **Counter-view:** npm's own default and LavaMoat pin versions, so a hijacked release of an
   approved package cannot run its script. pnpm, Bun and Yarn Berry approve by name.

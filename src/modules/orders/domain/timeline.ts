@@ -117,6 +117,24 @@ const plain = (
 };
 
 /**
+ * The cancel's cause as a sentence of its own, only for a cause the dictionary words: the ordinary
+ * causes are already told by who cancelled (`by`), so showing their raw codes would only add noise.
+ *
+ * @param tools - The injected helpers.
+ * @param data - The row's `data`.
+ * @returns The cause sentence, or `undefined` when the cause has no wording.
+ */
+const causeNote = (
+    tools: TimelineTools,
+    data: Readonly<Record<string, unknown>>
+): string | undefined => {
+    const cause = textOf(data, 'cause');
+    return cause !== undefined && tools.has(`order-timeline.cause-${cause}`)
+        ? tools.t(`order-timeline.cause-${cause}`)
+        : undefined;
+};
+
+/**
  * The fragments of one type's detail, in reading order; empties are dropped by the caller.
  */
 type DetailBuilder = (
@@ -154,6 +172,19 @@ const statusMove: DetailBuilder = (tools, data) => {
 const refundParts: DetailBuilder = (tools, data) => [
     amountOf(tools, data),
     coded(tools, data, 'reason', 'order-timeline.detail-reason', 'order-timeline.refund-reason-')
+];
+
+/**
+ * The money and state of a dispute row: how much the bank disputes, and where it stands.
+ *
+ * @param tools - The injected helpers.
+ * @param data - The row's `data`.
+ * @returns Amount, state and reason fragments.
+ */
+const disputeParts: DetailBuilder = (tools, data) => [
+    amountOf(tools, data),
+    coded(tools, data, 'status', 'order-timeline.detail-dispute', 'order-timeline.dispute-status-'),
+    coded(tools, data, 'reason', 'order-timeline.detail-reason', 'order-timeline.dispute-reason-')
 ];
 
 /**
@@ -232,7 +263,8 @@ const DETAILS: Readonly<Partial<Record<OrderTimelineType, DetailBuilder>>> = {
         ];
     },
     cancelled: (tools, data) => [
-        coded(tools, data, 'by', 'order-timeline.detail-by', 'order-timeline.by-')
+        coded(tools, data, 'by', 'order-timeline.detail-by', 'order-timeline.by-'),
+        causeNote(tools, data)
     ],
     status_overridden: statusMove,
     refund_issued: refundParts,
@@ -248,6 +280,8 @@ const DETAILS: Readonly<Partial<Record<OrderTimelineType, DetailBuilder>>> = {
             'order-timeline.failure-reason-'
         )
     ],
+    dispute_opened: disputeParts,
+    dispute_closed: disputeParts,
     shipment_shipped: (tools, data) => [
         plain(tools, data, 'number', 'order-timeline.detail-shipment'),
         plain(tools, data, 'trackingCode', 'order-timeline.detail-tracking')

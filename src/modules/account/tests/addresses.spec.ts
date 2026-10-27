@@ -3,8 +3,8 @@
  * Unit tests for the address-book store, mocking only the transport (`orvalMutator`) so the
  * store's own fetch-after-write logic runs for real.
  *
- * All four endpoints answer with the WHOLE book rather than the row that changed, so each case
- * pins the same invariant: exactly one default, and the local list replaced by the answer rather
+ * Only the read answers with the book; every write answers one entry or nothing, so each case
+ * pins the same invariant: exactly one default, and the local list replaced by a reload rather
  * than patched. `removeAddress` matters most — deleting the default promotes the oldest survivor
  * server-side, so a store that removed the row locally would show no default until reload.
  */
@@ -34,7 +34,7 @@ const lastRequest = () => {
 };
 
 /**
- * Makes the transport answer the book's own endpoints (read, delete) with this book, and a write
+ * Makes the transport answer the read with this book, a delete with nothing (204), and a write
  * to one entry with that entry alone — what the contract says each answers. Every answer is
  * proven against the operation's schema by `parseOrvalFixture`.
  *
@@ -43,10 +43,14 @@ const lastRequest = () => {
  */
 const respondWithBook = (addresses: unknown[], written?: unknown) =>
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) => {
-        const answersOneEntry = config.method !== 'GET' && config.method !== 'DELETE';
-        return Promise.resolve(
-            parseOrvalFixture(config.method, config.url, answersOneEntry ? written : { addresses })
-        );
+        const answers =
+            config.method === 'GET'
+                ? { addresses }
+                : // A DELETE answers 204, which has no body to prove.
+                  config.method === 'DELETE'
+                  ? undefined
+                  : written;
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, answers));
     });
 
 /**
@@ -155,7 +159,7 @@ describe('useAddressesStore', () => {
         });
     });
 
-    it('deletes an entry and takes the promoted default from the answer', () => {
+    it('deletes an entry, then reloads the book to see the promoted default', () => {
         const store = useAddressesStore();
         respondWithBook([HOME, WORK]);
 
@@ -167,10 +171,11 @@ describe('useAddressesStore', () => {
                 return store.removeAddress('a1');
             })
             .then(() => {
-                expect(lastRequest()).toMatchObject({
-                    url: '/account/addresses/a1',
-                    method: 'DELETE'
-                });
+                expect(requestLog()).toEqual([
+                    'GET /account/addresses',
+                    'DELETE /account/addresses/a1',
+                    'GET /account/addresses'
+                ]);
                 expect(store.addresses).toEqual([{ ...WORK, default: true }]);
             });
     });

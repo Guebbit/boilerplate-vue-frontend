@@ -61,7 +61,7 @@ stateDiagram-v2
   server filters, `enabled` and `autoDisabled` (`filterOfStatus`/`statusOfFilter`), because a
   client-side narrowing of a server-paged list would lie about its totals.
 - Every write button shows only when the record's `actions` says the server would accept it
-  (`update`, `delete`, `enable`, `disable`, `rotateSecret`, `removeSecret`); a delivery's
+  (`update`, `delete`, `enable`, `disable`, `createSecret`, `removeSecret`); a delivery's
   Replay follows `actions.replay`, which is false while its subscription is off.
 - A superseded secret shows when it stops signing (`retiringSecrets`); the page never restates
   the server's overlap window.
@@ -73,7 +73,7 @@ the response, meant to be shown exactly once through the shared
 same mechanism; modeled on the two-factor backup-codes screen). The toolkit's generic create/update
 path caches whatever the API call resolves to, verbatim — which would leave that plaintext sitting
 in this store's reactive state indefinitely, readable by anything with `getRecord(id)`.
-`createSubscription` and `rotateSecret` instead run the call through `fetchAny` (no automatic
+`createSubscription` and `createSecret` instead run the call through `fetchAny` (no automatic
 caching), strip the secret field by hand, and cache the rest — while still returning the full
 response, secret included, to the view that needs it for the one-time reveal. `tests/store.spec.ts`
 asserts this directly: after either call, the plaintext never appears anywhere in
@@ -96,7 +96,7 @@ returns is listed — an internal ref is not part of the surface.
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | **State**   | `subscriptions` · `selectedSubscriptionId` · `subscriptionFilters` · `subscriptionPageCurrent` · `subscriptionPageSize` · `deliveries` · `deliveryFilters` · `deliveryPageCurrent` · `deliveryPageSize`                                                                                                                   | The refs the setup function returns — the only writable surface. |
 | **Getters** | `subscriptionsList` · `currentSubscription` · `loadingSubscriptions` · `subscriptionsPageTotal` · `subscriptionPageItemList` · `deliveriesList` · `loadingDeliveries` · `deliveriesPageTotal` · `deliveryPageItemList` · `deliveriesTotalItems` · `eventCatalogue` · `loadingEventCatalogue` · `errorEventCatalogue`      | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `getSubscription` · `fetchAllSubscriptions` · `watchSubscriptionsSearch` · `watchSubscription` · `createSubscription` · `updateSubscription` · `deleteSubscription` · `enableSubscription` · `disableSubscription` · `rotateSecret` · `removeSecret` · `watchDeliveriesSearch` · `replayDelivery` · `fetchEventCatalogue` | Everything that changes state or calls the API.                  |
+| **Actions** | `getSubscription` · `fetchAllSubscriptions` · `watchSubscriptionsSearch` · `watchSubscription` · `createSubscription` · `updateSubscription` · `deleteSubscription` · `enableSubscription` · `disableSubscription` · `createSecret` · `removeSecret` · `watchDeliveriesSearch` · `replayDelivery` · `fetchEventCatalogue` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
@@ -123,7 +123,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `DELETE /webhooks/subscriptions/{id}`              | `DeleteWebhookSubscriptionResponse`       |
 | `POST /webhooks/subscriptions/{id}/enable`         | `EnableWebhookSubscriptionResponse`       |
 | `POST /webhooks/subscriptions/{id}/disable`        | `DisableWebhookSubscriptionResponse`      |
-| `POST /webhooks/subscriptions/{id}/rotate-secret`  | `RotateWebhookSubscriptionSecretResponse` |
+| `POST /webhooks/subscriptions/{id}/secrets`        | `CreateWebhookSubscriptionSecretResponse` |
 | `DELETE /webhooks/subscriptions/{id}/secrets/{id}` | `RemoveWebhookSubscriptionSecretResponse` |
 | `GET /webhooks/deliveries`                         | `ListWebhookDeliveriesResponse`           |
 | `POST /webhooks/deliveries/{id}/replay`            | `ReplayWebhookDeliveryResponse`           |

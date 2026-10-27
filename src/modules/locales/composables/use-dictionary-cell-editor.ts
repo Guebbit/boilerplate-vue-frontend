@@ -11,7 +11,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { useLocalesStore } from '../store.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import type { LocaleCapability, LocaleEntry } from '@types';
+import type { Language, LocaleEntry } from '@types';
 
 /**
  * How long the "saved" mark stays on a cell, in milliseconds.
@@ -135,7 +135,7 @@ export function useDictionaryCellEditor(
     /**
      * What every cell write ends with: the draft gone, the column reloaded, a failure on the cell.
      */
-    const settleWrite = (language: LocaleCapability, id: string, request: Promise<unknown>) =>
+    const settleWrite = (language: Language, id: string, request: Promise<unknown>) =>
         request
             .then(() => {
                 forgetDraft(id);
@@ -165,7 +165,7 @@ export function useDictionaryCellEditor(
      * @param key - The row.
      * @returns Nothing; success is shown on the cell, failure on the cell and as a toast.
      */
-    const handleCellBlur = (language: LocaleCapability, key: string) => {
+    const handleCellBlur = (language: Language, key: string) => {
         const id = cellId(language.tag, key);
         const draft = drafts.value[id];
         const current = entryAt(language.tag, key);
@@ -197,7 +197,7 @@ export function useDictionaryCellEditor(
      * @returns Nothing; the outcome is reported as a toast naming the cell. A repeat for a cell
      *  whose removal is still pending does nothing.
      */
-    const handleCellClear = (language: LocaleCapability, key: string, event: Event) => {
+    const handleCellClear = (language: Language, key: string, event: Event) => {
         const id = cellId(language.tag, key);
         const current = entryAt(language.tag, key);
         if (!current) {
@@ -243,7 +243,7 @@ export function useDictionaryCellEditor(
      * Enter on a cell: a removal when the cell was emptied, a save otherwise — the same save a blur
      * would do, one keystroke sooner.
      */
-    const handleCellEnter = (language: LocaleCapability, key: string, event: Event) => {
+    const handleCellEnter = (language: Language, key: string, event: Event) => {
         const draft = drafts.value[cellId(language.tag, key)];
         return draft === '' ? handleCellClear(language, key, event) : handleCellBlur(language, key);
     };
@@ -251,7 +251,7 @@ export function useDictionaryCellEditor(
     /**
      * Records a keystroke in the cell's draft; a cell being typed into is no longer in error.
      */
-    const handleCellInput = (language: LocaleCapability, key: string, draft: string) => {
+    const handleCellInput = (language: Language, key: string, draft: string) => {
         const id = cellId(language.tag, key);
         drafts.value[id] = draft;
         if (cellErrors.value[id]) forgetError(id);
@@ -260,7 +260,7 @@ export function useDictionaryCellEditor(
     /**
      * The cell's accessible name: the key, the language, and the baseline it would be replacing.
      */
-    const cellLabel = (language: LocaleCapability, key: string) => {
+    const cellLabel = (language: Language, key: string) => {
         const baseline = baselineAt(language.tag, key);
         if (entryAt(language.tag, key))
             return t('locales-dictionary-page.cell-label', { key, language: language.nativeName });
