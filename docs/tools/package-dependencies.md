@@ -57,6 +57,13 @@ Groups are organised by concern, with same-namespace tools together where that h
   maintained, and the only npm package `HumanCheck.vue` depends on: its `turnstile` branch loads
   Cloudflare's vendor script directly rather than adding a wrapper for one `render()` call.
 
+## Overrides
+
+`katex` is forced to `^0.18.2` (GHSA-238p-pmpm-9mq7). `mermaid` 11 pins a vulnerable katex and
+only loads it for `$$` maths, which no chart uses; no mermaid 11 release will carry the fix, and
+mermaid 12 breaks `vitepress-plugin-mermaid`. Dependabot ignores mermaid majors. Drop the override
+and the ignore together when the plugin is replaced and mermaid 12 lands.
+
 ## Install scripts
 
 `.npmrc` sets `strict-allow-scripts`: a package's install script runs only if `package.json`
