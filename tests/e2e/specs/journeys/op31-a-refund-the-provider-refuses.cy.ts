@@ -26,8 +26,8 @@ interface TimelineRowLike {
  */
 const timelineTypes = (role: 'moderator' | 'user', orderId: string): Cypress.Chainable<string[]> =>
     cy
-        .apiAs<TimelineRowLike[]>(role, 'GET', `/orders/${orderId}/timeline`)
-        .then((rows) => (rows ?? []).map((row) => row.type));
+        .apiAs<{ items: TimelineRowLike[] }>(role, 'GET', `/orders/${orderId}/timeline`)
+        .then((answer) => (answer?.items ?? []).map((row) => row.type));
 
 describe('OP31 · A refund the provider refuses', () => {
     beforeEach(() => {

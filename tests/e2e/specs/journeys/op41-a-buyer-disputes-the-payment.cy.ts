@@ -33,8 +33,8 @@ interface PaymentLike {
  */
 const timelineTypes = (role: 'moderator' | 'user', orderId: string): Cypress.Chainable<string[]> =>
     cy
-        .apiAs<TimelineRowLike[]>(role, 'GET', `/orders/${orderId}/timeline`)
-        .then((rows) => (rows ?? []).map((row) => row.type));
+        .apiAs<{ items: TimelineRowLike[] }>(role, 'GET', `/orders/${orderId}/timeline`)
+        .then((answer) => (answer?.items ?? []).map((row) => row.type));
 
 /**
  * What the provider reports about one dispute, `minutes` after the story began.

@@ -90,9 +90,14 @@ describe('OP26 · A goodwill refund, in part', () => {
                 cy.step('the customer is mailed, and holds a credit note for it');
                 orderMailTo('user', orderId, 'Your refund has been issued');
                 eventually(
-                    () => cy.apiAs<unknown[]>('user', 'GET', `/orders/${orderId}/credit-notes`),
-                    (notes) => (notes?.length ?? 0) > 0
-                ).should((notes) => expect(notes).to.have.length(1));
+                    () =>
+                        cy.apiAs<{ items: unknown[] }>(
+                            'user',
+                            'GET',
+                            `/orders/${orderId}/credit-notes`
+                        ),
+                    (answer) => (answer?.items.length ?? 0) > 0
+                ).should((answer) => expect(answer?.items).to.have.length(1));
 
                 cy.step('the rest goes back in one more press, and then nothing can be refunded');
                 cy.get('[data-test=refund-amount] input').clear();
