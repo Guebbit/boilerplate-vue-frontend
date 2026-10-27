@@ -62,4 +62,42 @@ describe('LP1 · A parcel is lost', () => {
                 .should('equal', 'shipped');
         });
     });
+
+    it('settles the order as cancelled, not delivered, when the buyer takes the refund', () => {
+        cy.subjectId('order.shipped').then((orderId) => {
+            cy.step('the warehouse reports the only parcel lost');
+            cy.loginAs('warehouse');
+            cy.visit(`/en/orders/${orderId}`);
+            cy.get('[data-test=open-report-lost]').first().click();
+            cy.get('[data-test=report-lost-reason]').click();
+            cy.get('[role=listbox] [role=option]').contains('Lost by the carrier').click();
+            cy.get('[data-test=report-lost-submit]').should('not.be.disabled').click();
+            cy.get('[data-test=report-lost-dialog]').should('not.exist');
+
+            cy.step('the buyer cancels what the parcel carried and is refunded');
+            cy.switchUser('user');
+            cy.visit(`/en/orders/${orderId}`);
+            cy.get('[data-test=cancel-remainder-open]').click();
+            cy.get('[data-test=cancel-remainder-confirm]').click();
+            cy.get('[data-test=cancel-remainder-dialog]').should('not.exist');
+
+            cy.step(
+                'nothing ever arrived: the order is cancelled, with no clock and no delivered row'
+            );
+            cy.apiAs<OrderLike & { withdrawUntil?: string }>(
+                'user',
+                'GET',
+                `/orders/${orderId}`
+            ).should((order) => {
+                expect(order?.status).to.equal('cancelled');
+                expect(order?.withdrawUntil).to.equal(undefined);
+            });
+            cy.visit(`/en/orders/${orderId}`);
+            cy.get('[data-test=order-timeline-entry][data-type=cancelled]').should(
+                'contain.text',
+                'Lost in transit, refunded'
+            );
+            cy.get('[data-test=order-timeline-entry][data-type=delivered]').should('not.exist');
+        });
+    });
 });
