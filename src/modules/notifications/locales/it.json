@@ -27,8 +27,28 @@
         "stock-alert": "Buone notizie: {name} si può ordinare di nuovo.",
         "staff": {
             "purchase-hold-placed": "Il checkout di un acquirente è sospeso fino al {until} dopo ripetuti annullamenti. Controlla l'account se sospetti un abuso.",
-            "webhook-disabled": "Una sottoscrizione webhook è stata disattivata dopo ripetuti errori di consegna. Correggi l'endpoint, poi riattivala."
+            "webhook-disabled": "Una sottoscrizione webhook è stata disattivata dopo ripetuti errori di consegna. Correggi l'endpoint, poi riattivala.",
+            "ticket-opened": "Nuovo ticket: {what}. Aprilo per prenderlo in carico.",
+            "ticket-assigned": "Ti è stato assegnato un ticket: {what}."
         },
-        "link-target": "Aprila"
+        "link-target": "Aprila",
+        "staff-ticket-kind-contact": "Messaggio di contatto",
+        "staff-ticket-kind-account_review": "Revisione account",
+        "staff-ticket-kind-manual_refund_owed": "Rimborso da fare a mano",
+        "staff-ticket-kind-amount_mismatch": "Importo del pagamento non corrispondente",
+        "staff-ticket-kind-paid_without_hold": "Ordine pagato senza riserva di stock",
+        "staff-ticket-kind-export_failed": "Esportazione dati non riuscita",
+        "staff-ticket-kind-consent_due": "Consenso dell'acquirente da ottenere",
+        "staff-ticket-kind-refund_refused": "Rimborso rifiutato",
+        "staff-ticket-kind-dispute": "Contestazione di pagamento",
+        "staff-ticket-kind-unknown": "Ticket",
+        "staff-ticket-category-order": "Ordine",
+        "staff-ticket-category-cancellation": "Annullamento",
+        "staff-ticket-category-return": "Reso",
+        "staff-ticket-category-payment": "Pagamento",
+        "staff-ticket-category-account": "Account",
+        "staff-ticket-category-privacy": "Privacy",
+        "staff-ticket-category-other": "Altro",
+        "staff-ticket-category-none": "Senza categoria"
     }
 }

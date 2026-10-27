@@ -9,6 +9,7 @@ import { ref } from 'vue';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
 import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
+import { asPassive } from '@/infrastructure/http/passive.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
 import {
@@ -127,10 +128,11 @@ export const useTicketsStore = defineStore('tickets', () => {
     const loadTicket = (id: string) => getTicket(id).then(keep);
 
     /**
-     * Reads the badge's counts.
+     * Reads the badge's counts. Passive: the app asks, not the person, so it must not keep a staff
+     * session from idling out.
      */
     const loadSummary = () =>
-        getTicketSummary().then((counts) => {
+        getTicketSummary(asPassive()).then((counts) => {
             summary.value = counts;
             return counts;
         });

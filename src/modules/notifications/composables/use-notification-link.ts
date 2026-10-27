@@ -35,10 +35,19 @@ export const useNotificationLink = () => {
      * @param target - The screen and id.
      * @returns A named location, or `undefined` when the route does not exist.
      */
-    const routed = (target: NotificationTarget) =>
-        target.screen === 'account'
-            ? linkIfRouted(router, 'UserTarget', { id: target.id })
-            : linkIfRouted(router, 'WebhookTarget', { id: target.id });
+    const routed = (target: NotificationTarget) => {
+        switch (target.screen) {
+            case 'account': {
+                return linkIfRouted(router, 'UserTarget', { id: target.id });
+            }
+            case 'ticket': {
+                return linkIfRouted(router, 'TicketDetail', { id: target.id });
+            }
+            case 'webhook-subscription': {
+                return linkIfRouted(router, 'WebhookTarget', { id: target.id });
+            }
+        }
+    };
 
     return (target?: NotificationTarget): RouteLocationRaw | undefined => {
         const located = target ? routed(target) : undefined;

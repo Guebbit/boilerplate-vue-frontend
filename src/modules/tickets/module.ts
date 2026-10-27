@@ -7,6 +7,7 @@ import { Inbox, Mail } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
+import { useTicketBadge } from './composables/use-ticket-badge';
 
 /**
  * The contact form and its admin inbox.
@@ -40,7 +41,9 @@ export default {
             plural: 1,
             order: 45,
             section: 'admin',
-            icon: Inbox
+            icon: Inbox,
+            // Tickets waiting for someone plus the ones the viewer holds; see the composable.
+            badge: () => useTicketBadge()
         }
     ],
     responseSchemas: () => import('./response-schemas').then((m) => m.ticketsResponseSchemas),

@@ -2780,6 +2780,22 @@ export const downloadAccountExportResponseNotificationsItemNineIdRegExp = new Re
 export const downloadAccountExportResponseNotificationsItemNineParamsSubscriptionIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemNineParamsSubscriptionIdRegExp =
     new RegExp('^[0-9A-Za-z_-]+$');
+export const downloadAccountExportResponseNotificationsItemOnezeroIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemOnezeroIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseNotificationsItemOnezeroParamsTicketIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemOnezeroParamsTicketIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseNotificationsItemOneoneIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemOneoneIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseNotificationsItemOneoneParamsTicketIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemOneoneParamsTicketIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const downloadAccountExportResponseStockAlertsItemProductIdMax = 64;
 export const downloadAccountExportResponseStockAlertsItemProductIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -3832,6 +3848,51 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .regex(
                             downloadAccountExportResponseNotificationsItemNineParamsSubscriptionIdRegExp
                         )
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(downloadAccountExportResponseNotificationsItemOnezeroIdMax)
+                    .regex(downloadAccountExportResponseNotificationsItemOnezeroIdRegExp),
+                audience: zod.enum(['own', 'staff']),
+                code: zod.enum(['notifications.staff.ticket-opened']),
+                params: zod.strictObject({
+                    ticketId: zod
+                        .string()
+                        .min(1)
+                        .max(downloadAccountExportResponseNotificationsItemOnezeroParamsTicketIdMax)
+                        .regex(
+                            downloadAccountExportResponseNotificationsItemOnezeroParamsTicketIdRegExp
+                        ),
+                    kind: zod.string(),
+                    category: zod.string().optional()
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(downloadAccountExportResponseNotificationsItemOneoneIdMax)
+                    .regex(downloadAccountExportResponseNotificationsItemOneoneIdRegExp),
+                audience: zod.enum(['own', 'staff']),
+                code: zod.enum(['notifications.staff.ticket-assigned']),
+                params: zod.strictObject({
+                    ticketId: zod
+                        .string()
+                        .min(1)
+                        .max(downloadAccountExportResponseNotificationsItemOneoneParamsTicketIdMax)
+                        .regex(
+                            downloadAccountExportResponseNotificationsItemOneoneParamsTicketIdRegExp
+                        ),
+                    kind: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -17671,6 +17732,18 @@ export const listNotificationsResponseItemsItemNineParamsSubscriptionIdMax = 64;
 export const listNotificationsResponseItemsItemNineParamsSubscriptionIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const listNotificationsResponseItemsItemOnezeroIdMax = 64;
+export const listNotificationsResponseItemsItemOnezeroIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listNotificationsResponseItemsItemOnezeroParamsTicketIdMax = 64;
+export const listNotificationsResponseItemsItemOnezeroParamsTicketIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const listNotificationsResponseItemsItemOneoneIdMax = 64;
+export const listNotificationsResponseItemsItemOneoneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listNotificationsResponseItemsItemOneoneParamsTicketIdMax = 64;
+export const listNotificationsResponseItemsItemOneoneParamsTicketIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const ListNotificationsResponse = zod.strictObject({
     items: zod.array(
         zod.union([
@@ -17892,6 +17965,47 @@ export const ListNotificationsResponse = zod.strictObject({
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
                 createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(listNotificationsResponseItemsItemOnezeroIdMax)
+                    .regex(listNotificationsResponseItemsItemOnezeroIdRegExp),
+                audience: zod.enum(['own', 'staff']),
+                code: zod.enum(['notifications.staff.ticket-opened']),
+                params: zod.strictObject({
+                    ticketId: zod
+                        .string()
+                        .min(1)
+                        .max(listNotificationsResponseItemsItemOnezeroParamsTicketIdMax)
+                        .regex(listNotificationsResponseItemsItemOnezeroParamsTicketIdRegExp),
+                    kind: zod.string(),
+                    category: zod.string().optional()
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(listNotificationsResponseItemsItemOneoneIdMax)
+                    .regex(listNotificationsResponseItemsItemOneoneIdRegExp),
+                audience: zod.enum(['own', 'staff']),
+                code: zod.enum(['notifications.staff.ticket-assigned']),
+                params: zod.strictObject({
+                    ticketId: zod
+                        .string()
+                        .min(1)
+                        .max(listNotificationsResponseItemsItemOneoneParamsTicketIdMax)
+                        .regex(listNotificationsResponseItemsItemOneoneParamsTicketIdRegExp),
+                    kind: zod.string()
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
             })
         ])
     )
@@ -17972,6 +18086,16 @@ export const getNotificationByIdResponseNineParamsSubscriptionIdMax = 64;
 export const getNotificationByIdResponseNineParamsSubscriptionIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const getNotificationByIdResponseOnezeroIdMax = 64;
+export const getNotificationByIdResponseOnezeroIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseOnezeroParamsTicketIdMax = 64;
+export const getNotificationByIdResponseOnezeroParamsTicketIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getNotificationByIdResponseOneoneIdMax = 64;
+export const getNotificationByIdResponseOneoneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseOneoneParamsTicketIdMax = 64;
+export const getNotificationByIdResponseOneoneParamsTicketIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const GetNotificationByIdResponse = zod.union([
     zod.strictObject({
         id: zod
@@ -18173,6 +18297,47 @@ export const GetNotificationByIdResponse = zod.union([
                 .min(1)
                 .max(getNotificationByIdResponseNineParamsSubscriptionIdMax)
                 .regex(getNotificationByIdResponseNineParamsSubscriptionIdRegExp)
+        }),
+        severity: zod.enum(['info', 'success', 'warning', 'error']),
+        readAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(getNotificationByIdResponseOnezeroIdMax)
+            .regex(getNotificationByIdResponseOnezeroIdRegExp),
+        audience: zod.enum(['own', 'staff']),
+        code: zod.enum(['notifications.staff.ticket-opened']),
+        params: zod.strictObject({
+            ticketId: zod
+                .string()
+                .min(1)
+                .max(getNotificationByIdResponseOnezeroParamsTicketIdMax)
+                .regex(getNotificationByIdResponseOnezeroParamsTicketIdRegExp),
+            kind: zod.string(),
+            category: zod.string().optional()
+        }),
+        severity: zod.enum(['info', 'success', 'warning', 'error']),
+        readAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(getNotificationByIdResponseOneoneIdMax)
+            .regex(getNotificationByIdResponseOneoneIdRegExp),
+        audience: zod.enum(['own', 'staff']),
+        code: zod.enum(['notifications.staff.ticket-assigned']),
+        params: zod.strictObject({
+            ticketId: zod
+                .string()
+                .min(1)
+                .max(getNotificationByIdResponseOneoneParamsTicketIdMax)
+                .regex(getNotificationByIdResponseOneoneParamsTicketIdRegExp),
+            kind: zod.string()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),

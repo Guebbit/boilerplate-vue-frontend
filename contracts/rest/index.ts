@@ -2755,6 +2755,68 @@ export interface NotificationStaffWebhookDisabled {
     createdAt: string;
 }
 
+/**
+ * A ticket opened in the caller's jurisdiction. Ids and closed codes only: the ticket page has the rest, and no visitor text travels in a notice.
+ */
+export interface TicketOpenedParams {
+    ticketId: Id;
+    /** The ticket's kind (`contact`, `account_review`, ...). */
+    kind: string;
+    /** A contact ticket's category, when the visitor chose one. */
+    category?: string;
+}
+
+export type NotificationStaffTicketOpenedCode =
+    (typeof NotificationStaffTicketOpenedCode)[keyof typeof NotificationStaffTicketOpenedCode];
+
+export const NotificationStaffTicketOpenedCode = {
+    'notificationsstaffticket-opened': 'notifications.staff.ticket-opened'
+} as const;
+
+/**
+ * A ticket opened in a jurisdiction the caller works; whoever holds its permission set takes it.
+ */
+export interface NotificationStaffTicketOpened {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffTicketOpenedCode;
+    params: TicketOpenedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+/**
+ * A ticket was given to the caller by someone else.
+ */
+export interface TicketAssignedParams {
+    ticketId: Id;
+    /** The ticket's kind. */
+    kind: string;
+}
+
+export type NotificationStaffTicketAssignedCode =
+    (typeof NotificationStaffTicketAssignedCode)[keyof typeof NotificationStaffTicketAssignedCode];
+
+export const NotificationStaffTicketAssignedCode = {
+    'notificationsstaffticket-assigned': 'notifications.staff.ticket-assigned'
+} as const;
+
+/**
+ * A colleague gave the caller a ticket.
+ */
+export interface NotificationStaffTicketAssigned {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffTicketAssignedCode;
+    params: TicketAssignedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
 export type Notification =
     | NotificationCartLineRemoved
     | NotificationWishlistItemRemoved
@@ -2764,7 +2826,9 @@ export type Notification =
     | NotificationShipmentLost
     | NotificationStockAlert
     | NotificationStaffPurchaseHoldPlaced
-    | NotificationStaffWebhookDisabled;
+    | NotificationStaffWebhookDisabled
+    | NotificationStaffTicketOpened
+    | NotificationStaffTicketAssigned;
 
 /**
  * One work notice this account received as staff, without the facts it named.

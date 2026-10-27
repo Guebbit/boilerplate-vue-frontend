@@ -27,8 +27,28 @@
         "stock-alert": "Good news: {name} can be ordered again.",
         "staff": {
             "purchase-hold-placed": "A buyer's checkout was paused until {until} after repeated cancellations. Review the account if you suspect abuse.",
-            "webhook-disabled": "A webhook subscription was switched off after repeated delivery failures. Fix the endpoint, then re-enable it."
+            "webhook-disabled": "A webhook subscription was switched off after repeated delivery failures. Fix the endpoint, then re-enable it.",
+            "ticket-opened": "New ticket: {what}. Open it to take it.",
+            "ticket-assigned": "A ticket was given to you: {what}."
         },
-        "link-target": "Open it"
+        "link-target": "Open it",
+        "staff-ticket-kind-contact": "Contact message",
+        "staff-ticket-kind-account_review": "Account review",
+        "staff-ticket-kind-manual_refund_owed": "Refund owed by hand",
+        "staff-ticket-kind-amount_mismatch": "Payment amount mismatch",
+        "staff-ticket-kind-paid_without_hold": "Paid order without a stock hold",
+        "staff-ticket-kind-export_failed": "Data export failed",
+        "staff-ticket-kind-consent_due": "Buyer consent due",
+        "staff-ticket-kind-refund_refused": "Refund refused",
+        "staff-ticket-kind-dispute": "Payment dispute",
+        "staff-ticket-kind-unknown": "Ticket",
+        "staff-ticket-category-order": "Order",
+        "staff-ticket-category-cancellation": "Cancellation",
+        "staff-ticket-category-return": "Return",
+        "staff-ticket-category-payment": "Payment",
+        "staff-ticket-category-account": "Account",
+        "staff-ticket-category-privacy": "Privacy",
+        "staff-ticket-category-other": "Other",
+        "staff-ticket-category-none": "Uncategorised"
     }
 }

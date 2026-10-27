@@ -329,3 +329,72 @@ describe('a work notice for staff', () => {
         ).toBeUndefined();
     });
 });
+
+/**
+ * A `ticket-opened` notice about a ticket of the given kind.
+ *
+ * @param parameters - the kind, and a contact message's category
+ */
+const opened = (parameters: { kind: string; category?: string }) =>
+    ({
+        code: 'notifications.staff.ticket-opened',
+        params: { ticketId: 't1', ...parameters }
+    }) as const;
+
+describe('a ticket notice for staff', () => {
+    it('names a contact message by its category', () => {
+        expect(
+            describeNotification(
+                opened({ kind: 'contact', category: 'privacy' }),
+                ['en'],
+                translate
+            )
+        ).toBe(
+            'notifications.staff.ticket-opened|what=notifications.staff-ticket-kind-contact · notifications.staff-ticket-category-privacy'
+        );
+    });
+
+    it('calls a contact message with no category uncategorised', () => {
+        expect(describeNotification(opened({ kind: 'contact' }), ['en'], translate)).toContain(
+            'notifications.staff-ticket-category-none'
+        );
+    });
+
+    it('names a system ticket by its kind alone, even when a category were sent', () => {
+        const text = describeNotification(
+            opened({ kind: 'dispute', category: 'privacy' }),
+            ['en'],
+            translate
+        );
+
+        expect(text).toBe(
+            'notifications.staff.ticket-opened|what=notifications.staff-ticket-kind-dispute'
+        );
+    });
+
+    it('reads a kind from a newer backend as a plain ticket, never as its key', () => {
+        expect(describeNotification(opened({ kind: 'from_the_future' }), ['en'], translate)).toBe(
+            'notifications.staff.ticket-opened|what=notifications.staff-ticket-kind-unknown'
+        );
+    });
+
+    it('says a ticket was given to the reader', () => {
+        expect(
+            describeNotification(
+                {
+                    code: 'notifications.staff.ticket-assigned',
+                    params: { ticketId: 't1', kind: 'dispute' }
+                },
+                ['en'],
+                translate
+            )
+        ).toBe('notifications.staff.ticket-assigned|what=notifications.staff-ticket-kind-dispute');
+    });
+
+    it('points both notices at the ticket page', () => {
+        expect(notificationTarget(opened({ kind: 'contact' }))).toEqual({
+            screen: 'ticket',
+            id: 't1'
+        });
+    });
+});

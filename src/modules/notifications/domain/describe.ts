@@ -163,6 +163,67 @@ const describeLost = (
         .join(' ');
 
 /**
+ * The dictionary entry of each ticket kind, as literals so the unused-key check can see them. A
+ * kind this client does not know (a newer backend) reads as {@link TICKET_KIND_UNKNOWN_KEY}.
+ */
+const TICKET_KIND_KEYS: Readonly<Record<string, string>> = {
+    contact: 'notifications.staff-ticket-kind-contact',
+    account_review: 'notifications.staff-ticket-kind-account_review',
+    manual_refund_owed: 'notifications.staff-ticket-kind-manual_refund_owed',
+    amount_mismatch: 'notifications.staff-ticket-kind-amount_mismatch',
+    paid_without_hold: 'notifications.staff-ticket-kind-paid_without_hold',
+    export_failed: 'notifications.staff-ticket-kind-export_failed',
+    consent_due: 'notifications.staff-ticket-kind-consent_due',
+    refund_refused: 'notifications.staff-ticket-kind-refund_refused',
+    dispute: 'notifications.staff-ticket-kind-dispute'
+};
+
+/**
+ * Dictionary key for a ticket kind this client has no word for.
+ */
+const TICKET_KIND_UNKNOWN_KEY = 'notifications.staff-ticket-kind-unknown';
+
+/**
+ * The dictionary entry of each contact category, as literals for the same reason. `none` is a
+ * message the visitor sent without one.
+ */
+const TICKET_CATEGORY_KEYS: Readonly<Record<string, string>> = {
+    order: 'notifications.staff-ticket-category-order',
+    cancellation: 'notifications.staff-ticket-category-cancellation',
+    return: 'notifications.staff-ticket-category-return',
+    payment: 'notifications.staff-ticket-category-payment',
+    account: 'notifications.staff-ticket-category-account',
+    privacy: 'notifications.staff-ticket-category-privacy',
+    other: 'notifications.staff-ticket-category-other',
+    none: 'notifications.staff-ticket-category-none'
+};
+
+/**
+ * The sentence of a ticket notice: what kind of ticket, and for a contact message its category.
+ * Kind and category are closed codes the server sends; their words are this client's own.
+ *
+ * @param code - Which of the two ticket notices.
+ * @param parameters - The notice's facts.
+ * @param parameters.kind - The ticket's kind.
+ * @param parameters.category - A contact ticket's category, when the visitor chose one.
+ * @param translate - The translate function.
+ * @returns The finished text.
+ */
+const describeTicket = (
+    code: 'notifications.staff.ticket-opened' | 'notifications.staff.ticket-assigned',
+    parameters: { kind: string; category?: string },
+    translate: Translate
+): string => {
+    const kind = translate(TICKET_KIND_KEYS[parameters.kind] ?? TICKET_KIND_UNKNOWN_KEY);
+    const category = translate(
+        TICKET_CATEGORY_KEYS[parameters.category ?? 'none'] ?? TICKET_CATEGORY_KEYS.none
+    );
+    return translate(code, {
+        what: parameters.kind === 'contact' ? `${kind} · ${category}` : kind
+    });
+};
+
+/**
  * The order a notification is about, when it is about one — where the reader can cancel.
  *
  * @param notification - The stored row's `code` and `params`.
@@ -182,18 +243,18 @@ export const notificationOrderId = (notification: DescribableNotification): stri
  */
 export interface NotificationTarget {
     /**
-     * The screen: a buyer's account page, or a webhook subscription's page.
+     * The screen: a buyer's account page, a webhook subscription's page, or a ticket's page.
      */
-    screen: 'account' | 'webhook-subscription';
+    screen: 'account' | 'webhook-subscription' | 'ticket';
     /**
-     * The id of the account or subscription.
+     * The id of the account, subscription or ticket.
      */
     id: string;
 }
 
 /**
  * The admin screen a work notice is about: the buyer's account for a purchase hold, the
- * subscription for a disabled webhook. Own messages point at none here (an order is
+ * subscription for a disabled webhook, the ticket for an opened or assigned one. Own messages point at none here (an order is
  * {@link notificationOrderId}'s job).
  *
  * @param notification - The stored row's `code` and `params`.
@@ -208,6 +269,10 @@ export const notificationTarget = (
         }
         case 'notifications.staff.webhook-disabled': {
             return { screen: 'webhook-subscription', id: notification.params.subscriptionId };
+        }
+        case 'notifications.staff.ticket-opened':
+        case 'notifications.staff.ticket-assigned': {
+            return { screen: 'ticket', id: notification.params.ticketId };
         }
         default: {
             return undefined;
@@ -304,6 +369,10 @@ export const describeNotification = (
         }
         case 'notifications.staff.webhook-disabled': {
             return translate(notification.code);
+        }
+        case 'notifications.staff.ticket-opened':
+        case 'notifications.staff.ticket-assigned': {
+            return describeTicket(notification.code, notification.params, translate);
         }
         default: {
             return translate(UNKNOWN_CODE_KEY);
