@@ -10,6 +10,11 @@ import { defineStore } from 'pinia';
 import { summarizePreorderFulfillmentOrdersQueryPageSizeMax } from '@api/schemas';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import {
+    useIdempotencyKeys,
+    type IdempotencyKeyKeeper
+} from '@/infrastructure/http/idempotency.ts';
+import { keepsIdempotencyKey } from '@/infrastructure/utils/errors.ts';
 import { loadShop, shipToCountries as shipToCountriesOfShop } from '@/infrastructure/shop.ts';
 import {
     listShippingMethods,
@@ -59,6 +64,18 @@ export const useDeliveryStore = defineStore('delivery', () => {
         resourceKey: 'delivery',
         queryClient
     });
+
+    /**
+     * `Idempotency-Key`s for cutting a shipment, one per fulfillment order: a retry after a lost
+     * connection resends the SAME key, so the API replays the first answer instead of cutting a
+     * second parcel and taking the stock twice. Any other answer spends the key.
+     */
+    const shipIdempotencyKeys = useIdempotencyKeys();
+
+    /**
+     * `Idempotency-Key`s for the digital door, one per fulfillment order, for the same reason.
+     */
+    const fulfillIdempotencyKeys = useIdempotencyKeys();
 
     /**
      * What the shop offers, flat rates and free-above thresholds.
@@ -190,6 +207,36 @@ export const useDeliveryStore = defineStore('delivery', () => {
         fetchAny(() => processOrder(orderId).then(() => undefined));
 
     /**
+     * Settles a keyed shipment write that was refused: spends the key unless the retry is the same
+     * attempt, and re-reads the order's fulfilment so the next click starts from what the server
+     * holds. Always rethrows the original failure.
+     *
+     * @param keeper - The key the failed call carried.
+     * @param fulfillmentOrderId - The fulfillment order the call was about.
+     * @param error - The rejected value.
+     * @returns A promise that rejects with `error`.
+     */
+    const failKeyedWrite = (
+        keeper: IdempotencyKeyKeeper,
+        fulfillmentOrderId: string,
+        error: unknown
+    ): Promise<never> => {
+        keeper.settle(error);
+        const orderId = fulfillmentOrders.value.find(
+            ({ id }) => id === fulfillmentOrderId
+        )?.orderId;
+        // A lost connection or an in-flight 409 is the same attempt: nothing new to read. The
+        // re-read is best effort: its own failure must not hide the refusal being reported.
+        const reread =
+            !orderId || keepsIdempotencyKey(error)
+                ? Promise.resolve()
+                : readFulfillment(orderId).catch(() => undefined);
+        return reread.then(() => {
+            throw error;
+        });
+    };
+
+    /**
      * Cuts a shipment from a fulfillment order (admin). The order moves to `shipped` only when
      * nothing remains anywhere; otherwise it is `partially_fulfilled`.
      *
@@ -198,12 +245,18 @@ export const useDeliveryStore = defineStore('delivery', () => {
      *  starts itself.
      * @returns A promise resolving with the new shipment, after the lists are re-read.
      */
-    const ship = (fulfillmentOrderId: string, input: ShipFulfillmentOrderRequest = {}) =>
-        fetchAny(() =>
-            shipFulfillmentOrder(fulfillmentOrderId, input).then((response) =>
-                readFulfillment(response.orderId).then(() => response)
+    const ship = (fulfillmentOrderId: string, input: ShipFulfillmentOrderRequest = {}) => {
+        const keeper = shipIdempotencyKeys.forSubject(fulfillmentOrderId);
+        return fetchAny(() =>
+            shipFulfillmentOrder(fulfillmentOrderId, input, keeper.withKey()).then(
+                (response) => {
+                    keeper.settle();
+                    return readFulfillment(response.orderId).then(() => response);
+                },
+                (error: unknown) => failKeyedWrite(keeper, fulfillmentOrderId, error)
             )
         );
+    };
 
     /**
      * Fulfils a `digital` fulfillment order (admin): no parcel, the shipment is born delivered.
@@ -211,12 +264,18 @@ export const useDeliveryStore = defineStore('delivery', () => {
      * @param fulfillmentOrderId - The digital fulfillment order.
      * @returns A promise resolving with the shipment, after the lists are re-read.
      */
-    const fulfill = (fulfillmentOrderId: string) =>
-        fetchAny(() =>
-            fulfillFulfillmentOrder(fulfillmentOrderId).then((response) =>
-                readFulfillment(response.orderId).then(() => response)
+    const fulfill = (fulfillmentOrderId: string) => {
+        const keeper = fulfillIdempotencyKeys.forSubject(fulfillmentOrderId);
+        return fetchAny(() =>
+            fulfillFulfillmentOrder(fulfillmentOrderId, keeper.withKey()).then(
+                (response) => {
+                    keeper.settle();
+                    return readFulfillment(response.orderId).then(() => response);
+                },
+                (error: unknown) => failKeyedWrite(keeper, fulfillmentOrderId, error)
             )
         );
+    };
 
     /**
      * Holds a fulfillment order back (admin). `awaiting_stock` is never staff's to give.
@@ -251,14 +310,11 @@ export const useDeliveryStore = defineStore('delivery', () => {
      * shipment has arrived and nothing remains.
      *
      * @param shipmentId - The shipment that arrived.
-     * @param forced - Records it without a carrier confirmation, for an `override:Order`
-     *  holder; `reason` is then required by the API.
-     * @param reason - Why the normal door didn't apply. Required exactly when `forced` is `true`.
      * @returns A promise resolving with the shipment, after the lists are re-read.
      */
-    const deliver = (shipmentId: string, forced?: boolean, reason?: string) =>
+    const deliver = (shipmentId: string) =>
         fetchAny(() =>
-            deliverShipment(shipmentId, forced ? { forced, reason } : {}).then((response) =>
+            deliverShipment(shipmentId).then((response) =>
                 readFulfillment(response.orderId).then(() => response)
             )
         );

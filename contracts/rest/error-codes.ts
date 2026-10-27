@@ -70,8 +70,6 @@ export const ERROR_CODES = {
     DELIVERY_NOT_RELEASABLE: 'DELIVERY_NOT_RELEASABLE',
     /** 409 — The fulfillment order cannot ship now: it is on hold, closed or cancelled, or the order is cancelled, or still `pending` (never paid: start or pay it first). */
     DELIVERY_NOT_SHIPPABLE: 'DELIVERY_NOT_SHIPPABLE',
-    /** 422 — A forced shipment or delivery requires a reason and none was supplied. */
-    DELIVERY_OVERRIDE_REASON_REQUIRED: 'DELIVERY_OVERRIDE_REASON_REQUIRED',
     /** 409 — Another account already holds this email address — on signup, or on a profile email change. */
     EMAIL_ALREADY_USED: 'EMAIL_ALREADY_USED',
     /** 409 — The account's email address is verified already, so there is nothing to resend. */

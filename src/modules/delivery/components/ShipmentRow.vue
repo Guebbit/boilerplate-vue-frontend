@@ -3,8 +3,7 @@
  * @module
  * One shipment inside its fulfillment order's card: its lines, status, tracking code and dates,
  * and the staff controls the shipment's own `actions` offer — correct the tracking code inline,
- * mark it delivered (with the forced door when `actions.forceDeliver` says so), report it lost or
- * damaged. A `lost` parcel shows what the shop told the buyer (and, to staff, the note); its
+ * mark it delivered, report it lost or damaged. A `lost` parcel shows what the shop told the buyer (and, to staff, the note); its
  * arrival button appears only while the server says every unit on it is still open. Controls
  * come from `actions`, never from a rule re-derived here.
  */
@@ -73,24 +72,9 @@ const { loading } = storeToRefs(deliveryStore);
 const trackingDraft = ref(props.shipment.trackingCode ?? '');
 
 /**
- * Force toggle for the arrival: records it without a carrier confirmation.
- */
-const force = ref(false);
-
-/**
- * Why the normal door did not apply; required exactly when {@link force} is on.
- */
-const forceReason = ref('');
-
-/**
  * This row's own blocked state: a lost race or a refusal stays next to the shipment it concerns.
  */
 const { message: rowError, report: reportRowError, clear: clearRowError } = useBlockingError();
-
-/**
- * Whether the forced arrival is offered: the server says a forced arrival would be accepted.
- */
-const offerForce = computed(() => props.shipment.actions.forceDeliver);
 
 /**
  * Whether the arrival button shows at all.
@@ -128,8 +112,6 @@ const run = (move: () => Promise<unknown>, success: string) => {
     return move()
         .then(() => {
             addMessage(t(success));
-            force.value = false;
-            forceReason.value = '';
             emit('moved');
         })
         .catch((error: unknown) => reportRowError(error));
@@ -152,15 +134,7 @@ const saveTracking = () =>
  * @returns A promise settling once the call finished.
  */
 const markDelivered = () =>
-    run(
-        () =>
-            deliveryStore.deliver(
-                props.shipment.id,
-                force.value,
-                force.value ? forceReason.value.trim() : undefined
-            ),
-        'shipment-row.delivered'
-    );
+    run(() => deliveryStore.deliver(props.shipment.id), 'shipment-row.delivered');
 </script>
 
 <template>
@@ -245,30 +219,12 @@ const markDelivered = () =>
             </v-btn>
         </form>
 
-        <template v-if="offerForce">
-            <v-checkbox
-                v-model="force"
-                :label="t('shipment-row.label-force')"
-                density="compact"
-                hide-details
-                data-test="force-deliver-toggle"
-            />
-            <v-textarea
-                v-if="force"
-                v-model="forceReason"
-                :label="t('shipment-row.label-force-reason')"
-                rows="2"
-                maxlength="1000"
-                density="compact"
-                data-test="force-deliver-reason"
-            />
-        </template>
         <div v-if="offerDeliver">
             <v-btn
                 color="secondary"
                 variant="tonal"
                 size="small"
-                :disabled="loading || (force && forceReason.trim() === '')"
+                :disabled="loading"
                 data-test="mark-delivered"
                 @click="markDelivered"
             >

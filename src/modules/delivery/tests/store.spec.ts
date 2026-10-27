@@ -238,6 +238,69 @@ describe('ship', () => {
     });
 });
 
+/**
+ * The `Idempotency-Key` header the first (write) call carried.
+ */
+const keyOfFirstCall = async () => {
+    const { orvalMutator } = await import('@/infrastructure/http');
+    return (
+        vi.mocked(orvalMutator).mock.calls[0][1] as { headers?: Record<string, string> } | undefined
+    )?.headers?.['Idempotency-Key'];
+};
+
+describe('the Idempotency-Key on a shipment write', () => {
+    it.each([
+        ['ship', (store: ReturnType<typeof useDeliveryStore>) => store.ship('fo1')],
+        ['fulfill', (store: ReturnType<typeof useDeliveryStore>) => store.fulfill('fo1')]
+    ])('is sent with %s, and a fresh one follows a success', async (_label, write) => {
+        const { orvalMutator } = await import('@/infrastructure/http');
+        const store = useDeliveryStore();
+
+        await write(store);
+        const first = await keyOfFirstCall();
+        vi.mocked(orvalMutator).mockClear();
+        await write(store);
+
+        expect(first).toEqual(expect.any(String));
+        expect(await keyOfFirstCall()).not.toBe(first);
+    });
+
+    it('is reused when the first attempt never arrived, so the API replays the first shipment', async () => {
+        const { orvalMutator } = await import('@/infrastructure/http');
+        const store = useDeliveryStore();
+        vi.mocked(orvalMutator).mockRejectedValueOnce(new Error('network down'));
+
+        await store.ship('fo1').catch(() => undefined);
+        const first = await keyOfFirstCall();
+        vi.mocked(orvalMutator).mockClear();
+        await store.ship('fo1');
+
+        expect(await keyOfFirstCall()).toBe(first);
+    });
+
+    it('is spent by a refusal, and the order is re-read so the next click starts from the server', async () => {
+        const { orvalMutator } = await import('@/infrastructure/http');
+        const store = useDeliveryStore();
+        await store.fetchFulfillmentForOrder('o1');
+        responses['POST /delivery/fulfillment-orders/fo1/shipments'] = new Error('refused');
+        vi.mocked(orvalMutator).mockClear();
+
+        await expect(store.ship('fo1')).rejects.toBeDefined();
+        const first = await keyOfFirstCall();
+        const urls = vi.mocked(orvalMutator).mock.calls.map(([config]) => config.url);
+        vi.mocked(orvalMutator).mockClear();
+        responses['POST /delivery/fulfillment-orders/fo1/shipments'] = aShipment({ id: 's2' });
+        await store.ship('fo1');
+
+        expect(urls).toEqual([
+            '/delivery/fulfillment-orders/fo1/shipments',
+            '/orders/o1/fulfillment-orders',
+            '/orders/o1/shipments'
+        ]);
+        expect(await keyOfFirstCall()).not.toBe(first);
+    });
+});
+
 describe('fulfill', () => {
     it('fulfils a digital fulfillment order and re-reads', () => {
         const store = useDeliveryStore();
@@ -361,28 +424,11 @@ describe('deliver', () => {
         });
     });
 
-    it('omits forced/reason when not forcing', async () => {
+    it('sends no body', async () => {
         const store = useDeliveryStore();
         await store.deliver('s1');
 
-        expect(
-            contractRequest(
-                schemas.DeliverShipmentBody,
-                await sentBody('POST', '/delivery/shipments/s1/deliver')
-            )
-        ).toEqual({});
-    });
-
-    it('carries forced/reason when overriding', async () => {
-        const store = useDeliveryStore();
-        await store.deliver('s1', true, 'customer disputed delivery');
-
-        expect(
-            contractRequest(
-                schemas.DeliverShipmentBody,
-                await sentBody('POST', '/delivery/shipments/s1/deliver')
-            )
-        ).toEqual({ forced: true, reason: 'customer disputed delivery' });
+        expect(await sentBody('POST', '/delivery/shipments/s1/deliver')).toBeUndefined();
     });
 });
 

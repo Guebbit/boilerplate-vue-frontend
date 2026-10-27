@@ -60,8 +60,6 @@
         "label-tracking-code": "Tracking code",
         "button-save-tracking": "Save tracking code",
         "button-deliver": "Mark delivered",
-        "label-force": "Force (override)",
-        "label-force-reason": "Reason for override",
         "tracking-saved": "Tracking code saved.",
         "delivered": "Marked delivered.",
         "status-lost": "Lost in transit",
