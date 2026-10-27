@@ -130,7 +130,7 @@ describe('OP17 · A warehouse shift', () => {
             });
             cy.get('[data-test=mark-started]').click();
             cy.get('[data-test=open-ship]').first().click();
-            cy.get('[data-test=ship-submit]').should('be.disabled');
+            cy.get('[data-test=ship-submit]').should('not.be.disabled');
             cy.get('[data-test=ship-tracking-code] input').type(TRACKING_CODE);
             cy.get('[data-test=ship-submit]').should('not.be.disabled').click();
             cy.get('[data-test=shipment-tracking]').should('contain.text', TRACKING_CODE);
