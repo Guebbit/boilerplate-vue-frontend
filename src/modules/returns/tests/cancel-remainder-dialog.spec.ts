@@ -6,7 +6,8 @@
  * delivery line only when this cancel takes the last unit, and a refusal staying in the dialog.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
+import { VSelect } from 'vuetify/components';
 import { createPinia, setActivePinia } from 'pinia';
 import CancelRemainderDialog from '../components/CancelRemainderDialog.vue';
 import { useReturnsStore } from '../store.ts';
@@ -14,6 +15,7 @@ import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
+import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import { aReturn } from '../../../../tests/support/unit/fixtures.ts';
 import type { CancellableFulfillmentOrder } from '@types';
 
@@ -140,5 +142,43 @@ describe('what it sends', () => {
                 expect(wrapper.emitted('cancelled')).toBeUndefined();
                 expect(wrapper.emitted('update:modelValue')).toBeUndefined();
             });
+    });
+});
+
+describe('staff recording the buyer’s withdrawal', () => {
+    it('sends the withdrawal with the stated day and channel', async () => {
+        const { wrapper, openReturn } = mountDialog('staff');
+
+        await wrapper.get('[data-test=cancel-remainder-as-withdrawal] input').setValue(true);
+        await wrapper.get('[data-test=stated-at-date] input').setValue('2026-01-02T03:04');
+        emitOn(wrapper.getComponent(VSelect), 'update:modelValue', 'email');
+        await flushPromises();
+        await wrapper.get('[data-test=cancel-remainder-confirm]').trigger('click');
+        await flushPromises();
+
+        expect(openReturn).toHaveBeenCalledWith(
+            expect.objectContaining({
+                kind: 'cancellation',
+                reason: 'withdrawal',
+                requestedAt: new Date(2026, 0, 2, 3, 4).toISOString(),
+                statedVia: 'email'
+            })
+        );
+    });
+
+    it('sends nothing while the statement is incomplete', async () => {
+        const { wrapper, openReturn } = mountDialog('staff');
+
+        await wrapper.get('[data-test=cancel-remainder-as-withdrawal] input').setValue(true);
+        await wrapper.get('[data-test=cancel-remainder-confirm]').trigger('click');
+        await flushPromises();
+
+        expect(openReturn).not.toHaveBeenCalled();
+    });
+
+    it('offers the tick to staff only', () => {
+        expect(
+            mountDialog('buyer').wrapper.find('[data-test=cancel-remainder-as-withdrawal]').exists()
+        ).toBe(false);
     });
 });

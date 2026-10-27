@@ -1,7 +1,7 @@
 /**
  * Signs and posts a payment-provider webhook, the way the provider would.
  *
- * The backend's `POST /payments/webhook` authenticates by an HMAC over the raw body, so a spec
+ * The backend's `POST /payments/webhook/fake` authenticates by an HMAC over the raw body, so a spec
  * that wants a provider to nudge the server (a duplicate event id, a stale signature) has to sign
  * it itself. The event is thin: it names an intent, and the server asks the provider what became
  * of it, so a delivery cannot carry an outcome. The format is the backend's
@@ -50,7 +50,7 @@ export const signPaymentWebhook = (body: string, timestamp: number, secret: stri
         .digest('hex')}`;
 
 /**
- * Sign an event and POST it to `/payments/webhook`.
+ * Sign an event and POST it to `/payments/webhook/fake`.
  *
  * The body is serialised once and those same bytes are signed and sent: re-serialising between the
  * two would change the bytes and fail the signature.
@@ -65,7 +65,7 @@ export const postPaymentWebhook = ({
     secret = process.env.E2E_PAYMENT_WEBHOOK_SECRET ?? DEMO_PAYMENT_WEBHOOK_SECRET
 }: PaymentWebhookRequest): Promise<number> => {
     const body = JSON.stringify(event);
-    return fetch(`${apiUrl}/payments/webhook`, {
+    return fetch(`${apiUrl}/payments/webhook/fake`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

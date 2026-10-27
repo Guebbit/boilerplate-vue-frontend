@@ -222,6 +222,25 @@ describe('PaymentPanel', () => {
                 expect(wrapper.find('[data-test=payment-card-refund-pending]').exists()).toBe(true);
             });
         });
+
+        it('says the buyer will be asked how they want the money, not that it is retried', () => {
+            const { store, wrapper } = mountPanel();
+            store.payment = {
+                ...waitingRefund(),
+                provider: 'fake',
+                method: 'card',
+                refunds: [{ ...pendingRefund, status: 'failed', owedAnotherWay: true }]
+            };
+
+            return nextRenderTick(wrapper).then(() => {
+                expect(wrapper.find('[data-test=payment-card-refund-pending]').exists()).toBe(
+                    false
+                );
+                expect(wrapper.get('[data-test=payment-refund-owed-another-way]').text()).toContain(
+                    'agree another way'
+                );
+            });
+        });
     });
 
     describe('the paid-by line', () => {

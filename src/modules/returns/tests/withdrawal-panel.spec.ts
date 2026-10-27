@@ -40,6 +40,7 @@ const NO_OPTIONS: ReturnOptions = {
     orderId: 'o1',
     currency: 'EUR',
     reasons: [],
+    exceptions: [],
     returnable: [],
     cancellable: []
 };
@@ -214,6 +215,47 @@ describe('WithdrawalPanel', () => {
 
         expect(wrapper.findAll('[data-test=order-return]')).toHaveLength(1);
         expect(wrapper.get('[data-test=order-return]').text()).toContain('Withdrawal');
+    });
+
+    describe('staff acting for the buyer', () => {
+        const FOR_BUYER: ReturnOptions = {
+            ...NO_OPTIONS,
+            reasons: ['withdrawal', 'defective', 'wrong_item', 'other'],
+            exceptions: ['other'],
+            returnable: [{ productId: 'p1', title: 'Shirt', quantity: 1, withdrawable: true }]
+        };
+
+        it('offers Record a withdrawal and the staff form to a caller holding update:Return', async () => {
+            signInWith([['update', 'Return']]);
+            const { wrapper } = mountPanel({}, [], FOR_BUYER);
+            await flushPromises();
+
+            expect(wrapper.find('[data-test=record-withdrawal-open]').exists()).toBe(true);
+            const form = wrapper.getComponent(ReturnRequestForm);
+            expect(form.props('staff')).toBe(true);
+            expect(form.props('exceptions')).toEqual(['other']);
+        });
+
+        it('offers neither to the buyer, whose own button the server drives', async () => {
+            signInWith([['update', 'Return']]);
+            const { wrapper } = mountPanel({ canWithdraw: true }, [], FOR_BUYER);
+            await flushPromises();
+
+            expect(wrapper.find('[data-test=record-withdrawal-open]').exists()).toBe(false);
+            expect(wrapper.getComponent(ReturnRequestForm).props('staff')).toBe(false);
+        });
+
+        it('offers nothing to a caller without update:Return', async () => {
+            signInWith([['read', 'Return']]);
+            const { wrapper } = mountPanel({}, [], {
+                ...FOR_BUYER,
+                reasons: [],
+                returnable: []
+            });
+            await flushPromises();
+
+            expect(wrapper.find('[data-test=record-withdrawal-open]').exists()).toBe(false);
+        });
     });
 
     describe('returns form', () => {

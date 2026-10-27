@@ -208,7 +208,7 @@ export const ERROR_CODES = {
     REORDER_UNAVAILABLE: 'REORDER_UNAVAILABLE',
     /** 422 — A 4xx with no more specific code of its own. Mostly a 422 refused for a reason that is not one field (a field-level failure is `VALIDATION_ERROR`); also a 429 and any other 4xx the status table does not name. */
     REQUEST_ERROR: 'REQUEST_ERROR',
-    /** 422 — A cancellation names no fulfillment order of this order, or sends `lines` (the remainder is its lines), or a return names a fulfillment order. Also the reason does not fit the caller: the order's buyer cancels only as a `withdrawal`; anyone else (staff) may name any reason but `withdrawal`, which is the buyer's own right. */
+    /** 422 — A cancellation names no fulfillment order of this order, or sends `lines` (the remainder is its lines), or a return names a fulfillment order. Also the reason does not fit the caller: the order's buyer cancels only as a `withdrawal`. */
     RETURN_CANCELLATION_INVALID: 'RETURN_CANCELLATION_INVALID',
     /** 422 — The handling deduction is more than the refund is worth. */
     RETURN_DEDUCTION_INVALID: 'RETURN_DEDUCTION_INVALID',
@@ -216,6 +216,8 @@ export const ERROR_CODES = {
     RETURN_LINES_INVALID: 'RETURN_LINES_INVALID',
     /** 409 — The fulfillment order has nothing left to cancel, or nothing has shipped from the order yet (cancel the whole order instead). */
     RETURN_NOTHING_TO_CANCEL: 'RETURN_NOTHING_TO_CANCEL',
+    /** 409 — The return is not an approved one awaiting goods that never came, so it cannot be canceled. */
+    RETURN_NOT_CANCELABLE: 'RETURN_NOT_CANCELABLE',
     /** 409 — The return is not one that was received and still awaits its money, so it cannot be closed by hand. */
     RETURN_NOT_CLOSABLE: 'RETURN_NOT_CLOSABLE',
     /** 409 — The return has already been decided. */
@@ -224,6 +226,10 @@ export const ERROR_CODES = {
     RETURN_NOT_RECEIVABLE: 'RETURN_NOT_RECEIVABLE',
     /** 409 — The order is not in a state a return can be opened on — cancelled, or (for a reason other than withdrawal) still in the shop's hands. */
     RETURN_ORDER_NOT_RETURNABLE: 'RETURN_ORDER_NOT_RETURNABLE',
+    /** 422 — A restock count names a product that is not on the return, names one twice, or is more than the line holds. */
+    RETURN_RESTOCK_INVALID: 'RETURN_RESTOCK_INVALID',
+    /** 422 — The date or the channel of what the buyer stated is missing where staff must give it (a withdrawal recorded for the buyer), given where it does not belong (by the buyer, or on a reason that is not a withdrawal), in the future, or before the order was made. */
+    RETURN_STATEMENT_INVALID: 'RETURN_STATEMENT_INVALID',
     /** 409 — The period for the reason named has ended: the withdrawal period for a withdrawal or other, two years from delivery for a defect or a wrong item. */
     RETURN_WINDOW_CLOSED: 'RETURN_WINDOW_CLOSED',
     /** 403 — The caller holds the permission this route requires, but the change needs `assign:Role`, which they do not hold: it would hand out a staff role, or it would change an account that holds one. Staff without it change customers only, and a role they may not give is refused here before any role name is judged. The caller's own account is never refused. */

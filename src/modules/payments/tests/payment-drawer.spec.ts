@@ -101,6 +101,17 @@ describe('PaymentDrawer', () => {
         expect(wrapper.find('[data-test="drawer-provider-ref"]').exists()).toBe(false);
     });
 
+    it('says when the provider took a refund back', () => {
+        const wrapper = mountDrawer({
+            ...FULL,
+            refunds: [{ ...SETTLED_REFUND, status: 'failed', reversedAt: '2026-03-09T10:00:00Z' }]
+        });
+
+        expect(wrapper.get('[data-test="drawer-reversed-on"]').text()).toContain(
+            'Reversed by the provider on'
+        );
+    });
+
     it('says so when the payment has no refund', () => {
         const wrapper = mountDrawer(aPayment());
 

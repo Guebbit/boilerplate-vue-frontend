@@ -16,6 +16,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     cancelOrderById: 'orders',
     cancelPendingEmailChange: 'account',
     cancelRefund: 'payments',
+    cancelReturn: 'returns',
     changePassword: 'account',
     checkout: 'cart',
     checkPasswordBreached: 'account',

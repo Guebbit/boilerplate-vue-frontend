@@ -22,6 +22,7 @@ import { storeToRefs } from 'pinia';
 import { Undo2 } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useOrderLink } from '@/kernel/order-link.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { useReturnsStore } from '../store.ts';
 import { formatCurrency, formatDateTime, formatText } from '@/infrastructure/utils/formatters.ts';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
@@ -56,6 +57,11 @@ const { currentReturn } = storeToRefs(useReturnsStore());
  * The order's page, or nothing when this build ships none.
  */
 const orderLink = useOrderLink();
+
+/**
+ * Signed-in caller: only staff are shown the exceptions a staff-opened return recorded.
+ */
+const session = useSessionStore();
 
 /**
  * The routed return's order page.
@@ -117,6 +123,50 @@ onMounted(refresh);
                         :value="formatDateTime(currentReturn.createdAt)"
                     />
                     <ItemDetailField
+                        :label="
+                            currentReturn.statedVia
+                                ? t('return-target-page.label-stated')
+                                : t('return-target-page.label-requested')
+                        "
+                        :value="
+                            currentReturn.statedVia
+                                ? t('return-target-page.stated', {
+                                      date: formatDateTime(currentReturn.requestedAt),
+                                      channel: t(
+                                          `stated-at-fields.channel-${currentReturn.statedVia}`
+                                      )
+                                  })
+                                : formatDateTime(currentReturn.requestedAt)
+                        "
+                        data-test="return-stated"
+                    />
+                    <ItemDetailField
+                        v-if="currentReturn.openedBy === 'staff'"
+                        :label="t('return-target-page.label-opened-by')"
+                        :value="t('return-target-page.opened-by-staff')"
+                        data-test="return-opened-by"
+                    />
+                    <ItemDetailField
+                        v-if="
+                            session.can('read', 'Return') &&
+                            currentReturn.policyExceptions.length > 0
+                        "
+                        :label="t('return-target-page.label-exceptions')"
+                        full-width
+                        data-test="return-exceptions"
+                    >
+                        <v-chip
+                            v-for="exception in currentReturn.policyExceptions"
+                            :key="'exception-' + exception"
+                            size="small"
+                            variant="tonal"
+                            color="warning"
+                            class="mr-1"
+                        >
+                            {{ t(`return-target-page.exception-${exception}`) }}
+                        </v-chip>
+                    </ItemDetailField>
+                    <ItemDetailField
                         v-if="currentReturn.receivedAt"
                         :label="t('return-target-page.label-received')"
                         :value="formatDateTime(currentReturn.receivedAt)"
@@ -138,9 +188,18 @@ onMounted(refresh);
                     <ItemDetailField
                         v-if="currentReturn.declineReason"
                         :label="t('return-target-page.label-decline-reason')"
-                        :value="currentReturn.declineReason"
+                        :value="
+                            t(`return-staff-actions.decline-reason-${currentReturn.declineReason}`)
+                        "
                         full-width
                         data-test="return-decline-reason-text"
+                    />
+                    <ItemDetailField
+                        v-if="currentReturn.declineMessage"
+                        :label="t('return-target-page.label-decline-message')"
+                        :value="currentReturn.declineMessage"
+                        full-width
+                        data-test="return-decline-message-text"
                     />
                 </div>
 

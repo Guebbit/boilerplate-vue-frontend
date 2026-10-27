@@ -8,6 +8,7 @@
         "status-declined": "Rifiutato",
         "status-received": "Ricevuto",
         "status-closed": "Chiuso",
+        "status-canceled": "Annullato",
         "reason-withdrawal": "Recesso",
         "reason-defective": "Merce difettosa",
         "reason-wrong_item": "Articolo sbagliato",
@@ -37,7 +38,16 @@
         "label-lines": "Cosa torna indietro",
         "no-lines": "Nessun articolo da restituire: l'ordine è stato annullato prima della spedizione.",
         "button-order": "Vai all'ordine",
-        "button-list": "Torna ai resi"
+        "button-list": "Torna ai resi",
+        "label-requested": "Richiesto",
+        "label-stated": "Dichiarato",
+        "stated": "{date}, tramite {channel}",
+        "label-opened-by": "Aperto da",
+        "opened-by-staff": "Il nostro team, su richiesta dell'acquirente",
+        "label-exceptions": "Deroghe del personale",
+        "exception-window_closed": "Oltre il termine",
+        "exception-excluded_goods": "Beni su misura",
+        "label-decline-message": "Messaggio all'acquirente"
     },
     "return-staff-actions": {
         "button-approve": "Approva il reso",
@@ -48,14 +58,30 @@
         "hint-close": "Usalo quando il rimborso è stato annullato o il denaro è tornato fuori dall'app. Non viene pagato, rimesso a magazzino né comunicato nulla.",
         "error-note-too-long": "La nota è troppo lunga (massimo {max} caratteri)",
         "success-close": "Reso chiuso.",
-        "label-reason": "Motivo comunicato al cliente",
+        "button-cancel": "Annulla il reso",
+        "label-cancel-note": "Perché lo annulli? (facoltativo)",
+        "hint-cancel": "Usalo quando la merce non tornerà mai. Non viene pagato, rimesso a magazzino né comunicato nulla, e gli stessi articoli potranno essere resi di nuovo. Se l'acquirente ha spedito il pacco e si è perso, ricevilo con quantità da rimettere a magazzino 0.",
+        "success-cancel": "Reso annullato.",
+        "label-reason": "Motivo",
         "label-deduction": "Danno di gestione da trattenere ({currency}, facoltativo)",
         "error-reason-required": "Il motivo è obbligatorio",
         "error-reason-too-long": "Il motivo è troppo lungo (massimo {max} caratteri)",
         "error-deduction-invalid": "Inserisci zero o un importo positivo",
         "success-approve": "Reso approvato.",
         "success-decline": "Reso rifiutato.",
-        "success-receive": "Merce ricevuta e cliente rimborsato."
+        "success-receive": "Merce ricevuta e cliente rimborsato.",
+        "label-restock": "Unità da rimettere in vendita",
+        "hint-restock": "Imposta una riga a 0 per un'unità rotta: non arriva a scaffale. Il rimborso non cambia.",
+        "label-restock-line": "{title} (su {max})",
+        "error-restock-invalid": "Inserisci un numero intero da 0 fino alla quantità della riga",
+        "restocked-line": "{title}: rimesse in vendita {restocked} su {quantity}",
+        "label-message": "Messaggio all'acquirente",
+        "hint-message": "Facoltativo. Obbligatorio per «Altro»: l'acquirente lo legge accanto al motivo.",
+        "error-message-required": "Scrivi un messaggio all'acquirente: «Altro» da solo non dice il perché.",
+        "decline-reason-return_period_ended": "Il periodo per il reso è terminato",
+        "decline-reason-not_returnable": "Non reso",
+        "decline-reason-no_defect_found": "Nessun difetto riscontrato",
+        "decline-reason-other": "Altro"
     },
     "returns-request": {
         "button-open": "Restituisci merce",
@@ -71,7 +97,11 @@
         "error-lines-required": "Scegli almeno un articolo da restituire",
         "hint-line-excluded": "I beni su misura possono essere restituiti solo se difettosi o diversi da quanto ordinato.",
         "error-quantity-invalid": "Inserisci una quantità intera, da 1 fino a quanto puoi ancora restituire",
-        "success": "Reso richiesto. Lo esamineremo e ti scriveremo via email."
+        "success": "Reso richiesto. Lo esamineremo e ti scriveremo via email.",
+        "button-open-staff": "Apri un reso per l'acquirente",
+        "button-submit-staff": "Apri il reso",
+        "hint-exception": "Questo motivo ha superato il termine. Il reso verrà aperto comunque e registrato come eccezione.",
+        "error-date-invalid": "Inserisci un giorno non nel futuro"
     },
     "withdrawal-panel": {
         "title": "Resi e recesso",
@@ -86,7 +116,9 @@
         "blocked-all_excluded": "Tutto in questo ordine è stato realizzato su tua richiesta, quindi il diritto di recesso non si applica. Se nulla è stato spedito, puoi comunque annullare l'ordine.",
         "blocked-window_closed": "Il periodo di recesso per questo ordine è terminato.",
         "blocked-nothing_left": "Tutto in questo ordine è già stato restituito.",
-        "contact-us": "Contattaci"
+        "contact-us": "Contattaci",
+        "record-hint": "L'acquirente ha receduto per telefono, email o lettera? Registralo con il giorno in cui l'ha inviato.",
+        "button-record": "Registra un recesso"
     },
     "cancel-remainder-dialog": {
         "title": "Annulla ciò che non è stato spedito: gruppo n. {number}",
@@ -95,6 +127,26 @@
         "includes-shipping": "Comprende {amount} di spedizione.",
         "label-note": "Motivo (facoltativo)",
         "button-confirm": "Annulla e rimborsa",
-        "success": "Annullato. Il rimborso è in arrivo."
+        "success": "Annullato. Il rimborso è in arrivo.",
+        "label-as-withdrawal": "È il recesso dell'acquirente, dichiarato fuori dal negozio"
+    },
+    "stated-at-fields": {
+        "label-date": "Giorno della richiesta (facoltativo)",
+        "hint-date": "Lascia vuoto per adesso. Il termine si valuta su questo giorno.",
+        "label-date-required": "Giorno in cui l'acquirente l'ha inviato",
+        "label-channel": "Come l'ha inviato l'acquirente",
+        "channel-phone": "Telefono",
+        "channel-email": "Email",
+        "channel-letter": "Lettera",
+        "channel-other": "Altro",
+        "channel-online": "il pulsante del negozio"
+    },
+    "record-withdrawal-dialog": {
+        "title": "Registra un recesso",
+        "lead": "La legge conta il recesso dal giorno in cui l'acquirente l'ha inviato, non da quando lo leggi. All'acquirente arrivano entrambi i giorni per email. Ti verrà chiesta la password: è una registrazione legale.",
+        "error-date-invalid": "Inserisci il giorno in cui l'acquirente l'ha inviato, non nel futuro",
+        "error-channel-required": "Scegli come l'ha inviato l'acquirente",
+        "button-confirm": "Registra il recesso",
+        "success": "Recesso registrato. All'acquirente arriva il giorno che ha dichiarato."
     }
 }

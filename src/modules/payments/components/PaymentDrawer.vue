@@ -356,6 +356,13 @@ const handleCancelRefund = singleFlight((refund: Payment['refunds'][number], not
                     <p v-if="refund.failureReason" class="mt-1" data-test="drawer-failure-reason">
                         {{ t(`payments-list-page.failure-reason-${refund.failureReason}`) }}
                     </p>
+                    <p v-if="refund.reversedAt" class="mt-1" data-test="drawer-reversed-on">
+                        {{
+                            t('payments-list-page.refund-reversed-on', {
+                                date: formatDateTime(refund.reversedAt)
+                            })
+                        }}
+                    </p>
                     <p v-if="refund.providerRefundRef" class="mt-1 text-xs">
                         <code>{{ refund.providerRefundRef }}</code>
                     </p>

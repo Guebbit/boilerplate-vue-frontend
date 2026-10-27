@@ -1926,7 +1926,7 @@ export interface ExportOrder {
 }
 
 /**
- * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`.
+ * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`, `refund_reversed`.
  */
 export type OrderTimelineType = (typeof OrderTimelineType)[keyof typeof OrderTimelineType];
 
@@ -1943,6 +1943,7 @@ export const OrderTimelineType = {
     refund_settled: 'refund_settled',
     refund_failed: 'refund_failed',
     refund_canceled: 'refund_canceled',
+    refund_reversed: 'refund_reversed',
     shipment_shipped: 'shipment_shipped',
     shipment_delivered: 'shipment_delivered',
     fulfillment_held: 'fulfillment_held',
@@ -1953,6 +1954,7 @@ export const OrderTimelineType = {
     return_declined: 'return_declined',
     return_received: 'return_received',
     return_closed: 'return_closed',
+    return_canceled: 'return_canceled',
     invoice_issued: 'invoice_issued',
     credit_note_issued: 'credit_note_issued',
     release_date_moved: 'release_date_moved',
@@ -2000,7 +2002,7 @@ export const RefundStatus = {
 } as const;
 
 /**
- * Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to; `late_payment` — the money arrived after the order could no longer be paid (its stock reservation had expired or it was cancelled), so the sale was lost and the money went back. The buyer is mailed it like a cancellation's refund.
+ * Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to; `late_payment` — the money arrived after the order could no longer be paid (its stock reservation had expired or it was cancelled), so the sale was lost and the money went back. The buyer is mailed it like a cancellation's refund. `external` — the refund was made in the payment provider's own dashboard, not here: the application found it and recorded it so the credit note, the buyer's mail and the order's state follow; it is `succeeded` from the start and carries the provider's own amount and date.
  */
 export type RefundReason = (typeof RefundReason)[keyof typeof RefundReason];
 
@@ -2008,12 +2010,14 @@ export const RefundReason = {
     cancellation: 'cancellation',
     goodwill: 'goodwill',
     return: 'return',
-    late_payment: 'late_payment'
+    late_payment: 'late_payment',
+    external: 'external'
 } as const;
 
 /**
  * Why the provider last refused a refund, as a closed code. Staff only (`display:Payment`). `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
  * Money did NOT move for `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` (the payment's provider is no longer installed, so nothing was asked): the refund may be marked returned by hand once the money went back another way. `declined`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` are final and are not retried; `insufficient_funds` (the shop's own provider balance is short) and the unclear `provider_unavailable` and `unknown` are retried with a growing delay. An unclear refusal may have gone through, so it is never offered for hand settlement.
+ * `disputed`: the buyer's bank took the money back in a dispute (chargeback). It is final like the refusals above, and it is never offered for hand settlement: the bank already returned the money.
  * `canceled` is not a refusal: staff voided the refund (`POST /payments/{id}/refunds/{refundId}/cancel`). Nothing was sent, it is never retried and it can neither be settled by hand nor canceled again.
  */
 export type RefundFailureReason = (typeof RefundFailureReason)[keyof typeof RefundFailureReason];
@@ -2026,7 +2030,8 @@ export const RefundFailureReason = {
     provider_removed: 'provider_removed',
     provider_unavailable: 'provider_unavailable',
     unknown: 'unknown',
-    canceled: 'canceled'
+    canceled: 'canceled',
+    disputed: 'disputed'
 } as const;
 
 /**
@@ -2052,6 +2057,10 @@ export interface Refund {
     /** The provider's id for the refund (Stripe's `re_…`). Staff only. */
     providerRefundRef?: string;
     failureReason?: RefundFailureReason;
+    /** `true` while this refund is open and the money cannot go back to the card: the provider refused it for good, or took it back after settling it. The buyer is emailed to agree how they would like to receive it, at no cost to them (Consumer Rights Directive Art. 13(1)), and the order page says so instead of "retried automatically". Carries no reason: that stays staff-only. Absent otherwise. */
+    owedAnotherWay?: boolean;
+    /** When the provider took this refund back (a bank sent the money back, or the provider reported the refund failed). Set once; a reversed refund is `failed` again, counts against what is left, and is owed another way: an operator pays it and presses mark-returned (`actions.settleByHand`). The credit note issued when it first settled stays. Absent otherwise. */
+    reversedAt?: string;
     createdAt: string;
 }
 
@@ -2241,7 +2250,7 @@ export interface ExportFulfillmentOrder {
 }
 
 /**
- * Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`.
+ * Where a return stands: `requested → approved → received → closed`, or `requested → declined`, or `approved → canceled` (the goods never came). `canceled` is final and is not `closed`: it holds no units and counts as no goods back. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`.
  */
 export type ReturnStatus = (typeof ReturnStatus)[keyof typeof ReturnStatus];
 
@@ -2250,7 +2259,8 @@ export const ReturnStatus = {
     approved: 'approved',
     declined: 'declined',
     received: 'received',
-    closed: 'closed'
+    closed: 'closed',
+    canceled: 'canceled'
 } as const;
 
 /**
@@ -2262,6 +2272,18 @@ export const ReturnReason = {
     withdrawal: 'withdrawal',
     defective: 'defective',
     wrong_item: 'wrong_item',
+    other: 'other'
+} as const;
+
+/**
+ * Why staff declined, as a code the buyer reads in their own language and a shop can count: `return_period_ended` — past the window; `not_returnable` — exempt from returns (an Art. 16 exception) or sold as final sale; `no_defect_found` — a guarantee claim where the goods conform; `other` — see the message.
+ */
+export type ReturnDeclineReason = (typeof ReturnDeclineReason)[keyof typeof ReturnDeclineReason];
+
+export const ReturnDeclineReason = {
+    return_period_ended: 'return_period_ended',
+    not_returnable: 'not_returnable',
+    no_defect_found: 'no_defect_found',
     other: 'other'
 } as const;
 
@@ -2278,7 +2300,8 @@ export interface ExportReturn {
     status: ReturnStatus;
     reason: ReturnReason;
     note?: string;
-    declineReason?: string;
+    declineReason?: ReturnDeclineReason;
+    declineMessage?: string;
     lines: ExportReturnLinesItem[];
     createdAt?: string;
 }
@@ -4335,7 +4358,7 @@ export interface ConfirmPaymentRequest {
 }
 
 /**
- * One delivery, in this module's normalised shape: which event it is and which intent it names, and nothing about what happened. A real provider sends its OWN event shape and its implementation of the provider port translates it into this. The outcome is never read from the body: once the delivery is authenticated, the server asks the provider for the payment's state, because providers do not guarantee the order events arrive in.
+ * One delivery, in this module's normalised shape: which event it is, which intent it names and, for a refund event (`refund.created`, `refund.updated`, `refund.failed`, `charge.refunded`), which refund, and nothing about what happened. A refund made in the provider's own dashboard arrives the same way and is imported. A real provider sends its OWN event shape and its implementation of the provider port translates it into this. The outcome is never read from the body: once the delivery is authenticated, the server asks the provider for the payment's state, because providers do not guarantee the order events arrive in.
  */
 export interface PaymentWebhookEvent {
     /**
@@ -4348,6 +4371,11 @@ export interface PaymentWebhookEvent {
      * @maxLength 200
      */
     providerRef?: string;
+    /**
+     * Which refund the event is about, when it is about one (Stripe's `refund.updated`, `refund.failed`, `charge.refunded`). Still only a pointer: the server re-reads that refund's own status from the provider, so a refund that settled and then bounced is noticed even days later.
+     * @maxLength 200
+     */
+    refundRef?: string;
 }
 
 export interface ShippingMethod {
@@ -4579,6 +4607,11 @@ export interface ReturnLine {
      * @minimum 0
      */
     unitPrice: number;
+    /**
+     * How many of the `quantity` went back on sale when the goods were received. Set at receipt, never more than `quantity`; absent before then.
+     * @minimum 0
+     */
+    restocked?: number;
 }
 
 /**
@@ -4589,6 +4622,41 @@ export type ReturnPostagePayer = (typeof ReturnPostagePayer)[keyof typeof Return
 export const ReturnPostagePayer = {
     consumer: 'consumer',
     shop: 'shop'
+} as const;
+
+/**
+ * How the buyer stated a withdrawal. `online` is the shop's own button; the rest are what staff record.
+ */
+export type ReturnStatementChannel =
+    (typeof ReturnStatementChannel)[keyof typeof ReturnStatementChannel];
+
+export const ReturnStatementChannel = {
+    online: 'online',
+    phone: 'phone',
+    email: 'email',
+    letter: 'letter',
+    other: 'other'
+} as const;
+
+/**
+ * Who opened the return — the order's buyer, or staff on the buyer's behalf.
+ */
+export type ReturnOpenedBy = (typeof ReturnOpenedBy)[keyof typeof ReturnOpenedBy];
+
+export const ReturnOpenedBy = {
+    buyer: 'buyer',
+    staff: 'staff'
+} as const;
+
+/**
+ * A rule staff waived when they opened the return for a buyer: `window_closed` — the reason's deadline had passed when the buyer asked; `excluded_goods` — a line is goods Art. 16 takes the right of withdrawal away from.
+ */
+export type ReturnPolicyException =
+    (typeof ReturnPolicyException)[keyof typeof ReturnPolicyException];
+
+export const ReturnPolicyException = {
+    window_closed: 'window_closed',
+    excluded_goods: 'excluded_goods'
 } as const;
 
 /**
@@ -4603,6 +4671,8 @@ export interface ReturnActions {
     receive: boolean;
     /** Whether `POST /returns/{id}/close` would be accepted. */
     close: boolean;
+    /** Whether `POST /returns/{id}/cancel` would be accepted. */
+    cancel: boolean;
 }
 
 export interface Return {
@@ -4625,8 +4695,18 @@ export interface Return {
     lines: ReturnLine[];
     /** Who pays to send the goods back — frozen when the return was opened, from the shop's configuration, so it is what the customer was told beforehand (Art. 14(1)). */
     returnPostage: ReturnPostagePayer;
-    /** Why staff declined. Present only on a `declined` return. */
-    declineReason?: string;
+    /** When the buyer asked (or, for a withdrawal, stated it). The server sets it for the buyer; staff may backdate it to the day the buyer actually phoned or wrote. The deadline is judged on it. */
+    requestedAt: string;
+    statedVia?: ReturnStatementChannel;
+    openedBy: ReturnOpenedBy;
+    /** What staff waived when they opened it. Empty when the buyer opened it, or nothing was waived. */
+    policyExceptions: ReturnPolicyException[];
+    declineReason?: ReturnDeclineReason;
+    /**
+     * What staff wrote to the buyer beside the reason code; required when the code is `other`. Free text, so `reap:returns` unsets it after the retention window; the code stays.
+     * @maxLength 500
+     */
+    declineMessage?: string;
     /** When staff decided it — or, for a withdrawal, when it was opened already approved. */
     decidedAt?: string;
     /** When the goods arrived and went back on sale. */
@@ -4643,6 +4723,8 @@ export interface Return {
     refundAmount?: number;
     /** When the money went back and the return finished. */
     closedAt?: string;
+    /** When staff canceled the return. Present only on a `canceled` return. */
+    canceledAt?: string;
     actions: ReturnActions;
     createdAt: string;
     updatedAt?: string;
@@ -4652,6 +4734,19 @@ export interface ReturnsResponse {
     items: Return[];
     meta: PaginationMeta;
 }
+
+/**
+ * How the buyer stated a withdrawal outside the shop, as staff record it.
+ */
+export type StaffStatementChannel =
+    (typeof StaffStatementChannel)[keyof typeof StaffStatementChannel];
+
+export const StaffStatementChannel = {
+    phone: 'phone',
+    email: 'email',
+    letter: 'letter',
+    other: 'other'
+} as const;
 
 export type CreateReturnRequestLinesItem = {
     productId: Id;
@@ -4670,6 +4765,9 @@ export interface CreateReturnRequest {
     kind?: ReturnKind;
     /** Required exactly when `kind` is `cancellation` — the fulfillment order whose remainder is cancelled. */
     fulfillmentOrderId?: Id;
+    /** Staff only: when the buyer asked, or for a withdrawal when they stated it (Art. 11(2) judges timing on the day it was sent). Required for a staff withdrawal, optional otherwise (default now). Never in the future, never before the order was made. The buyer does not send it. */
+    requestedAt?: string;
+    statedVia?: StaffStatementChannel;
     /**
      * What comes back. Absent means everything on the order that is still left to return — the usual shape of a withdrawal. Not allowed on a `cancellation`: the whole remainder is its lines.
      * @minItems 1
@@ -4722,21 +4820,30 @@ export interface ReturnOptions {
     orderId: Id;
     /** ISO-4217 code of the order's own currency. */
     currency: string;
-    /** The reasons THIS caller can still name, so a client offers no door that is shut. Empty for staff (the right is the buyer's own) and once every deadline has passed. `withdrawal` and `other` last for the withdrawal period; `defective` and `wrong_item` for two years from delivery (the legal guarantee of conformity), made-to-order goods included. */
+    /** The reasons THIS caller can still name, so a client offers no door that is shut. The buyer's are the ones whose deadline is open: empty once every deadline has passed. `withdrawal` and `other` last for the withdrawal period; `defective` and `wrong_item` for two years from delivery (the legal guarantee of conformity), made-to-order goods included. Staff holding `update:Return` get every reason: they open a return, or record a withdrawal, for the buyer. */
     reasons?: ReturnReason[];
-    /** Per product, what has shipped and not yet been returned. Empty unless `reasons` is not. Goods excluded from withdrawal (Art. 16) are listed only while a `defective` or `wrong_item` reason is open, and carry `withdrawable: false`. */
+    /** For staff, the non-withdrawal reasons that are past their deadline now: opening a return for one is recorded as an exception (`window_closed`). Empty for the buyer. A preview: the server judges the deadline on `requestedAt` when it opens. */
+    exceptions: ReturnReason[];
+    /** Per product, what has shipped and not yet been returned. Empty unless `reasons` is not. Goods excluded from withdrawal (Art. 16) are listed to the buyer only while a `defective` or `wrong_item` reason is open, and to staff always; they carry `withdrawable: false`. */
     returnable: ReturnOptionLine[];
     cancellable: CancellableFulfillmentOrder[];
 }
 
 export interface DeclineReturnRequest {
+    reason: ReturnDeclineReason;
     /**
-     * What the customer is told. Required — a refusal nobody explains is not one.
+     * Text for the buyer, mailed beside the reason. Required when `reason` is `other` ("other" alone tells the buyer nothing); optional otherwise.
      * @minLength 1
      * @maxLength 500
      */
-    reason: string;
+    message?: string;
 }
+
+export type ReceiveReturnRequestLinesItem = {
+    productId: Id;
+    /** @minimum 0 */
+    restock: number;
+};
 
 export interface ReceiveReturnRequest {
     /**
@@ -4744,6 +4851,8 @@ export interface ReceiveReturnRequest {
      * @minimum 0
      */
     handlingDeduction?: number;
+    /** How many units of each returned product go back on sale. A product not listed goes back in full, and absent `lines` puts everything back. A unit that is broken is set to 0. An unknown or repeated product, or a count over the line's quantity, is refused. */
+    lines?: ReceiveReturnRequestLinesItem[];
 }
 
 export interface InventoryLevel {
@@ -5376,6 +5485,7 @@ export interface RefundListItem {
     providerRefundRef?: string;
     failureReason?: RefundFailureReason;
     settledAt?: string;
+    reversedAt?: string;
     createdAt: string;
 }
 
@@ -5385,13 +5495,15 @@ export interface RefundsResponse {
 }
 
 /**
- * `stale_refund` — a provider refund open past the threshold, still waiting for the provider's answer or its next retry; `refused_refund` — a card refund the provider refused for good (a final `RefundFailureReason`), shown at once: the money has to go back another way; `manual_refund_owed` — money to hand back outside the system on a `manual` payment. Both are an open refund record on a payment: a cancel or a refund opens it before anything is asked of a provider, so no refund is owed without one.
+ * `stale_refund` — a provider refund open past the threshold, still waiting for the provider's answer or its next retry; `refused_refund` — a card refund the provider refused for good (a final `RefundFailureReason`), shown at once: the money has to go back another way; `reversed_refund` — a refund the provider took back after settling it (a bank sent it back), shown at once with `since` = when it was reversed: the money is owed another way, agreed with the buyer; `refund_exceeds_remaining` — a refund made in the provider's dashboard took the room an open refund here counted on: the open one is held unsent (the provider would refuse it) and `exceedsBy` says by how much. Staff cancel it or mark it returned; `manual_refund_owed` — money to hand back outside the system on a `manual` payment. Both are an open refund record on a payment: a cancel or a refund opens it before anything is asked of a provider, so no refund is owed without one.
  */
 export type PaymentAttentionKind = (typeof PaymentAttentionKind)[keyof typeof PaymentAttentionKind];
 
 export const PaymentAttentionKind = {
     stale_refund: 'stale_refund',
     refused_refund: 'refused_refund',
+    reversed_refund: 'reversed_refund',
+    refund_exceeds_remaining: 'refund_exceeds_remaining',
     manual_refund_owed: 'manual_refund_owed'
 } as const;
 
@@ -5406,6 +5518,11 @@ export interface PaymentAttentionItem {
     failureReason?: RefundFailureReason;
     /** When the problem was recorded, so the page can sort by age. */
     since: string;
+    /**
+     * On a `refund_exceeds_remaining` row, by how much this open refund overshoots what the provider can still give back, in the payment's currency.
+     * @minimum 0
+     */
+    exceedsBy?: number;
     /** The legal deadline to give the money back, on a `refused_refund` that pays for a withdrawal or a return: the refund's creation plus 14 days (Consumer Rights Directive Art. 13). Absent for any other refund, which shows its age only. The client shows the days left; a past date means the deadline has gone. */
     refundDueBy?: string;
 }
@@ -5439,6 +5556,15 @@ export interface CloseReturnRequest {
      * Why the return is closed by hand. Optional, staff-only free text, kept in the audit row and nowhere the customer reads.
      * @minLength 1
      * @maxLength 1000
+     */
+    note?: string;
+}
+
+export interface CancelReturnRequest {
+    /**
+     * Why the return is canceled. Optional, staff-only free text, kept in the audit row and nowhere the customer reads.
+     * @minLength 1
+     * @maxLength 500
      */
     note?: string;
 }
@@ -9988,16 +10114,18 @@ export const syncPayment = (
 
 /**
  * Where the provider says a payment changed — a thin event naming the intent. The server then asks the provider for the payment's state and settles that answer, so the authority is the provider's own, never the browser's and never this body's. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. A provider retrying for days settles once: the delivery is a pointer, the provider is re-read, and every write of the settlement is conditional.
- * Answers 200 to anything it has authenticated, including events it does not act on: a provider reads a non-2xx as a failure and retries harder. Answers 404 when no card payment provider is configured: nobody can sign a delivery, so the route does not exist for that deployment.
+ * One endpoint per provider, named in the path and resolved from the registry of installed adapters, not from `NODE_PAYMENT_PROVIDER`: a provider that is no longer the one new checkouts use still delivers its in-flight payments' events, and each adapter verifies its own signature with its own secret.
+ * Answers 204 to anything it has authenticated, including events it does not act on and a delivery naming a payment another provider took (logged, left alone): a provider reads a non-2xx as a failure and retries harder. Answers 404 when no adapter is installed under that name, and 400 for a signature that does not verify or a body that is not an event. An unverifiable delivery is never acknowledged.
  * @summary Provider webhook
  */
 export const receivePaymentWebhook = (
+    provider: string,
     paymentWebhookEvent: PaymentWebhookEvent,
     options?: SecondParameter<typeof orvalMutator<void>>
 ) => {
     return orvalMutator<void>(
         {
-            url: `/payments/webhook`,
+            url: `/payments/webhook/${provider}`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: paymentWebhookEvent
@@ -10212,8 +10340,9 @@ export const listReturns = (
 /**
  * The customer's one door for sending goods back — and the EU "withdraw from contract here" button (Consumer Rights Directive Art. 11a): a withdrawal is a return with `reason: withdrawal`, not a separate endpoint.
  * Always answers a `Return` (201, with `Location`); where the goods are decides what it is. Once they have shipped, a withdrawal is born `approved` and any other reason waits for staff. Before dispatch there is nothing to send back, so a withdrawal cancels the order — refunded in full, stock released — and the `Return` is born `closed`: `reason: withdrawal`, no `lines`, `refundAmount` what the order cost (zero when nothing was paid). Either way the customer gets an acknowledgement email carrying the exact date and time, and `Return.orderId` is where the client reloads the order from. `Order.actions.withdraw` says whether the button is offered; the client never counts the days.
- * `kind: cancellation` cancels what has not shipped yet — the remainder of ONE fulfillment order (`fulfillmentOrderId`) once something has shipped from the order. It is born `closed`, its `lines` are the remainder, and the refund of those lines follows (plus the delivery when it takes the last unit of the order). The buyer uses it as part of their withdrawal, and names `reason: withdrawal`; staff may use it too (out of stock for good), name any other reason, and need `create:Refund` — the refund key, `stepUp: critical`. Staff naming `withdrawal` on someone else's order are refused (`RETURN_CANCELLATION_INVALID`): that reason is the buyer's right, and writing it for them would falsify a legal record. A staff cancellation asks a fresh session; the buyer's own withdrawal never does. `GET /returns/options` says what each door would take and refund, and whether this caller may use it (`cancel`).
- * A return answers for goods that left (`kind: return`, the default); only the order's own buyer opens one, an operator included. Sending `Idempotency-Key` makes a retry safe.
+ * `kind: cancellation` cancels what has not shipped yet — the remainder of ONE fulfillment order (`fulfillmentOrderId`) once something has shipped from the order. It is born `closed`, its `lines` are the remainder, and the refund of those lines follows (plus the delivery when it takes the last unit of the order). The buyer uses it as part of their withdrawal, and names `reason: withdrawal`; staff may use it too (out of stock for good), name any other reason, and need `create:Refund` — the refund key, `stepUp: critical`. A staff cancellation asks a fresh session; the buyer's own withdrawal never does. `GET /returns/options` says what each door would take and refund, and whether this caller may use it (`cancel`).
+ * A return answers for goods that left (`kind: return`, the default). The order's buyer opens one for any reason whose deadline is open. Staff holding `update:Return` open one on a buyer's behalf, the way a phone call or an email asks for it: it is born `approved`, opening it IS the decision, and the buyer is told where to send the goods. Staff are not stopped by the deadline or by goods Art. 16 excludes for the shop's own reasons (`defective`, `wrong_item`, `other`): what they waived is recorded on the return, in `policyExceptions`. `requestedAt` says when the buyer asked (default now, never in the future, never before the order existed); the deadline is judged on it.
+ * Staff can also record a withdrawal the buyer stated outside the shop: `reason: withdrawal` with `requestedAt` (when the buyer sent it, Art. 11(2)) and `statedVia` (`phone`, `email`, `letter`, `other`), both required. The withdrawal keeps its legal window, judged on `requestedAt`, and its Art. 16 exclusion. It does everything the buyer's own withdrawal does, and the customer is told when they stated it and when the shop recorded it. Shipped goods need `update:Return`; before dispatch the order is cancelled and refunded, which needs `create:Refund` (money out) and `update:Order` (the cancel); a remainder cancel needs `create:Refund`. Any request carrying `statedVia` asks a fresh session: the record is a legal act, and the check fails closed. The buyer sends neither `requestedAt` nor `statedVia` (422): the server sets them. Sending `Idempotency-Key` makes a retry safe.
  * @summary Open a return, or withdraw from the contract
  */
 export const createReturn = (
@@ -10232,7 +10361,7 @@ export const createReturn = (
 };
 
 /**
- * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned, offered to the buyer only and only while a deadline in `reasons` is open: staff get an empty list (cancelling is theirs, returning is the buyer's right), and so does a buyer past every deadline. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`.
+ * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned, offered while a reason in `reasons` is open: the buyer's `reasons` are the ones whose deadline is open (none past every deadline), and staff holding `update:Return` get every reason, since they may open a return or record a withdrawal on a buyer's behalf. `exceptions` lists, for staff, the reasons that are past their deadline now, so a client can label what opening one would waive. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`.
  * @summary What an order can still send back or cancel
  */
 export const getReturnOptions = (
@@ -10265,7 +10394,7 @@ export const approveReturn = (
 };
 
 /**
- * Staff refuse a `requested` return, saying why — the customer is mailed the reason. Same conditional write as `approve`.
+ * Staff refuse a `requested` return with a reason code, and a message to the buyer that `other` requires — the customer is mailed the code's sentence, in their own language, and the message. Same conditional write as `approve`. A decline is final: a mistaken one is fixed by opening a new return for the same lines. A decline is a complaint the shop does not settle, so the mail does not carry the ADR information Directive 2013/11 Art. 13(3) asks for; that is the shop's to add.
  * @summary Decline a return request
  */
 export const declineReturn = (
@@ -10286,7 +10415,7 @@ export const declineReturn = (
 
 /**
  * The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409.
- * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed (its refund record is already on the payment, follow it there and on `GET /payments/attention`), `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
+ * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). Which of the returned units go back on sale is staff's call, per line: `lines[].restock` (absent means all of them). A broken unit set to 0 never reaches the shelf, so it is never handed to a backorder buyer, and the refund does not change: restocking is about the goods, not the money. A parcel lost on its way back is received with 0 on every line: the shop bears that risk, so the refund is owed, and nothing goes on sale. The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed (its refund record is already on the payment, follow it there and on `GET /payments/attention`), `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
  * @summary Record that the returned goods arrived
  */
 export const receiveReturn = (
@@ -11072,7 +11201,7 @@ export const getFulfillmentOrder = (
 };
 
 /**
- * Staff finish a `received` return whose refund will not follow the usual way: it was canceled, or the money went back outside the application. The return becomes `closed` and the order's timeline and the audit row `admin.return.closed` say so, with the note in the audit row only. No money moves, no stock moves (the units went back on sale when the goods were received), no credit note is issued and the customer is not mailed that their money went back: closing is bookkeeping, not a refund. A return that is not `received` (a `requested` one is declined, not closed) answers 409 `RETURN_NOT_CLOSABLE`. Needs `receive:Return`, the key that receives the goods, which carries a fresh-session requirement.
+ * Staff finish a `received` return whose refund will not follow the usual way: it was canceled, or the money went back outside the application. The return becomes `closed` and the order's timeline and the audit row `admin.return.closed` say so, with the note in the audit row only. No money moves, no stock moves (the units went back on sale when the goods were received), no credit note is issued and the customer is not mailed that their money went back: closing is bookkeeping, not a refund. A return that is not `received` (a `requested` one is declined, an `approved` one whose goods never came is canceled, not closed) answers 409 `RETURN_NOT_CLOSABLE`. Needs `receive:Return`, the key that receives the goods, which carries a fresh-session requirement.
  * @summary Close a return by hand
  */
 export const closeReturn = (
@@ -11086,6 +11215,28 @@ export const closeReturn = (
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: closeReturnRequest
+        },
+        options
+    );
+};
+
+/**
+ * Staff end an `approved` return whose goods will never arrive: the buyer never sent them, or changed their mind. The return becomes `canceled`, a final state that is not `closed`: it holds no units (the same lines can be returned again) and counts as no goods back, so the order's return status leaves `in_progress` and the delivery refund is not taken by it. A withdrawal, born `approved`, can be canceled too.
+ * Bookkeeping only. No money moves, no stock moves, no event is published and the customer is not mailed. The order's timeline and the audit row `admin.return.canceled` say so, with the note in the audit row only. A return that is not `approved` answers 409 `RETURN_NOT_CANCELABLE`: a `requested` one is declined, a `received` one is closed.
+ * A parcel lost on its way back is NOT canceled: the shop bears that risk, so the refund may be owed. Receive it with a restock count of 0 instead. Needs `update:Return`; no fresh session, since nothing moves.
+ * @summary Cancel an approved return whose goods never came
+ */
+export const cancelReturn = (
+    id: string,
+    cancelReturnRequest?: CancelReturnRequest,
+    options?: SecondParameter<typeof orvalMutator<Return>>
+) => {
+    return orvalMutator<Return>(
+        {
+            url: `/returns/${id}/cancel`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: cancelReturnRequest
         },
         options
     );
@@ -12022,6 +12173,7 @@ export type GetFulfillmentOrderResult = NonNullable<
     Awaited<ReturnType<typeof getFulfillmentOrder>>
 >;
 export type CloseReturnResult = NonNullable<Awaited<ReturnType<typeof closeReturn>>>;
+export type CancelReturnResult = NonNullable<Awaited<ReturnType<typeof cancelReturn>>>;
 export type GetSalesStatsResult = NonNullable<Awaited<ReturnType<typeof getSalesStats>>>;
 export type GetProductStatsResult = NonNullable<Awaited<ReturnType<typeof getProductStats>>>;
 export type GetProductSalesSeriesResult = NonNullable<

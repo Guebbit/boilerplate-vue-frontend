@@ -173,6 +173,15 @@ const cardRefundPending = computed(
 );
 
 /**
+ * A card refund is owed another way: the provider refused it for good or the bank sent it back, and
+ * the buyer has been emailed to agree how they want the money. The server decides, per refund, and
+ * sends no reason, so the page cannot (and does not) tell final from retried by itself.
+ */
+const owedAnotherWay = computed(
+    () => payment.value?.refunds.some((refund) => refund.owedAnotherWay) === true
+);
+
+/**
  * Announces a settled payment and tells the parent to re-read the order — the one thing both the
  * confirm and the sync do when the money finally lands.
  */
@@ -379,6 +388,13 @@ watch(
             <!-- An open refund wins: a partly returned hand payment is still waiting on the rest. -->
             <p v-if="refundPending" class="mt-2 mb-0 text-sm" data-test="payment-refund-pending">
                 {{ t('payments-panel.refund-pending') }}
+            </p>
+            <p
+                v-else-if="owedAnotherWay"
+                class="mt-2 mb-0 text-sm"
+                data-test="payment-refund-owed-another-way"
+            >
+                {{ t('payments-panel.refund-owed-another-way') }}
             </p>
             <p
                 v-else-if="cardRefundPending"
