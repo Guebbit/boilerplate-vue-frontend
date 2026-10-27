@@ -36,7 +36,9 @@ describe('OP37 · The manager exports what the filter shows', () => {
                 expect(name, 'the server names the file').to.match(
                     /^orders-\d{4}-\d{2}-\d{2}\.csv$/
                 );
-                downloadedText(String(name)).then((saved) => {
+                downloadedText(String(name)).then((savedWithMark) => {
+                    // The file keeps the server's bytes, mark included; compare like with like.
+                    const saved = savedWithMark.replace(/^\uFEFF/, '');
                     expect(saved, 'the saved file equals the served body').to.equal(served);
 
                     cy.step('one line per listed order, plus the header');
