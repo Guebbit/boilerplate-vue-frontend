@@ -18,7 +18,7 @@ import {
     webhookSink
 } from '../../support/e2e/harness';
 
-/** The one slice of `GET /products/categories` the cache spec reads. */
+/** The one slice of `GET /products/facets` the cache spec reads. */
 interface FacetsBody {
     categories: { name: string }[];
 }
@@ -253,7 +253,7 @@ describe('The journey harness', () => {
                 const facetNames = () =>
                     cy.window().then((win) =>
                         win
-                            .fetch(`${String(apiUrl)}/products/categories`)
+                            .fetch(`${String(apiUrl)}/products/facets`)
                             .then((response) => response.json() as Promise<FacetsBody>)
                             .then((body) => body.categories.map(({ name }) => name))
                     );

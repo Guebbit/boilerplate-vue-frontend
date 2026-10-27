@@ -214,7 +214,7 @@ on the server as a forbidden one.
 | `GET /products/{id}`         | `GetProductByIdResponse`        |
 | `PATCH /products/{id}`       | `UpdateProductByIdResponse`     |
 | `DELETE /products/{id}/hard` | `HardDeleteProductByIdResponse` |
-| `GET /products/categories`   | `GetCatalogueFacetsResponse`    |
+| `GET /products/facets`       | `GetCatalogueFacetsResponse`    |
 | `POST /products/search`      | `SearchProductsResponse`        |
 
 Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.

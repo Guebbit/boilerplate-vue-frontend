@@ -60,8 +60,8 @@ describe('onEtagResponse', () => {
         expect(knownEtag('/users/u1')).toBe('"300"');
     });
 
-    it('treats the editor read and the hard-delete spelling as the same resource', () => {
-        onEtagResponse(answered('get', '/products/p1/admin', '"100"'));
+    it('treats the hard-delete spelling as the same resource', () => {
+        onEtagResponse(answered('get', '/products/p1', '"100"'));
 
         expect(knownEtag('/products/p1')).toBe('"100"');
         expect(knownEtag('/products/p1/hard')).toBe('"100"');
@@ -114,7 +114,7 @@ describe('onEtagRequest', () => {
     it.each(['put', 'patch', 'delete', 'PATCH'])(
         'sends the known tag as If-Match on a %s',
         (method) => {
-            onEtagResponse(answered('get', '/products/p1/admin', '"100"'));
+            onEtagResponse(answered('get', '/products/p1', '"100"'));
 
             expect(ifMatchOf(onEtagRequest(outgoing(method, '/products/p1')))).toBe('"100"');
         }

@@ -92,7 +92,7 @@ beforeEach(() => {
             ],
             meta: { totalItems: 1, totalPages: 1 }
         },
-        'PUT /inventory/levels/p1/backorder-limit': { ...LEVEL, backorderLimit: 10 },
+        'PATCH /inventory/levels/p1': { ...LEVEL, backorderLimit: 10 },
         'POST /inventory/levels/p1/receive': LEVEL,
         'POST /inventory/levels/p1/adjust': LEVEL
     };
@@ -206,16 +206,13 @@ describe('fetchPreorderLevels', () => {
 });
 
 describe('setLimit', () => {
-    it('puts the absolute limit, then reloads the board, and answers the level', () => {
+    it('patches the absolute limit, then reloads the board, and answers the level', () => {
         const store = useInventoryStore();
         return store.setLimit('p1', 10).then((level) => {
             expect(level).toMatchObject({ productId: 'p1', backorderLimit: 10 });
-            expect(requestedUrls()).toEqual([
-                '/inventory/levels/p1/backorder-limit',
-                '/inventory/levels'
-            ]);
+            expect(requestedUrls()).toEqual(['/inventory/levels/p1', '/inventory/levels']);
             const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
-            expect(contractRequest(schemas.SetBackorderLimitBody, call.data)).toEqual({
+            expect(contractRequest(schemas.UpdateInventoryLevelBody, call.data)).toEqual({
                 backorderLimit: 10
             });
         });

@@ -61,7 +61,7 @@ actionTable('products', [
         name: 'a slow record read leaves the form closed until it lands, and a refetch keeps what was typed',
         persona: 'editor',
         route: () => cy.subjectId('product.inStock').then((id) => `/en/products/${id}/edit`),
-        intercept: { method: 'GET', url: '**/products/*/admin', operation: '/products/{id}/admin' },
+        intercept: { method: 'GET', url: '**/products/*', operation: '/products/{id}' },
         kind: 'slow',
         field: 'product-price-field',
         typed: '41.50',

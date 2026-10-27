@@ -132,7 +132,7 @@ sequenceDiagram
     participant F as Edit form
     participant I as etag.ts (interceptors)
     participant A as API
-    F->>A: GET /products/1/admin
+    F->>A: GET /products/1
     A-->>I: 200 + ETag "100"
     Note over I: remembers "100" for /products/1
     F->>A: PATCH /products/1
@@ -146,7 +146,7 @@ sequenceDiagram
 
 - **`src/infrastructure/http/etag.ts` is the whole transport half.** A success interceptor keeps the
   tag a read, PUT or PATCH answered with; a request interceptor sends it as `If-Match` on the next
-  PUT, PATCH or DELETE of that path. `/products/{id}/admin` and `/…/hard` are views of the same
+  PUT, PATCH or DELETE of that path. `/…/hard` is another path for the same
   resource. A resource never read here is written unconditionally — the API's own default.
 - **An action forgets the tag.** `POST /orders/1/cancel` changes the row and answers no tag, so
   everything held under that path is dropped rather than sent stale. A sign-out drops all of them.
@@ -252,7 +252,7 @@ flowchart TD
 ```
 
 - **A record page** hands `useMissingRecord()` to `watchX(..., { onError })`, or to `.catch(...)`
-  where there is no `watch*` (`ProductEdit.vue`'s uncached admin read).
+  where there is no `watch*` (`ProductEdit.vue`'s uncached read).
 - **Any other background read** ends in `.catch(onAmbientError)`, with
   `const onAmbientError = useAmbientError()` (`src/infrastructure/utils/use-ambient-error.ts`).
   A read shared by many components (`ensureWishlist`, `ensureStockAlerts`) toasts once inside the
