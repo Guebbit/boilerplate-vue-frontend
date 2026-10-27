@@ -54,12 +54,16 @@ export const ERROR_CODES = {
     CONFLICT: 'CONFLICT',
     /** 422 — A shipment line names a product that is not on the fulfillment order, asks for more than remains of it, or names the same product twice. */
     DELIVERY_LINES_INVALID: 'DELIVERY_LINES_INVALID',
+    /** 409 — A `lost` shipment cannot be recorded as arrived because its units were already shipped again or cancelled: taking them back would count the goods twice. */
+    DELIVERY_LOST_SUPERSEDED: 'DELIVERY_LOST_SUPERSEDED',
     /** 409 — The shipment has already been delivered, or its order is no longer in a state this can run from. */
     DELIVERY_NOT_DELIVERABLE: 'DELIVERY_NOT_DELIVERABLE',
     /** 409 — A physical fulfillment order cannot be fulfilled without a shipment; ship it instead. */
     DELIVERY_NOT_DIGITAL: 'DELIVERY_NOT_DIGITAL',
     /** 409 — Only an open or in-progress fulfillment order can be put on hold. */
     DELIVERY_NOT_HOLDABLE: 'DELIVERY_NOT_HOLDABLE',
+    /** 409 — Only a `shipped` parcel can be reported lost or damaged, and only while its order is `processing` or `shipped`. A parcel already `delivered` or `lost`, a digital fulfilment and a cancelled order are refused. */
+    DELIVERY_NOT_LOSABLE: 'DELIVERY_NOT_LOSABLE',
     /** 409 — A digital fulfillment order has nothing to ship (fulfil it instead), and a digital shipment has no tracking code to set. */
     DELIVERY_NOT_PHYSICAL: 'DELIVERY_NOT_PHYSICAL',
     /** 409 — The fulfillment order is not on hold, or waits for stock and is released only by the stock arriving. */

@@ -170,6 +170,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     loginTwoFactor: 'account',
     logout: 'account',
     logoutAll: 'account',
+    markShipmentLost: 'delivery',
     mergeCart: 'cart',
     mintApiKey: 'api-keys',
     moveWishlistItemToCart: 'wishlist',

@@ -2,9 +2,11 @@
 /**
  * @module
  * One shipment inside its fulfillment order's card: its lines, status, tracking code and dates,
- * and the two staff controls the shipment's own `actions` offer — correct the tracking code inline,
- * mark it delivered (with the forced door when `actions.forceDeliver` says so). Controls come
- * from `actions`, never from a rule re-derived here.
+ * and the staff controls the shipment's own `actions` offer — correct the tracking code inline,
+ * mark it delivered (with the forced door when `actions.forceDeliver` says so), report it lost or
+ * damaged. A `lost` parcel shows what the shop told the buyer (and, to staff, the note); its
+ * arrival button appears only while the server says every unit on it is still open. Controls
+ * come from `actions`, never from a rule re-derived here.
  */
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -14,6 +16,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatAddressLine, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useDeliveryStore } from '../store.ts';
+import ReportLostDialog from './ReportLostDialog.vue';
 import type { Shipment } from '@types';
 
 /**
@@ -95,6 +98,16 @@ const offerForce = computed(() => props.shipment.actions.forceDeliver);
 const offerDeliver = computed(() => props.shipment.actions.deliver);
 
 /**
+ * Whether the report-lost dialog is open.
+ */
+const lostOpen = ref(false);
+
+/**
+ * The chip's colour by status: a lost parcel is the one that needs the eye.
+ */
+const STATUS_COLOR = { shipped: 'info', delivered: 'success', lost: 'error' } as const;
+
+/**
  * Whether the tracking field holds a new, non-empty code.
  */
 const trackingChanged = computed(
@@ -156,11 +169,7 @@ const markDelivered = () =>
             <span class="text-sm font-semibold" data-test="shipment-number">
                 {{ t('shipment-row.title', { number: shipment.number }) }}
             </span>
-            <v-chip
-                :color="shipment.status === 'delivered' ? 'success' : 'info'"
-                size="small"
-                data-test="shipment-status"
-            >
+            <v-chip :color="STATUS_COLOR[shipment.status]" size="small" data-test="shipment-status">
                 {{ t(`shipment-row.status-${shipment.status}`) }}
             </v-chip>
             <v-chip
@@ -189,6 +198,22 @@ const markDelivered = () =>
                 {{ t('shipment-row.delivered-at', { date: formatDateTime(shipment.deliveredAt) }) }}
             </template>
         </p>
+
+        <div v-if="shipment.lostAt" class="flex flex-col gap-1 text-sm" data-test="shipment-lost">
+            <span data-test="shipment-lost-reason">
+                {{
+                    t(`shipment-row.lost-${shipment.lostReason ?? 'lost'}`) +
+                    ' · ' +
+                    t('shipment-row.lost-at', { date: formatDateTime(shipment.lostAt) })
+                }}
+            </span>
+            <span v-if="shipment.lostMessage" data-test="shipment-lost-message">
+                {{ t('shipment-row.lost-message', { message: shipment.lostMessage }) }}
+            </span>
+            <span v-if="shipment.lostNote" class="opacity-75" data-test="shipment-lost-note">
+                {{ t('shipment-row.lost-note', { note: shipment.lostNote }) }}
+            </span>
+        </div>
 
         <p v-if="redirectedFrom" class="m-0 text-sm" data-test="shipment-destination">
             {{ t('shipment-row.sent-to', { address: redirectedFrom }) }}
@@ -251,6 +276,20 @@ const markDelivered = () =>
             </v-btn>
         </div>
 
+        <div v-if="shipment.actions.markLost">
+            <v-btn
+                variant="tonal"
+                size="small"
+                :disabled="loading"
+                data-test="open-report-lost"
+                @click="lostOpen = true"
+            >
+                {{ t('shipment-row.button-report-lost') }}
+            </v-btn>
+        </div>
+
         <InlineErrorAlert :message="rowError" data-test="shipment-row-error" />
+
+        <ReportLostDialog v-model="lostOpen" :shipment="shipment" @reported="emit('moved')" />
     </li>
 </template>

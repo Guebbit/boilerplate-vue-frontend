@@ -45,7 +45,8 @@
         "last-notice": "Ultimo avviso inviato il {date}",
         "cancel-reason-buyer": "Annullato dall'acquirente",
         "cancel-reason-staff": "Annullato dallo staff",
-        "cancel-reason-order": "Annullato con l'ordine"
+        "cancel-reason-order": "Annullato con l'ordine",
+        "cancel-reason-found": "Chiuso: il pacco smarrito è arrivato"
     },
     "shipment-row": {
         "title": "Spedizione n. {number}",
@@ -62,7 +63,14 @@
         "label-force": "Forza (override)",
         "label-force-reason": "Motivo dell'override",
         "tracking-saved": "Codice di tracciamento salvato.",
-        "delivered": "Segnata come consegnata."
+        "delivered": "Segnata come consegnata.",
+        "status-lost": "Smarrito in viaggio",
+        "lost-damaged": "Danneggiato in viaggio",
+        "lost-at": "Segnalato {date}",
+        "lost-message": "Messaggio del negozio: {message}",
+        "lost-note": "Nota: {note}",
+        "button-report-lost": "Segnala smarrito / danneggiato",
+        "lost-lost": "Smarrito dal corriere"
     },
     "ship-items-dialog": {
         "title": "Spedisci articoli dal gruppo n. {number}",
@@ -111,5 +119,18 @@
         "state-allocated": "Assegnato",
         "state-shipped": "Spedito",
         "state-cancelled": "Annullato"
+    },
+    "report-lost-dialog": {
+        "title": "Segnala la spedizione #{number} smarrita o danneggiata",
+        "label-reason": "Che cosa è successo",
+        "reason-lost": "Smarrita dal corriere",
+        "reason-damaged": "Danneggiata in viaggio",
+        "hint-reason": "Danneggiata significa in viaggio e mai consegnata. Un danno trovato dall'acquirente dopo aver ricevuto la merce è un reso.",
+        "label-note": "Nota (facoltativa)",
+        "hint-note": "La vede solo lo staff. Non inserire numeri di telefono o indirizzi.",
+        "label-message": "Messaggio per l'acquirente (facoltativo)",
+        "hint-message": "L'acquirente lo legge e lo riceve via email. Scrivi che cosa farai e quando.",
+        "button-report": "Segnala",
+        "success": "La perdita è registrata. Spedisci di nuovo gli articoli, oppure annulla il resto."
     }
 }

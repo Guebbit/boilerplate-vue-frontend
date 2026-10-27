@@ -2659,6 +2659,8 @@ export const downloadAccountExportResponseShipmentsItemDestinationCountryRegExp 
     '^[A-Z]{2}$'
 );
 export const downloadAccountExportResponseShipmentsItemDestinationPhoneMax = 32;
+export const downloadAccountExportResponseShipmentsItemLostMessageMax = 500;
+export const downloadAccountExportResponseShipmentsItemLostNoteMax = 1000;
 export const downloadAccountExportResponseFulfillmentOrdersItemIdMax = 64;
 export const downloadAccountExportResponseFulfillmentOrdersItemIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -2739,24 +2741,37 @@ export const downloadAccountExportResponseNotificationsItemSixIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemSixIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseNotificationsItemSixParamsProductIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemSixParamsProductIdRegExp = new RegExp(
+export const downloadAccountExportResponseNotificationsItemSixParamsOrderIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemSixParamsOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const downloadAccountExportResponseNotificationsItemSixParamsShipmentIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemSixParamsShipmentIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseNotificationsItemSixParamsMessageMax = 500;
 export const downloadAccountExportResponseNotificationsItemSevenIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemSevenIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseNotificationsItemSevenParamsUserIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemSevenParamsUserIdRegExp = new RegExp(
+export const downloadAccountExportResponseNotificationsItemSevenParamsProductIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemSevenParamsProductIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const downloadAccountExportResponseNotificationsItemEightIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemEightIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseNotificationsItemEightParamsSubscriptionIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemEightParamsSubscriptionIdRegExp =
+export const downloadAccountExportResponseNotificationsItemEightParamsUserIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemEightParamsUserIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseNotificationsItemNineIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemNineIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseNotificationsItemNineParamsSubscriptionIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemNineParamsSubscriptionIdRegExp =
     new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseStockAlertsItemProductIdMax = 64;
 export const downloadAccountExportResponseStockAlertsItemProductIdRegExp = new RegExp(
@@ -3164,6 +3179,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 'refund_reversed',
                 'shipment_shipped',
                 'shipment_delivered',
+                'shipment_lost',
                 'fulfillment_held',
                 'fulfillment_released',
                 'remainder_cancelled',
@@ -3318,7 +3334,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .regex(downloadAccountExportResponseShipmentsItemFulfillmentOrderIdRegExp),
             number: zod.number().min(1),
             trackingCode: zod.string().optional(),
-            status: zod.enum(['shipped', 'delivered']),
+            status: zod.enum(['shipped', 'delivered', 'lost']),
             lines: zod.array(
                 zod.strictObject({
                     productId: zod
@@ -3360,7 +3376,17 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 })
                 .optional(),
             shippedAt: zod.iso.datetime({ offset: true }),
-            deliveredAt: zod.iso.datetime({ offset: true }).optional()
+            deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+            lostAt: zod.iso.datetime({ offset: true }).optional(),
+            lostReason: zod.enum(['lost', 'damaged']).optional(),
+            lostMessage: zod
+                .string()
+                .max(downloadAccountExportResponseShipmentsItemLostMessageMax)
+                .optional(),
+            lostNote: zod
+                .string()
+                .max(downloadAccountExportResponseShipmentsItemLostNoteMax)
+                .optional()
         })
     ),
     fulfillmentOrders: zod.array(
@@ -3423,7 +3449,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
             agreedAt: zod.iso.datetime({ offset: true }).optional(),
             expectedAt: zod.iso.datetime({ offset: true }).optional(),
             lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
-            cancelReason: zod.enum(['buyer', 'staff', 'order']).optional()
+            cancelReason: zod.enum(['buyer', 'staff', 'order', 'found']).optional()
         })
     ),
     returns: zod.array(
@@ -3663,16 +3689,29 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemSixIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemSixIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['notifications.stock-alert']),
+                code: zod.enum(['notifications.shipment-lost']),
                 params: zod.strictObject({
-                    productId: zod
+                    orderId: zod
                         .string()
                         .min(1)
-                        .max(downloadAccountExportResponseNotificationsItemSixParamsProductIdMax)
+                        .max(downloadAccountExportResponseNotificationsItemSixParamsOrderIdMax)
                         .regex(
-                            downloadAccountExportResponseNotificationsItemSixParamsProductIdRegExp
+                            downloadAccountExportResponseNotificationsItemSixParamsOrderIdRegExp
                         ),
-                    titles: zod.record(zod.string(), zod.string())
+                    shipmentId: zod
+                        .string()
+                        .min(1)
+                        .max(downloadAccountExportResponseNotificationsItemSixParamsShipmentIdMax)
+                        .regex(
+                            downloadAccountExportResponseNotificationsItemSixParamsShipmentIdRegExp
+                        ),
+                    reason: zod.enum(['lost', 'damaged']),
+                    message: zod
+                        .string()
+                        .max(downloadAccountExportResponseNotificationsItemSixParamsMessageMax)
+                        .optional(),
+                    owed: zod.array(zod.string()).optional(),
+                    expectedAt: zod.iso.datetime({ offset: true }).optional()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -3685,16 +3724,16 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemSevenIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemSevenIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['notifications.staff.purchase-hold-placed']),
+                code: zod.enum(['notifications.stock-alert']),
                 params: zod.strictObject({
-                    userId: zod
+                    productId: zod
                         .string()
                         .min(1)
-                        .max(downloadAccountExportResponseNotificationsItemSevenParamsUserIdMax)
+                        .max(downloadAccountExportResponseNotificationsItemSevenParamsProductIdMax)
                         .regex(
-                            downloadAccountExportResponseNotificationsItemSevenParamsUserIdRegExp
+                            downloadAccountExportResponseNotificationsItemSevenParamsProductIdRegExp
                         ),
-                    until: zod.iso.datetime({ offset: true })
+                    titles: zod.record(zod.string(), zod.string())
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -3707,16 +3746,38 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemEightIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemEightIdRegExp),
                 audience: zod.enum(['own', 'staff']),
+                code: zod.enum(['notifications.staff.purchase-hold-placed']),
+                params: zod.strictObject({
+                    userId: zod
+                        .string()
+                        .min(1)
+                        .max(downloadAccountExportResponseNotificationsItemEightParamsUserIdMax)
+                        .regex(
+                            downloadAccountExportResponseNotificationsItemEightParamsUserIdRegExp
+                        ),
+                    until: zod.iso.datetime({ offset: true })
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(downloadAccountExportResponseNotificationsItemNineIdMax)
+                    .regex(downloadAccountExportResponseNotificationsItemNineIdRegExp),
+                audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['notifications.staff.webhook-disabled']),
                 params: zod.strictObject({
                     subscriptionId: zod
                         .string()
                         .min(1)
                         .max(
-                            downloadAccountExportResponseNotificationsItemEightParamsSubscriptionIdMax
+                            downloadAccountExportResponseNotificationsItemNineParamsSubscriptionIdMax
                         )
                         .regex(
-                            downloadAccountExportResponseNotificationsItemEightParamsSubscriptionIdRegExp
+                            downloadAccountExportResponseNotificationsItemNineParamsSubscriptionIdRegExp
                         )
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
@@ -9637,7 +9698,7 @@ export const ListOrderFulfillmentOrdersResponse = zod.strictObject({
             agreedAt: zod.iso.datetime({ offset: true }).optional(),
             expectedAt: zod.iso.datetime({ offset: true }).optional(),
             lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
-            cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
+            cancelReason: zod.enum(['buyer', 'staff', 'order', 'found']).optional(),
             actions: zod.strictObject({
                 ship: zod.boolean(),
                 fulfill: zod.boolean(),
@@ -9677,6 +9738,8 @@ export const listOrderShipmentsResponseItemsItemDestinationZipMax = 20;
 export const listOrderShipmentsResponseItemsItemDestinationCountryMax = 2;
 export const listOrderShipmentsResponseItemsItemDestinationCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const listOrderShipmentsResponseItemsItemDestinationPhoneMax = 32;
+export const listOrderShipmentsResponseItemsItemLostMessageMax = 500;
+export const listOrderShipmentsResponseItemsItemLostNoteMax = 1000;
 export const ListOrderShipmentsResponse = zod.strictObject({
     items: zod.array(
         zod.strictObject({
@@ -9697,7 +9760,7 @@ export const ListOrderShipmentsResponse = zod.strictObject({
                 .regex(listOrderShipmentsResponseItemsItemFulfillmentOrderIdRegExp),
             number: zod.number().min(1),
             trackingCode: zod.string().optional(),
-            status: zod.enum(['shipped', 'delivered']),
+            status: zod.enum(['shipped', 'delivered', 'lost']),
             lines: zod.array(
                 zod.strictObject({
                     productId: zod
@@ -9742,10 +9805,18 @@ export const ListOrderShipmentsResponse = zod.strictObject({
             awaitingTracking: zod.boolean(),
             shippedAt: zod.iso.datetime({ offset: true }),
             deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+            lostAt: zod.iso.datetime({ offset: true }).optional(),
+            lostReason: zod.enum(['lost', 'damaged']).optional(),
+            lostMessage: zod
+                .string()
+                .max(listOrderShipmentsResponseItemsItemLostMessageMax)
+                .optional(),
+            lostNote: zod.string().max(listOrderShipmentsResponseItemsItemLostNoteMax).optional(),
             actions: zod.strictObject({
                 deliver: zod.boolean(),
                 forceDeliver: zod.boolean(),
-                update: zod.boolean()
+                update: zod.boolean(),
+                markLost: zod.boolean()
             }),
             createdAt: zod.iso.datetime({ offset: true }).optional(),
             updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -10506,7 +10577,7 @@ export const ListPreorderFulfillmentOrdersResponse = zod.strictObject({
                 .enum(['awaiting_stock', 'incorrect_address', 'high_risk', 'other'])
                 .optional(),
             lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
-            cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
+            cancelReason: zod.enum(['buyer', 'staff', 'order', 'found']).optional(),
             createdAt: zod.iso.datetime({ offset: true })
         })
     ),
@@ -10662,6 +10733,8 @@ export const shipFulfillmentOrderResponseDestinationZipMax = 20;
 export const shipFulfillmentOrderResponseDestinationCountryMax = 2;
 export const shipFulfillmentOrderResponseDestinationCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const shipFulfillmentOrderResponseDestinationPhoneMax = 32;
+export const shipFulfillmentOrderResponseLostMessageMax = 500;
+export const shipFulfillmentOrderResponseLostNoteMax = 1000;
 export const ShipFulfillmentOrderResponse = zod.strictObject({
     id: zod
         .string()
@@ -10680,7 +10753,7 @@ export const ShipFulfillmentOrderResponse = zod.strictObject({
         .regex(shipFulfillmentOrderResponseFulfillmentOrderIdRegExp),
     number: zod.number().min(1),
     trackingCode: zod.string().optional(),
-    status: zod.enum(['shipped', 'delivered']),
+    status: zod.enum(['shipped', 'delivered', 'lost']),
     lines: zod.array(
         zod.strictObject({
             productId: zod
@@ -10713,10 +10786,15 @@ export const ShipFulfillmentOrderResponse = zod.strictObject({
     awaitingTracking: zod.boolean(),
     shippedAt: zod.iso.datetime({ offset: true }),
     deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+    lostAt: zod.iso.datetime({ offset: true }).optional(),
+    lostReason: zod.enum(['lost', 'damaged']).optional(),
+    lostMessage: zod.string().max(shipFulfillmentOrderResponseLostMessageMax).optional(),
+    lostNote: zod.string().max(shipFulfillmentOrderResponseLostNoteMax).optional(),
     actions: zod.strictObject({
         deliver: zod.boolean(),
         forceDeliver: zod.boolean(),
-        update: zod.boolean()
+        update: zod.boolean(),
+        markLost: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -10753,6 +10831,8 @@ export const fulfillFulfillmentOrderResponseDestinationZipMax = 20;
 export const fulfillFulfillmentOrderResponseDestinationCountryMax = 2;
 export const fulfillFulfillmentOrderResponseDestinationCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const fulfillFulfillmentOrderResponseDestinationPhoneMax = 32;
+export const fulfillFulfillmentOrderResponseLostMessageMax = 500;
+export const fulfillFulfillmentOrderResponseLostNoteMax = 1000;
 export const FulfillFulfillmentOrderResponse = zod.strictObject({
     id: zod
         .string()
@@ -10771,7 +10851,7 @@ export const FulfillFulfillmentOrderResponse = zod.strictObject({
         .regex(fulfillFulfillmentOrderResponseFulfillmentOrderIdRegExp),
     number: zod.number().min(1),
     trackingCode: zod.string().optional(),
-    status: zod.enum(['shipped', 'delivered']),
+    status: zod.enum(['shipped', 'delivered', 'lost']),
     lines: zod.array(
         zod.strictObject({
             productId: zod
@@ -10807,10 +10887,15 @@ export const FulfillFulfillmentOrderResponse = zod.strictObject({
     awaitingTracking: zod.boolean(),
     shippedAt: zod.iso.datetime({ offset: true }),
     deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+    lostAt: zod.iso.datetime({ offset: true }).optional(),
+    lostReason: zod.enum(['lost', 'damaged']).optional(),
+    lostMessage: zod.string().max(fulfillFulfillmentOrderResponseLostMessageMax).optional(),
+    lostNote: zod.string().max(fulfillFulfillmentOrderResponseLostNoteMax).optional(),
     actions: zod.strictObject({
         deliver: zod.boolean(),
         forceDeliver: zod.boolean(),
-        update: zod.boolean()
+        update: zod.boolean(),
+        markLost: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -10885,7 +10970,7 @@ export const HoldFulfillmentOrderResponse = zod.strictObject({
     agreedAt: zod.iso.datetime({ offset: true }).optional(),
     expectedAt: zod.iso.datetime({ offset: true }).optional(),
     lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
-    cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
+    cancelReason: zod.enum(['buyer', 'staff', 'order', 'found']).optional(),
     actions: zod.strictObject({
         ship: zod.boolean(),
         fulfill: zod.boolean(),
@@ -10960,7 +11045,7 @@ export const ReleaseFulfillmentOrderResponse = zod.strictObject({
     agreedAt: zod.iso.datetime({ offset: true }).optional(),
     expectedAt: zod.iso.datetime({ offset: true }).optional(),
     lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
-    cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
+    cancelReason: zod.enum(['buyer', 'staff', 'order', 'found']).optional(),
     actions: zod.strictObject({
         ship: zod.boolean(),
         fulfill: zod.boolean(),
@@ -10994,6 +11079,8 @@ export const getShipmentResponseDestinationZipMax = 20;
 export const getShipmentResponseDestinationCountryMax = 2;
 export const getShipmentResponseDestinationCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const getShipmentResponseDestinationPhoneMax = 32;
+export const getShipmentResponseLostMessageMax = 500;
+export const getShipmentResponseLostNoteMax = 1000;
 export const GetShipmentResponse = zod.strictObject({
     id: zod.string().min(1).max(getShipmentResponseIdMax).regex(getShipmentResponseIdRegExp),
     orderId: zod
@@ -11008,7 +11095,7 @@ export const GetShipmentResponse = zod.strictObject({
         .regex(getShipmentResponseFulfillmentOrderIdRegExp),
     number: zod.number().min(1),
     trackingCode: zod.string().optional(),
-    status: zod.enum(['shipped', 'delivered']),
+    status: zod.enum(['shipped', 'delivered', 'lost']),
     lines: zod.array(
         zod.strictObject({
             productId: zod
@@ -11037,16 +11124,21 @@ export const GetShipmentResponse = zod.strictObject({
     awaitingTracking: zod.boolean(),
     shippedAt: zod.iso.datetime({ offset: true }),
     deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+    lostAt: zod.iso.datetime({ offset: true }).optional(),
+    lostReason: zod.enum(['lost', 'damaged']).optional(),
+    lostMessage: zod.string().max(getShipmentResponseLostMessageMax).optional(),
+    lostNote: zod.string().max(getShipmentResponseLostNoteMax).optional(),
     actions: zod.strictObject({
         deliver: zod.boolean(),
         forceDeliver: zod.boolean(),
-        update: zod.boolean()
+        update: zod.boolean(),
+        markLost: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped` or `delivered`; a digital fulfilment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.
+ * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped`, `delivered` or `lost`; a digital fulfilment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.
  * @summary Correct a shipment's tracking code
  */
 export const updateShipmentPathIdMax = 64;
@@ -11073,6 +11165,8 @@ export const updateShipmentResponseDestinationZipMax = 20;
 export const updateShipmentResponseDestinationCountryMax = 2;
 export const updateShipmentResponseDestinationCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const updateShipmentResponseDestinationPhoneMax = 32;
+export const updateShipmentResponseLostMessageMax = 500;
+export const updateShipmentResponseLostNoteMax = 1000;
 export const UpdateShipmentResponse = zod.strictObject({
     id: zod.string().min(1).max(updateShipmentResponseIdMax).regex(updateShipmentResponseIdRegExp),
     orderId: zod
@@ -11087,7 +11181,7 @@ export const UpdateShipmentResponse = zod.strictObject({
         .regex(updateShipmentResponseFulfillmentOrderIdRegExp),
     number: zod.number().min(1),
     trackingCode: zod.string().optional(),
-    status: zod.enum(['shipped', 'delivered']),
+    status: zod.enum(['shipped', 'delivered', 'lost']),
     lines: zod.array(
         zod.strictObject({
             productId: zod
@@ -11116,16 +11210,23 @@ export const UpdateShipmentResponse = zod.strictObject({
     awaitingTracking: zod.boolean(),
     shippedAt: zod.iso.datetime({ offset: true }),
     deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+    lostAt: zod.iso.datetime({ offset: true }).optional(),
+    lostReason: zod.enum(['lost', 'damaged']).optional(),
+    lostMessage: zod.string().max(updateShipmentResponseLostMessageMax).optional(),
+    lostNote: zod.string().max(updateShipmentResponseLostNoteMax).optional(),
     actions: zod.strictObject({
         deliver: zod.boolean(),
         forceDeliver: zod.boolean(),
-        update: zod.boolean()
+        update: zod.boolean(),
+        markLost: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
  * Stamps the shipment delivered. The order moves `shipped → delivered` when this was the last undelivered shipment and nothing remains to ship; its withdrawal clock then starts from the LAST delivery (CRD Art. 9(2)(b)(i)). Refuses a shipment already delivered with `DELIVERY_NOT_DELIVERABLE`.
+ *
+ * A `lost` shipment that turns up is accepted too, but only while every unit on it is still open: not shipped again and not cancelled, the owed units of a short shelf included. All or nothing, in one transaction: the shipment becomes `delivered` (its `lostAt` and `lostReason` stay as history), the units go back on the fulfillment order, the top-up of the stock hold is given back and the owed fulfillment order is closed with no refund (`cancelReason: found`). Otherwise `DELIVERY_LOST_SUPERSEDED` (409).
  * @summary Record a shipment's arrival
  */
 export const deliverShipmentPathIdMax = 64;
@@ -11153,6 +11254,8 @@ export const deliverShipmentResponseDestinationZipMax = 20;
 export const deliverShipmentResponseDestinationCountryMax = 2;
 export const deliverShipmentResponseDestinationCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const deliverShipmentResponseDestinationPhoneMax = 32;
+export const deliverShipmentResponseLostMessageMax = 500;
+export const deliverShipmentResponseLostNoteMax = 1000;
 export const DeliverShipmentResponse = zod.strictObject({
     id: zod
         .string()
@@ -11171,7 +11274,7 @@ export const DeliverShipmentResponse = zod.strictObject({
         .regex(deliverShipmentResponseFulfillmentOrderIdRegExp),
     number: zod.number().min(1),
     trackingCode: zod.string().optional(),
-    status: zod.enum(['shipped', 'delivered']),
+    status: zod.enum(['shipped', 'delivered', 'lost']),
     lines: zod.array(
         zod.strictObject({
             productId: zod
@@ -11200,10 +11303,15 @@ export const DeliverShipmentResponse = zod.strictObject({
     awaitingTracking: zod.boolean(),
     shippedAt: zod.iso.datetime({ offset: true }),
     deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+    lostAt: zod.iso.datetime({ offset: true }).optional(),
+    lostReason: zod.enum(['lost', 'damaged']).optional(),
+    lostMessage: zod.string().max(deliverShipmentResponseLostMessageMax).optional(),
+    lostNote: zod.string().max(deliverShipmentResponseLostNoteMax).optional(),
     actions: zod.strictObject({
         deliver: zod.boolean(),
         forceDeliver: zod.boolean(),
-        update: zod.boolean()
+        update: zod.boolean(),
+        markLost: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -13705,6 +13813,7 @@ export const GetOrderTimelineResponse = zod.strictObject({
                 'refund_reversed',
                 'shipment_shipped',
                 'shipment_delivered',
+                'shipment_lost',
                 'fulfillment_held',
                 'fulfillment_released',
                 'remainder_cancelled',
@@ -15010,7 +15119,7 @@ export const GetFulfillmentOrderResponse = zod.strictObject({
     agreedAt: zod.iso.datetime({ offset: true }).optional(),
     expectedAt: zod.iso.datetime({ offset: true }).optional(),
     lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
-    cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
+    cancelReason: zod.enum(['buyer', 'staff', 'order', 'found']).optional(),
     actions: zod.strictObject({
         ship: zod.boolean(),
         fulfill: zod.boolean(),
@@ -15018,6 +15127,101 @@ export const GetFulfillmentOrderResponse = zod.strictObject({
         release: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
+    updatedAt: zod.iso.datetime({ offset: true }).optional()
+});
+/**
+ * Staff reports a parcel that left but will not arrive (`lost`), or arrived unusable before its arrival was recorded (`damaged`, in transit and never handed over; damage found after the buyer has the goods is a return). Needs `update:Shipment`; no step-up. Only a `shipped` physical shipment on an order that is `processing` or `shipped` can be reported (`DELIVERY_NOT_LOSABLE`).
+ *
+ * One transaction: the shipment becomes `lost`; its units come off the fulfillment order's `shipped` count, so staff ship them again with the ordinary ship door (the same order, no new invoice, no new revenue, shipping is not charged again); the order's stock hold is topped up, with whatever free shelf units exist. Units the shelf cannot cover are owed: they move to a NEW fulfillment order on hold for stock (`cause: backorder`, dated by the product's restock date or 30 days), outside the backorder cap, first in the queue by the original payment. An order that was `shipped` goes back to `processing`. The buyer is mailed and gets an inbox row, always; `message` is the sentence they read.
+ * @summary Report a shipment lost or damaged
+ */
+export const markShipmentLostPathIdMax = 64;
+export const markShipmentLostPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const MarkShipmentLostParams = zod.strictObject({
+    id: zod.string().min(1).max(markShipmentLostPathIdMax).regex(markShipmentLostPathIdRegExp)
+});
+export const markShipmentLostBodyNoteMax = 1000;
+export const markShipmentLostBodyMessageMax = 500;
+export const MarkShipmentLostBody = zod.strictObject({
+    reason: zod.enum(['lost', 'damaged']),
+    note: zod.string().min(1).max(markShipmentLostBodyNoteMax).optional(),
+    message: zod.string().min(1).max(markShipmentLostBodyMessageMax).optional()
+});
+export const markShipmentLostResponseIdMax = 64;
+export const markShipmentLostResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const markShipmentLostResponseOrderIdMax = 64;
+export const markShipmentLostResponseOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const markShipmentLostResponseFulfillmentOrderIdMax = 64;
+export const markShipmentLostResponseFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const markShipmentLostResponseLinesItemProductIdMax = 64;
+export const markShipmentLostResponseLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const markShipmentLostResponseDestinationFullNameMax = 100;
+export const markShipmentLostResponseDestinationStreetMax = 200;
+export const markShipmentLostResponseDestinationCityMax = 100;
+export const markShipmentLostResponseDestinationZipMax = 20;
+export const markShipmentLostResponseDestinationCountryMax = 2;
+export const markShipmentLostResponseDestinationCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const markShipmentLostResponseDestinationPhoneMax = 32;
+export const markShipmentLostResponseLostMessageMax = 500;
+export const markShipmentLostResponseLostNoteMax = 1000;
+export const MarkShipmentLostResponse = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(markShipmentLostResponseIdMax)
+        .regex(markShipmentLostResponseIdRegExp),
+    orderId: zod
+        .string()
+        .min(1)
+        .max(markShipmentLostResponseOrderIdMax)
+        .regex(markShipmentLostResponseOrderIdRegExp),
+    fulfillmentOrderId: zod
+        .string()
+        .min(1)
+        .max(markShipmentLostResponseFulfillmentOrderIdMax)
+        .regex(markShipmentLostResponseFulfillmentOrderIdRegExp),
+    number: zod.number().min(1),
+    trackingCode: zod.string().optional(),
+    status: zod.enum(['shipped', 'delivered', 'lost']),
+    lines: zod.array(
+        zod.strictObject({
+            productId: zod
+                .string()
+                .min(1)
+                .max(markShipmentLostResponseLinesItemProductIdMax)
+                .regex(markShipmentLostResponseLinesItemProductIdRegExp),
+            title: zod.string(),
+            quantity: zod.number().min(1)
+        })
+    ),
+    destination: zod
+        .strictObject({
+            fullName: zod.string().min(1).max(markShipmentLostResponseDestinationFullNameMax),
+            street: zod.string().min(1).max(markShipmentLostResponseDestinationStreetMax),
+            city: zod.string().min(1).max(markShipmentLostResponseDestinationCityMax),
+            zip: zod.string().min(1).max(markShipmentLostResponseDestinationZipMax),
+            country: zod
+                .string()
+                .max(markShipmentLostResponseDestinationCountryMax)
+                .regex(markShipmentLostResponseDestinationCountryRegExp),
+            phone: zod.string().min(1).max(markShipmentLostResponseDestinationPhoneMax).optional()
+        })
+        .optional(),
+    forced: zod.boolean(),
+    awaitingTracking: zod.boolean(),
+    shippedAt: zod.iso.datetime({ offset: true }),
+    deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+    lostAt: zod.iso.datetime({ offset: true }).optional(),
+    lostReason: zod.enum(['lost', 'damaged']).optional(),
+    lostMessage: zod.string().max(markShipmentLostResponseLostMessageMax).optional(),
+    lostNote: zod.string().max(markShipmentLostResponseLostNoteMax).optional(),
+    actions: zod.strictObject({
+        deliver: zod.boolean(),
+        forceDeliver: zod.boolean(),
+        update: zod.boolean(),
+        markLost: zod.boolean()
+    }),
+    createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
@@ -16245,20 +16449,31 @@ export const listNotificationsResponseItemsItemFiveParamsFulfillmentOrderIdRegEx
 export const listNotificationsResponseItemsItemFiveParamsMessageMax = 500;
 export const listNotificationsResponseItemsItemSixIdMax = 64;
 export const listNotificationsResponseItemsItemSixIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listNotificationsResponseItemsItemSixParamsProductIdMax = 64;
-export const listNotificationsResponseItemsItemSixParamsProductIdRegExp = new RegExp(
+export const listNotificationsResponseItemsItemSixParamsOrderIdMax = 64;
+export const listNotificationsResponseItemsItemSixParamsOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const listNotificationsResponseItemsItemSixParamsShipmentIdMax = 64;
+export const listNotificationsResponseItemsItemSixParamsShipmentIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const listNotificationsResponseItemsItemSixParamsMessageMax = 500;
 export const listNotificationsResponseItemsItemSevenIdMax = 64;
 export const listNotificationsResponseItemsItemSevenIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listNotificationsResponseItemsItemSevenParamsUserIdMax = 64;
-export const listNotificationsResponseItemsItemSevenParamsUserIdRegExp = new RegExp(
+export const listNotificationsResponseItemsItemSevenParamsProductIdMax = 64;
+export const listNotificationsResponseItemsItemSevenParamsProductIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const listNotificationsResponseItemsItemEightIdMax = 64;
 export const listNotificationsResponseItemsItemEightIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listNotificationsResponseItemsItemEightParamsSubscriptionIdMax = 64;
-export const listNotificationsResponseItemsItemEightParamsSubscriptionIdRegExp = new RegExp(
+export const listNotificationsResponseItemsItemEightParamsUserIdMax = 64;
+export const listNotificationsResponseItemsItemEightParamsUserIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const listNotificationsResponseItemsItemNineIdMax = 64;
+export const listNotificationsResponseItemsItemNineIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listNotificationsResponseItemsItemNineParamsSubscriptionIdMax = 64;
+export const listNotificationsResponseItemsItemNineParamsSubscriptionIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const ListNotificationsResponse = zod.strictObject({
@@ -16400,14 +16615,25 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemSixIdMax)
                     .regex(listNotificationsResponseItemsItemSixIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['notifications.stock-alert']),
+                code: zod.enum(['notifications.shipment-lost']),
                 params: zod.strictObject({
-                    productId: zod
+                    orderId: zod
                         .string()
                         .min(1)
-                        .max(listNotificationsResponseItemsItemSixParamsProductIdMax)
-                        .regex(listNotificationsResponseItemsItemSixParamsProductIdRegExp),
-                    titles: zod.record(zod.string(), zod.string())
+                        .max(listNotificationsResponseItemsItemSixParamsOrderIdMax)
+                        .regex(listNotificationsResponseItemsItemSixParamsOrderIdRegExp),
+                    shipmentId: zod
+                        .string()
+                        .min(1)
+                        .max(listNotificationsResponseItemsItemSixParamsShipmentIdMax)
+                        .regex(listNotificationsResponseItemsItemSixParamsShipmentIdRegExp),
+                    reason: zod.enum(['lost', 'damaged']),
+                    message: zod
+                        .string()
+                        .max(listNotificationsResponseItemsItemSixParamsMessageMax)
+                        .optional(),
+                    owed: zod.array(zod.string()).optional(),
+                    expectedAt: zod.iso.datetime({ offset: true }).optional()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -16420,14 +16646,14 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemSevenIdMax)
                     .regex(listNotificationsResponseItemsItemSevenIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['notifications.staff.purchase-hold-placed']),
+                code: zod.enum(['notifications.stock-alert']),
                 params: zod.strictObject({
-                    userId: zod
+                    productId: zod
                         .string()
                         .min(1)
-                        .max(listNotificationsResponseItemsItemSevenParamsUserIdMax)
-                        .regex(listNotificationsResponseItemsItemSevenParamsUserIdRegExp),
-                    until: zod.iso.datetime({ offset: true })
+                        .max(listNotificationsResponseItemsItemSevenParamsProductIdMax)
+                        .regex(listNotificationsResponseItemsItemSevenParamsProductIdRegExp),
+                    titles: zod.record(zod.string(), zod.string())
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -16440,13 +16666,33 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemEightIdMax)
                     .regex(listNotificationsResponseItemsItemEightIdRegExp),
                 audience: zod.enum(['own', 'staff']),
+                code: zod.enum(['notifications.staff.purchase-hold-placed']),
+                params: zod.strictObject({
+                    userId: zod
+                        .string()
+                        .min(1)
+                        .max(listNotificationsResponseItemsItemEightParamsUserIdMax)
+                        .regex(listNotificationsResponseItemsItemEightParamsUserIdRegExp),
+                    until: zod.iso.datetime({ offset: true })
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(listNotificationsResponseItemsItemNineIdMax)
+                    .regex(listNotificationsResponseItemsItemNineIdRegExp),
+                audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['notifications.staff.webhook-disabled']),
                 params: zod.strictObject({
                     subscriptionId: zod
                         .string()
                         .min(1)
-                        .max(listNotificationsResponseItemsItemEightParamsSubscriptionIdMax)
-                        .regex(listNotificationsResponseItemsItemEightParamsSubscriptionIdRegExp)
+                        .max(listNotificationsResponseItemsItemNineParamsSubscriptionIdMax)
+                        .regex(listNotificationsResponseItemsItemNineParamsSubscriptionIdRegExp)
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -16512,16 +16758,23 @@ export const getNotificationByIdResponseFiveParamsFulfillmentOrderIdRegExp = new
 export const getNotificationByIdResponseFiveParamsMessageMax = 500;
 export const getNotificationByIdResponseSixIdMax = 64;
 export const getNotificationByIdResponseSixIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseSixParamsProductIdMax = 64;
-export const getNotificationByIdResponseSixParamsProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseSixParamsOrderIdMax = 64;
+export const getNotificationByIdResponseSixParamsOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseSixParamsShipmentIdMax = 64;
+export const getNotificationByIdResponseSixParamsShipmentIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseSixParamsMessageMax = 500;
 export const getNotificationByIdResponseSevenIdMax = 64;
 export const getNotificationByIdResponseSevenIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseSevenParamsUserIdMax = 64;
-export const getNotificationByIdResponseSevenParamsUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseSevenParamsProductIdMax = 64;
+export const getNotificationByIdResponseSevenParamsProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getNotificationByIdResponseEightIdMax = 64;
 export const getNotificationByIdResponseEightIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseEightParamsSubscriptionIdMax = 64;
-export const getNotificationByIdResponseEightParamsSubscriptionIdRegExp = new RegExp(
+export const getNotificationByIdResponseEightParamsUserIdMax = 64;
+export const getNotificationByIdResponseEightParamsUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseNineIdMax = 64;
+export const getNotificationByIdResponseNineIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseNineParamsSubscriptionIdMax = 64;
+export const getNotificationByIdResponseNineParamsSubscriptionIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const GetNotificationByIdResponse = zod.union([
@@ -16650,14 +16903,22 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseSixIdMax)
             .regex(getNotificationByIdResponseSixIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['notifications.stock-alert']),
+        code: zod.enum(['notifications.shipment-lost']),
         params: zod.strictObject({
-            productId: zod
+            orderId: zod
                 .string()
                 .min(1)
-                .max(getNotificationByIdResponseSixParamsProductIdMax)
-                .regex(getNotificationByIdResponseSixParamsProductIdRegExp),
-            titles: zod.record(zod.string(), zod.string())
+                .max(getNotificationByIdResponseSixParamsOrderIdMax)
+                .regex(getNotificationByIdResponseSixParamsOrderIdRegExp),
+            shipmentId: zod
+                .string()
+                .min(1)
+                .max(getNotificationByIdResponseSixParamsShipmentIdMax)
+                .regex(getNotificationByIdResponseSixParamsShipmentIdRegExp),
+            reason: zod.enum(['lost', 'damaged']),
+            message: zod.string().max(getNotificationByIdResponseSixParamsMessageMax).optional(),
+            owed: zod.array(zod.string()).optional(),
+            expectedAt: zod.iso.datetime({ offset: true }).optional()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -16670,14 +16931,14 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseSevenIdMax)
             .regex(getNotificationByIdResponseSevenIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['notifications.staff.purchase-hold-placed']),
+        code: zod.enum(['notifications.stock-alert']),
         params: zod.strictObject({
-            userId: zod
+            productId: zod
                 .string()
                 .min(1)
-                .max(getNotificationByIdResponseSevenParamsUserIdMax)
-                .regex(getNotificationByIdResponseSevenParamsUserIdRegExp),
-            until: zod.iso.datetime({ offset: true })
+                .max(getNotificationByIdResponseSevenParamsProductIdMax)
+                .regex(getNotificationByIdResponseSevenParamsProductIdRegExp),
+            titles: zod.record(zod.string(), zod.string())
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -16690,13 +16951,33 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseEightIdMax)
             .regex(getNotificationByIdResponseEightIdRegExp),
         audience: zod.enum(['own', 'staff']),
+        code: zod.enum(['notifications.staff.purchase-hold-placed']),
+        params: zod.strictObject({
+            userId: zod
+                .string()
+                .min(1)
+                .max(getNotificationByIdResponseEightParamsUserIdMax)
+                .regex(getNotificationByIdResponseEightParamsUserIdRegExp),
+            until: zod.iso.datetime({ offset: true })
+        }),
+        severity: zod.enum(['info', 'success', 'warning', 'error']),
+        readAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(getNotificationByIdResponseNineIdMax)
+            .regex(getNotificationByIdResponseNineIdRegExp),
+        audience: zod.enum(['own', 'staff']),
         code: zod.enum(['notifications.staff.webhook-disabled']),
         params: zod.strictObject({
             subscriptionId: zod
                 .string()
                 .min(1)
-                .max(getNotificationByIdResponseEightParamsSubscriptionIdMax)
-                .regex(getNotificationByIdResponseEightParamsSubscriptionIdRegExp)
+                .max(getNotificationByIdResponseNineParamsSubscriptionIdMax)
+                .regex(getNotificationByIdResponseNineParamsSubscriptionIdRegExp)
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),

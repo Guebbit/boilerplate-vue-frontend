@@ -177,6 +177,7 @@
         "type-refund_reversed": "Rimborso stornato dal gestore dei pagamenti",
         "type-shipment_shipped": "Pacco spedito",
         "type-shipment_delivered": "Pacco consegnato",
+        "type-shipment_lost": "Pacco smarrito in viaggio",
         "type-fulfillment_held": "Spedizione messa in attesa",
         "type-fulfillment_released": "Spedizione sbloccata",
         "type-remainder_cancelled": "Resto dell'ordine annullato",
@@ -224,6 +225,8 @@
         "hold-reason-awaiting_stock": "In attesa di merce",
         "hold-reason-incorrect_address": "Indirizzo errato",
         "hold-reason-high_risk": "Rischio elevato",
+        "lost-reason-lost": "Smarrito",
+        "lost-reason-damaged": "Danneggiato in viaggio",
         "hold-reason-other": "Altro motivo"
     },
     "orders-export": {

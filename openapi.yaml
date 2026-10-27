@@ -6759,7 +6759,7 @@ paths:
       tags:
         - Delivery
       summary: Correct a shipment's tracking code
-      description: 'Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped` or `delivered`; a digital fulfilment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.'
+      description: 'Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped`, `delivered` or `lost`; a digital fulfilment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.'
       operationId: updateShipment
       security:
         - bearerAuth: []
@@ -6811,7 +6811,10 @@ paths:
       tags:
         - Delivery
       summary: Record a shipment's arrival
-      description: Stamps the shipment delivered. The order moves `shipped → delivered` when this was the last undelivered shipment and nothing remains to ship; its withdrawal clock then starts from the LAST delivery (CRD Art. 9(2)(b)(i)). Refuses a shipment already delivered with `DELIVERY_NOT_DELIVERABLE`.
+      description: |-
+        Stamps the shipment delivered. The order moves `shipped → delivered` when this was the last undelivered shipment and nothing remains to ship; its withdrawal clock then starts from the LAST delivery (CRD Art. 9(2)(b)(i)). Refuses a shipment already delivered with `DELIVERY_NOT_DELIVERABLE`.
+
+        A `lost` shipment that turns up is accepted too, but only while every unit on it is still open: not shipped again and not cancelled, the owed units of a short shelf included. All or nothing, in one transaction: the shipment becomes `delivered` (its `lostAt` and `lostReason` stay as history), the units go back on the fulfillment order, the top-up of the stock hold is given back and the owed fulfillment order is closed with no refund (`cancelReason: found`). Otherwise `DELIVERY_LOST_SUPERSEDED` (409).
       operationId: deliverShipment
       security:
         - bearerAuth: []
@@ -9225,6 +9228,58 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
+  /delivery/shipments/{id}/lost:
+    post:
+      tags:
+        - Delivery
+      summary: Report a shipment lost or damaged
+      description: |-
+        Staff reports a parcel that left but will not arrive (`lost`), or arrived unusable before its arrival was recorded (`damaged`, in transit and never handed over; damage found after the buyer has the goods is a return). Needs `update:Shipment`; no step-up. Only a `shipped` physical shipment on an order that is `processing` or `shipped` can be reported (`DELIVERY_NOT_LOSABLE`).
+
+        One transaction: the shipment becomes `lost`; its units come off the fulfillment order's `shipped` count, so staff ship them again with the ordinary ship door (the same order, no new invoice, no new revenue, shipping is not charged again); the order's stock hold is topped up, with whatever free shelf units exist. Units the shelf cannot cover are owed: they move to a NEW fulfillment order on hold for stock (`cause: backorder`, dated by the product's restock date or 30 days), outside the backorder cap, first in the queue by the original payment. An order that was `shipped` goes back to `processing`. The buyer is mailed and gets an inbox row, always; `message` is the sentence they read.
+      operationId: markShipmentLost
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+          description: The shipment that did not arrive
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkShipmentLostRequest"
+      responses:
+        "200":
+          description: The shipment, now `lost`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -13674,6 +13729,7 @@ components:
         - refund_reversed
         - shipment_shipped
         - shipment_delivered
+        - shipment_lost
         - fulfillment_held
         - fulfillment_released
         - remainder_cancelled
@@ -13688,7 +13744,7 @@ components:
         - release_date_moved
         - delay_notice_sent
         - address_corrected
-      description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`, `refund_reversed`."
+      description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`. Shipments: `shipment_shipped`, `shipment_delivered`, `shipment_lost`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`, `refund_reversed`."
     OrderTimelineExportEntry:
       type: object
       additionalProperties: false
@@ -13883,6 +13939,13 @@ components:
           type: number
           format: double
           minimum: 0
+    ShipmentStatus:
+      type: string
+      enum:
+        - shipped
+        - delivered
+        - lost
+      description: "The tail of the order's lifecycle, as the carrier sees it. `lost`: staff reported the parcel lost or damaged in transit, so its units are open again; it can still become `delivered` if it turns up and nothing was shipped or cancelled meanwhile."
     ShipmentLine:
       type: object
       additionalProperties: false
@@ -13899,6 +13962,12 @@ components:
         quantity:
           type: integer
           minimum: 1
+    ShipmentLostReason:
+      type: string
+      enum:
+        - lost
+        - damaged
+      description: "Why the parcel will not arrive. `lost`: the carrier lost it. `damaged`: it was damaged in transit, reported before its arrival was recorded (damage found after the buyer has the goods is a return)."
     ExportShipment:
       type: object
       additionalProperties: false
@@ -13924,10 +13993,7 @@ components:
         trackingCode:
           type: string
         status:
-          type: string
-          enum:
-            - shipped
-            - delivered
+          $ref: "#/components/schemas/ShipmentStatus"
         lines:
           type: array
           items:
@@ -13941,6 +14007,20 @@ components:
         deliveredAt:
           type: string
           format: date-time
+        lostAt:
+          type: string
+          format: date-time
+          description: When staff reported it lost or damaged. Kept as history when the parcel turns up and is then delivered.
+        lostReason:
+          $ref: "#/components/schemas/ShipmentLostReason"
+        lostMessage:
+          type: string
+          maxLength: 500
+          description: What staff wrote for the buyer when they reported the loss; never reaped.
+        lostNote:
+          type: string
+          maxLength: 1000
+          description: Staff's free text about the loss. Reaped with the other free text.
     FulfillmentOrderKind:
       type: string
       enum:
@@ -14009,7 +14089,8 @@ components:
         - buyer
         - staff
         - order
-      description: "Who cancelled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `order`: the whole order was cancelled."
+        - found
+      description: "Who cancelled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `order`: the whole order was cancelled. `found`: the lost parcel turned up, so the units owed for it are no longer owed (no refund)."
     ExportFulfillmentOrder:
       type: object
       additionalProperties: false
@@ -14476,6 +14557,66 @@ components:
         createdAt:
           type: string
           format: date-time
+    ShipmentLostParams:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - shipmentId
+        - reason
+      description: "What the buyer needs to read a lost-parcel notice: which order and shipment, whether it was lost or damaged in transit, the sentence staff wrote for them if any, and the units the shelf could not cover again with the date they are now expected (absent when everything is being sent again from the shelf)."
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        shipmentId:
+          $ref: "#/components/schemas/Id"
+        reason:
+          type: string
+          enum:
+            - lost
+            - damaged
+        message:
+          type: string
+          maxLength: 500
+        owed:
+          type: array
+          description: The titles of the products still to be restocked, as the order froze them.
+          items:
+            type: string
+        expectedAt:
+          type: string
+          format: date-time
+    NotificationShipmentLost:
+      type: object
+      additionalProperties: false
+      description: A parcel the caller was waiting for was reported lost or damaged in transit; the shop sends it again or refunds.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - notifications.shipment-lost
+        params:
+          $ref: "#/components/schemas/ShipmentLostParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
     NotificationStockAlert:
       type: object
       additionalProperties: false
@@ -14599,6 +14740,7 @@ components:
         - $ref: "#/components/schemas/NotificationCartMergeRefused"
         - $ref: "#/components/schemas/NotificationFulfillmentDelayed"
         - $ref: "#/components/schemas/NotificationFulfillmentHeld"
+        - $ref: "#/components/schemas/NotificationShipmentLost"
         - $ref: "#/components/schemas/NotificationStockAlert"
         - $ref: "#/components/schemas/NotificationStaffPurchaseHoldPlaced"
         - $ref: "#/components/schemas/NotificationStaffWebhookDisabled"
@@ -14610,6 +14752,7 @@ components:
           notifications.cart-merge-refused: "#/components/schemas/NotificationCartMergeRefused"
           notifications.fulfillment-delayed: "#/components/schemas/NotificationFulfillmentDelayed"
           notifications.fulfillment-held: "#/components/schemas/NotificationFulfillmentHeld"
+          notifications.shipment-lost: "#/components/schemas/NotificationShipmentLost"
           notifications.stock-alert: "#/components/schemas/NotificationStockAlert"
           notifications.staff.purchase-hold-placed: "#/components/schemas/NotificationStaffPurchaseHoldPlaced"
           notifications.staff.webhook-disabled: "#/components/schemas/NotificationStaffWebhookDisabled"
@@ -17209,17 +17352,21 @@ components:
         - deliver
         - forceDeliver
         - update
+        - markLost
       description: What the requesting caller may do to this shipment, decided by the server.
       properties:
         deliver:
           type: boolean
-          description: Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`.
+          description: Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`, or `lost` with every unit on it still open (see the operation).
         forceDeliver:
           type: boolean
           description: "Whether `POST /delivery/shipments/{id}/deliver` with `forced: true` would be accepted: the arrival is open (as for `deliver`) and the caller also holds `override:Order`. True beside `deliver`, not instead of it: forcing records the arrival without a carrier confirmation and needs a `reason`."
         update:
           type: boolean
-          description: Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — any physical shipment, shipped or delivered.
+          description: Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — any physical shipment, shipped, delivered or lost.
+        markLost:
+          type: boolean
+          description: Whether `POST /delivery/shipments/{id}/lost` would be accepted — a physical shipment still `shipped`, on an order that is `processing` or `shipped`.
     Shipment:
       type: object
       additionalProperties: false
@@ -17234,7 +17381,7 @@ components:
         - awaitingTracking
         - shippedAt
         - actions
-      description: What actually left, at one time, with one tracking code (Shopify's `Fulfillment`). Born `shipped`; a digital fulfilment is born `delivered`.
+      description: What actually left, at one time, with one tracking code (Shopify's `Fulfillment`). Born `shipped`; a digital fulfilment is born `delivered`. A parcel that will not arrive becomes `lost`; one that turns up after all becomes `delivered`.
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -17250,11 +17397,7 @@ components:
           type: string
           description: The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false), and for a digital fulfilment.
         status:
-          type: string
-          enum:
-            - shipped
-            - delivered
-          description: The tail of the order's lifecycle, as the carrier sees it.
+          $ref: "#/components/schemas/ShipmentStatus"
         lines:
           type: array
           items:
@@ -17274,6 +17417,20 @@ components:
         deliveredAt:
           type: string
           format: date-time
+        lostAt:
+          type: string
+          format: date-time
+          description: When staff reported it lost or damaged. Kept as history when the parcel turns up and is then delivered.
+        lostReason:
+          $ref: "#/components/schemas/ShipmentLostReason"
+        lostMessage:
+          type: string
+          maxLength: 500
+          description: What staff wrote for the buyer when they reported the loss. Everyone who reads the shipment sees it.
+        lostNote:
+          type: string
+          maxLength: 1000
+          description: Staff's free text about the loss. Left out for anyone who cannot update fulfilment.
         actions:
           $ref: "#/components/schemas/ShipmentActions"
         createdAt:
@@ -19140,6 +19297,24 @@ components:
           type: integer
           minimum: 0
           description: Orders that would get a delay email (the date moves later or is cleared); silence always means the buyer keeps waiting, and they can cancel any time before it ships.
+    MarkShipmentLostRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - reason
+      properties:
+        reason:
+          $ref: "#/components/schemas/ShipmentLostReason"
+        note:
+          type: string
+          maxLength: 1000
+          minLength: 1
+          description: Free text for the staff who read the record later; reaped with the other free text. The buyer never sees it.
+        message:
+          type: string
+          maxLength: 500
+          minLength: 1
+          description: A sentence for the buyer, shown on their order and mailed with the loss notice. Separate from `note`, which they never see. Not translated.
     CloseReturnRequest:
       type: object
       additionalProperties: false
@@ -19929,6 +20104,9 @@ x-error-codes:
   DELIVERY_LINES_INVALID:
     status: 422
     description: A shipment line names a product that is not on the fulfillment order, asks for more than remains of it, or names the same product twice.
+  DELIVERY_LOST_SUPERSEDED:
+    status: 409
+    description: "A `lost` shipment cannot be recorded as arrived because its units were already shipped again or cancelled: taking them back would count the goods twice."
   DELIVERY_NOT_DELIVERABLE:
     status: 409
     description: The shipment has already been delivered, or its order is no longer in a state this can run from.
@@ -19938,6 +20116,9 @@ x-error-codes:
   DELIVERY_NOT_HOLDABLE:
     status: 409
     description: Only an open or in-progress fulfillment order can be put on hold.
+  DELIVERY_NOT_LOSABLE:
+    status: 409
+    description: Only a `shipped` parcel can be reported lost or damaged, and only while its order is `processing` or `shipped`. A parcel already `delivered` or `lost`, a digital fulfilment and a cancelled order are refused.
   DELIVERY_NOT_PHYSICAL:
     status: 409
     description: A digital fulfillment order has nothing to ship (fulfil it instead), and a digital shipment has no tracking code to set.

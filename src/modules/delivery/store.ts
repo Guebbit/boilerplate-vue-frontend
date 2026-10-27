@@ -22,6 +22,7 @@ import {
     releaseFulfillmentOrder,
     updateShipment,
     deliverShipment,
+    markShipmentLost,
     listPreorderFulfillmentOrders,
     summarizePreorderFulfillmentOrders
 } from '@api';
@@ -29,6 +30,7 @@ import type {
     FulfillmentOrder,
     HoldFulfillmentOrderRequest,
     ListPreorderFulfillmentOrdersParams,
+    MarkShipmentLostRequest,
     PreorderFulfillmentOrder,
     PreorderProductSummary,
     ShippingMethod,
@@ -262,7 +264,22 @@ export const useDeliveryStore = defineStore('delivery', () => {
         );
 
     /**
-     * Corrects a shipment's tracking code (admin), while it is still `shipped`.
+     * Reports a shipment lost or damaged in transit (admin). Its units reopen on the same
+     * fulfillment order; the order may step back to `processing`.
+     *
+     * @param shipmentId - The shipment that will not arrive.
+     * @param input - `reason`, and optionally a note for colleagues and a message for the buyer.
+     * @returns A promise resolving with the shipment, after the lists are re-read.
+     */
+    const markLost = (shipmentId: string, input: MarkShipmentLostRequest) =>
+        fetchAny(() =>
+            markShipmentLost(shipmentId, input).then((response) =>
+                readFulfillment(response.orderId).then(() => response)
+            )
+        );
+
+    /**
+     * Corrects a shipment's tracking code (admin), whatever its status.
      *
      * @param shipmentId - The shipment to correct.
      * @param trackingCode - The corrected code.
@@ -294,6 +311,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
         hold,
         release,
         deliver,
+        markLost,
         editTracking
     };
 });

@@ -23,6 +23,17 @@ const tools: TimelineTools = {
 };
 
 describe('describeTimelineEntry', () => {
+    it('says which shipment was lost and why, in the reason’s own words', () => {
+        expect(
+            describeTimelineEntry(
+                { type: 'shipment_lost', data: { number: 2, reason: 'damaged' } },
+                tools
+            ).detail
+        ).toBe(
+            'order-timeline.detail-shipment(2) · order-timeline.detail-reason(order-timeline.lost-reason-damaged)'
+        );
+    });
+
     it('gives every type a title and no detail when it has no data to add', () => {
         expect(describeTimelineEntry({ type: 'processing', data: {} }, tools)).toEqual({
             title: 'order-timeline.type-processing'
