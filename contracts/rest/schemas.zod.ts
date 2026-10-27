@@ -6774,7 +6774,16 @@ export const ListProductsResponse = zod.strictObject({
             tags: zod.array(zod.string()).optional(),
             createdAt: zod.iso.datetime({ offset: true }).optional(),
             updatedAt: zod.iso.datetime({ offset: true }).optional(),
-            deletedAt: zod.iso.datetime({ offset: true }).optional()
+            deletedAt: zod.iso.datetime({ offset: true }).optional(),
+            translations: zod
+                .record(
+                    zod.string(),
+                    zod.strictObject({
+                        title: zod.string(),
+                        description: zod.string().optional()
+                    })
+                )
+                .optional()
         })
     ),
     meta: zod.strictObject({
@@ -6885,7 +6894,16 @@ export const CreateProductResponse = zod.strictObject({
     tags: zod.array(zod.string()).optional(),
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
-    deletedAt: zod.iso.datetime({ offset: true }).optional()
+    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+    translations: zod
+        .record(
+            zod.string(),
+            zod.strictObject({
+                title: zod.string(),
+                description: zod.string().optional()
+            })
+        )
+        .optional()
 });
 /**
  * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /products/{id}/restore`.
@@ -6903,7 +6921,7 @@ export const DeleteProductBody = zod.strictObject({
 });
 export const DeleteProductResponse = zod.void();
 /**
- * Every category and tag the PUBLIC catalogue carries, each with how many visible products hold it — what a storefront renders as filter chips. Sorted by count descending, then name. Counts follow the same visibility rule the listing does, so a chip can never lead to an empty page.
+ * Every category and tag the PUBLIC catalogue carries, each with how many visible products hold it — what a storefront renders as filter chips. Sorted by count descending, then name. Counts follow the same visibility rule the listing does, so one chip alone never leads to an empty page. Counts are catalogue-wide: they do not follow the filters already chosen.
  * @summary Catalogue facets
  */
 export const GetCatalogueFacetsResponse = zod.strictObject({
@@ -6921,7 +6939,7 @@ export const GetCatalogueFacetsResponse = zod.strictObject({
     )
 });
 /**
- * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached.
+ * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`. `title` and `description` are always resolved to one language. A caller holding `read:Translation` also gets `translations`, every language the product has a row for (drafts included), for the editor's tabs: what the caller may see shapes the body, there is no separate staff URL. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph). A body that differs by caller is never served from, or stored in, the shared cache.
  * @summary Product details
  */
 export const getProductByIdPathIdMax = 64;
@@ -6971,7 +6989,16 @@ export const GetProductByIdResponse = zod.strictObject({
     tags: zod.array(zod.string()).optional(),
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
-    deletedAt: zod.iso.datetime({ offset: true }).optional()
+    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+    translations: zod
+        .record(
+            zod.string(),
+            zod.strictObject({
+                title: zod.string(),
+                description: zod.string().optional()
+            })
+        )
+        .optional()
 });
 /**
  * Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
@@ -7083,7 +7110,16 @@ export const ReplaceProductByIdResponse = zod.strictObject({
     tags: zod.array(zod.string()).optional(),
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
-    deletedAt: zod.iso.datetime({ offset: true }).optional()
+    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+    translations: zod
+        .record(
+            zod.string(),
+            zod.strictObject({
+                title: zod.string(),
+                description: zod.string().optional()
+            })
+        )
+        .optional()
 });
 /**
  * Updates the product identified by `{id}` in the path, merging. Every field but
@@ -7209,7 +7245,16 @@ export const UpdateProductByIdResponse = zod.strictObject({
     tags: zod.array(zod.string()).optional(),
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
-    deletedAt: zod.iso.datetime({ offset: true }).optional()
+    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+    translations: zod
+        .record(
+            zod.string(),
+            zod.strictObject({
+                title: zod.string(),
+                description: zod.string().optional()
+            })
+        )
+        .optional()
 });
 /**
  * Deletes the product identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /products/{id}/restore`. Functionally equivalent to `DELETE /products`.
@@ -7228,69 +7273,6 @@ export const DeleteProductByIdHeader = zod.strictObject({
     'If-Match': zod.string().max(deleteProductByIdHeaderIfMatchMax).optional()
 });
 export const DeleteProductByIdResponse = zod.void();
-/**
- * Every language this product has a row for, plus its price/stock/image — the shape the editor's form reads to populate its tabs. Unlike `GET /products/{id}`, this does not resolve to one language and is never cached: it's the screen someone is actively editing, the same reasoning `GET /locales/{locale}/entries` already applies.
- * @summary Product, every language at once
- */
-export const getProductAdminPathIdMax = 64;
-export const getProductAdminPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const GetProductAdminParams = zod.strictObject({
-    id: zod.string().min(1).max(getProductAdminPathIdMax).regex(getProductAdminPathIdRegExp)
-});
-export const getProductAdminResponseIdMax = 64;
-export const getProductAdminResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getProductAdminResponsePriceMin = 0;
-export const getProductAdminResponseSkuMax = 64;
-export const getProductAdminResponseOnHandMin = 0;
-export const getProductAdminResponseReservedMin = 0;
-export const getProductAdminResponseAvailableMin = 0;
-export const getProductAdminResponseRequiresShippingDefault = true;
-export const getProductAdminResponseNoWithdrawalDefault = false;
-export const getProductAdminResponseWeightMin = 0;
-export const GetProductAdminResponse = zod.strictObject({
-    id: zod
-        .string()
-        .min(1)
-        .max(getProductAdminResponseIdMax)
-        .regex(getProductAdminResponseIdRegExp),
-    title: zod.string(),
-    price: zod.number().min(getProductAdminResponsePriceMin),
-    currency: zod.string(),
-    taxClass: zod.enum(['reduced', 'zero']).optional(),
-    rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
-    sku: zod.string().min(1).max(getProductAdminResponseSkuMax).optional(),
-    inStock: zod.boolean(),
-    lowStock: zod.boolean(),
-    onHand: zod.number().min(getProductAdminResponseOnHandMin).optional(),
-    reserved: zod.number().min(getProductAdminResponseReservedMin).optional(),
-    available: zod.number().min(getProductAdminResponseAvailableMin).optional(),
-    description: zod.string().optional(),
-    active: zod.boolean().optional(),
-    purchasable: zod.boolean().optional(),
-    releaseDate: zod.iso.datetime({ offset: true }).optional(),
-    allowBackorder: zod.boolean().optional(),
-    restockDate: zod.iso.datetime({ offset: true }).optional(),
-    buyable: zod.boolean(),
-    preorder: zod.boolean().optional(),
-    backorder: zod.boolean().optional(),
-    requiresShipping: zod.boolean().default(getProductAdminResponseRequiresShippingDefault),
-    noWithdrawal: zod.boolean().default(getProductAdminResponseNoWithdrawalDefault),
-    weight: zod.number().min(getProductAdminResponseWeightMin).optional(),
-    imageUrl: zod.string().min(1).optional(),
-    thumbnailUrl: zod.string().optional(),
-    categories: zod.array(zod.string()).optional(),
-    tags: zod.array(zod.string()).optional(),
-    createdAt: zod.iso.datetime({ offset: true }).optional(),
-    updatedAt: zod.iso.datetime({ offset: true }).optional(),
-    deletedAt: zod.iso.datetime({ offset: true }).optional(),
-    translations: zod.record(
-        zod.string(),
-        zod.strictObject({
-            title: zod.string(),
-            description: zod.string().optional()
-        })
-    )
-});
 /**
  * Undoes the soft delete of the product identified by `{id}`. Answers 409 when the product is not soft-deleted, so a restore can never be mistaken for an ordinary read.
  * @summary Restore product
@@ -7346,7 +7328,16 @@ export const RestoreProductByIdResponse = zod.strictObject({
     tags: zod.array(zod.string()).optional(),
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
-    deletedAt: zod.iso.datetime({ offset: true }).optional()
+    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+    translations: zod
+        .record(
+            zod.string(),
+            zod.strictObject({
+                title: zod.string(),
+                description: zod.string().optional()
+            })
+        )
+        .optional()
 });
 /**
  * Permanently removes the product identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /products/{id}?hardDelete=true`.
@@ -7473,7 +7464,16 @@ export const SearchProductsResponse = zod.strictObject({
             tags: zod.array(zod.string()).optional(),
             createdAt: zod.iso.datetime({ offset: true }).optional(),
             updatedAt: zod.iso.datetime({ offset: true }).optional(),
-            deletedAt: zod.iso.datetime({ offset: true }).optional()
+            deletedAt: zod.iso.datetime({ offset: true }).optional(),
+            translations: zod
+                .record(
+                    zod.string(),
+                    zod.strictObject({
+                        title: zod.string(),
+                        description: zod.string().optional()
+                    })
+                )
+                .optional()
         })
     ),
     meta: zod.strictObject({
@@ -14001,45 +14001,6 @@ export const ListInventoryLevelsResponse = zod.strictObject({
     })
 });
 /**
- * Sets how many units of the product may be backordered at once: the allowance an order claims when it is placed. `0` closes it; `null` removes the cap, so the shop keeps selling whatever the date promises. Lowering it below what is already outstanding is allowed and leaves those orders alone; only new ones are refused. Absolute and idempotent, so a retry is safe.
- *
- * Not a stock movement: nothing on the shelf changes, so it leaves no ledger row (it is audited).
- * @summary Set a product's preorder limit
- */
-export const setBackorderLimitPathProductIdMax = 64;
-export const setBackorderLimitPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const SetBackorderLimitParams = zod.strictObject({
-    productId: zod
-        .string()
-        .min(1)
-        .max(setBackorderLimitPathProductIdMax)
-        .regex(setBackorderLimitPathProductIdRegExp)
-});
-export const setBackorderLimitBodyBackorderLimitMin = 0;
-export const SetBackorderLimitBody = zod.strictObject({
-    backorderLimit: zod.number().min(setBackorderLimitBodyBackorderLimitMin).nullable()
-});
-export const setBackorderLimitResponseProductIdMax = 64;
-export const setBackorderLimitResponseProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const setBackorderLimitResponseOnHandMin = 0;
-export const setBackorderLimitResponseReservedMin = 0;
-export const setBackorderLimitResponseAvailableMin = 0;
-export const setBackorderLimitResponseBackorderLimitMin = 0;
-export const setBackorderLimitResponseBackorderedMin = 0;
-export const SetBackorderLimitResponse = zod.strictObject({
-    productId: zod
-        .string()
-        .min(1)
-        .max(setBackorderLimitResponseProductIdMax)
-        .regex(setBackorderLimitResponseProductIdRegExp),
-    title: zod.string(),
-    onHand: zod.number().min(setBackorderLimitResponseOnHandMin),
-    reserved: zod.number().min(setBackorderLimitResponseReservedMin),
-    available: zod.number().min(setBackorderLimitResponseAvailableMin),
-    backorderLimit: zod.number().min(setBackorderLimitResponseBackorderLimitMin).nullable(),
-    backordered: zod.number().min(setBackorderLimitResponseBackorderedMin)
-});
-/**
  * Every product with a preorder allowance or an outstanding preorder, for the admin's preorder board: the cap, what is outstanding against it and how that splits between orders still unpaid and orders already paid. `backordered` is OUTSTANDING units, not units ever sold: it falls when stock arrives and is allocated, and when an order is cancelled or expires. `ordered` is the lifetime count, read off the ledger.
  *
  * The release date and the title come from the catalogue. Never public: exact counts are what a competitor wants.
@@ -17739,7 +17700,7 @@ export const GetStatsLimitsResponse = zod.strictObject({
     maxBuckets: zod.number()
 });
 /**
- * One row of the stock board by product, with its counters and availability — the record `receive`, `adjust` and `backorder-limit` act on. Same audience as the board (`read:StockLevel`). An unknown product, one with no level row and a malformed id are the same 404.
+ * One row of the stock board by product, with its counters and availability — the record `receive`, `adjust` and the `PATCH` act on. Same audience as the board (`read:StockLevel`). An unknown product, one with no level row and a malformed id are the same 404.
  * @summary Get one product's stock level
  */
 export const getInventoryLevelPathProductIdMax = 64;
@@ -17770,6 +17731,45 @@ export const GetInventoryLevelResponse = zod.strictObject({
     available: zod.number().min(getInventoryLevelResponseAvailableMin),
     backorderLimit: zod.number().min(getInventoryLevelResponseBackorderLimitMin).nullable(),
     backordered: zod.number().min(getInventoryLevelResponseBackorderedMin)
+});
+/**
+ * Merges the given fields into the level (RFC 7396). Only the preorder limit is editable; the counters move through `receive` and `adjust`. `backorderLimit` is how many units of the product may be backordered at once: the allowance an order claims when it is placed. `0` closes it; `null` removes the cap, so the shop keeps selling whatever the date promises. Lowering it below what is already outstanding is allowed and leaves those orders alone; only new ones are refused. A body that names no field changes nothing and answers the level as it is. Absolute and idempotent, so a retry is safe.
+ *
+ * Not a stock movement: nothing on the shelf changes, so it leaves no ledger row (it is audited). Needs `update:StockLevel`.
+ * @summary Edit a product's stock level
+ */
+export const updateInventoryLevelPathProductIdMax = 64;
+export const updateInventoryLevelPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const UpdateInventoryLevelParams = zod.strictObject({
+    productId: zod
+        .string()
+        .min(1)
+        .max(updateInventoryLevelPathProductIdMax)
+        .regex(updateInventoryLevelPathProductIdRegExp)
+});
+export const updateInventoryLevelBodyBackorderLimitMin = 0;
+export const UpdateInventoryLevelBody = zod.strictObject({
+    backorderLimit: zod.number().min(updateInventoryLevelBodyBackorderLimitMin).nullish()
+});
+export const updateInventoryLevelResponseProductIdMax = 64;
+export const updateInventoryLevelResponseProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const updateInventoryLevelResponseOnHandMin = 0;
+export const updateInventoryLevelResponseReservedMin = 0;
+export const updateInventoryLevelResponseAvailableMin = 0;
+export const updateInventoryLevelResponseBackorderLimitMin = 0;
+export const updateInventoryLevelResponseBackorderedMin = 0;
+export const UpdateInventoryLevelResponse = zod.strictObject({
+    productId: zod
+        .string()
+        .min(1)
+        .max(updateInventoryLevelResponseProductIdMax)
+        .regex(updateInventoryLevelResponseProductIdRegExp),
+    title: zod.string(),
+    onHand: zod.number().min(updateInventoryLevelResponseOnHandMin),
+    reserved: zod.number().min(updateInventoryLevelResponseReservedMin),
+    available: zod.number().min(updateInventoryLevelResponseAvailableMin),
+    backorderLimit: zod.number().min(updateInventoryLevelResponseBackorderLimitMin).nullable(),
+    backordered: zod.number().min(updateInventoryLevelResponseBackorderedMin)
 });
 /**
  * Turns a subscription back on, whether it was switched off by hand or by the

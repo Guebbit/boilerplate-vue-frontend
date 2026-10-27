@@ -16,7 +16,7 @@ import {
     listPreorderLevels,
     listStockMovements,
     receiveStock,
-    setBackorderLimit,
+    updateInventoryLevel,
     sweepReservations
 } from '@api';
 import type {
@@ -180,7 +180,7 @@ export const useInventoryStore = defineStore('inventory', () => {
      */
     const setLimit = (productId: string, backorderLimit: number | null) =>
         fetchAny(() =>
-            setBackorderLimit(productId, { backorderLimit }).then((response) =>
+            updateInventoryLevel(productId, { backorderLimit }).then((response) =>
                 fetchLevels().then(() => response)
             )
         );

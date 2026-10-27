@@ -3753,6 +3753,16 @@ export const TaxClass = {
  */
 export type RestockDate = string;
 
+export interface ProductTranslationFields {
+    title: string;
+    description?: string;
+}
+
+/**
+ * Every language the product has a row for, drafts included, keyed by locale: the editor's form fills one tab per entry. Present only on `GET /products/{id}` and only for a caller holding `read:Translation`; every other read, and every other caller, gets the resolved `title`/`description` alone.
+ */
+export type ProductTranslations = { [key: string]: ProductTranslationFields };
+
 export interface Product {
     id: Id;
     title: string;
@@ -3808,6 +3818,8 @@ export interface Product {
     createdAt?: string;
     updatedAt?: string;
     deletedAt?: string;
+    /** Every language the product has a row for, drafts included, keyed by locale: the editor's form fills one tab per entry. Present only on `GET /products/{id}` and only for a caller holding `read:Translation`; every other read, and every other caller, gets the resolved `title`/`description` alone. */
+    translations?: ProductTranslations;
 }
 
 export interface ProductsResponse {
@@ -4099,68 +4111,6 @@ export interface UpdateProductRequestMultipart {
      * @items.maxLength 50
      */
     tags?: string[];
-}
-
-export interface ProductTranslationFields {
-    title: string;
-    description?: string;
-}
-
-export type ProductAdminTranslations = { [key: string]: ProductTranslationFields };
-
-/**
- * A product with every language it has a row for, not just the caller's resolved one — what the editor's form needs to populate its tabs. `title`/`description` stay the resolved (fallback-locale-derived) values; `translations` is the per-locale source.
- */
-export interface ProductAdmin {
-    id: Id;
-    title: string;
-    /**
-     * Gross — VAT included. Same convention as `Product.price`.
-     * @minimum 0
-     */
-    price: number;
-    /** ISO-4217 currency code (e.g. EUR) — see `Product.currency`. */
-    readonly currency: string;
-    taxClass?: TaxClass;
-    rateType?: RateType;
-    sku?: Sku;
-    /** See `Product.inStock`. */
-    readonly inStock: boolean;
-    /** See `Product.lowStock`. */
-    readonly lowStock: boolean;
-    /** @minimum 0 */
-    readonly onHand?: number;
-    /** @minimum 0 */
-    readonly reserved?: number;
-    /** @minimum 0 */
-    readonly available?: number;
-    description?: string;
-    active?: boolean;
-    purchasable?: boolean;
-    releaseDate?: ReleaseDate;
-    allowBackorder?: boolean;
-    restockDate?: RestockDate;
-    /** A shopper can order it right now: visible, on sale, and something to order (shelf units, room in a preorder's allowance, or an open backorder). The one answer behind the add-to-cart button and "notify me", so a client never re-derives it from the other flags. */
-    readonly buyable: boolean;
-    /** The product is on sale before its release date: buyers can order it now and it ships from `releaseDate`. */
-    readonly preorder?: boolean;
-    /** The product may be ordered while its shelf is empty: the units arrive by `restockDate`, or within 30 days when there is none. Always shown with that promise. */
-    readonly backorder?: boolean;
-    requiresShipping?: boolean;
-    noWithdrawal?: boolean;
-    /**
-     * Grams. Absent counts as 0 for shipping-method filtering — the editor warns when it's missing.
-     * @minimum 0
-     */
-    weight?: number;
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
-    categories?: string[];
-    tags?: string[];
-    createdAt?: string;
-    updatedAt?: string;
-    deletedAt?: string;
-    translations: ProductAdminTranslations;
 }
 
 export interface SearchProductsRequest {
@@ -5602,15 +5552,6 @@ export interface InventoryLevelsResponse {
     meta: PaginationMeta;
 }
 
-export interface BackorderLimitRequest {
-    /**
-     * The new allowance. `0` closes it. `null` removes the cap: set a cap equal to the incoming quantity if the date must hold for everyone.
-     * @minimum 0
-     * @nullable
-     */
-    backorderLimit: number | null;
-}
-
 export interface PreorderLevel {
     productId: Id;
     title: string;
@@ -6521,6 +6462,15 @@ export interface StatsLimits {
     maxRangeDays: number;
     /** The most buckets one series may hold, the first possibly starting before `from`. */
     maxBuckets: number;
+}
+
+export interface UpdateInventoryLevelRequest {
+    /**
+     * The new allowance. `0` closes it. `null` removes the cap: set a cap equal to the incoming quantity if the date must hold for everyone.
+     * @minimum 0
+     * @nullable
+     */
+    backorderLimit?: number | null;
 }
 
 export type ExampleSortItem = (typeof ExampleSortItem)[keyof typeof ExampleSortItem];
@@ -9971,20 +9921,20 @@ export const deleteProduct = (
 };
 
 /**
- * Every category and tag the PUBLIC catalogue carries, each with how many visible products hold it — what a storefront renders as filter chips. Sorted by count descending, then name. Counts follow the same visibility rule the listing does, so a chip can never lead to an empty page.
+ * Every category and tag the PUBLIC catalogue carries, each with how many visible products hold it — what a storefront renders as filter chips. Sorted by count descending, then name. Counts follow the same visibility rule the listing does, so one chip alone never leads to an empty page. Counts are catalogue-wide: they do not follow the filters already chosen.
  * @summary Catalogue facets
  */
 export const getCatalogueFacets = (
     options?: SecondParameter<typeof orvalMutator<CatalogueFacetsResponse>>
 ) => {
     return orvalMutator<CatalogueFacetsResponse>(
-        { url: `/products/categories`, method: 'GET' },
+        { url: `/products/facets`, method: 'GET' },
         options
     );
 };
 
 /**
- * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached.
+ * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`. `title` and `description` are always resolved to one language. A caller holding `read:Translation` also gets `translations`, every language the product has a row for (drafts included), for the editor's tabs: what the caller may see shapes the body, there is no separate staff URL. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph). A body that differs by caller is never served from, or stored in, the shared cache.
  * @summary Product details
  */
 export const getProductById = (
@@ -10262,17 +10212,6 @@ export const deleteProductById = (
         { url: `/products/${id}`, method: 'DELETE', params },
         options
     );
-};
-
-/**
- * Every language this product has a row for, plus its price/stock/image — the shape the editor's form reads to populate its tabs. Unlike `GET /products/{id}`, this does not resolve to one language and is never cached: it's the screen someone is actively editing, the same reasoning `GET /locales/{locale}/entries` already applies.
- * @summary Product, every language at once
- */
-export const getProductAdmin = (
-    id: string,
-    options?: SecondParameter<typeof orvalMutator<ProductAdmin>>
-) => {
-    return orvalMutator<ProductAdmin>({ url: `/products/${id}/admin`, method: 'GET' }, options);
 };
 
 /**
@@ -11295,28 +11234,6 @@ export const listInventoryLevels = (
 };
 
 /**
- * Sets how many units of the product may be backordered at once: the allowance an order claims when it is placed. `0` closes it; `null` removes the cap, so the shop keeps selling whatever the date promises. Lowering it below what is already outstanding is allowed and leaves those orders alone; only new ones are refused. Absolute and idempotent, so a retry is safe.
- *
- * Not a stock movement: nothing on the shelf changes, so it leaves no ledger row (it is audited).
- * @summary Set a product's preorder limit
- */
-export const setBackorderLimit = (
-    productId: Id,
-    backorderLimitRequest: BackorderLimitRequest,
-    options?: SecondParameter<typeof orvalMutator<InventoryLevel>>
-) => {
-    return orvalMutator<InventoryLevel>(
-        {
-            url: `/inventory/levels/${productId}/backorder-limit`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: backorderLimitRequest
-        },
-        options
-    );
-};
-
-/**
  * Every product with a preorder allowance or an outstanding preorder, for the admin's preorder board: the cap, what is outstanding against it and how that splits between orders still unpaid and orders already paid. `backordered` is OUTSTANDING units, not units ever sold: it falls when stock arrives and is allocated, and when an order is cancelled or expires. `ordered` is the lifetime count, read off the ledger.
  *
  * The release date and the title come from the catalogue. Never public: exact counts are what a competitor wants.
@@ -12217,7 +12134,7 @@ export const getStatsLimits = (options?: SecondParameter<typeof orvalMutator<Sta
 };
 
 /**
- * One row of the stock board by product, with its counters and availability — the record `receive`, `adjust` and `backorder-limit` act on. Same audience as the board (`read:StockLevel`). An unknown product, one with no level row and a malformed id are the same 404.
+ * One row of the stock board by product, with its counters and availability — the record `receive`, `adjust` and the `PATCH` act on. Same audience as the board (`read:StockLevel`). An unknown product, one with no level row and a malformed id are the same 404.
  * @summary Get one product's stock level
  */
 export const getInventoryLevel = (
@@ -12226,6 +12143,50 @@ export const getInventoryLevel = (
 ) => {
     return orvalMutator<InventoryLevel>(
         { url: `/inventory/levels/${productId}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Merges the given fields into the level (RFC 7396). Only the preorder limit is editable; the counters move through `receive` and `adjust`. `backorderLimit` is how many units of the product may be backordered at once: the allowance an order claims when it is placed. `0` closes it; `null` removes the cap, so the shop keeps selling whatever the date promises. Lowering it below what is already outstanding is allowed and leaves those orders alone; only new ones are refused. A body that names no field changes nothing and answers the level as it is. Absolute and idempotent, so a retry is safe.
+ *
+ * Not a stock movement: nothing on the shelf changes, so it leaves no ledger row (it is audited). Needs `update:StockLevel`.
+ * @summary Edit a product's stock level
+ */
+export const updateInventoryLevel = (
+    productId: Id,
+    updateInventoryLevelRequest: UpdateInventoryLevelRequest,
+    options?: SecondParameter<typeof orvalMutator<InventoryLevel>>
+) => {
+    return orvalMutator<InventoryLevel>(
+        {
+            url: `/inventory/levels/${productId}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateInventoryLevelRequest
+        },
+        options
+    );
+};
+
+/**
+ * Merges the given fields into the level (RFC 7396). Only the preorder limit is editable; the counters move through `receive` and `adjust`. `backorderLimit` is how many units of the product may be backordered at once: the allowance an order claims when it is placed. `0` closes it; `null` removes the cap, so the shop keeps selling whatever the date promises. Lowering it below what is already outstanding is allowed and leaves those orders alone; only new ones are refused. A body that names no field changes nothing and answers the level as it is. Absolute and idempotent, so a retry is safe.
+ *
+ * Not a stock movement: nothing on the shelf changes, so it leaves no ledger row (it is audited). Needs `update:StockLevel`.
+ * @summary Edit a product's stock level
+ */
+export const updateInventoryLevelWithMergePatchJson = (
+    productId: Id,
+    updateInventoryLevelRequest: UpdateInventoryLevelRequest,
+    options?: SecondParameter<typeof orvalMutator<InventoryLevel>>
+) => {
+    return orvalMutator<InventoryLevel>(
+        {
+            url: `/inventory/levels/${productId}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/merge-patch+json' },
+            data: updateInventoryLevelRequest
+        },
         options
     );
 };
@@ -12859,7 +12820,6 @@ export type UpdateProductByIdWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof updateProductByIdWithMultipart>>
 >;
 export type DeleteProductByIdResult = NonNullable<Awaited<ReturnType<typeof deleteProductById>>>;
-export type GetProductAdminResult = NonNullable<Awaited<ReturnType<typeof getProductAdmin>>>;
 export type RestoreProductByIdResult = NonNullable<Awaited<ReturnType<typeof restoreProductById>>>;
 export type HardDeleteProductByIdResult = NonNullable<
     Awaited<ReturnType<typeof hardDeleteProductById>>
@@ -12962,7 +12922,6 @@ export type ReceiveReturnResult = NonNullable<Awaited<ReturnType<typeof receiveR
 export type ListInventoryLevelsResult = NonNullable<
     Awaited<ReturnType<typeof listInventoryLevels>>
 >;
-export type SetBackorderLimitResult = NonNullable<Awaited<ReturnType<typeof setBackorderLimit>>>;
 export type ListPreorderLevelsResult = NonNullable<Awaited<ReturnType<typeof listPreorderLevels>>>;
 export type ListStockMovementsResult = NonNullable<Awaited<ReturnType<typeof listStockMovements>>>;
 export type ReceiveStockResult = NonNullable<Awaited<ReturnType<typeof receiveStock>>>;
@@ -13055,6 +13014,12 @@ export type GetCustomerStatsResult = NonNullable<Awaited<ReturnType<typeof getCu
 export type GetPipelineStatsResult = NonNullable<Awaited<ReturnType<typeof getPipelineStats>>>;
 export type GetStatsLimitsResult = NonNullable<Awaited<ReturnType<typeof getStatsLimits>>>;
 export type GetInventoryLevelResult = NonNullable<Awaited<ReturnType<typeof getInventoryLevel>>>;
+export type UpdateInventoryLevelResult = NonNullable<
+    Awaited<ReturnType<typeof updateInventoryLevel>>
+>;
+export type UpdateInventoryLevelWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateInventoryLevelWithMergePatchJson>>
+>;
 export type EnableWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof enableWebhookSubscription>>
 >;

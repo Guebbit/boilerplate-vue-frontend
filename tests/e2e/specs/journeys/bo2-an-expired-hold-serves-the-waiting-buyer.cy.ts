@@ -44,7 +44,7 @@ describe('BO2 · An expired hold serves the buyer who waits', () => {
             translations: { en: { title: `BO2 last unit ${unique()}` } }
         }).then((product) => {
             const id = String(product?.id);
-            cy.apiAs('admin', 'PUT', `/inventory/levels/${id}/backorder-limit`, {
+            cy.apiAs('admin', 'PATCH', `/inventory/levels/${id}`, {
                 backorderLimit: 1
             });
             cy.apiAs('admin', 'POST', `/inventory/levels/${id}/receive`, { quantity: 1 });

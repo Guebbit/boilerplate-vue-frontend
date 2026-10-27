@@ -113,7 +113,7 @@ describe("OP10 · An editor's product, cradle to grave", () => {
             cy.contains(itTitle).should('exist');
             cy.visit('/en/products');
             cy.env(['apiUrl'])
-                .then(({ apiUrl }) => cy.request(`${String(apiUrl)}/products/categories`))
+                .then(({ apiUrl }) => cy.request(`${String(apiUrl)}/products/facets`))
                 .its('body.categories')
                 .should('deep.include', { name: category, count: 1 });
 
