@@ -19,12 +19,37 @@ import { createHmac } from 'node:crypto';
  */
 export const DEMO_PAYMENT_WEBHOOK_SECRET = 'demo-payment-webhook-secret';
 
-/** The payment provider's thin event — the contract's `PaymentWebhookEvent`. */
+/** One dispute as the provider reports it — the contract's `DisputeReport`. */
+export interface PaymentWebhookDispute {
+    /** The provider's dispute id; one per payment. */
+    disputeRef: string;
+    kind: 'inquiry' | 'chargeback';
+    status: 'needs_response' | 'under_review' | 'won' | 'lost' | 'accepted' | 'closed';
+    /** One of the contract's closed reasons (`fraudulent`, `product_not_received`, …). */
+    reason: string;
+    /** A decimal in `currency`. */
+    amount: number;
+    /** ISO-4217, upper case: the payment's own. */
+    currency: string;
+    fundsWithdrawn: boolean;
+    /** ISO time the evidence window closes. */
+    evidenceDueBy?: string;
+    /** ISO time of this report; the backend applies only a newer one than it holds. */
+    observedAt: string;
+    /** Where the shop answers, an `https` address. */
+    dashboardUrl?: string;
+}
+
+/** The payment provider's event — the contract's `PaymentWebhookEvent`. */
 export interface PaymentWebhookEvent {
-    /** The provider's event id; the backend deduplicates on it. */
+    /** The provider's event id, logged. */
     id: string;
     /** Which intent the event is about. Omit for an event the API ignores. */
     providerRef?: string;
+    /** Which refund the event is about, when it is about one. */
+    refundRef?: string;
+    /** The dispute's own state: the one thing a delivery carries beyond a pointer. */
+    dispute?: PaymentWebhookDispute;
 }
 
 /** What {@link postPaymentWebhook} takes. */

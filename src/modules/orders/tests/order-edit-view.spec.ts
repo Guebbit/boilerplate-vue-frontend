@@ -9,7 +9,7 @@
  * `@/modules/payments` is mocked rather than imported past its barrel — `useOrderRefund` would
  * otherwise fire a real, unmocked HTTP call this suite has nothing to answer, and reaching its
  * store directly is exactly what `eslint-plugin-boundaries` forbids for a sibling module.
- * `RecordOfflinePaymentForm` is stubbed the same way, for the same reason: mounting the real one
+ * `OrderDisputes` is stubbed the same way (it reads the payments store). `RecordOfflinePaymentForm` likewise, for the same reason: mounting the real one
  * would wire in `useRecordOfflinePayment` and a live payments store this suite never seeds.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
@@ -63,6 +63,10 @@ vi.mock('@/modules/payments', () => ({
     RecordOfflinePaymentForm: {
         name: 'RecordOfflinePaymentForm',
         template: '<div data-test="record-offline-payment-form" />'
+    },
+    OrderDisputes: {
+        name: 'OrderDisputes',
+        template: '<div data-test="order-disputes" />'
     }
 }));
 
@@ -580,6 +584,21 @@ describe('recording a payment by hand', () => {
                 expect(wrapper.find('[data-test=record-offline-payment-form]').exists()).toBe(
                     false
                 );
+            });
+    });
+
+    it('shows the order’s dispute banner above the money actions, for the order it is on', () => {
+        signInAsAdmin();
+        const detail = anOrder({ status: OrderStatus.paid, actions: anAction({ cancel: true }) });
+
+        const { wrapper } = mountFromListCache(detail);
+
+        return nextTick()
+            .then(() => nextTick())
+            .then(() => {
+                expect(
+                    wrapper.findComponent({ name: 'OrderDisputes' }).attributes('order-id')
+                ).toBe(detail.id);
             });
     });
 

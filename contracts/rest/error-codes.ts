@@ -70,8 +70,6 @@ export const ERROR_CODES = {
     DELIVERY_NOT_RELEASABLE: 'DELIVERY_NOT_RELEASABLE',
     /** 409 — The fulfillment order cannot ship now: it is on hold, closed or cancelled, or the order is cancelled, or still `pending` (never paid: start or pay it first). */
     DELIVERY_NOT_SHIPPABLE: 'DELIVERY_NOT_SHIPPABLE',
-    /** 422 — A forced shipment or delivery requires a reason and none was supplied. */
-    DELIVERY_OVERRIDE_REASON_REQUIRED: 'DELIVERY_OVERRIDE_REASON_REQUIRED',
     /** 409 — Another account already holds this email address — on signup, or on a profile email change. */
     EMAIL_ALREADY_USED: 'EMAIL_ALREADY_USED',
     /** 409 — The account's email address is verified already, so there is nothing to resend. */
@@ -186,6 +184,8 @@ export const ERROR_CODES = {
     PAYMENT_CARD_NOT_AVAILABLE: 'PAYMENT_CARD_NOT_AVAILABLE',
     /** 409 — The card issuer or gateway declined the charge. */
     PAYMENT_DECLINED: 'PAYMENT_DECLINED',
+    /** 409 — The buyer disputed the card payment (a chargeback is open), so the shop cannot refund it: the bank has taken the money back already and the answer goes to the provider as evidence. */
+    PAYMENT_DISPUTED: 'PAYMENT_DISPUTED',
     /** 409 — Another payment attempt for this order is already being recorded. */
     PAYMENT_IN_FLIGHT: 'PAYMENT_IN_FLIGHT',
     /** 409 — The payment is not in a state this confirmation can apply to. */

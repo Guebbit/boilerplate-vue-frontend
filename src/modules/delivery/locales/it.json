@@ -60,8 +60,6 @@
         "label-tracking-code": "Codice di tracciamento",
         "button-save-tracking": "Salva codice di tracciamento",
         "button-deliver": "Segna come consegnata",
-        "label-force": "Forza (override)",
-        "label-force-reason": "Motivo dell'override",
         "tracking-saved": "Codice di tracciamento salvato.",
         "delivered": "Segnata come consegnata.",
         "status-lost": "Smarrito in viaggio",
