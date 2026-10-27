@@ -241,17 +241,41 @@ export const notificationOrderId = (notification: DescribableNotification): stri
  * kind, not a route name: naming a sibling's route is the link composable's job, next to the
  * `hasRoute` guard that makes it safe.
  */
-export interface NotificationTarget {
-    /**
-     * The screen: a buyer's account page, a webhook subscription's page, a ticket's, a return's or
-     * an order's page.
-     */
-    screen: 'account' | 'webhook-subscription' | 'ticket' | 'return' | 'order';
-    /**
-     * The id of the account, subscription, ticket, return or order.
-     */
-    id: string;
-}
+export type NotificationTarget =
+    | {
+          /**
+           * A record's own page: a buyer's account, a webhook subscription, a ticket, a return or
+           * an order.
+           */
+          screen: 'account' | 'webhook-subscription' | 'ticket' | 'return' | 'order';
+          /**
+           * The id of that record.
+           */
+          id: string;
+      }
+    | {
+          /**
+           * A list a summary row counts: sales orders, payments, returns, the preorder board or
+           * the stock ledger. The row carries a count, not an id.
+           */
+          screen: 'sales-orders' | 'payments' | 'returns' | 'preorders' | 'inventory';
+      };
+
+/**
+ * The list each summary notice counts, as a target.
+ */
+const SUMMARY_SCREENS = {
+    'notifications.staff.transfers-due': 'sales-orders',
+    'notifications.staff.preorders-late': 'preorders',
+    'notifications.staff.delivery-holds-open': 'sales-orders',
+    'notifications.staff.withdrawals-awaiting-goods': 'returns',
+    'notifications.staff.returns-undecided': 'returns',
+    'notifications.staff.low-stock': 'inventory',
+    'notifications.staff.unshipped': 'sales-orders',
+    'notifications.staff.awaiting-tracking': 'sales-orders',
+    'notifications.staff.undelivered': 'sales-orders',
+    'notifications.staff.stale-refunds': 'payments'
+} as const;
 
 /**
  * The screen of the record a parked event was about, read off the event name's first segment. An
@@ -295,6 +319,18 @@ export const notificationTarget = (
         }
         case 'notifications.staff.outbox-dead': {
             return outboxTarget(notification.params.eventName, notification.params.aggregateId);
+        }
+        case 'notifications.staff.transfers-due':
+        case 'notifications.staff.preorders-late':
+        case 'notifications.staff.delivery-holds-open':
+        case 'notifications.staff.withdrawals-awaiting-goods':
+        case 'notifications.staff.returns-undecided':
+        case 'notifications.staff.low-stock':
+        case 'notifications.staff.unshipped':
+        case 'notifications.staff.awaiting-tracking':
+        case 'notifications.staff.undelivered':
+        case 'notifications.staff.stale-refunds': {
+            return { screen: SUMMARY_SCREENS[notification.code] };
         }
         default: {
             return undefined;
@@ -395,6 +431,18 @@ export const describeNotification = (
         }
         case 'notifications.staff.outbox-dead': {
             return translate(notification.code, { event: notification.params.eventName });
+        }
+        case 'notifications.staff.transfers-due':
+        case 'notifications.staff.preorders-late':
+        case 'notifications.staff.delivery-holds-open':
+        case 'notifications.staff.withdrawals-awaiting-goods':
+        case 'notifications.staff.returns-undecided':
+        case 'notifications.staff.low-stock':
+        case 'notifications.staff.unshipped':
+        case 'notifications.staff.awaiting-tracking':
+        case 'notifications.staff.undelivered':
+        case 'notifications.staff.stale-refunds': {
+            return translate(notification.code, { n: notification.params.count });
         }
         case 'notifications.staff.ticket-opened':
         case 'notifications.staff.ticket-assigned': {

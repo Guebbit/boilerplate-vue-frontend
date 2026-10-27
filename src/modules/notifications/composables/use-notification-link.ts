@@ -52,6 +52,21 @@ export const useNotificationLink = () => {
             case 'order': {
                 return linkIfRouted(router, 'OrderTarget', { id: target.id });
             }
+            case 'sales-orders': {
+                return linkIfRouted(router, 'SalesOrders');
+            }
+            case 'payments': {
+                return linkIfRouted(router, 'PaymentsList');
+            }
+            case 'returns': {
+                return linkIfRouted(router, 'ReturnsList');
+            }
+            case 'preorders': {
+                return linkIfRouted(router, 'PreordersBoard');
+            }
+            case 'inventory': {
+                return linkIfRouted(router, 'InventoryLedger');
+            }
         }
     };
 

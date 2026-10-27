@@ -375,6 +375,31 @@ describe('a return request and a dead event for staff', () => {
     });
 });
 
+/**
+ * A summary notice of the given code, carrying a count of four.
+ *
+ * @param code - the notice's code
+ */
+const summary = (code: string) => ({ code, params: { count: 4 } }) as never;
+
+describe('a digest summary for staff', () => {
+    it.each([
+        ['notifications.staff.transfers-due', 'sales-orders'],
+        ['notifications.staff.preorders-late', 'preorders'],
+        ['notifications.staff.delivery-holds-open', 'sales-orders'],
+        ['notifications.staff.withdrawals-awaiting-goods', 'returns'],
+        ['notifications.staff.returns-undecided', 'returns'],
+        ['notifications.staff.low-stock', 'inventory'],
+        ['notifications.staff.unshipped', 'sales-orders'],
+        ['notifications.staff.awaiting-tracking', 'sales-orders'],
+        ['notifications.staff.undelivered', 'sales-orders'],
+        ['notifications.staff.stale-refunds', 'payments']
+    ])('says how many for %s and opens the list it counts', (code, screen) => {
+        expect(describeNotification(summary(code), ['en'], translate)).toBe(`${code}|n=4`);
+        expect(notificationTarget(summary(code))).toEqual({ screen });
+    });
+});
+
 describe('a ticket notice for staff', () => {
     it('names a contact message by its category', () => {
         expect(
