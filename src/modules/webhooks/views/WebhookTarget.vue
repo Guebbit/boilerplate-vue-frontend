@@ -64,7 +64,7 @@ const { id } = defineProps<{
  */
 const {
     watchSubscription,
-    rotateSecret,
+    createSecret,
     removeSecret,
     deleteSubscription,
     enableSubscription,
@@ -131,7 +131,7 @@ const retiresAtBySecret = computed(
 /**
  * The newly minted secret, held only long enough to render the reveal modal after a rotation.
  * Never sent anywhere but this component; the store's own cache never sees it (`store.ts`'s
- * `rotateSecret`).
+ * `createSecret`).
  */
 const revealedSecret = ref<string>();
 
@@ -182,22 +182,22 @@ const handleDisable = singleFlight(() => {
  * it in place rather than joining a toast queue the visitor may have looked away from.
  */
 const {
-    message: rotateSecretError,
-    report: reportRotateSecretError,
-    clear: clearRotateSecretError
+    message: createSecretError,
+    report: reportCreateSecretError,
+    clear: clearCreateSecretError
 } = useBlockingError();
 
 /**
  * Mints a new secret onto this subscription's ring and opens the reveal modal.
  */
-const handleRotateSecret = () => {
+const handleCreateSecret = () => {
     if (!id) return;
-    clearRotateSecretError();
-    return rotateSecret(id)
+    clearCreateSecretError();
+    return createSecret(id)
         .then((updated) => {
             if (updated?.newSecret) revealedSecret.value = updated.newSecret;
         })
-        .catch((error: unknown) => reportRotateSecretError(error));
+        .catch((error: unknown) => reportCreateSecretError(error));
 };
 
 /**
@@ -476,19 +476,19 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                     </v-table>
 
                     <v-btn
-                        v-if="currentSubscription.actions.rotateSecret"
+                        v-if="currentSubscription.actions.createSecret"
                         class="mt-4"
                         variant="tonal"
                         color="secondary"
                         :disabled="writingSubscription"
                         data-test="webhook-rotate-secret"
-                        @click="handleRotateSecret"
+                        @click="handleCreateSecret"
                     >
                         {{ t('webhook-target-page.button-rotate-secret') }}
                     </v-btn>
 
                     <InlineErrorAlert
-                        :message="rotateSecretError"
+                        :message="createSecretError"
                         class="mt-3"
                         data-test="webhook-target-rotate-secret-error"
                     />

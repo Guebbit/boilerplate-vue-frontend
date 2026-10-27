@@ -4938,8 +4938,8 @@ export interface WebhookSubscriptionActions {
     enable: boolean;
     /** Whether `POST /webhooks/subscriptions/{id}/disable` would be accepted — false while it is already disabled. */
     disable: boolean;
-    /** Whether `POST /webhooks/subscriptions/{id}/rotate-secret` would be accepted. */
-    rotateSecret: boolean;
+    /** Whether `POST /webhooks/subscriptions/{id}/secrets` would be accepted. */
+    createSecret: boolean;
     /** Whether `DELETE /webhooks/subscriptions/{id}/secrets/{secretId}` would be accepted — false while the ring holds a single secret. */
     removeSecret: boolean;
 }
@@ -5016,7 +5016,7 @@ export interface WebhookSubscriptionCreated {
     updatedAt: string;
     /** The newly minted secret, in plaintext. Shown here once, on creation, and never again. */
     secret?: string;
-    /** A rotated-in secret's plaintext, present only in the response of `POST .../rotate-secret`. */
+    /** A rotated-in secret's plaintext, present only in the response of `POST .../secrets`. */
     newSecret?: string;
 }
 
@@ -10429,7 +10429,7 @@ export const sweepReservations = (
 /**
  * Newest first unless `sort` says otherwise. Never returns a secret — the ring's
  * plaintext exists only in the response of the call that minted it (`POST` here, or
- * `POST .../{id}/rotate-secret`).
+ * `POST .../{id}/secrets`).
  * @summary List this shop's webhook subscriptions
  */
 export const listWebhookSubscriptions = (
@@ -10564,31 +10564,9 @@ export const deleteWebhookSubscription = (
 };
 
 /**
- * Adds a new secret to the ring and returns its plaintext once, in `newSecret` — the
- * ring then carries two active secrets, and deliveries sign with both (two
- * space-separated `v1,` values in `webhook-signature`) until the old one is dropped
- * through `DELETE .../secrets/{secretId}` or its overlap window ends (24 hours by
- * default, `NODE_WEBHOOK_SECRET_OVERLAP_HOURS`; `retiringSecrets` names the exact
- * instant), after which it stops signing and disappears from `secretIds`. A ring holds at
- * most two: rotating again drops the oldest. Its own route rather than a flag on
- * `PATCH`'s body: a command, not state, so it does not share a route with
- * url/description/eventTypes.
- * @summary Rotate a webhook subscription's secret
- */
-export const rotateWebhookSubscriptionSecret = (
-    id: string,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionCreated>>
-) => {
-    return orvalMutator<WebhookSubscriptionCreated>(
-        { url: `/webhooks/subscriptions/${id}/rotate-secret`, method: 'POST' },
-        options
-    );
-};
-
-/**
  * The other half of a rotation, once every consumer has switched. Refuses to empty
  * the ring — a subscription with no secret can never sign a delivery. The remove twin
- * of `POST .../rotate-secret`, split out for the same reason.
+ * of `POST .../secrets`.
  * @summary Drop one secret from a subscription's ring
  */
 export const removeWebhookSubscriptionSecret = (
@@ -11261,6 +11239,28 @@ export const disableWebhookSubscription = (
 ) => {
     return orvalMutator<WebhookSubscription>(
         { url: `/webhooks/subscriptions/${id}/disable`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * Adds a new secret to the ring and returns its plaintext once, in `newSecret` — the
+ * ring then carries two active secrets, and deliveries sign with both (two
+ * space-separated `v1,` values in `webhook-signature`) until the old one is dropped
+ * through `DELETE .../secrets/{secretId}` or its overlap window ends (24 hours by
+ * default, `NODE_WEBHOOK_SECRET_OVERLAP_HOURS`; `retiringSecrets` names the exact
+ * instant), after which it stops signing and disappears from `secretIds`. A ring holds at
+ * most two: adding a third drops the oldest, which is already superseded. A secret is a
+ * line of the subscription, so adding one is a `POST` on the line collection and answers
+ * 200 with the whole subscription (docs/api/write-methods.md).
+ * @summary Add a secret to a webhook subscription's ring (rotate)
+ */
+export const createWebhookSubscriptionSecret = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionCreated>>
+) => {
+    return orvalMutator<WebhookSubscriptionCreated>(
+        { url: `/webhooks/subscriptions/${id}/secrets`, method: 'POST' },
         options
     );
 };
@@ -11970,9 +11970,6 @@ export type UpdateWebhookSubscriptionWithMergePatchJsonResult = NonNullable<
 export type DeleteWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof deleteWebhookSubscription>>
 >;
-export type RotateWebhookSubscriptionSecretResult = NonNullable<
-    Awaited<ReturnType<typeof rotateWebhookSubscriptionSecret>>
->;
 export type RemoveWebhookSubscriptionSecretResult = NonNullable<
     Awaited<ReturnType<typeof removeWebhookSubscriptionSecret>>
 >;
@@ -12042,6 +12039,9 @@ export type EnableWebhookSubscriptionResult = NonNullable<
 >;
 export type DisableWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof disableWebhookSubscription>>
+>;
+export type CreateWebhookSubscriptionSecretResult = NonNullable<
+    Awaited<ReturnType<typeof createWebhookSubscriptionSecret>>
 >;
 export type GetWebhookDeliveryResult = NonNullable<Awaited<ReturnType<typeof getWebhookDelivery>>>;
 export type ListExamplesResult = NonNullable<Awaited<ReturnType<typeof listExamples>>>;

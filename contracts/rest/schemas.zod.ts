@@ -12140,7 +12140,7 @@ export const SweepReservationsResponse = zod.strictObject({
 /**
  * Newest first unless `sort` says otherwise. Never returns a secret — the ring's
  * plaintext exists only in the response of the call that minted it (`POST` here, or
- * `POST .../{id}/rotate-secret`).
+ * `POST .../{id}/secrets`).
  * @summary List this shop's webhook subscriptions
  */
 export const listWebhookSubscriptionsQueryPageDefault = 1;
@@ -12206,7 +12206,7 @@ export const ListWebhookSubscriptionsResponse = zod.strictObject({
                 delete: zod.boolean(),
                 enable: zod.boolean(),
                 disable: zod.boolean(),
-                rotateSecret: zod.boolean(),
+                createSecret: zod.boolean(),
                 removeSecret: zod.boolean()
             }),
             createdAt: zod.iso.datetime({ offset: true }),
@@ -12282,7 +12282,7 @@ export const CreateWebhookSubscriptionResponse = zod.strictObject({
         delete: zod.boolean(),
         enable: zod.boolean(),
         disable: zod.boolean(),
-        rotateSecret: zod.boolean(),
+        createSecret: zod.boolean(),
         removeSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
@@ -12333,7 +12333,7 @@ export const GetWebhookSubscriptionResponse = zod.strictObject({
         delete: zod.boolean(),
         enable: zod.boolean(),
         disable: zod.boolean(),
-        rotateSecret: zod.boolean(),
+        createSecret: zod.boolean(),
         removeSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
@@ -12397,7 +12397,7 @@ export const ReplaceWebhookSubscriptionResponse = zod.strictObject({
         delete: zod.boolean(),
         enable: zod.boolean(),
         disable: zod.boolean(),
-        rotateSecret: zod.boolean(),
+        createSecret: zod.boolean(),
         removeSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
@@ -12463,7 +12463,7 @@ export const UpdateWebhookSubscriptionResponse = zod.strictObject({
         delete: zod.boolean(),
         enable: zod.boolean(),
         disable: zod.boolean(),
-        rotateSecret: zod.boolean(),
+        createSecret: zod.boolean(),
         removeSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
@@ -12484,69 +12484,9 @@ export const DeleteWebhookSubscriptionParams = zod.strictObject({
 });
 export const DeleteWebhookSubscriptionResponse = zod.void();
 /**
- * Adds a new secret to the ring and returns its plaintext once, in `newSecret` — the
- * ring then carries two active secrets, and deliveries sign with both (two
- * space-separated `v1,` values in `webhook-signature`) until the old one is dropped
- * through `DELETE .../secrets/{secretId}` or its overlap window ends (24 hours by
- * default, `NODE_WEBHOOK_SECRET_OVERLAP_HOURS`; `retiringSecrets` names the exact
- * instant), after which it stops signing and disappears from `secretIds`. A ring holds at
- * most two: rotating again drops the oldest. Its own route rather than a flag on
- * `PATCH`'s body: a command, not state, so it does not share a route with
- * url/description/eventTypes.
- * @summary Rotate a webhook subscription's secret
- */
-export const rotateWebhookSubscriptionSecretPathIdMax = 64;
-export const rotateWebhookSubscriptionSecretPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const RotateWebhookSubscriptionSecretParams = zod.strictObject({
-    id: zod
-        .string()
-        .min(1)
-        .max(rotateWebhookSubscriptionSecretPathIdMax)
-        .regex(rotateWebhookSubscriptionSecretPathIdRegExp)
-});
-export const rotateWebhookSubscriptionSecretResponseIdMax = 64;
-export const rotateWebhookSubscriptionSecretResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const rotateWebhookSubscriptionSecretResponseUrlRegExp = new RegExp('(?:^https://)');
-export const rotateWebhookSubscriptionSecretResponseConsecutiveFailuresMin = 0;
-export const RotateWebhookSubscriptionSecretResponse = zod.strictObject({
-    id: zod
-        .string()
-        .min(1)
-        .max(rotateWebhookSubscriptionSecretResponseIdMax)
-        .regex(rotateWebhookSubscriptionSecretResponseIdRegExp),
-    url: zod.url().regex(rotateWebhookSubscriptionSecretResponseUrlRegExp),
-    description: zod.string().optional(),
-    eventTypes: zod.array(zod.string()).min(1),
-    enabled: zod.boolean(),
-    consecutiveFailures: zod
-        .number()
-        .min(rotateWebhookSubscriptionSecretResponseConsecutiveFailuresMin),
-    disabledAt: zod.iso.datetime({ offset: true }).optional(),
-    autoDisabledAt: zod.iso.datetime({ offset: true }).optional(),
-    secretIds: zod.array(zod.string()),
-    retiringSecrets: zod.array(
-        zod.strictObject({
-            id: zod.string(),
-            retiresAt: zod.iso.datetime({ offset: true })
-        })
-    ),
-    actions: zod.strictObject({
-        update: zod.boolean(),
-        delete: zod.boolean(),
-        enable: zod.boolean(),
-        disable: zod.boolean(),
-        rotateSecret: zod.boolean(),
-        removeSecret: zod.boolean()
-    }),
-    createdAt: zod.iso.datetime({ offset: true }),
-    updatedAt: zod.iso.datetime({ offset: true }),
-    secret: zod.string().optional(),
-    newSecret: zod.string().optional()
-});
-/**
  * The other half of a rotation, once every consumer has switched. Refuses to empty
  * the ring — a subscription with no secret can never sign a delivery. The remove twin
- * of `POST .../rotate-secret`, split out for the same reason.
+ * of `POST .../secrets`.
  * @summary Drop one secret from a subscription's ring
  */
 export const removeWebhookSubscriptionSecretPathIdMax = 64;
@@ -12591,7 +12531,7 @@ export const RemoveWebhookSubscriptionSecretResponse = zod.strictObject({
         delete: zod.boolean(),
         enable: zod.boolean(),
         disable: zod.boolean(),
-        rotateSecret: zod.boolean(),
+        createSecret: zod.boolean(),
         removeSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
@@ -15280,7 +15220,7 @@ export const EnableWebhookSubscriptionResponse = zod.strictObject({
         delete: zod.boolean(),
         enable: zod.boolean(),
         disable: zod.boolean(),
-        rotateSecret: zod.boolean(),
+        createSecret: zod.boolean(),
         removeSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
@@ -15331,11 +15271,71 @@ export const DisableWebhookSubscriptionResponse = zod.strictObject({
         delete: zod.boolean(),
         enable: zod.boolean(),
         disable: zod.boolean(),
-        rotateSecret: zod.boolean(),
+        createSecret: zod.boolean(),
         removeSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true })
+});
+/**
+ * Adds a new secret to the ring and returns its plaintext once, in `newSecret` — the
+ * ring then carries two active secrets, and deliveries sign with both (two
+ * space-separated `v1,` values in `webhook-signature`) until the old one is dropped
+ * through `DELETE .../secrets/{secretId}` or its overlap window ends (24 hours by
+ * default, `NODE_WEBHOOK_SECRET_OVERLAP_HOURS`; `retiringSecrets` names the exact
+ * instant), after which it stops signing and disappears from `secretIds`. A ring holds at
+ * most two: adding a third drops the oldest, which is already superseded. A secret is a
+ * line of the subscription, so adding one is a `POST` on the line collection and answers
+ * 200 with the whole subscription (docs/api/write-methods.md).
+ * @summary Add a secret to a webhook subscription's ring (rotate)
+ */
+export const createWebhookSubscriptionSecretPathIdMax = 64;
+export const createWebhookSubscriptionSecretPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const CreateWebhookSubscriptionSecretParams = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(createWebhookSubscriptionSecretPathIdMax)
+        .regex(createWebhookSubscriptionSecretPathIdRegExp)
+});
+export const createWebhookSubscriptionSecretResponseIdMax = 64;
+export const createWebhookSubscriptionSecretResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createWebhookSubscriptionSecretResponseUrlRegExp = new RegExp('(?:^https://)');
+export const createWebhookSubscriptionSecretResponseConsecutiveFailuresMin = 0;
+export const CreateWebhookSubscriptionSecretResponse = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(createWebhookSubscriptionSecretResponseIdMax)
+        .regex(createWebhookSubscriptionSecretResponseIdRegExp),
+    url: zod.url().regex(createWebhookSubscriptionSecretResponseUrlRegExp),
+    description: zod.string().optional(),
+    eventTypes: zod.array(zod.string()).min(1),
+    enabled: zod.boolean(),
+    consecutiveFailures: zod
+        .number()
+        .min(createWebhookSubscriptionSecretResponseConsecutiveFailuresMin),
+    disabledAt: zod.iso.datetime({ offset: true }).optional(),
+    autoDisabledAt: zod.iso.datetime({ offset: true }).optional(),
+    secretIds: zod.array(zod.string()),
+    retiringSecrets: zod.array(
+        zod.strictObject({
+            id: zod.string(),
+            retiresAt: zod.iso.datetime({ offset: true })
+        })
+    ),
+    actions: zod.strictObject({
+        update: zod.boolean(),
+        delete: zod.boolean(),
+        enable: zod.boolean(),
+        disable: zod.boolean(),
+        createSecret: zod.boolean(),
+        removeSecret: zod.boolean()
+    }),
+    createdAt: zod.iso.datetime({ offset: true }),
+    updatedAt: zod.iso.datetime({ offset: true }),
+    secret: zod.string().optional(),
+    newSecret: zod.string().optional()
 });
 /**
  * One row of this shop's delivery log, the same shape the list gives it, with `actions.replay`. Another shop's delivery, an unknown id and a malformed one are the same 404.
