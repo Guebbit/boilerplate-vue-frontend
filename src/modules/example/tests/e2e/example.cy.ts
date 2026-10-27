@@ -83,8 +83,7 @@ describe('Example', () => {
         });
 
         it('keeps a draft away from the public page', () => {
-            cy.loginAs('editor');
-            // The editor’s seeded draft: readable by its owner, a 404 for everyone else.
+            // The editor’s seeded draft: readable by its owner, a 404 for a stranger (no session).
             cy.visit('/en/examples/published/65e1a0000000000000000e02');
 
             cy.get('#example-published-page').should('not.exist');
