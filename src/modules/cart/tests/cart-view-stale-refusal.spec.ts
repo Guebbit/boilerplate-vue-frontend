@@ -13,9 +13,10 @@ import { useSessionStore, type SessionViewer } from '@/infrastructure/session.ts
 import { loadLocale } from '@/i18n';
 import { asStub } from '../../../../tests/support/stub.ts';
 import { IN_FLIGHT_RETRY_DELAYS_MS } from '../composables/idempotent-calls';
-import { aCart, apiRejection, answered } from '../../../../tests/support/unit/cart-fixtures.ts';
+import { aCart } from './cart-fixtures.ts';
+import { apiRejection, answered } from '../../../../tests/support/unit/async-answers.ts';
 import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
-import { mountCartPage, router } from '../../../../tests/support/unit/mount-cart-page.ts';
+import { mountCartPage, router } from './mount-cart-page.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
 wireModulesIntoCore();

@@ -8,7 +8,7 @@
  *
  * Keep the surface narrow. Each export here is a promise to every other module that this shape
  * will not move, so add one only when a sibling genuinely needs it. Specs reach the store through
- * `tests/support/unit/products-store.ts`.
+ * `src/modules/products/tests/products-store.ts`.
  */
 
 export { invalidateProductsCache } from './store';

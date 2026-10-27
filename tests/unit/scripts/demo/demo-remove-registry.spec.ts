@@ -54,6 +54,31 @@ describe('removeModuleFolders', () => {
 });
 
 describe('stripModuleRegistry', () => {
+    it('drops the camel-cased entry of a hyphenated module', () => {
+        write(
+            'src/modules.ts',
+            [
+                "import cart from '@/modules/cart/module';",
+                "import stockAlerts from '@/modules/stock-alerts/module';",
+                'export const enabledModules = [',
+                '    cart,',
+                '    stockAlerts,',
+                '];'
+            ].join('\n')
+        );
+
+        stripModuleRegistry(root, ['stock-alerts']);
+
+        expect(read('src/modules.ts')).toBe(
+            [
+                "import cart from '@/modules/cart/module';",
+                'export const enabledModules = [',
+                '    cart,',
+                '];'
+            ].join('\n')
+        );
+    });
+
     it('drops the import and the array entry of a removed module, and only those', () => {
         write(
             'src/modules.ts',
@@ -100,6 +125,24 @@ describe('pruneModuleEdges', () => {
                 "    account: ['users', 'addresses'],",
                 '};'
             ].join('\n')
+        );
+    });
+
+    it('drops a quoted key, as a hyphenated module is written', () => {
+        write(
+            'scripts/module-edges.ts',
+            [
+                'export const MODULE_EDGES = {',
+                "    'stock-alerts': ['products'],",
+                "    wishlist: ['cart']",
+                '};'
+            ].join('\n')
+        );
+
+        pruneModuleEdges(root, ['stock-alerts']);
+
+        expect(read('scripts/module-edges.ts')).toBe(
+            ['export const MODULE_EDGES = {', "    wishlist: ['cart']", '};'].join('\n')
         );
     });
 

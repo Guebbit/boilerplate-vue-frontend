@@ -136,6 +136,10 @@ const FILE_SHAPES: readonly FileShape[] = [
         what: 'Cypress suite — the screens, in a browser.'
     },
     {
+        match: /^tests\/[^/]+\.ts$/,
+        what: 'A test double the module owns for its own specs, and for a sibling that `MODULE_EDGES` lets reach it: a store seeder, a page mount, a cart factory. Never imported by production code.'
+    },
+    {
         match: /^tests\/.+\.spec\.ts$/,
         what: 'Vitest suite — the store, the routes and the rules, in isolation.'
     }

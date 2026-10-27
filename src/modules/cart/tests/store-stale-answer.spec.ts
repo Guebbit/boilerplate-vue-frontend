@@ -15,15 +15,11 @@ import {
     updateCartItemById,
     checkout as apiCheckout
 } from '@api';
-import {
-    aCart,
-    gate,
-    answered,
-    type Answer
-} from '../../../../tests/support/unit/cart-fixtures.ts';
-import { ACTIONS, issue } from '../../../../tests/support/unit/cart-interleave.ts';
+import { aCart } from './cart-fixtures.ts';
+import { gate, answered, type Answer } from '../../../../tests/support/unit/async-answers.ts';
+import { ACTIONS, issue } from './cart-interleave.ts';
 import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
-import { trackStores } from '../../../../tests/support/unit/track-stores.ts';
+import { trackStores } from './track-stores.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
 wireModulesIntoCore();

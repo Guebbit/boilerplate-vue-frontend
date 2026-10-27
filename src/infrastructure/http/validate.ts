@@ -5,7 +5,7 @@
  * logging (not throwing) on an unmapped route.
  */
 
-import { z } from 'zod';
+import type { z } from 'zod';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { translate } from '@/i18n';
@@ -106,10 +106,13 @@ export const validateResponseAgainstContract = (
 
     const reportOnly = isReportOnly();
     // `.strip()` only exists on an object schema — a resource or list schema is one, but a `oneOf`
-    // answer (login) is not, so it is never stripped; the lookup's declared type is the wider
-    // `ZodType`, so this also guards the cast.
+    // answer (login) is not, so it is never stripped. Checked by `type`, not `instanceof`: a value
+    // import of zod here would pull all of it into the entry chunk (see forms.ts), and the cast
+    // narrows what the lookup's wider `ZodType` cannot say.
     const schema =
-        reportOnly && mappedSchema instanceof z.ZodObject ? mappedSchema.strip() : mappedSchema;
+        reportOnly && mappedSchema.type === 'object'
+            ? (mappedSchema as z.ZodObject).strip()
+            : mappedSchema;
 
     const result = schema.safeParse(data);
     if (result.success) return;

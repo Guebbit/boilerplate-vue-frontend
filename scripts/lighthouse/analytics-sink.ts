@@ -4,7 +4,9 @@
  *
  * With `VITE_FARO_URL` / `VITE_UMAMI_SRC` pointing here, the consent banner shows and Faro boots
  * as on a first visit, while nothing leaves the machine. Every POST is answered `204`, and
- * `GET /script.js` is an empty script. Reasoning: `docs/tools/lighthouse.md`.
+ * `GET /script.js` is an empty script. Every answer carries CORS headers, as the dev Alloy does:
+ * Faro posts JSON cross-origin, which makes the browser preflight it. Reasoning:
+ * `docs/tools/lighthouse.md`.
  */
 import { createServer, type Server } from 'node:http';
 
@@ -37,6 +39,12 @@ export const sinkScriptUrl = (port: number): string => `http://127.0.0.1:${Strin
 export const startAnalyticsSink = (port: number = ANALYTICS_SINK_PORT): Promise<Server> =>
     new Promise((resolve, reject) => {
         const server = createServer((request, response) => {
+            // Preflight: echo what the browser asks to send, since the sink accepts anything.
+            // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS
+            response.setHeader('access-control-allow-origin', '*');
+            response.setHeader('access-control-allow-methods', 'POST, GET, OPTIONS');
+            const requested = request.headers['access-control-request-headers'];
+            if (requested) response.setHeader('access-control-allow-headers', requested);
             if (request.method === 'GET' && request.url === '/script.js') {
                 response.writeHead(200, { 'content-type': 'text/javascript' }).end('');
                 return;
