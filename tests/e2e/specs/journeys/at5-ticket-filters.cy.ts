@@ -41,7 +41,7 @@ describe('AT5 · Ticket inbox filters', () => {
     it('text, email and status each narrow the inbox, and reset brings every ticket back', () => {
         contact('ann@example.com', 'Kennel question');
         contact('bob@example.com', 'Invoice question').then((ticket) => {
-            cy.apiAs('admin', 'PATCH', `/tickets/${String(ticket?.id)}`, { status: 'resolved' });
+            cy.apiAs('admin', 'POST', `/tickets/${String(ticket?.id)}/resolve`);
         });
         contact('bot@example.com', 'Buy now', { website: 'https://spam.example' });
 

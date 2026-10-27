@@ -112,7 +112,7 @@ describe('OP18 · The support desk', () => {
         cy.get('#home-page').should('exist');
         cy.get('.v-alert').should('exist');
 
-        cy.step('the inbox filters by text and by status, and a note sticks');
+        cy.step('the inbox filters by text and by status, and a note sticks on the detail page');
         cy.trackNetwork();
         cy.visit('/en/tickets');
         cy.settleNetwork();
@@ -121,18 +121,18 @@ describe('OP18 · The support desk', () => {
         search();
         cy.get('[data-test=ticket-item]').should('have.length', 1);
         cy.get('[data-test=ticket-item]').should('contain.text', VISITOR.subject);
-        cy.get('[data-test=ticket-notes] textarea').first().type(NOTE);
-        cy.get('[data-test=ticket-notes-save]').click();
-        cy.settleNetwork();
-        // The filter lives in the address, so the reload keeps the narrowed list.
+        // The filter lives in the address, so coming back keeps the narrowed list.
+        cy.get('[data-test=ticket-open]').click();
+        cy.textareaIn('ticket-note-draft').type(NOTE);
+        cy.get('[data-test=ticket-note-add]').click();
+        cy.contains('Note added.').should('exist');
         cy.reload();
-        cy.settleNetwork();
-        cy.get('[data-test=ticket-item]').should('have.length', 1);
-        cy.get('[data-test=ticket-notes] textarea').first().should('have.value', NOTE);
+        cy.get('[data-test=ticket-note]').should('contain.text', NOTE);
 
         cy.step('resolving it moves it out of New and into Resolved');
-        cy.get('[data-test=ticket-status]').first().click();
-        cy.get('[role=listbox] [role=option]').contains('Resolved').click();
+        cy.get('[data-test=ticket-resolve]').click();
+        cy.contains('Status updated.').should('exist');
+        cy.go('back');
         cy.settleNetwork();
         cy.get('[data-test=search-reset]').click();
         cy.settleNetwork();
@@ -190,11 +190,11 @@ describe('OP18 · The support desk', () => {
             cy.get('[data-test=return-decline-reason-text]').should('contain.text', DECLINE_REASON);
         });
 
-        cy.step('the ticket’s status change is on record under the support role');
+        cy.step('the ticket’s resolving is on record under the support role');
         cy.apiAs<{ items: TicketLike[] }>('admin', 'POST', '/tickets/search', {
             text: VISITOR.subject
         }).then((found) => {
-            auditedAsSupport(String(found?.items[0]?.id), 'admin.ticket.status_updated');
+            auditedAsSupport(String(found?.items[0]?.id), 'admin.ticket.resolved');
         });
     });
 

@@ -104,7 +104,7 @@ describe('OP16 · The shop manager’s morning', () => {
         cy.get('[data-test=adjust-form]').should('not.exist');
         cy.get('[data-test=sweep-submit]').should('not.exist');
 
-        cy.step('a ticket in the inbox is readable, with no way to answer, annotate or erase it');
+        cy.step('a ticket in the inbox is readable, with no way to take, resolve or erase it');
         cy.apiAs('admin', 'POST', '/tickets', {
             email: 'asker@example.com',
             subject: 'OP16 kennel question',
@@ -112,9 +112,10 @@ describe('OP16 · The shop manager’s morning', () => {
         });
         cy.visit('/en/tickets');
         cy.get('[data-test=ticket-item]').should('contain.text', 'OP16 kennel question');
-        cy.get('[data-test=ticket-notes-save]').should('not.exist');
+        cy.get('[data-test=ticket-open]').should('exist');
+        cy.get('[data-test=ticket-take]').should('not.exist');
+        cy.get('[data-test=ticket-resolve]').should('not.exist');
         cy.get('[data-test=ticket-delete]').should('not.exist');
-        cy.get('[data-test=ticket-status] input').should('be.disabled');
 
         cy.step('the manager reprices a product, and a guest sees the new price at once');
         cy.subjectId('product.rich').then((productId) => {

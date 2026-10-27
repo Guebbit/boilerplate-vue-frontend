@@ -81,7 +81,7 @@ describe('Tickets', () => {
         cy.get('[data-test=ticket-item]').should('have.length', 0);
     });
 
-    it('an admin can save internal notes on a ticket, and they survive a reload', () => {
+    it('an admin can add a note on the detail page, and it survives a reload', () => {
         cy.loginAs('admin');
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input').type('curious@example.com');
@@ -91,21 +91,23 @@ describe('Tickets', () => {
 
         cy.navigateViaMenu('admin', '/en/tickets');
         cy.get('[data-test=ticket-item]').should('have.length', 1);
+        cy.get('[data-test=ticket-open]').click();
+        cy.get('#ticket-detail-page').should('exist');
 
-        cy.intercept('PATCH', '**/tickets/*').as('patchNotes');
-        cy.textareaIn('ticket-notes').type('Called back, waiting on legal.');
-        cy.get('[data-test=ticket-notes-save]').click();
-        cy.wait('@patchNotes')
+        cy.intercept('POST', '**/tickets/*/notes').as('addNote');
+        cy.textareaIn('ticket-note-draft').type('Called back, waiting on legal.');
+        cy.get('[data-test=ticket-note-add]').click();
+        cy.wait('@addNote')
             .its('request.body')
-            .should('deep.equal', { adminNotes: 'Called back, waiting on legal.' });
-        cy.contains('Notes saved.').should('exist');
+            .should('deep.equal', { body: 'Called back, waiting on legal.' });
+        cy.contains('Note added.').should('exist');
 
-        // A fresh load must read the saved note back from the server, not a client-only draft.
+        // A fresh load must read the note back from the server, not a client-only draft.
         cy.reload();
-        cy.textareaIn('ticket-notes').should('have.value', 'Called back, waiting on legal.');
+        cy.get('[data-test=ticket-note]').should('contain.text', 'Called back, waiting on legal.');
     });
 
-    it("clearing a ticket's notes sends null, not the empty string the PATCH rule refuses", () => {
+    it('taking a ticket assigns it to the viewer and shows the assignee', () => {
         cy.loginAs('admin');
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input').type('curious@example.com');
@@ -114,17 +116,13 @@ describe('Tickets', () => {
         cy.get('[data-test=contact-submit]').click();
 
         cy.navigateViaMenu('admin', '/en/tickets');
-        cy.textareaIn('ticket-notes').type('A draft note');
-        cy.get('[data-test=ticket-notes-save]').click();
-        cy.contains('Notes saved.').should('exist');
-
-        cy.intercept('PATCH', '**/tickets/*').as('patchNotes');
-        cy.textareaIn('ticket-notes').clear();
-        cy.get('[data-test=ticket-notes-save]').click();
-        cy.wait('@patchNotes').its('request.body').should('deep.equal', { adminNotes: null });
+        cy.get('[data-test=ticket-assignee]').should('not.exist');
+        cy.get('[data-test=ticket-take]').click();
+        cy.contains('Ticket taken.').should('exist');
+        cy.get('[data-test=ticket-assignee]').should('exist');
     });
 
-    it('moving a ticket to resolved records and shows when it was responded to', () => {
+    it('resolving a ticket records and shows when it was responded to', () => {
         cy.loginAs('admin');
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input').type('curious@example.com');
@@ -135,11 +133,11 @@ describe('Tickets', () => {
         cy.navigateViaMenu('admin', '/en/tickets');
         cy.get('[data-test=ticket-responded-at]').should('not.exist');
 
-        cy.get('[data-test=ticket-status]').click();
-        cy.get('[role=listbox] [role=option]').contains('Resolved').click();
+        cy.get('[data-test=ticket-resolve]').click();
         cy.contains('Status updated.').should('exist');
+        cy.get('[data-test=ticket-status]').should('contain.text', 'Resolved');
 
-        // Set by the backend the first time a ticket becomes resolved — never sent by this UI.
+        // Set by the backend the first time a ticket becomes resolved: never sent by this UI.
         cy.get('[data-test=ticket-responded-at]').should('exist');
     });
 
