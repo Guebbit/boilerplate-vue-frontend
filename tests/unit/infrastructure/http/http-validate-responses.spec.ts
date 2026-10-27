@@ -6,6 +6,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { server } from '../../../support/unit/msw-server.ts';
+import { z } from 'zod';
 import { createPinia, setActivePinia } from 'pinia';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 
@@ -251,6 +252,35 @@ describe('orvalMutator contract validation', () => {
                 username: 'alice'
             })
         );
+    });
+
+    it('report-only (PROD): a union answer is never stripped, so an undeclared field fails strictly and still resolves', () => {
+        server.use(http.get(`${API}/either`, () => HttpResponse.json({ a: 1, extra: true })));
+        vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
+        vi.stubEnv('PROD', true);
+        const captureException = vi.spyOn(useObservabilityStore(), 'captureException');
+
+        return loadHttp()
+            .then(async ({ orvalMutator }) => {
+                const { registerResponseSchemas } =
+                    await import('@/infrastructure/http/response-schema-map');
+                registerResponseSchemas([
+                    {
+                        method: 'GET',
+                        pattern: /^\/either$/,
+                        schema: z.union([
+                            z.strictObject({ a: z.number() }),
+                            z.strictObject({ b: z.number() })
+                        ])
+                    }
+                ]);
+                return orvalMutator({ url: '/either', method: 'GET' });
+            })
+            .then((answer) => {
+                // A strippable (object) schema would have dropped `extra` and reported nothing.
+                expect(answer).toMatchObject({ a: 1, extra: true });
+                expect(captureException).toHaveBeenCalledOnce();
+            });
     });
 
     it('report-only (PROD): a genuinely missing field still reports to Faro but resolves', () => {
