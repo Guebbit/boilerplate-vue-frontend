@@ -121,10 +121,15 @@ describe('N2 · Withdraw after delivery', () => {
                 expect(payment?.displayStatus, 'part of the money stayed').to.not.equal('refunded');
             });
             eventually(
-                () => cy.apiAs<CreditNoteLike[]>('user', 'GET', `/orders/${orderId}/credit-notes`),
-                (notes) => (notes?.length ?? 0) > 0
+                () =>
+                    cy.apiAs<{ items: CreditNoteLike[] }>(
+                        'user',
+                        'GET',
+                        `/orders/${orderId}/credit-notes`
+                    ),
+                (notes) => (notes?.items.length ?? 0) > 0
             ).should((notes) => {
-                expect(notes).to.have.length(1);
+                expect(notes?.items).to.have.length(1);
             });
 
             cy.step('the customer sees the closed return, the partial refund and the credit note');
