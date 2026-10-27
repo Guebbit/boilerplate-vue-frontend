@@ -1,7 +1,7 @@
 /**
  * @module
- * Pinia store split into two halves behind one `defineStore` setup function: language capabilities
- * (read the manifest, write through explicit wrappers, always refetch after a write) and one
+ * Pinia store split into two halves behind one `defineStore` setup function: languages
+ * (read the manifest or one language, write through explicit wrappers that fold the answer in) and one
  * language's entries (the ordinary toolkit-driven paginated CRUD resource, via
  * `useStructureCrudApi`).
  */
@@ -10,6 +10,7 @@ import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import {
     getLocales,
+    getLocale,
     getLocaleDictionary,
     listLocaleApps,
     createLocale,
@@ -29,7 +30,7 @@ import {
     LocaleAppKind
 } from '@api';
 import type {
-    LocaleCapability,
+    Language,
     LocaleEntry,
     LocaleAppDescriptor,
     CreateLocaleRequest,
@@ -112,11 +113,9 @@ const listEntriesOf = (
 /**
  * The translation admin surface: languages on one side, one language's entries on the other.
  *
- * Two halves rather than one CRUD resource because the API answers with two different records:
- * `getLocales` serves `LocaleCapability` — the merged manifest of both tiers — while the writes
- * answer with `Language`, the dynamic-tier row alone. The manifest is what the board renders, so
- * every write refetches it rather than trying to splice a `Language` into a list it is not shaped
- * like.
+ * Two halves rather than one CRUD resource: a language has no search and no paging, while its
+ * entries do. A language is one shape everywhere (list, read, every write), so a write's answer
+ * is folded straight into the list the board renders, with no refetch.
  *
  * The entries half is the ordinary paginated resource the users and products stores are, and uses
  * the same toolkit surface. Only the writes differ: every operation needs the language tag as
@@ -179,7 +178,7 @@ export const useLocalesStore = defineStore('locales', () => {
     /**
      * The manifest: every language, both tiers merged, as last fetched.
      */
-    const capabilities = ref<LocaleCapability[]>([]);
+    const capabilities = ref<Language[]>([]);
 
     /**
      * The app registry: every keyspace the API holds words for, as last fetched.
@@ -234,6 +233,20 @@ export const useLocalesStore = defineStore('locales', () => {
     const fallbackLocale = ref<string>();
 
     /**
+     * Puts one language into the list, replacing the row with its tag, keeping tag order.
+     *
+     * @param language - The language as the API last answered it.
+     * @returns The same language, for chaining.
+     */
+    const upsertLanguage = (language: Language) => {
+        capabilities.value = [
+            ...capabilities.value.filter(({ tag }) => tag !== language.tag),
+            language
+        ].toSorted((left, right) => left.tag.localeCompare(right.tag));
+        return language;
+    };
+
+    /**
      * Loads the language manifest.
      *
      * @returns A promise resolving with the capabilities.
@@ -249,18 +262,25 @@ export const useLocalesStore = defineStore('locales', () => {
         );
 
     /**
-     * Registers a language in the dynamic tier, then reloads the manifest.
+     * Loads one language and folds it into the list, for a page that shows only that one.
+     *
+     * @param tag - Which language.
+     * @returns A promise resolving with the language.
+     */
+    const fetchLanguage = (tag: string) =>
+        fetchAny(() => getLocale(tag).then((response) => upsertLanguage(response)));
+
+    /**
+     * Registers a language in the dynamic tier, then adds it to the list.
      *
      * @param body - Tag, names, direction and visibility of the new language.
      * @returns A promise resolving with the created `Language` row.
      */
     const createLanguage = (body: CreateLocaleRequest) =>
-        fetchAny(() =>
-            createLocale(body).then((response) => fetchLanguages().then(() => response))
-        );
+        fetchAny(() => createLocale(body).then((response) => upsertLanguage(response)));
 
     /**
-     * Edits a language's display names or direction, then reloads the manifest. Whether it is
+     * Edits a language's display names or direction, then updates the list. Whether it is
      * switched on is not editable here: {@link activateLanguage} and {@link deactivateLanguage}.
      *
      * The tag is not editable — it is what every entry references.
@@ -270,45 +290,39 @@ export const useLocalesStore = defineStore('locales', () => {
      * @returns A promise resolving with the updated `Language` row.
      */
     const editLanguage = (tag: string, body: UpdateLocaleRequest) =>
-        fetchAny(() =>
-            apiUpdateLocale(tag, body).then((response) => fetchLanguages().then(() => response))
-        );
+        fetchAny(() => apiUpdateLocale(tag, body).then((response) => upsertLanguage(response)));
 
     /**
-     * Switches a language on, then reloads the manifest.
+     * Switches a language on, then updates the list.
      *
      * @param tag - Which language.
      * @returns A promise resolving with the updated `Language` row.
      */
     const activateLanguage = (tag: string) =>
-        fetchAny(() =>
-            activateLocale(tag).then((response) => fetchLanguages().then(() => response))
-        );
+        fetchAny(() => activateLocale(tag).then((response) => upsertLanguage(response)));
 
     /**
-     * Switches a language off, then reloads the manifest. The fallback language refuses (409).
+     * Switches a language off, then updates the list. The fallback language refuses (409).
      *
      * @param tag - Which language.
      * @returns A promise resolving with the updated `Language` row.
      */
     const deactivateLanguage = (tag: string) =>
-        fetchAny(() =>
-            deactivateLocale(tag).then((response) => fetchLanguages().then(() => response))
-        );
+        fetchAny(() => deactivateLocale(tag).then((response) => upsertLanguage(response)));
 
     /**
-     * Removes a language and every entry translated into it, then reloads the manifest.
+     * Removes a language and every entry translated into it, then updates the list.
      *
      * The API deletes an active language directly; the confirm that guards it belongs to the page.
      *
      * @param tag - Which language.
-     * @returns A promise resolving once the manifest agrees the language is gone.
+     * @returns A promise resolving once the language is gone from the list.
      */
     const removeLanguage = (tag: string) =>
         fetchAny(() =>
-            deleteLocale(tag)
-                .then(() => fetchLanguages())
-                .then(() => undefined)
+            deleteLocale(tag).then(() => {
+                capabilities.value = capabilities.value.filter((language) => language.tag !== tag);
+            })
         );
 
     /**
@@ -475,6 +489,7 @@ export const useLocalesStore = defineStore('locales', () => {
         defaultLocale,
         fallbackLocale,
         fetchLanguages,
+        fetchLanguage,
         createLanguage,
         editLanguage,
         activateLanguage,

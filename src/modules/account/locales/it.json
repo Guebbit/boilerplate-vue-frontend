@@ -42,6 +42,8 @@
         "button-change-password": "Cambia password",
         "button-export-data": "Scarica i miei dati",
         "export-requested": "Stiamo preparando i tuoi dati. Ti invieremo un link via email quando saranno pronti.",
+        "export-ready": "I tuoi dati sono pronti fino al {date}. Apri il link che ti abbiamo inviato via email per scaricarli.",
+        "export-failed": "L'ultima esportazione non è riuscita. Premi il pulsante per richiederla di nuovo.",
         "button-delete-account": "Elimina account",
         "confirm-delete-account": "Eliminare il tuo account? Viene bloccato subito e cancellato dopo un breve periodo di tolleranza, e vieni disconnesso. Scarica prima i tuoi dati se ne vuoi una copia. Fino alla cancellazione, il link nell'email, l'accesso o il nostro team possono ripristinarlo.",
         "deletion-scheduled": "Il tuo account è bloccato e verrà cancellato il {date}. Il link nell'email che ti abbiamo inviato, o l'accesso, lo annulla.",
@@ -214,6 +216,9 @@
         "intro": "L'esportazione dei tuoi dati è pronta. Scaricala qui: è un unico file JSON con tutto ciò che questo negozio conserva sul tuo account.",
         "button-download": "Scarica i miei dati",
         "saved": "Salvato. Il file è sul tuo dispositivo.",
+        "ready-until": "Resta disponibile fino al {date}.",
+        "building": "L'esportazione dei tuoi dati è ancora in preparazione. Ricarica la pagina tra qualche minuto.",
+        "failed": "L'ultima esportazione dei tuoi dati non è riuscita. Richiedine una nuova dal tuo profilo.",
         "gone-hint": "Un'esportazione viene conservata per alcuni giorni. Richiedine una nuova dal tuo profilo."
     },
     "email-change-confirm-page": {

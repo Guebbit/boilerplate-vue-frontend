@@ -67,11 +67,13 @@ presses _Connect_ in the profile's connected-accounts panel. That calls
 and the callback lands on `OAuthCallback` with `?linked=<provider>`: a toast, then back to where the
 visitor was. No session is minted for it.
 
-**The data export is a link, not a download.** The profile button only asks (`requestAccountExport`,
-`202`) and says an email is coming; the API builds the file in the background and mails a link to
-`account-export`, whose one button fetches it (`downloadAccountExport`) and saves it as JSON. A
-button rather than a download on arrival, so a mail scanner that prefetches the link triggers
-nothing. Both calls need a fresh session, which the step-up interceptor asks for in place. See the
+**The data export is a link, not a download.** The profile card reads the export's status on
+load (`fetchAccountExport`: building, ready until a date, failed, or none; polled while it builds).
+Its button asks (`requestAccountExport`, `202`); the API builds the file in the background and mails
+a link to `account-export`. That page reads the status first and offers the one button (`downloadAccountExport`, which saves
+the file as JSON) only when it is ready. A button rather than a download on arrival, so a mail
+scanner that prefetches the link triggers nothing. The request and the download need a fresh
+session, which the step-up interceptor asks for in place; the status read does not. See the
 backend's [data export](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/account.md#data-export).
 
 **The one dependency is validation, not screens.** Every form here validates against

@@ -18,7 +18,7 @@ import { useI18n } from 'vue-i18n';
 import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { localesLanguageEditSchema, localesLanguageSchema } from '../schemas.ts';
-import type { LocaleCapability, LocaleDirection } from '@types';
+import type { Language, LocaleDirection } from '@types';
 
 /**
  * Create-or-edit dialog for one language.
@@ -31,7 +31,7 @@ const props = defineProps<{
     /**
      * The language being edited; absent means the dialog creates one.
      */
-    language?: LocaleCapability;
+    language?: Language;
     /**
      * Whether the parent's save is in flight — the submit is disabled meanwhile, so Enter or a
      * second click cannot send the write twice.
