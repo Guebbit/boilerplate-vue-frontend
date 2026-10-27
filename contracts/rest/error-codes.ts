@@ -186,6 +186,8 @@ export const ERROR_CODES = {
     PAYMENT_CARD_NOT_AVAILABLE: 'PAYMENT_CARD_NOT_AVAILABLE',
     /** 409 — The card issuer or gateway declined the charge. */
     PAYMENT_DECLINED: 'PAYMENT_DECLINED',
+    /** 409 — The buyer disputed the card payment (a chargeback is open), so the shop cannot refund it: the bank has taken the money back already and the answer goes to the provider as evidence. */
+    PAYMENT_DISPUTED: 'PAYMENT_DISPUTED',
     /** 409 — Another payment attempt for this order is already being recorded. */
     PAYMENT_IN_FLIGHT: 'PAYMENT_IN_FLIGHT',
     /** 409 — The payment is not in a state this confirmation can apply to. */

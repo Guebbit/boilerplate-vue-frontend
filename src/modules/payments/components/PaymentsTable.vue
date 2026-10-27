@@ -82,6 +82,7 @@ interface PaymentFilters {
     amountMax?: string;
     orderId?: string;
     reference?: string;
+    disputed?: boolean;
     sort?: string;
 }
 
@@ -126,7 +127,8 @@ const { page, pageTotal, load } = usePagedTable(paymentsTotal, (pageNumber, page
         amountMin: amountOf(filters.value.amountMin),
         amountMax: amountOf(filters.value.amountMax),
         orderId: filters.value.orderId?.trim() || undefined,
-        reference: filters.value.reference?.trim() || undefined
+        reference: filters.value.reference?.trim() || undefined,
+        disputed: filters.value.disputed ? true : undefined
     })
 );
 
@@ -150,6 +152,7 @@ const { sync: syncUrl } = useListUrlState({
         amountMax: 'string',
         orderId: 'string',
         reference: 'string',
+        disputed: 'boolean',
         sort: 'string'
     }
 });
@@ -276,6 +279,13 @@ const orderLink = useOrderLink();
                         v-model="filters.reference"
                         :label="t('payments-list-page.filter-reference')"
                         data-test="filter-reference"
+                        hide-details
+                    />
+                    <v-checkbox
+                        v-model="filters.disputed"
+                        :label="t('payments-list-page.filter-disputed')"
+                        data-test="filter-disputed"
+                        density="compact"
                         hide-details
                     />
                     <v-text-field

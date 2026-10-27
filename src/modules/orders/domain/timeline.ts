@@ -157,6 +157,19 @@ const refundParts: DetailBuilder = (tools, data) => [
 ];
 
 /**
+ * The money and state of a dispute row: how much the bank disputes, and where it stands.
+ *
+ * @param tools - The injected helpers.
+ * @param data - The row's `data`.
+ * @returns Amount, state and reason fragments.
+ */
+const disputeParts: DetailBuilder = (tools, data) => [
+    amountOf(tools, data),
+    coded(tools, data, 'status', 'order-timeline.detail-dispute', 'order-timeline.dispute-status-'),
+    coded(tools, data, 'reason', 'order-timeline.detail-reason', 'order-timeline.dispute-reason-')
+];
+
+/**
  * The reason code of a return row.
  *
  * @param tools - The injected helpers.
@@ -248,6 +261,8 @@ const DETAILS: Readonly<Partial<Record<OrderTimelineType, DetailBuilder>>> = {
             'order-timeline.failure-reason-'
         )
     ],
+    dispute_opened: disputeParts,
+    dispute_closed: disputeParts,
     shipment_shipped: (tools, data) => [
         plain(tools, data, 'number', 'order-timeline.detail-shipment'),
         plain(tools, data, 'trackingCode', 'order-timeline.detail-tracking')

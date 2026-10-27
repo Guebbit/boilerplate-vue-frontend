@@ -29,7 +29,7 @@ import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.
 import { useOrdersStore } from '../store.ts';
 import { ordersSchema } from '../schemas.ts';
 import { useOrderHero } from '../composables/use-order-hero.ts';
-import { useOrderRefund, RecordOfflinePaymentForm } from '@/modules/payments';
+import { useOrderRefund, OrderDisputes, RecordOfflinePaymentForm } from '@/modules/payments';
 import ShippingAddressForm from '../components/ShippingAddressForm.vue';
 import { z } from 'zod';
 import type { OrderStatus } from '@types';
@@ -547,6 +547,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                     call the API would refuse.
                 -->
                 <div class="mt-6 border-t pt-5">
+                    <OrderDisputes v-if="id" :order-id="id" />
                     <h3 class="text-lg font-semibold">{{ t('order-edit-page.actions-title') }}</h3>
                     <p class="mt-1 mb-3 opacity-75">{{ t('order-edit-page.actions-hint') }}</p>
 

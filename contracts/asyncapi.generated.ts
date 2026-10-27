@@ -150,6 +150,32 @@ export interface PaymentRefundReversedPayload {
   'currency': string;
   'failureReason': string;
 }
+export interface PaymentDisputeOpenedEnvelope {
+  'type': PaymentDisputeOpenedEventType;
+  'timestamp': string;
+  'data': PaymentDisputePayload;
+}
+export type PaymentDisputeOpenedEventType = "payment.dispute_opened";
+export interface PaymentDisputePayload {
+  'paymentId': string;
+  'orderId': string;
+  'disputeId': string;
+  'kind': AnonymousSchema81;
+  'status': AnonymousSchema82;
+  'reason': string;
+  'amount': number;
+  'currency': string;
+  'fundsWithdrawn': boolean;
+  'evidenceDueBy'?: string;
+}
+export type AnonymousSchema81 = "inquiry" | "chargeback";
+export type AnonymousSchema82 = "needs_response" | "under_review" | "won" | "lost" | "accepted" | "closed";
+export interface PaymentDisputeUpdatedEnvelope {
+  'type': PaymentDisputeUpdatedEventType;
+  'timestamp': string;
+  'data': PaymentDisputePayload;
+}
+export type PaymentDisputeUpdatedEventType = "payment.dispute_updated";
 export interface ReturnRequestedEnvelope {
   'type': ReturnRequestedEventType;
   'timestamp': string;
@@ -161,9 +187,9 @@ export interface ReturnRequestedPayload {
   'orderId': string;
   'reason': string;
   'requestedAt': string;
-  'statedVia'?: AnonymousSchema82;
+  'statedVia'?: AnonymousSchema96;
 }
-export type AnonymousSchema82 = "online" | "phone" | "email" | "letter" | "other";
+export type AnonymousSchema96 = "online" | "phone" | "email" | "letter" | "other";
 export interface ReturnReceivedEnvelope {
   'type': ReturnReceivedEventType;
   'timestamp': string;
@@ -221,43 +247,43 @@ export interface NotificationCreatedPayload {
 }
 export interface NotificationCartLineRemovedPayload {
   'id': string;
-  'audience': AnonymousSchema106;
-  'code': AnonymousSchema107;
+  'audience': AnonymousSchema120;
+  'code': AnonymousSchema121;
   'params': CartLineRemovedParamsPayload;
-  'severity': AnonymousSchema111;
+  'severity': AnonymousSchema125;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema106 = "own" | "staff";
-export type AnonymousSchema107 = "notifications.cart-line-removed";
+export type AnonymousSchema120 = "own" | "staff";
+export type AnonymousSchema121 = "notifications.cart-line-removed";
 export interface CartLineRemovedParamsPayload {
   'productId': string;
   'titles': { [name: string]: string };
 }
-export type AnonymousSchema111 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema125 = "info" | "success" | "warning" | "error";
 export interface NotificationWishlistItemRemovedPayload {
   'id': string;
-  'audience': AnonymousSchema115;
-  'code': AnonymousSchema116;
+  'audience': AnonymousSchema129;
+  'code': AnonymousSchema130;
   'params': CartLineRemovedParamsPayload;
-  'severity': AnonymousSchema117;
+  'severity': AnonymousSchema131;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema115 = "own" | "staff";
-export type AnonymousSchema116 = "notifications.wishlist-item-removed";
-export type AnonymousSchema117 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema129 = "own" | "staff";
+export type AnonymousSchema130 = "notifications.wishlist-item-removed";
+export type AnonymousSchema131 = "info" | "success" | "warning" | "error";
 export interface NotificationCartMergeRefusedPayload {
   'id': string;
-  'audience': AnonymousSchema121;
-  'code': AnonymousSchema122;
+  'audience': AnonymousSchema135;
+  'code': AnonymousSchema136;
   'params': CartMergeRefusedParamsPayload;
-  'severity': AnonymousSchema128;
+  'severity': AnonymousSchema142;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema121 = "own" | "staff";
-export type AnonymousSchema122 = "notifications.cart-merge-refused";
+export type AnonymousSchema135 = "own" | "staff";
+export type AnonymousSchema136 = "notifications.cart-merge-refused";
 export interface CartMergeRefusedParamsPayload {
   'lines': CartMergeRefusedLinePayload[];
 }
@@ -266,18 +292,18 @@ export interface CartMergeRefusedLinePayload {
   'requested': number;
   'titles': { [name: string]: string };
 }
-export type AnonymousSchema128 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema142 = "info" | "success" | "warning" | "error";
 export interface NotificationFulfillmentDelayedPayload {
   'id': string;
-  'audience': AnonymousSchema132;
-  'code': AnonymousSchema133;
+  'audience': AnonymousSchema146;
+  'code': AnonymousSchema147;
   'params': FulfillmentDelayedParamsPayload;
-  'severity': AnonymousSchema140;
+  'severity': AnonymousSchema154;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema132 = "own" | "staff";
-export type AnonymousSchema133 = "notifications.fulfillment-delayed";
+export type AnonymousSchema146 = "own" | "staff";
+export type AnonymousSchema147 = "notifications.fulfillment-delayed";
 export interface FulfillmentDelayedParamsPayload {
   'orderId': string;
   'fulfillmentOrderId': string;
@@ -285,90 +311,90 @@ export interface FulfillmentDelayedParamsPayload {
   'agreedAt': string;
   'expectedAt'?: string;
 }
-export type AnonymousSchema140 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema154 = "info" | "success" | "warning" | "error";
 export interface NotificationFulfillmentHeldPayload {
   'id': string;
-  'audience': AnonymousSchema144;
-  'code': AnonymousSchema145;
+  'audience': AnonymousSchema158;
+  'code': AnonymousSchema159;
   'params': FulfillmentHeldParamsPayload;
-  'severity': AnonymousSchema150;
+  'severity': AnonymousSchema164;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema144 = "own" | "staff";
-export type AnonymousSchema145 = "notifications.fulfillment-held";
+export type AnonymousSchema158 = "own" | "staff";
+export type AnonymousSchema159 = "notifications.fulfillment-held";
 export interface FulfillmentHeldParamsPayload {
   'orderId': string;
   'fulfillmentOrderId': string;
-  'notice': AnonymousSchema148;
+  'notice': AnonymousSchema162;
   'message'?: string;
 }
-export type AnonymousSchema148 = "check_address" | "delayed";
-export type AnonymousSchema150 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema162 = "check_address" | "delayed";
+export type AnonymousSchema164 = "info" | "success" | "warning" | "error";
 export interface NotificationShipmentLostPayload {
   'id': string;
-  'audience': AnonymousSchema154;
-  'code': AnonymousSchema155;
+  'audience': AnonymousSchema168;
+  'code': AnonymousSchema169;
   'params': ShipmentLostParamsPayload;
-  'severity': AnonymousSchema163;
-  'readAt'?: string;
-  'createdAt': string;
-}
-export type AnonymousSchema154 = "own" | "staff";
-export type AnonymousSchema155 = "notifications.shipment-lost";
-export interface ShipmentLostParamsPayload {
-  'orderId': string;
-  'shipmentId': string;
-  'reason': AnonymousSchema158;
-  'message'?: string;
-  'owed'?: string[];
-  'expectedAt'?: string;
-}
-export type AnonymousSchema158 = "lost" | "damaged";
-export type AnonymousSchema163 = "info" | "success" | "warning" | "error";
-export interface NotificationStockAlertPayload {
-  'id': string;
-  'audience': AnonymousSchema167;
-  'code': AnonymousSchema168;
-  'params': CartLineRemovedParamsPayload;
-  'severity': AnonymousSchema169;
-  'readAt'?: string;
-  'createdAt': string;
-}
-export type AnonymousSchema167 = "own" | "staff";
-export type AnonymousSchema168 = "notifications.stock-alert";
-export type AnonymousSchema169 = "info" | "success" | "warning" | "error";
-export interface NotificationStaffPurchaseHoldPlacedPayload {
-  'id': string;
-  'audience': AnonymousSchema173;
-  'code': AnonymousSchema174;
-  'params': PurchaseHoldPlacedParamsPayload;
   'severity': AnonymousSchema177;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema173 = "own" | "staff";
-export type AnonymousSchema174 = "notifications.staff.purchase-hold-placed";
-export interface PurchaseHoldPlacedParamsPayload {
-  'userId': string;
-  'until': string;
+export type AnonymousSchema168 = "own" | "staff";
+export type AnonymousSchema169 = "notifications.shipment-lost";
+export interface ShipmentLostParamsPayload {
+  'orderId': string;
+  'shipmentId': string;
+  'reason': AnonymousSchema172;
+  'message'?: string;
+  'owed'?: string[];
+  'expectedAt'?: string;
 }
+export type AnonymousSchema172 = "lost" | "damaged";
 export type AnonymousSchema177 = "info" | "success" | "warning" | "error";
-export interface NotificationStaffWebhookDisabledPayload {
+export interface NotificationStockAlertPayload {
   'id': string;
   'audience': AnonymousSchema181;
   'code': AnonymousSchema182;
-  'params': WebhookDisabledParamsPayload;
-  'severity': AnonymousSchema184;
+  'params': CartLineRemovedParamsPayload;
+  'severity': AnonymousSchema183;
   'readAt'?: string;
   'createdAt': string;
 }
 export type AnonymousSchema181 = "own" | "staff";
-export type AnonymousSchema182 = "notifications.staff.webhook-disabled";
+export type AnonymousSchema182 = "notifications.stock-alert";
+export type AnonymousSchema183 = "info" | "success" | "warning" | "error";
+export interface NotificationStaffPurchaseHoldPlacedPayload {
+  'id': string;
+  'audience': AnonymousSchema187;
+  'code': AnonymousSchema188;
+  'params': PurchaseHoldPlacedParamsPayload;
+  'severity': AnonymousSchema191;
+  'readAt'?: string;
+  'createdAt': string;
+}
+export type AnonymousSchema187 = "own" | "staff";
+export type AnonymousSchema188 = "notifications.staff.purchase-hold-placed";
+export interface PurchaseHoldPlacedParamsPayload {
+  'userId': string;
+  'until': string;
+}
+export type AnonymousSchema191 = "info" | "success" | "warning" | "error";
+export interface NotificationStaffWebhookDisabledPayload {
+  'id': string;
+  'audience': AnonymousSchema195;
+  'code': AnonymousSchema196;
+  'params': WebhookDisabledParamsPayload;
+  'severity': AnonymousSchema198;
+  'readAt'?: string;
+  'createdAt': string;
+}
+export type AnonymousSchema195 = "own" | "staff";
+export type AnonymousSchema196 = "notifications.staff.webhook-disabled";
 export interface WebhookDisabledParamsPayload {
   'subscriptionId': string;
 }
-export type AnonymousSchema184 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema198 = "info" | "success" | "warning" | "error";
 export interface NotificationsDeletedPayload {
   'all': boolean;
   'ids': string[];
@@ -392,6 +418,8 @@ export type PaymentFailedEvent = PaymentFailedEnvelope;
 export type PaymentRefundedEvent = PaymentRefundedEnvelope;
 export type PaymentRefundFailedEvent = PaymentRefundFailedEnvelope;
 export type PaymentRefundReversedEvent = PaymentRefundReversedEnvelope;
+export type PaymentDisputeOpenedEvent = PaymentDisputeOpenedEnvelope;
+export type PaymentDisputeUpdatedEvent = PaymentDisputeUpdatedEnvelope;
 export type ReturnReceivedEvent = ReturnReceivedEnvelope;
 export type ReturnClosedEvent = ReturnClosedEnvelope;
 export type ReturnRequestedEvent = ReturnRequestedEnvelope;
@@ -442,6 +470,8 @@ export const PAYMENT_CHANNELS = {
     REFUNDED: 'payment.refunded',
     REFUND_FAILED: 'payment.refund_failed',
     REFUND_REVERSED: 'payment.refund_reversed',
+    DISPUTE_OPENED: 'payment.dispute_opened',
+    DISPUTE_UPDATED: 'payment.dispute_updated',
 } as const;
 
 /* Union of every "payment." channel name */
