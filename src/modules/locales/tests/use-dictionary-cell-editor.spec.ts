@@ -11,10 +11,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
 import { useDictionaryCellEditor } from '../composables/use-dictionary-cell-editor.ts';
-import type { LocaleCapability, LocaleEntry } from '@types';
+import type { Language, LocaleEntry } from '@types';
 
 /** The column every test writes into. */
-const ENGLISH = { tag: 'en', nativeName: 'English', source: 'dynamic' } as LocaleCapability;
+const ENGLISH = { tag: 'en', nativeName: 'English', source: 'dynamic' } as Language;
 
 /** The app a NEW entry is created in. */
 const OWN_APP = 'demo-fe';

@@ -67,6 +67,7 @@ const capability = (
     { active = true, source = 'both' }: { active?: boolean; source?: string } = {}
 ) => ({
     tag,
+    baseLanguage: tag.slice(0, 2),
     name: tag,
     nativeName: tag,
     direction: 'ltr',

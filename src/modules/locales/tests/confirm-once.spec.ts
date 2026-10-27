@@ -18,7 +18,7 @@ import { enabledModules } from '@/modules';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
-import type { LocaleCapability } from '@types';
+import type { Language } from '@types';
 
 wireModulesIntoCore();
 
@@ -53,8 +53,9 @@ vi.mock('@/infrastructure/http', () => ({
 }));
 
 /** A language to delete: the single `removeLanguage` call, whatever its on/off state. */
-const SPANISH: LocaleCapability = {
+const SPANISH: Language = {
     tag: 'es',
+    baseLanguage: 'es',
     name: 'Spanish',
     nativeName: 'Español',
     direction: 'ltr',

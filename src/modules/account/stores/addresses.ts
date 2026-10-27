@@ -40,8 +40,7 @@ export const useAddressesStore = defineStore('accountAddresses', () => {
     const addresses = ref<Address[]>([]);
 
     /**
-     * Replace the local book with the payload the book's own endpoints answer with (the read and
-     * the delete).
+     * Replace the local book with the payload the book's own read answers with.
      *
      * Typed as the generated schema rather than `unknown`, so the call sites are checked against
      * the contract instead of being waved through a cast: the day an endpoint stops answering with
@@ -61,7 +60,7 @@ export const useAddressesStore = defineStore('accountAddresses', () => {
         fetchAny(() => apiListAddresses().then((data) => readAddressesResponse(data)));
 
     /**
-     * Re-reads the book after a write that answered one entry. Called inside a write's own
+     * Re-reads the book after a write that answered one entry or nothing. Called inside a write's own
      * `fetchAny`, so `loading` stays up for the whole write-then-read and does not flicker.
      *
      * @returns A promise resolving with the addresses as the server now holds them.
@@ -101,13 +100,14 @@ export const useAddressesStore = defineStore('accountAddresses', () => {
         fetchAny(() => apiSetDefaultAddress(addressId).then(() => reloadBook()));
 
     /**
-     * Removes one entry; removing the default promotes the oldest survivor server-side.
+     * Removes one entry (the API answers `204`), then reloads the book: removing the default
+     * promotes the oldest survivor server-side, and the client must not guess which.
      *
      * @param addressId - Which entry.
      * @returns A promise resolving with the updated book.
      */
     const removeAddress = (addressId: string) =>
-        fetchAny(() => apiRemoveAddress(addressId).then((data) => readAddressesResponse(data)));
+        fetchAny(() => apiRemoveAddress(addressId).then(() => reloadBook()));
 
     return {
         addresses,
