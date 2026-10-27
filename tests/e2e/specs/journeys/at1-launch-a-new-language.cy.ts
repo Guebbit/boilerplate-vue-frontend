@@ -228,6 +228,7 @@ describe('AT1 · Launch a new language', () => {
                     expect(response.body.title).not.to.equal('Hundekorb 2');
                     expect(response.headers['content-language']).to.equal('en');
                 });
+            cy.visit('/en/locales');
             // Switched back on so the deletion below keeps its place in the story.
             cy.get(`[data-language=${TAG}] [data-test=row-activate]`).click();
             cy.get(`[data-language=${TAG}] [data-test=row-deactivate]`).should('exist');
