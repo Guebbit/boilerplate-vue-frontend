@@ -7,7 +7,7 @@
  * `enableSubscription`/`disableSubscription` are the two status actions (their own routes, not a
  * field in the update body); like `removeSecret` they cache the answer, which carries no secret.
  *
- * `createSubscription`/`rotateSecret` are hand-written rather than the generic `createOne`/
+ * `createSubscription`/`createSecret` are hand-written rather than the generic `createOne`/
  * `updateOne`: both responses carry a plaintext secret meant to be shown exactly once, and the
  * generic path (`createTarget`/`updateTarget`) caches whatever the API call resolves to verbatim
  * — caching the raw response would park that plaintext in this store's state forever, readable by
@@ -27,7 +27,7 @@ import {
     deleteWebhookSubscription,
     enableWebhookSubscription,
     disableWebhookSubscription,
-    rotateWebhookSubscriptionSecret,
+    createWebhookSubscriptionSecret,
     removeWebhookSubscriptionSecret,
     listWebhookDeliveries,
     replayWebhookDelivery,
@@ -179,10 +179,10 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      * @param id - the subscription to rotate
      * @returns The full response, including the plaintext `newSecret`
      */
-    const rotateSecret = (id: string) =>
+    const createSecret = (id: string) =>
         fetchAnySubscriptions(
             () =>
-                rotateWebhookSubscriptionSecret(id).then((updated) => {
+                createWebhookSubscriptionSecret(id).then((updated) => {
                     const { secret: _secret, newSecret: _newSecret, ...record } = updated;
                     editSubscriptionRecord(record, id);
                     return updated;
@@ -193,7 +193,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
     /**
      * Drops one secret from a subscription's ring — the other half of a rotation, once every
      * consumer has switched to the new one. Hand-written, like {@link createSubscription} and
-     * {@link rotateSecret}, because it calls its own dedicated action route rather than the
+     * {@link createSecret}, because it calls its own dedicated action route rather than the
      * generic update path — but unlike those two, its response carries no plaintext secret to
      * scrub before caching.
      *
@@ -337,7 +337,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         deleteSubscription,
         enableSubscription,
         disableSubscription,
-        rotateSecret,
+        createSecret,
         removeSecret,
 
         deliveries,

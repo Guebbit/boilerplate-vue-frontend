@@ -27,6 +27,16 @@ import * as schemas from '@api/schemas';
 wireModulesIntoCore();
 
 /**
+ * The caller's export, as `POST` and `GET /account/export` describe it.
+ */
+const EXPORT = {
+    id: 'e1',
+    status: 'building',
+    createdAt: '2026-09-07T00:00:00.000Z',
+    actions: { download: false, request: false }
+};
+
+/**
  * A representative user record, used across the fetch/update/role assertions below.
  */
 const USER = { id: 'u1', username: 'ada', email: 'ada@example.com', role: 'customer' };
@@ -83,13 +93,14 @@ beforeEach(() => {
         'POST /account/email-verification/confirm': undefined,
         'POST /account/email-change/confirm': undefined,
         'POST /account/email-change/undo': undefined,
-        // The request answers `202` with the export's id and status; the data comes later, by link.
-        'POST /account/export': { id: 'e1', status: 'building' },
+        // The request answers `202` with the export and its status; the data comes later, by link.
+        'POST /account/export': EXPORT,
+        'GET /account/export': EXPORT,
         // The download body IS the export document, not an envelope. Every collection is an array
         // the fixture is free to leave empty; only `exportedAt` and `profile` are required scalars
         // on `AccountExportResponse`. `invoicing` is the one exception — an object of two empty
         // arrays, never absent, for an account with no paid orders yet.
-        'GET /account/export': {
+        'GET /account/export/file': {
             exportedAt: '2026-09-07T00:00:00.000Z',
             profile: USER,
             roles: [],
@@ -243,21 +254,31 @@ describe('the account deletion flow', () => {
 });
 
 describe('requestAccountExport', () => {
-    it('answers the export id and status from POST /account/export, and carries no data', () =>
+    it('answers the export and its status from POST /account/export, and carries no data', () =>
         useProfileStore()
             .requestAccountExport()
             .then((data) => {
                 expect(requestedUrls().at(-1)).toBe('/account/export');
-                expect(data).toEqual({ id: 'e1', status: 'building' });
+                expect(data).toEqual(EXPORT);
+            }));
+});
+
+describe('fetchAccountExport', () => {
+    it('reads where the export stands from GET /account/export', () =>
+        useProfileStore()
+            .fetchAccountExport()
+            .then((data) => {
+                expect(requestedUrls().at(-1)).toBe('/account/export');
+                expect(data).toEqual(EXPORT);
             }));
 });
 
 describe('downloadAccountExport', () => {
-    it('returns the export document from GET /account/export', () =>
+    it('returns the export document from GET /account/export/file', () =>
         useProfileStore()
             .downloadAccountExport()
             .then((data) => {
-                expect(requestedUrls().at(-1)).toBe('/account/export');
+                expect(requestedUrls().at(-1)).toBe('/account/export/file');
                 expect(data?.profile).toEqual(USER);
                 expect(data?.exportedAt).toBe('2026-09-07T00:00:00.000Z');
             }));

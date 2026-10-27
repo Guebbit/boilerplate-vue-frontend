@@ -3,7 +3,7 @@
  * Unit tests for the webhooks store, mocking `orvalMutator` directly and inspecting the raw
  * requests sent by the store's actions — same shape as the users/products stores' tests.
  *
- * The tests with no equivalent anywhere else: `createSubscription` and `rotateSecret` both
+ * The tests with no equivalent anywhere else: `createSubscription` and `createSecret` both
  * receive a plaintext secret meant to be shown exactly once, and neither may leave it parked in
  * this store's cached state. See `store.ts`'s module docblock for why.
  *
@@ -44,7 +44,7 @@ const SUBSCRIPTION = {
         delete: true,
         enable: false,
         disable: true,
-        rotateSecret: true,
+        createSecret: true,
         removeSecret: false
     },
     createdAt: '2026-01-01T00:00:00.000Z',
@@ -183,13 +183,13 @@ describe('useWebhooksStore', () => {
         });
     });
 
-    describe('rotateSecret', () => {
-        it('posts to the rotate-secret action route', () =>
+    describe('createSecret', () => {
+        it('posts to the secrets collection', () =>
             useWebhooksStore()
-                .rotateSecret('sub1')
+                .createSecret('sub1')
                 .then(() => {
                     expect(lastRequest()).toMatchObject({
-                        url: '/webhooks/subscriptions/sub1/rotate-secret',
+                        url: '/webhooks/subscriptions/sub1/secrets',
                         method: 'POST'
                     });
                 }));
@@ -198,7 +198,7 @@ describe('useWebhooksStore', () => {
             respondOnceWith({ ...SUBSCRIPTION, newSecret: 'whsec_def456' });
 
             return useWebhooksStore()
-                .rotateSecret('sub1')
+                .createSecret('sub1')
                 .then((updated) => {
                     expect(updated?.newSecret).toBe('whsec_def456');
                 });
@@ -208,7 +208,7 @@ describe('useWebhooksStore', () => {
             respondOnceWith({ ...SUBSCRIPTION, newSecret: 'whsec_def456' });
 
             return useWebhooksStore()
-                .rotateSecret('sub1')
+                .createSecret('sub1')
                 .then(() => {
                     const store = useWebhooksStore();
                     expect(JSON.stringify(store.subscriptions)).not.toContain('whsec_def456');

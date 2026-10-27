@@ -104,6 +104,7 @@ describe('LanguageFormDialog', () => {
                 modelValue: true,
                 language: {
                     tag: 'es',
+                    baseLanguage: 'es',
                     name: 'Spanish',
                     nativeName: 'Español',
                     direction: 'ltr',

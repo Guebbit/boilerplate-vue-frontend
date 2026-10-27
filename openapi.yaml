@@ -338,32 +338,34 @@ paths:
     get:
       tags:
         - Locales
-      summary: API message dictionary
+      summary: Read a language
       description: |
-        This API's own dictionary for one language — tier 1, the deployed files.
+        One language, in the shape `GET /locales` lists it and every write on this URL
+        answers: a merge of what the two tiers know about the tag.
 
-        Normally unnecessary: the API resolves its keys itself and puts finished text on
-        the wire. It earns its place when no response arrives at all (a network failure, a
-        bare 502) and the client must produce the copy itself, in the active language.
+        Answered under the same caller scoping as the list. A registered language that is
+        switched off is `404` to a visitor and shown to a holder of `display:Locale`; a
+        language with only a deployed file is `200` with `source: static`, no `id` or
+        timestamps (it has no row) and every `actions` flag `false`.
 
-        Not to be confused with `GET /locales/{locale}/messages`, which serves the client's
-        own copy out of the database.
-      operationId: getLocaleDictionary
-      security: []
+        `POST /locales` answers `Location` at this URL, so following it reads what was
+        created.
+      operationId: getLocale
+      security:
+        - {}
+        - bearerAuth: []
+        - cookieAuth: []
       parameters:
-        - name: locale
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Locale"
-          description: A language tag from `GET /locales`.
+        - $ref: "#/components/parameters/LocalePathParam"
       responses:
         "200":
-          description: Dictionary for the requested locale
+          description: The language
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LocaleDictionary"
+                $ref: "#/components/schemas/Language"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "429":
@@ -520,6 +522,45 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: locales
+  /locales/{locale}/dictionary:
+    get:
+      tags:
+        - Locales
+      summary: API message dictionary
+      description: |
+        This API's own dictionary for one language — tier 1, the deployed files.
+
+        Normally unnecessary: the API resolves its keys itself and puts finished text on
+        the wire. It earns its place when no response arrives at all (a network failure, a
+        bare 502) and the client must produce the copy itself, in the active language.
+
+        Not to be confused with `GET /locales/{locale}/messages`, which serves the client's
+        own copy out of the database.
+      operationId: getLocaleDictionary
+      security: []
+      parameters:
+        - name: locale
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Locale"
+          description: A language tag from `GET /locales`.
+      responses:
+        "200":
+          description: Dictionary for the requested locale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocaleDictionary"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
   /locales/{locale}/messages:
     get:
       tags:
@@ -527,7 +568,7 @@ paths:
       summary: Client message dictionary
       description: |
         The dynamic dictionary for one language, built from its stored entries into the
-        same nested shape `GET /locales/{locale}` serves — so a client has ONE merge path
+        same nested shape `GET /locales/{locale}/dictionary` serves — so a client has ONE merge path
         for both tiers rather than two.
 
         ONE frontend app's rows — the client's own keyspace, the one named by `app`
@@ -2288,7 +2329,7 @@ paths:
       tags:
         - Account
       summary: Remove an address
-      description: Removes one entry of the caller's own book. Removing the default promotes the oldest remaining entry, so a non-empty book always has exactly one default.
+      description: Removes one entry of the caller's own book. Removing the default promotes the oldest remaining entry, so a non-empty book always has exactly one default; a client showing the book refetches it.
       operationId: removeAddress
       security:
         - bearerAuth: []
@@ -2301,12 +2342,8 @@ paths:
             $ref: "#/components/schemas/Id"
           description: Address identifier from `GET /account/addresses`
       responses:
-        "200":
-          description: The updated address book
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AddressesResponse"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2755,11 +2792,11 @@ paths:
         - Auth
       summary: Request an export of the caller's own data
       description: |-
-        Starts "give me my data" (Art. 15, 20) and answers at once with `202` and the export's `id` and `status`. The file is built in the background from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail — and a LINK to it is mailed to the account's address when it is ready, never the data itself. Fetch it with `GET /account/export`.
+        Starts "give me my data" (Art. 15, 20) and answers at once with `202`, the export's status (`AccountExport`) and `Location: /account/export`, the status monitor to poll (RFC 9110 §15.3.3). The file is built in the background from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail — and a LINK to it is mailed to the account's address when it is ready, never the data itself. Check on it with `GET /account/export`, fetch it with `GET /account/export/file`.
 
         One live export per account. Asking while one is `building` returns that one; asking after one is `ready` or `failed` replaces it (the old file and record are deleted first). A file is kept for `NODE_ACCOUNT_EXPORT_TTL_DAYS` days. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
 
-        Starting a NEW build costs one mail from the per-mailbox mail budget, since it ends in a mailed link: a spent budget answers `429`, and the previous export is left in place. Asking while one is `building` is not charged. Needs a fresh session (sensitive tier: `401 REAUTH_REQUIRED`), as does downloading the file.
+        Starting a NEW build costs one mail from the per-mailbox mail budget, since it ends in a mailed link: a spent budget answers `429`, and the previous export is left in place. Asking while one is `building` is not charged. Needs a fresh session (sensitive tier: `401 REAUTH_REQUIRED`), as does downloading the file; reading the status does not.
       operationId: requestAccountExport
       security:
         - bearerAuth: []
@@ -2767,10 +2804,13 @@ paths:
       responses:
         "202":
           description: The export is queued (or is the one already building)
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountExportRequest"
+                $ref: "#/components/schemas/AccountExport"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2785,8 +2825,38 @@ paths:
     get:
       tags:
         - Auth
+      summary: Check on the caller's own data export
+      description: |-
+        The status of the caller's export: `building`, `ready` or `failed`, with `createdAt`, and `expiresAt` once it is `ready`. Reading it is not a download, so it needs a session but not a fresh one: it carries dates and a state, no personal data.
+        An account has one export, so there is no id to name. `404` only when there is none: never asked for, already deleted, or past its retention and not yet swept (that last one counts as none). A `building` export older than the build limit reads as `failed`. The file itself is at `GET /account/export/file`.
+      operationId: getAccountExport
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        "200":
+          description: The caller's export, and where it stands
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountExport"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
+  /account/export/file:
+    get:
+      tags:
+        - Auth
       summary: Download an export of the caller's own data
-      description: "Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. An account has one live export, so there is no id to name: the caller's own is the one served. A FRESH session (`requireFreshAuth`), same as the request. `404` when the caller has none, it is still `building`, `failed`, or already gone (past its retention): the caller cannot tell these apart, by design."
+      description: "Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. An account has one export, so there is no id to name: the caller's own is the one served. A FRESH session (`requireFreshAuth`), same as the request. `404` unless the export is `ready` and within its retention. A `ready` export whose file is missing from the store answers `404` too: the file honestly does not exist."
       operationId: downloadAccountExport
       security:
         - bearerAuth: []
@@ -7063,7 +7133,7 @@ paths:
         - Delivery
       summary: Record a shipment's arrival
       description: |-
-        Stamps the shipment delivered. The order moves `shipped → delivered` when this was the last undelivered shipment and nothing remains to ship; its withdrawal clock then starts from the LAST delivery (CRD Art. 9(2)(b)(i)). Refuses a shipment already delivered with `DELIVERY_NOT_DELIVERABLE`.
+        Stamps the shipment delivered. The order moves `shipped → delivered` when this was the last undelivered shipment and nothing remains to ship; its withdrawal clock then starts from the LAST delivery (CRD Art. 9(2)(b)(i)). Only a `shipped` shipment can be delivered, or a `lost` one that turns up (below): any other answers `DELIVERY_NOT_DELIVERABLE`.
 
         A `lost` shipment that turns up is accepted too, but only while every unit on it is still open: not shipped again and not cancelled, the owed units of a short shelf included. All or nothing, in one transaction: the shipment becomes `delivered` (its `lostAt` and `lostReason` stay as history), the units go back on the fulfillment order, the top-up of the stock hold is given back and the owed fulfillment order is closed with no refund (`cancelReason: found`). Otherwise `DELIVERY_LOST_SUPERSEDED` (409).
       operationId: deliverShipment
@@ -7745,7 +7815,7 @@ paths:
       description: |
         Newest first unless `sort` says otherwise. Never returns a secret — the ring's
         plaintext exists only in the response of the call that minted it (`POST` here, or
-        `POST .../{id}/rotate-secret`).
+        `POST .../{id}/secrets`).
       operationId: listWebhookSubscriptions
       security:
         - bearerAuth: []
@@ -8014,48 +8084,6 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: webhooks
-  /webhooks/subscriptions/{id}/rotate-secret:
-    post:
-      tags:
-        - Webhooks
-      summary: Rotate a webhook subscription's secret
-      description: |
-        Adds a new secret to the ring and returns its plaintext once, in `newSecret` — the
-        ring then carries two active secrets, and deliveries sign with both (two
-        space-separated `v1,` values in `webhook-signature`) until the old one is dropped
-        through `DELETE .../secrets/{secretId}` or its overlap window ends (24 hours by
-        default, `NODE_WEBHOOK_SECRET_OVERLAP_HOURS`; `retiringSecrets` names the exact
-        instant), after which it stops signing and disappears from `secretIds`. A ring holds at
-        most two: rotating again drops the oldest. Its own route rather than a flag on
-        `PATCH`'s body: a command, not state, so it does not share a route with
-        url/description/eventTypes.
-      operationId: rotateWebhookSubscriptionSecret
-      security:
-        - bearerAuth: []
-        - apiKeyAuth: []
-        - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/IdPathParam"
-      responses:
-        "200":
-          description: Subscription with a newly minted secret
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WebhookSubscriptionCreated"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: webhooks
   /webhooks/subscriptions/{id}/secrets/{secretId}:
     delete:
       tags:
@@ -8064,7 +8092,7 @@ paths:
       description: |
         The other half of a rotation, once every consumer has switched. Refuses to empty
         the ring — a subscription with no secret can never sign a delivery. The remove twin
-        of `POST .../rotate-secret`, split out for the same reason.
+        of `POST .../secrets`.
       operationId: removeWebhookSubscriptionSecret
       security:
         - bearerAuth: []
@@ -10057,6 +10085,48 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: webhooks
+  /webhooks/subscriptions/{id}/secrets:
+    post:
+      tags:
+        - Webhooks
+      summary: Add a secret to a webhook subscription's ring (rotate)
+      description: |
+        Adds a new secret to the ring and returns its plaintext once, in `newSecret` — the
+        ring then carries two active secrets, and deliveries sign with both (two
+        space-separated `v1,` values in `webhook-signature`) until the old one is dropped
+        through `DELETE .../secrets/{secretId}` or its overlap window ends (24 hours by
+        default, `NODE_WEBHOOK_SECRET_OVERLAP_HOURS`; `retiringSecrets` names the exact
+        instant), after which it stops signing and disappears from `secretIds`. A ring holds at
+        most two: adding a third drops the oldest, which is already superseded. A secret is a
+        line of the subscription, so adding one is a `POST` on the line collection and answers
+        200 with the whole subscription (docs/api/write-methods.md).
+      operationId: createWebhookSubscriptionSecret
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: Subscription with a newly minted secret
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookSubscriptionCreated"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: webhooks
   /webhooks/deliveries/{id}:
     get:
       tags:
@@ -11672,11 +11742,12 @@ components:
           description: "Whether `DELETE /locales/{locale}` would be accepted: the caller holds `delete:Locale`, a registered row exists, and it is not the deployment's fallback."
         deleteBlocked:
           $ref: "#/components/schemas/LanguageDeleteBlockedReason"
-    LocaleCapability:
+    Language:
       type: object
       additionalProperties: false
       required:
         - tag
+        - baseLanguage
         - name
         - nativeName
         - direction
@@ -11686,15 +11757,28 @@ components:
         - entryCount
         - revision
         - actions
-      description: "One language as the manifest describes it: a merge of whatever the two tiers each know about it. A tag present in both appears once, carrying both apps."
+      description: |-
+        One language, as `GET /locales` lists it, `GET /locales/{locale}` reads it and every write on that URL answers it: a merge of whatever the two tiers each know about the tag. A tag present in both appears once, carrying both apps.
+        A language that exists only as a deployed file has no row, hence no `id` and no timestamps, and every `actions` flag is `false`. Its existence means entries can be translated into it and a client can download the result — whether the API can answer a request in it is decided by a deployed file and nothing else.
       properties:
+        id:
+          $ref: "#/components/schemas/Id"
         tag:
           $ref: "#/components/schemas/Locale"
+        baseLanguage:
+          type: string
+          pattern: ^[a-z]{2}$
+          description: |-
+            The ISO 639-1 code at the front of `tag` — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.
+            Derived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.
+          example: pt
         name:
           type: string
+          description: English name, for an admin list.
           example: Spanish
         nativeName:
           type: string
+          description: The language's own name, for a client's language picker.
           example: Español
         direction:
           $ref: "#/components/schemas/LocaleDirection"
@@ -11716,6 +11800,12 @@ components:
           minimum: 0
         actions:
           $ref: "#/components/schemas/LanguageActions"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     LocaleCapabilities:
       type: object
       additionalProperties: false
@@ -11728,7 +11818,7 @@ components:
         locales:
           type: array
           items:
-            $ref: "#/components/schemas/LocaleCapability"
+            $ref: "#/components/schemas/Language"
           description: Every language, ordered by tag so the response is stable.
         default:
           $ref: "#/components/schemas/Locale"
@@ -11757,55 +11847,6 @@ components:
         active:
           type: boolean
           default: true
-    Language:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - tag
-        - baseLanguage
-        - name
-        - nativeName
-        - direction
-        - active
-        - revision
-        - actions
-      description: A language registered in the DYNAMIC tier. Its existence means entries can be translated into it and a client can download the result — never that the API can answer a request in it, which is decided by a deployed file and nothing else.
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        tag:
-          $ref: "#/components/schemas/Locale"
-        baseLanguage:
-          type: string
-          pattern: ^[a-z]{2}$
-          description: |-
-            The ISO 639-1 code at the front of `tag` — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.
-            Derived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.
-          example: pt
-        name:
-          type: string
-          description: English name, for an admin list.
-          example: Spanish
-        nativeName:
-          type: string
-          description: The language's own name, for a client's language picker.
-          example: Español
-        direction:
-          $ref: "#/components/schemas/LocaleDirection"
-        active:
-          type: boolean
-        revision:
-          type: integer
-          minimum: 0
-        actions:
-          $ref: "#/components/schemas/LanguageActions"
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
     LocaleAppKind:
       type: string
       enum:
@@ -11841,20 +11882,6 @@ components:
           minItems: 1
           items:
             $ref: "#/components/schemas/LocaleAppDescriptor"
-    LocaleDictionary:
-      type: object
-      additionalProperties: false
-      required:
-        - locale
-        - messages
-      description: "The API's OWN message dictionary for one language — its API-response copy and nothing else. It is never a client's UI dictionary: the two are authored and deployed in separate repositories, and mixing them would put view copy in the API's keyspace. A client that wants these merges them under a namespace it reserves for the API, never at the root."
-      properties:
-        locale:
-          $ref: "#/components/schemas/Locale"
-        messages:
-          type: object
-          additionalProperties: true
-          description: Nested key/value dictionary, the same shape the API loads.
     ReplaceLocaleRequest:
       type: object
       additionalProperties: false
@@ -11888,6 +11915,20 @@ components:
           minLength: 1
         direction:
           $ref: "#/components/schemas/LocaleDirection"
+    LocaleDictionary:
+      type: object
+      additionalProperties: false
+      required:
+        - locale
+        - messages
+      description: "The API's OWN message dictionary for one language — its API-response copy and nothing else. It is never a client's UI dictionary: the two are authored and deployed in separate repositories, and mixing them would put view copy in the API's keyspace. A client that wants these merges them under a namespace it reserves for the API, never at the root."
+      properties:
+        locale:
+          $ref: "#/components/schemas/Locale"
+        messages:
+          type: object
+          additionalProperties: true
+          description: Nested key/value dictionary, the same shape the API loads.
     LocaleMessages:
       type: object
       additionalProperties: false
@@ -13471,6 +13512,46 @@ components:
         token:
           type: string
           description: New access JWT
+    AccountExport:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - status
+        - createdAt
+        - actions
+      description: The caller's data export and where it stands. `POST /account/export` answers it (always `building`) and `GET /account/export` reads it.
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        status:
+          type: string
+          enum:
+            - building
+            - ready
+            - failed
+          description: "`building` until the background job settles, then `ready` or `failed`. A `building` export older than the build limit reads as `failed`. Asking again after `ready` or `failed` replaces the export with a new `building` one."
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+          description: "When the file is deleted: the retention (`NODE_ACCOUNT_EXPORT_TTL_DAYS`) counted from the moment the build finished. Present only when `status` is `ready`."
+        actions:
+          type: object
+          additionalProperties: false
+          required:
+            - download
+            - request
+          description: What the caller may do with the export right now.
+          properties:
+            download:
+              type: boolean
+              description: "`GET /account/export/file` will answer the file: the export is `ready`."
+            request:
+              type: boolean
+              description: "`POST /account/export` would start a new build. `false` while one is `building`: asking then only returns that one."
     ExportSession:
       type: object
       additionalProperties: false
@@ -14139,7 +14220,7 @@ components:
         data:
           type: object
           additionalProperties: true
-          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
+          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
     RefundStatus:
       type: string
       enum:
@@ -15284,20 +15365,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StockAlert"
-    AccountExportRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - status
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        status:
-          type: string
-          enum:
-            - building
-          description: "`building` on a fresh request. A request never answers `ready` or `failed`: asking again after either REPLACES the export with a new `building` one."
     LoginTwoFactorRequest:
       type: object
       additionalProperties: false
@@ -19006,7 +19073,7 @@ components:
         - delete
         - enable
         - disable
-        - rotateSecret
+        - createSecret
         - removeSecret
       properties:
         update:
@@ -19021,9 +19088,9 @@ components:
         disable:
           type: boolean
           description: Whether `POST /webhooks/subscriptions/{id}/disable` would be accepted — false while it is already disabled.
-        rotateSecret:
+        createSecret:
           type: boolean
-          description: Whether `POST /webhooks/subscriptions/{id}/rotate-secret` would be accepted.
+          description: Whether `POST /webhooks/subscriptions/{id}/secrets` would be accepted.
         removeSecret:
           type: boolean
           description: Whether `DELETE /webhooks/subscriptions/{id}/secrets/{secretId}` would be accepted — false while the ring holds a single secret.
@@ -19186,7 +19253,7 @@ components:
           description: The newly minted secret, in plaintext. Shown here once, on creation, and never again.
         newSecret:
           type: string
-          description: A rotated-in secret's plaintext, present only in the response of `POST .../rotate-secret`.
+          description: A rotated-in secret's plaintext, present only in the response of `POST .../secrets`.
     ReplaceWebhookSubscriptionRequest:
       type: object
       additionalProperties: false
@@ -19607,7 +19674,7 @@ components:
         data:
           type: object
           additionalProperties: true
-          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
+          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
     OrderTimelineResponse:
       type: object
       additionalProperties: false

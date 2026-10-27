@@ -3,8 +3,8 @@
  * Store tests driven by mocking `orvalMutator` and asserting on the URLs it was called with, per
  * canned `responses` keyed by `METHOD path` — same transport-mock pattern as the inventory spec.
  *
- * Worth pinning: every language write refetches the manifest BEFORE answering (the board renders
- * `LocaleCapability`, writes answer with `Language` — a different shape), and entry writes keep
+ * Worth pinning: a language is one shape everywhere, so a write folds its answer into the list
+ * without refetching the manifest, and entry writes keep
  * the toolkit's search cache honest — create resets it, edit patches the record in place.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -22,22 +22,7 @@ import * as schemas from '@api/schemas';
 wireModulesIntoCore();
 
 /**
- * A `GET /locales` row: the merged manifest shape the board renders.
- */
-const CAPABILITY = {
-    tag: 'es',
-    name: 'Spanish',
-    nativeName: 'Español',
-    direction: 'ltr',
-    active: true,
-    apps: ['demo-fe'],
-    source: 'dynamic',
-    entryCount: 2,
-    revision: 3
-};
-
-/**
- * A write response's `Language` row — the dynamic-tier record alone, not the merged manifest.
+ * A language as every endpoint answers it: the list, the read and every write share one shape.
  */
 const LANGUAGE = {
     id: 'language-es',
@@ -47,7 +32,11 @@ const LANGUAGE = {
     nativeName: 'Español',
     direction: 'ltr',
     active: true,
-    revision: 3
+    apps: ['demo-fe'],
+    source: 'dynamic',
+    entryCount: 2,
+    revision: 3,
+    actions: { update: true, activate: false, deactivate: true, delete: false }
 };
 
 /**
@@ -90,7 +79,8 @@ beforeEach(() => {
     // table-driven one back for whatever runs after it.
     vi.resetAllMocks();
     responses = {
-        'GET /locales': { locales: [CAPABILITY], default: 'en', fallback: 'en' },
+        'GET /locales': { locales: [LANGUAGE], default: 'en', fallback: 'en' },
+        'GET /locales/es': LANGUAGE,
         'POST /locales': LANGUAGE,
         'PATCH /locales/es': LANGUAGE,
         'GET /locales/apps': {
@@ -139,14 +129,25 @@ describe('fetchLanguages', () => {
     });
 });
 
+describe('fetchLanguage', () => {
+    it('reads one language and folds it into the list, without the manifest', () => {
+        const store = useLocalesStore();
+        return store.fetchLanguage('es').then(() => {
+            expect(store.capabilities.map(({ tag }) => tag)).toEqual(['es']);
+            expect(requestedUrls()).toEqual(['GET /locales/es']);
+        });
+    });
+});
+
 describe('language writes', () => {
-    it('creates, then refetches the manifest before answering', () => {
+    it('creates, and adds the answer to the list with no refetch', () => {
         const store = useLocalesStore();
         return store
             .createLanguage({ tag: 'es', name: 'Spanish', nativeName: 'Español' })
             .then((language) => {
                 expect(language).toEqual(LANGUAGE);
-                expect(requestedUrls()).toEqual(['POST /locales', 'GET /locales']);
+                expect(store.capabilities).toEqual([LANGUAGE]);
+                expect(requestedUrls()).toEqual(['POST /locales']);
             });
     });
 
@@ -157,15 +158,29 @@ describe('language writes', () => {
             expect(contractRequest(schemas.UpdateLocaleBody, call.data)).toEqual({
                 name: 'Castilian'
             });
-            expect(requestedUrls()).toEqual(['PATCH /locales/es', 'GET /locales']);
+            expect(requestedUrls()).toEqual(['PATCH /locales/es']);
         });
     });
 
-    it('removes, then refetches, so the board never shows a deleted language', () => {
+    it('replaces the row of the same tag rather than adding a second', () => {
         const store = useLocalesStore();
-        return store.removeLanguage('es').then(() => {
-            expect(requestedUrls()).toEqual(['DELETE /locales/es', 'GET /locales']);
-        });
+        return store
+            .fetchLanguages()
+            .then(() => store.editLanguage('es', { name: 'Spanish' }))
+            .then(() => {
+                expect(store.capabilities).toHaveLength(1);
+            });
+    });
+
+    it('removes, and drops the language from the list so the board never shows it', () => {
+        const store = useLocalesStore();
+        return store
+            .fetchLanguages()
+            .then(() => store.removeLanguage('es'))
+            .then(() => {
+                expect(store.capabilities).toEqual([]);
+                expect(requestedUrls()).toEqual(['GET /locales', 'DELETE /locales/es']);
+            });
     });
 });
 
@@ -314,7 +329,7 @@ describe('entry search and removal', () => {
 
 describe('fetchApiDictionary', () => {
     it('flattens the deployed tree into dotted keys, the shape the board cells read', () => {
-        responses['GET /locales/es'] = {
+        responses['GET /locales/es/dictionary'] = {
             locale: 'es',
             messages: { generic: { search: 'Buscar', list: ['a', 'b'] } }
         };
