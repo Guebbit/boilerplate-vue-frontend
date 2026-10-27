@@ -1633,9 +1633,9 @@ export interface ExportSignInMethods {
     twoFactor: ExportTwoFactorMethod[];
 }
 
-export type FeedbackCategory = (typeof FeedbackCategory)[keyof typeof FeedbackCategory];
+export type TicketCategory = (typeof TicketCategory)[keyof typeof TicketCategory];
 
-export const FeedbackCategory = {
+export const TicketCategory = {
     order: 'order',
     cancellation: 'cancellation',
     return: 'return',
@@ -1645,26 +1645,91 @@ export const FeedbackCategory = {
     other: 'other'
 } as const;
 
-export type FeedbackRequestStatus =
-    (typeof FeedbackRequestStatus)[keyof typeof FeedbackRequestStatus];
+export type TicketStatus = (typeof TicketStatus)[keyof typeof TicketStatus];
 
-export const FeedbackRequestStatus = {
+export const TicketStatus = {
     new: 'new',
     in_progress: 'in_progress',
     resolved: 'resolved',
     spam: 'spam'
 } as const;
 
-export interface ExportFeedbackTicket {
+export interface ExportTicketNote {
+    body: string;
+    at: string;
+}
+
+export interface ExportTicket {
     id: Id;
     name?: string;
     email: Email;
     subject: string;
     message: string;
-    category?: FeedbackCategory;
+    category?: TicketCategory;
     orderNumber?: string;
-    status: FeedbackRequestStatus;
+    status: TicketStatus;
+    notes: ExportTicketNote[];
     respondedAt?: string;
+    createdAt?: string;
+}
+
+export type TicketKind = (typeof TicketKind)[keyof typeof TicketKind];
+
+export const TicketKind = {
+    contact: 'contact',
+    account_review: 'account_review',
+    manual_refund_owed: 'manual_refund_owed',
+    amount_mismatch: 'amount_mismatch',
+    paid_without_hold: 'paid_without_hold',
+    export_failed: 'export_failed',
+    consent_due: 'consent_due',
+    refund_refused: 'refund_refused',
+    dispute: 'dispute'
+} as const;
+
+export type TicketLinkType = (typeof TicketLinkType)[keyof typeof TicketLinkType];
+
+export const TicketLinkType = {
+    order: 'order',
+    user: 'user',
+    payment: 'payment',
+    refund: 'refund',
+    fulfillment_order: 'fulfillment_order',
+    export: 'export'
+} as const;
+
+/**
+ * The record a system ticket is about.
+ */
+export interface TicketLink {
+    type: TicketLinkType;
+    id: string;
+}
+
+export type TicketResolution = (typeof TicketResolution)[keyof typeof TicketResolution];
+
+export const TicketResolution = {
+    staff: 'staff',
+    cleared: 'cleared',
+    spam: 'spam'
+} as const;
+
+export interface ExportSystemTicket {
+    id: Id;
+    kind: TicketKind;
+    subject: string;
+    message: string;
+    link?: TicketLink;
+    routeSet: string;
+    status: TicketStatus;
+    resolution?: TicketResolution;
+    notes: ExportTicketNote[];
+    dueAt?: string;
+    lastSeenAt?: string;
+    /** @minimum 1 */
+    seenCount?: number;
+    respondedAt?: string;
+    closedAt?: string;
     createdAt?: string;
 }
 
@@ -2734,8 +2799,10 @@ export interface AccountExportResponse {
     sessions: ExportSession[];
     addresses: Address[];
     signInMethods: ExportSignInMethods;
-    /** Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`. */
-    feedback?: ExportFeedbackTicket[];
+    /** The contact messages this person owns: what they sent while signed in, plus what was sent under their verified email address. Staff notes are included without their author. Always present, empty when there are none. */
+    tickets: ExportTicket[];
+    /** The tickets the system opened about this person (a refund owed, an account under review, an export that failed). Every field except the staff who handled them. Always present, empty when there are none. */
+    systemTickets: ExportSystemTicket[];
     cart: CartItem[];
     wishlist: WishlistExportItem[];
     orders: ExportOrder[];
@@ -3102,7 +3169,120 @@ export interface SearchUsersRequest {
     purchaseHoldReview?: true;
 }
 
-export interface CreateFeedbackRequest {
+export type TicketSortItem = (typeof TicketSortItem)[keyof typeof TicketSortItem];
+
+export const TicketSortItem = {
+    createdAt: 'createdAt',
+    '-createdAt': '-createdAt',
+    dueAt: 'dueAt',
+    '-dueAt': '-dueAt',
+    status: 'status',
+    '-status': '-status',
+    email: 'email',
+    '-email': '-email'
+} as const;
+
+/**
+ * @minItems 1
+ * @maxItems 3
+ */
+export type TicketSort = TicketSortItem[];
+
+export type TicketSource = (typeof TicketSource)[keyof typeof TicketSource];
+
+export const TicketSource = {
+    visitor: 'visitor',
+    system: 'system'
+} as const;
+
+/**
+ * @minLength 2
+ * @maxLength 24
+ */
+export type TicketAssigneeFilter = string;
+
+export interface TicketNote {
+    /** Absent once the author's account is erased. */
+    authorId?: Id;
+    body: string;
+    at: string;
+}
+
+/**
+ * An earlier ticket about the same record.
+ */
+export interface TicketRef {
+    id: Id;
+    kind?: TicketKind;
+    status: TicketStatus;
+    createdAt: string;
+}
+
+/**
+ * What the requesting caller may do to this ticket, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the right to work the ticket (and its route set, for a system ticket) and a status the act can run from. `assign` covers taking it and assigning someone else.
+ */
+export interface TicketActions {
+    /** Whether `POST /tickets/{id}/resolve` would be accepted. */
+    resolve: boolean;
+    /** Whether `POST /tickets/{id}/mark-spam` would be accepted. */
+    markSpam: boolean;
+    /** Whether `POST /tickets/{id}/reopen` would be accepted. */
+    reopen: boolean;
+    /** Whether `PUT /tickets/{id}/assignee` would be accepted. */
+    assign: boolean;
+    /** Whether `DELETE /tickets/{id}/assignee` would change anything. */
+    unassign: boolean;
+    /** Whether `POST /tickets/{id}/notes` would be accepted. */
+    note: boolean;
+    /** Whether `DELETE /tickets/{id}` would be accepted. */
+    delete: boolean;
+}
+
+export interface Ticket {
+    id: Id;
+    source: TicketSource;
+    kind: TicketKind;
+    name?: string;
+    /** The account the sender was signed in as; absent for an anonymous sender. On a system ticket, the account the situation is about. */
+    subjectId?: Id;
+    /** The sender's address. Present on a visitor ticket, absent on a system one. */
+    email?: Email;
+    subject: string;
+    message: string;
+    category?: TicketCategory;
+    /** The order the visitor said this is about, as they typed it. Not checked against any order. */
+    orderNumber?: string;
+    link?: TicketLink;
+    /** The permission set that works this ticket, frozen when it opened. */
+    routeSet: string;
+    assigneeId?: Id;
+    /** The assignee's username. */
+    assigneeName?: string;
+    notes: TicketNote[];
+    /** When it falls overdue. Kept across a reopen. */
+    dueAt?: string;
+    /** Open and past `dueAt`, computed at read time. */
+    overdue: boolean;
+    lastSeenAt?: string;
+    /** @minimum 1 */
+    seenCount?: number;
+    readonly status: TicketStatus;
+    closedAt?: string;
+    resolution?: TicketResolution;
+    respondedAt?: string;
+    /** Present on `GET /tickets/{id}` only. */
+    earlierTickets?: TicketRef[];
+    actions: TicketActions;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+export interface TicketsResponse {
+    items: Ticket[];
+    meta: PaginationMeta;
+}
+
+export interface CreateContactTicketRequest {
     /**
      * @minLength 1
      * @maxLength 120
@@ -3119,7 +3299,7 @@ export interface CreateFeedbackRequest {
      * @maxLength 5000
      */
     message: string;
-    category?: FeedbackCategory;
+    category?: TicketCategory;
     /**
      * The order the visitor says this is about, free text. Not checked against any order.
      * @minLength 1
@@ -3127,69 +3307,50 @@ export interface CreateFeedbackRequest {
      */
     orderNumber?: string;
     /**
-     * Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `FeedbackRequest`, which does not declare it.
+     * Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `Ticket`, which does not declare it.
      * @maxLength 200
      */
     website?: string;
 }
 
-export interface FeedbackRequest {
-    id: Id;
-    name?: string;
-    email: Email;
-    subject: string;
-    message: string;
-    category?: FeedbackCategory;
-    /** The order the visitor said this is about, as they typed it. Not checked against any order. */
-    orderNumber?: string;
-    status: FeedbackRequestStatus;
-    adminNotes?: string;
-    respondedAt?: string;
-    createdAt: string;
-    updatedAt?: string;
-}
-
-export type FeedbackRequestSortItem =
-    (typeof FeedbackRequestSortItem)[keyof typeof FeedbackRequestSortItem];
-
-export const FeedbackRequestSortItem = {
-    createdAt: 'createdAt',
-    '-createdAt': '-createdAt',
-    status: 'status',
-    '-status': '-status',
-    email: 'email',
-    '-email': '-email'
-} as const;
-
-/**
- * @minItems 1
- * @maxItems 3
- */
-export type FeedbackRequestSort = FeedbackRequestSortItem[];
-
-export interface FeedbackRequestsResponse {
-    items: FeedbackRequest[];
-    meta: PaginationMeta;
-}
-
-export interface SearchFeedbackRequestsRequest {
+export interface SearchTicketsRequest {
     page?: Page;
     pageSize?: PageSize;
-    sort?: FeedbackRequestSort;
+    sort?: TicketSort;
     text?: Text;
-    status?: FeedbackRequestStatus;
-    category?: FeedbackCategory;
+    status?: TicketStatus;
+    category?: TicketCategory;
+    source?: TicketSource;
+    kind?: TicketKind;
+    assignee?: TicketAssigneeFilter;
+    overdue?: boolean;
     email?: Email;
 }
 
-export interface UpdateFeedbackRequestStatusRequest {
-    status?: FeedbackRequestStatus;
+/**
+ * Counts over the caller's jurisdiction.
+ */
+export interface TicketSummary {
+    /** @minimum 0 */
+    open: number;
+    /** @minimum 0 */
+    mine: number;
+    /** @minimum 0 */
+    overdue: number;
+    /** @minimum 0 */
+    unassigned: number;
+}
+
+export interface AssignTicketRequest {
+    userId: Id;
+}
+
+export interface CreateTicketNoteRequest {
     /**
      * @minLength 1
      * @maxLength 5000
-     * @nullable
      */
-    adminNotes?: string | null;
+    body: string;
 }
 
 export type ProductSortItem = (typeof ProductSortItem)[keyof typeof ProductSortItem];
@@ -6408,7 +6569,7 @@ export type DeleteUserByIdParams = {
     hardDelete?: HardDeleteParamParameter;
 };
 
-export type ListFeedbackRequestsParams = {
+export type ListTicketsParams = {
     /**
      * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
      * @minimum 1
@@ -6421,7 +6582,7 @@ export type ListFeedbackRequestsParams = {
      * @maximum 100
      */
     pageSize?: PageSizeParamParameter;
-    sort?: FeedbackRequestSort;
+    sort?: TicketSort;
     /**
      * Free-text search string
      * @minLength 1
@@ -6429,8 +6590,18 @@ export type ListFeedbackRequestsParams = {
      */
     text?: TextParamParameter;
     email?: Email;
-    status?: FeedbackRequestStatus;
-    category?: FeedbackCategory;
+    status?: TicketStatus;
+    category?: TicketCategory;
+    source?: TicketSource;
+    kind?: TicketKind;
+    /**
+     * `me`, `none` (unassigned) or a user id.
+     */
+    assignee?: TicketAssigneeFilter;
+    /**
+     * Only open tickets whose `dueAt` has passed.
+     */
+    overdue?: boolean;
 };
 
 export type ListProductsParams = {
@@ -8984,117 +9155,163 @@ export const searchUsers = (
 };
 
 /**
- * Creates a user feedback/contact request and notifies admins via email.
+ * Creates a contact ticket and notifies the support mailbox by email. Open to anyone. A valid session bearer token, when one is sent, records the sender's account on the ticket (`subjectId`), so the account's data export and erasure include it; an absent or expired token files it as anonymous.
  * @summary Submit contact request
  */
-export const createFeedbackRequest = (
-    createFeedbackRequest: CreateFeedbackRequest,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequest>>
+export const createContactTicket = (
+    createContactTicketRequest: CreateContactTicketRequest,
+    options?: SecondParameter<typeof orvalMutator<Ticket>>
 ) => {
-    return orvalMutator<FeedbackRequest>(
+    return orvalMutator<Ticket>(
         {
-            url: `/feedback/contact`,
+            url: `/tickets`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: createFeedbackRequest
+            data: createContactTicketRequest
         },
         options
     );
 };
 
 /**
- * Returns feedback/contact requests for admin review.
- * @summary List feedback requests
+ * Returns the tickets the caller may work: every visitor message, and the system tickets whose route set the caller holds (an administrator holds them all). Open work first when sorted by `dueAt`.
+ * @summary List tickets
  */
-export const listFeedbackRequests = (
-    params?: ListFeedbackRequestsParams,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequestsResponse>>
+export const listTickets = (
+    params?: ListTicketsParams,
+    options?: SecondParameter<typeof orvalMutator<TicketsResponse>>
 ) => {
-    return orvalMutator<FeedbackRequestsResponse>(
-        { url: `/feedback`, method: 'GET', params },
-        options
-    );
+    return orvalMutator<TicketsResponse>({ url: `/tickets`, method: 'GET', params }, options);
 };
 
 /**
- * Searches and filters feedback requests via a JSON request body. Functionally equivalent to `GET /feedback` with query parameters.
- * @summary Search feedback requests (DTO-friendly)
+ * Searches and filters tickets via a JSON request body. Functionally equivalent to `GET /tickets` with query parameters.
+ * @summary Search tickets (DTO-friendly)
  */
-export const searchFeedbackRequests = (
-    searchFeedbackRequestsRequest: SearchFeedbackRequestsRequest,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequestsResponse>>
+export const searchTickets = (
+    searchTicketsRequest: SearchTicketsRequest,
+    options?: SecondParameter<typeof orvalMutator<TicketsResponse>>
 ) => {
-    return orvalMutator<FeedbackRequestsResponse>(
+    return orvalMutator<TicketsResponse>(
         {
-            url: `/feedback/search`,
+            url: `/tickets/search`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: searchFeedbackRequestsRequest
+            data: searchTicketsRequest
         },
         options
     );
 };
 
 /**
- * One feedback request of the admin queue, by id. The same rows `GET /feedback` lists, so anyone who may read the list reads any of them. An unknown or malformed id is a 404.
- * @summary Get a feedback request
+ * How much work the caller's jurisdiction holds: open tickets, the caller's own, the overdue ones and the unassigned ones. Never cached: it is one person's view.
+ * @summary Counts for the staff badge
  */
-export const getFeedbackRequest = (
-    id: string,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequest>>
-) => {
-    return orvalMutator<FeedbackRequest>({ url: `/feedback/${id}`, method: 'GET' }, options);
+export const getTicketSummary = (options?: SecondParameter<typeof orvalMutator<TicketSummary>>) => {
+    return orvalMutator<TicketSummary>({ url: `/tickets/summary`, method: 'GET' }, options);
 };
 
 /**
- * Merges a status and/or notes change into a feedback request. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
- * @summary Update feedback request status
+ * One ticket with its notes, assignee and the earlier tickets about the same record. A visitor ticket names a person, so staff reading it is audited. An unknown, malformed or out-of-jurisdiction id is a 404.
+ * @summary Get a ticket
  */
-export const updateFeedbackRequestStatus = (
-    id: string,
-    updateFeedbackRequestStatusRequest: UpdateFeedbackRequestStatusRequest,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequest>>
-) => {
-    return orvalMutator<FeedbackRequest>(
-        {
-            url: `/feedback/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateFeedbackRequestStatusRequest
-        },
-        options
-    );
+export const getTicket = (id: string, options?: SecondParameter<typeof orvalMutator<Ticket>>) => {
+    return orvalMutator<Ticket>({ url: `/tickets/${id}`, method: 'GET' }, options);
 };
 
 /**
- * Merges a status and/or notes change into a feedback request. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
- * @summary Update feedback request status
+ * Permanently removes the ticket identified by `{id}`. Needs `delete:Ticket` and, for a system ticket, the ticket's route set.
+ * @summary Delete a ticket
  */
-export const updateFeedbackRequestStatusWithMergePatchJson = (
-    id: string,
-    updateFeedbackRequestStatusRequest: UpdateFeedbackRequestStatusRequest,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequest>>
-) => {
-    return orvalMutator<FeedbackRequest>(
-        {
-            url: `/feedback/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: updateFeedbackRequestStatusRequest
-        },
-        options
-    );
-};
-
-/**
- * Permanently removes the feedback request identified by `{id}`.
- * @summary Delete feedback request
- */
-export const deleteFeedbackRequest = (
+export const deleteTicket = (
     id: string,
     options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<NoContentResponse>({ url: `/feedback/${id}`, method: 'DELETE' }, options);
+    return orvalMutator<NoContentResponse>({ url: `/tickets/${id}`, method: 'DELETE' }, options);
+};
+
+/**
+ * From `new`, `in_progress` or `spam` to `resolved`, with `resolution: staff`. Stamps `closedAt` (kept when it was already closed) and `respondedAt` (once), and releases the dedup key. No body. Needs `update:Ticket` and, for a system ticket, its route set. The move is conditional on the status read, so a repeat answers 409.
+ * @summary Resolve a ticket
+ */
+export const resolveTicket = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<Ticket>>
+) => {
+    return orvalMutator<Ticket>({ url: `/tickets/${id}/resolve`, method: 'POST' }, options);
+};
+
+/**
+ * From `new`, `in_progress` or `resolved` to `spam`, with `resolution: spam`. Same stamps as a resolve, without `respondedAt`. Also undoes a false resolve. No body. Needs `update:Ticket` and, for a system ticket, its route set.
+ * @summary Mark a ticket as spam
+ */
+export const markTicketSpam = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<Ticket>>
+) => {
+    return orvalMutator<Ticket>({ url: `/tickets/${id}/mark-spam`, method: 'POST' }, options);
+};
+
+/**
+ * From `resolved` or `spam` to `in_progress` when it has an assignee, else `new`. Clears `closedAt` and `resolution` (the retention clock stops) and restores the dedup key of a linked ticket. `dueAt` is kept: the deadline belongs to the situation, not to the reopen. When a newer open ticket already covers the same situation the answer is 409 `TICKET_SUPERSEDED` with `details.ticketId`. No body. Needs `update:Ticket` and, for a system ticket, its route set.
+ * @summary Reopen a ticket
+ */
+export const reopenTicket = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<Ticket>>
+) => {
+    return orvalMutator<Ticket>({ url: `/tickets/${id}/reopen`, method: 'POST' }, options);
+};
+
+/**
+ * Hands the ticket to one person (taking it is assigning yourself). A `new` ticket becomes `in_progress`. The person must hold the permission set that works the ticket. Replaces any earlier assignee. A closed ticket answers 409 `TICKET_NOT_OPEN`.
+ * @summary Assign a ticket
+ */
+export const assignTicket = (
+    id: string,
+    assignTicketRequest: AssignTicketRequest,
+    options?: SecondParameter<typeof orvalMutator<Ticket>>
+) => {
+    return orvalMutator<Ticket>(
+        {
+            url: `/tickets/${id}/assignee`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: assignTicketRequest
+        },
+        options
+    );
+};
+
+/**
+ * Clears the assignee. An `in_progress` ticket goes back to `new`. Answers 200 whether or not anyone held it.
+ * @summary Give a ticket back
+ */
+export const unassignTicket = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<Ticket>>
+) => {
+    return orvalMutator<Ticket>({ url: `/tickets/${id}/assignee`, method: 'DELETE' }, options);
+};
+
+/**
+ * Appends a note to the staff thread: append-only, with its author and time. Notes are written and read by staff, and the data subject's export carries them without the author. Write each one as if the customer will read it.
+ * @summary Add a staff note
+ */
+export const createTicketNote = (
+    id: string,
+    createTicketNoteRequest: CreateTicketNoteRequest,
+    options?: SecondParameter<typeof orvalMutator<Ticket>>
+) => {
+    return orvalMutator<Ticket>(
+        {
+            url: `/tickets/${id}/notes`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createTicketNoteRequest
+        },
+        options
+    );
 };
 
 /**
@@ -12069,25 +12286,20 @@ export type DeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof deleteU
 export type RestoreUserByIdResult = NonNullable<Awaited<ReturnType<typeof restoreUserById>>>;
 export type HardDeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof hardDeleteUserById>>>;
 export type SearchUsersResult = NonNullable<Awaited<ReturnType<typeof searchUsers>>>;
-export type CreateFeedbackRequestResult = NonNullable<
-    Awaited<ReturnType<typeof createFeedbackRequest>>
+export type CreateContactTicketResult = NonNullable<
+    Awaited<ReturnType<typeof createContactTicket>>
 >;
-export type ListFeedbackRequestsResult = NonNullable<
-    Awaited<ReturnType<typeof listFeedbackRequests>>
->;
-export type SearchFeedbackRequestsResult = NonNullable<
-    Awaited<ReturnType<typeof searchFeedbackRequests>>
->;
-export type GetFeedbackRequestResult = NonNullable<Awaited<ReturnType<typeof getFeedbackRequest>>>;
-export type UpdateFeedbackRequestStatusResult = NonNullable<
-    Awaited<ReturnType<typeof updateFeedbackRequestStatus>>
->;
-export type UpdateFeedbackRequestStatusWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof updateFeedbackRequestStatusWithMergePatchJson>>
->;
-export type DeleteFeedbackRequestResult = NonNullable<
-    Awaited<ReturnType<typeof deleteFeedbackRequest>>
->;
+export type ListTicketsResult = NonNullable<Awaited<ReturnType<typeof listTickets>>>;
+export type SearchTicketsResult = NonNullable<Awaited<ReturnType<typeof searchTickets>>>;
+export type GetTicketSummaryResult = NonNullable<Awaited<ReturnType<typeof getTicketSummary>>>;
+export type GetTicketResult = NonNullable<Awaited<ReturnType<typeof getTicket>>>;
+export type DeleteTicketResult = NonNullable<Awaited<ReturnType<typeof deleteTicket>>>;
+export type ResolveTicketResult = NonNullable<Awaited<ReturnType<typeof resolveTicket>>>;
+export type MarkTicketSpamResult = NonNullable<Awaited<ReturnType<typeof markTicketSpam>>>;
+export type ReopenTicketResult = NonNullable<Awaited<ReturnType<typeof reopenTicket>>>;
+export type AssignTicketResult = NonNullable<Awaited<ReturnType<typeof assignTicket>>>;
+export type UnassignTicketResult = NonNullable<Awaited<ReturnType<typeof unassignTicket>>>;
+export type CreateTicketNoteResult = NonNullable<Awaited<ReturnType<typeof createTicketNote>>>;
 export type ListProductsResult = NonNullable<Awaited<ReturnType<typeof listProducts>>>;
 export type CreateProductResult = NonNullable<Awaited<ReturnType<typeof createProduct>>>;
 export type CreateProductWithMultipartResult = NonNullable<

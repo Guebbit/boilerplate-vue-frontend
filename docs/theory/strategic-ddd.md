@@ -124,7 +124,7 @@ and everything else should use the simplest thing that works.
 | ------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `core`       | the reason the product exists — worth client-side rules         | `products`, `cart`, `orders`                                                                         |
 | `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `inventory`, `notifications`, `payments`, `returns`, `stats`, `stock-alerts`, `wishlist` |
-| `generic`    | a solved problem, interchangeable with something bought         | `account`, `api-keys`, `feedback`, `locales`, `observability`, `users`, `webhooks`                   |
+| `generic`    | a solved problem, interchangeable with something bought         | `account`, `api-keys`, `tickets`, `locales`, `observability`, `users`, `webhooks`                    |
 
 `example` is not classified: it is the template a new domain is copied from. Its `domain/` holds
 one reading rule, `publicationOf`, the smallest case of a client rule that reads an answer and

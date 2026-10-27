@@ -246,6 +246,18 @@ export const ERROR_CODES = {
     SESSION_IDLE: 'SESSION_IDLE',
     /** 409 — The product can be ordered now, so there is nothing to wait for. The button is only offered while it cannot. */
     STOCK_ALERT_PRODUCT_BUYABLE: 'STOCK_ALERT_PRODUCT_BUYABLE',
+    /** 409 — The ticket is already open (new or in progress), so there is nothing to reopen. */
+    TICKET_ALREADY_OPEN: 'TICKET_ALREADY_OPEN',
+    /** 409 — The ticket is already resolved. */
+    TICKET_ALREADY_RESOLVED: 'TICKET_ALREADY_RESOLVED',
+    /** 409 — The ticket is already marked as spam. */
+    TICKET_ALREADY_SPAM: 'TICKET_ALREADY_SPAM',
+    /** 422 — The person does not exist, or does not hold the permission set that works this ticket. */
+    TICKET_ASSIGNEE_INVALID: 'TICKET_ASSIGNEE_INVALID',
+    /** 409 — The ticket is closed; reopen it before assigning it. */
+    TICKET_NOT_OPEN: 'TICKET_NOT_OPEN',
+    /** 409 — A newer open ticket already covers the same situation, so this one cannot be reopened. `details.ticketId` names the newer one. */
+    TICKET_SUPERSEDED: 'TICKET_SUPERSEDED',
     /** 429 — A two-factor code was already sent recently — carries `details.retryAfter`. */
     TWO_FACTOR_RESEND_TOO_SOON: 'TWO_FACTOR_RESEND_TOO_SOON',
     /** 401 — No valid session — log in and retry. */

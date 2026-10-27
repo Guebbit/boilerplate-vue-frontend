@@ -22,6 +22,7 @@ import type {
     Return,
     Shipment,
     Shop,
+    Ticket,
     User,
     UserActions
 } from '@types';
@@ -402,4 +403,34 @@ export const aProblem = (
     status,
     detail,
     errors
+});
+
+/**
+ * A new, unassigned visitor ticket the way the API answers it; a case overrides what it needs.
+ *
+ * @param overrides - Fields to replace.
+ * @returns A ticket that passes the response schema.
+ */
+export const aTicket = (overrides: Partial<Ticket> = {}): Ticket => ({
+    id: 't1',
+    source: 'visitor',
+    kind: 'contact',
+    routeSet: 'TicketDisplay',
+    notes: [],
+    overdue: false,
+    actions: {
+        resolve: true,
+        markSpam: true,
+        reopen: false,
+        assign: true,
+        unassign: false,
+        note: true,
+        delete: true
+    },
+    email: 'curious@example.com',
+    subject: 'A question',
+    message: 'About the cats',
+    status: 'new',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    ...overrides
 });

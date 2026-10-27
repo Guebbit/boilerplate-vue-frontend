@@ -1,4 +1,4 @@
-// requires-module: account, api-keys, feedback, inventory, orders, products, returns
+// requires-module: account, api-keys, tickets, inventory, orders, products, returns
 /**
  * @module
  * OP16 · The shop manager's morning. The manager runs what is for sale and what happens to an
@@ -30,7 +30,7 @@ describe('OP16 · The shop manager’s morning', () => {
             for (const page of [
                 '/locales',
                 '/inventory',
-                '/feedback',
+                '/tickets',
                 '/webhooks/subscriptions',
                 '/webhooks/deliveries',
                 '/audit'
@@ -104,17 +104,18 @@ describe('OP16 · The shop manager’s morning', () => {
         cy.get('[data-test=adjust-form]').should('not.exist');
         cy.get('[data-test=sweep-submit]').should('not.exist');
 
-        cy.step('a ticket in the inbox is readable, with no way to answer, annotate or erase it');
-        cy.apiAs('admin', 'POST', '/feedback/contact', {
+        cy.step('a ticket in the inbox is readable, with no way to take, resolve or erase it');
+        cy.apiAs('admin', 'POST', '/tickets', {
             email: 'asker@example.com',
             subject: 'OP16 kennel question',
             message: 'Does the kennel come flat-packed?'
         });
-        cy.visit('/en/feedback');
-        cy.get('[data-test=feedback-item]').should('contain.text', 'OP16 kennel question');
-        cy.get('[data-test=feedback-notes-save]').should('not.exist');
-        cy.get('[data-test=feedback-delete]').should('not.exist');
-        cy.get('[data-test=feedback-status] input').should('be.disabled');
+        cy.visit('/en/tickets');
+        cy.get('[data-test=ticket-item]').should('contain.text', 'OP16 kennel question');
+        cy.get('[data-test=ticket-open]').should('exist');
+        cy.get('[data-test=ticket-take]').should('not.exist');
+        cy.get('[data-test=ticket-resolve]').should('not.exist');
+        cy.get('[data-test=ticket-delete]').should('not.exist');
 
         cy.step('the manager reprices a product, and a guest sees the new price at once');
         cy.subjectId('product.rich').then((productId) => {

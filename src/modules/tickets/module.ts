@@ -1,6 +1,6 @@
 /**
  * @module
- * Module manifest: wires the feedback routes, nav entries, response schemas
+ * Module manifest: wires the tickets routes, nav entries, response schemas
  * and locale loaders into the app's module registry.
  */
 import { Inbox, Mail } from 'lucide-vue-next';
@@ -17,13 +17,13 @@ import routes from './routes';
  * A contact form and an inbox. Every application grows one, none of them differ, and this one
  * references no other domain’s records.
  *
- * Context map: `docs/modules/feedback.md` § "The map".
+ * Context map: `docs/modules/tickets.md` § "The map".
  *
  * Subdomain: `generic`.
  */
 export default {
-    name: 'feedback',
-    loadingKeys: ['feedback'],
+    name: 'tickets',
+    loadingKeys: ['tickets'],
     routes,
     navigation: [
         {
@@ -35,15 +35,15 @@ export default {
             icon: Mail
         },
         {
-            name: 'FeedbackInbox',
-            label: 'navigation.label-feedback',
+            name: 'TicketInbox',
+            label: 'navigation.label-tickets',
             plural: 1,
             order: 45,
             section: 'admin',
             icon: Inbox
         }
     ],
-    responseSchemas: () => import('./response-schemas').then((m) => m.feedbackResponseSchemas),
+    responseSchemas: () => import('./response-schemas').then((m) => m.ticketsResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)

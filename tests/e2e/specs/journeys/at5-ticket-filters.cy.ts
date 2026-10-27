@@ -1,7 +1,7 @@
-// requires-module: feedback
+// requires-module: tickets
 /**
  * @module
- * AT5 · Feedback inbox filters. The `shop` seed holds no tickets, so three are written here: two
+ * AT5 · Ticket inbox filters. The `shop` seed holds no tickets, so three are written here: two
  * ordinary from different addresses, and one the honeypot turns into spam. Text, email and status
  * each narrow the inbox to the tickets that match; reset brings all three back.
  */
@@ -19,7 +19,7 @@ interface TicketLike {
  * @param extra - further body fields, e.g. the honeypot
  */
 const contact = (email: string, subject: string, extra: Record<string, unknown> = {}) =>
-    cy.apiAs<TicketLike>('admin', 'POST', '/feedback/contact', {
+    cy.apiAs<TicketLike>('admin', 'POST', '/tickets', {
         email,
         subject,
         message: `Body of ${subject}`,
@@ -32,7 +32,7 @@ const search = (): void => {
     cy.settleNetwork();
 };
 
-describe('AT5 · Feedback inbox filters', () => {
+describe('AT5 · Ticket inbox filters', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();
@@ -41,51 +41,51 @@ describe('AT5 · Feedback inbox filters', () => {
     it('text, email and status each narrow the inbox, and reset brings every ticket back', () => {
         contact('ann@example.com', 'Kennel question');
         contact('bob@example.com', 'Invoice question').then((ticket) => {
-            cy.apiAs('admin', 'PATCH', `/feedback/${String(ticket?.id)}`, { status: 'resolved' });
+            cy.apiAs('admin', 'POST', `/tickets/${String(ticket?.id)}/resolve`);
         });
         contact('bot@example.com', 'Buy now', { website: 'https://spam.example' });
 
         cy.loginAs('admin');
         cy.trackNetwork();
-        cy.visit('/en/feedback');
+        cy.visit('/en/tickets');
         cy.settleNetwork();
-        cy.get('[data-test=feedback-item]').should('have.length', 3);
+        cy.get('[data-test=ticket-item]').should('have.length', 3);
 
         cy.step('text: only the ticket whose subject holds it');
         cy.get('[data-test=filter-text] input').type('Kennel');
         search();
-        cy.get('[data-test=feedback-item]').should('have.length', 1);
-        cy.get('[data-test=feedback-item]').should('contain.text', 'Kennel question');
+        cy.get('[data-test=ticket-item]').should('have.length', 1);
+        cy.get('[data-test=ticket-item]').should('contain.text', 'Kennel question');
         cy.get('[data-test=search-reset]').click();
         cy.settleNetwork();
-        cy.get('[data-test=feedback-item]').should('have.length', 3);
+        cy.get('[data-test=ticket-item]').should('have.length', 3);
 
         cy.step('email: only that sender');
         cy.get('[data-test=filter-email] input').type('bob@example.com');
         search();
-        cy.get('[data-test=feedback-item]').should('have.length', 1);
-        cy.get('[data-test=feedback-item]').should('contain.text', 'Invoice question');
+        cy.get('[data-test=ticket-item]').should('have.length', 1);
+        cy.get('[data-test=ticket-item]').should('contain.text', 'Invoice question');
         cy.get('[data-test=search-reset]').click();
         cy.settleNetwork();
 
         cy.step('status: resolved, spam and new each show only their own');
         cy.pickOption('[data-test=filter-status]', 'Resolved');
         search();
-        cy.get('[data-test=feedback-item]').should('have.length', 1);
-        cy.get('[data-test=feedback-item]').should('contain.text', 'Invoice question');
-        cy.get('[data-test=feedback-responded-at]').should('exist');
+        cy.get('[data-test=ticket-item]').should('have.length', 1);
+        cy.get('[data-test=ticket-item]').should('contain.text', 'Invoice question');
+        cy.get('[data-test=ticket-responded-at]').should('exist');
         cy.pickOption('[data-test=filter-status]', 'Spam');
         search();
-        cy.get('[data-test=feedback-item]').should('have.length', 1);
-        cy.get('[data-test=feedback-item]').should('contain.text', 'Buy now');
+        cy.get('[data-test=ticket-item]').should('have.length', 1);
+        cy.get('[data-test=ticket-item]').should('contain.text', 'Buy now');
         cy.pickOption('[data-test=filter-status]', 'New');
         search();
-        cy.get('[data-test=feedback-item]').should('have.length', 1);
-        cy.get('[data-test=feedback-item]').should('contain.text', 'Kennel question');
+        cy.get('[data-test=ticket-item]').should('have.length', 1);
+        cy.get('[data-test=ticket-item]').should('contain.text', 'Kennel question');
 
         cy.step('reset: all three again');
         cy.get('[data-test=search-reset]').click();
         cy.settleNetwork();
-        cy.get('[data-test=feedback-item]').should('have.length', 3);
+        cy.get('[data-test=ticket-item]').should('have.length', 3);
     });
 });

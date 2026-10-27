@@ -16,7 +16,6 @@ import apiKeys from '@/modules/api-keys/module';
 import cart from '@/modules/cart/module';
 import delivery from '@/modules/delivery/module';
 import example from '@/modules/example/module';
-import feedback from '@/modules/feedback/module';
 import inventory from '@/modules/inventory/module';
 import locales from '@/modules/locales/module';
 import notifications from '@/modules/notifications/module';
@@ -27,6 +26,7 @@ import products from '@/modules/products/module';
 import returns from '@/modules/returns/module';
 import stats from '@/modules/stats/module';
 import stockAlerts from '@/modules/stock-alerts/module';
+import tickets from '@/modules/tickets/module';
 import users from '@/modules/users/module';
 import webhooks from '@/modules/webhooks/module';
 import wishlist from '@/modules/wishlist/module';
@@ -40,7 +40,6 @@ export const enabledModules: AppModule[] = [
     cart,
     delivery,
     example,
-    feedback,
     inventory,
     locales,
     notifications,
@@ -51,6 +50,7 @@ export const enabledModules: AppModule[] = [
     returns,
     stats,
     stockAlerts,
+    tickets,
     users,
     webhooks,
     wishlist

@@ -45,7 +45,7 @@ only after the fact. `cart` and `products` once needed each other; the product p
 now reach it as contributions to a slot (`src/kernel/slots.ts`) instead of imports, so every edge
 points one way.
 
-The modules in this build are `account`, `api-keys`, `cart`, `delivery`, `example`, `feedback`,
+The modules in this build are `account`, `api-keys`, `cart`, `delivery`, `example`, `tickets`,
 `inventory`, `locales`, `observability`, `orders`, `payments`, `products`, `returns`, `stats`, `users`,
 `webhooks` and `wishlist`.
 
@@ -69,7 +69,7 @@ flowchart LR
     account --> users
 
     admin:::leaf
-    feedback:::leaf
+    tickets:::leaf
     locales:::leaf
     realtime:::leaf
 

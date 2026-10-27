@@ -1,4 +1,4 @@
-// requires-module: feedback
+// requires-module: tickets
 /**
  * @module
  * VI3 · A guest writes to the shop. Someone with no account fills the contact form from the Italian
@@ -56,7 +56,7 @@ const writeToTheShop = (subject: string, extra?: { honeypot: string }): void => 
  */
 const ticketsAbout = (subject: string): Cypress.Chainable<TicketLike[]> =>
     cy
-        .apiAs<{ items: TicketLike[] }>('admin', 'POST', '/feedback/search', { text: subject })
+        .apiAs<{ items: TicketLike[] }>('admin', 'POST', '/tickets/search', { text: subject })
         .then((found) => found?.items ?? []);
 
 describe('VI3 · A guest writes to the shop', () => {
@@ -124,7 +124,7 @@ describe('VI3 · A guest writes to the shop', () => {
         }
         cy.env(['liveProfile']).then(({ liveProfile }) => {
             // Demo budgets are raised far past this, so the answer a spent budget gives is stubbed.
-            if (liveProfile !== true) cy.intercept('POST', '**/feedback/contact', TOO_MANY);
+            if (liveProfile !== true) cy.intercept('POST', '**/tickets', TOO_MANY);
         });
         const sixth = `VI3 sixth ${run}`;
         writeToTheShop(sixth);

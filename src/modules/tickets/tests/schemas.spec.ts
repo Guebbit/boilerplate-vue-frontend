@@ -1,16 +1,16 @@
 /**
  * @module
- * `src/modules/feedback/schemas.ts` — the public contact form.
+ * `src/modules/tickets/schemas.ts` — the public contact form.
  *
  * The caps are read from `@api/schemas` rather than retyped, so a contract change moves the tests
  * with the form: one past the cap fails, exactly the cap passes.
  */
 import { describe, expect, it } from 'vitest';
 import {
-    createFeedbackRequestBodyMessageMax,
-    createFeedbackRequestBodyNameMax,
-    createFeedbackRequestBodyOrderNumberMax,
-    createFeedbackRequestBodySubjectMax
+    createContactTicketBodyMessageMax,
+    createContactTicketBodyNameMax,
+    createContactTicketBodyOrderNumberMax,
+    createContactTicketBodySubjectMax
 } from '@api/schemas';
 import { contactSchema } from '../schemas';
 
@@ -27,10 +27,10 @@ describe('contactSchema', () => {
     });
 
     it.each([
-        ['name', createFeedbackRequestBodyNameMax],
-        ['subject', createFeedbackRequestBodySubjectMax],
-        ['message', createFeedbackRequestBodyMessageMax],
-        ['orderNumber', createFeedbackRequestBodyOrderNumberMax]
+        ['name', createContactTicketBodyNameMax],
+        ['subject', createContactTicketBodySubjectMax],
+        ['message', createContactTicketBodyMessageMax],
+        ['orderNumber', createContactTicketBodyOrderNumberMax]
     ])('caps %s at the contract maximum', (field, max) => {
         const parse = (value: string) =>
             contactSchema.safeParse({ ...validMessage, [field]: value }).success;

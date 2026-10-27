@@ -12,7 +12,7 @@ export default {
 /**
  * @module
  * Public contact form, validated with `useStructureFormValidation` against a Zod schema and
- * submitted through the feedback store; success resets the form in place.
+ * submitted through the tickets store; success resets the form in place.
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import FormCard from '@/ui/organisms/FormCard.vue';
@@ -20,10 +20,10 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { useFeedbackStore } from '../store.ts';
+import { useTicketsStore } from '../store.ts';
 import { contactSchema, orderNumberMax } from '../schemas.ts';
-import { FeedbackCategory } from '@/types/enums.ts';
-import type { FeedbackCategory as TFeedbackCategory } from '@types';
+import { TicketCategory } from '@/types/enums.ts';
+import type { TicketCategory as TTicketCategory } from '@types';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import HumanCheck from '@/ui/organisms/HumanCheck.vue';
@@ -31,7 +31,7 @@ import { withAntibotToken } from '@/infrastructure/http/antibot.ts';
 
 /**
  * The public contact form. No login required — it exists for the visitor who cannot log in —
- * and the admin reads what lands here in the feedback inbox.
+ * and the admin reads what lands here in the ticket inbox.
  */
 interface ContactForm {
     name?: string;
@@ -39,7 +39,7 @@ interface ContactForm {
     subject?: string;
     message?: string;
     /** What the message is about; optional, and filled from `?category=` when an order page links here. */
-    category?: TFeedbackCategory;
+    category?: TTicketCategory;
     /** The order the visitor says this is about, free text; filled from `?order=`. */
     orderNumber?: string;
     /**
@@ -66,9 +66,9 @@ const route = useRoute();
  *
  * @returns the category, or `undefined`.
  */
-const categoryFromLink = (): TFeedbackCategory | undefined => {
+const categoryFromLink = (): TTicketCategory | undefined => {
     const wanted = route.query.category;
-    return Object.values(FeedbackCategory).find((category) => category === wanted);
+    return Object.values(TicketCategory).find((category) => category === wanted);
 };
 
 /**
@@ -86,7 +86,7 @@ const orderFromLink = (): string => {
  */
 const categoryOptions = computed(() => [
     { value: undefined, title: t('contact-page.category-none') },
-    ...Object.values(FeedbackCategory).map((category) => ({
+    ...Object.values(TicketCategory).map((category) => ({
         value: category,
         title: t(`contact-page.category-${category}`)
     }))
@@ -100,10 +100,10 @@ const { addMessage } = useNotificationsStore();
 /**
  * The public submit action this form calls.
  */
-const { submitContact } = useFeedbackStore();
+const { submitContact } = useTicketsStore();
 
 /**
- * The human-challenge widget. `POST /feedback/contact` is always guarded by `humanChallengeGate`,
+ * The human-challenge widget. `POST /tickets` is always guarded by `humanChallengeGate`,
  * so this attaches unconditionally rather than waiting for a first refusal.
  */
 const humanCheck = ref<InstanceType<typeof HumanCheck>>();
@@ -189,6 +189,7 @@ const submitForm = () =>
             ref="card"
             size="xl"
             :submit-label="t('contact-page.button-submit')"
+            submit-test="contact-submit"
             :loading="isSubmitting"
             @submit="submitForm"
         >

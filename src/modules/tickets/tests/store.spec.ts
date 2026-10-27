@@ -1,14 +1,14 @@
 /**
  * @module
- * The feedback store, transport-mocked like the wishlist's spec: `orvalMutator` is a router keyed
+ * The tickets store, transport-mocked like the wishlist's spec: `orvalMutator` is a router keyed
  * on `METHOD /url`, so the generated client and the store under test stay real. What is worth
- * pinning is the inbox reading pages through `POST /feedback/search` (never the browser-cached
+ * pinning is the inbox reading pages through `POST /tickets/search` (never the browser-cached
  * GET), `pageTotal` coming from the server's own count, and a write patching or evicting the
  * cached row.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { useFeedbackStore } from '../store.ts';
+import { useTicketsStore } from '../store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
@@ -25,6 +25,20 @@ wireModulesIntoCore();
  */
 const TICKET = {
     id: 'f1',
+    source: 'visitor',
+    kind: 'contact',
+    routeSet: 'TicketDisplay',
+    notes: [],
+    overdue: false,
+    actions: {
+        resolve: true,
+        markSpam: true,
+        reopen: false,
+        assign: true,
+        unassign: false,
+        note: true,
+        delete: true
+    },
     email: 'curious@example.com',
     subject: 'A question',
     message: 'About the cats',
@@ -35,8 +49,8 @@ const TICKET = {
 };
 
 /**
- * The ticket as the mocked API's own state currently holds it — updated by `PATCH /feedback/f1`
- * and cleared by `DELETE /feedback/f1` below, and read back by `POST /feedback/search`. A real
+ * The ticket as the mocked API's own state currently holds it — updated by `POST /tickets/f1/resolve`
+ * and cleared by `DELETE /tickets/f1` below, and read back by `POST /tickets/search`. A real
  * backend's list would reflect a write the moment it lands; a frozen `TICKET` snapshot would not,
  * and vue-toolkit 5's active `watchSearchRequests` genuinely refetches the search after every
  * write (it closes the "another store's list could go stale on screen indefinitely" bug), so a
@@ -46,7 +60,7 @@ let currentTicket: typeof TICKET | undefined;
 
 /**
  * Per-test static response table, keyed by `METHOD /url`; reset in `beforeEach`. The three routes
- * that read or change {@link currentTicket} (`search`, the `PATCH`, the `DELETE`) are handled
+ * that read or change {@link currentTicket} (`search`, the `resolve` door, the `DELETE`) are handled
  * ahead of this table instead of through it — see `orvalMutator`'s own mock below.
  */
 let responses: Record<string, unknown>;
@@ -61,18 +75,18 @@ let responses: Record<string, unknown>;
  * @returns the envelope to resolve with, or `undefined` for a route this does not own
  */
 const ticketStateEnvelope = (method: string | undefined, url: string | undefined) => {
-    if (method === 'POST' && url === '/feedback/search')
+    if (method === 'POST' && url === '/tickets/search')
         return {
             items: currentTicket ? [currentTicket] : [],
             meta: currentTicket
                 ? { page: 1, pageSize: 10, totalItems: 31, totalPages: 4 }
                 : { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 }
         };
-    if (method === 'PATCH' && url === '/feedback/f1' && currentTicket) {
+    if (method === 'POST' && url === '/tickets/f1/resolve' && currentTicket) {
         currentTicket = { ...currentTicket, status: 'resolved' };
         return currentTicket;
     }
-    if (method === 'DELETE' && url === '/feedback/f1') {
+    if (method === 'DELETE' && url === '/tickets/f1') {
         currentTicket = undefined;
         return undefined;
     }
@@ -101,24 +115,24 @@ beforeEach(() => {
     vi.clearAllMocks();
     currentTicket = { ...TICKET };
     responses = {
-        'POST /feedback/contact': TICKET
+        'POST /tickets': TICKET
     };
 });
 
 describe('submitContact', () => {
     it('posts the public form', () =>
-        useFeedbackStore()
+        useTicketsStore()
             .submitContact({
                 email: 'curious@example.com',
                 subject: 'A question',
                 message: 'About the cats'
             })
             .then(() => {
-                expect(requestedUrls()).toEqual(['/feedback/contact']);
+                expect(requestedUrls()).toEqual(['/tickets']);
             }));
 
     it("passes the honeypot through untouched — deciding what it means is the BE's job", () =>
-        useFeedbackStore()
+        useTicketsStore()
             .submitContact({
                 email: 'curious@example.com',
                 subject: 'A question',
@@ -132,7 +146,7 @@ describe('submitContact', () => {
 });
 
 /**
- * The JSON body of the most recent request — what `POST /feedback/search` reads.
+ * The JSON body of the most recent request — what `POST /tickets/search` reads.
  */
 const lastBody = () => {
     const [request] = vi.mocked(orvalMutator).mock.calls.at(-1) ?? [];
@@ -141,36 +155,34 @@ const lastBody = () => {
 
 describe('the inbox search', () => {
     /*
-     * Through the search, never `GET /feedback`: the GET is browser-cached for 30 seconds, and
+     * Through the search, never `GET /tickets`: the GET is browser-cached for 30 seconds, and
      * the contract declares no cache-busting param (the API answers an undeclared one with 422).
      */
-    it('reads a page through POST /feedback/search with no query string', () =>
-        useFeedbackStore()
+    it('reads a page through POST /tickets/search with no query string', () =>
+        useTicketsStore()
             .fetchPaginationRequests()
             .then(() => {
                 const [request] = vi.mocked(orvalMutator).mock.calls[0] as [
                     { url: string; method: string; data?: unknown; params?: unknown }
                 ];
                 expect(request).toMatchObject({
-                    url: '/feedback/search',
+                    url: '/tickets/search',
                     method: 'POST',
                     data: { page: 1, pageSize: 10 }
                 });
-                expect(
-                    contractRequest(schemas.SearchFeedbackRequestsBody, request.data)
-                ).toBeDefined();
+                expect(contractRequest(schemas.SearchTicketsBody, request.data)).toBeDefined();
                 expect(request.params).toBeUndefined();
             }));
 
     it('passes an explicit page and size through', () =>
-        useFeedbackStore()
+        useTicketsStore()
             .fetchPaginationRequests(3, 25)
             .then(() => {
                 expect(lastBody()).toMatchObject({ page: 3, pageSize: 25 });
             }));
 
     it('sends a sort the contract names, and drops one it does not', () => {
-        const store = useFeedbackStore();
+        const store = useTicketsStore();
         store.filters = { sort: 'status,-createdAt' };
 
         return store
@@ -187,7 +199,7 @@ describe('the inbox search', () => {
     });
 
     it('posts every supported filter', () => {
-        const store = useFeedbackStore();
+        const store = useTicketsStore();
         store.filters = {
             text: 'cats',
             status: 'new',
@@ -210,7 +222,7 @@ describe('the inbox search', () => {
 
     // The toolkit's own pageTotal counts the local cache — one ticket here — not the inbox.
     it("takes pageTotal from the server's meta, not from the rows it holds", () => {
-        const store = useFeedbackStore();
+        const store = useTicketsStore();
         return store
             .watchSearchRequests()
             .search()
@@ -225,7 +237,7 @@ describe('the inbox search', () => {
         vi.mocked(orvalMutator).mockRejectedValueOnce(failure);
         const onError = vi.fn();
 
-        return useFeedbackStore()
+        return useTicketsStore()
             .watchSearchRequests({ onError })
             .search()
             .catch(() => {})
@@ -235,35 +247,57 @@ describe('the inbox search', () => {
     });
 });
 
-describe('updateRequest', () => {
-    it("writes the status and caches the API's row, not a local guess", () => {
-        const store = useFeedbackStore();
-        return store
-            .watchSearchRequests()
-            .search()
-            .then(() => store.updateRequest('f1', { status: 'resolved' }))
+describe('the status doors', () => {
+    it("posts the door with no body and keeps the API's ticket as the current one", () => {
+        const store = useTicketsStore();
+        return store.resolve('f1').then(() => {
+            const [request] = vi
+                .mocked(orvalMutator)
+                .mock.calls.map(
+                    (call) => call[0] as { url: string; method: string; data?: unknown }
+                );
+            expect(request).toMatchObject({ url: '/tickets/f1/resolve', method: 'POST' });
+            expect(request.data).toBeUndefined();
+            expect(store.ticket?.status).toBe('resolved');
+        });
+    });
+
+    it('assigns by posting the user id to the ticket’s assignee', () => {
+        responses['PUT /tickets/f1/assignee'] = { ...TICKET, status: 'in_progress' };
+        const store = useTicketsStore();
+        return store.assign('f1', 'u1').then(() => {
+            const [request] = vi
+                .mocked(orvalMutator)
+                .mock.calls.map(
+                    (call) => call[0] as { url: string; method: string; data?: unknown }
+                );
+            expect(request).toMatchObject({
+                url: '/tickets/f1/assignee',
+                method: 'PUT',
+                data: { userId: 'u1' }
+            });
+            expect(contractRequest(schemas.AssignTicketBody, request.data)).toEqual({
+                userId: 'u1'
+            });
+        });
+    });
+
+    it('appends a note through the thread', () => {
+        responses['POST /tickets/f1/notes'] = TICKET;
+        return useTicketsStore()
+            .addNote('f1', 'Called back')
             .then(() => {
-                const [, request] = vi
-                    .mocked(orvalMutator)
-                    .mock.calls.map(
-                        (call) => call[0] as { url: string; method: string; data?: unknown }
-                    );
-                expect(request).toMatchObject({
-                    url: '/feedback/f1',
-                    method: 'PATCH',
-                    data: { status: 'resolved' }
+                const [request] = vi.mocked(orvalMutator).mock.calls[0] as [{ data?: unknown }];
+                expect(contractRequest(schemas.CreateTicketNoteBody, request.data)).toEqual({
+                    body: 'Called back'
                 });
-                expect(
-                    contractRequest(schemas.UpdateFeedbackRequestStatusBody, request.data)
-                ).toEqual({ status: 'resolved' });
-                expect(store.requests.f1?.status).toBe('resolved');
             });
     });
 });
 
 describe('deleteRequest', () => {
     it('deletes the ticket and drops it from the page on screen', () => {
-        const store = useFeedbackStore();
+        const store = useTicketsStore();
         return store
             .watchSearchRequests()
             .search()
@@ -275,9 +309,9 @@ describe('deleteRequest', () => {
                 // list going stale on screen indefinitely). The refetch is what proves the ticket
                 // is really gone server-side, not just removed from the local cache.
                 expect(requestedUrls()).toEqual([
-                    '/feedback/search',
-                    '/feedback/f1',
-                    '/feedback/search'
+                    '/tickets/search',
+                    '/tickets/f1',
+                    '/tickets/search'
                 ]);
                 expect(store.pageItemList).toEqual([]);
             });

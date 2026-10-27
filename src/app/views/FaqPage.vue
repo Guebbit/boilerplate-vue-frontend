@@ -14,7 +14,7 @@ export default {
  * The shop's FAQ. Questions are grouped in topics, each topic a heading over an expansion-panel
  * list; every question, answer and topic title comes from `static-pages.faq.topics.<topic>`. The
  * topic KEYS and their order are declared here, the copy is not. Closes with a contact CTA that
- * renders only when the feedback module is in the build.
+ * renders only when the tickets module is in the build.
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

@@ -1,4 +1,4 @@
-// requires-module: account, feedback, observability, returns, users
+// requires-module: account, tickets, observability, returns, users
 /**
  * @module
  * OP18 · The support desk. A visitor writes through the contact form; support works the inbox
@@ -87,12 +87,12 @@ describe('OP18 · The support desk', () => {
     it('support works the inbox, fixes an account and declines a return, and every action is on record', () => {
         cy.step('a visitor writes to the shop, and two more tickets are waiting');
         writeToTheShop();
-        cy.apiAs('admin', 'POST', '/feedback/contact', {
+        cy.apiAs('admin', 'POST', '/tickets', {
             email: 'op18.other@example.com',
             subject: 'OP18 invoice question',
             message: 'Please resend my invoice.'
         });
-        cy.apiAs('admin', 'POST', '/feedback/contact', {
+        cy.apiAs('admin', 'POST', '/tickets', {
             email: 'op18.third@example.com',
             subject: 'OP18 kennel question',
             message: 'Does the kennel come flat-packed?'
@@ -102,7 +102,7 @@ describe('OP18 · The support desk', () => {
         cy.loginAs('support');
         adminMenuLinks().should((links) => {
             expect(links).to.include('/en/users');
-            expect(links).to.include('/en/feedback');
+            expect(links).to.include('/en/tickets');
             // No Audit entry: the trail is the moderator's and the admin's, not the desk's.
             for (const page of ['/inventory', '/locales', '/admin', '/api-keys', '/audit']) {
                 expect(links, page).to.not.include(`/en${page}`);
@@ -112,41 +112,41 @@ describe('OP18 · The support desk', () => {
         cy.get('#home-page').should('exist');
         cy.get('.v-alert').should('exist');
 
-        cy.step('the inbox filters by text and by status, and a note sticks');
+        cy.step('the inbox filters by text and by status, and a note sticks on the detail page');
         cy.trackNetwork();
-        cy.visit('/en/feedback');
+        cy.visit('/en/tickets');
         cy.settleNetwork();
-        cy.get('[data-test=feedback-item]').should('have.length', 3);
+        cy.get('[data-test=ticket-item]').should('have.length', 3);
         cy.get('[data-test=filter-text] input').type('parcel');
         search();
-        cy.get('[data-test=feedback-item]').should('have.length', 1);
-        cy.get('[data-test=feedback-item]').should('contain.text', VISITOR.subject);
-        cy.get('[data-test=feedback-notes] textarea').first().type(NOTE);
-        cy.get('[data-test=feedback-notes-save]').click();
-        cy.settleNetwork();
-        // The filter lives in the address, so the reload keeps the narrowed list.
+        cy.get('[data-test=ticket-item]').should('have.length', 1);
+        cy.get('[data-test=ticket-item]').should('contain.text', VISITOR.subject);
+        // The filter lives in the address, so coming back keeps the narrowed list.
+        cy.get('[data-test=ticket-open]').click();
+        cy.textareaIn('ticket-note-draft').type(NOTE);
+        cy.get('[data-test=ticket-note-add]').click();
+        cy.contains('Note added.').should('exist');
         cy.reload();
-        cy.settleNetwork();
-        cy.get('[data-test=feedback-item]').should('have.length', 1);
-        cy.get('[data-test=feedback-notes] textarea').first().should('have.value', NOTE);
+        cy.get('[data-test=ticket-note]').should('contain.text', NOTE);
 
         cy.step('resolving it moves it out of New and into Resolved');
-        cy.get('[data-test=feedback-status]').first().click();
-        cy.get('[role=listbox] [role=option]').contains('Resolved').click();
+        cy.get('[data-test=ticket-resolve]').click();
+        cy.contains('Status updated.').should('exist');
+        cy.go('back');
         cy.settleNetwork();
         cy.get('[data-test=search-reset]').click();
         cy.settleNetwork();
         cy.pickOption('[data-test=filter-status]', 'Resolved');
         search();
-        cy.get('[data-test=feedback-item]').should('have.length', 1);
-        cy.get('[data-test=feedback-item]').should('contain.text', VISITOR.subject);
-        cy.get('[data-test=feedback-responded-at]').should('exist');
+        cy.get('[data-test=ticket-item]').should('have.length', 1);
+        cy.get('[data-test=ticket-item]').should('contain.text', VISITOR.subject);
+        cy.get('[data-test=ticket-responded-at]').should('exist');
 
         cy.step('the customer’s phone is fixed in the user form; support has no create or erase');
         cy.accountInRole('user').then(({ id: customerId }) => {
             cy.visit('/en/users');
             cy.get('[data-test=row-edit]').should('exist');
-            cy.get('[data-test=row-access]').should('exist');
+            cy.get('[data-test=row-access]').should('not.exist');
             cy.get('[data-test=row-delete]').should('not.exist');
             cy.get('[data-test=row-hard-delete]').should('not.exist');
             cy.get('a[href$="/users/create"]').should('not.exist');
@@ -159,14 +159,14 @@ describe('OP18 · The support desk', () => {
             cy.get('[data-test=user-history]').should('not.exist');
             cy.get('[data-test=user-disable-two-factor]').should('not.exist');
             loginDevice('support').then((device) => {
-                requestAsDevice(device, 'PATCH', `/users/${customerId}`, { active: false })
+                requestAsDevice(device, 'POST', `/users/${customerId}/deactivate`)
                     .its('status')
                     .should('equal', 403);
             });
 
             cy.visit(`/en/users/${customerId}/edit`);
             cy.get('[data-test=user-edit-username] input').should('not.have.value', '');
-            cy.get('[data-test=user-edit-active] input').should('be.disabled');
+            cy.get('[data-test=user-edit-active]').should('not.exist');
             cy.get('[data-test=user-edit-phone] input').clear();
             cy.get('[data-test=user-edit-phone] input').type(NEW_PHONE);
             cy.get('#user-edit-page form').submit();
@@ -190,11 +190,11 @@ describe('OP18 · The support desk', () => {
             cy.get('[data-test=return-decline-reason-text]').should('contain.text', DECLINE_REASON);
         });
 
-        cy.step('the ticket’s status change is on record under the support role');
-        cy.apiAs<{ items: TicketLike[] }>('admin', 'POST', '/feedback/search', {
+        cy.step('the ticket’s resolving is on record under the support role');
+        cy.apiAs<{ items: TicketLike[] }>('admin', 'POST', '/tickets/search', {
             text: VISITOR.subject
         }).then((found) => {
-            auditedAsSupport(String(found?.items[0]?.id), 'admin.feedback.status_updated');
+            auditedAsSupport(String(found?.items[0]?.id), 'admin.ticket.resolved');
         });
     });
 
@@ -203,18 +203,18 @@ describe('OP18 · The support desk', () => {
 
         cy.step('twelve tickets, ten to a page');
         for (let ticket = 1; ticket <= 12; ticket += 1) {
-            cy.apiAs('admin', 'POST', '/feedback/contact', {
+            cy.apiAs('admin', 'POST', '/tickets', {
                 email: `op18.page${String(ticket)}@example.com`,
                 subject: `OP18 page ticket ${String(ticket)}`,
                 message: 'Filling the inbox.'
             });
         }
         cy.loginAs('support');
-        cy.visit('/en/feedback');
-        cy.get('[data-test=feedback-item]').should('have.length', 10);
+        cy.visit('/en/tickets');
+        cy.get('[data-test=ticket-item]').should('have.length', 10);
 
         cy.step('the second page has the other two');
         cy.get('[data-test=pagination]').contains('button', '2').click();
-        cy.get('[data-test=feedback-item]').should('have.length', 2);
+        cy.get('[data-test=ticket-item]').should('have.length', 2);
     });
 });

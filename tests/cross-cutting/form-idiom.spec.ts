@@ -137,7 +137,7 @@ const NO_LEAVE_GUARD: Record<string, string> = {
     'src/modules/account/views/Signup.vue': 'one-shot sign-up, the visitor is not signed in',
     'src/modules/account/views/PasswordResetRequest.vue': 'one-shot request, nothing to lose',
     'src/modules/account/views/PasswordResetConfirm.vue': 'one-shot reset reached by a mailed link',
-    'src/modules/feedback/views/Contact.vue': 'one-shot contact message'
+    'src/modules/tickets/views/Contact.vue': 'one-shot contact message'
 };
 
 /** Routed views that build a form: they use the toolkit's validation, the translated-entity form or the tabs. */

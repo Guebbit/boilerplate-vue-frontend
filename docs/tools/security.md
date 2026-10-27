@@ -164,7 +164,7 @@ slow network greys things out rather than opening them.
 ## The human-challenge widget (rung 3)
 
 The backend's antibot rung is off by default (`NODE_ANTIBOT_PROVIDER=none`) but an operator can
-turn it on. Once on, `POST /account/signup`, `POST /account/password/reset` and `POST /feedback/contact`
+turn it on. Once on, `POST /account/signup`, `POST /account/password/reset` and `POST /tickets`
 always require an `antibot-challenge-token` header; `POST /account/login` and
 `POST /payments/:id/confirm` only require it after a prior failure — see
 `boilerplate-node-backend/docs/modules/antibot.md`.

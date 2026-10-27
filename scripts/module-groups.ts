@@ -30,7 +30,7 @@ export const MODULE_GROUPS: Record<string, ModuleGroup> = {
     cart: 'shop',
     delivery: 'shop',
     example: 'example',
-    feedback: 'foundation',
+    tickets: 'foundation',
     inventory: 'shop',
     locales: 'foundation',
     notifications: 'shop',
