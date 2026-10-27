@@ -33,6 +33,28 @@ describe('startAnalyticsSink', () => {
         }
     });
 
+    it('sends CORS headers on every answer, echoing the preflight request headers', async () => {
+        const sink = await startAnalyticsSink(0);
+        const { port } = sink.address() as AddressInfo;
+        try {
+            const url = `http://127.0.0.1:${String(port)}/collect`;
+            const post = await fetch(url, { method: 'POST', body: '{}' });
+            const preflight = await fetch(url, {
+                method: 'OPTIONS',
+                headers: { 'access-control-request-headers': 'content-type,x-faro-session-id' }
+            });
+
+            expect(post.headers.get('access-control-allow-origin')).toBe('*');
+            expect(preflight.status).toBe(204);
+            expect(preflight.headers.get('access-control-allow-origin')).toBe('*');
+            expect(preflight.headers.get('access-control-allow-headers')).toBe(
+                'content-type,x-faro-session-id'
+            );
+        } finally {
+            sink.close();
+        }
+    });
+
     it('rejects when the port is taken', async () => {
         const first = await startAnalyticsSink(0);
         const { port } = first.address() as AddressInfo;
