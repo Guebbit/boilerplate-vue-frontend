@@ -189,6 +189,7 @@ const submitForm = () =>
             ref="card"
             size="xl"
             :submit-label="t('contact-page.button-submit')"
+            submit-test="contact-submit"
             :loading="isSubmitting"
             @submit="submitForm"
         >

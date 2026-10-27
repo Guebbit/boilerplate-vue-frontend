@@ -69,7 +69,7 @@ describe('Tickets', () => {
 
         cy.get('[data-test=ticket-delete]').click();
         cy.get('[data-test=app-dialog-confirm]').click();
-        cy.wait('@delete').its('response.statusCode').should('eq', 200);
+        cy.wait('@delete').its('response.statusCode').should('eq', 204);
 
         cy.get('[data-test=ticket-item]').should('have.length', 0);
         cy.contains('Ticket deleted').should('exist');

@@ -146,7 +146,7 @@ describe('OP18 · The support desk', () => {
         cy.accountInRole('user').then(({ id: customerId }) => {
             cy.visit('/en/users');
             cy.get('[data-test=row-edit]').should('exist');
-            cy.get('[data-test=row-access]').should('exist');
+            cy.get('[data-test=row-access]').should('not.exist');
             cy.get('[data-test=row-delete]').should('not.exist');
             cy.get('[data-test=row-hard-delete]').should('not.exist');
             cy.get('a[href$="/users/create"]').should('not.exist');
@@ -159,14 +159,14 @@ describe('OP18 · The support desk', () => {
             cy.get('[data-test=user-history]').should('not.exist');
             cy.get('[data-test=user-disable-two-factor]').should('not.exist');
             loginDevice('support').then((device) => {
-                requestAsDevice(device, 'PATCH', `/users/${customerId}`, { active: false })
+                requestAsDevice(device, 'POST', `/users/${customerId}/deactivate`)
                     .its('status')
                     .should('equal', 403);
             });
 
             cy.visit(`/en/users/${customerId}/edit`);
             cy.get('[data-test=user-edit-username] input').should('not.have.value', '');
-            cy.get('[data-test=user-edit-active] input').should('be.disabled');
+            cy.get('[data-test=user-edit-active]').should('not.exist');
             cy.get('[data-test=user-edit-phone] input').clear();
             cy.get('[data-test=user-edit-phone] input').type(NEW_PHONE);
             cy.get('#user-edit-page form').submit();
