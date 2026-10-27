@@ -9954,7 +9954,7 @@ paths:
       tags:
         - Examples
       summary: Replace an example
-      description: Replaces the example's writable fields (RFC 9110 §9.3.4). `title` and `body` are required, since a PUT names the whole representation. The status moves through `POST /examples/{id}/transitions`.
+      description: Replaces the example's writable fields (RFC 9110 §9.3.4). `title` and `body` are required, since a PUT names the whole representation. The status moves through `POST /examples/{id}/publish|archive|unarchive`.
       operationId: replaceExampleById
       security:
         - bearerAuth: []
@@ -10087,33 +10087,25 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: example
-  /examples/{id}/transitions:
+  /examples/{id}/publish:
     post:
       tags:
         - Examples
-      summary: Move an example to another status
-      description: Moves the example to `to`. Which moves are open is the caller's `Example.actions.transitions`. A move into `published` stamps `publishedAt` the first time, announces `example.published` and mails the owner. Another person's example answers `404`, as every write here does.
-      operationId: transitionExample
+      summary: Publish an example
+      description: Moves a draft to `published`. Stamps `publishedAt` the first time, announces `example.published` and mails the owner. Whether the door is open is the caller's `Example.actions.publish`. Another person's example answers `404`, as every write here does. Answers `409` `EXAMPLE_NOT_PUBLISHABLE` from any other status.
+      operationId: publishExample
       security:
         - bearerAuth: []
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TransitionExampleRequest"
       responses:
         "200":
-          description: The example, moved
+          description: The example, published
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Example"
-        "400":
-          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -10122,12 +10114,74 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "413":
-          $ref: "#/components/responses/PayloadTooLarge"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
-        "422":
-          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: example
+  /examples/{id}/archive:
+    post:
+      tags:
+        - Examples
+      summary: Archive an example
+      description: Moves a draft or a published example to `archived`. Whether the door is open is the caller's `Example.actions.archive`. Another person's example answers `404`. Answers `409` `EXAMPLE_NOT_ARCHIVABLE` from any other status.
+      operationId: archiveExample
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: The example, archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: example
+  /examples/{id}/unarchive:
+    post:
+      tags:
+        - Examples
+      summary: Return an archived example to draft
+      description: Moves an archived example back to `draft`; publishing it again keeps the original `publishedAt`. Whether the door is open is the caller's `Example.actions.unarchive`. Another person's example answers `404`. Answers `409` `EXAMPLE_NOT_UNARCHIVABLE` from any other status.
+      operationId: unarchiveExample
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: The example, back in draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -19512,19 +19566,22 @@ components:
       type: object
       additionalProperties: false
       required:
-        - transitions
+        - publish
+        - archive
+        - unarchive
         - update
         - delete
       description: "What the requesting caller may do to this example, decided by the server. A client renders its controls from this instead of re-implementing the lifecycle or the ownership rule: both depend on who asks, and a second copy in a separately deployed client is how the two come to disagree."
       properties:
-        transitions:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExampleStatus"
-          description: The statuses this caller may move the example to through `POST /examples/{id}/transitions`. Never contains the current status; empty when the caller may not edit it.
-          example:
-            - published
-            - archived
+        publish:
+          type: boolean
+          description: Whether `POST /examples/{id}/publish` would be accepted for this caller, from the status the example holds now.
+        archive:
+          type: boolean
+          description: Whether `POST /examples/{id}/archive` would be accepted for this caller, from the status the example holds now.
+        unarchive:
+          type: boolean
+          description: Whether `POST /examples/{id}/unarchive` would be accepted for this caller, from the status the example holds now.
         update:
           type: boolean
           description: Whether `PATCH`/`PUT /examples/{id}` and `PUT /examples/{id}/cover` would be accepted for this caller.
@@ -19643,14 +19700,6 @@ components:
           type: string
           minLength: 1
           maxLength: 20000
-    TransitionExampleRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - to
-      properties:
-        to:
-          $ref: "#/components/schemas/ExampleStatus"
     ReplaceExampleCoverRequestMultipart:
       type: object
       additionalProperties: false
@@ -19883,9 +19932,15 @@ x-error-codes:
   EMAIL_VERIFY_RESEND_TOO_SOON:
     status: 429
     description: A verification email was already sent recently — carries `details.retryAfter`.
-  EXAMPLE_TRANSITION_NOT_ALLOWED:
+  EXAMPLE_NOT_ARCHIVABLE:
     status: 409
-    description: The example cannot move from its current status to the one asked, or another request moved it first. `errors[].details` is `{ from, to }`; `Example.actions.transitions` lists the moves still open.
+    description: Only a draft or a published example can be archived, or another request moved it first. `errors[].details` is `{ status }`; `Example.actions.archive` says whether the door is open.
+  EXAMPLE_NOT_PUBLISHABLE:
+    status: 409
+    description: Only a draft can be published, or another request moved the example first. `errors[].details` is `{ status }`, the status it holds now; `Example.actions.publish` says whether the door is open.
+  EXAMPLE_NOT_UNARCHIVABLE:
+    status: 409
+    description: Only an archived example can go back to draft, or another request moved it first. `errors[].details` is `{ status }`; `Example.actions.unarchive` says whether the door is open.
   FORBIDDEN:
     status: 403
     description: "The server understood the request and refuses it, whoever the caller is: the caller lacks the permission this route requires (a key's own `deniedCode` can replace this default with a more specific one), or a human-challenge token is missing or refused (`ANTIBOT_VERIFICATION_FAILED`)."

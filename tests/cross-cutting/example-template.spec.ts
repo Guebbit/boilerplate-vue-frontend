@@ -7,7 +7,7 @@
  * together: a pattern row naming a file that is gone fails here.
  *
  * Also here: no module's `domain/` may hold a transition table. The server lists the moves a
- * caller may make (`actions.transitions`); a client table is a second copy that drifts.
+ * caller may make (the `actions` flags); a client table is a second copy that drifts.
  */
 import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';

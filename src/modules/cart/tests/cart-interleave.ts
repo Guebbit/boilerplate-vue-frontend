@@ -8,7 +8,7 @@
  */
 import { expect, vi } from 'vitest';
 import { nextTick } from 'vue';
-import type { useCartStore } from '@/modules/cart/store';
+import type { useCartStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import {
     getCart,
@@ -18,8 +18,8 @@ import {
     clearCart,
     setCartShippingMethod
 } from '@api';
-import { answered, gate } from './cart-fixtures';
-import type { Answer } from './cart-fixtures';
+import { answered, gate } from '../../../../tests/support/unit/async-answers.ts';
+import type { Answer } from '../../../../tests/support/unit/async-answers.ts';
 import type { CartResponse } from '@types';
 
 /**

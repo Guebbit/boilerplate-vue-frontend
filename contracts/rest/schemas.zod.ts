@@ -15650,7 +15650,9 @@ export const ListExamplesResponse = zod.strictObject({
             createdAt: zod.iso.datetime({ offset: true }),
             updatedAt: zod.iso.datetime({ offset: true }).optional(),
             actions: zod.strictObject({
-                transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+                publish: zod.boolean(),
+                archive: zod.boolean(),
+                unarchive: zod.boolean(),
                 update: zod.boolean(),
                 delete: zod.boolean()
             })
@@ -15712,7 +15714,9 @@ export const CreateExampleResponse = zod.strictObject({
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
-        transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+        publish: zod.boolean(),
+        archive: zod.boolean(),
+        unarchive: zod.boolean(),
         update: zod.boolean(),
         delete: zod.boolean()
     })
@@ -15775,7 +15779,9 @@ export const SearchExamplesResponse = zod.strictObject({
             createdAt: zod.iso.datetime({ offset: true }),
             updatedAt: zod.iso.datetime({ offset: true }).optional(),
             actions: zod.strictObject({
-                transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+                publish: zod.boolean(),
+                archive: zod.boolean(),
+                unarchive: zod.boolean(),
                 update: zod.boolean(),
                 delete: zod.boolean()
             })
@@ -15826,13 +15832,15 @@ export const GetExampleByIdResponse = zod.strictObject({
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
-        transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+        publish: zod.boolean(),
+        archive: zod.boolean(),
+        unarchive: zod.boolean(),
         update: zod.boolean(),
         delete: zod.boolean()
     })
 });
 /**
- * Replaces the example's writable fields (RFC 9110 §9.3.4). `title` and `body` are required, since a PUT names the whole representation. The status moves through `POST /examples/{id}/transitions`.
+ * Replaces the example's writable fields (RFC 9110 §9.3.4). `title` and `body` are required, since a PUT names the whole representation. The status moves through `POST /examples/{id}/publish|archive|unarchive`.
  * @summary Replace an example
  */
 export const replaceExampleByIdPathIdMax = 64;
@@ -15875,7 +15883,9 @@ export const ReplaceExampleByIdResponse = zod.strictObject({
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
-        transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+        publish: zod.boolean(),
+        archive: zod.boolean(),
+        unarchive: zod.boolean(),
         update: zod.boolean(),
         delete: zod.boolean()
     })
@@ -15924,7 +15934,9 @@ export const UpdateExampleByIdResponse = zod.strictObject({
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
-        transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+        publish: zod.boolean(),
+        archive: zod.boolean(),
+        unarchive: zod.boolean(),
         update: zod.boolean(),
         delete: zod.boolean()
     })
@@ -15944,35 +15956,28 @@ export const DeleteExampleByIdHeader = zod.strictObject({
 });
 export const DeleteExampleByIdResponse = zod.void();
 /**
- * Moves the example to `to`. Which moves are open is the caller's `Example.actions.transitions`. A move into `published` stamps `publishedAt` the first time, announces `example.published` and mails the owner. Another person's example answers `404`, as every write here does.
- * @summary Move an example to another status
+ * Moves a draft to `published`. Stamps `publishedAt` the first time, announces `example.published` and mails the owner. Whether the door is open is the caller's `Example.actions.publish`. Another person's example answers `404`, as every write here does. Answers `409` `EXAMPLE_NOT_PUBLISHABLE` from any other status.
+ * @summary Publish an example
  */
-export const transitionExamplePathIdMax = 64;
-export const transitionExamplePathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const TransitionExampleParams = zod.strictObject({
-    id: zod.string().min(1).max(transitionExamplePathIdMax).regex(transitionExamplePathIdRegExp)
+export const publishExamplePathIdMax = 64;
+export const publishExamplePathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const PublishExampleParams = zod.strictObject({
+    id: zod.string().min(1).max(publishExamplePathIdMax).regex(publishExamplePathIdRegExp)
 });
-export const TransitionExampleBody = zod.strictObject({
-    to: zod.enum(['draft', 'published', 'archived'])
-});
-export const transitionExampleResponseIdMax = 64;
-export const transitionExampleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const transitionExampleResponseUserIdMax = 64;
-export const transitionExampleResponseUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const TransitionExampleResponse = zod.strictObject({
-    id: zod
-        .string()
-        .min(1)
-        .max(transitionExampleResponseIdMax)
-        .regex(transitionExampleResponseIdRegExp),
+export const publishExampleResponseIdMax = 64;
+export const publishExampleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const publishExampleResponseUserIdMax = 64;
+export const publishExampleResponseUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const PublishExampleResponse = zod.strictObject({
+    id: zod.string().min(1).max(publishExampleResponseIdMax).regex(publishExampleResponseIdRegExp),
     title: zod.string(),
     body: zod.string(),
     status: zod.enum(['draft', 'published', 'archived']),
     userId: zod
         .string()
         .min(1)
-        .max(transitionExampleResponseUserIdMax)
-        .regex(transitionExampleResponseUserIdRegExp),
+        .max(publishExampleResponseUserIdMax)
+        .regex(publishExampleResponseUserIdRegExp),
     ownerName: zod.string(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -15980,7 +15985,87 @@ export const TransitionExampleResponse = zod.strictObject({
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
-        transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+        publish: zod.boolean(),
+        archive: zod.boolean(),
+        unarchive: zod.boolean(),
+        update: zod.boolean(),
+        delete: zod.boolean()
+    })
+});
+/**
+ * Moves a draft or a published example to `archived`. Whether the door is open is the caller's `Example.actions.archive`. Another person's example answers `404`. Answers `409` `EXAMPLE_NOT_ARCHIVABLE` from any other status.
+ * @summary Archive an example
+ */
+export const archiveExamplePathIdMax = 64;
+export const archiveExamplePathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ArchiveExampleParams = zod.strictObject({
+    id: zod.string().min(1).max(archiveExamplePathIdMax).regex(archiveExamplePathIdRegExp)
+});
+export const archiveExampleResponseIdMax = 64;
+export const archiveExampleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const archiveExampleResponseUserIdMax = 64;
+export const archiveExampleResponseUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ArchiveExampleResponse = zod.strictObject({
+    id: zod.string().min(1).max(archiveExampleResponseIdMax).regex(archiveExampleResponseIdRegExp),
+    title: zod.string(),
+    body: zod.string(),
+    status: zod.enum(['draft', 'published', 'archived']),
+    userId: zod
+        .string()
+        .min(1)
+        .max(archiveExampleResponseUserIdMax)
+        .regex(archiveExampleResponseUserIdRegExp),
+    ownerName: zod.string(),
+    imageUrl: zod.string().min(1).optional(),
+    thumbnailUrl: zod.string().optional(),
+    publishedAt: zod.iso.datetime({ offset: true }).optional(),
+    createdAt: zod.iso.datetime({ offset: true }),
+    updatedAt: zod.iso.datetime({ offset: true }).optional(),
+    actions: zod.strictObject({
+        publish: zod.boolean(),
+        archive: zod.boolean(),
+        unarchive: zod.boolean(),
+        update: zod.boolean(),
+        delete: zod.boolean()
+    })
+});
+/**
+ * Moves an archived example back to `draft`; publishing it again keeps the original `publishedAt`. Whether the door is open is the caller's `Example.actions.unarchive`. Another person's example answers `404`. Answers `409` `EXAMPLE_NOT_UNARCHIVABLE` from any other status.
+ * @summary Return an archived example to draft
+ */
+export const unarchiveExamplePathIdMax = 64;
+export const unarchiveExamplePathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const UnarchiveExampleParams = zod.strictObject({
+    id: zod.string().min(1).max(unarchiveExamplePathIdMax).regex(unarchiveExamplePathIdRegExp)
+});
+export const unarchiveExampleResponseIdMax = 64;
+export const unarchiveExampleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const unarchiveExampleResponseUserIdMax = 64;
+export const unarchiveExampleResponseUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const UnarchiveExampleResponse = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(unarchiveExampleResponseIdMax)
+        .regex(unarchiveExampleResponseIdRegExp),
+    title: zod.string(),
+    body: zod.string(),
+    status: zod.enum(['draft', 'published', 'archived']),
+    userId: zod
+        .string()
+        .min(1)
+        .max(unarchiveExampleResponseUserIdMax)
+        .regex(unarchiveExampleResponseUserIdRegExp),
+    ownerName: zod.string(),
+    imageUrl: zod.string().min(1).optional(),
+    thumbnailUrl: zod.string().optional(),
+    publishedAt: zod.iso.datetime({ offset: true }).optional(),
+    createdAt: zod.iso.datetime({ offset: true }),
+    updatedAt: zod.iso.datetime({ offset: true }).optional(),
+    actions: zod.strictObject({
+        publish: zod.boolean(),
+        archive: zod.boolean(),
+        unarchive: zod.boolean(),
         update: zod.boolean(),
         delete: zod.boolean()
     })
@@ -16022,7 +16107,9 @@ export const ReplaceExampleCoverResponse = zod.strictObject({
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
-        transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+        publish: zod.boolean(),
+        archive: zod.boolean(),
+        unarchive: zod.boolean(),
         update: zod.boolean(),
         delete: zod.boolean()
     })

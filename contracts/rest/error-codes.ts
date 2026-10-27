@@ -78,8 +78,12 @@ export const ERROR_CODES = {
     EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
     /** 429 — A verification email was already sent recently — carries `details.retryAfter`. */
     EMAIL_VERIFY_RESEND_TOO_SOON: 'EMAIL_VERIFY_RESEND_TOO_SOON',
-    /** 409 — The example cannot move from its current status to the one asked, or another request moved it first. `errors[].details` is `{ from, to }`; `Example.actions.transitions` lists the moves still open. */
-    EXAMPLE_TRANSITION_NOT_ALLOWED: 'EXAMPLE_TRANSITION_NOT_ALLOWED',
+    /** 409 — Only a draft or a published example can be archived, or another request moved it first. `errors[].details` is `{ status }`; `Example.actions.archive` says whether the door is open. */
+    EXAMPLE_NOT_ARCHIVABLE: 'EXAMPLE_NOT_ARCHIVABLE',
+    /** 409 — Only a draft can be published, or another request moved the example first. `errors[].details` is `{ status }`, the status it holds now; `Example.actions.publish` says whether the door is open. */
+    EXAMPLE_NOT_PUBLISHABLE: 'EXAMPLE_NOT_PUBLISHABLE',
+    /** 409 — Only an archived example can go back to draft, or another request moved it first. `errors[].details` is `{ status }`; `Example.actions.unarchive` says whether the door is open. */
+    EXAMPLE_NOT_UNARCHIVABLE: 'EXAMPLE_NOT_UNARCHIVABLE',
     /** 403 — The server understood the request and refuses it, whoever the caller is: the caller lacks the permission this route requires (a key's own `deniedCode` can replace this default with a more specific one), or a human-challenge token is missing or refused (`ANTIBOT_VERIFICATION_FAILED`). */
     FORBIDDEN: 'FORBIDDEN',
     /** 409 — Another request already carries this `Idempotency-Key` and has not finished yet. */

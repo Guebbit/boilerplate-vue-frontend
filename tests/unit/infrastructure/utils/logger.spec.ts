@@ -66,7 +66,7 @@ describe('scope filtering', () => {
     it('enables every scope for `*`', () =>
         loadLogger({ DEV: true, VITE_APP_LOG_SCOPES: '*' }).then(({ logger }) => {
             logger.debug('router', 'a');
-            logger.debug('example', 'b');
+            logger.debug('http', 'b');
 
             expect(spies.debug).toHaveBeenCalledTimes(2);
         }));

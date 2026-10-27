@@ -58,7 +58,7 @@ export interface CompareOptions {
 
 /** What the compare task reports back to the spec. */
 export interface CompareResult {
-    /** `true` when the snapshot matches, or when a baseline was just created. */
+    /** `true` when the snapshot matches, or when update mode just recorded it. */
     passed: boolean;
     /** Human-readable outcome for the test's failure message. */
     message: string;
@@ -67,12 +67,12 @@ export interface CompareResult {
 /**
  * Compare one screenshot against its baseline.
  *
- * Three outcomes, and the first is the one worth understanding:
+ * Four outcomes, and the first is the one worth understanding:
  *
- *   1. **No baseline yet** → write it and PASS. A first run cannot fail, because there is nothing
- *      to compare against; failing would only mean "this is new". The baseline is committed, so
- *      the diff that matters is the one a reviewer sees in the pull request when the image
- *      changes — that is where a human actually looks at the picture.
+ *   1. **No baseline yet** → FAIL, and write nothing to `__snapshots__`. A comparison that
+ *      records its own baseline passes vacuously on every CI run (the file is discarded). Only
+ *      update mode writes a baseline, in the pinned image. The shot goes to
+ *      `<diffDirectory>/<name>.new.png` so a reviewer finds it in the CI artefact.
  *   0. **Not the viewport's size** → fail, before anything else (the browser window clipped it).
  *   2. **Different dimensions** → fail immediately. Comparing images of different sizes pixel by
  *      pixel is meaningless, and a size change is itself a layout regression.
@@ -89,8 +89,6 @@ export const compareSnapshot = (options: CompareOptions): CompareResult => {
     const baselineDirectory = path.join(process.cwd(), path.dirname(specRelative), '__snapshots__');
     const baselinePath = path.join(baselineDirectory, `${name}.png`);
 
-    mkdirSync(baselineDirectory, { recursive: true });
-
     const actual = PNG.sync.read(readFileSync(actualPath));
 
     // Before any baseline logic, update mode included: a clamped or double-density shot must
@@ -98,13 +96,22 @@ export const compareSnapshot = (options: CompareOptions): CompareResult => {
     const problem = shotSizeProblem(actual, expected);
     if (problem) return { passed: false, message: `${name}: ${problem}` };
 
-    if (update || !existsSync(baselinePath)) {
+    if (update) {
+        mkdirSync(baselineDirectory, { recursive: true });
         writeFileSync(baselinePath, PNG.sync.write(actual));
+        return { passed: true, message: `baseline updated: ${name}` };
+    }
+
+    if (!existsSync(baselinePath)) {
+        mkdirSync(diffDirectory, { recursive: true });
+        const newPath = path.join(diffDirectory, `${name}.new.png`);
+        writeFileSync(newPath, PNG.sync.write(actual));
         return {
-            passed: true,
-            message: update
-                ? `baseline updated: ${name}`
-                : `baseline created: ${name} — commit it, and review the image in the diff`
+            passed: false,
+            message:
+                `${name}: no baseline at ${baselinePath}.\n` +
+                `  The shot is at ${newPath}. Record it in the pinned image with the ` +
+                `update-baselines workflow or \`npm run test:e2e:visual:update\`, then review the PNG.`
         };
     }
 

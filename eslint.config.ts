@@ -97,6 +97,24 @@ const moduleDependencyPolicies = moduleFolderNames.flatMap((name) => {
                               }
                           }
                       }
+                  },
+                  // A module's own spec may also reach a listed sibling's `tests/**` (its seeding
+                  // doubles, as the backend's `@modules/<x>/tests/factories` does) — production
+                  // code never can, since only a `spec` file carries this category.
+                  {
+                      from: {
+                          element: { type: 'module', captured: { module: name } },
+                          file: { categories: ['spec'] }
+                      },
+                      allow: {
+                          to: {
+                              element: {
+                                  type: 'module',
+                                  fileInternalPath: 'tests/**',
+                                  captured: { module: reaches }
+                              }
+                          }
+                      }
                   }
               ]
             : []),

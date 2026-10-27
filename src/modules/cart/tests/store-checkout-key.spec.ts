@@ -10,15 +10,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { IN_FLIGHT_RETRY_DELAYS_MS } from '../composables/idempotent-calls';
 import { checkout as apiCheckout, getCart } from '@api';
+import { aCart } from './cart-fixtures.ts';
 import {
-    aCart,
     apiRejection,
     lostAnswer,
     answered
-} from '../../../../tests/support/unit/cart-fixtures.ts';
+} from '../../../../tests/support/unit/async-answers.ts';
 import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
-import { signInAs } from '../../../../tests/support/unit/cart-interleave.ts';
-import { trackStores } from '../../../../tests/support/unit/track-stores.ts';
+import { signInAs } from './cart-interleave.ts';
+import { trackStores } from './track-stores.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
 wireModulesIntoCore();

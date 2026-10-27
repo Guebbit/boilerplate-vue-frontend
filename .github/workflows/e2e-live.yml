@@ -385,9 +385,10 @@ jobs:
                       return 1
                   }
                   primary() { docker exec mongo mongosh --quiet --eval 'db.hello().isWritablePrimary' | grep -q true; }
-                  # mongo:8
+                  # mongo:8 (8.3.11), the digest the backend pins. 8.3.9 and 8.0.30 dropped the
+                  # refusal to start on Linux kernels >= 6.19 (SERVER-125742, was SERVER-121912).
                   docker run -d --name mongo -p 27017:27017 \
-                      mongo@sha256:5d7043a4ffe02b9ed1b6e0bab057546981af5ca0a79107e9c461e49bc44c0a7b \
+                      docker.io/library/mongo:8@sha256:d731d77bfd7afd66bd487bdf627b5bf7ce4c3602ec461d635977021db529ebbc \
                       --replSet rs0 --bind_ip_all
                   wait_for 'the server answering a ping' \
                       docker exec mongo mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'

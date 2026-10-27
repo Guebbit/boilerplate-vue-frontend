@@ -5,7 +5,7 @@
  */
 import { vi } from 'vitest';
 import type { Product } from '@types';
-import { useProductsStore } from '@/modules/products/store';
+import { useProductsStore } from '../store';
 
 /**
  * Puts products into the dictionary, as if a read had already returned them.

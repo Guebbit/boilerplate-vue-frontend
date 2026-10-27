@@ -14,6 +14,11 @@
  * (`main.ts`, gated on `shouldValidateResponses()`) and stripping their generated `.describe()`
  * calls (`scripts/contracts/strip-schema-descriptions.ts`): 407 KB raw / 132 KB gzip.
  *
+ * The build is forced to NODE_ENV=production: Vitest sets `test`, and a dev build both inflates
+ * the entry (~474 KB) and hides production-only imports. A zod value import in `validate.ts`
+ * (reached only when `isReportOnly()`) once took the real entry to 512 KB unseen. The real entry
+ * is now ~397 KB raw.
+ *
  * The budget below is 480 KB raw — headroom over the current, measured size for ordinary feature
  * growth, but far under the pre-fix number, so a schema import (or an equally large dependency)
  * finding its way back into the entry graph fails this test instead of shipping silently.
@@ -62,7 +67,9 @@ describe('entry chunk budget', () => {
         execFileSync(
             path.join(ROOT, 'node_modules', '.bin', 'vite'),
             ['build', '--outDir', buildOutputDirectory],
-            { cwd: ROOT, stdio: 'ignore' }
+            // Vitest sets NODE_ENV=test, which would make this a DEV build (devtools, dev builds
+            // of vue-router and vue-i18n) and hide what `isReportOnly()` pulls in under PROD.
+            { cwd: ROOT, stdio: 'ignore', env: { ...process.env, NODE_ENV: 'production' } }
         );
         html = readFileSync(path.join(buildOutputDirectory, 'index.html'), 'utf8');
     }, 120_000);

@@ -1,7 +1,7 @@
 /**
  * @module
- * The injecting half of the provide/inject pair: it renders exactly the moves the server listed in
- * `actions.transitions` (it decides none of its own), and asks the provider, never the store, to
+ * The injecting half of the provide/inject pair: it renders exactly the events the server flagged
+ * open in `actions` (it decides none of its own), and asks the provider, never the store, to
  * make one.
  */
 import { describe, expect, it, vi } from 'vitest';
@@ -12,29 +12,36 @@ import { provideExample } from '../provided';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import type { Example, ExampleStatus } from '@types';
+import type { Example } from '@types';
+import type { ExampleEvent } from '../store';
 
 wireModulesIntoCore();
 
 /**
- * Mounts the actions under a provider holding an example of `status`.
+ * Mounts the actions under a provider holding a draft example.
  *
- * @param transitions - The moves the server listed, or `undefined` while the example loads.
+ * @param open - The events the server flagged open, or `undefined` while the example loads.
  * @param changeStatus - What the provider does when asked.
  */
 const mountUnder = (
-    transitions: ExampleStatus[] | undefined,
-    changeStatus: (next: ExampleStatus) => Promise<unknown> = vi.fn().mockResolvedValue(undefined)
+    open: readonly ExampleEvent[] | undefined,
+    changeStatus: (next: ExampleEvent) => Promise<unknown> = vi.fn().mockResolvedValue(undefined)
 ) => {
     const Provider = defineComponent({
         setup() {
             provideExample({
                 example: ref(
-                    transitions
+                    open
                         ? ({
                               id: 'a',
                               status: 'draft',
-                              actions: { transitions, update: true, delete: true }
+                              actions: {
+                                  publish: open.includes('publish'),
+                                  archive: open.includes('archive'),
+                                  unarchive: open.includes('unarchive'),
+                                  update: true,
+                                  delete: true
+                              }
                           } as Example)
                         : undefined
                 ),
@@ -49,7 +56,7 @@ const mountUnder = (
 };
 
 /**
- * The status each rendered move button leads to.
+ * The event each rendered button applies.
  *
  * @param wrapper - The mounted provider.
  */
@@ -59,14 +66,14 @@ const offered = (wrapper: Awaited<ReturnType<typeof mountUnder>>) =>
 describe('ExampleStatusActions', () => {
     it.each([
         [
-            ['published', 'archived'],
-            ['example-move-published', 'example-move-archived']
+            ['publish', 'archive'],
+            ['example-move-publish', 'example-move-archive']
         ],
-        [['archived'], ['example-move-archived']],
-        [['draft'], ['example-move-draft']],
+        [['archive'], ['example-move-archive']],
+        [['unarchive'], ['example-move-unarchive']],
         [[], []]
-    ] as const)('renders the moves the server lists: %j', (transitions, expected) =>
-        mountUnder([...transitions]).then((wrapper) => {
+    ] as const)('renders the events the server flags open: %j', (open, expected) =>
+        mountUnder([...open]).then((wrapper) => {
             expect(offered(wrapper)).toEqual(expected);
         })
     );
@@ -79,12 +86,12 @@ describe('ExampleStatusActions', () => {
     it('asks the provider for the move a button names', () => {
         const changeStatus = vi.fn().mockResolvedValue(undefined);
 
-        return mountUnder(['published'], changeStatus).then((wrapper) =>
+        return mountUnder(['publish'], changeStatus).then((wrapper) =>
             wrapper
-                .get('[data-test=example-move-published]')
+                .get('[data-test=example-move-publish]')
                 .trigger('click')
                 .then(() => {
-                    expect(changeStatus).toHaveBeenCalledWith('published');
+                    expect(changeStatus).toHaveBeenCalledWith('publish');
                 })
         );
     });

@@ -11,7 +11,7 @@ import { nextTick } from 'vue';
 import { createWishlistItem, getWishlist, deleteWishlistItem } from '@api';
 import { useWishlistStore } from '../store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { answered, gate, type Answer } from '../../../../tests/support/unit/cart-fixtures.ts';
+import { answered, gate, type Answer } from '../../../../tests/support/unit/async-answers.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
 wireModulesIntoCore();

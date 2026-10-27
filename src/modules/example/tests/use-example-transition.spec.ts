@@ -54,8 +54,8 @@ describe('useExampleTransition', () => {
         const move = vi.spyOn(store, 'transitionExample').mockResolvedValue(MOVED);
         const { changeStatus, error } = mountHost();
 
-        return changeStatus('published').then(() => {
-            expect(move).toHaveBeenCalledWith('ex-1', 'published');
+        return changeStatus('publish').then(() => {
+            expect(move).toHaveBeenCalledWith('ex-1', 'publish');
             expect(error.value).toBeFalsy();
         });
     });
@@ -63,12 +63,12 @@ describe('useExampleTransition', () => {
     it('shows a 409 in place and re-reads the record once, past the cache', () => {
         const store = useExampleStore();
         vi.spyOn(store, 'transitionExample').mockRejectedValue(
-            aProblem(409, [{ code: 'EXAMPLE_TRANSITION_NOT_ALLOWED', message: 'Not allowed' }])
+            aProblem(409, [{ code: 'EXAMPLE_NOT_PUBLISHABLE', message: 'Not allowed' }])
         );
         const reread = vi.spyOn(store, 'fetchExample').mockResolvedValue(MOVED);
         const { changeStatus, error } = mountHost();
 
-        return changeStatus('published').then(() => {
+        return changeStatus('publish').then(() => {
             expect(error.value).toBeTruthy();
             expect(reread).toHaveBeenCalledTimes(1);
             expect(reread).toHaveBeenCalledWith('ex-1', { forced: true });
@@ -83,7 +83,7 @@ describe('useExampleTransition', () => {
         const reread = vi.spyOn(store, 'fetchExample').mockResolvedValue(MOVED);
         const { changeStatus, error } = mountHost();
 
-        return changeStatus('published').then(() => {
+        return changeStatus('publish').then(() => {
             expect(error.value).toBeTruthy();
             expect(reread).not.toHaveBeenCalled();
         });

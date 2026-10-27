@@ -13,13 +13,9 @@ import { useCartStockPoll } from '../composables/use-cart-stock-poll';
 import { useCartStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { getCart } from '@api';
-import {
-    aCart,
-    gate,
-    answered,
-    type Answer
-} from '../../../../tests/support/unit/cart-fixtures.ts';
-import { ACTIONS, issue, signInAs } from '../../../../tests/support/unit/cart-interleave.ts';
+import { aCart } from './cart-fixtures.ts';
+import { gate, answered, type Answer } from '../../../../tests/support/unit/async-answers.ts';
+import { ACTIONS, issue, signInAs } from './cart-interleave.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
 wireModulesIntoCore();

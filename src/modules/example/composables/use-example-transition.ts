@@ -1,7 +1,7 @@
 /**
  * @module
  * In any module: a composable earns its place by having two callers. This one is "ask the server
- * for a move, say how it went, and re-read when the answer is that someone got there first".
+ * for an event, say how it went, and re-read when the answer is that someone got there first".
  * Here: the status door, used by the detail and the edit screen.
  * Delete it if: your record has no action door with a 409.
  * See: docs/theory/request-flow.md#conditional-writes
@@ -10,8 +10,7 @@ import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { absentIs } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { useExampleStore } from '../store';
-import type { ExampleStatus } from '@types';
+import { useExampleStore, type ExampleEvent } from '../store';
 
 /**
  * The status door for one routed example.
@@ -31,17 +30,17 @@ export const useExampleTransition = (id: () => string | undefined) => {
     const { message: error, report, clear: clearError } = useBlockingError();
 
     /**
-     * Moves the example to another status, toasting a success and blocking in place on a failure.
+     * Applies a lifecycle event to the example, toasting a success and blocking in place on a failure.
      *
-     * @param to - The status to move to.
+     * @param event - The event to apply.
      * @returns A promise settling once the move was answered and any re-read finished.
      */
-    const changeStatus = (to: ExampleStatus) => {
+    const changeStatus = (event: ExampleEvent) => {
         const target = id();
         if (!target) return Promise.resolve();
         clearError();
         return store
-            .transitionExample(target, to)
+            .transitionExample(target, event)
             .then(() => {
                 addMessage(t('example-target-page.success-status'));
             })
