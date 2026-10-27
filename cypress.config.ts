@@ -236,7 +236,7 @@ export default defineConfig({
                 deviceRequest: (request: Parameters<typeof deviceRequest>[0]) =>
                     deviceRequest(request),
                 /*
-                 * Signs a payment-provider event and posts it to `/payments/webhook`; answers the
+                 * Signs a payment-provider event and posts it to `/payments/webhook/fake`; answers the
                  * status. See `scripts/e2e/payment-webhook.ts`.
                  */
                 postPaymentWebhook: (request: Parameters<typeof postPaymentWebhook>[0]) =>

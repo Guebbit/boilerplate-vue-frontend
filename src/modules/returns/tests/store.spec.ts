@@ -123,17 +123,30 @@ describe('the staff moves', () => {
         });
     });
 
-    it('decline sends the reason', () => {
+    it('decline sends the code, and the message when there is one', () => {
         responses['POST /returns/r1/decline'] = aReturn({
             status: 'declined',
-            declineReason: 'Used'
+            declineReason: 'other'
         });
 
         return useReturnsStore()
-            .decline('r1', 'Used')
+            .decline('r1', 'other', 'Sold as a bundle')
             .then(() => {
                 expect(contractRequest(schemas.DeclineReturnBody, sent[0].data)).toEqual({
-                    reason: 'Used'
+                    reason: 'other',
+                    message: 'Sold as a bundle'
+                });
+            });
+    });
+
+    it('decline sends only the code when there is no message', () => {
+        responses['POST /returns/r1/decline'] = aReturn({ status: 'declined' });
+
+        return useReturnsStore()
+            .decline('r1', 'not_returnable')
+            .then(() => {
+                expect(contractRequest(schemas.DeclineReturnBody, sent[0].data)).toEqual({
+                    reason: 'not_returnable'
                 });
             });
     });
@@ -171,6 +184,31 @@ describe('close', () => {
 
         return useReturnsStore()
             .close('r1')
+            .then(() => {
+                expect(sent[0].data).toBeUndefined();
+            });
+    });
+});
+
+describe('cancel', () => {
+    it('posts the note and mirrors the canceled return', () => {
+        responses['POST /returns/r1/cancel'] = aReturn({ status: 'canceled' });
+        const store = useReturnsStore();
+
+        return store.cancel('r1', 'never sent').then(() => {
+            expect(sent[0].url).toBe('/returns/r1/cancel');
+            expect(contractRequest(schemas.CancelReturnBody, sent[0].data)).toEqual({
+                note: 'never sent'
+            });
+            expect(store.returns.r1?.status).toBe('canceled');
+        });
+    });
+
+    it('sends no body at all when there is no note', () => {
+        responses['POST /returns/r1/cancel'] = aReturn({ status: 'canceled' });
+
+        return useReturnsStore()
+            .cancel('r1')
             .then(() => {
                 expect(sent[0].data).toBeUndefined();
             });

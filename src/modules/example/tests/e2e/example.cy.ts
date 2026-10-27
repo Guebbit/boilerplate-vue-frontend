@@ -59,7 +59,7 @@ describe('Example', () => {
             // The new example opens as a draft, and publishing is one click away.
             cy.get('#example-target').should('exist');
             cy.get('[data-test=example-target-status]').should('contain.text', 'Draft');
-            cy.get('[data-test=example-move-published]').click();
+            cy.get('[data-test=example-move-publish]').click();
             cy.get('[data-test=example-target-status]').should('contain.text', 'Published');
 
             cy.location('pathname').then((pathname) => {
@@ -76,15 +76,14 @@ describe('Example', () => {
                 // The author withdraws it: the list keeps the first publish, and says it is gone.
                 cy.loginAs('editor');
                 cy.visit(`/en/examples/${id}`);
-                cy.get('[data-test=example-move-archived]').click();
+                cy.get('[data-test=example-move-archive]').click();
                 cy.get('[data-test=example-target-status]').should('contain.text', 'Archived');
                 cy.get('[data-test=example-publication]').should('contain.text', 'Withdrawn');
             });
         });
 
         it('keeps a draft away from the public page', () => {
-            cy.loginAs('editor');
-            // The editor’s seeded draft: readable by its owner, a 404 for everyone else.
+            // The editor’s seeded draft: readable by its owner, a 404 for a stranger (no session).
             cy.visit('/en/examples/published/65e1a0000000000000000e02');
 
             cy.get('#example-published-page').should('not.exist');

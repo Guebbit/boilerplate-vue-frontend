@@ -15,7 +15,9 @@ export default {
  * optional note — `POST /returns` with a reason other than `withdrawal`. The right of withdrawal
  * stays its own reason-free button (`WithdrawalPanel`); this is for faulty or wrong goods, or any
  * other reason, and for sending back only part of an order. The server re-checks every limit, so
- * the form only keeps the customer from asking for the impossible.
+ * the form only keeps the customer from asking for the impossible. Staff use it too, for a buyer
+ * who phoned: they may also say which day the buyer asked, and the reasons already past their
+ * deadline are labelled as an exception the return will record.
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref, watch } from 'vue';
@@ -27,6 +29,8 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
 import { returnNoteSchema, returnNoteMax } from '../schemas.ts';
+import { isStatedInTime, localToIso } from '../domain/statement.ts';
+import StatedAtFields from './StatedAtFields.vue';
 import type { ReturnOptionLine, ReturnReason } from '@types';
 
 /**
@@ -38,6 +42,10 @@ const props = defineProps<{
     lines: ReturnOptionLine[];
     /** The reasons the server says can still be named (`ReturnOptions.reasons`). */
     reasons: ReturnReason[];
+    /** Staff acting for a buyer: asks the day the buyer asked, and shuts no line for a reason. */
+    staff?: boolean;
+    /** `ReturnOptions.exceptions`: the reasons already past their deadline, which staff would waive. */
+    exceptions?: ReturnReason[];
 }>();
 
 /**
@@ -143,6 +151,10 @@ const schema = z.object({
         error: () => t('returns-request.error-reason-required')
     }),
     note: returnNoteSchema,
+    // Empty means now; a typed day must be readable and not in the future.
+    requestedAt: z.string().refine((value) => value === '' || isStatedInTime(value), {
+        error: () => t('returns-request.error-date-invalid')
+    }),
     lines: z
         .record(z.string(), z.string())
         .refine((picked) => Object.keys(picked).length > 0, {
@@ -162,7 +174,7 @@ const schema = z.object({
  * would be a claim the customer never made.
  */
 const { form, formErrors, showFormErrors, handleSubmit, applyServerErrors, resetForm } =
-    useStructureFormValidation({ reason: '', note: '', lines: {} }, schema, {
+    useStructureFormValidation({ reason: '', note: '', requestedAt: '', lines: {} }, schema, {
         formElement,
         revalidateOn: locale,
         onInvalid: () => addMessage(t('generic.fix-errors'))
@@ -176,7 +188,15 @@ const { form, formErrors, showFormErrors, handleSubmit, applyServerErrors, reset
  * @returns `true` when the line must not be ticked for this reason.
  */
 const isLineShut = (line: ReturnOptionLine): boolean =>
-    form.value.reason === 'other' && !line.withdrawable;
+    !props.staff && form.value.reason === 'other' && !line.withdrawable;
+
+/**
+ * Whether the chosen reason is already past its deadline: opening it would record an exception.
+ * A preview only; the server judges the deadline on the day the buyer asked.
+ */
+const reasonIsException = computed(() =>
+    (props.exceptions ?? []).map(String).includes(form.value.reason)
+);
 
 /**
  * A line the new reason shuts is unticked, so the request never carries goods the reason cannot name.
@@ -240,14 +260,16 @@ const collapse = () => {
  * @returns A promise settling once the call finished.
  */
 const submit = () =>
-    handleSubmit(({ reason, note, lines }) => {
+    handleSubmit(({ reason, note, requestedAt, lines }) => {
         clearOpenError();
         const trimmedNote = note.trim();
+        const askedAt = props.staff ? localToIso(requestedAt) : undefined;
         return openReturn({
             orderId: props.orderId,
             // Narrows the select's string to the reason union; the schema already refused anything else.
             reason: REASONS.find((choice) => choice === reason) ?? 'other',
             ...(trimmedNote === '' ? {} : { note: trimmedNote }),
+            ...(askedAt ? { requestedAt: askedAt } : {}),
             lines: Object.entries(lines).map(([productId, quantity]) => ({
                 productId,
                 quantity: Number(quantity)
@@ -275,7 +297,7 @@ const submit = () =>
             data-test="return-request-open"
             @click="expanded = true"
         >
-            {{ t('returns-request.button-open') }}
+            {{ staff ? t('returns-request.button-open-staff') : t('returns-request.button-open') }}
         </v-btn>
 
         <form
@@ -345,6 +367,21 @@ const submit = () =>
                 data-test="return-reason"
             />
 
+            <p
+                v-if="staff && reasonIsException"
+                class="m-0 text-sm"
+                role="status"
+                data-test="return-exception-hint"
+            >
+                {{ t('returns-request.hint-exception') }}
+            </p>
+
+            <StatedAtFields
+                v-if="staff"
+                v-model:requested-at="form.requestedAt"
+                :date-errors="showFormErrors ? (formErrors.requestedAt ?? []) : []"
+            />
+
             <v-textarea
                 v-model="form.note"
                 :label="t('returns-request.label-note')"
@@ -367,7 +404,11 @@ const submit = () =>
                     data-test="return-request-submit"
                     :disabled="loading"
                 >
-                    {{ t('returns-request.button-submit') }}
+                    {{
+                        staff
+                            ? t('returns-request.button-submit-staff')
+                            : t('returns-request.button-submit')
+                    }}
                 </v-btn>
                 <v-btn variant="text" data-test="return-request-cancel" @click="collapse">
                     {{ t('returns-request.button-cancel') }}

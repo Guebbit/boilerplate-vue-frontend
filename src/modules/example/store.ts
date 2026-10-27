@@ -18,10 +18,25 @@ import {
     updateExampleById,
     deleteExampleById,
     replaceExampleCover,
-    transitionExample as apiTransitionExample,
+    publishExample,
+    archiveExample,
+    unarchiveExample,
     ExampleSortItem
 } from '@api';
 import type { CreateExampleRequest, Example, ExampleStatus, UpdateExampleRequest } from '@types';
+
+/**
+ * The lifecycle events an example has, each its own door on the server
+ * (`POST /examples/{id}/<event>`). The server says which are open through `Example.actions`.
+ */
+export type ExampleEvent = 'publish' | 'archive' | 'unarchive';
+
+/** The generated call behind each event. */
+const EVENT_DOORS = {
+    publish: publishExample,
+    archive: archiveExample,
+    unarchive: unarchiveExample
+} as const;
 
 /**
  * Search criteria for the list, i.e. everything but pagination (which the toolkit's search state
@@ -127,16 +142,16 @@ export const useExampleStore = defineStore('example', () => {
             });
 
     /**
-     * Moves an example to another status through its own door, and replaces the cached record
+     * Applies a lifecycle event to an example through its own door, and replaces the cached record
      * with the answer (which carries the new `actions`).
      *
      * @param id - The example to move.
-     * @param to - The status to move it to.
+     * @param event - The event to apply.
      * @returns The moved example.
      */
-    const transitionExample = (id: string, to: ExampleStatus) =>
+    const transitionExample = (id: string, event: ExampleEvent) =>
         fetchAny(() =>
-            apiTransitionExample(id, { to }).then((moved) => {
+            EVENT_DOORS[event](id).then((moved) => {
                 editExampleRecord(moved, id);
                 return moved;
             })

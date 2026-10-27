@@ -8,9 +8,9 @@
         "archived": "Archived"
     },
     "example-status-actions": {
-        "move-to-draft": "Back to draft",
-        "move-to-published": "Publish",
-        "move-to-archived": "Archive"
+        "event-publish": "Publish",
+        "event-archive": "Archive",
+        "event-unarchive": "Back to draft"
     },
     "example-form": {
         "title-required": "Enter a title",

@@ -56,7 +56,7 @@ describe('postPaymentWebhook', () => {
         });
 
         expect(status).toBe(200);
-        expect(sent[0].url).toBe('http://api.test/payments/webhook');
+        expect(sent[0].url).toBe('http://api.test/payments/webhook/fake');
         const body = sent[0].init.body as string;
         expect(JSON.parse(body)).toEqual({ id: 'evt-1', providerRef: 'fake_pi_1' });
         expect((sent[0].init.headers as Record<string, string>)['payment-signature']).toBe(

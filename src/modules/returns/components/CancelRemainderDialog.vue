@@ -5,7 +5,8 @@
  * step that shows the server's own refund (`GET /returns/options`), never a client's sum. Two
  * callers share it: the buyer, as part of their withdrawal (`reason: withdrawal`, no note), and
  * staff holding the refund key, who say why in a note; the step-up prompt for that key is the http
- * layer's, so it appears before the call resolves.
+ * layer's, so it appears before the call resolves. Staff can instead record the buyer's own
+ * withdrawal, with the day and channel the buyer stated it.
  */
 import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, ref, watch } from 'vue';
@@ -17,6 +18,13 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
+import {
+    STATEMENT_CHANNELS,
+    isStatedInTime,
+    isStatementChannel,
+    localToIso
+} from '../domain/statement.ts';
+import StatedAtFields from './StatedAtFields.vue';
 import type { CancellableFulfillmentOrder } from '@types';
 
 /**
@@ -73,6 +81,31 @@ const { loading } = storeToRefs(useReturnsStore());
 const note = ref('');
 
 /**
+ * Staff recording the buyer's withdrawal instead of cancelling for their own reason.
+ */
+const asWithdrawal = ref(false);
+
+/**
+ * The day the buyer stated the withdrawal (local, typed) and the channel they used.
+ */
+const requestedAt = ref('');
+const statedVia = ref('');
+
+/**
+ * Whether the statement is complete and not in the future: only checked for a recorded withdrawal.
+ */
+const statementOk = computed(
+    () =>
+        !asWithdrawal.value ||
+        (isStatedInTime(requestedAt.value) && isStatementChannel(statedVia.value))
+);
+
+/**
+ * Whether the confirm was pressed with an incomplete statement, so its messages show.
+ */
+const triedStatement = ref(false);
+
+/**
  * This dialog's own blocked state: a refusal (the window closed, a lost race, a step-up failure)
  * stays next to the button it blocked.
  */
@@ -98,6 +131,10 @@ const shippingText = computed(() => formatCurrency(props.option.shippingRefund, 
 watch(isOpen, (open) => {
     if (!open) return;
     note.value = '';
+    asWithdrawal.value = false;
+    requestedAt.value = '';
+    statedVia.value = '';
+    triedStatement.value = false;
     clearCancelError();
 });
 
@@ -108,14 +145,23 @@ watch(isOpen, (open) => {
  */
 const submit = () => {
     clearCancelError();
+    triedStatement.value = true;
+    if (!statementOk.value) return Promise.resolve();
+
     const trimmed = note.value.trim();
+    const stated = localToIso(requestedAt.value);
+    const channel = STATEMENT_CHANNELS.find((candidate) => candidate === statedVia.value);
     return openReturn({
         orderId: props.orderId,
         kind: 'cancellation',
         fulfillmentOrderId: props.option.fulfillmentOrderId,
-        // The buyer's door is their withdrawal; staff's has no legal reason, so it is "other".
-        reason: props.mode === 'buyer' ? 'withdrawal' : 'other',
-        ...(props.mode === 'staff' && trimmed ? { note: trimmed } : {})
+        // The buyer's door is their withdrawal; staff's own cancel has no legal reason ("other"),
+        // unless they record the buyer's withdrawal with the day and channel it was stated.
+        reason: props.mode === 'buyer' || asWithdrawal.value ? 'withdrawal' : 'other',
+        ...(props.mode === 'staff' && trimmed ? { note: trimmed } : {}),
+        ...(asWithdrawal.value && stated && channel
+            ? { requestedAt: stated, statedVia: channel }
+            : {})
     })
         .then(() => {
             addMessage(t('cancel-remainder-dialog.success'));
@@ -155,6 +201,33 @@ const submit = () => {
             >
                 {{ t('cancel-remainder-dialog.includes-shipping', { amount: shippingText }) }}
             </p>
+
+            <v-checkbox
+                v-if="mode === 'staff'"
+                v-model="asWithdrawal"
+                :label="t('cancel-remainder-dialog.label-as-withdrawal')"
+                hide-details
+                density="compact"
+                class="mt-2"
+                data-test="cancel-remainder-as-withdrawal"
+            />
+            <StatedAtFields
+                v-if="mode === 'staff' && asWithdrawal"
+                v-model:requested-at="requestedAt"
+                v-model:stated-via="statedVia"
+                with-channel
+                date-required
+                :date-errors="
+                    triedStatement && !isStatedInTime(requestedAt)
+                        ? [t('record-withdrawal-dialog.error-date-invalid')]
+                        : []
+                "
+                :channel-errors="
+                    triedStatement && !statedVia
+                        ? [t('record-withdrawal-dialog.error-channel-required')]
+                        : []
+                "
+            />
 
             <v-textarea
                 v-if="mode === 'staff'"

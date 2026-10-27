@@ -322,6 +322,26 @@ describe('RefundsTable', () => {
         );
     });
 
+    it('names a refund made in the provider dashboard', async () => {
+        answerRefundsWith([{ ...REFUND, status: 'succeeded', reason: 'external' }]);
+        const wrapper = mount(RefundsTable, { global: GLOBAL });
+        await flushPromises();
+
+        expect(wrapper.get('[data-test="refund-row"]').text()).toContain(
+            "Refunded in the provider's dashboard"
+        );
+    });
+
+    it('says when the provider took a refund back', async () => {
+        answerRefundsWith([{ ...REFUND, reversedAt: '2026-03-09T10:00:00Z' }]);
+        const wrapper = mount(RefundsTable, { global: GLOBAL });
+        await flushPromises();
+
+        expect(wrapper.get('[data-test="refund-reversed-on"]').text()).toContain(
+            'Reversed by the provider on'
+        );
+    });
+
     it('shows a dash where a refund has no provider reference or failure', async () => {
         answerRefundsWith([
             {
@@ -397,6 +417,52 @@ describe('AttentionList', () => {
             since: '2026-03-04T10:00:00Z'
         }
     ];
+
+    it('says by how much an open refund overshoots what an outside refund left', async () => {
+        answerAttentionWith([
+            {
+                kind: 'refund_exceeds_remaining',
+                orderId: 'o5',
+                paymentId: 'pay-5',
+                refundId: 'r5',
+                amount: 50,
+                currency: 'EUR',
+                exceedsBy: 30,
+                since: '2026-03-09T10:00:00Z'
+            }
+        ]);
+        const wrapper = mount(AttentionList, { global: GLOBAL });
+        await flushPromises();
+
+        const row = wrapper.get('[data-test="attention-row"]');
+        expect(row.get('[data-test="attention-kind"]').text()).toContain('left no room');
+        expect(row.get('[data-test="attention-exceeds-by"]').text()).toBe('Over by €30.00');
+    });
+
+    it('names a refund the bank sent back, with the reason it bounced', async () => {
+        answerAttentionWith([
+            {
+                kind: 'reversed_refund',
+                orderId: 'o4',
+                paymentId: 'pay-4',
+                refundId: 'r4',
+                amount: 9,
+                currency: 'EUR',
+                failureReason: 'disputed',
+                since: '2026-03-09T10:00:00Z'
+            }
+        ]);
+        const wrapper = mount(AttentionList, { global: GLOBAL });
+        await flushPromises();
+
+        const row = wrapper.get('[data-test="attention-row"]');
+        expect(row.get('[data-test="attention-kind"]').text()).toBe(
+            'Sent back by the bank: return the money another way'
+        );
+        expect(row.get('[data-test="attention-failure-reason"]').text()).toBe(
+            "The buyer's bank took the money back in a dispute"
+        );
+    });
 
     it('lists every problem, even two with the same order and time', async () => {
         answerAttentionWith(ITEMS);

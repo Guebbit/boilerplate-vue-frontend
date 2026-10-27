@@ -113,14 +113,14 @@ describe('CU11 · I cancel a paid order and get my money back', () => {
                 // Written after the refund, off the request's path, so the page is read until it is there.
                 eventually(
                     () =>
-                        cy.apiAs<CreditNoteLike[]>(
+                        cy.apiAs<{ items: CreditNoteLike[] }>(
                             'user',
                             'GET',
                             `/orders/${orderId}/credit-notes`
                         ),
-                    (notes) => (notes?.length ?? 0) > 0
+                    (notes) => (notes?.items.length ?? 0) > 0
                 ).should((notes) => {
-                    expect(notes).to.have.length(1);
+                    expect(notes?.items).to.have.length(1);
                 });
                 cy.visit(`/en/orders/${orderId}`);
                 cy.get('[data-test=order-credit-note-row]').should('have.length', 1);

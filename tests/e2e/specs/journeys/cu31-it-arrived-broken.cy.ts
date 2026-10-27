@@ -192,9 +192,14 @@ describe('CU31 · It arrived broken', () => {
                         expect(payment?.displayStatus).to.equal('partially_refunded');
                     });
                     eventually(
-                        () => cy.apiAs<unknown[]>('user', 'GET', `/orders/${orderId}/credit-notes`),
-                        (notes) => (notes?.length ?? 0) > 0
-                    ).should((notes) => expect(notes).to.have.length(1));
+                        () =>
+                            cy.apiAs<{ items: unknown[] }>(
+                                'user',
+                                'GET',
+                                `/orders/${orderId}/credit-notes`
+                            ),
+                        (notes) => (notes?.items.length ?? 0) > 0
+                    ).should((notes) => expect(notes?.items).to.have.length(1));
                     orderMailTo('user', orderId, 'Your return was refunded');
                     cy.switchUser('user');
                     cy.visit(`/en/orders/${orderId}`);

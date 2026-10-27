@@ -113,11 +113,15 @@ describe('PaymentPanel', () => {
     it('offers the test cards in a development build, once the picker has loaded', () => {
         const { wrapper } = mountPanel();
 
-        // The picker is a lazy chunk, so it arrives a few ticks after the panel renders.
-        return vi.waitFor(() => {
-            expect(wrapper.find('[data-test=payment-method-select]').exists()).toBe(true);
-        });
-    });
+        // The picker is a lazy chunk: its first import compiles the SFC, which under CPU load
+        // outlasts vi.waitFor's default 1s. 15s bounds a hang, it is not a pause.
+        return vi.waitFor(
+            () => {
+                expect(wrapper.find('[data-test=payment-method-select]').exists()).toBe(true);
+            },
+            { timeout: 15_000 }
+        );
+    }, 20_000);
 
     /**
      * Every order that holds stock freezes a real `payBy`, card orders included — the
@@ -216,6 +220,25 @@ describe('PaymentPanel', () => {
             return nextRenderTick(wrapper).then(() => {
                 expect(wrapper.find('[data-test=payment-refund-pending]').exists()).toBe(false);
                 expect(wrapper.find('[data-test=payment-card-refund-pending]').exists()).toBe(true);
+            });
+        });
+
+        it('says the buyer will be asked how they want the money, not that it is retried', () => {
+            const { store, wrapper } = mountPanel();
+            store.payment = {
+                ...waitingRefund(),
+                provider: 'fake',
+                method: 'card',
+                refunds: [{ ...pendingRefund, status: 'failed', owedAnotherWay: true }]
+            };
+
+            return nextRenderTick(wrapper).then(() => {
+                expect(wrapper.find('[data-test=payment-card-refund-pending]').exists()).toBe(
+                    false
+                );
+                expect(wrapper.get('[data-test=payment-refund-owed-another-way]').text()).toContain(
+                    'agree another way'
+                );
             });
         });
     });

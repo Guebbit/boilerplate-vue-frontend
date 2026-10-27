@@ -2,7 +2,7 @@
  * @module
  * Pinia store for the returns module: a paginated search and a by-id read on
  * `useStructureCrudApi`, plus hand-written actions for the endpoints that are moves rather than
- * record edits — open (the withdrawal button), approve, decline, receive, close.
+ * record edits — open (the withdrawal button), approve, decline, receive, close, cancel.
  */
 import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
@@ -10,6 +10,7 @@ import { queryClient } from '@/infrastructure/query-client.ts';
 import { useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
 import {
     approveReturn,
+    cancelReturn,
     closeReturn,
     createReturn,
     declineReturn,
@@ -18,6 +19,7 @@ import {
     listReturns,
     receiveReturn
 } from '@api';
+import type { DeclineReason } from './schemas.ts';
 import type {
     CreateReturnRequest,
     ListReturnsParams,
@@ -157,14 +159,20 @@ export const useReturnsStore = defineStore('returns', () => {
     const approve = (returnId: string) => updateTarget(() => approveReturn(returnId), {}, returnId);
 
     /**
-     * Staff refuse a requested return, saying why — the customer is mailed the reason.
+     * Staff refuse a requested return with a reason code — the customer reads one sentence per code
+     * in their own language, and the message when there is one (required for `other`).
      *
      * @param returnId - Which return.
-     * @param reason - What the customer is told.
+     * @param reason - The code.
+     * @param message - What the customer is also told; required when the code is `other`.
      * @returns A promise resolving with the declined return.
      */
-    const decline = (returnId: string, reason: string) =>
-        updateTarget(() => declineReturn(returnId, { reason }), {}, returnId);
+    const decline = (returnId: string, reason: DeclineReason, message?: string) =>
+        updateTarget(
+            () => declineReturn(returnId, { reason, ...(message ? { message } : {}) }),
+            {},
+            returnId
+        );
 
     /**
      * Records that the goods arrived: they go back on sale and the customer is paid back. Step-up
@@ -204,6 +212,17 @@ export const useReturnsStore = defineStore('returns', () => {
     const close = (returnId: string, note?: string) =>
         updateTarget(() => closeReturn(returnId, note ? { note } : undefined), {}, returnId);
 
+    /**
+     * Staff end an approved return whose goods never came. Nothing is paid, restocked or emailed;
+     * the same lines can be returned again.
+     *
+     * @param returnId - Which return.
+     * @param note - Why, optional; kept in the audit log only.
+     * @returns A promise resolving with the canceled return.
+     */
+    const cancel = (returnId: string, note?: string) =>
+        updateTarget(() => cancelReturn(returnId, note ? { note } : undefined), {}, returnId);
+
     return {
         returns,
         returnsList,
@@ -226,6 +245,7 @@ export const useReturnsStore = defineStore('returns', () => {
         approve,
         decline,
         receive,
-        close
+        close,
+        cancel
     };
 });

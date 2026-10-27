@@ -34,6 +34,7 @@ import { formatCurrency, formatUtcDate } from '@/infrastructure/utils/formatters
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
 import CancelRemainderDialog from './CancelRemainderDialog.vue';
+import RecordWithdrawalDialog from './RecordWithdrawalDialog.vue';
 import ReturnRequestForm from './ReturnRequestForm.vue';
 import type {
     CancellableFulfillmentOrder,
@@ -126,6 +127,28 @@ const cancelMode = computed<'buyer' | 'staff' | undefined>(() => {
     if (props.canWithdraw) return 'buyer';
     return session.can('create', 'Refund') ? 'staff' : undefined;
 });
+
+/**
+ * Whether the caller acts for a buyer: not the buyer (the server offers them no withdrawal button
+ * and no blocked reason) and holding `update:Return`. They open a return, or record a withdrawal
+ * the buyer stated, on the buyer's behalf.
+ */
+const staffMode = computed(
+    () => !props.canWithdraw && !props.withdrawBlocked && session.can('update', 'Return')
+);
+
+/**
+ * Whether the server lets this staff caller record a withdrawal (it lists `withdrawal` among the
+ * reasons) and the order is not wholly returned already.
+ */
+const canRecordWithdrawal = computed(
+    () => staffMode.value && (options.value?.reasons ?? []).includes('withdrawal')
+);
+
+/**
+ * Whether the record-withdrawal dialog is open.
+ */
+const recordOpen = ref(false);
 
 /**
  * The remainders on offer: none for a caller with no door, and only those the server says THIS
@@ -225,6 +248,17 @@ const handleReturnOpened = () => {
 };
 
 /**
+ * A withdrawal was recorded for the buyer: re-read the lists and tell the page, whose order may
+ * have been cancelled or now awaits goods.
+ *
+ * @returns A promise settling once the lists are reloaded.
+ */
+const handleRecorded = () => {
+    emit('opened');
+    return loadOpened();
+};
+
+/**
  * A remainder was cancelled: re-read the lists (its refund shrank what is on offer) and tell the
  * page, whose order status may have moved.
  *
@@ -243,6 +277,7 @@ onMounted(loadOpened);
         v-if="
             canWithdraw ||
             withdrawBlocked ||
+            canRecordWithdrawal ||
             opened.length > 0 ||
             returnLines.length > 0 ||
             cancellable.length > 0
@@ -303,6 +338,21 @@ onMounted(loadOpened);
             </p>
         </template>
 
+        <template v-if="canRecordWithdrawal">
+            <p class="m-0 text-sm opacity-75" data-test="record-withdrawal-hint">
+                {{ t('withdrawal-panel.record-hint') }}
+            </p>
+            <v-btn
+                color="error"
+                variant="tonal"
+                :disabled="loading"
+                data-test="record-withdrawal-open"
+                @click="recordOpen = true"
+            >
+                {{ t('withdrawal-panel.button-record') }}
+            </v-btn>
+        </template>
+
         <ul
             v-if="cancellable.length > 0"
             class="m-0 flex list-none flex-col gap-2 p-0"
@@ -344,6 +394,8 @@ onMounted(loadOpened);
             :order-id="orderId"
             :lines="returnLines"
             :reasons="formReasons"
+            :staff="staffMode"
+            :exceptions="options?.exceptions ?? []"
             @opened="handleReturnOpened"
         />
 
@@ -364,6 +416,12 @@ onMounted(loadOpened);
                 </v-chip>
             </li>
         </ul>
+
+        <RecordWithdrawalDialog
+            v-model="recordOpen"
+            :order-id="orderId"
+            @recorded="handleRecorded"
+        />
 
         <CancelRemainderDialog
             v-if="cancelling && cancelMode"

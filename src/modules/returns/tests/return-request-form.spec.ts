@@ -38,11 +38,15 @@ const ALL_REASONS: ReturnReason[] = ['withdrawal', 'defective', 'wrong_item', 'o
  *
  * @returns the wrapper and the store
  */
-const mountForm = (lines: ReturnOptionLine[] = LINES, reasons: ReturnReason[] = ALL_REASONS) => {
+const mountForm = (
+    lines: ReturnOptionLine[] = LINES,
+    reasons: ReturnReason[] = ALL_REASONS,
+    extra: { staff?: boolean; exceptions?: ReturnReason[] } = {}
+) => {
     const store = useReturnsStore();
     vi.spyOn(store, 'openReturn').mockResolvedValue(aReturn());
     const wrapper = mount(ReturnRequestForm, {
-        props: { orderId: 'o1', lines, reasons },
+        props: { orderId: 'o1', lines, reasons, ...extra },
         global: { plugins: [vuetify, i18n] },
         attachTo: document.body
     });
@@ -244,5 +248,69 @@ describe('ReturnRequestForm', () => {
         await openForm(wrapper);
 
         expect(wrapper.find('[data-test=return-line-quantity-p1]').exists()).toBe(false);
+    });
+});
+
+describe('staff opening a return for the buyer', () => {
+    it('asks the day the buyer asked and sends it, with the reason', async () => {
+        const { wrapper, store } = mountForm(LINES, ALL_REASONS, { staff: true });
+        await openForm(wrapper);
+        await pick(wrapper, 'p1');
+        await chooseReason(wrapper, 'defective');
+
+        await wrapper.get('[data-test=stated-at-date] input').setValue('2026-01-02T03:04');
+        await wrapper.get('[data-test=return-request-form]').trigger('submit');
+        await flushPromises();
+
+        expect(store.openReturn).toHaveBeenCalledWith(
+            expect.objectContaining({
+                reason: 'defective',
+                requestedAt: new Date(2026, 0, 2, 3, 4).toISOString()
+            })
+        );
+    });
+
+    it('sends no day when none is typed: the server uses now', async () => {
+        const { wrapper, store } = mountForm(LINES, ALL_REASONS, { staff: true });
+        await openForm(wrapper);
+        await pick(wrapper, 'p1');
+        await chooseReason(wrapper, 'other');
+
+        await wrapper.get('[data-test=return-request-form]').trigger('submit');
+        await flushPromises();
+
+        expect(vi.mocked(store.openReturn).mock.calls[0][0]).not.toHaveProperty('requestedAt');
+    });
+
+    it('refuses a day in the future', async () => {
+        const { wrapper, store } = mountForm(LINES, ALL_REASONS, { staff: true });
+        await openForm(wrapper);
+        await pick(wrapper, 'p1');
+        await chooseReason(wrapper, 'defective');
+
+        await wrapper.get('[data-test=stated-at-date] input').setValue('2999-01-01T00:00');
+        await wrapper.get('[data-test=return-request-form]').trigger('submit');
+        await flushPromises();
+
+        expect(store.openReturn).not.toHaveBeenCalled();
+    });
+
+    it('labels a reason past its deadline as an exception, and leaves made-to-order lines open', async () => {
+        const lines = [{ productId: 'p1', title: 'Engraved', quantity: 1, withdrawable: false }];
+        const { wrapper } = mountForm(lines, ALL_REASONS, { staff: true, exceptions: ['other'] });
+        await openForm(wrapper);
+        await chooseReason(wrapper, 'other');
+
+        expect(wrapper.find('[data-test=return-exception-hint]').exists()).toBe(true);
+        expect(
+            wrapper.get('[data-test=return-line-pick-p1] input').attributes('disabled')
+        ).toBeUndefined();
+    });
+
+    it('does not ask the buyer for a day', async () => {
+        const { wrapper } = mountForm();
+        await openForm(wrapper);
+
+        expect(wrapper.find('[data-test=stated-at-fields]').exists()).toBe(false);
     });
 });
