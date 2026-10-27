@@ -553,8 +553,8 @@ describe('useProductsStore', () => {
             });
         });
 
-        describe('fetchProductAdmin', () => {
-            it('requests the admin route and unwraps a single-record envelope', () => {
+        describe('fetchProductForEdit', () => {
+            it('reads the one product route and keeps its translations map', () => {
                 const ADMIN_PRODUCT = { ...PRODUCT, translations: { en: { title: 'Gadget' } } };
                 vi.mocked(orvalMutator).mockImplementation(
                     (config: { url?: string; method?: string }) =>
@@ -562,11 +562,11 @@ describe('useProductsStore', () => {
                 );
 
                 return useProductsStore()
-                    .fetchProductAdmin('p1')
+                    .fetchProductForEdit('p1')
                     .then((result) => {
-                        // The dedicated admin route, not the public single-language one.
+                        // The one product route: staff get `translations` on it, there is no admin URL.
                         expect(lastRequest()).toMatchObject({
-                            url: '/products/p1/admin',
+                            url: '/products/p1',
                             method: 'GET'
                         });
                         expect(result).toEqual(ADMIN_PRODUCT);
@@ -665,7 +665,7 @@ describe('useProductsStore', () => {
 
                 return store.fetchFacets().then((result) => {
                     expect(lastRequest()).toMatchObject({
-                        url: '/products/categories',
+                        url: '/products/facets',
                         method: 'GET'
                     });
                     // Both halves matter: the view reads `store.facets` to render the chips, and

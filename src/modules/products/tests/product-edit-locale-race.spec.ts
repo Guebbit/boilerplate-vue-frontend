@@ -2,7 +2,7 @@
  * @module
  * Reproduces the fetch-ordering race `ProductEdit.vue`'s tab bar must survive: the page's own,
  * independent `fetchTranslationLocales()` (`GET /locales`) answering before `loadAdminProduct()`
- * (`GET /products/{id}/admin`) does. Before the fix, `openTags` unconditionally opened the
+ * (`GET /products/{id}`) does. Before the fix, `openTags` unconditionally opened the
  * fallback tab the moment the fallback tag was known, and the template's
  * `form.translations[tag]!.title` threw once Vue re-rendered against a `form.translations` still
  * empty — a render error `@vue/test-utils` does not surface as a rejected promise, since it fires
@@ -63,7 +63,7 @@ const LOCALES_RESPONSE = {
 };
 
 /**
- * A `GET /products/p1/admin` payload with a row for the fallback locale only.
+ * A `GET /products/p1` payload with a row for the fallback locale only.
  */
 const ADMIN_RESPONSE = {
     id: 'p1',
@@ -99,7 +99,7 @@ describe('the edit form under a locales-before-admin-record race', () => {
 
         vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) => {
             if (config.url === '/locales') return locales.promise;
-            if (config.url === '/products/p1/admin') return admin.promise;
+            if (config.url === '/products/p1' && config.method === 'GET') return admin.promise;
             return Promise.resolve(undefined);
         });
 
@@ -126,7 +126,7 @@ describe('the edit form under a locales-before-admin-record race', () => {
                 expect(wrapper.find('[data-test=translation-tab-en]').exists()).toBe(false);
                 expect(wrapper.find('[data-test=translation-title-field]').exists()).toBe(false);
 
-                admin.resolve(parseOrvalFixture('GET', '/products/p1/admin', ADMIN_RESPONSE));
+                admin.resolve(parseOrvalFixture('GET', '/products/p1', ADMIN_RESPONSE));
                 return flushPromises();
             })
             .then(() => {

@@ -81,8 +81,8 @@ flowchart LR
     B -->|cancel or expiry| E[allowance given back: backordered down]
 ```
 
-- The limit is set from a dialog on the board row (`PUT /inventory/levels/{id}/backorder-limit`),
-  offered only to a holder of the stock write (`create:StockMovement`). It is absolute and
+- The limit is set from a dialog on the board row (`PATCH /inventory/levels/{id}`),
+  offered only to a holder of `update:StockLevel`. It is absolute and
   idempotent, may sit below what is outstanding (only new orders are refused), and is **not** a
   movement: it leaves no ledger row.
 - The ledger has a "Backordered" column for the third counter, and two reasons: `preorder` (units
@@ -141,15 +141,15 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 #### Endpoints called
 
-| Call                                         | Response schema               |
-| -------------------------------------------- | ----------------------------- |
-| `POST /inventory/levels/{productId}/adjust`  | `AdjustStockResponse`         |
-| `GET /inventory/levels(\?.*)?`               | `ListInventoryLevelsResponse` |
-| `GET /inventory/movements(\?.*)?`            | `ListStockMovementsResponse`  |
-| `GET /inventory/preorders(\?.*)?`            | `ListPreorderLevelsResponse`  |
-| `PUT /inventory/levels/{id}/backorder-limit` | `SetBackorderLimitResponse`   |
-| `POST /inventory/levels/{productId}/receive` | `ReceiveStockResponse`        |
-| `POST /inventory/reservations/sweep`         | `SweepReservationsResponse`   |
+| Call                                         | Response schema                |
+| -------------------------------------------- | ------------------------------ |
+| `POST /inventory/levels/{productId}/adjust`  | `AdjustStockResponse`          |
+| `GET /inventory/levels(\?.*)?`               | `ListInventoryLevelsResponse`  |
+| `GET /inventory/movements(\?.*)?`            | `ListStockMovementsResponse`   |
+| `GET /inventory/preorders(\?.*)?`            | `ListPreorderLevelsResponse`   |
+| `PATCH /inventory/levels/{id}`               | `UpdateInventoryLevelResponse` |
+| `POST /inventory/levels/{productId}/receive` | `ReceiveStockResponse`         |
+| `POST /inventory/reservations/sweep`         | `SweepReservationsResponse`    |
 
 Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 

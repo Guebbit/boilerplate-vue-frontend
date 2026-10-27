@@ -17,10 +17,10 @@ import { toPathname } from './url.ts';
 const tags = new Map<string, string>();
 
 /**
- * Paths that are another VIEW of the same resource share its tag: the editor's read
- * (`/products/{id}/admin`) and the hard-delete spelling (`/users/{id}/hard`) validate the same row.
+ * The hard-delete spelling (`/users/{id}/hard`) is another path for the same row, so it shares
+ * the row's tag.
  */
-const VIEW_SUFFIX = /\/(?:admin|hard)$/;
+const VIEW_SUFFIX = /\/hard$/;
 
 /**
  * Methods that answer with the row's new state and its new tag.

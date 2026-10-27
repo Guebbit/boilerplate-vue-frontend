@@ -47,8 +47,8 @@ const inventoryStore = useInventoryStore();
 const { levels, levelsTotal, loading } = storeToRefs(inventoryStore);
 
 /**
- * The session, asked whether the preorder limit is this account's to set: it is a stock write
- * (`create:StockMovement`), so the manager, who only reads stock, sees the numbers without the button.
+ * The session, asked whether the preorder limit is this account's to set: it is an edit of the level
+ * (`update:StockLevel`), so the manager, who only reads stock, sees the numbers without the button.
  */
 const session = useSessionStore();
 
@@ -208,7 +208,7 @@ onMounted(() => {
             <span class="inline-flex items-center gap-1">
                 {{ item.backorderLimit ?? t('inventory-page.unlimited') }}
                 <v-btn
-                    v-if="session.can('create', 'StockMovement')"
+                    v-if="session.can('update', 'StockLevel')"
                     :size="rowActionSize"
                     variant="text"
                     icon

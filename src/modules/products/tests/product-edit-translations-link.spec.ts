@@ -90,8 +90,8 @@ beforeEach(() => {
                     fallback: 'en'
                 })
             );
-        if (config.url === '/products/p1/admin')
-            return Promise.resolve(parseOrvalFixture('GET', '/products/p1/admin', ADMIN_PRODUCT));
+        if (config.url === '/products/p1' && config.method === 'GET')
+            return Promise.resolve(parseOrvalFixture('GET', '/products/p1', ADMIN_PRODUCT));
         return Promise.resolve(undefined);
     });
     return loadLocale('en');

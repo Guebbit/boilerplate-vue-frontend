@@ -1,7 +1,7 @@
 /**
  * @module
  * `StockBoard.vue` — the preorder columns and the limit control. The control is a stock write
- * (`create:StockMovement`), so a reader without it sees the numbers and no button; the button opens
+ * (`update:StockLevel`), so a reader without it sees the numbers and no button; the button opens
  * the dialog on its own row.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -77,7 +77,7 @@ describe('StockBoard preorder columns', () => {
                     [aLevel()],
                     [
                         ['read', 'StockLevel'],
-                        ['create', 'StockMovement']
+                        ['update', 'StockLevel']
                     ]
                 );
                 return flushPromises().then(() => writer);
@@ -95,7 +95,7 @@ describe('StockBoard preorder columns', () => {
             ],
             [
                 ['read', 'StockLevel'],
-                ['create', 'StockMovement']
+                ['update', 'StockLevel']
             ]
         );
 

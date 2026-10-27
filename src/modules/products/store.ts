@@ -19,7 +19,6 @@ import {
     searchProducts,
     getCatalogueFacets,
     getProductById,
-    getProductAdmin,
     createProduct as apiCreateProduct,
     createProductWithMultipart,
     updateProductById,
@@ -31,7 +30,6 @@ import {
 } from '@api';
 import type {
     Product,
-    ProductAdmin,
     CreateProductRequest,
     UpdateProductRequest,
     SearchProductsRequest
@@ -343,28 +341,26 @@ export const useProductsStore = defineStore('products', () => {
         );
 
     /**
-     * The admin record for one product: every language it has a row for, not just the caller's
-     * resolved one — what `ProductEdit.vue` needs to populate its per-locale tabs.
+     * One product for the edit form: `GET /products/{id}`, which answers every language in
+     * `translations` to a caller holding `read:Translation`, beside the resolved `title`.
      *
-     * A plain ref rather than a `useStructureCrudApi` slice: `GET /products/{id}/admin` is
-     * deliberately uncached — it's the screen someone is actively editing — so there is no
-     * dictionary or `staleTime` for it to share with the public read.
+     * Not a `useStructureCrudApi` slice: `forced` skips the shared cache, since the screen someone
+     * is actively editing must show the row as it is now, and the own `key` bucket disables the
+     * form's controls apart from other reads.
      *
      * @param productId - Which product.
-     * @returns A promise resolving with the admin record.
+     * @returns A promise resolving with the product.
      */
-    const fetchProductAdmin = (productId: string): Promise<ProductAdmin | undefined> =>
-        fetchAny(() => getProductAdmin(productId), {
-            // Own bucket so the edit form's controls disable apart from other reads; `forced`
-            // keeps the record uncached, as the screen someone is actively editing must be.
-            key: ['admin'],
+    const fetchProductForEdit = (productId: string): Promise<Product | undefined> =>
+        fetchAny(() => getProductById(productId), {
+            key: ['edit'],
             forced: true
         });
 
     /**
-     * Whether the admin record is being read.
+     * Whether the edit form's product is being read.
      */
-    const loadingProductAdmin = computed(() => isLoading(['admin']));
+    const loadingProductForEdit = computed(() => isLoading(['edit']));
 
     /**
      * Reads many products at once — the join a cart or wishlist needs for its lines, in one
@@ -438,8 +434,8 @@ export const useProductsStore = defineStore('products', () => {
         watchSearchProducts,
         fetchProduct,
         watchProduct,
-        fetchProductAdmin,
-        loadingProductAdmin,
+        fetchProductForEdit,
+        loadingProductForEdit,
         createProduct,
         updateProduct,
         deleteProduct,

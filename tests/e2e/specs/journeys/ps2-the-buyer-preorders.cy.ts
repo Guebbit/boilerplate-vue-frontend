@@ -4,7 +4,7 @@
  * PS2 · The buyer preorders. A product with a release date ahead, and room in its preorder
  * allowance, is bought like any other: the page offers "Preorder", the cart says so on the line,
  * and the placed order names the date it ships from. Nothing is held on a shelf: a preorder is an
- * allowance, which only the admin opens (`PUT /inventory/levels/{id}/backorder-limit`).
+ * allowance, which only the admin opens (`PATCH /inventory/levels/{id}`).
  *
  * When the one place in the allowance is taken and paid for, the next shopper is told it is out of
  * stock instead of being offered a preorder that the cart would then refuse.
@@ -40,7 +40,7 @@ describe('PS2 · The buyer preorders', () => {
         cy.step('the editor makes the preorder, and the admin opens its allowance');
         cy.loginAs('editor');
         createProductThroughTheForm(`PS2 preorder ${unique()}`, releaseDateIn(60)).then((id) => {
-            cy.apiAs('admin', 'PUT', `/inventory/levels/${id}/backorder-limit`, {
+            cy.apiAs('admin', 'PATCH', `/inventory/levels/${id}`, {
                 backorderLimit: 5
             });
 

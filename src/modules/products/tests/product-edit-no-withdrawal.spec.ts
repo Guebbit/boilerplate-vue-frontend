@@ -109,7 +109,7 @@ const mountHydrated = (adminRecord: Record<string, unknown>) => {
     const admin = deferred<unknown>();
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) => {
         if (config.url === '/locales') return locales.promise;
-        if (config.url === '/products/p1/admin') return admin.promise;
+        if (config.url === '/products/p1' && config.method === 'GET') return admin.promise;
         if (config.method === 'PATCH')
             return Promise.resolve(parseOrvalFixture('PATCH', '/products/p1', echo({})));
         return Promise.resolve(undefined);
@@ -125,7 +125,7 @@ const mountHydrated = (adminRecord: Record<string, unknown>) => {
     locales.resolve(parseOrvalFixture('GET', '/locales', LOCALES_RESPONSE));
     return flushPromises()
         .then(() => {
-            admin.resolve(parseOrvalFixture('GET', '/products/p1/admin', echo(adminRecord)));
+            admin.resolve(parseOrvalFixture('GET', '/products/p1', echo(adminRecord)));
             return flushPromises();
         })
         .then(() => wrapper);

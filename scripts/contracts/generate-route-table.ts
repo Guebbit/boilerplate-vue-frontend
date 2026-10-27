@@ -13,11 +13,11 @@
  *
  * A row's pattern is fully anchored (`^…$`), which stops a `[^/]+` segment absorbing an adjacent
  * literal one at a DIFFERENT depth. It does NOT stop one at the SAME depth: `/products/{id}` and
- * `/products/categories` both match `GET /products/categories`, and `resolveResponseSchema`'s
+ * `/products/facets` both match `GET /products/facets`, and `resolveResponseSchema`'s
  * `find()` returns whichever row comes first. So every row with FEWER `{param}` segments sorts
  * before a same-method sibling with more — the literal, more specific shape wins — exactly the
  * order five hand-written files already enforced one pair at a time before this generator existed
- * (`/products/categories`, `/cart/shipping-method`, `/account/oauth/providers`,
+ * (`/products/facets`, `/cart/shipping-method`, `/account/oauth/providers`,
  * `/locales/tenants`).
  *
  * `--check` compares against the committed file and exits 1 on a mismatch — the same contract

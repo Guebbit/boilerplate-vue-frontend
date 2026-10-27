@@ -11,9 +11,9 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Edit form for a product: fetches the ADMIN record (`GET /products/{id}/admin`, every language
- * the row has — never the public, single-language `GET /products/{id}`), populates one tab per
- * language it holds, and submits through the store's multipart-aware, merging `updateProduct`.
+ * Edit form for a product: fetches `GET /products/{id}`, whose `translations` (every language the
+ * row has) the API sends to a caller holding `read:Translation`, populates one tab per language it
+ * holds, and submits through the store's multipart-aware, merging `updateProduct`.
  * Removing a tab that existed on the fetched record sends `null` for that locale; removing one
  * opened this session and never saved just drops it — see `handleRemoveLocale`.
  */
@@ -82,12 +82,12 @@ const { id } = defineProps<{
 /**
  * Product store's admin-record fetch and update actions.
  */
-const { fetchProductAdmin, updateProduct } = useProductsStore();
+const { fetchProductForEdit, updateProduct } = useProductsStore();
 
 /**
  * Whether the admin record is currently loading.
  */
-const { loadingProductAdmin: loadingAdmin } = storeToRefs(useProductsStore());
+const { loadingProductForEdit: loadingAdmin } = storeToRefs(useProductsStore());
 
 /**
  * Router, asked whether the optional `EntityTranslations` route exists in this build.
@@ -122,17 +122,17 @@ const { locales, fallbackLocale, fetchTranslationLocales } = useTranslationLocal
 void fetchTranslationLocales();
 
 /**
- * The fetched admin record: every language this product has a row for, plus its price/stock/
- * image — what this whole page renders from. `GET /products/{id}/admin` is deliberately
- * uncached, so this is a plain fetch rather than a `useStructureCrudApi` slice.
+ * The fetched record: every language this product has a row for (`translations`), plus its
+ * price/stock/image — what this whole page renders from. Read uncached, so this is a plain fetch
+ * rather than a `useStructureCrudApi` slice.
  */
-const adminProduct = ref<Awaited<ReturnType<typeof fetchProductAdmin>>>();
+const adminProduct = ref<Awaited<ReturnType<typeof fetchProductForEdit>>>();
 
 /**
  * (Re)loads the admin record for `id`.
  */
 const loadAdminProduct = (productId: string) =>
-    fetchProductAdmin(productId).then((data) => {
+    fetchProductForEdit(productId).then((data) => {
         adminProduct.value = data;
         return data;
     });
