@@ -57,6 +57,26 @@ Groups are organised by concern, with same-namespace tools together where that h
   maintained, and the only npm package `HumanCheck.vue` depends on: its `turnstile` branch loads
   Cloudflare's vendor script directly rather than adding a wrapper for one `render()` call.
 
+## Install scripts
+
+`.npmrc` sets `strict-allow-scripts`: a package's install script runs only if `package.json`
+`allowScripts` names it. Entries are by **package name**, not `name@version`
+(`allow-scripts-pin=false`).
+
+- **Why not pinned:** dependabot's grouped bumps cannot re-approve a pin, so every bump failed
+  `npm ci` with `ESTRICTALLOWSCRIPTS`.
+- **What still guards a version change:** the lockfile integrity hash and the human merge. The
+  7-day dependabot cooldown covers dependabot only, not a local `npm install`.
+- **What guards production:** the backend image installs with `--ignore-scripts`.
+- **Counter-view:** npm's own default and LavaMoat pin versions, so a hijacked release of an
+  approved package cannot run its script. pnpm, Bun and Yarn Berry approve by name.
+- **A new script is still reviewed once:** `npm view <pkg>@<version> scripts`, then
+  `npm install-scripts approve <pkg>` (alias `approve-scripts`), never `--all`.
+- **Deny a script that does nothing:** `@parcel/watcher` is `false` because its install step is a
+  no-op without `npm_config_build_from_source`; the binaries arrive as optional dependencies.
+
+The paired backend's dependency-vetting page holds the longer argument.
+
 ## Related pages
 
 - [Package Scripts](./package-scripts.md)

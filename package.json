@@ -167,17 +167,17 @@
         "npm": ">=11.16.0"
     },
     "allowScripts": {
-        "@hyperjump/json-pointer@0.9.8": true,
-        "@hyperjump/json-schema@0.23.5": true,
-        "@hyperjump/json-schema-core@0.28.5": true,
-        "@hyperjump/pact@0.2.5": true,
-        "cypress@15.18.1": true,
-        "esbuild@0.28.1": true,
-        "esbuild@0.21.5": true,
-        "fsevents@2.3.3": true,
-        "msw@2.15.0": true,
-        "unrs-resolver@1.12.2": true,
-        "vue-demi@0.14.10": true,
+        "@hyperjump/json-pointer": true,
+        "@hyperjump/json-schema": true,
+        "@hyperjump/json-schema-core": true,
+        "@hyperjump/pact": true,
+        "cypress": true,
+        "esbuild": true,
+        "fsevents": true,
+        "msw": true,
+        "unrs-resolver": true,
+        "vue-demi": true,
+        "@parcel/watcher": false,
         "@scarf/scarf": false
     }
 }
