@@ -433,8 +433,8 @@ watchOrder(() => id, { onError: onMissingRecord });
                     <div v-if="currentOrder" data-tour="order-shipment">
                         <ShipmentPanel
                             :order-id="currentOrder.id"
-                            :shipping-method-id="currentOrder.shippingMethod"
                             :can-start="currentOrder.actions?.process ?? false"
+                            :shipping-address="shippingAddressText"
                             @moved="fetchOrder(currentOrder.id, { forced: true })"
                         />
                     </div>

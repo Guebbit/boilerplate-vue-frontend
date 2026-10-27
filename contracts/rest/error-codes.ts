@@ -60,7 +60,7 @@ export const ERROR_CODES = {
     DELIVERY_NOT_DIGITAL: 'DELIVERY_NOT_DIGITAL',
     /** 409 — Only an open or in-progress fulfillment order can be put on hold. */
     DELIVERY_NOT_HOLDABLE: 'DELIVERY_NOT_HOLDABLE',
-    /** 409 — A digital fulfillment order has nothing to ship; fulfil it instead. */
+    /** 409 — A digital fulfillment order has nothing to ship (fulfil it instead), and a digital shipment has no tracking code to set. */
     DELIVERY_NOT_PHYSICAL: 'DELIVERY_NOT_PHYSICAL',
     /** 409 — The fulfillment order is not on hold, or waits for stock and is released only by the stock arriving. */
     DELIVERY_NOT_RELEASABLE: 'DELIVERY_NOT_RELEASABLE',
@@ -68,8 +68,6 @@ export const ERROR_CODES = {
     DELIVERY_NOT_SHIPPABLE: 'DELIVERY_NOT_SHIPPABLE',
     /** 422 — A forced shipment or delivery requires a reason and none was supplied. */
     DELIVERY_OVERRIDE_REASON_REQUIRED: 'DELIVERY_OVERRIDE_REASON_REQUIRED',
-    /** 422 — Shipping a tracked method requires a tracking code and none was supplied. */
-    DELIVERY_TRACKING_CODE_REQUIRED: 'DELIVERY_TRACKING_CODE_REQUIRED',
     /** 409 — Another account already holds this email address — on signup, or on a profile email change. */
     EMAIL_ALREADY_USED: 'EMAIL_ALREADY_USED',
     /** 409 — The account's email address is verified already, so there is nothing to resend. */
@@ -140,7 +138,7 @@ export const ERROR_CODES = {
     MISSING_FIELD_NAME: 'MISSING_FIELD_NAME',
     /** 404 — The addressed resource does not exist, or the caller may not be told that it does. */
     NOT_FOUND: 'NOT_FOUND',
-    /** 409 — The order cannot be redirected: something has shipped, or it has no shipping address (a pickup, a digital order). */
+    /** 409 — The order cannot be redirected: nothing is left to send (every unit has shipped or been cancelled), it is over, or it has no shipping address (a pickup, a digital order). */
     ORDER_ADDRESS_LOCKED: 'ORDER_ADDRESS_LOCKED',
     /** 404 — The order exists but has no such credit note. */
     ORDER_CREDIT_NOTE_NOT_ISSUED: 'ORDER_CREDIT_NOTE_NOT_ISSUED',
@@ -170,8 +168,10 @@ export const ERROR_CODES = {
     ORDER_OVERRIDE_AWAITING_STOCK: 'ORDER_OVERRIDE_AWAITING_STOCK',
     /** 409 — This status transition is not on the admin override's allowed list. */
     ORDER_OVERRIDE_NOT_ALLOWED: 'ORDER_OVERRIDE_NOT_ALLOWED',
-    /** 409 — An admin-created order names a product that is hidden (`active: false`), off sale (`purchasable: false`) or soft-deleted: refused exactly as checkout refuses it. `errors[].details.productIds` names each one. */
+    /** 409 — An admin-created order names a product that has been removed (soft-deleted). Hidden and off-sale products can be sold by hand, so only a removed one is refused. `errors[].details.productIds` names each one. */
     ORDER_PRODUCT_UNAVAILABLE: 'ORDER_PRODUCT_UNAVAILABLE',
+    /** 422 — The corrected shipping address names a country outside the shop's ship-to list (`Shop.shipToCountries`), the list checkout refuses by; VAT is charged at the shop's own rates. */
+    ORDER_SHIP_TO_COUNTRY_NOT_SUPPORTED: 'ORDER_SHIP_TO_COUNTRY_NOT_SUPPORTED',
     /** 413 — The request body exceeds this deployment's size limit. */
     PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
     /** 409 — This deployment has no card payment provider, so a card payment cannot be started. */

@@ -9,7 +9,7 @@
     "shipment-panel": {
         "title": "Shipping",
         "not-shipped-yet": "Nothing to ship yet.",
-        "button-start": "Start fulfilment",
+        "button-start": "Mark in progress",
         "started": "Fulfilment started.",
         "arrives-in": "Arrives in {count} shipments"
     },
@@ -52,6 +52,8 @@
         "status-shipped": "Shipped",
         "status-delivered": "Delivered",
         "tracking": "Tracking: {code}",
+        "awaiting-tracking": "Tracking code missing",
+        "sent-to": "Sent to: {address}",
         "shipped-at": "Shipped {date}",
         "delivered-at": "Delivered {date}",
         "label-tracking-code": "Tracking code",
@@ -68,9 +70,7 @@
         "hint-remaining": "{remaining} remaining",
         "error-lines-invalid": "Ship at least one item, and no more than remains on each line.",
         "label-tracking-code": "Tracking code",
-        "tracking-code-required": "Required for this shipping method",
-        "label-force": "Force (override)",
-        "label-force-reason": "Reason for override",
+        "tracking-code-hint": "Express is tracked: add the code now, or later from the shipment",
         "button-ship": "Mark shipped",
         "success": "Shipment recorded."
     },
