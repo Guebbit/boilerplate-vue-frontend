@@ -167,6 +167,18 @@ onMounted(refresh);
                         </v-chip>
                     </ItemDetailField>
                     <ItemDetailField
+                        v-if="currentReturn.preferredRemedy"
+                        :label="t('return-target-page.label-preferred-remedy')"
+                        :value="t(`return-target-page.remedy-${currentReturn.preferredRemedy}`)"
+                        data-test="return-preferred-remedy"
+                    />
+                    <ItemDetailField
+                        v-if="currentReturn.remedy"
+                        :label="t('return-target-page.label-remedy')"
+                        :value="t(`return-target-page.remedy-${currentReturn.remedy}`)"
+                        data-test="return-remedy"
+                    />
+                    <ItemDetailField
                         v-if="currentReturn.receivedAt"
                         :label="t('return-target-page.label-received')"
                         :value="formatDateTime(currentReturn.receivedAt)"

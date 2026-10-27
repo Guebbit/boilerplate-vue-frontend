@@ -13076,7 +13076,9 @@ export const ListReturnsResponse = zod.strictObject({
                 .max(listReturnsResponseItemsItemDeclineMessageMax)
                 .optional(),
             decidedAt: zod.iso.datetime({ offset: true }).optional(),
+            preferredRemedy: zod.enum(['refund', 'replace', 'repair']).optional(),
             receivedAt: zod.iso.datetime({ offset: true }).optional(),
+            remedy: zod.enum(['refund', 'replace', 'repair']).optional(),
             handlingDeduction: zod
                 .number()
                 .min(listReturnsResponseItemsItemHandlingDeductionMin)
@@ -13152,6 +13154,7 @@ export const CreateReturnBody = zod.strictObject({
         .optional(),
     requestedAt: zod.iso.datetime({ offset: true }).optional(),
     statedVia: zod.enum(['phone', 'email', 'letter', 'other']).optional(),
+    preferredRemedy: zod.enum(['refund', 'replace', 'repair']).optional(),
     lines: zod
         .array(
             zod.strictObject({
@@ -13222,7 +13225,9 @@ export const CreateReturnResponse = zod.strictObject({
         .optional(),
     declineMessage: zod.string().max(createReturnResponseDeclineMessageMax).optional(),
     decidedAt: zod.iso.datetime({ offset: true }).optional(),
+    preferredRemedy: zod.enum(['refund', 'replace', 'repair']).optional(),
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
+    remedy: zod.enum(['refund', 'replace', 'repair']).optional(),
     handlingDeduction: zod.number().min(createReturnResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(createReturnResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -13377,7 +13382,9 @@ export const GetReturnByIdResponse = zod.strictObject({
         .optional(),
     declineMessage: zod.string().max(getReturnByIdResponseDeclineMessageMax).optional(),
     decidedAt: zod.iso.datetime({ offset: true }).optional(),
+    preferredRemedy: zod.enum(['refund', 'replace', 'repair']).optional(),
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
+    remedy: zod.enum(['refund', 'replace', 'repair']).optional(),
     handlingDeduction: zod.number().min(getReturnByIdResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(getReturnByIdResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -13457,7 +13464,9 @@ export const ApproveReturnResponse = zod.strictObject({
         .optional(),
     declineMessage: zod.string().max(approveReturnResponseDeclineMessageMax).optional(),
     decidedAt: zod.iso.datetime({ offset: true }).optional(),
+    preferredRemedy: zod.enum(['refund', 'replace', 'repair']).optional(),
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
+    remedy: zod.enum(['refund', 'replace', 'repair']).optional(),
     handlingDeduction: zod.number().min(approveReturnResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(approveReturnResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -13542,7 +13551,9 @@ export const DeclineReturnResponse = zod.strictObject({
         .optional(),
     declineMessage: zod.string().max(declineReturnResponseDeclineMessageMax).optional(),
     decidedAt: zod.iso.datetime({ offset: true }).optional(),
+    preferredRemedy: zod.enum(['refund', 'replace', 'repair']).optional(),
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
+    remedy: zod.enum(['refund', 'replace', 'repair']).optional(),
     handlingDeduction: zod.number().min(declineReturnResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(declineReturnResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -13559,7 +13570,7 @@ export const DeclineReturnResponse = zod.strictObject({
 });
 /**
  * The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409.
- * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). Which of the returned units go back on sale is staff's call, per line: `lines[].restock` (absent means all of them). A broken unit set to 0 never reaches the shelf, so it is never handed to a backorder buyer, and the refund does not change: restocking is about the goods, not the money. A parcel lost on its way back is received with 0 on every line: the shop bears that risk, so the refund is owed, and nothing goes on sale. The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed (its refund record is already on the payment, follow it there and on `GET /payments/attention`), `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
+ * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). Which of the returned units go back on sale is staff's call, per line: `lines[].restock` (absent means all of them). A broken unit set to 0 never reaches the shelf, so it is never handed to a backorder buyer, and the refund does not change: restocking is about the goods, not the money. A defect or a wrong item has a ladder of remedies (Directive 2019/771 Art. 13): `remedy` says which one staff give — `refund` (the default, as above), `replace` (the same product is sent again on the SAME order through the ordinary shipping door; the return closes with no money moving) or `repair` (the goods are repaired and posted back by staff; the return closes with no money moving and the guarantee is extended by 12 months, once per order, Directive 2024/1799). Staff may pick a remedy other than the buyer's `preferredRemedy`. A withdrawal and a goodwill return always refund (`RETURN_REMEDY_INVALID` otherwise), and a defect or a wrong item never takes a `handlingDeduction`. A replacement the order cannot send again answers 409 `DELIVERY_NOT_REOPENABLE`. A parcel lost on its way back is received with 0 on every line: the shop bears that risk, so the refund is owed, and nothing goes on sale. The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed (its refund record is already on the payment, follow it there and on `GET /payments/attention`), `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
  * @summary Record that the returned goods arrived
  */
 export const receiveReturnPathIdMax = 64;
@@ -13582,6 +13593,7 @@ export const receiveReturnBodyLinesItemProductIdMax = 64;
 export const receiveReturnBodyLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const receiveReturnBodyLinesItemRestockMin = 0;
 export const ReceiveReturnBody = zod.strictObject({
+    remedy: zod.enum(['refund', 'replace', 'repair']).optional(),
     handlingDeduction: zod.number().min(receiveReturnBodyHandlingDeductionMin).optional(),
     lines: zod
         .array(
@@ -13652,7 +13664,9 @@ export const ReceiveReturnResponse = zod.strictObject({
         .optional(),
     declineMessage: zod.string().max(receiveReturnResponseDeclineMessageMax).optional(),
     decidedAt: zod.iso.datetime({ offset: true }).optional(),
+    preferredRemedy: zod.enum(['refund', 'replace', 'repair']).optional(),
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
+    remedy: zod.enum(['refund', 'replace', 'repair']).optional(),
     handlingDeduction: zod.number().min(receiveReturnResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(receiveReturnResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -17055,7 +17069,9 @@ export const CloseReturnResponse = zod.strictObject({
         .optional(),
     declineMessage: zod.string().max(closeReturnResponseDeclineMessageMax).optional(),
     decidedAt: zod.iso.datetime({ offset: true }).optional(),
+    preferredRemedy: zod.enum(['refund', 'replace', 'repair']).optional(),
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
+    remedy: zod.enum(['refund', 'replace', 'repair']).optional(),
     handlingDeduction: zod.number().min(closeReturnResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(closeReturnResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -17141,7 +17157,9 @@ export const CancelReturnResponse = zod.strictObject({
         .optional(),
     declineMessage: zod.string().max(cancelReturnResponseDeclineMessageMax).optional(),
     decidedAt: zod.iso.datetime({ offset: true }).optional(),
+    preferredRemedy: zod.enum(['refund', 'replace', 'repair']).optional(),
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
+    remedy: zod.enum(['refund', 'replace', 'repair']).optional(),
     handlingDeduction: zod.number().min(cancelReturnResponseHandlingDeductionMin).optional(),
     refundAmount: zod.number().min(cancelReturnResponseRefundAmountMin).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),

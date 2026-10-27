@@ -206,6 +206,56 @@ describe('ReturnRequestForm', () => {
         expect(wrapper.find('[data-test=return-request-form]').exists()).toBe(false);
     });
 
+    it('offers the remedy choice and its legal notice only for a faulty or wrong item', async () => {
+        const { wrapper } = mountForm();
+        await openForm(wrapper);
+        expect(wrapper.find('[data-test=return-remedy]').exists()).toBe(false);
+
+        await chooseReason(wrapper, 'other');
+        expect(wrapper.find('[data-test=return-remedy]').exists()).toBe(false);
+
+        await chooseReason(wrapper, 'defective');
+        expect(wrapper.get('[data-test=return-remedy]').text()).toContain(
+            'extends your guarantee by 12 months'
+        );
+    });
+
+    it('sends the remedy the buyer would like with a defect', async () => {
+        const { wrapper, store } = mountForm();
+        await openForm(wrapper);
+        await pick(wrapper, 'p2');
+        await chooseReason(wrapper, 'defective');
+        await wrapper.get('[data-test=return-remedy-repair] input').setValue(true);
+
+        await wrapper.get('[data-test=return-request-form]').trigger('submit');
+        await flushPromises();
+
+        expect(store.openReturn).toHaveBeenCalledWith({
+            orderId: 'o1',
+            reason: 'defective',
+            preferredRemedy: 'repair',
+            lines: [{ productId: 'p2', quantity: 1 }]
+        });
+    });
+
+    it('drops a wish when the reason changes to one with no choice', async () => {
+        const { wrapper, store } = mountForm();
+        await openForm(wrapper);
+        await pick(wrapper, 'p2');
+        await chooseReason(wrapper, 'defective');
+        await wrapper.get('[data-test=return-remedy-replace] input').setValue(true);
+        await chooseReason(wrapper, 'other');
+
+        await wrapper.get('[data-test=return-request-form]').trigger('submit');
+        await flushPromises();
+
+        expect(store.openReturn).toHaveBeenCalledWith({
+            orderId: 'o1',
+            reason: 'other',
+            lines: [{ productId: 'p2', quantity: 1 }]
+        });
+    });
+
     it('leaves the note out when it is blank', async () => {
         const { wrapper, store } = mountForm();
         await openForm(wrapper);

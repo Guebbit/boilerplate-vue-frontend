@@ -177,6 +177,58 @@ describe('ReturnStaffActions', () => {
         expect(store.receive).toHaveBeenCalledWith('r1', { handlingDeduction: 4.5 });
     });
 
+    describe('the remedy for a faulty or wrong item', () => {
+        const receivable = {
+            approve: false,
+            decline: false,
+            receive: true,
+            close: false,
+            cancel: false
+        };
+
+        it('offers no remedy and keeps the deduction for a withdrawal', () => {
+            const { wrapper } = mountActions(aReturn({ actions: receivable }));
+
+            expect(wrapper.find('[data-test=return-receive-remedy]').exists()).toBe(false);
+            expect(wrapper.find('[data-test=return-receive-deduction]').exists()).toBe(true);
+        });
+
+        it('preselects what the buyer asked for and drops the deduction under the guarantee', () => {
+            const { wrapper } = mountActions(
+                aReturn({ reason: 'defective', preferredRemedy: 'repair', actions: receivable })
+            );
+
+            expect(wrapper.find('[data-test=return-receive-deduction]').exists()).toBe(false);
+            const repair = wrapper.get<HTMLInputElement>(
+                '[data-test=return-receive-remedy-repair] input'
+            );
+            expect(repair.element.checked).toBe(true);
+        });
+
+        it('sends the remedy staff chose, which may differ from the buyer’s wish', async () => {
+            const { wrapper, store } = mountActions(
+                aReturn({ reason: 'defective', preferredRemedy: 'repair', actions: receivable })
+            );
+
+            await wrapper.get('[data-test=return-receive-remedy-replace] input').setValue(true);
+            await wrapper.get('[data-test=return-receive-form]').trigger('submit');
+            await flushPromises();
+
+            expect(store.receive).toHaveBeenCalledWith('r1', { remedy: 'replace' });
+        });
+
+        it('defaults to a refund when the buyer stated no wish', async () => {
+            const { wrapper, store } = mountActions(
+                aReturn({ reason: 'wrong_item', actions: receivable })
+            );
+
+            await wrapper.get('[data-test=return-receive-form]').trigger('submit');
+            await flushPromises();
+
+            expect(store.receive).toHaveBeenCalledWith('r1', { remedy: 'refund' });
+        });
+    });
+
     it('blocks the moves in place when the server refuses', async () => {
         const { wrapper, store } = mountActions(
             aReturn({

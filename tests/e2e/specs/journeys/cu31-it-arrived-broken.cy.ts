@@ -12,9 +12,6 @@
  */
 import { centsOf, eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
 
-/** What the warehouse keeps back for handling on the first return, in cents. */
-const DEDUCTION_CENTS = 100;
-
 /** The slice of an order this story reads. */
 interface OrderLike {
     items: { product: { id: string; price: number }; quantity: number }[];
@@ -162,20 +159,18 @@ describe('CU31 · It arrived broken', () => {
                     cy.get('[data-test=return-request-open]').should('not.exist');
 
                     cy.step(
-                        'the warehouse receives it with a deduction: the goods only, no shipping'
+                        'the warehouse receives it as a refund: the goods only, no shipping, and no deduction on a faulty item'
                     );
                     cy.switchUser('warehouse');
                     cy.visit(`/en/returns/${firstId}`);
-                    cy.get('[data-test=return-receive-deduction] input').type(
-                        (DEDUCTION_CENTS / 100).toFixed(2)
-                    );
+                    cy.get('[data-test=return-receive-deduction]').should('not.exist');
+                    cy.get('[data-test=return-receive-remedy-refund] input').should('be.checked');
                     cy.get('[data-test=return-receive]').click();
                     cy.get('[data-test=return-receive-form]').should('not.exist');
                     centsOf('[data-test=return-refund]').should((refund) => {
-                        expect(refund, 'one unit less the deduction, no shipping').to.equal(
-                            a.cents - DEDUCTION_CENTS
-                        );
+                        expect(refund, 'one unit, no shipping').to.equal(a.cents);
                     });
+                    cy.get('[data-test=return-remedy]').should('contain.text', 'Refund');
                     cy.visit('/en/inventory');
                     cy.get(`[data-test=movement-row]:has(a[href$="/orders/${orderId}"])`)
                         .find('[data-test=movement-reason]')
@@ -186,9 +181,7 @@ describe('CU31 · It arrived broken', () => {
                         () => paymentOfOrder<PaymentLike>('admin', orderId),
                         (payment) => inCents(Number(payment?.amountRefunded)) > 0
                     ).should((payment) => {
-                        expect(inCents(Number(payment?.amountRefunded))).to.equal(
-                            a.cents - DEDUCTION_CENTS
-                        );
+                        expect(inCents(Number(payment?.amountRefunded))).to.equal(a.cents);
                         expect(payment?.displayStatus).to.equal('partially_refunded');
                     });
                     eventually(
@@ -233,14 +226,12 @@ describe('CU31 · It arrived broken', () => {
                         const paid = inCents(Number(before?.amount));
                         eventually(
                             () => paymentOfOrder<PaymentLike>('admin', orderId),
-                            (payment) =>
-                                inCents(Number(payment?.amountRefunded)) > a.cents - DEDUCTION_CENTS
+                            (payment) => inCents(Number(payment?.amountRefunded)) > a.cents
                         ).should((payment) => {
                             expect(
                                 inCents(Number(payment?.amountRefunded)),
-                                'everything paid comes back but the deduction, shipping included'
-                            ).to.equal(paid - DEDUCTION_CENTS);
-                            expect(payment?.displayStatus).to.not.equal('refunded');
+                                'everything paid comes back, shipping included'
+                            ).to.equal(paid);
                         });
                     });
 

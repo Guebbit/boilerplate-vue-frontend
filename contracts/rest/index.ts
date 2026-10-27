@@ -5070,6 +5070,17 @@ export const ReturnPolicyException = {
 } as const;
 
 /**
+ * What the buyer is given for a faulty or wrong item (Directive 2019/771 Art. 13): `repair` and `replace` come first and the buyer chooses; `refund` is the money back. Choosing `repair` extends the guarantee by 12 months (Directive 2024/1799). Only a `defective` or `wrong_item` return has a choice; every other reason is refunded.
+ */
+export type ReturnRemedy = (typeof ReturnRemedy)[keyof typeof ReturnRemedy];
+
+export const ReturnRemedy = {
+    refund: 'refund',
+    replace: 'replace',
+    repair: 'repair'
+} as const;
+
+/**
  * What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the key that names the act and a status the act can run from.
  */
 export interface ReturnActions {
@@ -5119,8 +5130,12 @@ export interface Return {
     declineMessage?: string;
     /** When staff decided it — or, for a withdrawal, when it was opened already approved. */
     decidedAt?: string;
+    /** What the buyer asked for when they opened a `defective` or `wrong_item` return. A wish, not a promise: staff choose the `remedy` when the goods arrive. */
+    preferredRemedy?: ReturnRemedy;
     /** When the goods arrived and went back on sale. */
     receivedAt?: string;
+    /** What staff gave when the goods arrived. Absent until then, and on a return born closed. `replace` and `repair` close the return with no money moving and hand its units back to the buyer, so they are returnable again. */
+    remedy?: ReturnRemedy;
     /**
      * An amount kept back from the refund for handling damage (Art. 14(2)), entered when the goods were received. Absent when nothing was kept.
      * @minimum 0
@@ -5178,6 +5193,8 @@ export interface CreateReturnRequest {
     /** Staff only: when the buyer asked, or for a withdrawal when they stated it (Art. 11(2) judges timing on the day it was sent). Required for a staff withdrawal, optional otherwise (default now). Never in the future, never before the order was made. The buyer does not send it. */
     requestedAt?: string;
     statedVia?: StaffStatementChannel;
+    /** What the buyer would like for a faulty or wrong item: a repair, a replacement or the money back. Only for `defective` and `wrong_item` (422 `RETURN_REMEDY_INVALID` otherwise). Staff decide at receipt; the buyer is told that choosing repair extends the guarantee by 12 months. */
+    preferredRemedy?: ReturnRemedy;
     /**
      * What comes back. Absent means everything on the order that is still left to return — the usual shape of a withdrawal. Not allowed on a `cancellation`: the whole remainder is its lines.
      * @minItems 1
@@ -5256,8 +5273,10 @@ export type ReceiveReturnRequestLinesItem = {
 };
 
 export interface ReceiveReturnRequest {
+    /** What the buyer is given. Absent means `refund`. `replace` and `repair` are for a `defective` or `wrong_item` return only (422 `RETURN_REMEDY_INVALID` otherwise). */
+    remedy?: ReturnRemedy;
     /**
-     * Handling damage to keep back from the refund (Art. 14(2)), a decimal in the return's currency. Absent means none. More than the refund is worth is refused.
+     * Handling damage to keep back from the refund (Art. 14(2)), a decimal in the return's currency. Absent means none. More than the refund is worth is refused, and so is any amount on a `defective` or `wrong_item` return (a guarantee remedy is free of charge).
      * @minimum 0
      */
     handlingDeduction?: number;
@@ -10952,7 +10971,7 @@ export const declineReturn = (
 
 /**
  * The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409.
- * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). Which of the returned units go back on sale is staff's call, per line: `lines[].restock` (absent means all of them). A broken unit set to 0 never reaches the shelf, so it is never handed to a backorder buyer, and the refund does not change: restocking is about the goods, not the money. A parcel lost on its way back is received with 0 on every line: the shop bears that risk, so the refund is owed, and nothing goes on sale. The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed (its refund record is already on the payment, follow it there and on `GET /payments/attention`), `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
+ * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). Which of the returned units go back on sale is staff's call, per line: `lines[].restock` (absent means all of them). A broken unit set to 0 never reaches the shelf, so it is never handed to a backorder buyer, and the refund does not change: restocking is about the goods, not the money. A defect or a wrong item has a ladder of remedies (Directive 2019/771 Art. 13): `remedy` says which one staff give — `refund` (the default, as above), `replace` (the same product is sent again on the SAME order through the ordinary shipping door; the return closes with no money moving) or `repair` (the goods are repaired and posted back by staff; the return closes with no money moving and the guarantee is extended by 12 months, once per order, Directive 2024/1799). Staff may pick a remedy other than the buyer's `preferredRemedy`. A withdrawal and a goodwill return always refund (`RETURN_REMEDY_INVALID` otherwise), and a defect or a wrong item never takes a `handlingDeduction`. A replacement the order cannot send again answers 409 `DELIVERY_NOT_REOPENABLE`. A parcel lost on its way back is received with 0 on every line: the shop bears that risk, so the refund is owed, and nothing goes on sale. The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed (its refund record is already on the payment, follow it there and on `GET /payments/attention`), `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
  * @summary Record that the returned goods arrived
  */
 export const receiveReturn = (
