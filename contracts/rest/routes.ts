@@ -172,7 +172,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "POST", pattern: /^\/delivery\/fulfillment-orders\/[^/]+\/release$/, schemaName: "ReleaseFulfillmentOrderResponse", bodySchemaName: undefined, module: "delivery" },
     { method: "POST", pattern: /^\/delivery\/fulfillment-orders\/[^/]+\/shipments$/, schemaName: "ShipFulfillmentOrderResponse", bodySchemaName: "ShipFulfillmentOrderBody", module: "delivery" },
     { method: "GET", pattern: /^\/delivery\/fulfillment-orders\/[^/]+$/, schemaName: "GetFulfillmentOrderResponse", bodySchemaName: undefined, module: "delivery" },
-    { method: "POST", pattern: /^\/delivery\/shipments\/[^/]+\/deliver$/, schemaName: "DeliverShipmentResponse", bodySchemaName: "DeliverShipmentBody", module: "delivery" },
+    { method: "POST", pattern: /^\/delivery\/shipments\/[^/]+\/deliver$/, schemaName: "DeliverShipmentResponse", bodySchemaName: undefined, module: "delivery" },
     { method: "POST", pattern: /^\/delivery\/shipments\/[^/]+\/lost$/, schemaName: "MarkShipmentLostResponse", bodySchemaName: "MarkShipmentLostBody", module: "delivery" },
     { method: "GET", pattern: /^\/delivery\/shipments\/[^/]+$/, schemaName: "GetShipmentResponse", bodySchemaName: undefined, module: "delivery" },
     { method: "PATCH", pattern: /^\/delivery\/shipments\/[^/]+$/, schemaName: "UpdateShipmentResponse", bodySchemaName: "UpdateShipmentBody", module: "delivery" },
