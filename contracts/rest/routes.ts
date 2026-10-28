@@ -25,7 +25,6 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "POST", pattern: /^\/account\/2fa\/backup-codes$/, schemaName: "RegenerateBackupCodesResponse", bodySchemaName: "RegenerateBackupCodesBody", module: "account" },
     { method: "POST", pattern: /^\/account\/2fa\/disable$/, schemaName: "DisableTwoFactorResponse", bodySchemaName: "DisableTwoFactorBody", module: "account" },
     { method: "GET", pattern: /^\/account\/2fa$/, schemaName: "GetTwoFactorStatusResponse", bodySchemaName: undefined, module: "account" },
-    { method: "GET", pattern: /^\/account\/abilities$/, schemaName: "GetMyAbilitiesResponse", bodySchemaName: undefined, module: "account" },
     { method: "GET", pattern: /^\/account\/addresses$/, schemaName: "ListAddressesResponse", bodySchemaName: undefined, module: "addresses" },
     { method: "POST", pattern: /^\/account\/addresses$/, schemaName: "AddAddressResponse", bodySchemaName: "AddAddressBody", module: "addresses" },
     { method: "POST", pattern: /^\/account\/email-change\/confirm$/, schemaName: "ConfirmEmailChangeResponse", bodySchemaName: "ConfirmEmailChangeBody", module: "account" },

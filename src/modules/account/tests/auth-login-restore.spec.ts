@@ -17,6 +17,7 @@ import {
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import * as schemas from '@api/schemas';
+import { accountView } from '../../../../tests/support/unit/account-view.ts';
 
 wireModulesIntoCore();
 
@@ -46,15 +47,9 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /account/abilities': {
-            platform: [],
-            tenant: [['read', 'Product', { active: true, deletedAt: null }]],
-            version: 36,
-            subjects: ['Product']
-        },
         'POST /account/login': DELETION_PENDING,
         'POST /account/login/restore': { token: 'restored-jwt' },
-        'GET /account': { id: 'u1', username: 'ada', email: 'ada@example.com' }
+        'GET /account': accountView({ id: 'u1', username: 'ada', email: 'ada@example.com' })
     };
 });
 

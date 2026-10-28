@@ -235,6 +235,117 @@ export interface Account {
     purchaseHold?: PurchaseHold;
 }
 
+export type PackedRulesItemItem = string | 0 | 1 | { [key: string]: unknown };
+
+/**
+ * CASL packed rules — `[action, subject, conditions | 0, inverted 1 | 0, fields, reason]`,
+ * with trailing absent members omitted. `0` stands in for an absent `conditions` or
+ * `inverted: false` when a later member is present.
+ */
+export type PackedRules = PackedRulesItemItem[][];
+
+/**
+ * What the caller may do, as CASL's packed-rule format — the shape `unpackRules`
+ * takes. A tuple per rule rather than an object, which is what makes shipping a few
+ * dozen of them cheap.
+ *
+ * BOTH SCOPES ARE ANSWERED, and that is the whole reason this is not a single rule
+ * list. A request resolves to exactly one scope — the one the key it is asking about
+ * declares — but a CLIENT renders screens from both at once: a shop's catalogue and
+ * the installation's health dashboard sit in one navigation. Publishing only the
+ * caller's tenant rules left every platform screen with no rule to grey out, so it
+ * was gated on a tenant key that happened to correlate, which is exactly the
+ * hand-maintained guess these rules exist to abolish.
+ *
+ * The two lists never merge. A tenant rule can never satisfy a platform key and the
+ * reverse is equally impossible (`shared/authorization-keys.yaml`'s one invariant),
+ * so a client builds ONE ABILITY PER SCOPE and asks the one that owns the subject.
+ *
+ * The client's copy has NO AUTHORITY: it decides what to render, never what is
+ * allowed, and every request is re-evaluated server-side. Published so a client greys
+ * out what it would be refused from the same rules the server enforces, rather than
+ * from a hand-maintained duplicate that drifts — the drift is silent until somebody
+ * is shown a button that answers 403.
+ */
+export interface Abilities {
+    /**
+     * `true` when the caller holds a staff role that grants nothing yet because no
+     * authenticator app is armed. The rules above are then the account's customer
+     * ones; a client shows an "enrol to use your staff tools" prompt instead of
+     * a staff menu. `false` for everyone else.
+     */
+    secondFactorRequired: boolean;
+    /**
+     * The tenant-scope roles this caller may assign through `POST`/`PUT`/`PATCH
+     * /users`, in the order `shared/authorization-roles.yaml` declares them.
+     * Computed by the same rule as the `403`/`422` those writes answer, so a role
+     * picker built from it offers exactly what the write accepts. Empty for a
+     * caller who may grant nothing. It has NO
+     * AUTHORITY: the write is re-checked server-side.
+     */
+    grantableRoles: string[];
+    /**
+     * The shop `tenant`'s rules are about. Absent when the caller has no tenant
+     * membership at all — a pure platform operator administers the installation
+     * rather than acting inside one shop.
+     */
+    tenantId?: string;
+    /**
+     * What the caller may do INSIDE their shop. Empty for a caller with no tenant
+     * membership.
+     */
+    tenant: PackedRules;
+    /**
+     * What the caller may do ACROSS the installation — health, metrics, the
+     * operational audit. Empty for everyone but a platform operator, which is
+     * most callers: an operator is not a super-member and holds no shop's keys.
+     */
+    platform: PackedRules;
+    /**
+     * The permission model's own version, bumped when the RULES change rather than
+     * when a role does. A client caches these; this is what tells it the cache is
+     * about a different model, not merely a different person. One number for both
+     * lists — the keys file they are declared in is one file.
+     */
+    version: number;
+}
+
+export interface SessionActivity {
+    /** When the session last saw a real request — now, for a touch. */
+    lastActiveAt: string;
+    /**
+     * How long the session may then sit unused before it ends. Absent when no idle timeout applies to this account (a shopper, or the timeout is switched off).
+     * @minimum 1
+     */
+    idleTimeoutSeconds?: number;
+}
+
+export interface AccountView {
+    id: Id;
+    email: Email;
+    username: string;
+    role?: string;
+    active?: boolean;
+    verifiedAt?: string;
+    readonly pendingEmail?: string;
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+    locale?: Locale;
+    phone?: string;
+    website?: string;
+    analyticsConsent?: boolean;
+    analyticsConsentAt?: string;
+    termsAcceptedAt?: string;
+    termsVersion?: string;
+    twoFactorEnabledAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
+    purchaseHold?: PurchaseHold;
+    abilities: Abilities;
+    activity: SessionActivity;
+}
+
 /**
  * What the requesting caller may do to this account, one flag per endpoint. Each is the route's permission key AND the protection of staff accounts: an account that holds a staff role is `false` for all of them unless the caller holds `assign:Role`; the caller's own account is judged by the keys alone. A flag also reads the account's state, so a control never offers a move the server would refuse with a 409.
  */
@@ -1188,89 +1299,6 @@ export interface EmailVerificationRequested {
     resendAfter: number;
 }
 
-export type PackedRulesItemItem = string | boolean | { [key: string]: unknown } | string[];
-
-/**
- * CASL packed rules — `[action, subject, conditions?, fields?, inverted?, reason?]`,
- * with trailing absent members omitted.
- */
-export type PackedRules = PackedRulesItemItem[][];
-
-/**
- * What the caller may do, as CASL's packed-rule format — the shape `unpackRules`
- * takes. A tuple per rule rather than an object, which is what makes shipping a few
- * dozen of them cheap.
- *
- * BOTH SCOPES ARE ANSWERED, and that is the whole reason this is not a single rule
- * list. A request resolves to exactly one scope — the one the key it is asking about
- * declares — but a CLIENT renders screens from both at once: a shop's catalogue and
- * the installation's health dashboard sit in one navigation. Publishing only the
- * caller's tenant rules left every platform screen with no rule to grey out, so it
- * was gated on a tenant key that happened to correlate, which is exactly the
- * hand-maintained guess this endpoint exists to abolish.
- *
- * The two lists never merge. A tenant rule can never satisfy a platform key and the
- * reverse is equally impossible (`shared/authorization-keys.yaml`'s one invariant),
- * so a client builds ONE ABILITY PER SCOPE and asks the one that owns the subject.
- *
- * The client's copy has NO AUTHORITY: it decides what to render, never what is
- * allowed, and every request is re-evaluated server-side. Published so a client greys
- * out what it would be refused from the same rules the server enforces, rather than
- * from a hand-maintained duplicate that drifts — the drift is silent until somebody
- * is shown a button that answers 403.
- */
-export interface Abilities {
-    /**
-     * `true` when the caller holds a staff role that grants nothing yet because no
-     * authenticator app is armed. The rules above are then the account's customer
-     * ones; a client shows an "enrol to use your staff tools" prompt instead of
-     * a staff menu. `false` for everyone else, an anonymous caller and an API key
-     * included.
-     */
-    secondFactorRequired: boolean;
-    /**
-     * Every CASL subject a declared key names, deduplicated and sorted — the
-     * `Order`/`Product`/`ApiKey`/... a rule's second element may be. Published so
-     * a client's own `meta.can` rules are typed against the real set rather than
-     * an unchecked string a typo can silently fail closed on.
-     */
-    subjects: string[];
-    /**
-     * The tenant-scope roles this caller may assign through `POST`/`PUT`/`PATCH
-     * /users`, in the order `shared/authorization-roles.yaml` declares them.
-     * Computed by the same rule as the `403`/`422` those writes answer, so a role
-     * picker built from it offers exactly what the write accepts. Empty for a
-     * caller who may grant nothing, an anonymous one included. It has NO
-     * AUTHORITY: the write is re-checked server-side.
-     */
-    grantableRoles: string[];
-    /**
-     * The shop `tenant`'s rules are about. Absent when the caller has no tenant
-     * membership at all — a pure platform operator administers the installation
-     * rather than acting inside one shop.
-     */
-    tenantId?: string;
-    /**
-     * What the caller may do INSIDE their shop. Empty for a caller with no tenant
-     * membership; for an anonymous visitor it is the `guest` role's rules, which
-     * are a value in the model rather than an absence.
-     */
-    tenant: PackedRules;
-    /**
-     * What the caller may do ACROSS the installation — health, metrics, the
-     * operational audit. Empty for everyone but a platform operator, which is
-     * most callers: an operator is not a super-member and holds no shop's keys.
-     */
-    platform: PackedRules;
-    /**
-     * The permission model's own version, bumped when the RULES change rather than
-     * when a role does. A client caches these; this is what tells it the cache is
-     * about a different model, not merely a different person. One number for both
-     * lists — the keys file they are declared in is one file.
-     */
-    version: number;
-}
-
 /**
  * An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. Length bounds only, like `PasswordNew`: a login attempt is not the place to also announce the site's password policy to whoever is guessing it.
  * @minLength 8
@@ -1296,6 +1324,8 @@ export interface AuthTokens {
     token?: string;
     /** The `ses_…` session id, to send back as `Authorization: Bearer ses_…`. Present only for a `cookie`-mode login that asked for `transport: bearer` (or a re-proof by such a client); that login sets no cookie. */
     sessionToken?: string;
+    /** The signed-in account, with its abilities and idle clock — exactly what `GET /account` answers, so a sign-in needs no follow-up read. Present on the answers that START a session (login, its second step, restore); absent on a re-mint after a password or factor change. */
+    account?: AccountView;
 }
 
 export interface PasswordCheckRequest {
@@ -1589,6 +1619,8 @@ export interface PasswordResetConfirmRequest {
 export interface RefreshTokenResponse {
     /** New access JWT */
     token: string;
+    /** The caller's abilities as they stand now, so a role granted mid-session shows within one refresh. */
+    abilities: Abilities;
 }
 
 /**
@@ -5958,16 +5990,6 @@ export interface ApiKeyCreated {
     secret: string;
 }
 
-export interface SessionActivity {
-    /** When the session last saw a real request — now, for a touch. */
-    lastActiveAt: string;
-    /**
-     * How long the session may then sit unused before it ends. Absent when no idle timeout applies to this account (a shopper, or the timeout is switched off).
-     * @minimum 1
-     */
-    idleTimeoutSeconds?: number;
-}
-
 /**
  * The deployment's `NODE_SESSION_MODE`.
  */
@@ -8425,11 +8447,22 @@ export const createAnalyticsEvent = (
 };
 
 /**
- * Returns the full profile of the currently authenticated user
+ * Returns the full profile of the currently authenticated user, plus two read-only
+ * members that ride with it so a client needs no second call: `abilities` (the
+ * rules the SERVER enforces, packed for the client to evaluate) and `activity` (the
+ * session's idle clock).
+ *
+ * `abilities` is the same object a sign-in and a token refresh carry. The client's
+ * copy has NO AUTHORITY: it decides what to render, never what is allowed, and every
+ * request is re-evaluated server-side. A non-passive `GET /account` also counts as
+ * activity, so a restore needs no separate touch.
+ *
+ * The `ETag` is computed over the stored account, not over this body: a role change
+ * does not make an `If-Match` taken from an earlier read answer `412`.
  * @summary Current user info
  */
-export const getAccount = (options?: SecondParameter<typeof orvalMutator<Account>>) => {
-    return orvalMutator<Account>({ url: `/account`, method: 'GET' }, options);
+export const getAccount = (options?: SecondParameter<typeof orvalMutator<AccountView>>) => {
+    return orvalMutator<AccountView>({ url: `/account`, method: 'GET' }, options);
 };
 
 /**
@@ -8604,35 +8637,6 @@ export const resendPendingEmail = (
         { url: `/account/email-change/resend`, method: 'POST' },
         options
     );
-};
-
-/**
- * The rules the SERVER enforces, packed for a client to evaluate.
- *
- * Published so a client can grey out what it would be refused, from the same rules
- * rather than from a copy of them — a hand-maintained duplicate of "what may I do"
- * drifts, and the drift is silent until somebody is shown a button that answers 403.
- *
- * Answered in BOTH scopes, as two separate lists. A request acts in exactly one — the
- * one its key declares — but a client renders the shop's screens and the
- * installation's health dashboard from a single navigation, so it needs both and must
- * never merge them.
- *
- * **The client's copy has no authority.** It decides what to RENDER, never what is
- * allowed; every request is re-evaluated server-side. Published here because the
- * alternative is every client inventing the same guess.
- *
- * `grantableRoles` lists the tenant-scope roles the caller may assign through the user
- * writes, computed by the same rule as their `403`/`422`; a role picker reads it instead of a
- * hard-coded list. Empty for an anonymous caller. It has no authority either.
- *
- * Answered for an anonymous caller too: a stranger holds the `guest` role, which is
- * a value in the model rather than an absence, and a shop front that greys nothing
- * out for a visitor is a shop front that lies twice.
- * @summary The caller's own authorization rules
- */
-export const getMyAbilities = (options?: SecondParameter<typeof orvalMutator<Abilities>>) => {
-    return orvalMutator<Abilities>({ url: `/account/abilities`, method: 'GET' }, options);
 };
 
 /**
@@ -12682,7 +12686,6 @@ export type CancelPendingEmailChangeResult = NonNullable<
     Awaited<ReturnType<typeof cancelPendingEmailChange>>
 >;
 export type ResendPendingEmailResult = NonNullable<Awaited<ReturnType<typeof resendPendingEmail>>>;
-export type GetMyAbilitiesResult = NonNullable<Awaited<ReturnType<typeof getMyAbilities>>>;
 export type ChangePasswordResult = NonNullable<Awaited<ReturnType<typeof changePassword>>>;
 export type CheckPasswordBreachedResult = NonNullable<
     Awaited<ReturnType<typeof checkPasswordBreached>>

@@ -22,6 +22,8 @@ import {
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
+import { accountView } from '../../../../tests/support/unit/account-view.ts';
+
 import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
@@ -60,19 +62,8 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'POST /account/login': { token: 'jwt-token' },
-        'GET /account': USER,
-        // The rules the server would publish for this viewer. The store unpacks them with CASL's
-        // own reader, so a fixture that is not packed is a fixture no client could use.
-        'GET /account/abilities': {
-            platform: [],
-            tenant: [
-                ['read', 'Product', { active: true, deletedAt: null }],
-                ['read', 'Order', { userId: 'u1', deletedAt: null }]
-            ],
-            version: 36,
-            subjects: ['Order', 'Product']
-        },
+        'POST /account/login': { token: 'jwt-token', account: accountView(USER) },
+        'GET /account': accountView(USER),
         'POST /account/password/reset': undefined,
         'POST /account/password/reset/confirm': undefined,
         'POST /account/logout': undefined,
@@ -81,19 +72,12 @@ beforeEach(() => {
 });
 
 describe('login', () => {
-    it('stores the token, then loads the profile with it', () =>
+    it('stores the token and adopts the account view the answer carries, with no further call', () =>
         useAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => {
-                // Order is the assertion: a profile fetched before the token is attached is an
-                // anonymous request, which answers 401 rather than the account. The rules follow
-                // the record, because they are about the person it just identified.
-                expect(requestedUrls()).toEqual([
-                    '/account/login',
-                    '/account',
-                    '/account/abilities',
-                    '/account/sessions/current/touch'
-                ]);
+                // One call: the answer carries the account, its rules and the idle clock.
+                expect(requestedUrls()).toEqual(['/account/login']);
                 expect(useSessionStore().accessToken).toBe('jwt-token');
             }));
 
@@ -103,7 +87,7 @@ describe('login', () => {
      */
     it('in cookie mode, signs in from a login that carries no token', () => {
         useSessionStore().mode = 'cookie';
-        responses['POST /account/login'] = {};
+        responses['POST /account/login'] = { account: accountView(USER) };
 
         return useAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
@@ -111,12 +95,7 @@ describe('login', () => {
                 const session = useSessionStore();
                 expect(session.accessToken).toBeUndefined();
                 expect(session.isAuth).toBe(true);
-                expect(requestedUrls()).toEqual([
-                    '/account/login',
-                    '/account',
-                    '/account/abilities',
-                    '/account/sessions/current/touch'
-                ]);
+                expect(requestedUrls()).toEqual(['/account/login']);
             });
     });
 
@@ -127,7 +106,7 @@ describe('login', () => {
             mode: 'cookie',
             lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
         };
-        responses['POST /account/login'] = {};
+        responses['POST /account/login'] = { account: accountView(USER) };
 
         return useSessionStore()
             .loadSessionMode()
@@ -176,7 +155,6 @@ describe('login', () => {
             }));
 
     it('answers each rule an unrestricted caller was published, so their screens resolve', () => {
-        responses['GET /account'] = { ...USER, role: 'admin' };
         /*
          * The RULES, not the role name. `can` asks what the server said this person may do — a
          * name is who they are, and only the rules say what that lets them do. There is no
@@ -184,16 +162,14 @@ describe('login', () => {
          * holds, so a fixture that published a `manage` rule would test a shape the server
          * cannot send.
          */
-        responses['GET /account/abilities'] = {
-            platform: [],
-            tenant: [
+        responses['POST /account/login'] = {
+            token: 'jwt-token',
+            account: accountView({ ...USER, role: 'admin' }, [
                 ['read', 'Product'],
                 ['create', 'Product'],
                 ['update', 'Product'],
                 ['delete', 'Product']
-            ],
-            version: 36,
-            subjects: ['Product']
+            ])
         };
 
         return useAuthStore()
@@ -210,12 +186,9 @@ describe('login', () => {
     });
 
     it('drops the rules when the session ends, so nothing stays unlocked', () => {
-        responses['GET /account'] = { ...USER, role: 'admin' };
-        responses['GET /account/abilities'] = {
-            platform: [],
-            tenant: [['delete', 'Product']],
-            version: 36,
-            subjects: ['Product']
+        responses['POST /account/login'] = {
+            token: 'jwt-token',
+            account: accountView({ ...USER, role: 'admin' }, [['delete', 'Product']])
         };
 
         return useAuthStore()
@@ -231,6 +204,17 @@ describe('login', () => {
                 // arrive with the next fetch.
                 expect(session.can('delete', 'Product')).toBe(false);
                 expect(session.tenantAbility.can('delete', 'Product')).toBe(false);
+            });
+    });
+
+    it('reads GET /account when the answer carries no account view', () => {
+        responses['POST /account/login'] = { token: 'jwt-token' };
+
+        return useAuthStore()
+            .login('ada@example.com', 'hunter2hunter2')
+            .then(() => {
+                expect(requestedUrls()).toEqual(['/account/login', '/account']);
+                expect(useSessionStore().isAuth).toBe(true);
             });
     });
 

@@ -9,6 +9,7 @@ import { server } from '../../../support/unit/msw-server.ts';
 import { z } from 'zod';
 import { createPinia, setActivePinia } from 'pinia';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
+import { accountView } from '../../../support/unit/account-view.ts';
 
 /** Origin of the stub API. */
 const API = 'http://api.test';
@@ -150,7 +151,7 @@ describe('orvalMutator contract validation', () => {
     it('resolves normally when VITE_VALIDATE_RESPONSES=true and the response satisfies its schema', () => {
         server.use(
             http.get(`${API}/account`, () =>
-                HttpResponse.json({ id: '1', email: 'a@b.com', username: 'alice' })
+                HttpResponse.json(accountView({ id: '1', email: 'a@b.com', username: 'alice' }))
             )
         );
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');

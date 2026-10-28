@@ -28,34 +28,56 @@ beforeEach(() => {
     vi.mocked(orvalMutator).mockClear();
 });
 
-/** How many times the touch was asked. */
-const touchesAsked = () =>
-    vi
-        .mocked(orvalMutator)
-        .mock.calls.filter(([config]) => config.url === '/account/sessions/current/touch').length;
+/** What the server answers a sign-in or `GET /account` with, besides the account itself. */
+const answer = (activity: { lastActiveAt: string; idleTimeoutSeconds?: number }) => ({
+    abilities: {
+        platform: [],
+        tenant: [],
+        version: 1,
+        grantableRoles: [],
+        secondFactorRequired: false
+    },
+    activity
+});
 
-describe('the idle clock, asked when the viewer is set', () => {
-    it('is read once per signed-in stretch, not at every viewer load', async () => {
-        touchAnswer = { lastActiveAt: '2026-10-14T10:00:00.000Z' };
+describe('the idle clock, carried by the answer that sets the viewer', () => {
+    const viewer = { id: 'u1', email: 'a@example.com' };
+
+    it('is taken from the answer, with no touch asked', () => {
         const session = useSessionStore();
-        const viewer = { id: 'u1', email: 'a@example.com' };
 
-        await session.setViewer(viewer);
-        await session.setViewer(viewer);
+        session.setViewer(
+            viewer,
+            answer({ lastActiveAt: '2026-10-14T10:00:00.000Z', idleTimeoutSeconds: 1800 })
+        );
 
-        expect(touchesAsked()).toBe(1);
+        expect(session.idle).toEqual({
+            timeoutMs: 1_800_000,
+            lastActiveAt: Date.parse('2026-10-14T10:00:00.000Z')
+        });
+        expect(vi.mocked(orvalMutator)).not.toHaveBeenCalled();
     });
 
-    it('is asked again after the session ended', async () => {
-        touchAnswer = { lastActiveAt: '2026-10-14T10:00:00.000Z' };
+    it('stays empty for a shopper, and is cleared with the session', () => {
         const session = useSessionStore();
-        const viewer = { id: 'u1', email: 'a@example.com' };
+        session.setViewer(viewer, answer({ lastActiveAt: '2026-10-14T10:00:00.000Z' }));
+        expect(session.idle).toBeUndefined();
 
-        await session.setViewer(viewer);
+        session.setViewer(
+            viewer,
+            answer({ lastActiveAt: '2026-10-14T10:00:00.000Z', idleTimeoutSeconds: 60 })
+        );
         session.clearSession();
-        await session.setViewer(viewer);
 
-        expect(touchesAsked()).toBe(2);
+        expect(session.idle).toBeUndefined();
+    });
+
+    it('keeps the rules already held when an answer carries none', () => {
+        const session = useSessionStore();
+        session.setAbilities({ tenant: [['read', 'Product']], platform: [] });
+        session.setViewer(viewer);
+
+        expect(session.tenantAbility.can('read', 'Product')).toBe(true);
     });
 });
 

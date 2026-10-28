@@ -10,16 +10,22 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import * as schemas from '@api/schemas';
-import { contractResponse } from './http/orval-fixture-schema.ts';
+import { contractBody } from './http/orval-fixture-schema.ts';
+import type { AccountView } from '@types';
 import { anAccount, aProblem } from '../../support/unit/fixtures.ts';
+import { accountView } from '../../support/unit/account-view.ts';
+
+/** `GET /account`'s answer carrying exactly the given tenant rules, proven against the contract. */
+const viewOf = (tenant: unknown[], overrides: Parameters<typeof anAccount>[0] = {}) =>
+    contractBody<AccountView>(
+        schemas.GetAccountResponse,
+        accountView(anAccount({ role: 'customer', ...overrides }), tenant)
+    );
 
 // `vi.fn()` deliberately left untyped: these mocks return partial, case-by-case fixture shapes
 // the real generated envelope types would refuse, and that looseness is the point of a mock.
 /** Stub for the account API's `getAccount`. */
 const getAccountMock = vi.fn();
-
-/** Stub for `getMyAbilities`. */
-const getMyAbilitiesMock = vi.fn();
 
 /** Stub for the token refresh call. */
 const refreshTokenMock = vi.fn();
@@ -38,9 +44,7 @@ const logoutAllMock = vi.fn();
 // envelope shapes these fixtures intentionally only build part of.
 vi.mock('@api', () => ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
-    getAccount: () => getAccountMock(),
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
-    getMyAbilities: (options?: unknown) => getMyAbilitiesMock(options),
+    getAccount: (options?: unknown) => getAccountMock(options),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     getSessionConfig: () => getSessionConfigMock(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
@@ -49,7 +53,7 @@ vi.mock('@api', () => ({
     logout: () => logoutMock(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     logoutAll: () => logoutAllMock(),
-    // The idle clock is read once per signed-in stretch; a shopper's answer names no timeout.
+    // The "still there?" answer; a shopper's names no timeout.
     touchSession: () => Promise.resolve({ lastActiveAt: new Date().toISOString() })
 }));
 
@@ -60,24 +64,14 @@ const { useSessionStore } = await import('@/infrastructure/session.ts');
 const signedIn = () => {
     const store = useSessionStore();
     store.setAccessToken('token');
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- setViewer never rejects (both its reads swallow their failure)
-    void store.setViewer({ id: '1', email: 'a@b.c', role: 'customer' });
+    store.setViewer({ id: '1', email: 'a@b.c', role: 'customer' });
     return store;
 };
 
 beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    getMyAbilitiesMock.mockResolvedValue(
-        contractResponse(schemas.GetMyAbilitiesResponse, {
-            platform: [],
-            tenant: [],
-            version: 1,
-            subjects: [],
-            grantableRoles: [],
-            secondFactorRequired: false
-        })
-    );
+    getAccountMock.mockResolvedValue(viewOf([]));
     logoutMock.mockResolvedValue(undefined);
     logoutAllMock.mockResolvedValue(undefined);
 });
@@ -206,14 +200,11 @@ describe('loadViewer', () => {
      */
     it('carries thumbnailUrl into the viewer projection', () => {
         getAccountMock.mockResolvedValue(
-            contractResponse(
-                schemas.GetAccountResponse,
-                anAccount({
-                    role: 'customer',
-                    imageUrl: '/images/abc.png',
-                    thumbnailUrl: '/images/thumbs/v1/abc.webp'
-                })
-            )
+            viewOf([], {
+                role: 'customer',
+                imageUrl: '/images/abc.png',
+                thumbnailUrl: '/images/thumbs/v1/abc.webp'
+            })
         );
         const store = useSessionStore();
 
@@ -225,10 +216,7 @@ describe('loadViewer', () => {
 
     it('leaves thumbnailUrl undefined for an account with none', () => {
         getAccountMock.mockResolvedValue(
-            contractResponse(
-                schemas.GetAccountResponse,
-                anAccount({ role: 'customer', imageUrl: '/images/abc.png' })
-            )
+            viewOf([], { role: 'customer', imageUrl: '/images/abc.png' })
         );
         const store = useSessionStore();
 
@@ -243,10 +231,7 @@ describe('loadViewer', () => {
      */
     it('projects verified true once verifiedAt is set', () => {
         getAccountMock.mockResolvedValue(
-            contractResponse(
-                schemas.GetAccountResponse,
-                anAccount({ role: 'customer', verifiedAt: '2026-01-01T00:00:00.000Z' })
-            )
+            viewOf([], { role: 'customer', verifiedAt: '2026-01-01T00:00:00.000Z' })
         );
         const store = useSessionStore();
 
@@ -256,9 +241,7 @@ describe('loadViewer', () => {
     });
 
     it('projects verified false while verifiedAt is absent', () => {
-        getAccountMock.mockResolvedValue(
-            contractResponse(schemas.GetAccountResponse, anAccount({ role: 'customer' }))
-        );
+        getAccountMock.mockResolvedValue(viewOf([], { role: 'customer' }));
         const store = useSessionStore();
 
         return store.loadViewer().then(() => {
@@ -271,30 +254,16 @@ describe('loadViewer', () => {
      * store: a page load restores the session through this path alone, and a viewer whose rules
      * never arrived is a screen that hides every control its visitor is entitled to.
      */
-    it('loads the rules that go with the viewer, not just the projection', () => {
-        getAccountMock.mockResolvedValue(
-            contractResponse(schemas.GetAccountResponse, anAccount({ role: 'admin' }))
-        );
-        getMyAbilitiesMock.mockResolvedValue(
-            contractResponse(schemas.GetMyAbilitiesResponse, {
-                platform: [],
-                tenant: [['delete', 'Product']],
-                version: 1,
-                subjects: ['Product'],
-                grantableRoles: ['customer'],
-                secondFactorRequired: false
-            })
-        );
+    it('takes the rules that go with the viewer from the same answer, not just the projection', () => {
+        getAccountMock.mockResolvedValue(viewOf([['delete', 'Product']], { role: 'admin' }));
         const store = useSessionStore();
         store.setAccessToken('token');
 
-        return store
-            .loadViewer()
-            .then(() => {})
-            .then(() => {
-                expect(store.tenantAbility.can('delete', 'Product')).toBe(true);
-                expect(store.can('delete', 'Product')).toBe(true);
-            });
+        return store.loadViewer().then(() => {
+            expect(store.tenantAbility.can('delete', 'Product')).toBe(true);
+            expect(store.can('delete', 'Product')).toBe(true);
+            expect(getAccountMock).toHaveBeenCalledOnce();
+        });
     });
 
     /**
@@ -302,19 +271,7 @@ describe('loadViewer', () => {
      * nowhere else, see `PermissionAction`'s own docblock.
      */
     it('answers a checkout ability the same way it answers a CRUD one', () => {
-        getAccountMock.mockResolvedValue(
-            contractResponse(schemas.GetAccountResponse, anAccount({ role: 'customer' }))
-        );
-        getMyAbilitiesMock.mockResolvedValue(
-            contractResponse(schemas.GetMyAbilitiesResponse, {
-                platform: [],
-                tenant: [['checkout', 'Cart']],
-                version: 1,
-                subjects: ['Cart'],
-                grantableRoles: ['customer'],
-                secondFactorRequired: false
-            })
-        );
+        getAccountMock.mockResolvedValue(viewOf([['checkout', 'Cart']]));
         const store = useSessionStore();
         store.setAccessToken('token');
 
@@ -353,32 +310,6 @@ describe('loadViewer', () => {
         }).toEqual(expected);
     });
 
-    /**
-     * `declaredSubjects` is what lets a typo in a route's `meta.can` be caught rather than just
-     * quietly matching no rule — see `can`'s own docblock for why it warns instead of throwing.
-     */
-    it('carries the published subject set alongside the rules', () => {
-        getAccountMock.mockResolvedValue(
-            contractResponse(schemas.GetAccountResponse, anAccount({ role: 'admin' }))
-        );
-        getMyAbilitiesMock.mockResolvedValue(
-            contractResponse(schemas.GetMyAbilitiesResponse, {
-                platform: [],
-                tenant: [],
-                version: 1,
-                subjects: ['Order', 'Product'],
-                grantableRoles: ['customer'],
-                secondFactorRequired: false
-            })
-        );
-        const store = useSessionStore();
-        store.setAccessToken('token');
-
-        return store.loadViewer().then(() => {
-            expect(store.declaredSubjects).toEqual(new Set(['Order', 'Product']));
-        });
-    });
-
     it('keeps the roles the caller may grant, and empties them with the rest of the abilities', () => {
         const store = useSessionStore();
 
@@ -387,19 +318,6 @@ describe('loadViewer', () => {
 
         store.setAbilities();
         expect(store.grantableRoles).toEqual([]);
-    });
-
-    /** A response that omits `subjects` altogether must not wipe out a set already known. */
-    it('leaves a previously published subject set alone when a response omits it', () => {
-        getAccountMock.mockResolvedValue(
-            contractResponse(schemas.GetAccountResponse, anAccount({ role: 'admin' }))
-        );
-        const store = useSessionStore();
-        store.setAbilities({ tenant: [], platform: [], subjects: ['Order'] });
-
-        store.setAbilities({ tenant: [['read', 'Order']], platform: [] });
-
-        expect(store.declaredSubjects).toEqual(new Set(['Order']));
     });
 });
 
@@ -473,17 +391,6 @@ describe('logout waits out an in-flight refresh', () => {
     });
 });
 
-/** An abilities answer granting exactly the given tenant rules. */
-const rules = (tenant: string[][]) =>
-    contractResponse(schemas.GetMyAbilitiesResponse, {
-        platform: [],
-        tenant,
-        version: 1,
-        subjects: ['Product'],
-        grantableRoles: [],
-        secondFactorRequired: false
-    });
-
 describe('secondFactorRequired', () => {
     it('keeps what the abilities answer said, and empties with the rest', () => {
         const store = useSessionStore();
@@ -496,16 +403,9 @@ describe('secondFactorRequired', () => {
     });
 
     it('is re-read after a 403 on a signed-in request, which is how a refusal reaches the banner', async () => {
-        getMyAbilitiesMock.mockResolvedValue(
-            contractResponse(schemas.GetMyAbilitiesResponse, {
-                platform: [],
-                tenant: [],
-                version: 1,
-                subjects: [],
-                grantableRoles: [],
-                secondFactorRequired: true
-            })
-        );
+        const answer = viewOf([]);
+        answer.abilities.secondFactorRequired = true;
+        getAccountMock.mockResolvedValue(answer);
         const store = signedIn();
 
         await store.reloadAbilities();
@@ -516,35 +416,46 @@ describe('secondFactorRequired', () => {
 
 describe('reloadAbilities', () => {
     it('replaces the rules and bumps the signal, so a taken-away right disappears', () => {
-        getMyAbilitiesMock.mockResolvedValue(rules([['delete', 'Product']]));
+        getAccountMock.mockResolvedValue(viewOf([['delete', 'Product']]));
         const store = signedIn();
 
-        return vi
-            .waitFor(() => expect(store.can('delete', 'Product')).toBe(true))
+        return store
+            .reloadAbilities()
             .then(() => {
-                getMyAbilitiesMock.mockResolvedValue(rules([]));
+                expect(store.can('delete', 'Product')).toBe(true);
+                getAccountMock.mockResolvedValue(viewOf([]));
                 return store.reloadAbilities();
             })
             .then(() => {
                 expect(store.can('delete', 'Product')).toBe(false);
-                expect(store.abilitiesSignal).toBe(1);
+                expect(store.abilitiesSignal).toBe(2);
             });
     });
 
     it('keeps the rules it has when the read fails', () => {
-        getMyAbilitiesMock.mockResolvedValue(rules([['delete', 'Product']]));
+        getAccountMock.mockResolvedValue(viewOf([['delete', 'Product']]));
         const store = signedIn();
 
-        return vi
-            .waitFor(() => expect(store.can('delete', 'Product')).toBe(true))
+        return store
+            .reloadAbilities()
             .then(() => {
-                getMyAbilitiesMock.mockRejectedValue(new Error('offline'));
+                getAccountMock.mockRejectedValue(new Error('offline'));
                 return store.reloadAbilities();
             })
             .then(() => {
                 expect(store.can('delete', 'Product')).toBe(true);
-                expect(store.abilitiesSignal).toBe(0);
+                expect(store.abilitiesSignal).toBe(1);
             });
+    });
+
+    it('is sent passive: re-reading the rules is not the person acting', () => {
+        const store = signedIn();
+
+        return store.reloadAbilities().then(() => {
+            expect(getAccountMock).toHaveBeenCalledWith({
+                headers: { 'Session-Passive': 'true' }
+            });
+        });
     });
 
     it('shares one read between callers arriving together, and asks nothing for a guest', () => {
@@ -552,31 +463,36 @@ describe('reloadAbilities', () => {
         return guest
             .reloadAbilities()
             .then(() => {
-                expect(getMyAbilitiesMock).not.toHaveBeenCalled();
+                expect(getAccountMock).not.toHaveBeenCalled();
                 const store = signedIn();
-                return vi.waitFor(() => expect(store.viewer).toBeDefined()).then(() => store);
-            })
-            .then((store) => {
-                getMyAbilitiesMock.mockClear();
+                getAccountMock.mockClear();
                 return Promise.all([store.reloadAbilities(), store.reloadAbilities()]);
             })
             .then(() => {
-                expect(getMyAbilitiesMock).toHaveBeenCalledOnce();
+                expect(getAccountMock).toHaveBeenCalledOnce();
             });
     });
 
-    it('is also run after a token refresh', () => {
-        refreshTokenMock.mockResolvedValue({ token: 'renewed' });
+    it('is not run after a token refresh: the refresh answer carries the abilities', () => {
+        refreshTokenMock.mockResolvedValue({ token: 'renewed', abilities: viewOf([]).abilities });
         const store = signedIn();
 
-        // Joins the read `signedIn` already started, so the count below starts clean.
-        return store
-            .reloadAbilities()
-            .then(() => {
-                getMyAbilitiesMock.mockClear();
-                return store.refreshToken();
-            })
-            .then(() => vi.waitFor(() => expect(getMyAbilitiesMock).toHaveBeenCalledOnce()));
+        return store.refreshToken().then(() => {
+            expect(getAccountMock).not.toHaveBeenCalled();
+        });
+    });
+
+    it('takes the abilities a refresh answered with, and bumps the signal', () => {
+        refreshTokenMock.mockResolvedValue({
+            token: 'renewed',
+            abilities: viewOf([['delete', 'Product']]).abilities
+        });
+        const store = signedIn();
+
+        return store.refreshToken().then(() => {
+            expect(store.can('delete', 'Product')).toBe(true);
+            expect(store.abilitiesSignal).toBe(1);
+        });
     });
 });
 
@@ -608,14 +524,13 @@ describe('clearSession', () => {
  * A network error or a 5xx says nothing about the cookie, so it must leave the session alone.
  */
 describe('refreshToken', () => {
-    it('is marked passive, with its abilities re-read: neither is the person acting', () => {
-        refreshTokenMock.mockResolvedValue({ token: 'fresh' });
+    it('is marked passive: a refresh is not the person acting', () => {
+        refreshTokenMock.mockResolvedValue({ token: 'fresh', abilities: viewOf([]).abilities });
         const marked = { headers: { 'Session-Passive': 'true' } };
         const store = signedIn();
 
         return store
             .refreshToken()
-            .then(() => vi.waitFor(() => expect(getMyAbilitiesMock).toHaveBeenCalledWith(marked)))
             .then(() =>
                 expect(refreshTokenMock).toHaveBeenCalledWith({ _refreshed: true, ...marked })
             );
@@ -784,9 +699,9 @@ describe('session modes', () => {
             store.adoptSession({});
             expect(store.isAuth).toBe(false);
 
-            return store.setViewer({ id: '1', email: 'a@b.c', role: 'customer' }).then(() => {
-                expect(store.isAuth).toBe(true);
-            });
+            store.setViewer({ id: '1', email: 'a@b.c', role: 'customer' });
+
+            expect(store.isAuth).toBe(true);
         });
 
         it('never asks the server to refresh: there is nothing to renew', () => {
@@ -889,12 +804,7 @@ describe('a sign-in in another tab', () => {
             lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
         });
         refreshTokenMock.mockResolvedValue({ token: 'second-persons' });
-        getAccountMock.mockResolvedValue(
-            contractResponse(
-                schemas.GetAccountResponse,
-                anAccount({ id: SECOND_PERSON, role: 'customer' })
-            )
-        );
+        getAccountMock.mockResolvedValue(viewOf([], { id: SECOND_PERSON, role: 'customer' }));
         const store = signedIn();
         const channel = new BroadcastChannel('session');
 

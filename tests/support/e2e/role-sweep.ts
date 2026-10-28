@@ -17,7 +17,7 @@ import { adminMenuLinks, isTurnedBack } from './steps';
  *
  * ── Expected values are derived, never typed ─────────────────────────────────────────────────
  * The matrix already exists, in the roles yaml and the generated tables. Each persona's own
- * `GET /account/abilities` is evaluated the way `session.can` does it (both scopes, either
+ * The `abilities` of `GET /account` are evaluated the way `session.can` does it (both scopes, either
  * answers yes), so a hand-written row cannot go stale. That also proves the real seeded persona,
  * the packed rules, `implies:` and both scopes reach the browser intact.
  *
@@ -64,10 +64,9 @@ export const SWEEP_PERSONAS: readonly E2ERole[] = [
     'admin'
 ];
 
-/** What `GET /account/abilities` answers that a sweep reads: one packed rule list per scope. */
+/** What `GET /account` answers that a sweep reads: one packed rule list per scope, under `abilities`. */
 interface PackedAbilities {
-    tenant?: unknown[];
-    platform?: unknown[];
+    abilities?: { tenant?: unknown[]; platform?: unknown[] };
 }
 
 /** A persona's two abilities, asked the way `session.can` asks. */
@@ -90,9 +89,9 @@ const abilityOf = (packed: unknown[] = []): MongoAbility =>
  * @param persona - the seeded account
  */
 const evaluatorOf = (persona: E2ERole): Cypress.Chainable<Evaluator> =>
-    cy.apiAs<PackedAbilities>(persona, 'GET', '/account/abilities').then((rules) => {
-        const tenant = abilityOf(rules?.tenant);
-        const platform = abilityOf(rules?.platform);
+    cy.apiAs<PackedAbilities>(persona, 'GET', '/account').then((account) => {
+        const tenant = abilityOf(account?.abilities?.tenant);
+        const platform = abilityOf(account?.abilities?.platform);
         return cy.wrap<Evaluator>(
             {
                 can: ([action, subject]) =>

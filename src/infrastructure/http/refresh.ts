@@ -55,6 +55,15 @@ const shouldSkipRefresh = (url?: string) => {
 };
 
 /**
+ * Whether a request is `GET /account` — the read that carries the abilities, so a 403 on it must
+ * not trigger another one.
+ *
+ * @param request - The failed request's config.
+ */
+const isAccountRead = (request?: AxiosRequestConfigWithRetry): boolean =>
+    request?.method?.toLowerCase() === 'get' && toPathname(request.url ?? '') === '/account';
+
+/**
  * Whether a 401 says the session ended for inactivity — the server's `SESSION_IDLE`.
  *
  * @param error - The failed request.
@@ -119,13 +128,9 @@ export const onResponseRejectWithRefresh = (
         });
     }
     // A 403 on a signed-in request may mean the rules changed under the session (a role taken
-    // away): re-read them so the menu and buttons follow. The abilities call itself is excluded,
-    // or a refused read would ask again forever.
-    if (
-        error.response?.status === 403 &&
-        session.isAuth &&
-        toPathname(originalRequest?.url ?? '') !== '/account/abilities'
-    )
+    // away): re-read them (`GET /account` carries them) so the menu and buttons follow. That read
+    // itself is excluded, or a refused read would ask again forever.
+    if (error.response?.status === 403 && session.isAuth && !isAccountRead(originalRequest))
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- reloadAbilities never rejects (a failed read leaves the empty abilities)
         void session.reloadAbilities();
     return onResponseReject(error);

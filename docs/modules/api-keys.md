@@ -41,9 +41,8 @@ preset role names an `apikeys` key outright, and there is no wildcard of any kin
 gates both routes on the rule, the same way every other screen in this app does, so the nav entry
 and both routes simply disappear for anyone else; nothing here hardcodes a role name.
 
-**The permissions field is free text, not a picker.** `GET /account/abilities` publishes CASL
-packed rules (`[action, subject]`, wildcards expanded) plus, as of this build, the full declared
-`subjects` set — but not the permission KEY strings themselves (`display:Product`), which are
+**The permissions field is free text, not a picker.** the `abilities` of `GET /account` publish CASL
+packed rules (`[action, subject]`, wildcards expanded) — but not the permission KEY strings themselves (`display:Product`), which are
 `<family>.<breadth>.<action>` triples this repo has no source for. A `v-combobox` (multiple,
 chips, no fixed `:items`) is the honest V1; a `422` naming the refused keys (`details.permissions`) lands on the
 field directly rather than as a toast.
@@ -78,7 +77,7 @@ function returns is listed — an internal ref is not part of the surface.
 | `api-keys`        | `ApiKeysList`  | `auth` | `read ApiKey`   | `views/ApiKeysList.vue`  |
 | `api-keys/create` | `ApiKeyCreate` | `auth` | `create ApiKey` | `views/ApiKeyCreate.vue` |
 
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
+Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
 ## Wiring
 

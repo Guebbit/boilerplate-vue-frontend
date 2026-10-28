@@ -1,7 +1,7 @@
 /**
  * @module
  * The options of every role select in this module, read from the server: the roles the signed-in
- * caller may assign, as `GET /account/abilities` published them. There is no list in this repo to
+ * caller may assign, as the `abilities` of `GET /account` published them. There is no list in this repo to
  * drift, and the picker offers exactly what the write would accept instead of a role it would
  * answer `409` to.
  */

@@ -109,7 +109,7 @@ The requirement has two halves, and they are ANDed:
 
 **There is no `admin` level, and that is the point.** A screen names the permission it needs —
 `['update', 'Product']`, `['read', 'User']` — and the answer comes from the rules the API
-published for this caller at `GET /account/abilities`, which are the same rules the server
+published for this caller at the `abilities` of `GET /account`, which are the same rules the server
 enforces. A ladder of role names cannot express the model behind it: `warehouse` may move stock and
 not answer a message, `support` may answer a message and not move stock — neither is "more
 privileged" than the other — and the boolean that used to stand in for all of it could not say
@@ -117,6 +117,11 @@ _administrator of what_.
 
 A rule always implies a session — rules are published for a caller the server identified — so a
 stranger is refused before the abilities are consulted at all.
+
+The rules ride on answers the client already makes, never on a call of their own: the sign-in answer
+(`account.abilities`), `GET /account` after a reload, and the refresh answer. After a `403` the
+interceptor re-reads `GET /account` (single flight, sent passive) and the store bumps
+`abilitiesSignal`, so a role taken away shows without a reload.
 
 Every refusal notifies the visitor — silently bouncing someone reads as a broken link.
 
@@ -127,7 +132,7 @@ reload.
 
 ### The two scopes
 
-`GET /account/abilities` answers **two** rule lists, and the store keeps them as two abilities:
+the `abilities` of `GET /account` answers **two** rule lists, and the store keeps them as two abilities:
 
 | Ability           | What it covers                                                      | Who has any                                         |
 | ----------------- | ------------------------------------------------------------------- | --------------------------------------------------- |

@@ -93,7 +93,6 @@ export const OPERATION_MODULES: Record<string, string> = {
     getLocaleEntry: 'locales',
     getLocaleMessages: 'locales',
     getLocales: 'locales',
-    getMyAbilities: 'account',
     getNotificationById: 'notifications',
     getNotificationsStream: 'notifications',
     getObservabilityEvents: 'observability',
