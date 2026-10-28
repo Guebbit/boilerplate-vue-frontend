@@ -355,6 +355,39 @@ Cypress.on('window:before:load', (contentWindow) => {
         ).__APP_CONFIG = { API_URL: injectedApiUrl, TOURS_ENABLED: 'false' };
 });
 
+/**
+ * Whether one `console.error` call is the app's contract diagnostic. Both halves of the text are
+ * matched so that `[contract] no response schema mapped` (a `console.warn` here) and any other
+ * `[contract]`-prefixed note never fail a test.
+ *
+ * @param parameters - The arguments one `console.error` call carried.
+ */
+const isContractMismatch = (parameters: unknown[]): boolean =>
+    typeof parameters[0] === 'string' &&
+    parameters[0].includes('[contract]') &&
+    parameters[0].includes('does not match the');
+
+/**
+ * Fails the running test on any contract mismatch the page logs. The e2e bundle rejects the
+ * call (`VITE_CONTRACT_THROW`), but a store swallows the rejection and a background poll or an
+ * SSE frame has no caller, so without this a mismatch only shows up as an unrelated assertion
+ * timing out. Wraps `console.error` only, never `warn`.
+ *
+ * The throw is deferred to the page's own `setTimeout`: a throw inside `console.error` would
+ * unwind the app's logger, while an uncaught page error is what `uncaught:exception` (e2e.ts)
+ * turns into a failure of the test that is running.
+ */
+Cypress.on('window:before:load', (contentWindow) => {
+    const originalError = contentWindow.console.error.bind(contentWindow.console);
+    contentWindow.console.error = (...parameters: unknown[]) => {
+        originalError(...parameters);
+        if (!isContractMismatch(parameters)) return;
+        contentWindow.setTimeout(() => {
+            throw new Error(String(parameters[0]));
+        }, 0);
+    };
+});
+
 // `allowCypressEnv: false` in cypress.config.ts disables `Cypress.env()`, so the profile flag is
 // read through the stateful `cy.env()` API instead.
 //

@@ -245,6 +245,7 @@ describe('orvalMutator contract validation', () => {
         );
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
         vi.stubEnv('PROD', true);
+        vi.stubEnv('VITE_CONTRACT_THROW', '');
         return loadHttp().then(({ orvalMutator }) =>
             expect(orvalMutator({ url: '/account', method: 'GET' })).resolves.toMatchObject({
                 id: '1',
@@ -254,10 +255,40 @@ describe('orvalMutator contract validation', () => {
         );
     });
 
+    it('PROD + VITE_CONTRACT_THROW (the e2e build): rejects, does not strip, and logs the diagnostic', () => {
+        server.use(
+            http.get(`${API}/account`, () =>
+                HttpResponse.json({
+                    id: '1',
+                    email: 'a@b.com',
+                    username: 'alice',
+                    passwordHash: 'should-never-be-serialized'
+                })
+            )
+        );
+        vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
+        vi.stubEnv('PROD', true);
+        vi.stubEnv('VITE_CONTRACT_THROW', 'true');
+
+        return Promise.all([loadHttp(), import('@/infrastructure/utils/logger.ts')]).then(
+            ([{ orvalMutator }, { logger }]) => {
+                const logged = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
+                return expect(orvalMutator({ url: '/account', method: 'GET' }))
+                    .rejects.toMatchObject({ errors: [{ code: 'CONTRACT_MISMATCH' }] })
+                    .then(() => {
+                        expect(logged).toHaveBeenCalledWith(
+                            expect.stringContaining('response for GET /account does not match')
+                        );
+                    });
+            }
+        );
+    });
+
     it('report-only (PROD): a union answer is never stripped, so an undeclared field fails strictly and still resolves', () => {
         server.use(http.get(`${API}/either`, () => HttpResponse.json({ a: 1, extra: true })));
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
         vi.stubEnv('PROD', true);
+        vi.stubEnv('VITE_CONTRACT_THROW', '');
         const captureException = vi.spyOn(useObservabilityStore(), 'captureException');
 
         return loadHttp()
@@ -287,6 +318,7 @@ describe('orvalMutator contract validation', () => {
         server.use(http.get(`${API}/account`, () => HttpResponse.json({ id: '1' })));
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
         vi.stubEnv('PROD', true);
+        vi.stubEnv('VITE_CONTRACT_THROW', '');
         const captureException = vi.spyOn(useObservabilityStore(), 'captureException');
 
         return loadHttp()

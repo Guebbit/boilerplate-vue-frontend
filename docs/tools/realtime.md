@@ -90,7 +90,7 @@ response, and on in the e2e build — `createSseClient` parses each frame's payl
 schema `asyncapi.yaml` declares for its event. The generator emits those schemas as
 `SSE_EVENT_PAYLOAD_SCHEMAS` (JSON Schema, every `$ref` inlined), and Zod's own `fromJSONSchema`
 turns each into a validator on first use — nothing hand-written. A frame that fails is logged
-with the fields that broke and dropped, never forwarded to the store.
+with the fields that broke and, in dev, unit and e2e (`VITE_CONTRACT_THROW`), dropped, never forwarded to the store. A production build forwards it.
 
 **Where the stream is opened:** the e2e shard runner's runtime `__E2E_API_URL`, when set, wins
 over the build-time `VITE_API_SSE` — the same precedence every REST call already has — so one
