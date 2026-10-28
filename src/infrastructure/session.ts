@@ -28,7 +28,7 @@ import {
     logoutAll as apiLogoutAll,
     touchSession as apiTouchSession
 } from '@api';
-import type { PermissionAction } from '@api/permission-vocabulary';
+import type { ActionOn, PermissionAction, PermissionSubject } from '@api/permission-vocabulary';
 import { clearEtags } from '@/infrastructure/http/etag.ts';
 import { asPassive } from '@/infrastructure/http/passive.ts';
 import { warn } from '@/infrastructure/utils/logger.ts';
@@ -77,8 +77,16 @@ const isDefinitiveAuthFailure = (error: unknown): boolean => {
  * @param packed - One scope's rules exactly as the ability endpoint returns them.
  * @returns Unpacked CASL rules, ready for {@link createMongoAbility}.
  */
-const unpackAbilityRules = (packed: PackedRules): RawRuleOf<MongoAbility>[] =>
-    unpackRules(packed as PackRule<RawRuleOf<MongoAbility>>[]);
+const unpackAbilityRules = (packed: PackedRules): RawRuleOf<SessionAbility>[] =>
+    unpackRules(packed as PackRule<RawRuleOf<SessionAbility>>[]);
+
+/**
+ * The ability the store holds: CASL's own typing (an action and a subject), narrowed to the
+ * backend's closed lists. A misspelled pair is a compile error; the pair map narrows further, in
+ * {@link RoutePermission} and `can()`.
+ * https://casl.js.org/v6/en/advanced/typescript
+ */
+type SessionAbility = MongoAbility<[PermissionAction, PermissionSubject]>;
 
 /**
  * The concrete actions a screen may ask about — generated from `actions:` in the backend's
@@ -86,7 +94,7 @@ const unpackAbilityRules = (packed: PackedRules): RawRuleOf<MongoAbility>[] =>
  * absent: no key declares it and there is no wildcard to expand into one, so asking for it always
  * answers no. A screen asks for the action it actually performs.
  */
-export type { PermissionAction } from '@api/permission-vocabulary';
+export type { ActionOn, PermissionAction, PermissionSubject } from '@api/permission-vocabulary';
 
 /**
  * The least the app shell and the guards need to know about the signed-in visitor.
@@ -269,10 +277,10 @@ export const useSessionStore = defineStore('session', () => {
      * ability anyway; each is replaced wholesale when new rules arrive, which is exactly what a
      * shallow ref is for.
      */
-    const tenantAbility = shallowRef<MongoAbility>(createMongoAbility());
+    const tenantAbility = shallowRef<SessionAbility>(createMongoAbility<SessionAbility>());
 
     /** The caller's rules over the INSTALLATION — health, metrics, the operational audit. Empty for almost everyone. */
-    const platformAbility = shallowRef<MongoAbility>(createMongoAbility());
+    const platformAbility = shallowRef<SessionAbility>(createMongoAbility<SessionAbility>());
 
     /**
      * Every CASL subject a declared key names, as last published by `GET /account/abilities` —
@@ -313,8 +321,12 @@ export const useSessionStore = defineStore('session', () => {
             'tenant' | 'platform' | 'subjects' | 'grantableRoles' | 'secondFactorRequired'
         > = {}
     ) => {
-        tenantAbility.value = createMongoAbility(unpackAbilityRules(rules.tenant ?? []));
-        platformAbility.value = createMongoAbility(unpackAbilityRules(rules.platform ?? []));
+        tenantAbility.value = createMongoAbility<SessionAbility>(
+            unpackAbilityRules(rules.tenant ?? [])
+        );
+        platformAbility.value = createMongoAbility<SessionAbility>(
+            unpackAbilityRules(rules.platform ?? [])
+        );
         grantableRoles.value = rules.grantableRoles ?? [];
         secondFactorRequired.value = rules.secondFactorRequired ?? false;
         if (rules.subjects) declaredSubjects.value = new Set(rules.subjects);
@@ -345,7 +357,10 @@ export const useSessionStore = defineStore('session', () => {
      * @param action - a CASL action: `read`, `create`, `update`, `delete`
      * @param subject - the CASL subject type the key names, e.g. `Product`, `WebhookSubscription`
      */
-    const can = (action: PermissionAction, subject: string): boolean => {
+    const can = <TSubject extends PermissionSubject>(
+        action: ActionOn<TSubject>,
+        subject: TSubject
+    ): boolean => {
         if (
             import.meta.env.DEV &&
             declaredSubjects.value.size > 0 &&

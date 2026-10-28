@@ -12,7 +12,11 @@ import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import ProductEdit from '../views/ProductEdit.vue';
 import { createMongoAbility } from '@casl/ability';
 import { useDialogStore } from '@/ui/dialog.ts';
-import { useSessionStore } from '@/infrastructure/session.ts';
+import {
+    useSessionStore,
+    type PermissionAction,
+    type PermissionSubject
+} from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
@@ -202,7 +206,7 @@ describe('ProductEdit — release date', () => {
 /**
  * A signed-in visitor holding the given rules, as the session sees abilities.
  */
-const signIn = (rules: { action: string; subject: string }[]) => {
+const signIn = (rules: { action: PermissionAction; subject: PermissionSubject }[]) => {
     const session = useSessionStore();
     session.accessToken = 'test-token';
     session.viewer = { id: 'u1', email: 'manager@example.com', role: 'manager' };
@@ -223,7 +227,7 @@ describe('ProductEdit — the preview before a changed date', () => {
     let confirmSpy: MockInstance<ReturnType<typeof useDialogStore>['confirm']>;
 
     /** Rules of a manager: moves dates and reads orders. */
-    const MANAGER = [
+    const MANAGER: Parameters<typeof signIn>[0] = [
         { action: 'update', subject: 'Product' },
         { action: 'display', subject: 'Order' }
     ];
