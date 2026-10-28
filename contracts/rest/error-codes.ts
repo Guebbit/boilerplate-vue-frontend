@@ -218,7 +218,7 @@ export const ERROR_CODES = {
     RETURN_DEDUCTION_INVALID: 'RETURN_DEDUCTION_INVALID',
     /** 422 — A line names a product that is not on the order, asks for more than is left of it, is excluded from the right of withdrawal (Art. 16), or nothing on the order is left to return. */
     RETURN_LINES_INVALID: 'RETURN_LINES_INVALID',
-    /** 409 — The fulfillment order has nothing left to cancel, or nothing has shipped from the order yet (cancel the whole order instead). */
+    /** 409 — The fulfillment order has nothing left to cancel, is not part of this order, or nothing has shipped from the order yet (cancel the whole order instead). */
     RETURN_NOTHING_TO_CANCEL: 'RETURN_NOTHING_TO_CANCEL',
     /** 409 — The return is not an approved one awaiting goods that never came, so it cannot be canceled. */
     RETURN_NOT_CANCELABLE: 'RETURN_NOT_CANCELABLE',

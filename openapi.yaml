@@ -5331,17 +5331,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
-          links:
-            PayOrder:
-              operationId: createPayment
-              parameters:
-                orderId: $response.body#/data/id
-              description: The new order's id is the `orderId` to freeze into a payment intent.
-            CancelOrder:
-              operationId: cancelOrderById
-              parameters:
-                id: $response.body#/data/id
-              description: The new order's id can be cancelled directly.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5677,17 +5666,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
-          links:
-            PayOrder:
-              operationId: createPayment
-              parameters:
-                orderId: $response.body#/data/id
-              description: The new order's id is the `orderId` to freeze into a payment intent.
-            CancelOrder:
-              operationId: cancelOrderById
-              parameters:
-                id: $response.body#/data/id
-              description: The new order's id can be cancelled directly.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6630,22 +6608,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Payment"
-          links:
-            SyncPayment:
-              operationId: syncPayment
-              parameters:
-                id: $response.body#/id
-              description: An in-flight payment is resolved by re-reading the provider here.
-            RefundPayment:
-              operationId: createRefund
-              parameters:
-                orderId: $response.body#/orderId
-              description: A succeeded payment can be refunded without touching the order status.
-            CancelOrder:
-              operationId: cancelOrderById
-              parameters:
-                id: $response.body#/orderId
-              description: A paid order can still be cancelled, which refunds it too.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -9099,12 +9061,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Payment"
-          links:
-            ConfirmPayment:
-              operationId: confirmPayment
-              parameters:
-                id: $response.body#/id
-              description: The intent's id is confirmed here to complete the charge.
         "201":
           description: The payment intent, ready to confirm
           headers:
@@ -9114,11 +9070,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Payment"
-          links:
-            ConfirmPayment:
-              operationId: confirmPayment
-              parameters:
-                id: $response.body#/id
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -21618,7 +21569,7 @@ x-error-codes:
     description: A line names a product that is not on the order, asks for more than is left of it, is excluded from the right of withdrawal (Art. 16), or nothing on the order is left to return.
   RETURN_NOTHING_TO_CANCEL:
     status: 409
-    description: The fulfillment order has nothing left to cancel, or nothing has shipped from the order yet (cancel the whole order instead).
+    description: The fulfillment order has nothing left to cancel, is not part of this order, or nothing has shipped from the order yet (cancel the whole order instead).
   RETURN_NOT_CANCELABLE:
     status: 409
     description: The return is not an approved one awaiting goods that never came, so it cannot be canceled.
