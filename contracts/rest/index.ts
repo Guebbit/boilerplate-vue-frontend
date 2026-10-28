@@ -235,6 +235,82 @@ export interface Account {
     purchaseHold?: PurchaseHold;
 }
 
+/**
+ * The deployment's `NODE_SESSION_MODE`.
+ */
+export type SessionConfigMode = (typeof SessionConfigMode)[keyof typeof SessionConfigMode];
+
+export const SessionConfigMode = {
+    jwt: 'jwt',
+    cookie: 'cookie'
+} as const;
+
+/**
+ * How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own.
+ */
+export type SessionConfigLifetimeSeconds = {
+    /** @minimum 1 */
+    short: number;
+    /** @minimum 1 */
+    medium: number;
+    /** @minimum 1 */
+    long: number;
+};
+
+export interface SessionConfig {
+    /** The deployment's `NODE_SESSION_MODE`. */
+    mode: SessionConfigMode;
+    /** How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own. */
+    lifetimeSeconds: SessionConfigLifetimeSeconds;
+    /**
+     * The longest a staff or admin session lives from sign-in, whatever the tier (`NODE_SESSION_LIFETIME_STAFF`). Absent when the cap is off.
+     * @minimum 1
+     */
+    staffLifetimeSeconds?: number;
+}
+
+/**
+ * Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused.
+ */
+export type AntibotRungsEmailPolicy =
+    (typeof AntibotRungsEmailPolicy)[keyof typeof AntibotRungsEmailPolicy];
+
+export const AntibotRungsEmailPolicy = {
+    off: 'off',
+    disposable: 'disposable',
+    mx: 'mx'
+} as const;
+
+/**
+ * Every rung's status, not just rung 3's provider — one answer to "what is active on this deployment" instead of asking each rung to publish its own.
+ */
+export interface AntibotRungs {
+    /** Rung 1 — always `true`. The identity/address/address-block budgets have no off switch. */
+    identityBudgets: boolean;
+    /** Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused. */
+    emailPolicy: AntibotRungsEmailPolicy;
+}
+
+/**
+ * What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.
+ */
+export type AntibotConfigParameters = { [key: string]: string };
+
+export interface AntibotConfig {
+    /** The active implementation's name (`none` by default). `none` means no challenge is required — send no token. */
+    provider: string;
+    /** What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser. */
+    parameters: AntibotConfigParameters;
+    rungs: AntibotRungs;
+}
+
+export interface Config {
+    session: SessionConfig;
+    /** Registry names this deployment holds OAuth credentials for, e.g. `["google", "github"]`. Empty when none are configured. */
+    oauthProviders: string[];
+    antibot: AntibotConfig;
+}
+
 export type PackedRulesItemItem = string | 0 | 1 | { [key: string]: unknown };
 
 /**
@@ -1093,41 +1169,6 @@ export interface AuditLogsResponse {
 export interface AuditEntriesResponse {
     items: AuditEntryItem[];
     meta: PaginationMeta;
-}
-
-/**
- * Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused.
- */
-export type AntibotRungsEmailPolicy =
-    (typeof AntibotRungsEmailPolicy)[keyof typeof AntibotRungsEmailPolicy];
-
-export const AntibotRungsEmailPolicy = {
-    off: 'off',
-    disposable: 'disposable',
-    mx: 'mx'
-} as const;
-
-/**
- * Every rung's status, not just rung 3's provider — one answer to "what is active on this deployment" instead of asking each rung to publish its own.
- */
-export interface AntibotRungs {
-    /** Rung 1 — always `true`. The identity/address/address-block budgets have no off switch. */
-    identityBudgets: boolean;
-    /** Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused. */
-    emailPolicy: AntibotRungsEmailPolicy;
-}
-
-/**
- * What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.
- */
-export type AntibotConfigParameters = { [key: string]: string };
-
-export interface AntibotConfig {
-    /** The active implementation's name (`none` by default). `none` means no challenge is required — send no token. */
-    provider: string;
-    /** What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser. */
-    parameters: AntibotConfigParameters;
-    rungs: AntibotRungs;
 }
 
 /**
@@ -3350,11 +3391,6 @@ export interface TwoFactorBackupCodesRegenerated {
     backupCodes: string[];
     /** How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate. */
     backupCodesRemaining: number;
-}
-
-export interface OAuthProviders {
-    /** Registry names this deployment holds credentials for, e.g. `["google", "github"]`. */
-    providers: string[];
 }
 
 export interface OAuthLink {
@@ -5990,40 +6026,6 @@ export interface ApiKeyCreated {
     secret: string;
 }
 
-/**
- * The deployment's `NODE_SESSION_MODE`.
- */
-export type SessionConfigMode = (typeof SessionConfigMode)[keyof typeof SessionConfigMode];
-
-export const SessionConfigMode = {
-    jwt: 'jwt',
-    cookie: 'cookie'
-} as const;
-
-/**
- * How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own.
- */
-export type SessionConfigLifetimeSeconds = {
-    /** @minimum 1 */
-    short: number;
-    /** @minimum 1 */
-    medium: number;
-    /** @minimum 1 */
-    long: number;
-};
-
-export interface SessionConfig {
-    /** The deployment's `NODE_SESSION_MODE`. */
-    mode: SessionConfigMode;
-    /** How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own. */
-    lifetimeSeconds: SessionConfigLifetimeSeconds;
-    /**
-     * The longest a staff or admin session lives from sign-in, whatever the tier (`NODE_SESSION_LIFETIME_STAFF`). Absent when the cap is off.
-     * @minimum 1
-     */
-    staffLifetimeSeconds?: number;
-}
-
 export interface SetPurchaseHoldRequest {
     /** When checkout opens again. Must be in the future. */
     until: string;
@@ -6731,7 +6733,7 @@ export type PageSizeParamParameter = PageSize;
 export type TextParamParameter = Text;
 
 /**
- * The token the active human-challenge provider issued to the client — see `GET /antibot/config`. Absent when that provider is `none`.
+ * The token the active human-challenge provider issued to the client — see `antibot` on `GET /config`. Absent when that provider is `none`.
  */
 export type AntibotChallengeTokenHeaderParameter = string;
 
@@ -7673,6 +7675,22 @@ export const getHealth = (options?: SecondParameter<typeof orvalMutator<HealthPi
 };
 
 /**
+ * One public answer for the three things a client reads before anyone has signed in:
+ * how the deployment keeps people signed in (`session`), which "Continue with..."
+ * buttons to render (`oauthProviders`) and which human challenge a protected form
+ * asks for (`antibot`). Each piece is owned by its own module and composed here, so
+ * a client makes one call at start instead of three.
+ *
+ * None of it is secret and none of it changes while the process runs, so it is
+ * cached for a short while. `GET /shop` stays its own call: the shop is removable and
+ * this answer must exist without it.
+ * @summary What a client needs to boot, before it has a session
+ */
+export const getConfig = (options?: SecondParameter<typeof orvalMutator<Config>>) => {
+    return orvalMutator<Config>({ url: `/config`, method: 'GET' }, options);
+};
+
+/**
  * Is the process up. For an orchestrator (Kubernetes' own `/livez` + `/readyz`
  * convention) and for every container HEALTHCHECK. Empty body, no I/O: it checks
  * nothing else, on purpose. A failing dependency must never fail liveness, because
@@ -8410,14 +8428,6 @@ export const listAuditEntries = (
 };
 
 /**
- * Rung 3 of the anti-automation ladder, plus a `rungs` summary of every other one. Always answers 200; the default `none` provider reports an empty parameter map, which means there is no widget to render and no token to send. Reachable with no credential; guarding it behind a login would defeat signup, which has none yet.
- * @summary Read the active human-challenge provider's public parameters, and every rung's status
- */
-export const getAntibotConfig = (options?: SecondParameter<typeof orvalMutator<AntibotConfig>>) => {
-    return orvalMutator<AntibotConfig>({ url: `/antibot/config`, method: 'GET' }, options);
-};
-
-/**
  * Only a provider this server hosts itself (`altcha`) issues a challenge here; the default `none` and any vendor-hosted provider answer 404, which is a truthful statement about the deployment rather than an error. The shape is the provider's own — pass it to its widget verbatim.
  * @summary Fetch work from a self-hosted human-challenge provider
  */
@@ -8974,7 +8984,7 @@ export const restoreAccount = (
 };
 
 /**
- * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
+ * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`session.mode` of `GET /config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
  * @summary Login
  */
 export const login = (
@@ -9270,19 +9280,6 @@ export const regenerateBackupCodes = (
             headers: { 'Content-Type': 'application/json' },
             data: twoFactorCodeRequest
         },
-        options
-    );
-};
-
-/**
- * The OAuth providers this deployment holds credentials for — an empty list means none are configured. The frontend uses this to decide which "Continue with…" buttons to render.
- * @summary List enabled OAuth providers
- */
-export const listOAuthProviders = (
-    options?: SecondParameter<typeof orvalMutator<OAuthProviders>>
-) => {
-    return orvalMutator<OAuthProviders>(
-        { url: `/account/oauth/providers`, method: 'GET' },
         options
     );
 };
@@ -11650,14 +11647,6 @@ export const touchSession = (options?: SecondParameter<typeof orvalMutator<Sessi
 };
 
 /**
- * Public, like `GET /antibot/config`: a client reads it once at boot and adapts, so it needs no switch of its own. `jwt` — a short access token in memory plus a rotating refresh cookie (`POST /account/refresh` exists). `cookie` — one HttpOnly `__Host-session` cookie, nothing to refresh, and every state-changing request that a cookie authenticates must come from an allowed `Origin`.
- * @summary How this deployment keeps people signed in
- */
-export const getSessionConfig = (options?: SecondParameter<typeof orvalMutator<SessionConfig>>) => {
-    return orvalMutator<SessionConfig>({ url: `/account/session-config`, method: 'GET' }, options);
-};
-
-/**
  * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Clears the account's review flag: placing a hold is acting on it. Audited as `admin.user.purchase_hold_set`.
  * @summary Put a purchase hold on a user
  */
@@ -12598,6 +12587,7 @@ export const deleteStockAlert = (
 };
 
 export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;
+export type GetConfigResult = NonNullable<Awaited<ReturnType<typeof getConfig>>>;
 export type GetLivezResult = NonNullable<Awaited<ReturnType<typeof getLivez>>>;
 export type GetReadyzResult = NonNullable<Awaited<ReturnType<typeof getReadyz>>>;
 export type GetSecurityTxtResult = NonNullable<Awaited<ReturnType<typeof getSecurityTxt>>>;
@@ -12660,7 +12650,6 @@ export type ListObservabilityAuditEntriesResult = NonNullable<
     Awaited<ReturnType<typeof listObservabilityAuditEntries>>
 >;
 export type ListAuditEntriesResult = NonNullable<Awaited<ReturnType<typeof listAuditEntries>>>;
-export type GetAntibotConfigResult = NonNullable<Awaited<ReturnType<typeof getAntibotConfig>>>;
 export type GetAntibotChallengeResult = NonNullable<
     Awaited<ReturnType<typeof getAntibotChallenge>>
 >;
@@ -12752,7 +12741,6 @@ export type RemoveTwoFactorMethodResult = NonNullable<
 export type RegenerateBackupCodesResult = NonNullable<
     Awaited<ReturnType<typeof regenerateBackupCodes>>
 >;
-export type ListOAuthProvidersResult = NonNullable<Awaited<ReturnType<typeof listOAuthProviders>>>;
 export type ListOAuthLinksResult = NonNullable<Awaited<ReturnType<typeof listOAuthLinks>>>;
 export type StartOAuthLinkResult = NonNullable<Awaited<ReturnType<typeof startOAuthLink>>>;
 export type UnlinkOAuthProviderResult = NonNullable<
@@ -12962,7 +12950,6 @@ export type ActivateLocaleResult = NonNullable<Awaited<ReturnType<typeof activat
 export type DeactivateLocaleResult = NonNullable<Awaited<ReturnType<typeof deactivateLocale>>>;
 export type SendReauthCodeResult = NonNullable<Awaited<ReturnType<typeof sendReauthCode>>>;
 export type TouchSessionResult = NonNullable<Awaited<ReturnType<typeof touchSession>>>;
-export type GetSessionConfigResult = NonNullable<Awaited<ReturnType<typeof getSessionConfig>>>;
 export type SetUserPurchaseHoldResult = NonNullable<
     Awaited<ReturnType<typeof setUserPurchaseHold>>
 >;

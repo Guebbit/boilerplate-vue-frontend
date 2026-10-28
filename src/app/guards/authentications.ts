@@ -127,7 +127,7 @@ export const canAccess = (
  * Only attempted when the `isAuth` cookie is present — avoids a pointless
  * network round-trip for every guest page view. The cookie is written by the session store when
  * it adopts a session, so its presence means one existed on this browser at some point.
- * The mode is read first (`GET /account/session-config`, once per tab): `jwt` mints an access
+ * The mode is read first (from `GET /config`, once per tab): `jwt` mints an access
  * token from the refresh cookie, `cookie` has nothing to mint and goes straight to asking who
  * the cookie belongs to.
  *

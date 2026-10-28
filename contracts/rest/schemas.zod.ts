@@ -50,6 +50,38 @@ export const GetHealthResponse = zod.strictObject({
     status: zod.enum(['ok'])
 });
 /**
+ * One public answer for the three things a client reads before anyone has signed in:
+ * how the deployment keeps people signed in (`session`), which "Continue with..."
+ * buttons to render (`oauthProviders`) and which human challenge a protected form
+ * asks for (`antibot`). Each piece is owned by its own module and composed here, so
+ * a client makes one call at start instead of three.
+ *
+ * None of it is secret and none of it changes while the process runs, so it is
+ * cached for a short while. `GET /shop` stays its own call: the shop is removable and
+ * this answer must exist without it.
+ * @summary What a client needs to boot, before it has a session
+ */
+export const GetConfigResponse = zod.strictObject({
+    session: zod.strictObject({
+        mode: zod.enum(['jwt', 'cookie']),
+        lifetimeSeconds: zod.strictObject({
+            short: zod.number().min(1),
+            medium: zod.number().min(1),
+            long: zod.number().min(1)
+        }),
+        staffLifetimeSeconds: zod.number().min(1).optional()
+    }),
+    oauthProviders: zod.array(zod.string()),
+    antibot: zod.strictObject({
+        provider: zod.string(),
+        parameters: zod.record(zod.string(), zod.string()),
+        rungs: zod.strictObject({
+            identityBudgets: zod.boolean(),
+            emailPolicy: zod.enum(['off', 'disposable', 'mx'])
+        })
+    })
+});
+/**
  * Is the process up. For an orchestrator (Kubernetes' own `/livez` + `/readyz`
  * convention) and for every container HEALTHCHECK. Empty body, no I/O: it checks
  * nothing else, on purpose. A failing dependency must never fail liveness, because
@@ -1651,18 +1683,6 @@ export const ListAuditEntriesResponse = zod.strictObject({
     })
 });
 /**
- * Rung 3 of the anti-automation ladder, plus a `rungs` summary of every other one. Always answers 200; the default `none` provider reports an empty parameter map, which means there is no widget to render and no token to send. Reachable with no credential; guarding it behind a login would defeat signup, which has none yet.
- * @summary Read the active human-challenge provider's public parameters, and every rung's status
- */
-export const GetAntibotConfigResponse = zod.strictObject({
-    provider: zod.string(),
-    parameters: zod.record(zod.string(), zod.string()),
-    rungs: zod.strictObject({
-        identityBudgets: zod.boolean(),
-        emailPolicy: zod.enum(['off', 'disposable', 'mx'])
-    })
-});
-/**
  * Only a provider this server hosts itself (`altcha`) issues a challenge here; the default `none` and any vendor-hosted provider answer 404, which is a truthful statement about the deployment rather than an error. The shape is the provider's own — pass it to its widget verbatim.
  * @summary Fetch work from a self-hosted human-challenge provider
  */
@@ -2574,7 +2594,7 @@ export const RestoreAccountBody = zod.strictObject({
 });
 export const RestoreAccountResponse = zod.void();
 /**
- * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
+ * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`session.mode` of `GET /config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
  * @summary Login
  */
 export const loginBodyEmailMax = 254;
@@ -5015,13 +5035,6 @@ export const RegenerateBackupCodesBody = zod.strictObject({
 export const RegenerateBackupCodesResponse = zod.strictObject({
     backupCodes: zod.array(zod.string()),
     backupCodesRemaining: zod.number()
-});
-/**
- * The OAuth providers this deployment holds credentials for — an empty list means none are configured. The frontend uses this to decide which "Continue with…" buttons to render.
- * @summary List enabled OAuth providers
- */
-export const ListOAuthProvidersResponse = zod.strictObject({
-    providers: zod.array(zod.string())
 });
 /**
  * The sign-in providers linked to the authenticated account (Google, GitHub), with when each was connected. Never carries a provider's own identifier. An empty list means the account signs in with a password alone.
@@ -15663,19 +15676,6 @@ export const SendReauthCodeResponse = zod.strictObject({
 export const TouchSessionResponse = zod.strictObject({
     lastActiveAt: zod.iso.datetime({ offset: true }),
     idleTimeoutSeconds: zod.number().min(1).optional()
-});
-/**
- * Public, like `GET /antibot/config`: a client reads it once at boot and adapts, so it needs no switch of its own. `jwt` — a short access token in memory plus a rotating refresh cookie (`POST /account/refresh` exists). `cookie` — one HttpOnly `__Host-session` cookie, nothing to refresh, and every state-changing request that a cookie authenticates must come from an allowed `Origin`.
- * @summary How this deployment keeps people signed in
- */
-export const GetSessionConfigResponse = zod.strictObject({
-    mode: zod.enum(['jwt', 'cookie']),
-    lifetimeSeconds: zod.strictObject({
-        short: zod.number().min(1),
-        medium: zod.number().min(1),
-        long: zod.number().min(1)
-    }),
-    staffLifetimeSeconds: zod.number().min(1).optional()
 });
 /**
  * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Clears the account's review flag: placing a hold is acting on it. Audited as `admin.user.purchase_hold_set`.

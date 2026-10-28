@@ -42,7 +42,7 @@ const mountPage = () => {
             stubs: {
                 // Unrelated to this file: HumanCheck's own branching is
                 // tests/unit/ui/human-check.spec.ts's job, and mounting the real thing here would
-                // fire a real GET /antibot/config.
+                // fire a real GET /config.
                 HumanCheck: { template: '<div />' }
             }
         }

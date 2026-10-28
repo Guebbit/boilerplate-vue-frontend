@@ -25,6 +25,8 @@ import {
 import { accountView } from '../../../../tests/support/unit/account-view.ts';
 
 import * as schemas from '@api/schemas';
+import { configAnswer } from '../../../../tests/support/unit/config-answer.ts';
+import { resetConfig } from '@/infrastructure/config.ts';
 
 wireModulesIntoCore();
 
@@ -60,6 +62,7 @@ const requestedUrls = () =>
 
 beforeEach(() => {
     setActivePinia(createPinia());
+    resetConfig();
     vi.clearAllMocks();
     responses = {
         'POST /account/login': { token: 'jwt-token', account: accountView(USER) },
@@ -102,10 +105,12 @@ describe('login', () => {
     // The boot reads the mode once (`main.ts`); a fresh tab has no `isAuth` cookie to trigger it
     // anywhere else, and a login adopted before the answer would behave as `jwt` and hold nothing.
     it('signs in on a fresh tab whose deployment answered cookie mode at boot', () => {
-        responses['GET /account/session-config'] = {
-            mode: 'cookie',
-            lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
-        };
+        responses['GET /config'] = configAnswer({
+            session: {
+                mode: 'cookie',
+                lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
+            }
+        });
         responses['POST /account/login'] = { account: accountView(USER) };
 
         return useSessionStore()
@@ -340,10 +345,12 @@ describe('logoutEverywhere', () => {
 
 describe('restoreFromCookies after a failed mode read', () => {
     it('asks for the mode again and opens a cookie session, instead of refreshing as jwt', () => {
-        responses['GET /account/session-config'] = {
-            mode: 'cookie',
-            lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
-        };
+        responses['GET /config'] = configAnswer({
+            session: {
+                mode: 'cookie',
+                lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
+            }
+        });
         vi.mocked(orvalMutator).mockRejectedValueOnce(new Error('network down'));
 
         return useSessionStore()

@@ -20,6 +20,7 @@ import {
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 import { accountView } from '../../../../tests/support/unit/account-view.ts';
+import { configAnswer } from '../../../../tests/support/unit/config-answer.ts';
 
 import * as schemas from '@api/schemas';
 
@@ -31,7 +32,9 @@ vi.mock('@/infrastructure/http', () => ({
             parseOrvalFixture(
                 config.method,
                 config.url,
-                accountView({ id: 'u1', username: 'ada', email: 'ada@example.com' })
+                config.url === '/config'
+                    ? configAnswer()
+                    : accountView({ id: 'u1', username: 'ada', email: 'ada@example.com' })
             )
         )
     )

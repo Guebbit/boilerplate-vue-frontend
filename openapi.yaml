@@ -129,6 +129,41 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+  /config:
+    get:
+      tags:
+        - System
+      summary: What a client needs to boot, before it has a session
+      description: |
+        One public answer for the three things a client reads before anyone has signed in:
+        how the deployment keeps people signed in (`session`), which "Continue with..."
+        buttons to render (`oauthProviders`) and which human challenge a protected form
+        asks for (`antibot`). Each piece is owned by its own module and composed here, so
+        a client makes one call at start instead of three.
+
+        None of it is secret and none of it changes while the process runs, so it is
+        cached for a short while. `GET /shop` stays its own call: the shop is removable and
+        this answer must exist without it.
+      operationId: getConfig
+      security: []
+      responses:
+        "200":
+          description: The deployment's public configuration
+          headers:
+            Cache-Control:
+              description: A short public lifetime; the values only change with a restart.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Config"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
   /livez:
     get:
       tags:
@@ -1479,29 +1514,6 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: audit-logs
-  /antibot/config:
-    get:
-      tags:
-        - Antibot
-      summary: Read the active human-challenge provider's public parameters, and every rung's status
-      description: |
-        Rung 3 of the anti-automation ladder, plus a `rungs` summary of every other one. Always answers 200; the default `none` provider reports an empty parameter map, which means there is no widget to render and no token to send. Reachable with no credential; guarding it behind a login would defeat signup, which has none yet.
-      operationId: getAntibotConfig
-      security: []
-      responses:
-        "200":
-          description: The active provider and what the client needs to render it
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AntibotConfig"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: antibot
   /antibot/challenge:
     get:
       tags:
@@ -2554,7 +2566,7 @@ paths:
       tags:
         - Auth
       summary: Login
-      description: "Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call."
+      description: "Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`session.mode` of `GET /config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call."
       operationId: login
       security: []
       requestBody:
@@ -3233,30 +3245,6 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
-  /account/oauth/providers:
-    get:
-      tags:
-        - Auth
-      summary: List enabled OAuth providers
-      description: The OAuth providers this deployment holds credentials for — an empty list means none are configured. The frontend uses this to decide which "Continue with…" buttons to render.
-      operationId: listOAuthProviders
-      security: []
-      responses:
-        "200":
-          description: Enabled provider names
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OAuthProviders"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: account
   /account/oauth/links:
     get:
       tags:
@@ -3300,7 +3288,7 @@ paths:
           schema:
             type: string
             maxLength: 32
-          description: One of the `provider` names `GET /account/oauth/providers` lists.
+          description: One of the `oauthProviders` names `GET /config` lists.
         - name: continue
           in: query
           required: false
@@ -3391,7 +3379,7 @@ paths:
           schema:
             type: string
             maxLength: 32
-          description: One of the names `GET /account/oauth/providers` lists.
+          description: One of the `oauthProviders` names `GET /config` lists.
         - name: continue
           in: query
           required: false
@@ -8476,30 +8464,6 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
-  /account/session-config:
-    get:
-      tags:
-        - Auth
-      summary: How this deployment keeps people signed in
-      description: "Public, like `GET /antibot/config`: a client reads it once at boot and adapts, so it needs no switch of its own. `jwt` — a short access token in memory plus a rotating refresh cookie (`POST /account/refresh` exists). `cookie` — one HttpOnly `__Host-session` cookie, nothing to refresh, and every state-changing request that a cookie authenticates must come from an allowed `Origin`."
-      operationId: getSessionConfig
-      security: []
-      responses:
-        "200":
-          description: The active session mode
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SessionConfig"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: account
   /users/{id}/purchase-hold:
     put:
       tags:
@@ -11036,7 +11000,7 @@ components:
         type: string
         maxLength: 4096
       description: |
-        The token the active human-challenge provider issued to the client — see `GET /antibot/config`. Absent when that provider is `none`.
+        The token the active human-challenge provider issued to the client — see `antibot` on `GET /config`. Absent when that provider is `none`.
     RequiredIdempotencyKeyHeader:
       name: Idempotency-Key
       in: header
@@ -11532,6 +11496,23 @@ components:
           format: date-time
         purchaseHold:
           $ref: "#/components/schemas/PurchaseHold"
+    Config:
+      type: object
+      additionalProperties: false
+      required:
+        - session
+        - oauthProviders
+        - antibot
+      properties:
+        session:
+          $ref: "#/components/schemas/SessionConfig"
+        oauthProviders:
+          type: array
+          items:
+            type: string
+          description: Registry names this deployment holds OAuth credentials for, e.g. `["google", "github"]`. Empty when none are configured.
+        antibot:
+          $ref: "#/components/schemas/AntibotConfig"
     AccountView:
       type: object
       additionalProperties: false
@@ -11744,6 +11725,82 @@ components:
           enum:
             - ok
           description: Liveness indicator. Always `ok` when the process is answering.
+    SessionConfig:
+      type: object
+      additionalProperties: false
+      required:
+        - mode
+        - lifetimeSeconds
+      properties:
+        mode:
+          type: string
+          enum:
+            - jwt
+            - cookie
+          description: The deployment's `NODE_SESSION_MODE`.
+        lifetimeSeconds:
+          type: object
+          additionalProperties: false
+          required:
+            - short
+            - medium
+            - long
+          description: How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own.
+          properties:
+            short:
+              type: integer
+              minimum: 1
+            medium:
+              type: integer
+              minimum: 1
+            long:
+              type: integer
+              minimum: 1
+        staffLifetimeSeconds:
+          type: integer
+          minimum: 1
+          description: The longest a staff or admin session lives from sign-in, whatever the tier (`NODE_SESSION_LIFETIME_STAFF`). Absent when the cap is off.
+    AntibotRungs:
+      type: object
+      additionalProperties: false
+      required:
+        - identityBudgets
+        - emailPolicy
+      description: |
+        Every rung's status, not just rung 3's provider — one answer to "what is active on this deployment" instead of asking each rung to publish its own.
+      properties:
+        identityBudgets:
+          type: boolean
+          description: |
+            Rung 1 — always `true`. The identity/address/address-block budgets have no off switch.
+        emailPolicy:
+          type: string
+          enum:
+            - off
+            - disposable
+            - mx
+          description: |
+            Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused.
+    AntibotConfig:
+      type: object
+      additionalProperties: false
+      required:
+        - provider
+        - parameters
+        - rungs
+      properties:
+        provider:
+          type: string
+          description: |
+            The active implementation's name (`none` by default). `none` means no challenge is required — send no token.
+        parameters:
+          type: object
+          additionalProperties:
+            type: string
+          description: |
+            What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.
+        rungs:
+          $ref: "#/components/schemas/AntibotRungs"
     LocaleDirection:
       type: string
       enum:
@@ -12683,47 +12740,6 @@ components:
             $ref: "#/components/schemas/AuditEntryItem"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    AntibotRungs:
-      type: object
-      additionalProperties: false
-      required:
-        - identityBudgets
-        - emailPolicy
-      description: |
-        Every rung's status, not just rung 3's provider — one answer to "what is active on this deployment" instead of asking each rung to publish its own.
-      properties:
-        identityBudgets:
-          type: boolean
-          description: |
-            Rung 1 — always `true`. The identity/address/address-block budgets have no off switch.
-        emailPolicy:
-          type: string
-          enum:
-            - off
-            - disposable
-            - mx
-          description: |
-            Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused.
-    AntibotConfig:
-      type: object
-      additionalProperties: false
-      required:
-        - provider
-        - parameters
-        - rungs
-      properties:
-        provider:
-          type: string
-          description: |
-            The active implementation's name (`none` by default). `none` means no challenge is required — send no token.
-        parameters:
-          type: object
-          additionalProperties:
-            type: string
-          description: |
-            What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.
-        rungs:
-          $ref: "#/components/schemas/AntibotRungs"
     AntibotChallengeParameters:
       type: object
       additionalProperties: false
@@ -16145,17 +16161,6 @@ components:
         backupCodesRemaining:
           type: integer
           description: How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate.
-    OAuthProviders:
-      type: object
-      additionalProperties: false
-      required:
-        - providers
-      properties:
-        providers:
-          type: array
-          items:
-            type: string
-          description: Registry names this deployment holds credentials for, e.g. `["google", "github"]`.
     OAuthLink:
       type: object
       additionalProperties: false
@@ -20153,41 +20158,6 @@ components:
         secret:
           type: string
           description: The newly minted credential, in plaintext — `sk_<prefix>_<secret>`. Shown here once, on creation, and never again.
-    SessionConfig:
-      type: object
-      additionalProperties: false
-      required:
-        - mode
-        - lifetimeSeconds
-      properties:
-        mode:
-          type: string
-          enum:
-            - jwt
-            - cookie
-          description: The deployment's `NODE_SESSION_MODE`.
-        lifetimeSeconds:
-          type: object
-          additionalProperties: false
-          required:
-            - short
-            - medium
-            - long
-          description: How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own.
-          properties:
-            short:
-              type: integer
-              minimum: 1
-            medium:
-              type: integer
-              minimum: 1
-            long:
-              type: integer
-              minimum: 1
-        staffLifetimeSeconds:
-          type: integer
-          minimum: 1
-          description: The longest a staff or admin session lives from sign-in, whatever the tier (`NODE_SESSION_LIFETIME_STAFF`). Absent when the cap is off.
     SetPurchaseHoldRequest:
       type: object
       additionalProperties: false

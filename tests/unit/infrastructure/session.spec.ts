@@ -14,6 +14,8 @@ import { contractBody } from './http/orval-fixture-schema.ts';
 import type { AccountView } from '@types';
 import { anAccount, aProblem } from '../../support/unit/fixtures.ts';
 import { accountView } from '../../support/unit/account-view.ts';
+import { configAnswer } from '../../support/unit/config-answer.ts';
+import { resetConfig } from '@/infrastructure/config.ts';
 
 /** `GET /account`'s answer carrying exactly the given tenant rules, proven against the contract. */
 const viewOf = (tenant: unknown[], overrides: Parameters<typeof anAccount>[0] = {}) =>
@@ -30,8 +32,8 @@ const getAccountMock = vi.fn();
 /** Stub for the token refresh call. */
 const refreshTokenMock = vi.fn();
 
-/** Stub for `GET /account/session-config`. */
-const getSessionConfigMock = vi.fn();
+/** Stub for `GET /config`, the public config the session mode is read from. */
+const getConfigMock = vi.fn();
 
 /** Stub for logout. */
 const logoutMock = vi.fn();
@@ -46,7 +48,7 @@ vi.mock('@api', () => ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     getAccount: (options?: unknown) => getAccountMock(options),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
-    getSessionConfig: () => getSessionConfigMock(),
+    getConfig: () => getConfigMock(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     refreshToken: (options?: unknown) => refreshTokenMock(options),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
@@ -70,6 +72,7 @@ const signedIn = () => {
 
 beforeEach(() => {
     setActivePinia(createPinia());
+    resetConfig();
     vi.clearAllMocks();
     getAccountMock.mockResolvedValue(viewOf([]));
     logoutMock.mockResolvedValue(undefined);
@@ -637,12 +640,16 @@ describe('refreshToken', () => {
  * an HttpOnly cookie no script reads, so the store keeps only the fact that one was granted. Every
  * door that adopts a login-shaped response must work in both without its caller asking which.
  */
-/** Answers `GET /account/session-config` with the given mode. */
+/** Answers `GET /config` with the given session mode. */
 const answerMode = (mode: 'jwt' | 'cookie') =>
-    getSessionConfigMock.mockResolvedValue({
-        mode,
-        lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
-    });
+    getConfigMock.mockResolvedValue(
+        configAnswer({
+            session: {
+                mode,
+                lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
+            }
+        })
+    );
 
 describe('session modes', () => {
     beforeEach(() => {
@@ -656,12 +663,12 @@ describe('session modes', () => {
 
             return Promise.all([store.loadSessionMode(), store.loadSessionMode()]).then(() => {
                 expect(store.mode).toBe('cookie');
-                expect(getSessionConfigMock).toHaveBeenCalledOnce();
+                expect(getConfigMock).toHaveBeenCalledOnce();
             });
         });
 
         it('stays undefined, behaving as jwt, when the read fails, and retries next time', () => {
-            getSessionConfigMock.mockRejectedValueOnce(new Error('offline'));
+            getConfigMock.mockRejectedValueOnce(new Error('offline'));
             const store = useSessionStore();
 
             return store
@@ -799,10 +806,7 @@ describe('a sign-in in another tab', () => {
     });
 
     it('replaces the person this tab was acting as', () => {
-        getSessionConfigMock.mockResolvedValue({
-            mode: 'jwt',
-            lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
-        });
+        answerMode('jwt');
         refreshTokenMock.mockResolvedValue({ token: 'second-persons' });
         getAccountMock.mockResolvedValue(viewOf([], { id: SECOND_PERSON, role: 'customer' }));
         const store = signedIn();

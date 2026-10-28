@@ -13,12 +13,14 @@ import {
     fetchAntibotConfig,
     fetchAntibotChallenge
 } from '@/infrastructure/http/antibot.ts';
-import { getAntibotConfig, getAntibotChallenge } from '@api';
+import { getAntibotChallenge } from '@api';
+import { loadConfig } from '@/infrastructure/config.ts';
 
 vi.mock('@api', () => ({
-    getAntibotConfig: vi.fn(),
     getAntibotChallenge: vi.fn()
 }));
+
+vi.mock('@/infrastructure/config.ts', () => ({ loadConfig: vi.fn() }));
 
 /** A stand-in for a real per-call option, e.g. the one `signup` attaches. */
 const onUploadProgress = () => {};
@@ -72,9 +74,14 @@ describe('isAntibotVerificationFailed', () => {
 });
 
 describe('fetchAntibotConfig', () => {
-    it('delegates to GET /antibot/config', () => {
-        vi.mocked(getAntibotConfig).mockResolvedValue('config-response' as never);
-        return expect(fetchAntibotConfig()).resolves.toBe('config-response');
+    it('answers the antibot member of the public config', () => {
+        vi.mocked(loadConfig).mockResolvedValue({ antibot: 'antibot-config' } as never);
+        return expect(fetchAntibotConfig()).resolves.toBe('antibot-config');
+    });
+
+    it('rejects when the public config could not be read', () => {
+        vi.mocked(loadConfig).mockResolvedValue(undefined);
+        return expect(fetchAntibotConfig()).rejects.toThrow('public config');
     });
 });
 

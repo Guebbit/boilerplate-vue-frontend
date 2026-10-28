@@ -6,7 +6,7 @@ For the backend auth architecture (JWT signing, bcrypt, refresh token DB storage
 
 ## Two session modes
 
-The backend keeps people signed in one of two ways, chosen per deployment by `NODE_SESSION_MODE`. The SPA has no switch of its own: `useSessionStore().loadSessionMode()` reads `GET /account/session-config` once per tab and every code path adapts.
+The backend keeps people signed in one of two ways, chosen per deployment by `NODE_SESSION_MODE`. The SPA has no switch of its own: `useSessionStore().loadSessionMode()` reads `GET /config` once per tab and every code path adapts. `src/infrastructure/config.ts` makes that one request and shares it with the OAuth buttons and the human check, which read their own members of the same answer; `GET /shop` stays a separate call, started in parallel.
 
 | Mode            | What the SPA holds                                     | On a `401`                                       | After a reload                                                       |
 | --------------- | ------------------------------------------------------ | ------------------------------------------------ | -------------------------------------------------------------------- |
@@ -17,7 +17,7 @@ Both modes get the same `isAuth` hint cookie from the backend (it sets it beside
 
 ```mermaid
 flowchart TD
-    Boot[App boot] --> Cfg["GET /account/session-config"]
+    Boot[App boot] --> Cfg["GET /config"]
     Cfg --> Mode{mode}
     Mode -- jwt --> J["token in memory\nrefresh cookie rotates"]
     Mode -- cookie --> C["HttpOnly cookie only\nno token, no refresh"]
@@ -178,7 +178,7 @@ always require an `antibot-challenge-token` header; `POST /account/login` and
 
 ```mermaid
 flowchart TD
-    A[HumanCheck mounts] --> B[GET /antibot/config]
+    A[HumanCheck mounts] --> B[GET /config]
     B -->|provider: none| C[Renders nothing]
     B -->|provider: altcha| D[altcha-widget web component]
     B -->|provider: turnstile| E[Cloudflare vendor script + render]

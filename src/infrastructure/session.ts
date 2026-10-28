@@ -11,7 +11,7 @@
  * (`email-verification.ts`) and the language preference (`locale-preference.ts`) share no state
  * with them and live beside this file.
  *
- * Which of the two modes the deployment runs is read once from `GET /account/session-config`;
+ * Which of the two modes the deployment runs is read once from `GET /config` (`session`);
  * see `docs/tools/security.md`.
  */
 
@@ -21,13 +21,13 @@ import { deleteCookie, setCookie } from '@guebbit/js-toolkit';
 import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
 import {
     getAccount as apiGetAccount,
-    getSessionConfig as apiGetSessionConfig,
     refreshToken as apiRefreshToken,
     logout as apiLogout,
     logoutAll as apiLogoutAll,
     touchSession as apiTouchSession
 } from '@api';
 import type { PermissionAction } from '@api/permission-actions';
+import { loadConfig } from '@/infrastructure/config.ts';
 import { clearEtags } from '@/infrastructure/http/etag.ts';
 import { asPassive } from '@/infrastructure/http/passive.ts';
 import { createMongoAbility, type MongoAbility, type RawRuleOf } from '@casl/ability';
@@ -385,31 +385,22 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     /**
-     * In flight or settled: the one `GET /account/session-config` this tab makes.
-     */
-    let modeRequest: Promise<void> | undefined;
-
-    /**
-     * Reads how this deployment keeps people signed in, once per tab (public, so it needs no
-     * session). A failed read is dropped and retried on the next call; until it lands the store
-     * behaves as `jwt`, the default, so an unreachable backend never invents a cookie session.
+     * Reads how this deployment keeps people signed in, once per tab, from the public config
+     * (`GET /config`, shared with every other reader of it). A failed read is dropped and retried
+     * on the next call; until it lands the store behaves as `jwt`, the default, so an unreachable
+     * backend never invents a cookie session.
      *
      * @returns A promise that always resolves, once {@link mode} is known or the read failed.
      */
-    const loadSessionMode = (): Promise<void> => {
-        modeRequest ??= apiGetSessionConfig()
-            .then((config) => {
-                mode.value = config.mode;
-                lifetimes.value = {
-                    lifetimeSeconds: config.lifetimeSeconds,
-                    staffLifetimeSeconds: config.staffLifetimeSeconds
-                };
-            })
-            .catch(() => {
-                modeRequest = undefined;
-            });
-        return modeRequest;
-    };
+    const loadSessionMode = (): Promise<void> =>
+        loadConfig().then((config) => {
+            if (!config) return;
+            mode.value = config.session.mode;
+            lifetimes.value = {
+                lifetimeSeconds: config.session.lifetimeSeconds,
+                staffLifetimeSeconds: config.session.staffLifetimeSeconds
+            };
+        });
 
     /**
      * Bumped each time {@link reloadAbilities} lands new rules. `LayoutDefault.vue` watches it to

@@ -8,7 +8,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
-import { listOAuthProviders as apiListOAuthProviders } from '@api';
+import { loadConfig } from '@/infrastructure/config.ts';
 import { instance } from '@/infrastructure/http/client.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import type { StartOAuthLoginParams } from '@api';
@@ -108,8 +108,10 @@ export const useOAuthProvidersStore = defineStore('accountOAuthProviders', () =>
     const fetchProviders = () => {
         if (loaded.value) return Promise.resolve(providers.value);
         return fetchAny(() =>
-            apiListOAuthProviders().then((data) => {
-                providers.value = data.providers;
+            loadConfig().then((config) => {
+                // A failed read leaves `loaded` false, so the next mount asks again.
+                if (!config) return providers.value;
+                providers.value = config.oauthProviders;
                 loaded.value = true;
                 return providers.value;
             })
