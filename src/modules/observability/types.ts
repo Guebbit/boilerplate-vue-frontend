@@ -8,7 +8,7 @@
  * come from `@types`, which re-exports the generated `@api` client types.
  * Only UI/composition-specific types belong here.
  */
-import type { ObservabilityMetricsPayload } from '@types';
+import type { ListAuditEntriesOutcome, ObservabilityMetricsPayload } from '@types';
 
 /**
  * Identifies each tab in the Admin dashboard.
@@ -38,7 +38,7 @@ export interface AdminAuditFilters {
     /** Filter by the audited action name. */
     action?: string;
     /** Filter by whether the action succeeded or failed. */
-    outcome?: 'success' | 'failure';
+    outcome?: ListAuditEntriesOutcome;
     /** ISO timestamp lower bound — only events at or after this time. */
     since?: string;
     /** Shop trail only: the id of the record the action was taken on. */

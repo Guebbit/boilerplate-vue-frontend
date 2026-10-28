@@ -26,7 +26,9 @@ wireModulesIntoCore();
 /** An empty audit page, the answer both audit endpoints give by default. */
 const EMPTY_PAGE = { items: [], meta: { page: 1, pageSize: 50, totalItems: 0, totalPages: 0 } };
 
-vi.mock('@api', () => ({
+// Partial: the component also reads the contract's `ListAuditEntriesOutcome` object at runtime.
+vi.mock('@api', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@api')>()),
     listObservabilityAuditEntries: vi.fn(() =>
         Promise.resolve(contractResponse(schemas.ListObservabilityAuditEntriesResponse, EMPTY_PAGE))
     ),

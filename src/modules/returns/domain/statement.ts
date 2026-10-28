@@ -5,15 +5,12 @@
  * the future, so both directions live here and the three forms that ask share them.
  */
 
+import { StaffStatementChannel } from '@/types/enums.ts';
+
 /**
  * The channels staff can record, in the order the select lists them.
  */
-export const STATEMENT_CHANNELS = ['phone', 'email', 'letter', 'other'] as const;
-
-/**
- * One of {@link STATEMENT_CHANNELS}.
- */
-export type StatementChannel = (typeof STATEMENT_CHANNELS)[number];
+export const STATEMENT_CHANNELS = Object.values(StaffStatementChannel);
 
 /**
  * Pads a date part to two digits.
@@ -67,5 +64,5 @@ const CHANNEL_NAMES: ReadonlySet<string> = new Set(STATEMENT_CHANNELS);
  * @param value - What the select holds.
  * @returns `true` (and narrows) when it is a channel.
  */
-export const isStatementChannel = (value: string): value is StatementChannel =>
+export const isStatementChannel = (value: string): value is StaffStatementChannel =>
     CHANNEL_NAMES.has(value);

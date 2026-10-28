@@ -19,6 +19,7 @@ import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
 import AuditMetadataDetail from './AuditMetadataDetail.vue';
 import { auditTargetLocation, shortTargetId } from '../composables/audit-target.ts';
 import { useAuditTrail, type AuditEndpoint } from '../composables/use-audit-trail.ts';
+import { ListAuditEntriesOutcome } from '@/types/enums.ts';
 import type { AuditEntryItem } from '@types';
 import type { AdminAuditFilters } from '../types.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
@@ -96,7 +97,7 @@ const { sync: syncUrl } = useListUrlState({
     params: {
         actor: 'string',
         action: 'string',
-        outcome: ['success', 'failure'],
+        outcome: Object.values(ListAuditEntriesOutcome),
         since: 'string',
         target: 'string',
         ownOrder: 'boolean'
@@ -123,8 +124,10 @@ const load = () => fetchPage({ ...filters.value, page: page.value, pageSize: pag
  */
 const outcomeOptions = computed(() => [
     { value: null, label: t('admin-page.audit-filter-outcome-all') },
-    { value: 'success', label: t('admin-page.audit-filter-outcome-success') },
-    { value: 'failure', label: t('admin-page.audit-filter-outcome-failure') }
+    ...Object.values(ListAuditEntriesOutcome).map((value) => ({
+        value,
+        label: t(`admin-page.audit-filter-outcome-${value}`)
+    }))
 ]);
 
 /**
