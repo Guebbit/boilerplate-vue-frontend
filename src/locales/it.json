@@ -466,6 +466,10 @@
                 "purpose": "Porta il controllo del secondo passaggio di un accesso con un provider esterno.",
                 "lifetime": "Finché il controllo resta aperto, al massimo pochi minuti"
             },
+            "oauthDeletionChallenge": {
+                "purpose": "Porta il passaggio che ripristina un account in cancellazione programmata, durante un accesso con un provider esterno.",
+                "lifetime": "Finché il controllo resta aperto, al massimo pochi minuti"
+            },
             "themePreference": {
                 "purpose": "Ricorda se hai scelto l'aspetto chiaro o scuro.",
                 "lifetime": "1 anno"
