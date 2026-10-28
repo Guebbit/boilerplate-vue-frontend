@@ -1368,8 +1368,8 @@ export const GetObservabilityHealthResponse = zod.strictObject({
         .array(
             zod.strictObject({
                 name: zod.string(),
-                lastSuccessAt: zod.iso.datetime({ offset: true }).nullish(),
-                lastError: zod.string().nullish()
+                lastSuccessAt: zod.iso.datetime({ offset: true }).optional(),
+                lastError: zod.string().optional()
             })
         )
         .optional(),
@@ -1732,7 +1732,7 @@ export const GetAccountResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -1804,7 +1804,7 @@ export const ReplaceAccountResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -1877,7 +1877,7 @@ export const UpdateAccountResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -2527,7 +2527,7 @@ export const SignupResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -2991,7 +2991,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
         username: zod.string(),
         role: zod.string().optional(),
         active: zod.boolean().optional(),
-        verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+        verifiedAt: zod.iso.datetime({ offset: true }).optional(),
         pendingEmail: zod.email().optional(),
         imageUrl: zod.string().min(1).optional(),
         thumbnailUrl: zod.string().optional(),
@@ -3255,13 +3255,12 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     backorderedQuantity: zod.number().min(1).optional(),
                     promisedAt: zod.iso.datetime({ offset: true }).optional(),
                     promiseDated: zod.boolean().optional(),
-                    current: zod.union([
-                        zod.strictObject({
+                    current: zod
+                        .strictObject({
                             imageUrl: zod.string().min(1).optional(),
                             thumbnailUrl: zod.string().optional()
-                        }),
-                        zod.null()
-                    ]),
+                        })
+                        .optional(),
                     taxAmount: zod
                         .number()
                         .min(downloadAccountExportResponseOrdersItemItemsItemTaxAmountMin),
@@ -4605,7 +4604,7 @@ export const ListUsersResponse = zod.strictObject({
             username: zod.string(),
             role: zod.string().optional(),
             active: zod.boolean().optional(),
-            verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+            verifiedAt: zod.iso.datetime({ offset: true }).optional(),
             pendingEmail: zod.email().optional(),
             imageUrl: zod.string().min(1).optional(),
             thumbnailUrl: zod.string().optional(),
@@ -4681,7 +4680,6 @@ export const CreateUserBody = zod.strictObject({
     username: zod.string().min(createUserBodyUsernameMin).max(createUserBodyUsernameMax),
     role: zod.string().min(1).max(createUserBodyRoleMax).optional(),
     active: zod.boolean().default(createUserBodyActiveDefault),
-    imageUrl: zod.null().optional(),
     locale: zod.string().max(createUserBodyLocaleMax).regex(createUserBodyLocaleRegExp).optional()
 });
 export const createUserResponseIdMax = 64;
@@ -4696,7 +4694,7 @@ export const CreateUserResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -4773,7 +4771,7 @@ export const GetUserByIdResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -4866,7 +4864,7 @@ export const ReplaceUserByIdResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -4959,7 +4957,7 @@ export const UpdateUserByIdResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -5042,7 +5040,7 @@ export const RestoreUserByIdResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -5161,7 +5159,7 @@ export const SearchUsersResponse = zod.strictObject({
             username: zod.string(),
             role: zod.string().optional(),
             active: zod.boolean().optional(),
-            verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+            verifiedAt: zod.iso.datetime({ offset: true }).optional(),
             pendingEmail: zod.email().optional(),
             imageUrl: zod.string().min(1).optional(),
             thumbnailUrl: zod.string().optional(),
@@ -6805,9 +6803,9 @@ export const ListProductsResponse = zod.strictObject({
  * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/levels/{productId}/receive`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it.
  * @summary Create product
  */
-export const createProductBodyTranslationsOneTitleMin = 5;
-export const createProductBodyTranslationsOneTitleMax = 200;
-export const createProductBodyTranslationsOneDescriptionMax = 10000;
+export const createProductBodyTranslationsTitleMin = 5;
+export const createProductBodyTranslationsTitleMax = 200;
+export const createProductBodyTranslationsDescriptionMax = 10000;
 export const createProductBodyPriceMin = 0;
 export const createProductBodySkuMax = 64;
 export const createProductBodyActiveDefault = true;
@@ -6821,20 +6819,17 @@ export const createProductBodyTagsItemMax = 50;
 export const CreateProductBody = zod.strictObject({
     translations: zod.record(
         zod.string(),
-        zod.union([
-            zod.strictObject({
-                title: zod
-                    .string()
-                    .min(createProductBodyTranslationsOneTitleMin)
-                    .max(createProductBodyTranslationsOneTitleMax),
-                description: zod
-                    .string()
-                    .min(1)
-                    .max(createProductBodyTranslationsOneDescriptionMax)
-                    .optional()
-            }),
-            zod.null()
-        ])
+        zod.strictObject({
+            title: zod
+                .string()
+                .min(createProductBodyTranslationsTitleMin)
+                .max(createProductBodyTranslationsTitleMax),
+            description: zod
+                .string()
+                .min(1)
+                .max(createProductBodyTranslationsDescriptionMax)
+                .optional()
+        })
     ),
     price: zod.number().min(createProductBodyPriceMin),
     taxClass: zod.enum(['reduced', 'zero']).optional(),
@@ -6848,7 +6843,6 @@ export const CreateProductBody = zod.strictObject({
     requiresShipping: zod.boolean().default(createProductBodyRequiresShippingDefault),
     noWithdrawal: zod.boolean().default(createProductBodyNoWithdrawalDefault),
     weight: zod.number().min(createProductBodyWeightMin).optional(),
-    imageUrl: zod.null().optional(),
     categories: zod.array(zod.string().min(1).max(createProductBodyCategoriesItemMax)).optional(),
     tags: zod.array(zod.string().min(1).max(createProductBodyTagsItemMax)).optional()
 });
@@ -7055,10 +7049,10 @@ export const ReplaceProductByIdBody = zod.strictObject({
     active: zod.boolean(),
     purchasable: zod.boolean(),
     releaseDate: zod.union([zod.iso.datetime({ offset: true }), zod.null()]).optional(),
-    allowBackorder: zod.boolean().optional(),
+    allowBackorder: zod.boolean(),
     restockDate: zod.union([zod.iso.datetime({ offset: true }), zod.null()]).optional(),
     requiresShipping: zod.boolean(),
-    noWithdrawal: zod.boolean().optional(),
+    noWithdrawal: zod.boolean(),
     weight: zod.number().min(replaceProductByIdBodyWeightMin).nullish(),
     imageUrl: zod.null().optional(),
     categories: zod.array(zod.string().min(1).max(replaceProductByIdBodyCategoriesItemMax)),
@@ -7544,7 +7538,7 @@ export const GetCartResponse = zod.strictObject({
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
-        selected: zod.string().nullable(),
+        selected: zod.string().optional(),
         options: zod.array(
             zod.strictObject({
                 id: zod.string(),
@@ -7620,7 +7614,7 @@ export const AddCartItemResponse = zod.strictObject({
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
-        selected: zod.string().nullable(),
+        selected: zod.string().optional(),
         options: zod.array(
             zod.strictObject({
                 id: zod.string(),
@@ -7685,7 +7679,7 @@ export const ClearCartResponse = zod.strictObject({
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
-        selected: zod.string().nullable(),
+        selected: zod.string().optional(),
         options: zod.array(
             zod.strictObject({
                 id: zod.string(),
@@ -7763,7 +7757,7 @@ export const UpdateCartItemByIdResponse = zod.strictObject({
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
-        selected: zod.string().nullable(),
+        selected: zod.string().optional(),
         options: zod.array(
             zod.strictObject({
                 id: zod.string(),
@@ -7837,7 +7831,7 @@ export const RemoveCartItemResponse = zod.strictObject({
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
-        selected: zod.string().nullable(),
+        selected: zod.string().optional(),
         options: zod.array(
             zod.strictObject({
                 id: zod.string(),
@@ -7910,7 +7904,7 @@ export const SetCartShippingMethodResponse = zod.strictObject({
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
-        selected: zod.string().nullable(),
+        selected: zod.string().optional(),
         options: zod.array(
             zod.strictObject({
                 id: zod.string(),
@@ -8085,13 +8079,12 @@ export const CheckoutResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(checkoutResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(checkoutResponseItemsItemNetAmountMin)
         })
@@ -8239,7 +8232,7 @@ export const ReorderResponse = zod.strictObject({
         }),
         shipping: zod.strictObject({
             required: zod.boolean(),
-            selected: zod.string().nullable(),
+            selected: zod.string().optional(),
             options: zod.array(
                 zod.strictObject({
                     id: zod.string(),
@@ -8608,13 +8601,12 @@ export const ListOrdersResponse = zod.strictObject({
                     backorderedQuantity: zod.number().min(1).optional(),
                     promisedAt: zod.iso.datetime({ offset: true }).optional(),
                     promiseDated: zod.boolean().optional(),
-                    current: zod.union([
-                        zod.strictObject({
+                    current: zod
+                        .strictObject({
                             imageUrl: zod.string().min(1).optional(),
                             thumbnailUrl: zod.string().optional()
-                        }),
-                        zod.null()
-                    ]),
+                        })
+                        .optional(),
                     taxAmount: zod.number().min(listOrdersResponseItemsItemItemsItemTaxAmountMin),
                     netAmount: zod.number().min(listOrdersResponseItemsItemItemsItemNetAmountMin)
                 })
@@ -8890,13 +8882,12 @@ export const CreateOrderResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(createOrderResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(createOrderResponseItemsItemNetAmountMin)
         })
@@ -9201,13 +9192,12 @@ export const SearchOrdersResponse = zod.strictObject({
                     backorderedQuantity: zod.number().min(1).optional(),
                     promisedAt: zod.iso.datetime({ offset: true }).optional(),
                     promiseDated: zod.boolean().optional(),
-                    current: zod.union([
-                        zod.strictObject({
+                    current: zod
+                        .strictObject({
                             imageUrl: zod.string().min(1).optional(),
                             thumbnailUrl: zod.string().optional()
-                        }),
-                        zod.null()
-                    ]),
+                        })
+                        .optional(),
                     taxAmount: zod.number().min(searchOrdersResponseItemsItemItemsItemTaxAmountMin),
                     netAmount: zod.number().min(searchOrdersResponseItemsItemItemsItemNetAmountMin)
                 })
@@ -9458,13 +9448,12 @@ export const GetOrderByIdResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(getOrderByIdResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(getOrderByIdResponseItemsItemNetAmountMin)
         })
@@ -9670,13 +9659,12 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(replaceOrderByIdResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(replaceOrderByIdResponseItemsItemNetAmountMin)
         })
@@ -9890,13 +9878,12 @@ export const UpdateOrderByIdResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(updateOrderByIdResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(updateOrderByIdResponseItemsItemNetAmountMin)
         })
@@ -10115,13 +10102,12 @@ export const RestoreOrderByIdResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(restoreOrderByIdResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(restoreOrderByIdResponseItemsItemNetAmountMin)
         })
@@ -10346,13 +10332,12 @@ export const CancelOrderByIdResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(cancelOrderByIdResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(cancelOrderByIdResponseItemsItemNetAmountMin)
         })
@@ -10559,13 +10544,12 @@ export const OverrideOrderStatusResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(overrideOrderStatusResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(overrideOrderStatusResponseItemsItemNetAmountMin)
         })
@@ -11238,13 +11222,12 @@ export const ProcessOrderResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(processOrderResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(processOrderResponseItemsItemNetAmountMin)
         })
@@ -11579,7 +11562,7 @@ export const createRefundBodyAmountExclusiveMin = 0;
 export const createRefundBodyCurrencyMax = 3;
 export const CreateRefundBody = zod.strictObject({
     amount: zod.number().gt(createRefundBodyAmountExclusiveMin).optional(),
-    currency: zod.string().max(createRefundBodyCurrencyMax).optional()
+    currency: zod.string().min(1).max(createRefundBodyCurrencyMax).optional()
 });
 export const createRefundResponseIdMax = 64;
 export const createRefundResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -13981,7 +13964,7 @@ export const ListInventoryLevelsResponse = zod.strictObject({
             backorderLimit: zod
                 .number()
                 .min(listInventoryLevelsResponseItemsItemBackorderLimitMin)
-                .nullable(),
+                .optional(),
             backordered: zod.number().min(listInventoryLevelsResponseItemsItemBackorderedMin)
         })
     ),
@@ -14049,11 +14032,11 @@ export const ListPreorderLevelsResponse = zod.strictObject({
             backorderLimit: zod
                 .number()
                 .min(listPreorderLevelsResponseItemsItemBackorderLimitMin)
-                .nullable(),
+                .optional(),
             backordered: zod.number().min(listPreorderLevelsResponseItemsItemBackorderedMin),
             held: zod.number().min(listPreorderLevelsResponseItemsItemHeldMin),
             paid: zod.number().min(listPreorderLevelsResponseItemsItemPaidMin),
-            left: zod.number().min(listPreorderLevelsResponseItemsItemLeftMin).nullish(),
+            left: zod.number().min(listPreorderLevelsResponseItemsItemLeftMin).optional(),
             ordered: zod.number().min(listPreorderLevelsResponseItemsItemOrderedMin)
         })
     ),
@@ -14216,7 +14199,7 @@ export const ReceiveStockResponse = zod.strictObject({
     onHand: zod.number().min(receiveStockResponseOnHandMin),
     reserved: zod.number().min(receiveStockResponseReservedMin),
     available: zod.number().min(receiveStockResponseAvailableMin),
-    backorderLimit: zod.number().min(receiveStockResponseBackorderLimitMin).nullable(),
+    backorderLimit: zod.number().min(receiveStockResponseBackorderLimitMin).optional(),
     backordered: zod.number().min(receiveStockResponseBackorderedMin)
 });
 /**
@@ -14264,7 +14247,7 @@ export const AdjustStockResponse = zod.strictObject({
     onHand: zod.number().min(adjustStockResponseOnHandMin),
     reserved: zod.number().min(adjustStockResponseReservedMin),
     available: zod.number().min(adjustStockResponseAvailableMin),
-    backorderLimit: zod.number().min(adjustStockResponseBackorderLimitMin).nullable(),
+    backorderLimit: zod.number().min(adjustStockResponseBackorderLimitMin).optional(),
     backordered: zod.number().min(adjustStockResponseBackorderedMin)
 });
 /**
@@ -15145,7 +15128,7 @@ export const SetUserPurchaseHoldParams = zod.strictObject({
 export const setUserPurchaseHoldBodyNoteMax = 500;
 export const SetUserPurchaseHoldBody = zod.strictObject({
     until: zod.iso.datetime({ offset: true }),
-    note: zod.string().max(setUserPurchaseHoldBodyNoteMax).optional()
+    note: zod.string().min(1).max(setUserPurchaseHoldBodyNoteMax).optional()
 });
 export const setUserPurchaseHoldResponseIdMax = 64;
 export const setUserPurchaseHoldResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -15163,7 +15146,7 @@ export const SetUserPurchaseHoldResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -15233,7 +15216,7 @@ export const LiftUserPurchaseHoldResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -15299,7 +15282,7 @@ export const ActivateUserByIdResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -15365,7 +15348,7 @@ export const DeactivateUserByIdResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -15492,7 +15475,7 @@ export const MergeCartResponse = zod.strictObject({
         }),
         shipping: zod.strictObject({
             required: zod.boolean(),
-            selected: zod.string().nullable(),
+            selected: zod.string().optional(),
             options: zod.array(
                 zod.strictObject({
                     id: zod.string(),
@@ -15831,13 +15814,12 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(correctOrderShippingAddressResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(correctOrderShippingAddressResponseItemsItemNetAmountMin)
         })
@@ -17729,7 +17711,7 @@ export const GetInventoryLevelResponse = zod.strictObject({
     onHand: zod.number().min(getInventoryLevelResponseOnHandMin),
     reserved: zod.number().min(getInventoryLevelResponseReservedMin),
     available: zod.number().min(getInventoryLevelResponseAvailableMin),
-    backorderLimit: zod.number().min(getInventoryLevelResponseBackorderLimitMin).nullable(),
+    backorderLimit: zod.number().min(getInventoryLevelResponseBackorderLimitMin).optional(),
     backordered: zod.number().min(getInventoryLevelResponseBackorderedMin)
 });
 /**
@@ -17768,7 +17750,7 @@ export const UpdateInventoryLevelResponse = zod.strictObject({
     onHand: zod.number().min(updateInventoryLevelResponseOnHandMin),
     reserved: zod.number().min(updateInventoryLevelResponseReservedMin),
     available: zod.number().min(updateInventoryLevelResponseAvailableMin),
-    backorderLimit: zod.number().min(updateInventoryLevelResponseBackorderLimitMin).nullable(),
+    backorderLimit: zod.number().min(updateInventoryLevelResponseBackorderLimitMin).optional(),
     backordered: zod.number().min(updateInventoryLevelResponseBackorderedMin)
 });
 /**

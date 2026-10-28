@@ -116,7 +116,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
                 role: user.role,
                 imageUrl: user.imageUrl,
                 // Absent means unverified: the backend sends the field only once it's set.
-                verified: user.verifiedAt != null
+                verified: user.verifiedAt !== undefined
             }
         );
 

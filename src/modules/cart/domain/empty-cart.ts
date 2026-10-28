@@ -24,6 +24,6 @@ export const emptyCart = (currency: string): CartResponse => ({
         currency,
         expectedTotal: { amount: 0, currency }
     },
-    shipping: { required: false, selected: null, options: [] },
+    shipping: { required: false, options: [] },
     checkoutable: false
 });

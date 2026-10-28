@@ -66,10 +66,10 @@ describe('shapeBody', () => {
     });
 
     describe('nested objects', () => {
-        const create = schemas.CreateProductBody;
+        const replace = schemas.ReplaceProductByIdBody;
 
         it('keeps a removed locale as null and a nullable child spelled per its own schema', () => {
-            expect(shapeBody(create, { translations: { en: { title: 'a' }, it: null } })).toEqual({
+            expect(shapeBody(replace, { translations: { en: { title: 'a' }, it: null } })).toEqual({
                 translations: { en: { title: 'a' }, it: null }
             });
         });

@@ -19,7 +19,7 @@ describe('emptyCart', () => {
                 currency: 'EUR',
                 expectedTotal: { amount: 0, currency: 'EUR' }
             },
-            shipping: { required: false, selected: null, options: [] },
+            shipping: { required: false, options: [] },
             checkoutable: false
         });
     });
