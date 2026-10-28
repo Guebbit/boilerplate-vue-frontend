@@ -69,7 +69,6 @@ const A_CART: CartResponse = {
     checkoutable: true,
     shipping: {
         required: true,
-        selected: null,
         options: [
             { id: 'standard', price: 5, requiresAddress: true, tracked: false },
             { id: 'pickup', price: 0, requiresAddress: false, tracked: false }
@@ -775,7 +774,7 @@ describe('the checkout payload — billing', () => {
 
     it('holds checkout back while billing stands alone and no entry is chosen', () => {
         const cart = useCartStore();
-        cart.cart = { ...A_CART, shipping: { required: false, selected: null, options: [] } };
+        cart.cart = { ...A_CART, shipping: { required: false, options: [] } };
         vi.spyOn(cart, 'fetchCart').mockResolvedValue(cart.cart);
         spyOnProductReads().mockResolvedValue([]);
         vi.spyOn(cart, 'checkout').mockResolvedValue(undefined);
@@ -844,7 +843,7 @@ describe("the checkout/clear buttons' in-flight guard", () => {
 describe('a cart with nothing to ship', () => {
     const DIGITAL_CART: CartResponse = {
         ...A_CART,
-        shipping: { required: false, selected: null, options: [] }
+        shipping: { required: false, options: [] }
     };
 
     /**

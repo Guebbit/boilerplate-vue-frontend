@@ -21,7 +21,7 @@ describe('fromMinorUnits', () => {
 });
 
 describe('checkoutFingerprint', () => {
-    const cart = asStub<CartResponse>({ items: [], shipping: { selected: null } });
+    const cart = asStub<CartResponse>({ items: [], shipping: {} });
 
     /**
      * The fingerprint of an order whose shown total is `amount` minor units.
@@ -40,8 +40,7 @@ describe('checkoutFingerprint', () => {
     it('reads a bare checkout with no cart loaded as no body, no lines, no shipping', () => {
         expect(JSON.parse(checkoutFingerprint(undefined, undefined))).toEqual({
             body: null,
-            lines: [],
-            shipping: null
+            lines: []
         });
     });
 

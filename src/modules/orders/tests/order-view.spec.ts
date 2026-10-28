@@ -94,11 +94,11 @@ const mountOrder = (order: OrderType) => {
 };
 
 /** One line, everything but `current` fixed — only what each case asserts on changes. */
-const lineWith = (current: OrderType['items'][number]['current']): OrderType['items'][number] => ({
+const lineWith = (current?: OrderType['items'][number]['current']): OrderType['items'][number] => ({
     product: { id: 'p1', title: 'Gadget', price: 9.99, taxRate: 0 },
     quantity: 1,
     locale: 'en',
-    current,
+    ...(current ? { current } : {}),
     taxAmount: 0,
     netAmount: 9.99
 });
@@ -152,7 +152,7 @@ beforeEach(() => {
 
 describe('the invoice buttons', () => {
     it('are absent until the server says the order has been invoiced', () => {
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
 
         expect(wrapper.find('[data-test=order-download-invoice]').exists()).toBe(false);
         expect(wrapper.find('[data-test=order-view-invoice]').exists()).toBe(false);
@@ -163,7 +163,7 @@ describe('the invoice buttons', () => {
     it('are both enabled, with their normal labels, once actions.invoice is true', () => {
         const wrapper = mountOrder({
             ...BASE_ORDER,
-            items: [lineWith(null)],
+            items: [lineWith()],
             actions: {
                 cancel: false,
                 pay: false,
@@ -196,7 +196,7 @@ describe('the invoice buttons', () => {
  */
 const invoicedOrder = (): OrderType => ({
     ...BASE_ORDER,
-    items: [lineWith(null)],
+    items: [lineWith()],
     actions: { ...BASE_ORDER.actions, invoice: true }
 });
 
@@ -217,7 +217,7 @@ describe('the credit notes', () => {
     });
 
     it('are not requested for an order with no invoice', async () => {
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
         await flushPromises();
 
         expect(listOrderCreditNotes).not.toHaveBeenCalled();
@@ -279,7 +279,7 @@ describe('the order number', () => {
         const wrapper = mountOrder({
             ...BASE_ORDER,
             orderNumber: '2026-000041',
-            items: [lineWith(null)]
+            items: [lineWith()]
         });
 
         expect(wrapper.get('[data-test=order-number]').text()).toContain('2026-000041');
@@ -294,7 +294,7 @@ describe('the timeline', () => {
             ...BASE_ORDER,
             status: 'paid',
             paymentStatus: 'paid',
-            items: [lineWith(null)]
+            items: [lineWith()]
         });
 
         const timeline = wrapper.getComponent({ name: 'OrderTimeline' });
@@ -311,7 +311,7 @@ describe('the payment deadline', () => {
         const wrapper = mountOrder({
             ...BASE_ORDER,
             payBy: '2026-01-10T12:00:00.000Z',
-            items: [lineWith(null)]
+            items: [lineWith()]
         });
 
         expect(wrapper.getComponent({ name: 'PaymentPanel' }).props('payBy')).toBe(
@@ -324,7 +324,7 @@ describe('the payment deadline', () => {
 
 describe('the VAT summary', () => {
     it('is absent on a pre-VAT order — no taxSummary at all', () => {
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
 
         expect(wrapper.find('[data-test=order-tax-summary]').exists()).toBe(false);
     });
@@ -335,7 +335,7 @@ describe('the VAT summary', () => {
             netTotal: 8.18,
             taxTotal: 1.81,
             taxSummary: [{ rate: 0.22, netAmount: 8.18, taxAmount: 1.81, grossAmount: 9.99 }],
-            items: [lineWith(null)]
+            items: [lineWith()]
         });
 
         const summary = wrapper.get('[data-test=order-tax-summary]');
@@ -365,14 +365,14 @@ const signIn = (canReadAuditLog: boolean) => {
 describe('the "History" link', () => {
     it('is absent for a visitor with no read:AuditLog', () => {
         signIn(false);
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
 
         expect(wrapper.find('[data-test=order-history]').exists()).toBe(false);
     });
 
     it("links to the shop audit trail, filtered to this order's id, for a visitor who holds it", () => {
         signIn(true);
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
 
         const link = wrapper.get('[data-test=order-history]');
         expect(link.attributes('href')).toBe('/en/audit?target=o1');
@@ -385,7 +385,7 @@ describe('an order line’s price', () => {
             ...BASE_ORDER,
             currency: 'GBP',
             // The server froze the line's total: net plus tax, which the page shows as it is.
-            items: [{ ...lineWith(null), quantity: 3, netAmount: 24.57, taxAmount: 5.4 }]
+            items: [{ ...lineWith(), quantity: 3, netAmount: 24.57, taxAmount: 5.4 }]
         });
 
         expect(wrapper.get('[data-test=order-item-unit-price]').text()).toContain('£9.99');
@@ -411,8 +411,8 @@ describe('an order line’s picture', () => {
         expect(wrapper.get('[data-test=lazy-image]').attributes('data-placeholder')).toBe('true');
     });
 
-    it('falls back to the placeholder once the product is gone (`current: null`)', () => {
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+    it('falls back to the placeholder once the product is gone (no `current`)', () => {
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
 
         expect(wrapper.get('[data-test=lazy-image]').attributes('data-placeholder')).toBe('true');
     });
@@ -423,7 +423,7 @@ describe('the reorder button', () => {
         // `reorder` runs under the cart store's `fetchAny` — a double-click firing it twice is
         // exactly the bug this guard removes, and the orders store's own `loading` (already
         // exercised by the invoice/cancel cases above) says nothing about it.
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
         expect(wrapper.get('[data-test=order-reorder]').attributes('disabled')).toBeUndefined();
 
         // A genuinely pending API call — the cart store's `loading` is real, TanStack-tracked
@@ -468,7 +468,7 @@ const toasts = () => useNotificationsStore().messages.map(({ message }) => messa
 
 describe('the reorder outcome', () => {
     it('says it plainly when every line came back', async () => {
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
         vi.mocked(apiReorder).mockResolvedValueOnce(reorderAnswer());
 
         await wrapper.get('[data-test=order-reorder]').trigger('click');
@@ -478,7 +478,7 @@ describe('the reorder outcome', () => {
     });
 
     it('names what the cart did not get when a product has left the catalogue', async () => {
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
         vi.mocked(apiReorder).mockResolvedValueOnce(reorderAnswer('removed'));
 
         await wrapper.get('[data-test=order-reorder]').trigger('click');
@@ -488,7 +488,7 @@ describe('the reorder outcome', () => {
     });
 
     it('names a line held back at the cap, which is not the same as one that left', async () => {
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
         vi.mocked(apiReorder).mockResolvedValueOnce(reorderAnswer('capped'));
 
         await wrapper.get('[data-test=order-reorder]').trigger('click');
@@ -500,7 +500,7 @@ describe('the reorder outcome', () => {
     });
 
     it('does not call a sum a problem', async () => {
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
         vi.mocked(apiReorder).mockResolvedValueOnce(reorderAnswer('summed'));
 
         await wrapper.get('[data-test=order-reorder]').trigger('click');
@@ -512,7 +512,7 @@ describe('the reorder outcome', () => {
 
 describe('the three statuses beside the order status', () => {
     it('shows the payment and fulfilment state, and no return chip while none is open', () => {
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
 
         expect(wrapper.get('[data-test=order-payment-status]').text()).toBe('Unpaid');
         expect(wrapper.get('[data-test=order-fulfillment-status]').text()).toBe('Not started');
@@ -524,7 +524,7 @@ describe('the three statuses beside the order status', () => {
     it('shows a partial refund and a return in progress as the server reports them', () => {
         const wrapper = mountOrder({
             ...BASE_ORDER,
-            items: [lineWith(null)],
+            items: [lineWith()],
             paymentStatus: 'partially_refunded',
             fulfillmentStatus: 'fulfilled',
             returnStatus: 'partially_returned'
@@ -542,7 +542,7 @@ describe('the withdrawal panel', () => {
     it('is handed what the server said about the button, never a computed deadline', () => {
         const wrapper = mountOrder({
             ...BASE_ORDER,
-            items: [lineWith(null)],
+            items: [lineWith()],
             withdrawUntil: '2026-10-01T10:00:00Z',
             actions: {
                 ...BASE_ORDER.actions,
@@ -566,7 +566,7 @@ describe('goods with no right of withdrawal', () => {
             ...BASE_ORDER,
             items: [
                 {
-                    ...lineWith(null),
+                    ...lineWith(),
                     product: {
                         id: 'p1',
                         title: 'Engraved mug',
@@ -586,7 +586,7 @@ describe('goods with no right of withdrawal', () => {
     });
 
     it('carry no note on an ordinary line', () => {
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
 
         expect(wrapper.find('[data-test=order-item-no-withdrawal]').exists()).toBe(false);
 
@@ -600,7 +600,7 @@ describe('a preorder line', () => {
             ...BASE_ORDER,
             items: [
                 {
-                    ...lineWith(null),
+                    ...lineWith(),
                     product: {
                         id: 'p1',
                         title: 'Limited vinyl',
@@ -621,7 +621,7 @@ describe('a preorder line', () => {
     });
 
     it('carries no note on a line sold from the shelf', () => {
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
 
         expect(wrapper.find('[data-test=order-item-preorder]').exists()).toBe(false);
 
@@ -640,7 +640,7 @@ const signInWith = (tenant: [string, string][]) => {
 describe('the edit button', () => {
     it('is hidden from a customer, who would only meet a guard refusal', () => {
         signInWith([['read', 'Order']]);
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
 
         expect(wrapper.find('[data-test=go-to-edit]').exists()).toBe(false);
 
@@ -649,7 +649,7 @@ describe('the edit button', () => {
 
     it('is shown to staff who may update orders', () => {
         signInWith([['update', 'Order']]);
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
 
         expect(wrapper.find('[data-test=go-to-edit]').exists()).toBe(true);
 
@@ -661,7 +661,7 @@ describe('the shipping method', () => {
     it('reads as its name, not the id the order froze', () => {
         const wrapper = mountOrder({
             ...BASE_ORDER,
-            items: [lineWith(null)],
+            items: [lineWith()],
             shippingMethod: 'express',
             shippingCost: 5
         });
@@ -676,7 +676,7 @@ describe('the shipping method', () => {
     it('falls back to the id for a method this deployment has no wording for', () => {
         const wrapper = mountOrder({
             ...BASE_ORDER,
-            items: [lineWith(null)],
+            items: [lineWith()],
             shippingMethod: 'drone',
             shippingCost: 5
         });
@@ -690,7 +690,7 @@ describe('the shipping method', () => {
 describe('the reorder button and the cart key', () => {
     it('is not offered to a role that holds no shopping key', () => {
         useSessionStore().setAbilities({ tenant: [['read', 'Order']], platform: [] });
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
 
         expect(wrapper.find('[data-test=order-reorder]').exists()).toBe(false);
 

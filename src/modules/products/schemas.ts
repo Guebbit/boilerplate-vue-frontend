@@ -14,8 +14,8 @@ import { z } from 'zod';
 import { translate } from '@/i18n';
 import {
     createProductBodyPriceMin,
-    createProductBodyTranslationsOneDescriptionMax,
-    createProductBodyTranslationsOneTitleMax
+    createProductBodyTranslationsDescriptionMax,
+    createProductBodyTranslationsTitleMax
 } from '@api/schemas';
 
 /**
@@ -29,7 +29,7 @@ import {
 const productsTitleSchema = z
     .string()
     .min(1, { error: () => translate('products-form.title-required') })
-    .max(createProductBodyTranslationsOneTitleMax, {
+    .max(createProductBodyTranslationsTitleMax, {
         error: () => translate('products-form.title-too-long')
     });
 
@@ -51,7 +51,7 @@ const productTranslationFieldsSchema = z.object({
     // has no `null` arm — omitting the key is how the field stays unset.
     description: z
         .string()
-        .max(createProductBodyTranslationsOneDescriptionMax, {
+        .max(createProductBodyTranslationsDescriptionMax, {
             error: () => translate('products-form.description-too-long')
         })
         .optional()

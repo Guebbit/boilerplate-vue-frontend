@@ -54,7 +54,7 @@ const CART: CartResponse = {
         currency: 'GBP',
         expectedTotal: { amount: 2997, currency: 'GBP' }
     },
-    shipping: { required: false, selected: null, options: [] },
+    shipping: { required: false, options: [] },
     checkoutable: true
 };
 

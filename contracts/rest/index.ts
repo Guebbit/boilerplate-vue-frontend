@@ -217,8 +217,7 @@ export interface Account {
     username: string;
     role?: string;
     active?: boolean;
-    /** @nullable */
-    verifiedAt?: string | null;
+    verifiedAt?: string;
     readonly pendingEmail?: string;
     imageUrl?: ImageUrl;
     thumbnailUrl?: ThumbnailUrl;
@@ -266,8 +265,7 @@ export interface User {
     username: string;
     role?: string;
     active?: boolean;
-    /** @nullable */
-    verifiedAt?: string | null;
+    verifiedAt?: string;
     readonly pendingEmail?: string;
     imageUrl?: ImageUrl;
     thumbnailUrl?: ThumbnailUrl;
@@ -774,10 +772,8 @@ export interface ObservabilityHealthSystem {
  */
 export interface ObservabilityHealthJob {
     name: string;
-    /** @nullable */
-    lastSuccessAt?: string | null;
-    /** @nullable */
-    lastError?: string | null;
+    lastSuccessAt?: string;
+    lastError?: string;
 }
 
 /**
@@ -927,7 +923,7 @@ export const AuditEntryItemOutcome = {
  * - `ownOrder` (boolean): `true` when staff acted on an order they placed
  *   themselves; absent otherwise. Filter with `GET /audit?ownOrder=`.
  * - `changes` (object): an `*.updated` action's non-personal fields that moved,
- *   `{ <field>: { from, to } }`, `null` meaning unset.
+ *   `{ <field>: { from, to } }`; a side that is unset is the absent key, never `null`.
  * - `changedFields` (string[]): an `*.updated` action's free-text and personal
  *   fields that moved, by NAME only. The trail is never scrubbed on erasure, so
  *   their values never enter it.
@@ -968,7 +964,7 @@ export interface AuditEntryItem {
      * - `ownOrder` (boolean): `true` when staff acted on an order they placed
      *   themselves; absent otherwise. Filter with `GET /audit?ownOrder=`.
      * - `changes` (object): an `*.updated` action's non-personal fields that moved,
-     *   `{ <field>: { from, to } }`, `null` meaning unset.
+     *   `{ <field>: { from, to } }`; a side that is unset is the absent key, never `null`.
      * - `changedFields` (string[]): an `*.updated` action's free-text and personal
      *   fields that moved, by NAME only. The trail is never scrubbed on erasure, so
      *   their values never enter it.
@@ -1844,8 +1840,8 @@ export interface OrderItem {
     promisedAt?: string;
     /** Whether `promisedAt` was a date the product named. `false` means the buyer was promised delivery "within 30 days" of the order. Present with `promisedAt`. */
     promiseDated?: boolean;
-    /** The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`. */
-    current: OrderLineCurrent | null;
+    /** The product's picture, resolved live — absent when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`. */
+    current?: OrderLineCurrent;
     /**
      * VAT included in this line's total, at its own frozen `taxRate`.
      * @minimum 0
@@ -2019,7 +2015,7 @@ export interface ExportOrder {
 }
 
 /**
- * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`, `dispute_opened`, `dispute_closed`. Shipments: `shipment_shipped`, `shipment_delivered`, `shipment_lost`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`, `refund_reversed`, `dispute_opened`, `dispute_closed`.
+ * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`, `dispute_opened`, `dispute_closed`. Shipments: `shipment_shipped`, `shipment_delivered`, `shipment_lost`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Which of these a buyer sees is the row's own `audience` (`buyer` or `staff`), set per type by the server.
  */
 export type OrderTimelineType = (typeof OrderTimelineType)[keyof typeof OrderTimelineType];
 
@@ -2070,7 +2066,7 @@ export const OrderTimelineExportEntryAudience = {
 } as const;
 
 /**
- * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
+ * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
  */
 export type OrderTimelineExportEntryData = { [key: string]: unknown };
 
@@ -2085,7 +2081,7 @@ export interface OrderTimelineExportEntry {
     actor?: Id;
     /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
     text?: string;
-    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
+    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
     data: OrderTimelineExportEntryData;
 }
 
@@ -3383,7 +3379,6 @@ export interface CreateUserRequest {
      */
     role?: string;
     active?: boolean;
-    imageUrl?: ImageRemoval;
     locale?: Locale;
 }
 
@@ -3841,14 +3836,14 @@ export interface ProductTranslationFieldsWrite {
 }
 
 /**
- * One or more locales, keyed by BCP 47 tag, each stated WHOLE: a `PUT` replaces the set, so a stored locale this map omits is deleted and a `description` a locale omits is cleared, drafts included. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on create and on `PUT`. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on.
+ * One or more locales, keyed by BCP 47 tag, each stated whole. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on.
  */
-export interface ProductTranslationsWrite {
-    [key: string]: ProductTranslationFieldsWrite | null;
+export interface ProductTranslationsCreate {
+    [key: string]: ProductTranslationFieldsWrite;
 }
 
 export interface CreateProductRequest {
-    translations: ProductTranslationsWrite;
+    translations: ProductTranslationsCreate;
     /**
      * Gross — VAT included. Same convention as `Product.price`.
      * @minimum 0
@@ -3869,7 +3864,6 @@ export interface CreateProductRequest {
      * @minimum 0
      */
     weight?: number;
-    imageUrl?: ImageRemoval;
     /**
      * @items.minLength 1
      * @items.maxLength 100
@@ -3938,6 +3932,13 @@ export interface CatalogueFacetsResponse {
     tags: FacetCount[];
 }
 
+/**
+ * One or more locales, keyed by BCP 47 tag, each stated WHOLE: a `PUT` replaces the set, so a stored locale this map omits is deleted and a `description` a locale omits is cleared, drafts included. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on `PUT`. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on.
+ */
+export interface ProductTranslationsWrite {
+    [key: string]: ProductTranslationFieldsWrite | null;
+}
+
 export interface ReplaceProductRequest {
     translations: ProductTranslationsWrite;
     /**
@@ -3951,10 +3952,10 @@ export interface ReplaceProductRequest {
     active: boolean;
     purchasable: boolean;
     releaseDate?: ReleaseDate | null;
-    allowBackorder?: boolean;
+    allowBackorder: boolean;
     restockDate?: RestockDate | null;
     requiresShipping: boolean;
-    noWithdrawal?: boolean;
+    noWithdrawal: boolean;
     /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
@@ -3991,10 +3992,10 @@ export interface ReplaceProductRequestMultipart {
     active: boolean;
     purchasable: boolean;
     releaseDate?: string;
-    allowBackorder?: boolean;
+    allowBackorder: boolean;
     restockDate?: string;
     requiresShipping: boolean;
-    noWithdrawal?: boolean;
+    noWithdrawal: boolean;
     /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
@@ -4249,11 +4250,8 @@ export interface CartShippingOption {
 export interface CartShipping {
     /** Whether this basket needs a shipping method at all — `false` for an all-digital cart, which `PUT /cart/shipping-method` and checkout both refuse a method against (`CART_SHIPPING_NOT_APPLICABLE`). */
     required: boolean;
-    /**
-     * The cart's chosen shipping method (`PUT /cart/shipping-method`). `null` when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket's weight — the same "reads as none" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`).
-     * @nullable
-     */
-    selected: string | null;
+    /** The cart's chosen shipping method (`PUT /cart/shipping-method`). Absent when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket's weight — the same "reads as none" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`). */
+    selected?: string;
     /** Every method that currently fits this basket, already priced against `summary.itemsTotal` — empty whenever `required` is `false`. `GET /delivery/methods` remains the full, unfiltered catalogue this is drawn from. */
     options: CartShippingOption[];
 }
@@ -4967,6 +4965,7 @@ export interface RefundPaymentRequest {
     amount?: number;
     /**
      * ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
+     * @minLength 1
      * @maxLength 3
      */
     currency?: string;
@@ -5535,11 +5534,10 @@ export interface InventoryLevel {
     /** @minimum 0 */
     available: number;
     /**
-     * How many units may be backordered at once. `0` means it is closed; `null` means there is no cap.
+     * How many units may be backordered at once. `0` means it is closed; absent means there is no cap.
      * @minimum 0
-     * @nullable
      */
-    backorderLimit: number | null;
+    backorderLimit?: number;
     /**
      * Preorder units outstanding against the limit, paid or not, until stock arrives and is allocated to them.
      * @minimum 0
@@ -5557,11 +5555,10 @@ export interface PreorderLevel {
     title: string;
     releaseDate?: ReleaseDate;
     /**
-     * The cap on owed units. `null` means there is no cap.
+     * The cap on owed units. Absent means there is no cap.
      * @minimum 0
-     * @nullable
      */
-    backorderLimit: number | null;
+    backorderLimit?: number;
     /**
      * Outstanding units, `held + paid`. Drops when stock is allocated, so it is not "units sold".
      * @minimum 0
@@ -5578,11 +5575,10 @@ export interface PreorderLevel {
      */
     paid: number;
     /**
-     * `backorderLimit - backordered`, never below zero: how many more may be ordered. `null` when there is no cap. Absent while the product is neither a preorder nor open to backorder: its cap then promises nothing.
+     * `backorderLimit - backordered`, never below zero: how many more may be ordered. Absent when there is no number to show: no cap (the row has no `backorderLimit` either), or the product is neither a preorder nor open to backorder, so its cap promises nothing.
      * @minimum 0
-     * @nullable
      */
-    left?: number | null;
+    left?: number;
     /**
      * Lifetime units claimed through `preorder` movements in the ledger, given back or not.
      * @minimum 0
@@ -6011,6 +6007,7 @@ export interface SetPurchaseHoldRequest {
     until: string;
     /**
      * Shown to the buyer with the refusal, so write it as if they read it (GDPR Art. 22(3): the reason and how to contest it).
+     * @minLength 1
      * @maxLength 500
      */
     note?: string;
@@ -6043,7 +6040,7 @@ export const OrderTimelineEntryAudience = {
 } as const;
 
 /**
- * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
+ * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
  */
 export type OrderTimelineEntryData = { [key: string]: unknown };
 
@@ -6057,7 +6054,7 @@ export interface OrderTimelineEntry {
     actor?: Id;
     /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
     text?: string;
-    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
+    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
     data: OrderTimelineEntryData;
 }
 
@@ -10004,16 +10001,12 @@ export const replaceProductByIdWithMultipart = (
     if (replaceProductRequestMultipart.releaseDate !== undefined) {
         formData.append(`releaseDate`, replaceProductRequestMultipart.releaseDate);
     }
-    if (replaceProductRequestMultipart.allowBackorder !== undefined) {
-        formData.append(`allowBackorder`, replaceProductRequestMultipart.allowBackorder.toString());
-    }
+    formData.append(`allowBackorder`, replaceProductRequestMultipart.allowBackorder.toString());
     if (replaceProductRequestMultipart.restockDate !== undefined) {
         formData.append(`restockDate`, replaceProductRequestMultipart.restockDate);
     }
     formData.append(`requiresShipping`, replaceProductRequestMultipart.requiresShipping.toString());
-    if (replaceProductRequestMultipart.noWithdrawal !== undefined) {
-        formData.append(`noWithdrawal`, replaceProductRequestMultipart.noWithdrawal.toString());
-    }
+    formData.append(`noWithdrawal`, replaceProductRequestMultipart.noWithdrawal.toString());
     if (replaceProductRequestMultipart.weight !== undefined) {
         formData.append(`weight`, replaceProductRequestMultipart.weight.toString());
     }
