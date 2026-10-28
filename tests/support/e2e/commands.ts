@@ -6,6 +6,7 @@ import { withScenario } from '../../../scripts/e2e/reset-command';
 import { asStub } from '../stub';
 import { parseMailpitMessage, type MailedEmail } from '../../../scripts/e2e/mail-message';
 import { answerChallengePage } from './login-challenge';
+import { isContractMismatch } from '../../../scripts/e2e/contract-mismatch';
 
 /*
  * A demo restore empties the in-memory database and puts a scenario back inside the backend
@@ -356,18 +357,6 @@ Cypress.on('window:before:load', (contentWindow) => {
 });
 
 /**
- * Whether one `console.error` call is the app's contract diagnostic. Both halves of the text are
- * matched so that `[contract] no response schema mapped` (a `console.warn` here) and any other
- * `[contract]`-prefixed note never fail a test.
- *
- * @param parameters - The arguments one `console.error` call carried.
- */
-const isContractMismatch = (parameters: unknown[]): boolean =>
-    typeof parameters[0] === 'string' &&
-    parameters[0].includes('[contract]') &&
-    parameters[0].includes('does not match the');
-
-/**
  * Fails the running test on any contract mismatch the page logs. The e2e bundle rejects the
  * call (`VITE_CONTRACT_THROW`), but a store swallows the rejection and a background poll or an
  * SSE frame has no caller, so without this a mismatch only shows up as an unrelated assertion
@@ -381,7 +370,7 @@ Cypress.on('window:before:load', (contentWindow) => {
     const originalError = contentWindow.console.error.bind(contentWindow.console);
     contentWindow.console.error = (...parameters: unknown[]) => {
         originalError(...parameters);
-        if (!isContractMismatch(parameters)) return;
+        if (!isContractMismatch('error', parameters)) return;
         contentWindow.setTimeout(() => {
             throw new Error(String(parameters[0]));
         }, 0);
