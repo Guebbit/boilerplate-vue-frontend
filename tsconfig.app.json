@@ -6,7 +6,7 @@
     "include": [
         "contracts/rest",
         "contracts/asyncapi.generated.ts",
-        "contracts/permission-actions.ts",
+        "contracts/permission-vocabulary.ts",
         "src/**/*",
         "src/**/*.vue"
     ],
@@ -32,7 +32,7 @@
             "@api/schemas": ["./contracts/rest/schemas.zod"],
             "@api/error-codes": ["./contracts/rest/error-codes"],
             "@api/routes": ["./contracts/rest/routes"],
-            "@api/permission-actions": ["./contracts/permission-actions"]
+            "@api/permission-vocabulary": ["./contracts/permission-vocabulary"]
         }
     }
 }

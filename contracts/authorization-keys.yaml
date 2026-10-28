@@ -68,7 +68,7 @@ version: 1
 #     rule every signed-in account holds. A subject with no own-rows rule keeps plain `read`.
 #
 # THIS LIST IS THE ONE HOME of the vocabulary: `npm run gen:api` turns it into
-# `api/permission-actions.ts` (and the frontend's copy), so no code types it a second time.
+# `api/permission-vocabulary.ts` (and the frontend's copy), so no code types it a second time.
 actions:
     - read
     - create
@@ -111,6 +111,13 @@ scopes:
 # deserves a fresh session wherever it is reached from, and a second route that reaches it would
 # otherwise have to remember. `amr` may also be named, so a future passkey tier is a line here
 # rather than a guard change — the reason `amr` was carried as a list rather than a boolean.
+#
+# `stepUp` below is each tier's window in seconds: how recent a sign-in must be. The environment
+# variables above override these defaults. Not read at boot: `npm run regenerate` writes
+# `src/kernel/step-up.generated.ts` from it.
+stepUp:
+    critical: 300
+    sensitive: 900
 
 # Credential — whether an API key can be minted with the rule.
 #

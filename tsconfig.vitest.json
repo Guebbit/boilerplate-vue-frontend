@@ -3,7 +3,7 @@
     "include": [
         "contracts/rest",
         "contracts/asyncapi.generated.ts",
-        "contracts/permission-actions.ts",
+        "contracts/permission-vocabulary.ts",
         "src/**/*",
         "src/**/*.vue",
         "tests/unit/**/*.ts",

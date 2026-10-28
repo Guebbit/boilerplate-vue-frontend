@@ -28,7 +28,7 @@ import {
     logoutAll as apiLogoutAll,
     touchSession as apiTouchSession
 } from '@api';
-import type { PermissionAction } from '@api/permission-actions';
+import type { PermissionAction } from '@api/permission-vocabulary';
 import { clearEtags } from '@/infrastructure/http/etag.ts';
 import { asPassive } from '@/infrastructure/http/passive.ts';
 import { warn } from '@/infrastructure/utils/logger.ts';
@@ -86,7 +86,7 @@ const unpackAbilityRules = (packed: PackedRules): RawRuleOf<MongoAbility>[] =>
  * absent: no key declares it and there is no wildcard to expand into one, so asking for it always
  * answers no. A screen asks for the action it actually performs.
  */
-export type { PermissionAction } from '@api/permission-actions';
+export type { PermissionAction } from '@api/permission-vocabulary';
 
 /**
  * The least the app shell and the guards need to know about the signed-in visitor.
