@@ -4,7 +4,8 @@
  * enforces on them so the form can say no before a round trip does. The ceilings are the API's
  * (`GET /stats/limits`), passed in; none is kept here. Pure functions; "today" is always passed in.
  */
-import type { StatsInterval, StatsLimits } from '@types';
+import { StatsInterval } from '@/types/enums.ts';
+import type { StatsLimits } from '@types';
 import { addCalendarDays, daysInRange, isCalendarDay, toCalendarDay } from './calendar.ts';
 
 /**
@@ -117,16 +118,13 @@ export const presetPeriod = (preset: PeriodPreset, today: Date): StatsPeriodChoi
  */
 export const periodFromQuery = (query: Record<string, unknown>, today: Date): StatsPeriodChoice => {
     const fallback = presetPeriod('last-30', today);
-    const intervals: readonly string[] = ['day', 'week', 'month'];
     const { from, to, interval } = query;
     if (typeof from !== 'string' || typeof to !== 'string') return fallback;
     const candidate: StatsPeriodChoice = {
         from,
         to,
         interval:
-            typeof interval === 'string' && intervals.includes(interval)
-                ? (interval as StatsInterval) // narrowed by the includes() above
-                : fallback.interval
+            Object.values(StatsInterval).find((known) => known === interval) ?? fallback.interval
     };
     return periodProblem(candidate) === undefined ? candidate : fallback;
 };
