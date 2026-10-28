@@ -253,6 +253,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LocaleCapabilities"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -345,6 +347,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LocaleApps"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -387,6 +391,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Language"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -580,6 +586,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LocaleDictionary"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "404":
           $ref: "#/components/responses/NotFound"
         "429":
@@ -640,6 +648,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LocaleMessages"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -4612,6 +4622,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProductsResponse"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
@@ -4736,6 +4748,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CatalogueFacetsResponse"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -4778,6 +4792,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Product"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -11405,7 +11421,7 @@ components:
     NoContent:
       description: Done. There is nothing to say, so the body is empty (RFC 9110 section 15.3.5).
     NotModified:
-      description: "The caller's `If-None-Match` still matches: nothing changed since the copy it holds, so the body is empty and that copy is still good (RFC 9110 section 15.4.5). Only the per-caller reads that revalidate on every use answer it — the bundler adds it to each of them; an operation never declares it by hand."
+      description: "The caller's `If-None-Match` still matches: nothing changed since the copy it holds, so the body is empty and that copy is still good (RFC 9110 section 15.4.5). Every `GET` the app caches (`setCache`) or lets a browser keep and revalidate (`privateNoCache`) can answer it; the bundler adds it to each of them, an operation never declares it by hand."
       headers:
         ETag:
           required: true

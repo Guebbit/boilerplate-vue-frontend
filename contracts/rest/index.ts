@@ -6646,7 +6646,7 @@ export interface CreateStockAlertRequest {
 export type NoContentResponse = void;
 
 /**
- * The caller's `If-None-Match` still matches: nothing changed since the copy it holds, so the body is empty and that copy is still good (RFC 9110 section 15.4.5). Only the per-caller reads that revalidate on every use answer it — the bundler adds it to each of them; an operation never declares it by hand.
+ * The caller's `If-None-Match` still matches: nothing changed since the copy it holds, so the body is empty and that copy is still good (RFC 9110 section 15.4.5). Every `GET` the app caches (`setCache`) or lets a browser keep and revalidate (`privateNoCache`) can answer it; the bundler adds it to each of them, an operation never declares it by hand.
  */
 export type NotModifiedResponse = void;
 
