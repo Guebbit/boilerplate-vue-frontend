@@ -466,6 +466,10 @@
                 "purpose": "Carries the second-step check of a sign-in with an outside provider.",
                 "lifetime": "As long as the check stays open, at most a few minutes"
             },
+            "oauthDeletionChallenge": {
+                "purpose": "Carries the step that restores an account scheduled for deletion, during a sign-in with an outside provider.",
+                "lifetime": "As long as the check stays open, at most a few minutes"
+            },
             "themePreference": {
                 "purpose": "Remembers whether you chose the light or the dark look.",
                 "lifetime": "1 year"
