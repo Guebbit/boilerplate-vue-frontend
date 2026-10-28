@@ -88,14 +88,14 @@ describe('OP23 · Cash goes back by hand', () => {
             cy.step('a credit note joins the invoice, and the invoice still downloads');
             eventually(
                 () =>
-                    cy.apiAs<CreditNoteLike[]>(
+                    cy.apiAs<{ items: CreditNoteLike[] }>(
                         'moderator',
                         'GET',
                         `/orders/${orderId}/credit-notes`
                     ),
-                (notes) => (notes?.length ?? 0) > 0
+                (notes) => (notes?.items.length ?? 0) > 0
             ).should((notes) => {
-                expect(notes).to.have.length(1);
+                expect(notes?.items).to.have.length(1);
             });
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=order-credit-note-row]').should('have.length', 1);

@@ -115,14 +115,14 @@ describe('OP5 · Cancel only versus cancel and refund', () => {
                     for (const orderId of [keptId, refundedId])
                         eventually(
                             () =>
-                                cy.apiAs<CreditNoteLike[]>(
+                                cy.apiAs<{ items: CreditNoteLike[] }>(
                                     'admin',
                                     'GET',
                                     `/orders/${orderId}/credit-notes`
                                 ),
-                            (notes) => (notes?.length ?? 0) > 0
+                            (notes) => (notes?.items.length ?? 0) > 0
                         ).should((notes) => {
-                            expect(notes).to.have.length(1);
+                            expect(notes?.items).to.have.length(1);
                         });
 
                     cy.step(
