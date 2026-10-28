@@ -25,5 +25,5 @@ export const checkoutFingerprint = (
     JSON.stringify({
         body: body ?? null,
         lines: (cart?.items ?? []).map(({ productId, quantity }) => [productId, quantity]),
-        shipping: cart?.shipping.selected ?? null
+        shipping: cart?.shipping.selected
     });

@@ -40,7 +40,7 @@ const MERGED_CART = {
         currency: 'EUR',
         expectedTotal: { amount: 3000, currency: 'EUR' }
     },
-    shipping: { required: false, selected: null, options: [] },
+    shipping: { required: false, options: [] },
     checkoutable: true
 };
 

@@ -29,13 +29,13 @@ const SHIPPING_OPTIONS: CartResponse['shipping']['options'] = [
  * A valid cart as `GET /cart` answers it, whose summary agrees with its lines.
  *
  * @param lines - `[productId, quantity]` pairs, in the order the cart lists them
- * @param selected - The shipping method the cart plans to ship by, or `null` for none
+ * @param selected - The shipping method the cart plans to ship by, or none; the request's own `null` (a clear) reads as none, as the server answers it
  * @param short - Ids of the lines the server names `insufficient_stock`
  * @returns A `CartResponse` that parses against the generated schema
  */
 export const aCart = (
     lines: [string, number][],
-    selected: string | null = null,
+    selected?: string | null,
     short: readonly string[] = []
 ): CartResponse => {
     const totalQuantity = lines.reduce((sum, [, quantity]) => sum + quantity, 0);
@@ -61,7 +61,7 @@ export const aCart = (
         },
         shipping: {
             required: lines.length > 0,
-            selected,
+            ...(typeof selected === 'string' ? { selected } : {}),
             options: lines.length > 0 ? SHIPPING_OPTIONS : []
         },
         checkoutable: lines.length > 0 && short.length === 0

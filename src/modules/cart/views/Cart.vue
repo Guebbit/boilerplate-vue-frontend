@@ -110,7 +110,7 @@ const shippingMethodId = ref<string | undefined>();
 watch(
     () => cart.value?.shipping.selected,
     (selected) => {
-        shippingMethodId.value = selected ?? undefined;
+        shippingMethodId.value = selected;
     },
     { immediate: true }
 );
@@ -122,7 +122,7 @@ watch(
  * picker to its previous choice rather than leaving a selection the server rejected.
  */
 watch(shippingMethodId, (chosen, previous) => {
-    if (chosen === (cart.value?.shipping.selected ?? undefined)) return;
+    if (chosen === cart.value?.shipping.selected) return;
     void setShippingMethod(chosen ?? null).catch((error: unknown) => {
         const verdict = classifyCheckoutError(error);
         addMessage(

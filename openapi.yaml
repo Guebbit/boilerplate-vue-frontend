@@ -11578,9 +11578,7 @@ components:
         active:
           type: boolean
         verifiedAt:
-          type:
-            - string
-            - "null"
+          type: string
           format: date-time
         pendingEmail:
           type: string
@@ -11640,9 +11638,7 @@ components:
         active:
           type: boolean
         verifiedAt:
-          type:
-            - string
-            - "null"
+          type: string
           format: date-time
         pendingEmail:
           type: string
@@ -12436,14 +12432,10 @@ components:
         name:
           type: string
         lastSuccessAt:
-          type:
-            - string
-            - "null"
+          type: string
           format: date-time
         lastError:
-          type:
-            - string
-            - "null"
+          type: string
     ObservabilityHealthQueue:
       type: object
       additionalProperties: false
@@ -12674,7 +12666,7 @@ components:
             - `ownOrder` (boolean): `true` when staff acted on an order they placed
               themselves; absent otherwise. Filter with `GET /audit?ownOrder=`.
             - `changes` (object): an `*.updated` action's non-personal fields that moved,
-              `{ <field>: { from, to } }`, `null` meaning unset.
+              `{ <field>: { from, to } }`; a side that is unset is the absent key, never `null`.
             - `changedFields` (string[]): an `*.updated` action's free-text and personal
               fields that moved, by NAME only. The trail is never scrubbed on erasure, so
               their values never enter it.
@@ -13977,7 +13969,6 @@ components:
         - product
         - quantity
         - locale
-        - current
         - taxAmount
         - netAmount
       properties:
@@ -14000,10 +13991,8 @@ components:
           type: boolean
           description: Whether `promisedAt` was a date the product named. `false` means the buyer was promised delivery "within 30 days" of the order. Present with `promisedAt`.
         current:
-          oneOf:
-            - $ref: "#/components/schemas/OrderLineCurrent"
-            - type: "null"
-          description: The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`.
+          $ref: "#/components/schemas/OrderLineCurrent"
+          description: The product's picture, resolved live — absent when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`.
         taxAmount:
           type: number
           format: double
@@ -14274,7 +14263,7 @@ components:
         - release_date_moved
         - delay_notice_sent
         - address_corrected
-      description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`, `dispute_opened`, `dispute_closed`. Shipments: `shipment_shipped`, `shipment_delivered`, `shipment_lost`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`, `refund_reversed`, `dispute_opened`, `dispute_closed`."
+      description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`, `dispute_opened`, `dispute_closed`. Shipments: `shipment_shipped`, `shipment_delivered`, `shipment_lost`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Which of these a buyer sees is the row's own `audience` (`buyer` or `staff`), set per type by the server."
     OrderTimelineExportEntry:
       type: object
       additionalProperties: false
@@ -14311,7 +14300,7 @@ components:
         data:
           type: object
           additionalProperties: true
-          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
+          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
     RefundStatus:
       type: string
       enum:
@@ -16258,8 +16247,6 @@ components:
         active:
           type: boolean
           default: true
-        imageUrl:
-          $ref: "#/components/schemas/ImageRemoval"
         locale:
           $ref: "#/components/schemas/Locale"
     CreateUserRequestMultipart:
@@ -16929,13 +16916,11 @@ components:
           type: string
           maxLength: 10000
           minLength: 1
-    ProductTranslationsWrite:
+    ProductTranslationsCreate:
       type: object
       additionalProperties:
-        oneOf:
-          - $ref: "#/components/schemas/ProductTranslationFieldsWrite"
-          - type: "null"
-      description: "One or more locales, keyed by BCP 47 tag, each stated WHOLE: a `PUT` replaces the set, so a stored locale this map omits is deleted and a `description` a locale omits is cleared, drafts included. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on create and on `PUT`. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on."
+        $ref: "#/components/schemas/ProductTranslationFieldsWrite"
+      description: "One or more locales, keyed by BCP 47 tag, each stated whole. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on."
       example:
         en:
           title: Orthopedic Memory Foam Dog Bed
@@ -16951,7 +16936,7 @@ components:
         - translations
       properties:
         translations:
-          $ref: "#/components/schemas/ProductTranslationsWrite"
+          $ref: "#/components/schemas/ProductTranslationsCreate"
         price:
           type: number
           format: double
@@ -16986,8 +16971,6 @@ components:
           type: integer
           minimum: 0
           description: Grams. Absent counts as 0 for shipping-method filtering.
-        imageUrl:
-          $ref: "#/components/schemas/ImageRemoval"
         categories:
           type: array
           items:
@@ -17103,6 +17086,20 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/FacetCount"
+    ProductTranslationsWrite:
+      type: object
+      additionalProperties:
+        oneOf:
+          - $ref: "#/components/schemas/ProductTranslationFieldsWrite"
+          - type: "null"
+      description: "One or more locales, keyed by BCP 47 tag, each stated WHOLE: a `PUT` replaces the set, so a stored locale this map omits is deleted and a `description` a locale omits is cleared, drafts included. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on `PUT`. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on."
+      example:
+        en:
+          title: Orthopedic Memory Foam Dog Bed
+          description: Extra support for joints during rest.
+        it:
+          title: Cuccia ortopedica in memory foam
+          description: Un supporto extra per le articolazioni durante il riposo.
     ReplaceProductRequest:
       type: object
       additionalProperties: false
@@ -17111,7 +17108,9 @@ components:
         - translations
         - active
         - purchasable
+        - allowBackorder
         - requiresShipping
+        - noWithdrawal
         - categories
         - tags
       properties:
@@ -17180,7 +17179,9 @@ components:
         - translations
         - active
         - purchasable
+        - allowBackorder
         - requiresShipping
+        - noWithdrawal
         - categories
         - tags
       properties:
@@ -17566,7 +17567,6 @@ components:
       additionalProperties: false
       required:
         - required
-        - selected
         - options
       description: What this basket needs from shipping, and what it may choose from — replaces a client computing its own basket weight and free-above math against the unfiltered `GET /delivery/methods` catalogue.
       properties:
@@ -17574,10 +17574,8 @@ components:
           type: boolean
           description: Whether this basket needs a shipping method at all — `false` for an all-digital cart, which `PUT /cart/shipping-method` and checkout both refuse a method against (`CART_SHIPPING_NOT_APPLICABLE`).
         selected:
-          type:
-            - string
-            - "null"
-          description: The cart's chosen shipping method (`PUT /cart/shipping-method`). `null` when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket's weight — the same "reads as none" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`).
+          type: string
+          description: The cart's chosen shipping method (`PUT /cart/shipping-method`). Absent when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket's weight — the same "reads as none" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`).
         options:
           type: array
           items:
@@ -18678,6 +18676,7 @@ components:
         currency:
           type: string
           maxLength: 3
+          minLength: 1
           description: ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
     ConfirmPaymentRequest:
       type: object
@@ -19451,7 +19450,6 @@ components:
         - onHand
         - reserved
         - available
-        - backorderLimit
         - backordered
       properties:
         productId:
@@ -19469,11 +19467,9 @@ components:
           type: integer
           minimum: 0
         backorderLimit:
-          type:
-            - integer
-            - "null"
+          type: integer
           minimum: 0
-          description: How many units may be backordered at once. `0` means it is closed; `null` means there is no cap.
+          description: How many units may be backordered at once. `0` means it is closed; absent means there is no cap.
         backordered:
           type: integer
           minimum: 0
@@ -19497,7 +19493,6 @@ components:
       required:
         - productId
         - title
-        - backorderLimit
         - backordered
         - held
         - paid
@@ -19510,11 +19505,9 @@ components:
         releaseDate:
           $ref: "#/components/schemas/ReleaseDate"
         backorderLimit:
-          type:
-            - integer
-            - "null"
+          type: integer
           minimum: 0
-          description: The cap on owed units. `null` means there is no cap.
+          description: The cap on owed units. Absent means there is no cap.
         backordered:
           type: integer
           minimum: 0
@@ -19528,11 +19521,9 @@ components:
           minimum: 0
           description: Outstanding units on paid orders, waiting for stock oldest payment first.
         left:
-          type:
-            - integer
-            - "null"
+          type: integer
           minimum: 0
-          description: "`backorderLimit - backordered`, never below zero: how many more may be ordered. `null` when there is no cap. Absent while the product is neither a preorder nor open to backorder: its cap then promises nothing."
+          description: "`backorderLimit - backordered`, never below zero: how many more may be ordered. Absent when there is no number to show: no cap (the row has no `backorderLimit` either), or the product is neither a preorder nor open to backorder, so its cap promises nothing."
         ordered:
           type: integer
           minimum: 0
@@ -20234,6 +20225,7 @@ components:
         note:
           type: string
           maxLength: 500
+          minLength: 1
           description: "Shown to the buyer with the refusal, so write it as if they read it (GDPR Art. 22(3): the reason and how to contest it)."
     MergeCartRequest:
       type: object
@@ -20295,7 +20287,7 @@ components:
         data:
           type: object
           additionalProperties: true
-          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
+          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
     OrderTimelineResponse:
       type: object
       additionalProperties: false

@@ -58,7 +58,6 @@ const CART = {
     checkoutable: true,
     shipping: {
         required: true,
-        selected: null,
         options: [{ id: 'standard', price: 5, requiresAddress: true, tracked: false }]
     }
 };
@@ -93,7 +92,7 @@ const EMPTY_CART = {
         currency: 'EUR',
         expectedTotal: { amount: 0, currency: 'EUR' }
     },
-    shipping: { required: false, selected: null, options: [] },
+    shipping: { required: false, options: [] },
     checkoutable: false
 };
 
@@ -405,7 +404,6 @@ describe('useCartStore', () => {
                 .then(() => {
                     expect(store.cartShipping).toEqual({
                         required: false,
-                        selected: null,
                         options: []
                     });
                 });

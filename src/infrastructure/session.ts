@@ -126,7 +126,7 @@ export interface SessionViewer {
      */
     thumbnailUrl?: string;
     /**
-     * Whether the address on file has been proven — `verifiedAt != null` on the record. The one
+     * Whether the address on file has been proven — `verifiedAt` being set on the record. The one
      * field here read by something OTHER than a route guard: `AppVerificationBanner` keys on it
      * directly, deliberately not on a shop permission (an unverified operator on a platform-only
      * site must see it too).
@@ -602,7 +602,7 @@ export const useSessionStore = defineStore('session', () => {
                 imageUrl: data.imageUrl,
                 thumbnailUrl: data.thumbnailUrl,
                 // Absent means unverified: the backend sends the field only once it's set.
-                verified: data.verifiedAt != null
+                verified: data.verifiedAt !== undefined
             }).then(() => data);
         });
 
