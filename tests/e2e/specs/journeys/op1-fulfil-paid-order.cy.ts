@@ -20,7 +20,7 @@ const TRACKING_CODE = 'TRK-E2E-OP1';
 interface OrderLike {
     status: string;
     fulfillmentStatus: string;
-    actions?: { withdrawUntil?: string };
+    withdrawUntil?: string;
 }
 
 /**
@@ -86,7 +86,7 @@ describe('OP1 · Fulfil a paid order the ordinary way', { tags: '@smoke' }, () =
                 'the customer is mailed that it arrived, with the day the right to withdraw ends'
             );
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).then((order) => {
-                const until = order?.actions?.withdrawUntil;
+                const until = order?.withdrawUntil;
                 if (!until) throw new Error('OP1: a delivered order has no withdrawal deadline');
                 cy.accountOf('user').then(({ email }) => {
                     cy.emailTo(
