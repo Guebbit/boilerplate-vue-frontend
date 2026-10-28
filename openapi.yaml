@@ -244,6 +244,11 @@ paths:
       responses:
         "200":
           description: Locale capabilities
+          headers:
+            Cache-Control:
+              description: "`public, no-cache`: the shared cache keeps it, a browser revalidates first. A caller who sees more than the public answer gets `private, no-cache`."
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -331,6 +336,11 @@ paths:
       responses:
         "200":
           description: The configured apps
+          headers:
+            Cache-Control:
+              description: "`public, no-cache`: the shared cache keeps it, a browser revalidates first."
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -368,6 +378,11 @@ paths:
       responses:
         "200":
           description: The language
+          headers:
+            Cache-Control:
+              description: "`public, no-cache`: the shared cache keeps it, a browser revalidates first. A caller who sees more than the public answer gets `private, no-cache`."
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -556,6 +571,11 @@ paths:
       responses:
         "200":
           description: Dictionary for the requested locale
+          headers:
+            Cache-Control:
+              description: "`public, no-cache`: the shared cache keeps it, a browser revalidates first."
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -611,6 +631,11 @@ paths:
       responses:
         "200":
           description: The built dictionary for the requested language
+          headers:
+            Cache-Control:
+              description: "`public, no-cache`: the shared cache keeps it, a browser revalidates first. A caller who sees more than the public answer gets `private, no-cache`."
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -3581,6 +3606,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UsersResponse"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3714,6 +3741,8 @@ paths:
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4106,6 +4135,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TicketsResponse"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4214,6 +4245,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Ticket"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4694,6 +4727,11 @@ paths:
       responses:
         "200":
           description: Categories and tags with counts
+          headers:
+            Cache-Control:
+              description: "`public, max-age=3600, stale-while-revalidate=60, stale-if-error=300`: the shared cache and the browser may both keep it."
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -4729,13 +4767,17 @@ paths:
       responses:
         "200":
           description: Product
+          headers:
+            Cache-Control:
+              description: "`public, no-cache`: the shared cache keeps it, a browser revalidates first. A caller who sees more than the public answer gets `private, no-cache`."
+              schema:
+                type: string
+            ETag:
+              $ref: "#/components/headers/ETag"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Product"
-          headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -5636,6 +5678,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OrdersResponse"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
@@ -5827,6 +5871,8 @@ paths:
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7249,6 +7295,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReturnsResponse"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
@@ -7338,6 +7386,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReturnOptions"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -7370,6 +7420,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Return"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -8912,6 +8964,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OrderTimelineResponse"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -9064,6 +9118,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PaymentsResponse"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9227,6 +9283,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RefundsResponse"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9257,6 +9315,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PaymentAttentionResponse"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9689,6 +9749,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SalesStats"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9730,6 +9792,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProductStats"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9769,6 +9833,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProductSeries"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9804,6 +9870,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CategoryStats"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9837,6 +9905,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PaymentMix"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9870,6 +9940,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OperationsStats"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9903,6 +9975,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CustomerStats"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9933,6 +10007,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PipelineStats"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9961,6 +10037,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/StatsLimits"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -10258,6 +10336,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExamplesResponse"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -10390,6 +10470,8 @@ paths:
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "404":
           $ref: "#/components/responses/NotFound"
         "429":
@@ -11322,6 +11404,14 @@ components:
   responses:
     NoContent:
       description: Done. There is nothing to say, so the body is empty (RFC 9110 section 15.3.5).
+    NotModified:
+      description: "The caller's `If-None-Match` still matches: nothing changed since the copy it holds, so the body is empty and that copy is still good (RFC 9110 section 15.4.5). Only the per-caller reads that revalidate on every use answer it — the bundler adds it to each of them; an operation never declares it by hand."
+      headers:
+        ETag:
+          required: true
+          description: The entity-tag the request matched (RFC 9110 section 8.8.3).
+          schema:
+            type: string
     BadRequest:
       description: "The request could not be understood or authenticated as what it claims to be — distinct from `ValidationError`, which is a well-formed request whose FIELDS are wrong. Used where a caller is a machine rather than a form: an unverifiable webhook signature is the case that needs it."
       content:

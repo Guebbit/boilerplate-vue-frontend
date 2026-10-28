@@ -6646,6 +6646,11 @@ export interface CreateStockAlertRequest {
 export type NoContentResponse = void;
 
 /**
+ * The caller's `If-None-Match` still matches: nothing changed since the copy it holds, so the body is empty and that copy is still good (RFC 9110 section 15.4.5). Only the per-caller reads that revalidate on every use answer it — the bundler adds it to each of them; an operation never declares it by hand.
+ */
+export type NotModifiedResponse = void;
+
+/**
  * The request could not be understood or authenticated as what it claims to be — distinct from `ValidationError`, which is a well-formed request whose FIELDS are wrong. Used where a caller is a machine rather than a form: an unverifiable webhook signature is the case that needs it.
  */
 export type BadRequestResponse = Problem;
