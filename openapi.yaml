@@ -9822,34 +9822,6 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: stats
-  /stats/limits:
-    get:
-      tags:
-        - Stats
-      summary: How big a period may be (staff)
-      description: "The two ceilings every period read enforces, so a form can refuse a period before a round trip does: the most calendar days (inclusive) and the most buckets one request may cover. Needs `read:Stats`."
-      operationId: getStatsLimits
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      responses:
-        "200":
-          description: The ceilings
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/StatsLimits"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: stats
   /inventory/levels/{productId}:
     get:
       tags:
@@ -20554,6 +20526,19 @@ components:
         timeZone:
           type: string
           description: The shop's IANA time zone every day and bucket edge follows.
+    StatsLimits:
+      type: object
+      additionalProperties: false
+      required:
+        - maxRangeDays
+        - maxBuckets
+      properties:
+        maxRangeDays:
+          type: integer
+          description: The most calendar days one period may cover, both ends counted.
+        maxBuckets:
+          type: integer
+          description: The most buckets one series may hold, the first possibly starting before `from`.
     SalesFigures:
       type: object
       additionalProperties: false
@@ -20660,10 +20645,13 @@ components:
       additionalProperties: false
       required:
         - period
+        - limits
         - currencies
       properties:
         period:
           $ref: "#/components/schemas/StatsPeriod"
+        limits:
+          $ref: "#/components/schemas/StatsLimits"
         currencies:
           type: array
           items:
@@ -20701,10 +20689,13 @@ components:
       additionalProperties: false
       required:
         - period
+        - limits
         - products
       properties:
         period:
           $ref: "#/components/schemas/StatsPeriod"
+        limits:
+          $ref: "#/components/schemas/StatsLimits"
         products:
           type: array
           items:
@@ -20729,11 +20720,14 @@ components:
       additionalProperties: false
       required:
         - period
+        - limits
         - productId
         - buckets
       properties:
         period:
           $ref: "#/components/schemas/StatsPeriod"
+        limits:
+          $ref: "#/components/schemas/StatsLimits"
         productId:
           $ref: "#/components/schemas/Id"
         title:
@@ -20766,10 +20760,13 @@ components:
       additionalProperties: false
       required:
         - period
+        - limits
         - categories
       properties:
         period:
           $ref: "#/components/schemas/StatsPeriod"
+        limits:
+          $ref: "#/components/schemas/StatsLimits"
         categories:
           type: array
           items:
@@ -20805,10 +20802,13 @@ components:
       additionalProperties: false
       required:
         - period
+        - limits
         - rows
       properties:
         period:
           $ref: "#/components/schemas/StatsPeriod"
+        limits:
+          $ref: "#/components/schemas/StatsLimits"
         rows:
           type: array
           items:
@@ -20818,12 +20818,15 @@ components:
       additionalProperties: false
       required:
         - period
+        - limits
         - cancellation
         - returns
         - refunds
       properties:
         period:
           $ref: "#/components/schemas/StatsPeriod"
+        limits:
+          $ref: "#/components/schemas/StatsLimits"
         cancellation:
           type: object
           additionalProperties: false
@@ -20888,6 +20891,7 @@ components:
       additionalProperties: false
       required:
         - period
+        - limits
         - customers
         - newCustomers
         - returningCustomers
@@ -20895,6 +20899,8 @@ components:
       properties:
         period:
           $ref: "#/components/schemas/StatsPeriod"
+        limits:
+          $ref: "#/components/schemas/StatsLimits"
         customers:
           type: integer
           description: Accounts with at least one paid order in the period.
@@ -20938,19 +20944,6 @@ components:
         paidNotShipped:
           type: integer
           description: Orders `paid` or `processing`, so not yet handed to a carrier.
-    StatsLimits:
-      type: object
-      additionalProperties: false
-      required:
-        - maxRangeDays
-        - maxBuckets
-      properties:
-        maxRangeDays:
-          type: integer
-          description: The most calendar days one period may cover, both ends counted.
-        maxBuckets:
-          type: integer
-          description: The most buckets one series may hold, the first possibly starting before `from`.
     UpdateInventoryLevelRequest:
       type: object
       additionalProperties: false

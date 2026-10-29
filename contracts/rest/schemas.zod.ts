@@ -17948,6 +17948,10 @@ export const GetSalesStatsResponse = zod.strictObject({
             .default(getSalesStatsResponsePeriodIntervalDefault),
         timeZone: zod.string()
     }),
+    limits: zod.strictObject({
+        maxRangeDays: zod.number(),
+        maxBuckets: zod.number()
+    }),
     currencies: zod.array(
         zod.strictObject({
             currency: zod.string(),
@@ -18031,6 +18035,10 @@ export const GetProductStatsResponse = zod.strictObject({
             .default(getProductStatsResponsePeriodIntervalDefault),
         timeZone: zod.string()
     }),
+    limits: zod.strictObject({
+        maxRangeDays: zod.number(),
+        maxBuckets: zod.number()
+    }),
     products: zod.array(
         zod.strictObject({
             productId: zod
@@ -18078,6 +18086,10 @@ export const GetProductSalesSeriesResponse = zod.strictObject({
             .default(getProductSalesSeriesResponsePeriodIntervalDefault),
         timeZone: zod.string()
     }),
+    limits: zod.strictObject({
+        maxRangeDays: zod.number(),
+        maxBuckets: zod.number()
+    }),
     productId: zod
         .string()
         .min(1)
@@ -18110,6 +18122,10 @@ export const GetCategoryStatsResponse = zod.strictObject({
             .default(getCategoryStatsResponsePeriodIntervalDefault),
         timeZone: zod.string()
     }),
+    limits: zod.strictObject({
+        maxRangeDays: zod.number(),
+        maxBuckets: zod.number()
+    }),
     categories: zod.array(
         zod.strictObject({
             category: zod.string(),
@@ -18136,6 +18152,10 @@ export const GetPaymentMixStatsResponse = zod.strictObject({
             .enum(['day', 'week', 'month'])
             .default(getPaymentMixStatsResponsePeriodIntervalDefault),
         timeZone: zod.string()
+    }),
+    limits: zod.strictObject({
+        maxRangeDays: zod.number(),
+        maxBuckets: zod.number()
     }),
     rows: zod.array(
         zod.strictObject({
@@ -18168,6 +18188,10 @@ export const GetOperationsStatsResponse = zod.strictObject({
             .enum(['day', 'week', 'month'])
             .default(getOperationsStatsResponsePeriodIntervalDefault),
         timeZone: zod.string()
+    }),
+    limits: zod.strictObject({
+        maxRangeDays: zod.number(),
+        maxBuckets: zod.number()
     }),
     cancellation: zod.strictObject({
         placed: zod.number(),
@@ -18211,6 +18235,10 @@ export const GetCustomerStatsResponse = zod.strictObject({
             .default(getCustomerStatsResponsePeriodIntervalDefault),
         timeZone: zod.string()
     }),
+    limits: zod.strictObject({
+        maxRangeDays: zod.number(),
+        maxBuckets: zod.number()
+    }),
     customers: zod.number(),
     newCustomers: zod.number(),
     returningCustomers: zod.number(),
@@ -18233,14 +18261,6 @@ export const GetPipelineStatsResponse = zod.strictObject({
         })
     ),
     paidNotShipped: zod.number()
-});
-/**
- * The two ceilings every period read enforces, so a form can refuse a period before a round trip does: the most calendar days (inclusive) and the most buckets one request may cover. Needs `read:Stats`.
- * @summary How big a period may be (staff)
- */
-export const GetStatsLimitsResponse = zod.strictObject({
-    maxRangeDays: zod.number(),
-    maxBuckets: zod.number()
 });
 /**
  * One row of the stock board by product, with its counters and availability — the record `receive`, `adjust` and the `PATCH` act on. Same audience as the board (`read:StockLevel`). An unknown product, one with no level row and a malformed id are the same 404.

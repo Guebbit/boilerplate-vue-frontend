@@ -6300,6 +6300,13 @@ export interface StatsPeriod {
     timeZone: string;
 }
 
+export interface StatsLimits {
+    /** The most calendar days one period may cover, both ends counted. */
+    maxRangeDays: number;
+    /** The most buckets one series may hold, the first possibly starting before `from`. */
+    maxBuckets: number;
+}
+
 export interface SalesFigures {
     /** Orders paid in the period, by `paidAt`. */
     orders: number;
@@ -6346,6 +6353,7 @@ export interface SalesCurrency {
 
 export interface SalesStats {
     period: StatsPeriod;
+    limits: StatsLimits;
     currencies: SalesCurrency[];
 }
 
@@ -6362,6 +6370,7 @@ export interface ProductSalesRow {
 
 export interface ProductStats {
     period: StatsPeriod;
+    limits: StatsLimits;
     products: ProductSalesRow[];
 }
 
@@ -6373,6 +6382,7 @@ export interface ProductSeriesBucket {
 
 export interface ProductSeries {
     period: StatsPeriod;
+    limits: StatsLimits;
     productId: Id;
     /** As the orders froze it; absent when the product sold nothing in the period. */
     title?: string;
@@ -6388,6 +6398,7 @@ export interface CategorySalesRow {
 
 export interface CategoryStats {
     period: StatsPeriod;
+    limits: StatsLimits;
     categories: CategorySalesRow[];
 }
 
@@ -6410,6 +6421,7 @@ export interface PaymentMixRow {
 
 export interface PaymentMix {
     period: StatsPeriod;
+    limits: StatsLimits;
     rows: PaymentMixRow[];
 }
 
@@ -6445,6 +6457,7 @@ export type OperationsStatsRefundsItem = {
 
 export interface OperationsStats {
     period: StatsPeriod;
+    limits: StatsLimits;
     /** A cohort, meaning orders placed in the period that ended cancelled, not cancellations dated by when they happened. */
     cancellation: OperationsStatsCancellation;
     returns: OperationsStatsReturns;
@@ -6453,6 +6466,7 @@ export interface OperationsStats {
 
 export interface CustomerStats {
     period: StatsPeriod;
+    limits: StatsLimits;
     /** Accounts with at least one paid order in the period. */
     customers: number;
     /** Of those, accounts whose first paid order is in the period. */
@@ -6476,13 +6490,6 @@ export interface PipelineStats {
     awaitingTransfers: PipelineStatsAwaitingTransfersItem[];
     /** Orders `paid` or `processing`, so not yet handed to a carrier. */
     paidNotShipped: number;
-}
-
-export interface StatsLimits {
-    /** The most calendar days one period may cover, both ends counted. */
-    maxRangeDays: number;
-    /** The most buckets one series may hold, the first possibly starting before `from`. */
-    maxBuckets: number;
 }
 
 export interface UpdateInventoryLevelRequest {
@@ -12112,14 +12119,6 @@ export const getPipelineStats = (options?: SecondParameter<typeof orvalMutator<P
 };
 
 /**
- * The two ceilings every period read enforces, so a form can refuse a period before a round trip does: the most calendar days (inclusive) and the most buckets one request may cover. Needs `read:Stats`.
- * @summary How big a period may be (staff)
- */
-export const getStatsLimits = (options?: SecondParameter<typeof orvalMutator<StatsLimits>>) => {
-    return orvalMutator<StatsLimits>({ url: `/stats/limits`, method: 'GET' }, options);
-};
-
-/**
  * One row of the stock board by product, with its counters and availability — the record `receive`, `adjust` and the `PATCH` act on. Same audience as the board (`read:StockLevel`). An unknown product, one with no level row and a malformed id are the same 404.
  * @summary Get one product's stock level
  */
@@ -12995,7 +12994,6 @@ export type GetPaymentMixStatsResult = NonNullable<Awaited<ReturnType<typeof get
 export type GetOperationsStatsResult = NonNullable<Awaited<ReturnType<typeof getOperationsStats>>>;
 export type GetCustomerStatsResult = NonNullable<Awaited<ReturnType<typeof getCustomerStats>>>;
 export type GetPipelineStatsResult = NonNullable<Awaited<ReturnType<typeof getPipelineStats>>>;
-export type GetStatsLimitsResult = NonNullable<Awaited<ReturnType<typeof getStatsLimits>>>;
 export type GetInventoryLevelResult = NonNullable<Awaited<ReturnType<typeof getInventoryLevel>>>;
 export type UpdateInventoryLevelResult = NonNullable<
     Awaited<ReturnType<typeof updateInventoryLevel>>

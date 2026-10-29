@@ -120,7 +120,6 @@ export const OPERATION_MODULES: Record<string, string> = {
     getSitemapIndex: 'sitemap',
     getSitemapPages: 'sitemap',
     getSitemapProducts: 'sitemap',
-    getStatsLimits: 'stats',
     getTicket: 'tickets',
     getTicketSummary: 'tickets',
     getTwoFactorStatus: 'account',

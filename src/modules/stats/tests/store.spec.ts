@@ -60,12 +60,16 @@ const parametersOf = (url: string): unknown =>
             { params?: unknown } | undefined
     )?.params;
 
+/** The ceilings every period answer carries. */
+const LIMITS = { maxRangeDays: 731, maxBuckets: 400 };
+
 beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
         'GET /stats/sales': {
             period: PERIOD,
+            limits: LIMITS,
             currencies: [
                 {
                     currency: 'EUR',
@@ -77,6 +81,7 @@ beforeEach(() => {
         },
         'GET /stats/products': {
             period: PERIOD,
+            limits: LIMITS,
             products: [
                 {
                     productId: 'p1',
@@ -91,20 +96,24 @@ beforeEach(() => {
         },
         'GET /stats/categories': {
             period: PERIOD,
+            limits: LIMITS,
             categories: [{ category: 'Food', currency: 'EUR', unitsOrdered: 3, netSales: 40 }]
         },
         'GET /stats/payments': {
             period: PERIOD,
+            limits: LIMITS,
             rows: [{ method: 'card', provider: 'fake', currency: 'EUR', payments: 2, amount: 90 }]
         },
         'GET /stats/operations': {
             period: PERIOD,
+            limits: LIMITS,
             cancellation: { placed: 4, cancelled: 1, rate: 0.25 },
             returns: { unitsOrdered: 3, unitsReturned: 1, rate: 0.33 },
             refunds: [{ currency: 'EUR', invoiced: 90, credited: 12, rate: 0.13 }]
         },
         'GET /stats/customers': {
             period: PERIOD,
+            limits: LIMITS,
             customers: 2,
             newCustomers: 1,
             returningCustomers: 1,
@@ -114,9 +123,9 @@ beforeEach(() => {
             awaitingTransfers: [{ currency: 'EUR', count: 2, amount: 50 }],
             paidNotShipped: 3
         },
-        'GET /stats/limits': { maxRangeDays: 731, maxBuckets: 400 },
         'GET /stats/products/p1': {
             period: PERIOD,
+            limits: LIMITS,
             productId: 'p1',
             title: 'Kibble',
             buckets: [{ start: '2026-09-30T22:00:00.000Z', unitsOrdered: 3, unitsReversed: 1 }]
@@ -124,12 +133,28 @@ beforeEach(() => {
     };
 });
 
-describe('loadLimits', () => {
-    it('holds the ceilings as the API states them', () => {
+describe('the period ceilings', () => {
+    it('are held from the answers that carry them, with no read of their own', () => {
         const store = useStatsStore();
-        return store.loadLimits().then(() => {
-            expect(store.limits).toEqual({ maxRangeDays: 731, maxBuckets: 400 });
-        });
+        expect(store.limits).toBeUndefined();
+
+        return store
+            .loadDashboard({ from: '2026-10-01', to: '2026-10-07', interval: 'day' })
+            .then(() => {
+                expect(store.limits).toEqual(LIMITS);
+                expect(vi.mocked(orvalMutator).mock.calls.map((call) => call[0].url)).not.toContain(
+                    '/stats/limits'
+                );
+            });
+    });
+
+    it('come with a product series too', () => {
+        const store = useStatsStore();
+        return store
+            .loadProductSales('p1', { from: '2026-10-01', to: '2026-10-07', interval: 'day' })
+            .then(() => {
+                expect(store.limits).toEqual(LIMITS);
+            });
     });
 });
 

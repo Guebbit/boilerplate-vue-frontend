@@ -23,7 +23,6 @@ import { useStatsStore } from '../store.ts';
 import { periodFromQuery } from '../domain';
 import type { StatsPeriodChoice } from '../domain';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { logger } from '@/infrastructure/utils/logger.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import StatsPeriodForm from '../components/StatsPeriodForm.vue';
 import SalesSection from '../components/SalesSection.vue';
@@ -79,10 +78,6 @@ const applyPeriod = (next: StatsPeriodChoice) => {
 };
 
 onMounted(() => {
-    // A failed read leaves the form to the API's own refusal.
-    stats.loadLimits().catch((error: unknown) => {
-        logger.debug('http', '[Stats] period limits not read', error);
-    });
     // eslint-disable-next-line @typescript-eslint/no-floating-promises -- load records or toasts its own failure
     void load();
 });
