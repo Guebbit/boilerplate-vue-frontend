@@ -15,7 +15,8 @@ import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useDeliveryStore } from '../store.ts';
-import type { FulfillmentOrder, HoldFulfillmentOrderRequestReason } from '@types';
+import { HoldFulfillmentOrderRequestReason } from '@/types/enums.ts';
+import type { FulfillmentOrder } from '@types';
 
 /**
  * The fulfillment order being held.
@@ -60,9 +61,9 @@ const deliveryStore = useDeliveryStore();
 const { loading } = storeToRefs(deliveryStore);
 
 /**
- * The reasons staff may give — the contract's own enum minus `awaiting_stock`.
+ * The reasons staff may give — the contract's own enum for staff, which has no `awaiting_stock`.
  */
-const REASONS: HoldFulfillmentOrderRequestReason[] = ['incorrect_address', 'high_risk', 'other'];
+const REASONS = Object.values(HoldFulfillmentOrderRequestReason);
 
 /**
  * The reason select's choices, translated.

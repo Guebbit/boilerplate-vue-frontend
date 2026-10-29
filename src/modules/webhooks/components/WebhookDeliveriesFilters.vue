@@ -16,7 +16,8 @@ import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import type { WebhookDeliveryFilters } from '../types.ts';
-import type { WebhookDelivery, WebhookDeliveryStatus, WebhookSubscription } from '@types';
+import { WebhookDeliveryStatus } from '@/types/enums.ts';
+import type { WebhookDelivery, WebhookSubscription } from '@types';
 
 /**
  * i18n translator for this component's template and messages.
@@ -100,10 +101,10 @@ const subscriptionChoice = useAnyFilterChoice(
  */
 const statusOptions = computed(() => [
     { value: null, label: t('webhook-deliveries-page.filter-status-all') },
-    { value: 'pending', label: t('webhook-deliveries-page.status-pending') },
-    { value: 'in-flight', label: t('webhook-deliveries-page.status-in-flight') },
-    { value: 'succeeded', label: t('webhook-deliveries-page.status-succeeded') },
-    { value: 'exhausted', label: t('webhook-deliveries-page.status-exhausted') }
+    ...Object.values(WebhookDeliveryStatus).map((value) => ({
+        value,
+        label: t(`webhook-deliveries-page.status-${value}`)
+    }))
 ]);
 
 /**

@@ -32,7 +32,8 @@ import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
-import type { PreorderFulfillmentOrder, PreorderFulfillmentState } from '@types';
+import { PreorderFulfillmentState } from '@/types/enums.ts';
+import type { PreorderFulfillmentOrder } from '@types';
 import { useDeliveryStore } from '../store.ts';
 
 /**
@@ -88,12 +89,7 @@ const DUE_SOON_DAYS = 7;
 /**
  * Every state the server names, in the order the filter lists them.
  */
-const STATES = [
-    'waiting',
-    'allocated',
-    'shipped',
-    'cancelled'
-] as const satisfies readonly PreorderFulfillmentState[];
+const STATES = Object.values(PreorderFulfillmentState);
 
 /**
  * The board's own filters; a missing key shows everything.

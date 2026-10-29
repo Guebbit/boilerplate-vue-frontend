@@ -14,7 +14,8 @@ import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useDeliveryStore } from '../store.ts';
-import type { Shipment, ShipmentLostReason } from '@types';
+import { ShipmentLostReason } from '@/types/enums.ts';
+import type { Shipment } from '@types';
 
 /**
  * The shipment that did not arrive.
@@ -61,7 +62,7 @@ const { loading } = storeToRefs(deliveryStore);
 /**
  * The reasons on offer — the contract's own enum.
  */
-const REASONS: ShipmentLostReason[] = ['lost', 'damaged'];
+const REASONS = Object.values(ShipmentLostReason);
 
 /**
  * The reason select's choices, translated.
