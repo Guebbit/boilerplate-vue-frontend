@@ -379,6 +379,14 @@ const holdNotice: Notification = {
     createdAt: '2026-10-04T10:00:00.000Z'
 };
 
+/**
+ * Switches the open panel to its Work tab, where a work notice lives.
+ */
+const openWorkTab = async () => {
+    document.body.querySelector<HTMLElement>('[data-test=notifications-tab-work]')!.click();
+    await flushPromises();
+};
+
 describe('a work notice for staff', () => {
     it('links to the screen it is about when the reader may open it', async () => {
         signIn();
@@ -389,6 +397,7 @@ describe('a work notice for staff', () => {
         inboxOnServer = [holdNotice];
         await mountBell();
         await openPanel();
+        await openWorkTab();
 
         const link = document.body.querySelector('[data-test=notification-target-link]');
 
@@ -400,6 +409,7 @@ describe('a work notice for staff', () => {
         inboxOnServer = [holdNotice];
         await mountBell();
         await openPanel();
+        await openWorkTab();
 
         expect(document.body.querySelector('[data-test=notification-target-link]')).toBeNull();
         expect(document.body.querySelector('[data-test=notification-w1]')).not.toBeNull();
@@ -417,7 +427,131 @@ describe('a work notice for staff', () => {
         ];
         await mountBell();
         await openPanel();
+        await openWorkTab();
 
         expect(document.body.querySelector('[data-test=notification-target-link]')).toBeNull();
+    });
+});
+
+/**
+ * An own notice and two work notices, one of them already read.
+ */
+const mixedInbox = (): Notification[] => [
+    row('n1'),
+    holdNotice,
+    {
+        ...holdNotice,
+        id: 'w3',
+        readAt: '2026-10-04T12:00:00.000Z'
+    }
+];
+
+/**
+ * A tab button by its data-test suffix.
+ */
+const tabButton = (name: 'mine' | 'work') =>
+    document.body.querySelector<HTMLElement>(`[data-test=notifications-tab-${name}]`);
+
+/**
+ * The ids of the rows the panel lists now.
+ */
+const listedIds = () =>
+    [...document.body.querySelectorAll<HTMLElement>('[data-test^="notification-"]')]
+        .map((node) => node.dataset.test ?? '')
+        .filter((name) => /^notification-[a-z]\d+$/.test(name))
+        .map((name) => name.replace('notification-', ''));
+
+describe('the panel for a person who holds work notices', () => {
+    it('shows no tabs to someone with only their own notices', async () => {
+        signIn();
+        inboxOnServer = [row('n1')];
+        await mountBell();
+        await openPanel();
+
+        expect(tabButton('work')).toBeNull();
+        expect(listedIds()).toEqual(['n1']);
+    });
+
+    it('splits into Mine and Work, opening on Mine', async () => {
+        signIn();
+        inboxOnServer = mixedInbox();
+        await mountBell();
+        await openPanel();
+
+        expect(tabButton('mine')?.getAttribute('aria-selected')).toBe('true');
+        expect(listedIds()).toEqual(['n1']);
+    });
+
+    it('lists only the work notices on the Work tab', async () => {
+        signIn();
+        inboxOnServer = mixedInbox();
+        await mountBell();
+        await openPanel();
+        tabButton('work')!.click();
+        await flushPromises();
+
+        expect(listedIds().toSorted()).toEqual(['w1', 'w3']);
+    });
+
+    it('keeps the bell badge at the total and gives the Work tab its own count', async () => {
+        signIn();
+        inboxOnServer = mixedInbox();
+        await mountBell();
+
+        expect(wrapper!.get('[data-test=notifications-badge]').text()).toContain('2');
+
+        await openPanel();
+
+        // Opening marked everything read; the tab still counts what was new when it opened.
+        expect(
+            document.body
+                .querySelector('[data-test=notifications-tab-work-count]')
+                ?.textContent?.trim()
+        ).toBe('1');
+        expect(tabButton('work')?.getAttribute('aria-label')).toBe('Work: 1 unread');
+    });
+
+    it('clears only the tab in view', async () => {
+        signIn();
+        inboxOnServer = mixedInbox();
+        await mountBell();
+        await openPanel();
+        tabButton('work')!.click();
+        await flushPromises();
+        panel()!.querySelector<HTMLElement>('[data-test=notifications-clear-all]')!.click();
+        await flushPromises();
+
+        expect(requests()).toContain('DELETE /notifications/w1');
+        expect(requests()).not.toContain('DELETE /notifications');
+        expect(useInboxStore().items.map(({ id }) => id)).toEqual(['n1']);
+    });
+
+    it('falls back to Mine, without tabs, once the last work notice is gone', async () => {
+        signIn();
+        inboxOnServer = [row('n1'), holdNotice];
+        await mountBell();
+        await openPanel();
+        tabButton('work')!.click();
+        await flushPromises();
+        await useInboxStore().dismiss('w1');
+        await flushPromises();
+
+        expect(tabButton('work')).toBeNull();
+        expect(listedIds()).toEqual(['n1']);
+    });
+
+    it('breaks no accessibility rule with the tabs showing', async () => {
+        signIn();
+        inboxOnServer = mixedInbox();
+        await mountBell();
+        await openPanel();
+        tabButton('work')!.click();
+        await flushPromises();
+
+        const results = await axe.run(document.body, {
+            rules: { 'color-contrast': { enabled: false }, region: { enabled: false } }
+        });
+
+        expect(results.violations.map(({ id, nodes }) => `${id}: ${nodes[0]?.html}`)).toEqual([]);
     });
 });

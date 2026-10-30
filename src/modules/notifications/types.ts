@@ -4,6 +4,7 @@
  * store. No endpoint answers with these directly.
  */
 import type { EToastType } from '@guebbit/vue-toolkit';
+import type { NotificationAudience } from '@types';
 import type { NotificationTarget } from './domain';
 
 /**
@@ -39,4 +40,9 @@ export interface InboxItem {
      * Whether the owner has not opened the bell since it arrived.
      */
     unread: boolean;
+    /**
+     * Whose message it is: `own` (about the reader as a person or buyer) or `staff` (a work notice
+     * sent because the reader's role does that work). The panel's tabs split on it.
+     */
+    audience: NotificationAudience;
 }
