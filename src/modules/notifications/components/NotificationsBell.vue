@@ -21,6 +21,7 @@ import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useInboxLifecycle } from '../composables/use-inbox-lifecycle';
 import { useNotificationLink } from '../composables/use-notification-link';
 import { useInboxStore } from '../store';
+import type { InboxItem } from '../types';
 
 /**
  * Translation function.
@@ -100,11 +101,10 @@ const workCount = computed(
 );
 
 /**
- * "Clear all": the tab's own rows when the panel is split, else the whole inbox in one call. The
- * server's bulk delete has no audience filter, so a tab must not use it.
+ * "Clear all": the tab in view when the panel is split, else the whole inbox. One call either way;
+ * the server filters by audience.
  */
-const clearAll = () =>
-    hasWork.value ? inbox.dismissMany(shownItems.value.map(({ id }) => id)) : inbox.dismissAll();
+const clearAll = () => inbox.dismissAll(hasWork.value ? TAB_AUDIENCE[tab.value] : undefined);
 
 /**
  * The notice's order page, or nothing when it has none or this build ships no order page.
@@ -131,6 +131,19 @@ const bellLabel = computed(() =>
 );
 
 /**
+ * The tab the panel opens on: Work when only Work has unread rows, Mine otherwise (a tie, or
+ * nothing unread, stays on Mine).
+ *
+ * @param rows - The panel's rows as they are the moment it opens.
+ * @returns The tab to show first.
+ */
+const firstTab = (rows: readonly InboxItem[]): PanelTab => {
+    const unreadOf = (audience: InboxItem['audience']) =>
+        rows.some((row) => row.unread && row.audience === audience);
+    return unreadOf('staff') && !unreadOf('own') ? 'work' : 'mine';
+};
+
+/**
  * The panel opened or closed. Opening remembers what was new, then tells the server it was read.
  *
  * @param isOpen - The menu's new state.
@@ -138,6 +151,7 @@ const bellLabel = computed(() =>
 const onToggle = (isOpen: boolean) => {
     if (!isOpen) return;
     freshIds.value = new Set(items.value.filter(({ unread }) => unread).map(({ id }) => id));
+    chosenTab.value = firstTab(items.value);
     // eslint-disable-next-line @typescript-eslint/no-floating-promises -- the inbox store reports its own failure
     void inbox.markAllRead();
 };

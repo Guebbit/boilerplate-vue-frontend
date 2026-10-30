@@ -7644,6 +7644,13 @@ export type ListExamplesParams = {
     status?: ExampleStatus;
 };
 
+export type DismissAllNotificationsParams = {
+    /**
+     * Delete only this group of the caller's notifications.
+     */
+    audience?: NotificationAudience;
+};
+
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
@@ -12458,13 +12465,17 @@ export const listNotifications = (
 };
 
 /**
- * Permanently deletes every notification of the caller — a hard delete, like `DELETE /notifications/{id}`, on the collection itself (as `DELETE /account/sessions` and `DELETE /cart/items` are). Emptying an empty inbox is the state the caller asked for, so it answers 204 too. `POST /notifications/read-all` stays an action: it moves `readAt`, not membership.
+ * Permanently deletes every notification of the caller — a hard delete, like `DELETE /notifications/{id}`, on the collection itself (as `DELETE /account/sessions` and `DELETE /cart/items` are). With `audience` it deletes only that group: a bell with a Mine and a Work tab clears one tab in one call (the staff cap is 200 rows, more than the global rate limit allows as single deletes). Without it, everything. Emptying an empty inbox, or an empty group, is the state the caller asked for, so it answers 204 too. `POST /notifications/read-all` stays an action: it moves `readAt`, not membership.
  * @summary Delete every notification
  */
 export const dismissAllNotifications = (
+    params?: DismissAllNotificationsParams,
     options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<NoContentResponse>({ url: `/notifications`, method: 'DELETE' }, options);
+    return orvalMutator<NoContentResponse>(
+        { url: `/notifications`, method: 'DELETE', params },
+        options
+    );
 };
 
 /**

@@ -24,6 +24,7 @@ import {
 } from '@api';
 import type {
     Notification,
+    NotificationAudience,
     NotificationCreatedPayload,
     NotificationSeverity,
     NotificationsDeletedPayload,
@@ -397,30 +398,25 @@ export const useInboxStore = defineStore('inbox', () => {
     };
 
     /**
-     * The owner deletes every notification, in one call. Those that were in the panel when it was
-     * pressed leave once the server has agreed; one that arrived meanwhile stays. A failure leaves
-     * them all in place and shows a toast.
+     * The owner deletes every notification, or one audience of them, in one call. Those that were
+     * in the panel when it was pressed leave once the server has agreed; one that arrived
+     * meanwhile stays. A failure leaves them all in place and shows a toast.
      *
+     * @param audience - Only this group (a panel tab); the whole inbox when omitted.
      * @returns A promise that always resolves.
      */
-    const dismissAll = (): Promise<void> => {
-        const ids = inbox.value.map(({ message }) => message.id);
-        return dismissAllNotifications()
+    const dismissAll = (audience?: NotificationAudience): Promise<void> => {
+        const ids = inbox.value
+            .filter(
+                ({ notification }) => audience === undefined || notification.audience === audience
+            )
+            .map(({ message }) => message.id);
+        return dismissAllNotifications(audience === undefined ? undefined : { audience })
             .then(() => {
                 drop(ids);
             })
             .catch(report);
     };
-
-    /**
-     * The owner deletes some notifications, each through its own call. For a panel tab: the
-     * server's `DELETE /notifications` empties the whole inbox, both tabs, so it cannot serve.
-     *
-     * @param ids - The notifications to delete.
-     * @returns A promise that always resolves.
-     */
-    const dismissMany = (ids: readonly string[]): Promise<void> =>
-        Promise.all(ids.map((id) => dismiss(id))).then(() => undefined);
 
     /**
      * Rebuilds every message's text, for a language switch. Updates in place, so no toast returns.
@@ -440,7 +436,6 @@ export const useInboxStore = defineStore('inbox', () => {
         markAllRead,
         dismiss,
         dismissAll,
-        dismissMany,
         reset,
         retranslate
     };
