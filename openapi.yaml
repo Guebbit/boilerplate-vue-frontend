@@ -239,6 +239,7 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
   /locales:
     get:
+      x-cache: revalidate
       tags:
         - Locales
       summary: Supported languages
@@ -354,6 +355,7 @@ paths:
       x-module: locales
   /locales/apps:
     get:
+      x-cache: revalidate
       tags:
         - Locales
       summary: Translation apps
@@ -393,6 +395,7 @@ paths:
       x-module: locales
   /locales/{locale}:
     get:
+      x-cache: revalidate
       tags:
         - Locales
       summary: Read a language
@@ -588,6 +591,7 @@ paths:
       x-module: locales
   /locales/{locale}/dictionary:
     get:
+      x-cache: revalidate
       tags:
         - Locales
       summary: API message dictionary
@@ -634,6 +638,7 @@ paths:
       x-module: locales
   /locales/{locale}/messages:
     get:
+      x-cache: revalidate
       tags:
         - Locales
       summary: Client message dictionary
@@ -3507,6 +3512,7 @@ paths:
       x-module: account
   /users:
     get:
+      x-cache: private-no-cache
       tags:
         - Users
       summary: List users (paginated)
@@ -3681,6 +3687,7 @@ paths:
       - patch
       - delete
     get:
+      x-cache: private-no-cache
       tags:
         - Users
       summary: User details
@@ -4031,6 +4038,7 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: tickets
     get:
+      x-cache: private-no-cache
       tags:
         - Tickets
       summary: List tickets
@@ -4187,6 +4195,7 @@ paths:
       x-module: tickets
   /tickets/{id}:
     get:
+      x-cache: private-no-cache
       tags:
         - Tickets
       summary: Get a ticket
@@ -4499,6 +4508,7 @@ paths:
       x-module: tickets
   /products:
     get:
+      x-cache: "max-age: 3600"
       tags:
         - Products
       summary: List products (paginated)
@@ -4681,6 +4691,7 @@ paths:
       x-module: products
   /products/facets:
     get:
+      x-cache: "max-age: 3600"
       tags:
         - Products
       summary: Catalogue facets
@@ -4717,6 +4728,7 @@ paths:
       - patch
       - delete
     get:
+      x-cache: revalidate
       tags:
         - Products
       summary: Product details
@@ -5551,6 +5563,7 @@ paths:
       x-module: wishlist
   /orders:
     get:
+      x-cache: private-no-cache
       tags:
         - Orders
       summary: List orders (paginated)
@@ -5796,6 +5809,7 @@ paths:
       - patch
       - delete
     get:
+      x-cache: private-no-cache
       tags:
         - Orders
       summary: Order details
@@ -7187,6 +7201,7 @@ paths:
       x-module: delivery
   /returns:
     get:
+      x-cache: private-no-cache
       tags:
         - Returns
       summary: List returns (paginated)
@@ -7294,6 +7309,7 @@ paths:
       x-module: returns
   /returns/options:
     get:
+      x-cache: private-no-cache
       tags:
         - Returns
       summary: What an order can still send back or cancel
@@ -7332,6 +7348,7 @@ paths:
       x-module: returns
   /returns/{id}:
     get:
+      x-cache: private-no-cache
       tags:
         - Returns
       summary: Get a return
@@ -8852,6 +8869,7 @@ paths:
       x-module: orders
   /orders/{id}/timeline:
     get:
+      x-cache: private-no-cache
       tags:
         - Orders
       summary: The order's timeline
@@ -8932,6 +8950,7 @@ paths:
       x-module: orders
   /payments:
     get:
+      x-cache: private-no-cache
       tags:
         - Payments
       summary: List payments (staff)
@@ -9137,6 +9156,7 @@ paths:
       x-module: payments
   /payments/refunds:
     get:
+      x-cache: private-no-cache
       tags:
         - Payments
       summary: List refunds (staff)
@@ -9194,6 +9214,7 @@ paths:
       x-module: payments
   /payments/attention:
     get:
+      x-cache: private-no-cache
       tags:
         - Payments
       summary: Payments that need a person (staff)
@@ -9624,6 +9645,7 @@ paths:
       x-module: returns
   /stats/sales:
     get:
+      x-cache: private-no-cache
       tags:
         - Stats
       summary: Sales over time (staff)
@@ -9660,6 +9682,7 @@ paths:
       x-module: stats
   /stats/products:
     get:
+      x-cache: private-no-cache
       tags:
         - Stats
       summary: Top products (staff)
@@ -9703,6 +9726,7 @@ paths:
       x-module: stats
   /stats/products/{productId}:
     get:
+      x-cache: private-no-cache
       tags:
         - Stats
       summary: One product's sales over time (staff)
@@ -9746,6 +9770,7 @@ paths:
       x-module: stats
   /stats/categories:
     get:
+      x-cache: private-no-cache
       tags:
         - Stats
       summary: Sales by category (staff)
@@ -9781,6 +9806,7 @@ paths:
       x-module: stats
   /stats/payments:
     get:
+      x-cache: private-no-cache
       tags:
         - Stats
       summary: Payments mix (staff)
@@ -9816,6 +9842,7 @@ paths:
       x-module: stats
   /stats/operations:
     get:
+      x-cache: private-no-cache
       tags:
         - Stats
       summary: Operations rates (staff)
@@ -9851,6 +9878,7 @@ paths:
       x-module: stats
   /stats/customers:
     get:
+      x-cache: private-no-cache
       tags:
         - Stats
       summary: New and returning customers (staff)
@@ -9886,6 +9914,7 @@ paths:
       x-module: stats
   /stats/pipeline:
     get:
+      x-cache: private-no-cache
       tags:
         - Stats
       summary: What is waiting right now (staff)
@@ -10169,6 +10198,7 @@ paths:
       x-module: webhooks
   /examples:
     get:
+      x-cache: private-no-cache
       tags:
         - Examples
       summary: List examples
@@ -10313,6 +10343,7 @@ paths:
       - patch
       - delete
     get:
+      x-cache: private-no-cache
       tags:
         - Examples
       summary: Read an example
