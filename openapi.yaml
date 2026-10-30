@@ -12693,6 +12693,7 @@ components:
           description: Which world this action happened in — a shop or the installation.
         action:
           type: string
+          pattern: ^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$
           description: Dot-notation action name (e.g. order.created)
         outcome:
           type: string
@@ -12706,8 +12707,10 @@ components:
           type: string
         requestId:
           type: string
+          format: uuid
         traceId:
           type: string
+          pattern: ^[0-9a-f]{32}$
         targetType:
           type: string
         targetId:
@@ -14486,6 +14489,7 @@ components:
           type: string
         cardLast4:
           type: string
+          pattern: ^\d{4}$
         createdAt:
           type: string
           format: date-time
@@ -18431,7 +18435,7 @@ components:
           type: string
           description: The order's number. Present on `GET /payments` rows only.
         email:
-          type: string
+          $ref: "#/components/schemas/Email"
           description: The order's customer email. Present on `GET /payments` rows only.
         provider:
           type: string
@@ -18457,6 +18461,7 @@ components:
           description: "Returned by `POST /payments` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response."
         cardLast4:
           type: string
+          pattern: ^\d{4}$
           description: The only card digits a payment system may remember. Survives a refund — refunding does not clear it.
         disputes:
           type: array
@@ -18884,7 +18889,7 @@ components:
         userId:
           $ref: "#/components/schemas/Id"
         email:
-          type: string
+          $ref: "#/components/schemas/Email"
     PreorderFulfillmentOrder:
       type: object
       additionalProperties: false
@@ -19693,7 +19698,7 @@ components:
       properties:
         delta:
           type: integer
-          description: Signed. Negative is shrinkage or damage; positive is a miscount found in your favour.
+          description: Signed and non-zero (0 is a 422 naming `delta`). Negative is shrinkage or damage; positive is a miscount found in your favour.
         note:
           type: string
           maxLength: 1000
@@ -20009,7 +20014,7 @@ components:
         subscriptionId:
           $ref: "#/components/schemas/Id"
         eventId:
-          type: string
+          $ref: "#/components/schemas/Id"
         eventType:
           type: string
         attempt:
@@ -20019,6 +20024,8 @@ components:
           $ref: "#/components/schemas/WebhookDeliveryStatus"
         responseCode:
           type: integer
+          minimum: 100
+          maximum: 599
         durationMs:
           type: integer
         error:

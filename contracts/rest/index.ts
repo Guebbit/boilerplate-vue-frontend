@@ -946,13 +946,17 @@ export interface AuditEntryItem {
     actorRoleName?: string;
     /** Which world this action happened in — a shop or the installation. */
     actorScope: AuditEntryItemActorScope;
-    /** Dot-notation action name (e.g. order.created) */
+    /**
+     * Dot-notation action name (e.g. order.created)
+     * @pattern ^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$
+     */
     action: string;
     outcome: AuditEntryItemOutcome;
     /** The caller address as recorded. The platform trail (`GET /observability/audit`) answers a keyed digest instead: `hmac:` and 12 hex characters. */
     ip?: string;
     userAgent?: string;
     requestId?: string;
+    /** @pattern ^[0-9a-f]{32}$ */
     traceId?: string;
     targetType?: string;
     targetId?: string;
@@ -2178,6 +2182,7 @@ export interface ExportPayment {
     refunds: Refund[];
     status: ExportPaymentStatus;
     provider: string;
+    /** @pattern ^\d{4}$ */
     cardLast4?: string;
     createdAt?: string;
     updatedAt?: string;
@@ -4778,7 +4783,7 @@ export interface Payment {
     /** The order's number. Present on `GET /payments` rows only. */
     orderNumber?: string;
     /** The order's customer email. Present on `GET /payments` rows only. */
-    email?: string;
+    email?: Email;
     /** Which provider implementation handled it — the name the deployment registered (`NODE_PAYMENT_PROVIDER`), or `manual` for a payment recorded by hand (`POST /orders/{id}/payments`). */
     provider: string;
     /** How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /payments/orders/{orderId}/offline`, from what the admin chose there. */
@@ -4792,7 +4797,10 @@ export interface Payment {
     receivedAt?: string;
     /** Returned by `POST /payments` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response. */
     clientSecret?: string;
-    /** The only card digits a payment system may remember. Survives a refund — refunding does not clear it. */
+    /**
+     * The only card digits a payment system may remember. Survives a refund — refunding does not clear it.
+     * @pattern ^\d{4}$
+     */
     cardLast4?: string;
     /** Disputes the buyer's bank opened on this card payment, oldest first. Sent only to a caller holding `display:Payment`. A payment with none omits the field. An open chargeback blocks refunds (`actions.refund` is false and the refund door answers 409 `PAYMENT_DISPUTED`); a lost one shrinks what is left to refund by its amount. `displayStatus` does not change: a dispute is a separate fact. */
     disputes?: Dispute[];
@@ -5091,7 +5099,7 @@ export const PreorderFulfillmentState = {
  */
 export interface PreorderBuyer {
     userId?: Id;
-    email: string;
+    email: Email;
 }
 
 /**
@@ -5653,7 +5661,7 @@ export interface ReceiptRequest {
 }
 
 export interface AdjustmentRequest {
-    /** Signed. Negative is shrinkage or damage; positive is a miscount found in your favour. */
+    /** Signed and non-zero (0 is a 422 naming `delta`). Negative is shrinkage or damage; positive is a miscount found in your favour. */
     delta: number;
     /**
      * Why. An unexplained correction is the thing an audit is looking for.
@@ -5847,11 +5855,15 @@ export interface WebhookDeliveryActions {
 export interface WebhookDelivery {
     id: Id;
     subscriptionId: Id;
-    eventId: string;
+    eventId: Id;
     eventType: string;
     /** @minimum 1 */
     attempt: number;
     status: WebhookDeliveryStatus;
+    /**
+     * @minimum 100
+     * @maximum 599
+     */
     responseCode?: number;
     durationMs?: number;
     error?: string;

@@ -1532,6 +1532,12 @@ export const ListObservabilityAuditEntriesQueryParams = zod.strictObject({
         .max(listObservabilityAuditEntriesQueryPageSizeMax)
         .default(listObservabilityAuditEntriesQueryPageSizeDefault)
 });
+export const listObservabilityAuditEntriesResponseItemsItemActionRegExp = new RegExp(
+    '^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$'
+);
+export const listObservabilityAuditEntriesResponseItemsItemTraceIdRegExp = new RegExp(
+    '^[0-9a-f]{32}$'
+);
 export const listObservabilityAuditEntriesResponseMetaPageDefault = 1;
 export const listObservabilityAuditEntriesResponseMetaPageMax = 10000;
 export const listObservabilityAuditEntriesResponseMetaPageSizeDefault = 10;
@@ -1546,12 +1552,15 @@ export const ListObservabilityAuditEntriesResponse = zod.strictObject({
             actorRole: zod.enum(['admin', 'user', 'anonymous', 'system']),
             actorRoleName: zod.string().optional(),
             actorScope: zod.enum(['tenant', 'platform']),
-            action: zod.string(),
+            action: zod.string().regex(listObservabilityAuditEntriesResponseItemsItemActionRegExp),
             outcome: zod.enum(['success', 'failure']),
             ip: zod.string().optional(),
             userAgent: zod.string().optional(),
-            requestId: zod.string().optional(),
-            traceId: zod.string().optional(),
+            requestId: zod.uuid().optional(),
+            traceId: zod
+                .string()
+                .regex(listObservabilityAuditEntriesResponseItemsItemTraceIdRegExp)
+                .optional(),
             targetType: zod.string().optional(),
             targetId: zod.string().optional(),
             metadata: zod.record(zod.string(), zod.unknown()).optional(),
@@ -1608,6 +1617,10 @@ export const ListAuditEntriesQueryParams = zod.strictObject({
         .max(listAuditEntriesQueryPageSizeMax)
         .default(listAuditEntriesQueryPageSizeDefault)
 });
+export const listAuditEntriesResponseItemsItemActionRegExp = new RegExp(
+    '^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$'
+);
+export const listAuditEntriesResponseItemsItemTraceIdRegExp = new RegExp('^[0-9a-f]{32}$');
 export const listAuditEntriesResponseMetaPageDefault = 1;
 export const listAuditEntriesResponseMetaPageMax = 10000;
 export const listAuditEntriesResponseMetaPageSizeDefault = 10;
@@ -1622,12 +1635,12 @@ export const ListAuditEntriesResponse = zod.strictObject({
             actorRole: zod.enum(['admin', 'user', 'anonymous', 'system']),
             actorRoleName: zod.string().optional(),
             actorScope: zod.enum(['tenant', 'platform']),
-            action: zod.string(),
+            action: zod.string().regex(listAuditEntriesResponseItemsItemActionRegExp),
             outcome: zod.enum(['success', 'failure']),
             ip: zod.string().optional(),
             userAgent: zod.string().optional(),
-            requestId: zod.string().optional(),
-            traceId: zod.string().optional(),
+            requestId: zod.uuid().optional(),
+            traceId: zod.string().regex(listAuditEntriesResponseItemsItemTraceIdRegExp).optional(),
             targetType: zod.string().optional(),
             targetId: zod.string().optional(),
             metadata: zod.record(zod.string(), zod.unknown()).optional(),
@@ -2652,6 +2665,10 @@ export const downloadAccountExportResponseProfileLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
 export const downloadAccountExportResponseProfilePurchaseHoldNoteMax = 500;
+export const downloadAccountExportResponseAuditLogItemActionRegExp = new RegExp(
+    '^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$'
+);
+export const downloadAccountExportResponseAuditLogItemTraceIdRegExp = new RegExp('^[0-9a-f]{32}$');
 export const downloadAccountExportResponseSessionsItemIdMax = 64;
 export const downloadAccountExportResponseSessionsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseAddressesItemIdMax = 64;
@@ -2756,6 +2773,7 @@ export const downloadAccountExportResponsePaymentsItemRefundsItemReturnIdMax = 6
 export const downloadAccountExportResponsePaymentsItemRefundsItemReturnIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const downloadAccountExportResponsePaymentsItemCardLast4RegExp = new RegExp('^\\d{4}$');
 export const downloadAccountExportResponseInvoicingInvoicesItemOrderIdMax = 64;
 export const downloadAccountExportResponseInvoicingInvoicesItemOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -3029,12 +3047,15 @@ export const DownloadAccountExportResponse = zod.strictObject({
             actorRole: zod.enum(['admin', 'user', 'anonymous', 'system']),
             actorRoleName: zod.string().optional(),
             actorScope: zod.enum(['tenant', 'platform']),
-            action: zod.string(),
+            action: zod.string().regex(downloadAccountExportResponseAuditLogItemActionRegExp),
             outcome: zod.enum(['success', 'failure']),
             ip: zod.string().optional(),
             userAgent: zod.string().optional(),
-            requestId: zod.string().optional(),
-            traceId: zod.string().optional(),
+            requestId: zod.uuid().optional(),
+            traceId: zod
+                .string()
+                .regex(downloadAccountExportResponseAuditLogItemTraceIdRegExp)
+                .optional(),
             targetType: zod.string().optional(),
             targetId: zod.string().optional(),
             metadata: zod.record(zod.string(), zod.unknown()).optional(),
@@ -3527,7 +3548,10 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 'cancelled'
             ]),
             provider: zod.string(),
-            cardLast4: zod.string().optional(),
+            cardLast4: zod
+                .string()
+                .regex(downloadAccountExportResponsePaymentsItemCardLast4RegExp)
+                .optional(),
             createdAt: zod.iso.datetime({ offset: true }).optional(),
             updatedAt: zod.iso.datetime({ offset: true }).optional()
         })
@@ -10735,7 +10759,9 @@ export const listOrderPaymentsResponseItemsItemRefundsItemReturnIdMax = 64;
 export const listOrderPaymentsResponseItemsItemRefundsItemReturnIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const listOrderPaymentsResponseItemsItemEmailMax = 254;
 export const listOrderPaymentsResponseItemsItemReferenceMax = 120;
+export const listOrderPaymentsResponseItemsItemCardLast4RegExp = new RegExp('^\\d{4}$');
 export const listOrderPaymentsResponseItemsItemDisputesItemAmountMin = 0;
 export const listOrderPaymentsResponseItemsItemActionsSettleByHandItemMax = 64;
 export const listOrderPaymentsResponseItemsItemActionsSettleByHandItemRegExp = new RegExp(
@@ -10843,13 +10869,16 @@ export const ListOrderPaymentsResponse = zod.strictObject({
                 .optional(),
             providerRef: zod.string().optional(),
             orderNumber: zod.string().optional(),
-            email: zod.string().optional(),
+            email: zod.email().max(listOrderPaymentsResponseItemsItemEmailMax).optional(),
             provider: zod.string(),
             method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
             reference: zod.string().max(listOrderPaymentsResponseItemsItemReferenceMax).optional(),
             receivedAt: zod.iso.datetime({ offset: true }).optional(),
             clientSecret: zod.string().optional(),
-            cardLast4: zod.string().optional(),
+            cardLast4: zod
+                .string()
+                .regex(listOrderPaymentsResponseItemsItemCardLast4RegExp)
+                .optional(),
             disputes: zod
                 .array(
                     zod.strictObject({
@@ -10956,7 +10985,9 @@ export const recordOrderPaymentResponseRefundsItemIdRegExp = new RegExp('^[0-9A-
 export const recordOrderPaymentResponseRefundsItemAmountMin = 0;
 export const recordOrderPaymentResponseRefundsItemReturnIdMax = 64;
 export const recordOrderPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const recordOrderPaymentResponseEmailMax = 254;
 export const recordOrderPaymentResponseReferenceMax = 120;
+export const recordOrderPaymentResponseCardLast4RegExp = new RegExp('^\\d{4}$');
 export const recordOrderPaymentResponseDisputesItemAmountMin = 0;
 export const recordOrderPaymentResponseActionsSettleByHandItemMax = 64;
 export const recordOrderPaymentResponseActionsSettleByHandItemRegExp = new RegExp(
@@ -11054,13 +11085,13 @@ export const RecordOrderPaymentResponse = zod.strictObject({
         .optional(),
     providerRef: zod.string().optional(),
     orderNumber: zod.string().optional(),
-    email: zod.string().optional(),
+    email: zod.email().max(recordOrderPaymentResponseEmailMax).optional(),
     provider: zod.string(),
     method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
     reference: zod.string().max(recordOrderPaymentResponseReferenceMax).optional(),
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
     clientSecret: zod.string().optional(),
-    cardLast4: zod.string().optional(),
+    cardLast4: zod.string().regex(recordOrderPaymentResponseCardLast4RegExp).optional(),
     disputes: zod
         .array(
             zod.strictObject({
@@ -11672,7 +11703,9 @@ export const getPaymentResponseRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+
 export const getPaymentResponseRefundsItemAmountMin = 0;
 export const getPaymentResponseRefundsItemReturnIdMax = 64;
 export const getPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getPaymentResponseEmailMax = 254;
 export const getPaymentResponseReferenceMax = 120;
+export const getPaymentResponseCardLast4RegExp = new RegExp('^\\d{4}$');
 export const getPaymentResponseDisputesItemAmountMin = 0;
 export const getPaymentResponseActionsSettleByHandItemMax = 64;
 export const getPaymentResponseActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -11762,13 +11795,13 @@ export const GetPaymentResponse = zod.strictObject({
         .optional(),
     providerRef: zod.string().optional(),
     orderNumber: zod.string().optional(),
-    email: zod.string().optional(),
+    email: zod.email().max(getPaymentResponseEmailMax).optional(),
     provider: zod.string(),
     method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
     reference: zod.string().max(getPaymentResponseReferenceMax).optional(),
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
     clientSecret: zod.string().optional(),
-    cardLast4: zod.string().optional(),
+    cardLast4: zod.string().regex(getPaymentResponseCardLast4RegExp).optional(),
     disputes: zod
         .array(
             zod.strictObject({
@@ -11873,7 +11906,9 @@ export const confirmPaymentResponseRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z
 export const confirmPaymentResponseRefundsItemAmountMin = 0;
 export const confirmPaymentResponseRefundsItemReturnIdMax = 64;
 export const confirmPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const confirmPaymentResponseEmailMax = 254;
 export const confirmPaymentResponseReferenceMax = 120;
+export const confirmPaymentResponseCardLast4RegExp = new RegExp('^\\d{4}$');
 export const confirmPaymentResponseDisputesItemAmountMin = 0;
 export const confirmPaymentResponseActionsSettleByHandItemMax = 64;
 export const confirmPaymentResponseActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -11963,13 +11998,13 @@ export const ConfirmPaymentResponse = zod.strictObject({
         .optional(),
     providerRef: zod.string().optional(),
     orderNumber: zod.string().optional(),
-    email: zod.string().optional(),
+    email: zod.email().max(confirmPaymentResponseEmailMax).optional(),
     provider: zod.string(),
     method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
     reference: zod.string().max(confirmPaymentResponseReferenceMax).optional(),
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
     clientSecret: zod.string().optional(),
-    cardLast4: zod.string().optional(),
+    cardLast4: zod.string().regex(confirmPaymentResponseCardLast4RegExp).optional(),
     disputes: zod
         .array(
             zod.strictObject({
@@ -12054,7 +12089,9 @@ export const syncPaymentResponseRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]
 export const syncPaymentResponseRefundsItemAmountMin = 0;
 export const syncPaymentResponseRefundsItemReturnIdMax = 64;
 export const syncPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const syncPaymentResponseEmailMax = 254;
 export const syncPaymentResponseReferenceMax = 120;
+export const syncPaymentResponseCardLast4RegExp = new RegExp('^\\d{4}$');
 export const syncPaymentResponseDisputesItemAmountMin = 0;
 export const syncPaymentResponseActionsSettleByHandItemMax = 64;
 export const syncPaymentResponseActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -12144,13 +12181,13 @@ export const SyncPaymentResponse = zod.strictObject({
         .optional(),
     providerRef: zod.string().optional(),
     orderNumber: zod.string().optional(),
-    email: zod.string().optional(),
+    email: zod.email().max(syncPaymentResponseEmailMax).optional(),
     provider: zod.string(),
     method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
     reference: zod.string().max(syncPaymentResponseReferenceMax).optional(),
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
     clientSecret: zod.string().optional(),
-    cardLast4: zod.string().optional(),
+    cardLast4: zod.string().regex(syncPaymentResponseCardLast4RegExp).optional(),
     disputes: zod
         .array(
             zod.strictObject({
@@ -12371,6 +12408,7 @@ export const listPreorderFulfillmentOrdersResponseItemsItemBuyerUserIdMax = 64;
 export const listPreorderFulfillmentOrdersResponseItemsItemBuyerUserIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const listPreorderFulfillmentOrdersResponseItemsItemBuyerEmailMax = 254;
 export const listPreorderFulfillmentOrdersResponseItemsItemSlippedDaysMin = 0;
 export const listPreorderFulfillmentOrdersResponseMetaPageDefault = 1;
 export const listPreorderFulfillmentOrdersResponseMetaPageMax = 10000;
@@ -12428,7 +12466,7 @@ export const ListPreorderFulfillmentOrdersResponse = zod.strictObject({
                     .max(listPreorderFulfillmentOrdersResponseItemsItemBuyerUserIdMax)
                     .regex(listPreorderFulfillmentOrdersResponseItemsItemBuyerUserIdRegExp)
                     .optional(),
-                email: zod.string()
+                email: zod.email().max(listPreorderFulfillmentOrdersResponseItemsItemBuyerEmailMax)
             }),
             paidAt: zod.iso.datetime({ offset: true }).optional(),
             agreedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -14695,6 +14733,10 @@ export const listWebhookDeliveriesResponseItemsItemSubscriptionIdMax = 64;
 export const listWebhookDeliveriesResponseItemsItemSubscriptionIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const listWebhookDeliveriesResponseItemsItemEventIdMax = 64;
+export const listWebhookDeliveriesResponseItemsItemEventIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listWebhookDeliveriesResponseItemsItemResponseCodeMin = 100;
+export const listWebhookDeliveriesResponseItemsItemResponseCodeMax = 599;
 export const listWebhookDeliveriesResponseMetaPageDefault = 1;
 export const listWebhookDeliveriesResponseMetaPageMax = 10000;
 export const listWebhookDeliveriesResponseMetaPageSizeDefault = 10;
@@ -14714,11 +14756,19 @@ export const ListWebhookDeliveriesResponse = zod.strictObject({
                 .min(1)
                 .max(listWebhookDeliveriesResponseItemsItemSubscriptionIdMax)
                 .regex(listWebhookDeliveriesResponseItemsItemSubscriptionIdRegExp),
-            eventId: zod.string(),
+            eventId: zod
+                .string()
+                .min(1)
+                .max(listWebhookDeliveriesResponseItemsItemEventIdMax)
+                .regex(listWebhookDeliveriesResponseItemsItemEventIdRegExp),
             eventType: zod.string(),
             attempt: zod.number().min(1),
             status: zod.enum(['pending', 'in-flight', 'succeeded', 'exhausted']),
-            responseCode: zod.number().optional(),
+            responseCode: zod
+                .number()
+                .min(listWebhookDeliveriesResponseItemsItemResponseCodeMin)
+                .max(listWebhookDeliveriesResponseItemsItemResponseCodeMax)
+                .optional(),
             durationMs: zod.number().optional(),
             error: zod.string().optional(),
             nextAttemptAt: zod.iso.datetime({ offset: true }).optional(),
@@ -14767,6 +14817,10 @@ export const replayWebhookDeliveryResponseIdMax = 64;
 export const replayWebhookDeliveryResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const replayWebhookDeliveryResponseSubscriptionIdMax = 64;
 export const replayWebhookDeliveryResponseSubscriptionIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const replayWebhookDeliveryResponseEventIdMax = 64;
+export const replayWebhookDeliveryResponseEventIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const replayWebhookDeliveryResponseResponseCodeMin = 100;
+export const replayWebhookDeliveryResponseResponseCodeMax = 599;
 export const ReplayWebhookDeliveryResponse = zod.strictObject({
     id: zod
         .string()
@@ -14778,11 +14832,19 @@ export const ReplayWebhookDeliveryResponse = zod.strictObject({
         .min(1)
         .max(replayWebhookDeliveryResponseSubscriptionIdMax)
         .regex(replayWebhookDeliveryResponseSubscriptionIdRegExp),
-    eventId: zod.string(),
+    eventId: zod
+        .string()
+        .min(1)
+        .max(replayWebhookDeliveryResponseEventIdMax)
+        .regex(replayWebhookDeliveryResponseEventIdRegExp),
     eventType: zod.string(),
     attempt: zod.number().min(1),
     status: zod.enum(['pending', 'in-flight', 'succeeded', 'exhausted']),
-    responseCode: zod.number().optional(),
+    responseCode: zod
+        .number()
+        .min(replayWebhookDeliveryResponseResponseCodeMin)
+        .max(replayWebhookDeliveryResponseResponseCodeMax)
+        .optional(),
     durationMs: zod.number().optional(),
     error: zod.string().optional(),
     nextAttemptAt: zod.iso.datetime({ offset: true }).optional(),
@@ -16007,7 +16069,9 @@ export const listPaymentsResponseItemsItemRefundsItemReturnIdMax = 64;
 export const listPaymentsResponseItemsItemRefundsItemReturnIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const listPaymentsResponseItemsItemEmailMax = 254;
 export const listPaymentsResponseItemsItemReferenceMax = 120;
+export const listPaymentsResponseItemsItemCardLast4RegExp = new RegExp('^\\d{4}$');
 export const listPaymentsResponseItemsItemDisputesItemAmountMin = 0;
 export const listPaymentsResponseItemsItemActionsSettleByHandItemMax = 64;
 export const listPaymentsResponseItemsItemActionsSettleByHandItemRegExp = new RegExp(
@@ -16119,13 +16183,13 @@ export const ListPaymentsResponse = zod.strictObject({
                 .optional(),
             providerRef: zod.string().optional(),
             orderNumber: zod.string().optional(),
-            email: zod.string().optional(),
+            email: zod.email().max(listPaymentsResponseItemsItemEmailMax).optional(),
             provider: zod.string(),
             method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
             reference: zod.string().max(listPaymentsResponseItemsItemReferenceMax).optional(),
             receivedAt: zod.iso.datetime({ offset: true }).optional(),
             clientSecret: zod.string().optional(),
-            cardLast4: zod.string().optional(),
+            cardLast4: zod.string().regex(listPaymentsResponseItemsItemCardLast4RegExp).optional(),
             disputes: zod
                 .array(
                     zod.strictObject({
@@ -16232,7 +16296,9 @@ export const createPaymentResponseRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_
 export const createPaymentResponseRefundsItemAmountMin = 0;
 export const createPaymentResponseRefundsItemReturnIdMax = 64;
 export const createPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createPaymentResponseEmailMax = 254;
 export const createPaymentResponseReferenceMax = 120;
+export const createPaymentResponseCardLast4RegExp = new RegExp('^\\d{4}$');
 export const createPaymentResponseDisputesItemAmountMin = 0;
 export const createPaymentResponseActionsSettleByHandItemMax = 64;
 export const createPaymentResponseActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -16322,13 +16388,13 @@ export const CreatePaymentResponse = zod.strictObject({
         .optional(),
     providerRef: zod.string().optional(),
     orderNumber: zod.string().optional(),
-    email: zod.string().optional(),
+    email: zod.email().max(createPaymentResponseEmailMax).optional(),
     provider: zod.string(),
     method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
     reference: zod.string().max(createPaymentResponseReferenceMax).optional(),
     receivedAt: zod.iso.datetime({ offset: true }).optional(),
     clientSecret: zod.string().optional(),
-    cardLast4: zod.string().optional(),
+    cardLast4: zod.string().regex(createPaymentResponseCardLast4RegExp).optional(),
     disputes: zod
         .array(
             zod.strictObject({
@@ -16464,7 +16530,9 @@ export const searchPaymentsResponseItemsItemRefundsItemReturnIdMax = 64;
 export const searchPaymentsResponseItemsItemRefundsItemReturnIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const searchPaymentsResponseItemsItemEmailMax = 254;
 export const searchPaymentsResponseItemsItemReferenceMax = 120;
+export const searchPaymentsResponseItemsItemCardLast4RegExp = new RegExp('^\\d{4}$');
 export const searchPaymentsResponseItemsItemDisputesItemAmountMin = 0;
 export const searchPaymentsResponseItemsItemActionsSettleByHandItemMax = 64;
 export const searchPaymentsResponseItemsItemActionsSettleByHandItemRegExp = new RegExp(
@@ -16576,13 +16644,16 @@ export const SearchPaymentsResponse = zod.strictObject({
                 .optional(),
             providerRef: zod.string().optional(),
             orderNumber: zod.string().optional(),
-            email: zod.string().optional(),
+            email: zod.email().max(searchPaymentsResponseItemsItemEmailMax).optional(),
             provider: zod.string(),
             method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
             reference: zod.string().max(searchPaymentsResponseItemsItemReferenceMax).optional(),
             receivedAt: zod.iso.datetime({ offset: true }).optional(),
             clientSecret: zod.string().optional(),
-            cardLast4: zod.string().optional(),
+            cardLast4: zod
+                .string()
+                .regex(searchPaymentsResponseItemsItemCardLast4RegExp)
+                .optional(),
             disputes: zod
                 .array(
                     zod.strictObject({
@@ -17929,6 +18000,10 @@ export const getWebhookDeliveryResponseIdMax = 64;
 export const getWebhookDeliveryResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getWebhookDeliveryResponseSubscriptionIdMax = 64;
 export const getWebhookDeliveryResponseSubscriptionIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getWebhookDeliveryResponseEventIdMax = 64;
+export const getWebhookDeliveryResponseEventIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getWebhookDeliveryResponseResponseCodeMin = 100;
+export const getWebhookDeliveryResponseResponseCodeMax = 599;
 export const GetWebhookDeliveryResponse = zod.strictObject({
     id: zod
         .string()
@@ -17940,11 +18015,19 @@ export const GetWebhookDeliveryResponse = zod.strictObject({
         .min(1)
         .max(getWebhookDeliveryResponseSubscriptionIdMax)
         .regex(getWebhookDeliveryResponseSubscriptionIdRegExp),
-    eventId: zod.string(),
+    eventId: zod
+        .string()
+        .min(1)
+        .max(getWebhookDeliveryResponseEventIdMax)
+        .regex(getWebhookDeliveryResponseEventIdRegExp),
     eventType: zod.string(),
     attempt: zod.number().min(1),
     status: zod.enum(['pending', 'in-flight', 'succeeded', 'exhausted']),
-    responseCode: zod.number().optional(),
+    responseCode: zod
+        .number()
+        .min(getWebhookDeliveryResponseResponseCodeMin)
+        .max(getWebhookDeliveryResponseResponseCodeMax)
+        .optional(),
     durationMs: zod.number().optional(),
     error: zod.string().optional(),
     nextAttemptAt: zod.iso.datetime({ offset: true }).optional(),
