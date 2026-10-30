@@ -4,6 +4,7 @@
  * locale loaders into the app's module registry.
  */
 import { Users } from 'lucide-vue-next';
+import { useUnreadNoticeCount } from '@/kernel/inbox-notices';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
@@ -33,7 +34,9 @@ export default {
             plural: 2,
             order: 50,
             section: 'admin',
-            icon: Users
+            icon: Users,
+            // Unread work notices that point at this screen.
+            badge: () => useUnreadNoticeCount(['notifications.staff.purchase-hold-placed'])
         }
     ],
     responseSchemas: () => import('./response-schemas').then((m) => m.usersResponseSchemas),

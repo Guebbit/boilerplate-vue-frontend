@@ -152,6 +152,37 @@ session without `read:Notification`.
 | Clear all       | Deletes the tab in view, one `DELETE /notifications/{id}` per row, because the bulk `DELETE /notifications` has no audience filter and would empty both tabs. With no tabs it is the single bulk call.                                                                                                                                                               |
 | Focus           | Moves into the panel on open; Escape closes it and returns focus to the bell.                                                                                                                                                                                                                                                                                        |
 
+## Nav badges
+
+An admin entry wears the number of unread work notices that point at its screen. The notifications
+module is not imported for it: `src/kernel/inbox-notices.ts` reads the toolkit's persistent
+messages that carry the inbox's `meta.source: 'inbox'` stamp, and each module's `badge` accessor
+names the codes it counts (typed against the contract's code union).
+
+```mermaid
+flowchart LR
+    S["inbox store<br/>(this module)"] -->|"persistent message,<br/>meta.notification"| T[(toolkit message store)]
+    T --> K["kernel/inbox-notices<br/>useUnreadNoticeCount(codes)"]
+    K --> P[payments badge]
+    K --> O[orders badge]
+    K --> M[... one per entry]
+    P & O & M --> N[app navigation]
+```
+
+| Entry             | Module    | Codes counted                                                                           |
+| ----------------- | --------- | --------------------------------------------------------------------------------------- |
+| `PaymentsList`    | payments  | `stale-refunds`                                                                         |
+| `UsersList`       | users     | `purchase-hold-placed`                                                                  |
+| `WebhooksList`    | webhooks  | `webhook-disabled`                                                                      |
+| `InventoryLedger` | inventory | `low-stock`                                                                             |
+| `PreordersBoard`  | inventory | `preorders-late`                                                                        |
+| `ReturnsList`     | returns   | `return-requested`, `withdrawals-awaiting-goods`, `returns-undecided`                   |
+| `SalesOrders`     | orders    | `transfers-due`, `delivery-holds-open`, `unshipped`, `awaiting-tracking`, `undelivered` |
+
+Codes are `notifications.staff.<name>`. Opening the bell marks every row read, so the badges clear
+with it; the next notice raises them again. The tickets entry keeps its own badge, which also reads
+`GET /tickets/summary`.
+
 ## Screens
 
 None. The module has no routes.
