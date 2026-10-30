@@ -22,7 +22,6 @@ import { storeToRefs } from 'pinia';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { logger } from '@/infrastructure/utils/logger.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useStatsStore } from '../store.ts';
 import { periodFromQuery } from '../domain';
@@ -160,10 +159,6 @@ const ordersLink = computed(() => {
 });
 
 onMounted(() => {
-    // A failed read leaves the form to the API's own refusal.
-    stats.loadLimits().catch((error: unknown) => {
-        logger.debug('http', '[Stats] period limits not read', error);
-    });
     // eslint-disable-next-line @typescript-eslint/no-floating-promises -- load records or toasts its own failure
     void load();
 });

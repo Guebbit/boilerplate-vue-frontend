@@ -58,7 +58,7 @@ Every screen here declares the `users.*` rule it needs — `read` to list or vie
 the screens it can use. The equivalent self-service actions — profile read, account deletion —
 live under [`account`](./account.md). The two never share a screen.
 
-Every role picker (`UserCreate`, `UserEdit`, `UserAccessDialog`) is built from `grantableRoles`, which `GET /account/abilities` publishes: the roles the signed-in caller may assign, computed by the same rule as the `409` the write answers. There is no role list in this repo to drift. The select adds the account's current role so it can still show it, and it is disabled (create: hidden) when the caller may assign none.
+Every role picker (`UserCreate`, `UserEdit`, `UserAccessDialog`) is built from `grantableRoles`, which the `abilities` of `GET /account` publishes: the roles the signed-in caller may assign, computed by the same rule as the `409` the write answers. There is no role list in this repo to drift. The select adds the account's current role so it can still show it, and it is disabled (create: hidden) when the caller may assign none.
 
 `users/create` is declared before `users/:id` for the same reason the products routes are: vue-router
 would rank it correctly either way, and a reader should not have to know that.
@@ -106,7 +106,7 @@ Store `users`, from `store.ts`. Only what the setup function returns is listed �
 | `users/:id`      | `UserTarget` | `auth` | `read User`   | `views/User.vue`       |
 | `users/:id/edit` | `UserEdit`   | `auth` | `update User` | `views/UserEdit.vue`   |
 
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
+Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
 ## Wiring
 

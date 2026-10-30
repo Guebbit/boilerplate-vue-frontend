@@ -498,7 +498,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                                 <div class="flex items-start gap-3">
                                     <!--
                                         The picture is resolved LIVE against the catalogue product
-                                        (`item.current`), never frozen. `current` is `null` once that
+                                        (`item.current`), never frozen. `current` is absent once that
                                         product is hard-deleted, and carries no `imageUrl` when it
                                         never had a picture; `LazyImage` draws its own placeholder
                                         for both.

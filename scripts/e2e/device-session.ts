@@ -6,7 +6,7 @@
  * found it — and the cookie this file keeps is what makes the device real: a refresh needs it, and
  * a logout-everywhere or a password reset is proved by that refresh failing afterwards.
  *
- * Both session modes (`GET /account/session-config`) answer to the same calls. `cookie` mode has
+ * Both session modes (`GET /config`) answer to the same calls. `cookie` mode has
  * no refresh endpoint, so {@link deviceRefresh} asks `GET /account` instead: still 200 while the
  * session lives, 401 once it was revoked, which is what every journey asserts.
  *
@@ -26,7 +26,7 @@ export type SessionMode = 'jwt' | 'cookie';
 export interface Device {
     /** The API base URL, no trailing slash. */
     apiUrl: string;
-    /** The deployment's session mode, read from `GET /account/session-config` at login. */
+    /** The deployment's session mode, read from `GET /config` at login. */
     mode: SessionMode;
     /** The access token, sent as `Authorization: Bearer`. Empty in `cookie` mode: no token exists. */
     token: string;
@@ -121,16 +121,16 @@ const jsonOf = (response: Response): Promise<unknown> => response.text().then(pa
  * The deployment's session mode.
  *
  * @param apiUrl - the API base URL
- * @returns `GET /account/session-config`'s `mode`
+ * @returns `GET /config`'s `session.mode`
  * @throws {Error} when the answer carries no known mode
  */
 const readSessionMode = (apiUrl: string): Promise<SessionMode> =>
-    fetch(`${apiUrl}/account/session-config`)
+    fetch(`${apiUrl}/config`)
         .then(jsonOf)
         .then((body) => {
-            const mode = (body as { mode?: unknown } | null)?.mode;
+            const mode = (body as { session?: { mode?: unknown } } | null)?.session?.mode;
             if (mode !== 'jwt' && mode !== 'cookie')
-                throw new Error('deviceLogin: GET /account/session-config named no known mode');
+                throw new Error('deviceLogin: GET /config named no known mode');
             return mode;
         });
 

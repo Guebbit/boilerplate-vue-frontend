@@ -66,8 +66,8 @@ describe('The journey harness', () => {
         it('is the one the journeys were told, so a mode-specific skip skips the right mode', () => {
             cy.env(['apiUrl', 'sessionMode']).then(({ apiUrl, sessionMode }) =>
                 cy
-                    .request<{ mode: string }>(`${String(apiUrl)}/account/session-config`)
-                    .its('body.mode')
+                    .request<{ session: { mode: string } }>(`${String(apiUrl)}/config`)
+                    .its('body.session.mode')
                     .should('equal', sessionMode)
             );
         });

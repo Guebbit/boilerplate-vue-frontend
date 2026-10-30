@@ -6,6 +6,7 @@
  */
 import { z } from 'zod';
 import { translate } from '@/i18n';
+import { ReturnDeclineReason } from '@/types/enums.ts';
 import {
     cancelReturnBodyNoteMax,
     closeReturnBodyNoteMax,
@@ -14,20 +15,9 @@ import {
 } from '@api/schemas';
 
 /**
- * The codes a decline can carry, in the order the select lists them. The contract's enum, spelled
- * here only because a select needs the list at runtime.
+ * The codes a decline can carry, in the order the select lists them.
  */
-export const DECLINE_REASONS = [
-    'return_period_ended',
-    'not_returnable',
-    'no_defect_found',
-    'other'
-] as const;
-
-/**
- * One of {@link DECLINE_REASONS}.
- */
-export type DeclineReason = (typeof DECLINE_REASONS)[number];
+export const DECLINE_REASONS = Object.values(ReturnDeclineReason);
 
 /**
  * {@link DECLINE_REASONS} as plain strings, so a select's value can be looked up.

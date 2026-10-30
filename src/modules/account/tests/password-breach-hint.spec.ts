@@ -19,6 +19,8 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { configAnswer } from '../../../../tests/support/unit/config-answer.ts';
+import { resetConfig } from '@/infrastructure/config.ts';
 
 wireModulesIntoCore();
 
@@ -74,7 +76,7 @@ const mountSignupPage = () =>
                 // router never registers — irrelevant to the breach hint under test.
                 RouterLink: true,
                 // Antibot's own config fetch and branching are `human-check.spec.ts`'s job; a
-                // real mount here would need `GET /antibot/config` mocked for no reason this
+                // real mount here would need `GET /config` mocked for no reason this
                 // suite cares about.
                 HumanCheck: true
             }
@@ -85,6 +87,7 @@ beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
     setActivePinia(createPinia());
+    resetConfig();
     responses = { 'POST /account/password/check': { breached: false } };
     return loadLocale('en');
 });
@@ -195,7 +198,7 @@ describe('PasswordResetConfirm', () => {
 
 describe('Signup', () => {
     beforeEach(() => {
-        responses['GET /account/oauth/providers'] = { providers: [] };
+        responses['GET /config'] = configAnswer();
         return router.push('/en/signup').then(() => router.isReady());
     });
 

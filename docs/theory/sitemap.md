@@ -78,7 +78,7 @@ Every screen the enabled modules contribute, generated from their route records 
 
 Paths are relative to the localised root. **Access** is the route’s own `meta.access` — the STANDING it requires — and **Permission** is its
 `meta.can`, the `[action, subject]` rule evaluated against the caller's own rules from
-`GET /account/abilities` — a staff screen asks the staff action (`display Order`), which a customer holding only
+the `abilities` of `GET /account` — a staff screen asks the staff action (`display Order`), which a customer holding only
 `read:Order` does not hold. Together they are the only place a screen's requirement is declared; a
 menu entry inherits both rather than restating them. There is no `admin` level: a screen names the
 permission it needs, because "administrator" could never say _of what_.

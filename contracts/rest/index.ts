@@ -217,8 +217,7 @@ export interface Account {
     username: string;
     role?: string;
     active?: boolean;
-    /** @nullable */
-    verifiedAt?: string | null;
+    verifiedAt?: string;
     readonly pendingEmail?: string;
     imageUrl?: ImageUrl;
     thumbnailUrl?: ThumbnailUrl;
@@ -234,6 +233,193 @@ export interface Account {
     updatedAt?: string;
     deletedAt?: string;
     purchaseHold?: PurchaseHold;
+}
+
+/**
+ * The deployment's `NODE_SESSION_MODE`.
+ */
+export type SessionConfigMode = (typeof SessionConfigMode)[keyof typeof SessionConfigMode];
+
+export const SessionConfigMode = {
+    jwt: 'jwt',
+    cookie: 'cookie'
+} as const;
+
+/**
+ * How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own.
+ */
+export type SessionConfigLifetimeSeconds = {
+    /** @minimum 1 */
+    short: number;
+    /** @minimum 1 */
+    medium: number;
+    /** @minimum 1 */
+    long: number;
+};
+
+export interface SessionConfig {
+    /** The deployment's `NODE_SESSION_MODE`. */
+    mode: SessionConfigMode;
+    /** How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own. */
+    lifetimeSeconds: SessionConfigLifetimeSeconds;
+    /**
+     * The longest a staff or admin session lives from sign-in, whatever the tier (`NODE_SESSION_LIFETIME_STAFF`). Absent when the cap is off.
+     * @minimum 1
+     */
+    staffLifetimeSeconds?: number;
+}
+
+/**
+ * Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused.
+ */
+export type AntibotRungsEmailPolicy =
+    (typeof AntibotRungsEmailPolicy)[keyof typeof AntibotRungsEmailPolicy];
+
+export const AntibotRungsEmailPolicy = {
+    off: 'off',
+    disposable: 'disposable',
+    mx: 'mx'
+} as const;
+
+/**
+ * Every rung's status, not just rung 3's provider — one answer to "what is active on this deployment" instead of asking each rung to publish its own.
+ */
+export interface AntibotRungs {
+    /** Rung 1 — always `true`. The identity/address/address-block budgets have no off switch. */
+    identityBudgets: boolean;
+    /** Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused. */
+    emailPolicy: AntibotRungsEmailPolicy;
+}
+
+/**
+ * What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.
+ */
+export type AntibotConfigParameters = { [key: string]: string };
+
+export interface AntibotConfig {
+    /** The active implementation's name (`none` by default). `none` means no challenge is required — send no token. */
+    provider: string;
+    /** What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser. */
+    parameters: AntibotConfigParameters;
+    rungs: AntibotRungs;
+}
+
+export interface Config {
+    session: SessionConfig;
+    /** Registry names this deployment holds OAuth credentials for, e.g. `["google", "github"]`. Empty when none are configured. */
+    oauthProviders: string[];
+    antibot: AntibotConfig;
+}
+
+export type PackedRulesItemItem = string | 0 | 1 | { [key: string]: unknown };
+
+/**
+ * CASL packed rules — `[action, subject, conditions | 0, inverted 1 | 0, fields, reason]`,
+ * with trailing absent members omitted. `0` stands in for an absent `conditions` or
+ * `inverted: false` when a later member is present.
+ */
+export type PackedRules = PackedRulesItemItem[][];
+
+/**
+ * What the caller may do, as CASL's packed-rule format — the shape `unpackRules`
+ * takes. A tuple per rule rather than an object, which is what makes shipping a few
+ * dozen of them cheap.
+ *
+ * BOTH SCOPES ARE ANSWERED, and that is the whole reason this is not a single rule
+ * list. A request resolves to exactly one scope — the one the key it is asking about
+ * declares — but a CLIENT renders screens from both at once: a shop's catalogue and
+ * the installation's health dashboard sit in one navigation. Publishing only the
+ * caller's tenant rules left every platform screen with no rule to grey out, so it
+ * was gated on a tenant key that happened to correlate, which is exactly the
+ * hand-maintained guess these rules exist to abolish.
+ *
+ * The two lists never merge. A tenant rule can never satisfy a platform key and the
+ * reverse is equally impossible (`shared/authorization-keys.yaml`'s one invariant),
+ * so a client builds ONE ABILITY PER SCOPE and asks the one that owns the subject.
+ *
+ * The client's copy has NO AUTHORITY: it decides what to render, never what is
+ * allowed, and every request is re-evaluated server-side. Published so a client greys
+ * out what it would be refused from the same rules the server enforces, rather than
+ * from a hand-maintained duplicate that drifts — the drift is silent until somebody
+ * is shown a button that answers 403.
+ */
+export interface Abilities {
+    /**
+     * `true` when the caller holds a staff role that grants nothing yet because no
+     * authenticator app is armed. The rules above are then the account's customer
+     * ones; a client shows an "enrol to use your staff tools" prompt instead of
+     * a staff menu. `false` for everyone else.
+     */
+    secondFactorRequired: boolean;
+    /**
+     * The tenant-scope roles this caller may assign through `POST`/`PUT`/`PATCH
+     * /users`, in the order `shared/authorization-roles.yaml` declares them.
+     * Computed by the same rule as the `403`/`422` those writes answer, so a role
+     * picker built from it offers exactly what the write accepts. Empty for a
+     * caller who may grant nothing. It has NO
+     * AUTHORITY: the write is re-checked server-side.
+     */
+    grantableRoles: string[];
+    /**
+     * The shop `tenant`'s rules are about. Absent when the caller has no tenant
+     * membership at all — a pure platform operator administers the installation
+     * rather than acting inside one shop.
+     */
+    tenantId?: string;
+    /**
+     * What the caller may do INSIDE their shop. Empty for a caller with no tenant
+     * membership.
+     */
+    tenant: PackedRules;
+    /**
+     * What the caller may do ACROSS the installation — health, metrics, the
+     * operational audit. Empty for everyone but a platform operator, which is
+     * most callers: an operator is not a super-member and holds no shop's keys.
+     */
+    platform: PackedRules;
+    /**
+     * The permission model's own version, bumped when the RULES change rather than
+     * when a role does. A client caches these; this is what tells it the cache is
+     * about a different model, not merely a different person. One number for both
+     * lists — the keys file they are declared in is one file.
+     */
+    version: number;
+}
+
+export interface SessionActivity {
+    /** When the session last saw a real request — now, for a touch. */
+    lastActiveAt: string;
+    /**
+     * How long the session may then sit unused before it ends. Absent when no idle timeout applies to this account (a shopper, or the timeout is switched off).
+     * @minimum 1
+     */
+    idleTimeoutSeconds?: number;
+}
+
+export interface AccountView {
+    id: Id;
+    email: Email;
+    username: string;
+    role?: string;
+    active?: boolean;
+    verifiedAt?: string;
+    readonly pendingEmail?: string;
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+    locale?: Locale;
+    phone?: string;
+    website?: string;
+    analyticsConsent?: boolean;
+    analyticsConsentAt?: string;
+    termsAcceptedAt?: string;
+    termsVersion?: string;
+    twoFactorEnabledAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
+    purchaseHold?: PurchaseHold;
+    abilities: Abilities;
+    activity: SessionActivity;
 }
 
 /**
@@ -266,8 +452,7 @@ export interface User {
     username: string;
     role?: string;
     active?: boolean;
-    /** @nullable */
-    verifiedAt?: string | null;
+    verifiedAt?: string;
     readonly pendingEmail?: string;
     imageUrl?: ImageUrl;
     thumbnailUrl?: ThumbnailUrl;
@@ -774,10 +959,8 @@ export interface ObservabilityHealthSystem {
  */
 export interface ObservabilityHealthJob {
     name: string;
-    /** @nullable */
-    lastSuccessAt?: string | null;
-    /** @nullable */
-    lastError?: string | null;
+    lastSuccessAt?: string;
+    lastError?: string;
 }
 
 /**
@@ -927,7 +1110,7 @@ export const AuditEntryItemOutcome = {
  * - `ownOrder` (boolean): `true` when staff acted on an order they placed
  *   themselves; absent otherwise. Filter with `GET /audit?ownOrder=`.
  * - `changes` (object): an `*.updated` action's non-personal fields that moved,
- *   `{ <field>: { from, to } }`, `null` meaning unset.
+ *   `{ <field>: { from, to } }`; a side that is unset is the absent key, never `null`.
  * - `changedFields` (string[]): an `*.updated` action's free-text and personal
  *   fields that moved, by NAME only. The trail is never scrubbed on erasure, so
  *   their values never enter it.
@@ -968,7 +1151,7 @@ export interface AuditEntryItem {
      * - `ownOrder` (boolean): `true` when staff acted on an order they placed
      *   themselves; absent otherwise. Filter with `GET /audit?ownOrder=`.
      * - `changes` (object): an `*.updated` action's non-personal fields that moved,
-     *   `{ <field>: { from, to } }`, `null` meaning unset.
+     *   `{ <field>: { from, to } }`; a side that is unset is the absent key, never `null`.
      * - `changedFields` (string[]): an `*.updated` action's free-text and personal
      *   fields that moved, by NAME only. The trail is never scrubbed on erasure, so
      *   their values never enter it.
@@ -986,41 +1169,6 @@ export interface AuditLogsResponse {
 export interface AuditEntriesResponse {
     items: AuditEntryItem[];
     meta: PaginationMeta;
-}
-
-/**
- * Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused.
- */
-export type AntibotRungsEmailPolicy =
-    (typeof AntibotRungsEmailPolicy)[keyof typeof AntibotRungsEmailPolicy];
-
-export const AntibotRungsEmailPolicy = {
-    off: 'off',
-    disposable: 'disposable',
-    mx: 'mx'
-} as const;
-
-/**
- * Every rung's status, not just rung 3's provider — one answer to "what is active on this deployment" instead of asking each rung to publish its own.
- */
-export interface AntibotRungs {
-    /** Rung 1 — always `true`. The identity/address/address-block budgets have no off switch. */
-    identityBudgets: boolean;
-    /** Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused. */
-    emailPolicy: AntibotRungsEmailPolicy;
-}
-
-/**
- * What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.
- */
-export type AntibotConfigParameters = { [key: string]: string };
-
-export interface AntibotConfig {
-    /** The active implementation's name (`none` by default). `none` means no challenge is required — send no token. */
-    provider: string;
-    /** What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser. */
-    parameters: AntibotConfigParameters;
-    rungs: AntibotRungs;
 }
 
 /**
@@ -1192,89 +1340,6 @@ export interface EmailVerificationRequested {
     resendAfter: number;
 }
 
-export type PackedRulesItemItem = string | boolean | { [key: string]: unknown } | string[];
-
-/**
- * CASL packed rules — `[action, subject, conditions?, fields?, inverted?, reason?]`,
- * with trailing absent members omitted.
- */
-export type PackedRules = PackedRulesItemItem[][];
-
-/**
- * What the caller may do, as CASL's packed-rule format — the shape `unpackRules`
- * takes. A tuple per rule rather than an object, which is what makes shipping a few
- * dozen of them cheap.
- *
- * BOTH SCOPES ARE ANSWERED, and that is the whole reason this is not a single rule
- * list. A request resolves to exactly one scope — the one the key it is asking about
- * declares — but a CLIENT renders screens from both at once: a shop's catalogue and
- * the installation's health dashboard sit in one navigation. Publishing only the
- * caller's tenant rules left every platform screen with no rule to grey out, so it
- * was gated on a tenant key that happened to correlate, which is exactly the
- * hand-maintained guess this endpoint exists to abolish.
- *
- * The two lists never merge. A tenant rule can never satisfy a platform key and the
- * reverse is equally impossible (`shared/authorization-keys.yaml`'s one invariant),
- * so a client builds ONE ABILITY PER SCOPE and asks the one that owns the subject.
- *
- * The client's copy has NO AUTHORITY: it decides what to render, never what is
- * allowed, and every request is re-evaluated server-side. Published so a client greys
- * out what it would be refused from the same rules the server enforces, rather than
- * from a hand-maintained duplicate that drifts — the drift is silent until somebody
- * is shown a button that answers 403.
- */
-export interface Abilities {
-    /**
-     * `true` when the caller holds a staff role that grants nothing yet because no
-     * authenticator app is armed. The rules above are then the account's customer
-     * ones; a client shows an "enrol to use your staff tools" prompt instead of
-     * a staff menu. `false` for everyone else, an anonymous caller and an API key
-     * included.
-     */
-    secondFactorRequired: boolean;
-    /**
-     * Every CASL subject a declared key names, deduplicated and sorted — the
-     * `Order`/`Product`/`ApiKey`/... a rule's second element may be. Published so
-     * a client's own `meta.can` rules are typed against the real set rather than
-     * an unchecked string a typo can silently fail closed on.
-     */
-    subjects: string[];
-    /**
-     * The tenant-scope roles this caller may assign through `POST`/`PUT`/`PATCH
-     * /users`, in the order `shared/authorization-roles.yaml` declares them.
-     * Computed by the same rule as the `403`/`422` those writes answer, so a role
-     * picker built from it offers exactly what the write accepts. Empty for a
-     * caller who may grant nothing, an anonymous one included. It has NO
-     * AUTHORITY: the write is re-checked server-side.
-     */
-    grantableRoles: string[];
-    /**
-     * The shop `tenant`'s rules are about. Absent when the caller has no tenant
-     * membership at all — a pure platform operator administers the installation
-     * rather than acting inside one shop.
-     */
-    tenantId?: string;
-    /**
-     * What the caller may do INSIDE their shop. Empty for a caller with no tenant
-     * membership; for an anonymous visitor it is the `guest` role's rules, which
-     * are a value in the model rather than an absence.
-     */
-    tenant: PackedRules;
-    /**
-     * What the caller may do ACROSS the installation — health, metrics, the
-     * operational audit. Empty for everyone but a platform operator, which is
-     * most callers: an operator is not a super-member and holds no shop's keys.
-     */
-    platform: PackedRules;
-    /**
-     * The permission model's own version, bumped when the RULES change rather than
-     * when a role does. A client caches these; this is what tells it the cache is
-     * about a different model, not merely a different person. One number for both
-     * lists — the keys file they are declared in is one file.
-     */
-    version: number;
-}
-
 /**
  * An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. Length bounds only, like `PasswordNew`: a login attempt is not the place to also announce the site's password policy to whoever is guessing it.
  * @minLength 8
@@ -1300,6 +1365,8 @@ export interface AuthTokens {
     token?: string;
     /** The `ses_…` session id, to send back as `Authorization: Bearer ses_…`. Present only for a `cookie`-mode login that asked for `transport: bearer` (or a re-proof by such a client); that login sets no cookie. */
     sessionToken?: string;
+    /** The signed-in account, with its abilities and idle clock — exactly what `GET /account` answers, so a sign-in needs no follow-up read. Present on the answers that START a session (login, its second step, restore); absent on a re-mint after a password or factor change. */
+    account?: AccountView;
 }
 
 export interface PasswordCheckRequest {
@@ -1593,6 +1660,8 @@ export interface PasswordResetConfirmRequest {
 export interface RefreshTokenResponse {
     /** New access JWT */
     token: string;
+    /** The caller's abilities as they stand now, so a role granted mid-session shows within one refresh. */
+    abilities: Abilities;
 }
 
 /**
@@ -1844,8 +1913,8 @@ export interface OrderItem {
     promisedAt?: string;
     /** Whether `promisedAt` was a date the product named. `false` means the buyer was promised delivery "within 30 days" of the order. Present with `promisedAt`. */
     promiseDated?: boolean;
-    /** The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`. */
-    current: OrderLineCurrent | null;
+    /** The product's picture, resolved live — absent when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`. */
+    current?: OrderLineCurrent;
     /**
      * VAT included in this line's total, at its own frozen `taxRate`.
      * @minimum 0
@@ -2019,7 +2088,7 @@ export interface ExportOrder {
 }
 
 /**
- * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`, `dispute_opened`, `dispute_closed`. Shipments: `shipment_shipped`, `shipment_delivered`, `shipment_lost`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`, `refund_canceled`, `refund_reversed`, `dispute_opened`, `dispute_closed`.
+ * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`, `dispute_opened`, `dispute_closed`. Shipments: `shipment_shipped`, `shipment_delivered`, `shipment_lost`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Which of these a buyer sees is the row's own `audience` (`buyer` or `staff`), set per type by the server.
  */
 export type OrderTimelineType = (typeof OrderTimelineType)[keyof typeof OrderTimelineType];
 
@@ -2070,7 +2139,7 @@ export const OrderTimelineExportEntryAudience = {
 } as const;
 
 /**
- * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
+ * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
  */
 export type OrderTimelineExportEntryData = { [key: string]: unknown };
 
@@ -2085,7 +2154,7 @@ export interface OrderTimelineExportEntry {
     actor?: Id;
     /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
     text?: string;
-    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
+    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
     data: OrderTimelineExportEntryData;
 }
 
@@ -3324,11 +3393,6 @@ export interface TwoFactorBackupCodesRegenerated {
     backupCodesRemaining: number;
 }
 
-export interface OAuthProviders {
-    /** Registry names this deployment holds credentials for, e.g. `["google", "github"]`. */
-    providers: string[];
-}
-
 export interface OAuthLink {
     /** Registry name of the linked provider, e.g. `google`. */
     provider: string;
@@ -3383,7 +3447,6 @@ export interface CreateUserRequest {
      */
     role?: string;
     active?: boolean;
-    imageUrl?: ImageRemoval;
     locale?: Locale;
 }
 
@@ -3841,14 +3904,14 @@ export interface ProductTranslationFieldsWrite {
 }
 
 /**
- * One or more locales, keyed by BCP 47 tag, each stated WHOLE: a `PUT` replaces the set, so a stored locale this map omits is deleted and a `description` a locale omits is cleared, drafts included. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on create and on `PUT`. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on.
+ * One or more locales, keyed by BCP 47 tag, each stated whole. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on.
  */
-export interface ProductTranslationsWrite {
-    [key: string]: ProductTranslationFieldsWrite | null;
+export interface ProductTranslationsCreate {
+    [key: string]: ProductTranslationFieldsWrite;
 }
 
 export interface CreateProductRequest {
-    translations: ProductTranslationsWrite;
+    translations: ProductTranslationsCreate;
     /**
      * Gross — VAT included. Same convention as `Product.price`.
      * @minimum 0
@@ -3869,7 +3932,6 @@ export interface CreateProductRequest {
      * @minimum 0
      */
     weight?: number;
-    imageUrl?: ImageRemoval;
     /**
      * @items.minLength 1
      * @items.maxLength 100
@@ -3938,6 +4000,13 @@ export interface CatalogueFacetsResponse {
     tags: FacetCount[];
 }
 
+/**
+ * One or more locales, keyed by BCP 47 tag, each stated WHOLE: a `PUT` replaces the set, so a stored locale this map omits is deleted and a `description` a locale omits is cleared, drafts included. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on `PUT`. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on.
+ */
+export interface ProductTranslationsWrite {
+    [key: string]: ProductTranslationFieldsWrite | null;
+}
+
 export interface ReplaceProductRequest {
     translations: ProductTranslationsWrite;
     /**
@@ -3951,10 +4020,10 @@ export interface ReplaceProductRequest {
     active: boolean;
     purchasable: boolean;
     releaseDate?: ReleaseDate | null;
-    allowBackorder?: boolean;
+    allowBackorder: boolean;
     restockDate?: RestockDate | null;
     requiresShipping: boolean;
-    noWithdrawal?: boolean;
+    noWithdrawal: boolean;
     /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
@@ -3991,10 +4060,10 @@ export interface ReplaceProductRequestMultipart {
     active: boolean;
     purchasable: boolean;
     releaseDate?: string;
-    allowBackorder?: boolean;
+    allowBackorder: boolean;
     restockDate?: string;
     requiresShipping: boolean;
-    noWithdrawal?: boolean;
+    noWithdrawal: boolean;
     /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
@@ -4249,11 +4318,8 @@ export interface CartShippingOption {
 export interface CartShipping {
     /** Whether this basket needs a shipping method at all — `false` for an all-digital cart, which `PUT /cart/shipping-method` and checkout both refuse a method against (`CART_SHIPPING_NOT_APPLICABLE`). */
     required: boolean;
-    /**
-     * The cart's chosen shipping method (`PUT /cart/shipping-method`). `null` when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket's weight — the same "reads as none" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`).
-     * @nullable
-     */
-    selected: string | null;
+    /** The cart's chosen shipping method (`PUT /cart/shipping-method`). Absent when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket's weight — the same "reads as none" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`). */
+    selected?: string;
     /** Every method that currently fits this basket, already priced against `summary.itemsTotal` — empty whenever `required` is `false`. `GET /delivery/methods` remains the full, unfiltered catalogue this is drawn from. */
     options: CartShippingOption[];
 }
@@ -4967,6 +5033,7 @@ export interface RefundPaymentRequest {
     amount?: number;
     /**
      * ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
+     * @minLength 1
      * @maxLength 3
      */
     currency?: string;
@@ -5535,11 +5602,10 @@ export interface InventoryLevel {
     /** @minimum 0 */
     available: number;
     /**
-     * How many units may be backordered at once. `0` means it is closed; `null` means there is no cap.
+     * How many units may be backordered at once. `0` means it is closed; absent means there is no cap.
      * @minimum 0
-     * @nullable
      */
-    backorderLimit: number | null;
+    backorderLimit?: number;
     /**
      * Preorder units outstanding against the limit, paid or not, until stock arrives and is allocated to them.
      * @minimum 0
@@ -5557,11 +5623,10 @@ export interface PreorderLevel {
     title: string;
     releaseDate?: ReleaseDate;
     /**
-     * The cap on owed units. `null` means there is no cap.
+     * The cap on owed units. Absent means there is no cap.
      * @minimum 0
-     * @nullable
      */
-    backorderLimit: number | null;
+    backorderLimit?: number;
     /**
      * Outstanding units, `held + paid`. Drops when stock is allocated, so it is not "units sold".
      * @minimum 0
@@ -5578,11 +5643,10 @@ export interface PreorderLevel {
      */
     paid: number;
     /**
-     * `backorderLimit - backordered`, never below zero: how many more may be ordered. `null` when there is no cap. Absent while the product is neither a preorder nor open to backorder: its cap then promises nothing.
+     * `backorderLimit - backordered`, never below zero: how many more may be ordered. Absent when there is no number to show: no cap (the row has no `backorderLimit` either), or the product is neither a preorder nor open to backorder, so its cap promises nothing.
      * @minimum 0
-     * @nullable
      */
-    left?: number | null;
+    left?: number;
     /**
      * Lifetime units claimed through `preorder` movements in the ledger, given back or not.
      * @minimum 0
@@ -5962,55 +6026,12 @@ export interface ApiKeyCreated {
     secret: string;
 }
 
-export interface SessionActivity {
-    /** When the session last saw a real request — now, for a touch. */
-    lastActiveAt: string;
-    /**
-     * How long the session may then sit unused before it ends. Absent when no idle timeout applies to this account (a shopper, or the timeout is switched off).
-     * @minimum 1
-     */
-    idleTimeoutSeconds?: number;
-}
-
-/**
- * The deployment's `NODE_SESSION_MODE`.
- */
-export type SessionConfigMode = (typeof SessionConfigMode)[keyof typeof SessionConfigMode];
-
-export const SessionConfigMode = {
-    jwt: 'jwt',
-    cookie: 'cookie'
-} as const;
-
-/**
- * How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own.
- */
-export type SessionConfigLifetimeSeconds = {
-    /** @minimum 1 */
-    short: number;
-    /** @minimum 1 */
-    medium: number;
-    /** @minimum 1 */
-    long: number;
-};
-
-export interface SessionConfig {
-    /** The deployment's `NODE_SESSION_MODE`. */
-    mode: SessionConfigMode;
-    /** How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own. */
-    lifetimeSeconds: SessionConfigLifetimeSeconds;
-    /**
-     * The longest a staff or admin session lives from sign-in, whatever the tier (`NODE_SESSION_LIFETIME_STAFF`). Absent when the cap is off.
-     * @minimum 1
-     */
-    staffLifetimeSeconds?: number;
-}
-
 export interface SetPurchaseHoldRequest {
     /** When checkout opens again. Must be in the future. */
     until: string;
     /**
      * Shown to the buyer with the refusal, so write it as if they read it (GDPR Art. 22(3): the reason and how to contest it).
+     * @minLength 1
      * @maxLength 500
      */
     note?: string;
@@ -6043,7 +6064,7 @@ export const OrderTimelineEntryAudience = {
 } as const;
 
 /**
- * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
+ * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
  */
 export type OrderTimelineEntryData = { [key: string]: unknown };
 
@@ -6057,7 +6078,7 @@ export interface OrderTimelineEntry {
     actor?: Id;
     /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
     text?: string;
-    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
+    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
     data: OrderTimelineEntryData;
 }
 
@@ -6279,6 +6300,13 @@ export interface StatsPeriod {
     timeZone: string;
 }
 
+export interface StatsLimits {
+    /** The most calendar days one period may cover, both ends counted. */
+    maxRangeDays: number;
+    /** The most buckets one series may hold, the first possibly starting before `from`. */
+    maxBuckets: number;
+}
+
 export interface SalesFigures {
     /** Orders paid in the period, by `paidAt`. */
     orders: number;
@@ -6325,6 +6353,7 @@ export interface SalesCurrency {
 
 export interface SalesStats {
     period: StatsPeriod;
+    limits: StatsLimits;
     currencies: SalesCurrency[];
 }
 
@@ -6341,6 +6370,7 @@ export interface ProductSalesRow {
 
 export interface ProductStats {
     period: StatsPeriod;
+    limits: StatsLimits;
     products: ProductSalesRow[];
 }
 
@@ -6352,6 +6382,7 @@ export interface ProductSeriesBucket {
 
 export interface ProductSeries {
     period: StatsPeriod;
+    limits: StatsLimits;
     productId: Id;
     /** As the orders froze it; absent when the product sold nothing in the period. */
     title?: string;
@@ -6367,6 +6398,7 @@ export interface CategorySalesRow {
 
 export interface CategoryStats {
     period: StatsPeriod;
+    limits: StatsLimits;
     categories: CategorySalesRow[];
 }
 
@@ -6389,6 +6421,7 @@ export interface PaymentMixRow {
 
 export interface PaymentMix {
     period: StatsPeriod;
+    limits: StatsLimits;
     rows: PaymentMixRow[];
 }
 
@@ -6424,6 +6457,7 @@ export type OperationsStatsRefundsItem = {
 
 export interface OperationsStats {
     period: StatsPeriod;
+    limits: StatsLimits;
     /** A cohort, meaning orders placed in the period that ended cancelled, not cancellations dated by when they happened. */
     cancellation: OperationsStatsCancellation;
     returns: OperationsStatsReturns;
@@ -6432,6 +6466,7 @@ export interface OperationsStats {
 
 export interface CustomerStats {
     period: StatsPeriod;
+    limits: StatsLimits;
     /** Accounts with at least one paid order in the period. */
     customers: number;
     /** Of those, accounts whose first paid order is in the period. */
@@ -6455,13 +6490,6 @@ export interface PipelineStats {
     awaitingTransfers: PipelineStatsAwaitingTransfersItem[];
     /** Orders `paid` or `processing`, so not yet handed to a carrier. */
     paidNotShipped: number;
-}
-
-export interface StatsLimits {
-    /** The most calendar days one period may cover, both ends counted. */
-    maxRangeDays: number;
-    /** The most buckets one series may hold, the first possibly starting before `from`. */
-    maxBuckets: number;
 }
 
 export interface UpdateInventoryLevelRequest {
@@ -6646,6 +6674,11 @@ export interface CreateStockAlertRequest {
 export type NoContentResponse = void;
 
 /**
+ * The caller's `If-None-Match` still matches: nothing changed since the copy it holds, so the body is empty and that copy is still good (RFC 9110 section 15.4.5). Every `GET` the app caches (`setCache`) or lets a browser keep and revalidate (`privateNoCache`) can answer it; the bundler adds it to each of them, an operation never declares it by hand.
+ */
+export type NotModifiedResponse = void;
+
+/**
  * The request could not be understood or authenticated as what it claims to be — distinct from `ValidationError`, which is a well-formed request whose FIELDS are wrong. Used where a caller is a machine rather than a form: an unverifiable webhook signature is the case that needs it.
  */
 export type BadRequestResponse = Problem;
@@ -6712,7 +6745,7 @@ export type PageSizeParamParameter = PageSize;
 export type TextParamParameter = Text;
 
 /**
- * The token the active human-challenge provider issued to the client — see `GET /antibot/config`. Absent when that provider is `none`.
+ * The token the active human-challenge provider issued to the client — see `antibot` on `GET /config`. Absent when that provider is `none`.
  */
 export type AntibotChallengeTokenHeaderParameter = string;
 
@@ -7654,6 +7687,22 @@ export const getHealth = (options?: SecondParameter<typeof orvalMutator<HealthPi
 };
 
 /**
+ * One public answer for the three things a client reads before anyone has signed in:
+ * how the deployment keeps people signed in (`session`), which "Continue with..."
+ * buttons to render (`oauthProviders`) and which human challenge a protected form
+ * asks for (`antibot`). Each piece is owned by its own module and composed here, so
+ * a client makes one call at start instead of three.
+ *
+ * None of it is secret and none of it changes while the process runs, so it is
+ * cached for a short while. `GET /shop` stays its own call: the shop is removable and
+ * this answer must exist without it.
+ * @summary What a client needs to boot, before it has a session
+ */
+export const getConfig = (options?: SecondParameter<typeof orvalMutator<Config>>) => {
+    return orvalMutator<Config>({ url: `/config`, method: 'GET' }, options);
+};
+
+/**
  * Is the process up. For an orchestrator (Kubernetes' own `/livez` + `/readyz`
  * convention) and for every container HEALTHCHECK. Empty body, no I/O: it checks
  * nothing else, on purpose. A failing dependency must never fail liveness, because
@@ -8391,14 +8440,6 @@ export const listAuditEntries = (
 };
 
 /**
- * Rung 3 of the anti-automation ladder, plus a `rungs` summary of every other one. Always answers 200; the default `none` provider reports an empty parameter map, which means there is no widget to render and no token to send. Reachable with no credential; guarding it behind a login would defeat signup, which has none yet.
- * @summary Read the active human-challenge provider's public parameters, and every rung's status
- */
-export const getAntibotConfig = (options?: SecondParameter<typeof orvalMutator<AntibotConfig>>) => {
-    return orvalMutator<AntibotConfig>({ url: `/antibot/config`, method: 'GET' }, options);
-};
-
-/**
  * Only a provider this server hosts itself (`altcha`) issues a challenge here; the default `none` and any vendor-hosted provider answer 404, which is a truthful statement about the deployment rather than an error. The shape is the provider's own — pass it to its widget verbatim.
  * @summary Fetch work from a self-hosted human-challenge provider
  */
@@ -8428,11 +8469,22 @@ export const createAnalyticsEvent = (
 };
 
 /**
- * Returns the full profile of the currently authenticated user
+ * Returns the full profile of the currently authenticated user, plus two read-only
+ * members that ride with it so a client needs no second call: `abilities` (the
+ * rules the SERVER enforces, packed for the client to evaluate) and `activity` (the
+ * session's idle clock).
+ *
+ * `abilities` is the same object a sign-in and a token refresh carry. The client's
+ * copy has NO AUTHORITY: it decides what to render, never what is allowed, and every
+ * request is re-evaluated server-side. A non-passive `GET /account` also counts as
+ * activity, so a restore needs no separate touch.
+ *
+ * The `ETag` is computed over the stored account, not over this body: a role change
+ * does not make an `If-Match` taken from an earlier read answer `412`.
  * @summary Current user info
  */
-export const getAccount = (options?: SecondParameter<typeof orvalMutator<Account>>) => {
-    return orvalMutator<Account>({ url: `/account`, method: 'GET' }, options);
+export const getAccount = (options?: SecondParameter<typeof orvalMutator<AccountView>>) => {
+    return orvalMutator<AccountView>({ url: `/account`, method: 'GET' }, options);
 };
 
 /**
@@ -8607,35 +8659,6 @@ export const resendPendingEmail = (
         { url: `/account/email-change/resend`, method: 'POST' },
         options
     );
-};
-
-/**
- * The rules the SERVER enforces, packed for a client to evaluate.
- *
- * Published so a client can grey out what it would be refused, from the same rules
- * rather than from a copy of them — a hand-maintained duplicate of "what may I do"
- * drifts, and the drift is silent until somebody is shown a button that answers 403.
- *
- * Answered in BOTH scopes, as two separate lists. A request acts in exactly one — the
- * one its key declares — but a client renders the shop's screens and the
- * installation's health dashboard from a single navigation, so it needs both and must
- * never merge them.
- *
- * **The client's copy has no authority.** It decides what to RENDER, never what is
- * allowed; every request is re-evaluated server-side. Published here because the
- * alternative is every client inventing the same guess.
- *
- * `grantableRoles` lists the tenant-scope roles the caller may assign through the user
- * writes, computed by the same rule as their `403`/`422`; a role picker reads it instead of a
- * hard-coded list. Empty for an anonymous caller. It has no authority either.
- *
- * Answered for an anonymous caller too: a stranger holds the `guest` role, which is
- * a value in the model rather than an absence, and a shop front that greys nothing
- * out for a visitor is a shop front that lies twice.
- * @summary The caller's own authorization rules
- */
-export const getMyAbilities = (options?: SecondParameter<typeof orvalMutator<Abilities>>) => {
-    return orvalMutator<Abilities>({ url: `/account/abilities`, method: 'GET' }, options);
 };
 
 /**
@@ -8973,7 +8996,7 @@ export const restoreAccount = (
 };
 
 /**
- * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
+ * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`session.mode` of `GET /config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
  * @summary Login
  */
 export const login = (
@@ -9269,19 +9292,6 @@ export const regenerateBackupCodes = (
             headers: { 'Content-Type': 'application/json' },
             data: twoFactorCodeRequest
         },
-        options
-    );
-};
-
-/**
- * The OAuth providers this deployment holds credentials for — an empty list means none are configured. The frontend uses this to decide which "Continue with…" buttons to render.
- * @summary List enabled OAuth providers
- */
-export const listOAuthProviders = (
-    options?: SecondParameter<typeof orvalMutator<OAuthProviders>>
-) => {
-    return orvalMutator<OAuthProviders>(
-        { url: `/account/oauth/providers`, method: 'GET' },
         options
     );
 };
@@ -10004,16 +10014,12 @@ export const replaceProductByIdWithMultipart = (
     if (replaceProductRequestMultipart.releaseDate !== undefined) {
         formData.append(`releaseDate`, replaceProductRequestMultipart.releaseDate);
     }
-    if (replaceProductRequestMultipart.allowBackorder !== undefined) {
-        formData.append(`allowBackorder`, replaceProductRequestMultipart.allowBackorder.toString());
-    }
+    formData.append(`allowBackorder`, replaceProductRequestMultipart.allowBackorder.toString());
     if (replaceProductRequestMultipart.restockDate !== undefined) {
         formData.append(`restockDate`, replaceProductRequestMultipart.restockDate);
     }
     formData.append(`requiresShipping`, replaceProductRequestMultipart.requiresShipping.toString());
-    if (replaceProductRequestMultipart.noWithdrawal !== undefined) {
-        formData.append(`noWithdrawal`, replaceProductRequestMultipart.noWithdrawal.toString());
-    }
+    formData.append(`noWithdrawal`, replaceProductRequestMultipart.noWithdrawal.toString());
     if (replaceProductRequestMultipart.weight !== undefined) {
         formData.append(`weight`, replaceProductRequestMultipart.weight.toString());
     }
@@ -11653,14 +11659,6 @@ export const touchSession = (options?: SecondParameter<typeof orvalMutator<Sessi
 };
 
 /**
- * Public, like `GET /antibot/config`: a client reads it once at boot and adapts, so it needs no switch of its own. `jwt` — a short access token in memory plus a rotating refresh cookie (`POST /account/refresh` exists). `cookie` — one HttpOnly `__Host-session` cookie, nothing to refresh, and every state-changing request that a cookie authenticates must come from an allowed `Origin`.
- * @summary How this deployment keeps people signed in
- */
-export const getSessionConfig = (options?: SecondParameter<typeof orvalMutator<SessionConfig>>) => {
-    return orvalMutator<SessionConfig>({ url: `/account/session-config`, method: 'GET' }, options);
-};
-
-/**
  * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Clears the account's review flag: placing a hold is acting on it. Audited as `admin.user.purchase_hold_set`.
  * @summary Put a purchase hold on a user
  */
@@ -12123,14 +12121,6 @@ export const getCustomerStats = (
  */
 export const getPipelineStats = (options?: SecondParameter<typeof orvalMutator<PipelineStats>>) => {
     return orvalMutator<PipelineStats>({ url: `/stats/pipeline`, method: 'GET' }, options);
-};
-
-/**
- * The two ceilings every period read enforces, so a form can refuse a period before a round trip does: the most calendar days (inclusive) and the most buckets one request may cover. Needs `read:Stats`.
- * @summary How big a period may be (staff)
- */
-export const getStatsLimits = (options?: SecondParameter<typeof orvalMutator<StatsLimits>>) => {
-    return orvalMutator<StatsLimits>({ url: `/stats/limits`, method: 'GET' }, options);
 };
 
 /**
@@ -12601,6 +12591,7 @@ export const deleteStockAlert = (
 };
 
 export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;
+export type GetConfigResult = NonNullable<Awaited<ReturnType<typeof getConfig>>>;
 export type GetLivezResult = NonNullable<Awaited<ReturnType<typeof getLivez>>>;
 export type GetReadyzResult = NonNullable<Awaited<ReturnType<typeof getReadyz>>>;
 export type GetSecurityTxtResult = NonNullable<Awaited<ReturnType<typeof getSecurityTxt>>>;
@@ -12663,7 +12654,6 @@ export type ListObservabilityAuditEntriesResult = NonNullable<
     Awaited<ReturnType<typeof listObservabilityAuditEntries>>
 >;
 export type ListAuditEntriesResult = NonNullable<Awaited<ReturnType<typeof listAuditEntries>>>;
-export type GetAntibotConfigResult = NonNullable<Awaited<ReturnType<typeof getAntibotConfig>>>;
 export type GetAntibotChallengeResult = NonNullable<
     Awaited<ReturnType<typeof getAntibotChallenge>>
 >;
@@ -12689,7 +12679,6 @@ export type CancelPendingEmailChangeResult = NonNullable<
     Awaited<ReturnType<typeof cancelPendingEmailChange>>
 >;
 export type ResendPendingEmailResult = NonNullable<Awaited<ReturnType<typeof resendPendingEmail>>>;
-export type GetMyAbilitiesResult = NonNullable<Awaited<ReturnType<typeof getMyAbilities>>>;
 export type ChangePasswordResult = NonNullable<Awaited<ReturnType<typeof changePassword>>>;
 export type CheckPasswordBreachedResult = NonNullable<
     Awaited<ReturnType<typeof checkPasswordBreached>>
@@ -12756,7 +12745,6 @@ export type RemoveTwoFactorMethodResult = NonNullable<
 export type RegenerateBackupCodesResult = NonNullable<
     Awaited<ReturnType<typeof regenerateBackupCodes>>
 >;
-export type ListOAuthProvidersResult = NonNullable<Awaited<ReturnType<typeof listOAuthProviders>>>;
 export type ListOAuthLinksResult = NonNullable<Awaited<ReturnType<typeof listOAuthLinks>>>;
 export type StartOAuthLinkResult = NonNullable<Awaited<ReturnType<typeof startOAuthLink>>>;
 export type UnlinkOAuthProviderResult = NonNullable<
@@ -12966,7 +12954,6 @@ export type ActivateLocaleResult = NonNullable<Awaited<ReturnType<typeof activat
 export type DeactivateLocaleResult = NonNullable<Awaited<ReturnType<typeof deactivateLocale>>>;
 export type SendReauthCodeResult = NonNullable<Awaited<ReturnType<typeof sendReauthCode>>>;
 export type TouchSessionResult = NonNullable<Awaited<ReturnType<typeof touchSession>>>;
-export type GetSessionConfigResult = NonNullable<Awaited<ReturnType<typeof getSessionConfig>>>;
 export type SetUserPurchaseHoldResult = NonNullable<
     Awaited<ReturnType<typeof setUserPurchaseHold>>
 >;
@@ -13012,7 +12999,6 @@ export type GetPaymentMixStatsResult = NonNullable<Awaited<ReturnType<typeof get
 export type GetOperationsStatsResult = NonNullable<Awaited<ReturnType<typeof getOperationsStats>>>;
 export type GetCustomerStatsResult = NonNullable<Awaited<ReturnType<typeof getCustomerStats>>>;
 export type GetPipelineStatsResult = NonNullable<Awaited<ReturnType<typeof getPipelineStats>>>;
-export type GetStatsLimitsResult = NonNullable<Awaited<ReturnType<typeof getStatsLimits>>>;
 export type GetInventoryLevelResult = NonNullable<Awaited<ReturnType<typeof getInventoryLevel>>>;
 export type UpdateInventoryLevelResult = NonNullable<
     Awaited<ReturnType<typeof updateInventoryLevel>>

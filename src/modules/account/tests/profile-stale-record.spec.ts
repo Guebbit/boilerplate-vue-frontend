@@ -18,6 +18,7 @@ import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
+import { accountView } from '../../../../tests/support/unit/account-view.ts';
 
 wireModulesIntoCore();
 
@@ -67,11 +68,7 @@ const mockRefusedPatch = () => {
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) => {
         // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
         if (config.method === 'PATCH') return Promise.reject(PRECONDITION_FAILED);
-        const body =
-            config.url === '/account/abilities'
-                ? { platform: [], tenant: [], version: 1, subjects: [] }
-                : USER;
-        return Promise.resolve(parseOrvalFixture(config.method, config.url, body));
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, accountView(USER, [])));
     });
 };
 

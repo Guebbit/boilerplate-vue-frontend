@@ -18,6 +18,7 @@ import {
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 import * as schemas from '@api/schemas';
+import { accountView } from '../../../../tests/support/unit/account-view.ts';
 
 wireModulesIntoCore();
 
@@ -70,18 +71,9 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /account': USER,
+        'GET /account': accountView(USER),
         // The rules the server would publish for this viewer. The store unpacks them with CASL's
         // own reader, so a fixture that is not packed is a fixture no client could use.
-        'GET /account/abilities': {
-            platform: [],
-            tenant: [
-                ['read', 'Product', { active: true, deletedAt: null }],
-                ['read', 'Order', { userId: 'u1', deletedAt: null }]
-            ],
-            version: 36,
-            subjects: ['Order', 'Product']
-        },
         // PATCH, not PUT — `updateProfile` sends only the fields it was given.
         'PATCH /account': { ...USER, imageUrl: undefined }
     };

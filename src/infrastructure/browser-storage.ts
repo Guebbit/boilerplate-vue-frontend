@@ -80,6 +80,7 @@ export const BROWSER_STORAGE_NAME = {
     oauthLocale: '__Host-oauth_locale',
     oauthLink: '__Host-oauth_link',
     oauthMfaChallenge: '__Host-oauth_mfa_challenge',
+    oauthDeletionChallenge: '__Host-oauth_deletion_challenge',
     rememberMe: 'rememberMe',
     analyticsConsent: 'analyticsConsent',
     themePreference: 'themePreference',
@@ -139,6 +140,13 @@ export const BROWSER_STORAGE_ITEMS: readonly BrowserStorageItem[] = [
     { id: 'oauthLink', kind: 'cookie', setter: 'backend', party: 'first', necessity: 'necessary' },
     {
         id: 'oauthMfaChallenge',
+        kind: 'cookie',
+        setter: 'backend',
+        party: 'first',
+        necessity: 'necessary'
+    },
+    {
+        id: 'oauthDeletionChallenge',
         kind: 'cookie',
         setter: 'backend',
         party: 'first',

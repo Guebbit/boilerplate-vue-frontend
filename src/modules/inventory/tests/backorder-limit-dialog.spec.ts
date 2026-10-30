@@ -90,7 +90,7 @@ describe('BackorderLimitDialog', () => {
     it('opens with "no limit" ticked for a product that has none', () => {
         vi.spyOn(useInventoryStore(), 'setLimit').mockResolvedValue(aLevel());
         const wrapper = mount(BackorderLimitDialog, {
-            props: { modelValue: true, level: aLevel({ backorderLimit: null }) },
+            props: { modelValue: true, level: aLevel({ backorderLimit: undefined }) },
             global: {
                 plugins: [vuetify, i18n],
                 stubs: { VDialog: { template: '<div><slot /></div>' } }

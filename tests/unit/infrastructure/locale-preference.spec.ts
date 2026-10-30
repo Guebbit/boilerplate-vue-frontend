@@ -19,21 +19,7 @@ const updateAccountMock = vi.fn();
 
 vi.mock('@api', () => ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
-    updateAccount: (body: { locale: string }) => updateAccountMock(body),
-    // `setViewer` loads the abilities; an empty set is enough to sign the viewer in.
-    getMyAbilities: () =>
-        Promise.resolve(
-            contractResponse(schemas.GetMyAbilitiesResponse, {
-                platform: [],
-                tenant: [],
-                version: 1,
-                subjects: [],
-                grantableRoles: [],
-                secondFactorRequired: false
-            })
-        ),
-    // The idle clock is read once per signed-in stretch; the answer names no timeout.
-    touchSession: () => Promise.resolve({ lastActiveAt: new Date().toISOString() })
+    updateAccount: (body: { locale: string }) => updateAccountMock(body)
 }));
 
 /** The code under test, imported after the mocks are in place. */
@@ -46,8 +32,7 @@ const { useSessionStore } = await import('@/infrastructure/session.ts');
 const signedIn = () => {
     const store = useSessionStore();
     store.setAccessToken('token');
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises -- setViewer never rejects (both its reads swallow their failure)
-    void store.setViewer({ id: '1', email: 'a@b.c', role: 'customer' });
+    store.setViewer({ id: '1', email: 'a@b.c', role: 'customer' });
     return store;
 };
 

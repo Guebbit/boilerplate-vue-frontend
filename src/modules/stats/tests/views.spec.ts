@@ -42,6 +42,7 @@ const MermaidStub = { props: ['definition', 'label'], template: '<pre data-test=
 /** What a product that sold something answers. */
 const SERIES: ProductSeries = {
     period: { from: '2026-10-01', to: '2026-10-02', interval: 'day', timeZone: 'Europe/Rome' },
+    limits: { maxRangeDays: 731, maxBuckets: 400 },
     productId: 'p1',
     title: 'Kibble',
     buckets: [{ start: '2026-09-30T22:00:00.000Z', unitsOrdered: 3, unitsReversed: 1 }]
@@ -49,8 +50,6 @@ const SERIES: ProductSeries = {
 
 beforeEach(() => {
     setActivePinia(createPinia());
-    // The ceilings are a read of their own; these specs are about the page, not that call.
-    vi.spyOn(useStatsStore(), 'loadLimits').mockResolvedValue(undefined);
     return loadLocale('en');
 });
 

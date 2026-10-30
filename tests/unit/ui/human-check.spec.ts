@@ -1,6 +1,6 @@
 /**
  * `HumanCheck.vue` — the provider-neutral human-challenge widget. Its whole job is picking the
- * right BRANCH off `GET /antibot/config`'s answer; the real vendor widgets (`altcha`'s web
+ * right BRANCH off `GET /config`'s answer; the real vendor widgets (`altcha`'s web
  * component, Cloudflare's `window.turnstile`) are mocked out entirely, since exercising them for
  * real would test a library, not this component.
  */
@@ -39,7 +39,7 @@ beforeEach(() => {
 });
 
 /**
- * A `GET /antibot/config` body for the given provider.
+ * A `GET /config` body for the given provider.
  *
  * @param provider - The provider name to answer with.
  * @param parameters - Its public parameters, empty for `none`.

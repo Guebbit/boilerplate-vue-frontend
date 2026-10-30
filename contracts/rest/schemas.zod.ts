@@ -50,6 +50,38 @@ export const GetHealthResponse = zod.strictObject({
     status: zod.enum(['ok'])
 });
 /**
+ * One public answer for the three things a client reads before anyone has signed in:
+ * how the deployment keeps people signed in (`session`), which "Continue with..."
+ * buttons to render (`oauthProviders`) and which human challenge a protected form
+ * asks for (`antibot`). Each piece is owned by its own module and composed here, so
+ * a client makes one call at start instead of three.
+ *
+ * None of it is secret and none of it changes while the process runs, so it is
+ * cached for a short while. `GET /shop` stays its own call: the shop is removable and
+ * this answer must exist without it.
+ * @summary What a client needs to boot, before it has a session
+ */
+export const GetConfigResponse = zod.strictObject({
+    session: zod.strictObject({
+        mode: zod.enum(['jwt', 'cookie']),
+        lifetimeSeconds: zod.strictObject({
+            short: zod.number().min(1),
+            medium: zod.number().min(1),
+            long: zod.number().min(1)
+        }),
+        staffLifetimeSeconds: zod.number().min(1).optional()
+    }),
+    oauthProviders: zod.array(zod.string()),
+    antibot: zod.strictObject({
+        provider: zod.string(),
+        parameters: zod.record(zod.string(), zod.string()),
+        rungs: zod.strictObject({
+            identityBudgets: zod.boolean(),
+            emailPolicy: zod.enum(['off', 'disposable', 'mx'])
+        })
+    })
+});
+/**
  * Is the process up. For an orchestrator (Kubernetes' own `/livez` + `/readyz`
  * convention) and for every container HEALTHCHECK. Empty body, no I/O: it checks
  * nothing else, on purpose. A failing dependency must never fail liveness, because
@@ -1368,8 +1400,8 @@ export const GetObservabilityHealthResponse = zod.strictObject({
         .array(
             zod.strictObject({
                 name: zod.string(),
-                lastSuccessAt: zod.iso.datetime({ offset: true }).nullish(),
-                lastError: zod.string().nullish()
+                lastSuccessAt: zod.iso.datetime({ offset: true }).optional(),
+                lastError: zod.string().optional()
             })
         )
         .optional(),
@@ -1651,18 +1683,6 @@ export const ListAuditEntriesResponse = zod.strictObject({
     })
 });
 /**
- * Rung 3 of the anti-automation ladder, plus a `rungs` summary of every other one. Always answers 200; the default `none` provider reports an empty parameter map, which means there is no widget to render and no token to send. Reachable with no credential; guarding it behind a login would defeat signup, which has none yet.
- * @summary Read the active human-challenge provider's public parameters, and every rung's status
- */
-export const GetAntibotConfigResponse = zod.strictObject({
-    provider: zod.string(),
-    parameters: zod.record(zod.string(), zod.string()),
-    rungs: zod.strictObject({
-        identityBudgets: zod.boolean(),
-        emailPolicy: zod.enum(['off', 'disposable', 'mx'])
-    })
-});
-/**
  * Only a provider this server hosts itself (`altcha`) issues a challenge here; the default `none` and any vendor-hosted provider answer 404, which is a truthful statement about the deployment rather than an error. The shape is the provider's own — pass it to its widget verbatim.
  * @summary Fetch work from a self-hosted human-challenge provider
  */
@@ -1717,7 +1737,18 @@ export const CreateAnalyticsEventBody = zod.union([
 ]);
 export const CreateAnalyticsEventResponse = zod.void();
 /**
- * Returns the full profile of the currently authenticated user
+ * Returns the full profile of the currently authenticated user, plus two read-only
+ * members that ride with it so a client needs no second call: `abilities` (the
+ * rules the SERVER enforces, packed for the client to evaluate) and `activity` (the
+ * session's idle clock).
+ *
+ * `abilities` is the same object a sign-in and a token refresh carry. The client's
+ * copy has NO AUTHORITY: it decides what to render, never what is allowed, and every
+ * request is re-evaluated server-side. A non-passive `GET /account` also counts as
+ * activity, so a restore needs no separate touch.
+ *
+ * The `ETag` is computed over the stored account, not over this body: a role change
+ * does not make an `If-Match` taken from an earlier read answer `412`.
  * @summary Current user info
  */
 export const getAccountResponseIdMax = 64;
@@ -1732,7 +1763,7 @@ export const GetAccountResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -1758,7 +1789,35 @@ export const GetAccountResponse = zod.strictObject({
             note: zod.string().max(getAccountResponsePurchaseHoldNoteMax).optional(),
             setAt: zod.iso.datetime({ offset: true })
         })
-        .optional()
+        .optional(),
+    abilities: zod.strictObject({
+        secondFactorRequired: zod.boolean(),
+        grantableRoles: zod.array(zod.string()),
+        tenantId: zod.string().optional(),
+        tenant: zod.array(
+            zod.array(
+                zod.union([
+                    zod.string(),
+                    zod.union([zod.literal(0), zod.literal(1)]),
+                    zod.looseObject({})
+                ])
+            )
+        ),
+        platform: zod.array(
+            zod.array(
+                zod.union([
+                    zod.string(),
+                    zod.union([zod.literal(0), zod.literal(1)]),
+                    zod.looseObject({})
+                ])
+            )
+        ),
+        version: zod.number()
+    }),
+    activity: zod.strictObject({
+        lastActiveAt: zod.iso.datetime({ offset: true }),
+        idleTimeoutSeconds: zod.number().min(1).optional()
+    })
 });
 /**
  * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change/confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change/undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/email-change`, or have its link mailed again with `POST /account/email-change/resend`.
@@ -1804,7 +1863,7 @@ export const ReplaceAccountResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -1877,7 +1936,7 @@ export const UpdateAccountResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -1926,48 +1985,6 @@ export const ResendPendingEmailResponse = zod.strictObject({
     resendAfter: zod.number()
 });
 /**
- * The rules the SERVER enforces, packed for a client to evaluate.
- *
- * Published so a client can grey out what it would be refused, from the same rules
- * rather than from a copy of them — a hand-maintained duplicate of "what may I do"
- * drifts, and the drift is silent until somebody is shown a button that answers 403.
- *
- * Answered in BOTH scopes, as two separate lists. A request acts in exactly one — the
- * one its key declares — but a client renders the shop's screens and the
- * installation's health dashboard from a single navigation, so it needs both and must
- * never merge them.
- *
- * **The client's copy has no authority.** It decides what to RENDER, never what is
- * allowed; every request is re-evaluated server-side. Published here because the
- * alternative is every client inventing the same guess.
- *
- * `grantableRoles` lists the tenant-scope roles the caller may assign through the user
- * writes, computed by the same rule as their `403`/`422`; a role picker reads it instead of a
- * hard-coded list. Empty for an anonymous caller. It has no authority either.
- *
- * Answered for an anonymous caller too: a stranger holds the `guest` role, which is
- * a value in the model rather than an absence, and a shop front that greys nothing
- * out for a visitor is a shop front that lies twice.
- * @summary The caller's own authorization rules
- */
-export const GetMyAbilitiesResponse = zod.strictObject({
-    secondFactorRequired: zod.boolean(),
-    subjects: zod.array(zod.string()),
-    grantableRoles: zod.array(zod.string()),
-    tenantId: zod.string().optional(),
-    tenant: zod.array(
-        zod.array(
-            zod.union([zod.string(), zod.boolean(), zod.looseObject({}), zod.array(zod.string())])
-        )
-    ),
-    platform: zod.array(
-        zod.array(
-            zod.union([zod.string(), zod.boolean(), zod.looseObject({}), zod.array(zod.string())])
-        )
-    ),
-    version: zod.number()
-});
-/**
  * Changes the authenticated user's password. Unlike the reset flow this proves possession of the current password rather than of the mailbox, so it needs no email round-trip. Every session is revoked and every pending one-time link and login challenge is purged; the response carries a fresh access token for the calling session, and sets fresh session cookies. An account with a second factor armed also needs a fresh session that proved an `otp` (`401 REAUTH_REQUIRED` with `details.methods`); an account without one is asked nothing new.
  * @summary Change password
  */
@@ -1988,9 +2005,86 @@ export const ChangePasswordBody = zod.strictObject({
         .min(changePasswordBodyPasswordConfirmMin)
         .max(changePasswordBodyPasswordConfirmMax)
 });
+export const changePasswordResponseAccountIdMax = 64;
+export const changePasswordResponseAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const changePasswordResponseAccountEmailMax = 254;
+export const changePasswordResponseAccountLocaleMax = 35;
+export const changePasswordResponseAccountLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const changePasswordResponseAccountPurchaseHoldNoteMax = 500;
 export const ChangePasswordResponse = zod.strictObject({
     token: zod.string().optional(),
-    sessionToken: zod.string().optional()
+    sessionToken: zod.string().optional(),
+    account: zod
+        .strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(changePasswordResponseAccountIdMax)
+                .regex(changePasswordResponseAccountIdRegExp),
+            email: zod.email().max(changePasswordResponseAccountEmailMax),
+            username: zod.string(),
+            role: zod.string().optional(),
+            active: zod.boolean().optional(),
+            verifiedAt: zod.iso.datetime({ offset: true }).optional(),
+            pendingEmail: zod.email().optional(),
+            imageUrl: zod.string().min(1).optional(),
+            thumbnailUrl: zod.string().optional(),
+            locale: zod
+                .string()
+                .max(changePasswordResponseAccountLocaleMax)
+                .regex(changePasswordResponseAccountLocaleRegExp)
+                .optional(),
+            phone: zod.string().optional(),
+            website: zod.string().optional(),
+            analyticsConsent: zod.boolean().optional(),
+            analyticsConsentAt: zod.iso.datetime({ offset: true }).optional(),
+            termsAcceptedAt: zod.iso.datetime({ offset: true }).optional(),
+            termsVersion: zod.string().optional(),
+            twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true }).optional(),
+            updatedAt: zod.iso.datetime({ offset: true }).optional(),
+            deletedAt: zod.iso.datetime({ offset: true }).optional(),
+            purchaseHold: zod
+                .strictObject({
+                    until: zod.iso.datetime({ offset: true }),
+                    reason: zod.enum(['repeated_cancellations', 'staff']),
+                    note: zod
+                        .string()
+                        .max(changePasswordResponseAccountPurchaseHoldNoteMax)
+                        .optional(),
+                    setAt: zod.iso.datetime({ offset: true })
+                })
+                .optional(),
+            abilities: zod.strictObject({
+                secondFactorRequired: zod.boolean(),
+                grantableRoles: zod.array(zod.string()),
+                tenantId: zod.string().optional(),
+                tenant: zod.array(
+                    zod.array(
+                        zod.union([
+                            zod.string(),
+                            zod.union([zod.literal(0), zod.literal(1)]),
+                            zod.looseObject({})
+                        ])
+                    )
+                ),
+                platform: zod.array(
+                    zod.array(
+                        zod.union([
+                            zod.string(),
+                            zod.union([zod.literal(0), zod.literal(1)]),
+                            zod.looseObject({})
+                        ])
+                    )
+                ),
+                version: zod.number()
+            }),
+            activity: zod.strictObject({
+                lastActiveAt: zod.iso.datetime({ offset: true }),
+                idleTimeoutSeconds: zod.number().min(1).optional()
+            })
+        })
+        .optional()
 });
 /**
  * Advisory only — never blocks anything itself. Reports whether a CANDIDATE password (not yet required to satisfy `PasswordNew`) matches a known-breached password, so a signup or password-change form can warn before submission. Unauthenticated, since signup needs it before an account exists. The four password-SET paths remain the actual gate, checked again server-side regardless of what this endpoint answered.
@@ -2033,9 +2127,83 @@ export const ReauthBody = zod.union([
         otp: zod.string().min(1).max(reauthBodyTwoOtpMax).optional()
     })
 ]);
+export const reauthResponseAccountIdMax = 64;
+export const reauthResponseAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const reauthResponseAccountEmailMax = 254;
+export const reauthResponseAccountLocaleMax = 35;
+export const reauthResponseAccountLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const reauthResponseAccountPurchaseHoldNoteMax = 500;
 export const ReauthResponse = zod.strictObject({
     token: zod.string().optional(),
-    sessionToken: zod.string().optional()
+    sessionToken: zod.string().optional(),
+    account: zod
+        .strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(reauthResponseAccountIdMax)
+                .regex(reauthResponseAccountIdRegExp),
+            email: zod.email().max(reauthResponseAccountEmailMax),
+            username: zod.string(),
+            role: zod.string().optional(),
+            active: zod.boolean().optional(),
+            verifiedAt: zod.iso.datetime({ offset: true }).optional(),
+            pendingEmail: zod.email().optional(),
+            imageUrl: zod.string().min(1).optional(),
+            thumbnailUrl: zod.string().optional(),
+            locale: zod
+                .string()
+                .max(reauthResponseAccountLocaleMax)
+                .regex(reauthResponseAccountLocaleRegExp)
+                .optional(),
+            phone: zod.string().optional(),
+            website: zod.string().optional(),
+            analyticsConsent: zod.boolean().optional(),
+            analyticsConsentAt: zod.iso.datetime({ offset: true }).optional(),
+            termsAcceptedAt: zod.iso.datetime({ offset: true }).optional(),
+            termsVersion: zod.string().optional(),
+            twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true }).optional(),
+            updatedAt: zod.iso.datetime({ offset: true }).optional(),
+            deletedAt: zod.iso.datetime({ offset: true }).optional(),
+            purchaseHold: zod
+                .strictObject({
+                    until: zod.iso.datetime({ offset: true }),
+                    reason: zod.enum(['repeated_cancellations', 'staff']),
+                    note: zod.string().max(reauthResponseAccountPurchaseHoldNoteMax).optional(),
+                    setAt: zod.iso.datetime({ offset: true })
+                })
+                .optional(),
+            abilities: zod.strictObject({
+                secondFactorRequired: zod.boolean(),
+                grantableRoles: zod.array(zod.string()),
+                tenantId: zod.string().optional(),
+                tenant: zod.array(
+                    zod.array(
+                        zod.union([
+                            zod.string(),
+                            zod.union([zod.literal(0), zod.literal(1)]),
+                            zod.looseObject({})
+                        ])
+                    )
+                ),
+                platform: zod.array(
+                    zod.array(
+                        zod.union([
+                            zod.string(),
+                            zod.union([zod.literal(0), zod.literal(1)]),
+                            zod.looseObject({})
+                        ])
+                    )
+                ),
+                version: zod.number()
+            }),
+            activity: zod.strictObject({
+                lastActiveAt: zod.iso.datetime({ offset: true }),
+                idleTimeoutSeconds: zod.number().min(1).optional()
+            })
+        })
+        .optional()
 });
 /**
  * Logs out the CURRENT session only — deletes the session the `__Host-session` cookie (or, in `cookie` mode, a `ses_…` bearer) names, and clears the authentication cookies. Refused with 403 when the request names an `Origin` that is not an allowed frontend origin. Other devices stay signed in; `DELETE /account/sessions` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
@@ -2426,7 +2594,7 @@ export const RestoreAccountBody = zod.strictObject({
 });
 export const RestoreAccountResponse = zod.void();
 /**
- * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
+ * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`session.mode` of `GET /config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
  * @summary Login
  */
 export const loginBodyEmailMax = 254;
@@ -2438,10 +2606,87 @@ export const LoginBody = zod.strictObject({
     remember: zod.enum(['short', 'medium', 'long']).optional(),
     transport: zod.enum(['cookie', 'bearer']).optional()
 });
+export const loginResponseOneAccountIdMax = 64;
+export const loginResponseOneAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const loginResponseOneAccountEmailMax = 254;
+export const loginResponseOneAccountLocaleMax = 35;
+export const loginResponseOneAccountLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const loginResponseOneAccountPurchaseHoldNoteMax = 500;
 export const LoginResponse = zod.union([
     zod.strictObject({
         token: zod.string().optional(),
-        sessionToken: zod.string().optional()
+        sessionToken: zod.string().optional(),
+        account: zod
+            .strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(loginResponseOneAccountIdMax)
+                    .regex(loginResponseOneAccountIdRegExp),
+                email: zod.email().max(loginResponseOneAccountEmailMax),
+                username: zod.string(),
+                role: zod.string().optional(),
+                active: zod.boolean().optional(),
+                verifiedAt: zod.iso.datetime({ offset: true }).optional(),
+                pendingEmail: zod.email().optional(),
+                imageUrl: zod.string().min(1).optional(),
+                thumbnailUrl: zod.string().optional(),
+                locale: zod
+                    .string()
+                    .max(loginResponseOneAccountLocaleMax)
+                    .regex(loginResponseOneAccountLocaleRegExp)
+                    .optional(),
+                phone: zod.string().optional(),
+                website: zod.string().optional(),
+                analyticsConsent: zod.boolean().optional(),
+                analyticsConsentAt: zod.iso.datetime({ offset: true }).optional(),
+                termsAcceptedAt: zod.iso.datetime({ offset: true }).optional(),
+                termsVersion: zod.string().optional(),
+                twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true }).optional(),
+                updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                purchaseHold: zod
+                    .strictObject({
+                        until: zod.iso.datetime({ offset: true }),
+                        reason: zod.enum(['repeated_cancellations', 'staff']),
+                        note: zod
+                            .string()
+                            .max(loginResponseOneAccountPurchaseHoldNoteMax)
+                            .optional(),
+                        setAt: zod.iso.datetime({ offset: true })
+                    })
+                    .optional(),
+                abilities: zod.strictObject({
+                    secondFactorRequired: zod.boolean(),
+                    grantableRoles: zod.array(zod.string()),
+                    tenantId: zod.string().optional(),
+                    tenant: zod.array(
+                        zod.array(
+                            zod.union([
+                                zod.string(),
+                                zod.union([zod.literal(0), zod.literal(1)]),
+                                zod.looseObject({})
+                            ])
+                        )
+                    ),
+                    platform: zod.array(
+                        zod.array(
+                            zod.union([
+                                zod.string(),
+                                zod.union([zod.literal(0), zod.literal(1)]),
+                                zod.looseObject({})
+                            ])
+                        )
+                    ),
+                    version: zod.number()
+                }),
+                activity: zod.strictObject({
+                    lastActiveAt: zod.iso.datetime({ offset: true }),
+                    idleTimeoutSeconds: zod.number().min(1).optional()
+                })
+            })
+            .optional()
     }),
     zod.strictObject({
         mfaRequired: zod.literal(true),
@@ -2477,9 +2722,86 @@ export const LoginRestoreBody = zod.strictObject({
     remember: zod.enum(['short', 'medium', 'long']).optional(),
     transport: zod.enum(['cookie', 'bearer']).optional()
 });
+export const loginRestoreResponseAccountIdMax = 64;
+export const loginRestoreResponseAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const loginRestoreResponseAccountEmailMax = 254;
+export const loginRestoreResponseAccountLocaleMax = 35;
+export const loginRestoreResponseAccountLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const loginRestoreResponseAccountPurchaseHoldNoteMax = 500;
 export const LoginRestoreResponse = zod.strictObject({
     token: zod.string().optional(),
-    sessionToken: zod.string().optional()
+    sessionToken: zod.string().optional(),
+    account: zod
+        .strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(loginRestoreResponseAccountIdMax)
+                .regex(loginRestoreResponseAccountIdRegExp),
+            email: zod.email().max(loginRestoreResponseAccountEmailMax),
+            username: zod.string(),
+            role: zod.string().optional(),
+            active: zod.boolean().optional(),
+            verifiedAt: zod.iso.datetime({ offset: true }).optional(),
+            pendingEmail: zod.email().optional(),
+            imageUrl: zod.string().min(1).optional(),
+            thumbnailUrl: zod.string().optional(),
+            locale: zod
+                .string()
+                .max(loginRestoreResponseAccountLocaleMax)
+                .regex(loginRestoreResponseAccountLocaleRegExp)
+                .optional(),
+            phone: zod.string().optional(),
+            website: zod.string().optional(),
+            analyticsConsent: zod.boolean().optional(),
+            analyticsConsentAt: zod.iso.datetime({ offset: true }).optional(),
+            termsAcceptedAt: zod.iso.datetime({ offset: true }).optional(),
+            termsVersion: zod.string().optional(),
+            twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true }).optional(),
+            updatedAt: zod.iso.datetime({ offset: true }).optional(),
+            deletedAt: zod.iso.datetime({ offset: true }).optional(),
+            purchaseHold: zod
+                .strictObject({
+                    until: zod.iso.datetime({ offset: true }),
+                    reason: zod.enum(['repeated_cancellations', 'staff']),
+                    note: zod
+                        .string()
+                        .max(loginRestoreResponseAccountPurchaseHoldNoteMax)
+                        .optional(),
+                    setAt: zod.iso.datetime({ offset: true })
+                })
+                .optional(),
+            abilities: zod.strictObject({
+                secondFactorRequired: zod.boolean(),
+                grantableRoles: zod.array(zod.string()),
+                tenantId: zod.string().optional(),
+                tenant: zod.array(
+                    zod.array(
+                        zod.union([
+                            zod.string(),
+                            zod.union([zod.literal(0), zod.literal(1)]),
+                            zod.looseObject({})
+                        ])
+                    )
+                ),
+                platform: zod.array(
+                    zod.array(
+                        zod.union([
+                            zod.string(),
+                            zod.union([zod.literal(0), zod.literal(1)]),
+                            zod.looseObject({})
+                        ])
+                    )
+                ),
+                version: zod.number()
+            }),
+            activity: zod.strictObject({
+                lastActiveAt: zod.iso.datetime({ offset: true }),
+                idleTimeoutSeconds: zod.number().min(1).optional()
+            })
+        })
+        .optional()
 });
 /**
  * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account is an `unverified` audience until `POST /account/email-verification/confirm` proves the address — it browses freely and is stopped only at `checkout:Cart`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards.
@@ -2527,7 +2849,7 @@ export const SignupResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -2593,7 +2915,31 @@ export const ConfirmPasswordResetResponse = zod.void();
  * @summary Refresh access token
  */
 export const RefreshTokenResponse = zod.strictObject({
-    token: zod.string()
+    token: zod.string(),
+    abilities: zod.strictObject({
+        secondFactorRequired: zod.boolean(),
+        grantableRoles: zod.array(zod.string()),
+        tenantId: zod.string().optional(),
+        tenant: zod.array(
+            zod.array(
+                zod.union([
+                    zod.string(),
+                    zod.union([zod.literal(0), zod.literal(1)]),
+                    zod.looseObject({})
+                ])
+            )
+        ),
+        platform: zod.array(
+            zod.array(
+                zod.union([
+                    zod.string(),
+                    zod.union([zod.literal(0), zod.literal(1)]),
+                    zod.looseObject({})
+                ])
+            )
+        ),
+        version: zod.number()
+    })
 });
 /**
  * Starts "give me my data" (Art. 15, 20) and answers at once with `202`, the export's status (`AccountExport`) and `Location: /account/export`, the status monitor to poll (RFC 9110 §15.3.3). The file is built in the background from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail — and a LINK to it is mailed to the account's address when it is ready, never the data itself. Check on it with `GET /account/export`, fetch it with `GET /account/export/file`.
@@ -2991,7 +3337,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
         username: zod.string(),
         role: zod.string().optional(),
         active: zod.boolean().optional(),
-        verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+        verifiedAt: zod.iso.datetime({ offset: true }).optional(),
         pendingEmail: zod.email().optional(),
         imageUrl: zod.string().min(1).optional(),
         thumbnailUrl: zod.string().optional(),
@@ -3255,13 +3601,12 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     backorderedQuantity: zod.number().min(1).optional(),
                     promisedAt: zod.iso.datetime({ offset: true }).optional(),
                     promiseDated: zod.boolean().optional(),
-                    current: zod.union([
-                        zod.strictObject({
+                    current: zod
+                        .strictObject({
                             imageUrl: zod.string().min(1).optional(),
                             thumbnailUrl: zod.string().optional()
-                        }),
-                        zod.null()
-                    ]),
+                        })
+                        .optional(),
                     taxAmount: zod
                         .number()
                         .min(downloadAccountExportResponseOrdersItemItemsItemTaxAmountMin),
@@ -4305,10 +4650,89 @@ export const LoginTwoFactorBody = zod.strictObject({
     remember: zod.enum(['short', 'medium', 'long']).optional(),
     transport: zod.enum(['cookie', 'bearer']).optional()
 });
+export const loginTwoFactorResponseOneAccountIdMax = 64;
+export const loginTwoFactorResponseOneAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const loginTwoFactorResponseOneAccountEmailMax = 254;
+export const loginTwoFactorResponseOneAccountLocaleMax = 35;
+export const loginTwoFactorResponseOneAccountLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+export const loginTwoFactorResponseOneAccountPurchaseHoldNoteMax = 500;
 export const LoginTwoFactorResponse = zod.union([
     zod.strictObject({
         token: zod.string().optional(),
-        sessionToken: zod.string().optional()
+        sessionToken: zod.string().optional(),
+        account: zod
+            .strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(loginTwoFactorResponseOneAccountIdMax)
+                    .regex(loginTwoFactorResponseOneAccountIdRegExp),
+                email: zod.email().max(loginTwoFactorResponseOneAccountEmailMax),
+                username: zod.string(),
+                role: zod.string().optional(),
+                active: zod.boolean().optional(),
+                verifiedAt: zod.iso.datetime({ offset: true }).optional(),
+                pendingEmail: zod.email().optional(),
+                imageUrl: zod.string().min(1).optional(),
+                thumbnailUrl: zod.string().optional(),
+                locale: zod
+                    .string()
+                    .max(loginTwoFactorResponseOneAccountLocaleMax)
+                    .regex(loginTwoFactorResponseOneAccountLocaleRegExp)
+                    .optional(),
+                phone: zod.string().optional(),
+                website: zod.string().optional(),
+                analyticsConsent: zod.boolean().optional(),
+                analyticsConsentAt: zod.iso.datetime({ offset: true }).optional(),
+                termsAcceptedAt: zod.iso.datetime({ offset: true }).optional(),
+                termsVersion: zod.string().optional(),
+                twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true }).optional(),
+                updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                purchaseHold: zod
+                    .strictObject({
+                        until: zod.iso.datetime({ offset: true }),
+                        reason: zod.enum(['repeated_cancellations', 'staff']),
+                        note: zod
+                            .string()
+                            .max(loginTwoFactorResponseOneAccountPurchaseHoldNoteMax)
+                            .optional(),
+                        setAt: zod.iso.datetime({ offset: true })
+                    })
+                    .optional(),
+                abilities: zod.strictObject({
+                    secondFactorRequired: zod.boolean(),
+                    grantableRoles: zod.array(zod.string()),
+                    tenantId: zod.string().optional(),
+                    tenant: zod.array(
+                        zod.array(
+                            zod.union([
+                                zod.string(),
+                                zod.union([zod.literal(0), zod.literal(1)]),
+                                zod.looseObject({})
+                            ])
+                        )
+                    ),
+                    platform: zod.array(
+                        zod.array(
+                            zod.union([
+                                zod.string(),
+                                zod.union([zod.literal(0), zod.literal(1)]),
+                                zod.looseObject({})
+                            ])
+                        )
+                    ),
+                    version: zod.number()
+                }),
+                activity: zod.strictObject({
+                    lastActiveAt: zod.iso.datetime({ offset: true }),
+                    idleTimeoutSeconds: zod.number().min(1).optional()
+                })
+            })
+            .optional()
     }),
     zod.strictObject({
         deletionPending: zod.literal(true),
@@ -4424,9 +4848,86 @@ export const disableTwoFactorBodyCodeMax = 64;
 export const DisableTwoFactorBody = zod.strictObject({
     code: zod.string().min(1).max(disableTwoFactorBodyCodeMax)
 });
+export const disableTwoFactorResponseAccountIdMax = 64;
+export const disableTwoFactorResponseAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const disableTwoFactorResponseAccountEmailMax = 254;
+export const disableTwoFactorResponseAccountLocaleMax = 35;
+export const disableTwoFactorResponseAccountLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const disableTwoFactorResponseAccountPurchaseHoldNoteMax = 500;
 export const DisableTwoFactorResponse = zod.strictObject({
     token: zod.string().optional(),
-    sessionToken: zod.string().optional()
+    sessionToken: zod.string().optional(),
+    account: zod
+        .strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(disableTwoFactorResponseAccountIdMax)
+                .regex(disableTwoFactorResponseAccountIdRegExp),
+            email: zod.email().max(disableTwoFactorResponseAccountEmailMax),
+            username: zod.string(),
+            role: zod.string().optional(),
+            active: zod.boolean().optional(),
+            verifiedAt: zod.iso.datetime({ offset: true }).optional(),
+            pendingEmail: zod.email().optional(),
+            imageUrl: zod.string().min(1).optional(),
+            thumbnailUrl: zod.string().optional(),
+            locale: zod
+                .string()
+                .max(disableTwoFactorResponseAccountLocaleMax)
+                .regex(disableTwoFactorResponseAccountLocaleRegExp)
+                .optional(),
+            phone: zod.string().optional(),
+            website: zod.string().optional(),
+            analyticsConsent: zod.boolean().optional(),
+            analyticsConsentAt: zod.iso.datetime({ offset: true }).optional(),
+            termsAcceptedAt: zod.iso.datetime({ offset: true }).optional(),
+            termsVersion: zod.string().optional(),
+            twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true }).optional(),
+            updatedAt: zod.iso.datetime({ offset: true }).optional(),
+            deletedAt: zod.iso.datetime({ offset: true }).optional(),
+            purchaseHold: zod
+                .strictObject({
+                    until: zod.iso.datetime({ offset: true }),
+                    reason: zod.enum(['repeated_cancellations', 'staff']),
+                    note: zod
+                        .string()
+                        .max(disableTwoFactorResponseAccountPurchaseHoldNoteMax)
+                        .optional(),
+                    setAt: zod.iso.datetime({ offset: true })
+                })
+                .optional(),
+            abilities: zod.strictObject({
+                secondFactorRequired: zod.boolean(),
+                grantableRoles: zod.array(zod.string()),
+                tenantId: zod.string().optional(),
+                tenant: zod.array(
+                    zod.array(
+                        zod.union([
+                            zod.string(),
+                            zod.union([zod.literal(0), zod.literal(1)]),
+                            zod.looseObject({})
+                        ])
+                    )
+                ),
+                platform: zod.array(
+                    zod.array(
+                        zod.union([
+                            zod.string(),
+                            zod.union([zod.literal(0), zod.literal(1)]),
+                            zod.looseObject({})
+                        ])
+                    )
+                ),
+                version: zod.number()
+            }),
+            activity: zod.strictObject({
+                lastActiveAt: zod.iso.datetime({ offset: true }),
+                idleTimeoutSeconds: zod.number().min(1).optional()
+            })
+        })
+        .optional()
 });
 /**
  * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as POST /account/2fa/disable would.
@@ -4440,9 +4941,88 @@ export const removeTwoFactorMethodBodyCodeMax = 64;
 export const RemoveTwoFactorMethodBody = zod.strictObject({
     code: zod.string().min(1).max(removeTwoFactorMethodBodyCodeMax)
 });
+export const removeTwoFactorMethodResponseAccountIdMax = 64;
+export const removeTwoFactorMethodResponseAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const removeTwoFactorMethodResponseAccountEmailMax = 254;
+export const removeTwoFactorMethodResponseAccountLocaleMax = 35;
+export const removeTwoFactorMethodResponseAccountLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+export const removeTwoFactorMethodResponseAccountPurchaseHoldNoteMax = 500;
 export const RemoveTwoFactorMethodResponse = zod.strictObject({
     token: zod.string().optional(),
-    sessionToken: zod.string().optional()
+    sessionToken: zod.string().optional(),
+    account: zod
+        .strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(removeTwoFactorMethodResponseAccountIdMax)
+                .regex(removeTwoFactorMethodResponseAccountIdRegExp),
+            email: zod.email().max(removeTwoFactorMethodResponseAccountEmailMax),
+            username: zod.string(),
+            role: zod.string().optional(),
+            active: zod.boolean().optional(),
+            verifiedAt: zod.iso.datetime({ offset: true }).optional(),
+            pendingEmail: zod.email().optional(),
+            imageUrl: zod.string().min(1).optional(),
+            thumbnailUrl: zod.string().optional(),
+            locale: zod
+                .string()
+                .max(removeTwoFactorMethodResponseAccountLocaleMax)
+                .regex(removeTwoFactorMethodResponseAccountLocaleRegExp)
+                .optional(),
+            phone: zod.string().optional(),
+            website: zod.string().optional(),
+            analyticsConsent: zod.boolean().optional(),
+            analyticsConsentAt: zod.iso.datetime({ offset: true }).optional(),
+            termsAcceptedAt: zod.iso.datetime({ offset: true }).optional(),
+            termsVersion: zod.string().optional(),
+            twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true }).optional(),
+            updatedAt: zod.iso.datetime({ offset: true }).optional(),
+            deletedAt: zod.iso.datetime({ offset: true }).optional(),
+            purchaseHold: zod
+                .strictObject({
+                    until: zod.iso.datetime({ offset: true }),
+                    reason: zod.enum(['repeated_cancellations', 'staff']),
+                    note: zod
+                        .string()
+                        .max(removeTwoFactorMethodResponseAccountPurchaseHoldNoteMax)
+                        .optional(),
+                    setAt: zod.iso.datetime({ offset: true })
+                })
+                .optional(),
+            abilities: zod.strictObject({
+                secondFactorRequired: zod.boolean(),
+                grantableRoles: zod.array(zod.string()),
+                tenantId: zod.string().optional(),
+                tenant: zod.array(
+                    zod.array(
+                        zod.union([
+                            zod.string(),
+                            zod.union([zod.literal(0), zod.literal(1)]),
+                            zod.looseObject({})
+                        ])
+                    )
+                ),
+                platform: zod.array(
+                    zod.array(
+                        zod.union([
+                            zod.string(),
+                            zod.union([zod.literal(0), zod.literal(1)]),
+                            zod.looseObject({})
+                        ])
+                    )
+                ),
+                version: zod.number()
+            }),
+            activity: zod.strictObject({
+                lastActiveAt: zod.iso.datetime({ offset: true }),
+                idleTimeoutSeconds: zod.number().min(1).optional()
+            })
+        })
+        .optional()
 });
 /**
  * Mints a fresh set of ten one-time backup codes and discards whatever was left of the old set — the answer to burning through them with no way back in short of admin-assisted recovery. Requires a valid code from any armed method, or an unused backup code, on top of the route's own fresh-auth requirement, same reasoning as disabling a factor.
@@ -4455,13 +5035,6 @@ export const RegenerateBackupCodesBody = zod.strictObject({
 export const RegenerateBackupCodesResponse = zod.strictObject({
     backupCodes: zod.array(zod.string()),
     backupCodesRemaining: zod.number()
-});
-/**
- * The OAuth providers this deployment holds credentials for — an empty list means none are configured. The frontend uses this to decide which "Continue with…" buttons to render.
- * @summary List enabled OAuth providers
- */
-export const ListOAuthProvidersResponse = zod.strictObject({
-    providers: zod.array(zod.string())
 });
 /**
  * The sign-in providers linked to the authenticated account (Google, GitHub), with when each was connected. Never carries a provider's own identifier. An empty list means the account signs in with a password alone.
@@ -4605,7 +5178,7 @@ export const ListUsersResponse = zod.strictObject({
             username: zod.string(),
             role: zod.string().optional(),
             active: zod.boolean().optional(),
-            verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+            verifiedAt: zod.iso.datetime({ offset: true }).optional(),
             pendingEmail: zod.email().optional(),
             imageUrl: zod.string().min(1).optional(),
             thumbnailUrl: zod.string().optional(),
@@ -4681,7 +5254,6 @@ export const CreateUserBody = zod.strictObject({
     username: zod.string().min(createUserBodyUsernameMin).max(createUserBodyUsernameMax),
     role: zod.string().min(1).max(createUserBodyRoleMax).optional(),
     active: zod.boolean().default(createUserBodyActiveDefault),
-    imageUrl: zod.null().optional(),
     locale: zod.string().max(createUserBodyLocaleMax).regex(createUserBodyLocaleRegExp).optional()
 });
 export const createUserResponseIdMax = 64;
@@ -4696,7 +5268,7 @@ export const CreateUserResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -4773,7 +5345,7 @@ export const GetUserByIdResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -4866,7 +5438,7 @@ export const ReplaceUserByIdResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -4959,7 +5531,7 @@ export const UpdateUserByIdResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -5042,7 +5614,7 @@ export const RestoreUserByIdResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -5161,7 +5733,7 @@ export const SearchUsersResponse = zod.strictObject({
             username: zod.string(),
             role: zod.string().optional(),
             active: zod.boolean().optional(),
-            verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+            verifiedAt: zod.iso.datetime({ offset: true }).optional(),
             pendingEmail: zod.email().optional(),
             imageUrl: zod.string().min(1).optional(),
             thumbnailUrl: zod.string().optional(),
@@ -6805,9 +7377,9 @@ export const ListProductsResponse = zod.strictObject({
  * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/levels/{productId}/receive`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it.
  * @summary Create product
  */
-export const createProductBodyTranslationsOneTitleMin = 5;
-export const createProductBodyTranslationsOneTitleMax = 200;
-export const createProductBodyTranslationsOneDescriptionMax = 10000;
+export const createProductBodyTranslationsTitleMin = 5;
+export const createProductBodyTranslationsTitleMax = 200;
+export const createProductBodyTranslationsDescriptionMax = 10000;
 export const createProductBodyPriceMin = 0;
 export const createProductBodySkuMax = 64;
 export const createProductBodyActiveDefault = true;
@@ -6821,20 +7393,17 @@ export const createProductBodyTagsItemMax = 50;
 export const CreateProductBody = zod.strictObject({
     translations: zod.record(
         zod.string(),
-        zod.union([
-            zod.strictObject({
-                title: zod
-                    .string()
-                    .min(createProductBodyTranslationsOneTitleMin)
-                    .max(createProductBodyTranslationsOneTitleMax),
-                description: zod
-                    .string()
-                    .min(1)
-                    .max(createProductBodyTranslationsOneDescriptionMax)
-                    .optional()
-            }),
-            zod.null()
-        ])
+        zod.strictObject({
+            title: zod
+                .string()
+                .min(createProductBodyTranslationsTitleMin)
+                .max(createProductBodyTranslationsTitleMax),
+            description: zod
+                .string()
+                .min(1)
+                .max(createProductBodyTranslationsDescriptionMax)
+                .optional()
+        })
     ),
     price: zod.number().min(createProductBodyPriceMin),
     taxClass: zod.enum(['reduced', 'zero']).optional(),
@@ -6848,7 +7417,6 @@ export const CreateProductBody = zod.strictObject({
     requiresShipping: zod.boolean().default(createProductBodyRequiresShippingDefault),
     noWithdrawal: zod.boolean().default(createProductBodyNoWithdrawalDefault),
     weight: zod.number().min(createProductBodyWeightMin).optional(),
-    imageUrl: zod.null().optional(),
     categories: zod.array(zod.string().min(1).max(createProductBodyCategoriesItemMax)).optional(),
     tags: zod.array(zod.string().min(1).max(createProductBodyTagsItemMax)).optional()
 });
@@ -7055,10 +7623,10 @@ export const ReplaceProductByIdBody = zod.strictObject({
     active: zod.boolean(),
     purchasable: zod.boolean(),
     releaseDate: zod.union([zod.iso.datetime({ offset: true }), zod.null()]).optional(),
-    allowBackorder: zod.boolean().optional(),
+    allowBackorder: zod.boolean(),
     restockDate: zod.union([zod.iso.datetime({ offset: true }), zod.null()]).optional(),
     requiresShipping: zod.boolean(),
-    noWithdrawal: zod.boolean().optional(),
+    noWithdrawal: zod.boolean(),
     weight: zod.number().min(replaceProductByIdBodyWeightMin).nullish(),
     imageUrl: zod.null().optional(),
     categories: zod.array(zod.string().min(1).max(replaceProductByIdBodyCategoriesItemMax)),
@@ -7544,7 +8112,7 @@ export const GetCartResponse = zod.strictObject({
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
-        selected: zod.string().nullable(),
+        selected: zod.string().optional(),
         options: zod.array(
             zod.strictObject({
                 id: zod.string(),
@@ -7620,7 +8188,7 @@ export const AddCartItemResponse = zod.strictObject({
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
-        selected: zod.string().nullable(),
+        selected: zod.string().optional(),
         options: zod.array(
             zod.strictObject({
                 id: zod.string(),
@@ -7685,7 +8253,7 @@ export const ClearCartResponse = zod.strictObject({
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
-        selected: zod.string().nullable(),
+        selected: zod.string().optional(),
         options: zod.array(
             zod.strictObject({
                 id: zod.string(),
@@ -7763,7 +8331,7 @@ export const UpdateCartItemByIdResponse = zod.strictObject({
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
-        selected: zod.string().nullable(),
+        selected: zod.string().optional(),
         options: zod.array(
             zod.strictObject({
                 id: zod.string(),
@@ -7837,7 +8405,7 @@ export const RemoveCartItemResponse = zod.strictObject({
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
-        selected: zod.string().nullable(),
+        selected: zod.string().optional(),
         options: zod.array(
             zod.strictObject({
                 id: zod.string(),
@@ -7910,7 +8478,7 @@ export const SetCartShippingMethodResponse = zod.strictObject({
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
-        selected: zod.string().nullable(),
+        selected: zod.string().optional(),
         options: zod.array(
             zod.strictObject({
                 id: zod.string(),
@@ -8085,13 +8653,12 @@ export const CheckoutResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(checkoutResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(checkoutResponseItemsItemNetAmountMin)
         })
@@ -8239,7 +8806,7 @@ export const ReorderResponse = zod.strictObject({
         }),
         shipping: zod.strictObject({
             required: zod.boolean(),
-            selected: zod.string().nullable(),
+            selected: zod.string().optional(),
             options: zod.array(
                 zod.strictObject({
                     id: zod.string(),
@@ -8608,13 +9175,12 @@ export const ListOrdersResponse = zod.strictObject({
                     backorderedQuantity: zod.number().min(1).optional(),
                     promisedAt: zod.iso.datetime({ offset: true }).optional(),
                     promiseDated: zod.boolean().optional(),
-                    current: zod.union([
-                        zod.strictObject({
+                    current: zod
+                        .strictObject({
                             imageUrl: zod.string().min(1).optional(),
                             thumbnailUrl: zod.string().optional()
-                        }),
-                        zod.null()
-                    ]),
+                        })
+                        .optional(),
                     taxAmount: zod.number().min(listOrdersResponseItemsItemItemsItemTaxAmountMin),
                     netAmount: zod.number().min(listOrdersResponseItemsItemItemsItemNetAmountMin)
                 })
@@ -8890,13 +9456,12 @@ export const CreateOrderResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(createOrderResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(createOrderResponseItemsItemNetAmountMin)
         })
@@ -9201,13 +9766,12 @@ export const SearchOrdersResponse = zod.strictObject({
                     backorderedQuantity: zod.number().min(1).optional(),
                     promisedAt: zod.iso.datetime({ offset: true }).optional(),
                     promiseDated: zod.boolean().optional(),
-                    current: zod.union([
-                        zod.strictObject({
+                    current: zod
+                        .strictObject({
                             imageUrl: zod.string().min(1).optional(),
                             thumbnailUrl: zod.string().optional()
-                        }),
-                        zod.null()
-                    ]),
+                        })
+                        .optional(),
                     taxAmount: zod.number().min(searchOrdersResponseItemsItemItemsItemTaxAmountMin),
                     netAmount: zod.number().min(searchOrdersResponseItemsItemItemsItemNetAmountMin)
                 })
@@ -9458,13 +10022,12 @@ export const GetOrderByIdResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(getOrderByIdResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(getOrderByIdResponseItemsItemNetAmountMin)
         })
@@ -9670,13 +10233,12 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(replaceOrderByIdResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(replaceOrderByIdResponseItemsItemNetAmountMin)
         })
@@ -9890,13 +10452,12 @@ export const UpdateOrderByIdResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(updateOrderByIdResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(updateOrderByIdResponseItemsItemNetAmountMin)
         })
@@ -10115,13 +10676,12 @@ export const RestoreOrderByIdResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(restoreOrderByIdResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(restoreOrderByIdResponseItemsItemNetAmountMin)
         })
@@ -10346,13 +10906,12 @@ export const CancelOrderByIdResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(cancelOrderByIdResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(cancelOrderByIdResponseItemsItemNetAmountMin)
         })
@@ -10559,13 +11118,12 @@ export const OverrideOrderStatusResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(overrideOrderStatusResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(overrideOrderStatusResponseItemsItemNetAmountMin)
         })
@@ -11238,13 +11796,12 @@ export const ProcessOrderResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(processOrderResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(processOrderResponseItemsItemNetAmountMin)
         })
@@ -11579,7 +12136,7 @@ export const createRefundBodyAmountExclusiveMin = 0;
 export const createRefundBodyCurrencyMax = 3;
 export const CreateRefundBody = zod.strictObject({
     amount: zod.number().gt(createRefundBodyAmountExclusiveMin).optional(),
-    currency: zod.string().max(createRefundBodyCurrencyMax).optional()
+    currency: zod.string().min(1).max(createRefundBodyCurrencyMax).optional()
 });
 export const createRefundResponseIdMax = 64;
 export const createRefundResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -13981,7 +14538,7 @@ export const ListInventoryLevelsResponse = zod.strictObject({
             backorderLimit: zod
                 .number()
                 .min(listInventoryLevelsResponseItemsItemBackorderLimitMin)
-                .nullable(),
+                .optional(),
             backordered: zod.number().min(listInventoryLevelsResponseItemsItemBackorderedMin)
         })
     ),
@@ -14049,11 +14606,11 @@ export const ListPreorderLevelsResponse = zod.strictObject({
             backorderLimit: zod
                 .number()
                 .min(listPreorderLevelsResponseItemsItemBackorderLimitMin)
-                .nullable(),
+                .optional(),
             backordered: zod.number().min(listPreorderLevelsResponseItemsItemBackorderedMin),
             held: zod.number().min(listPreorderLevelsResponseItemsItemHeldMin),
             paid: zod.number().min(listPreorderLevelsResponseItemsItemPaidMin),
-            left: zod.number().min(listPreorderLevelsResponseItemsItemLeftMin).nullish(),
+            left: zod.number().min(listPreorderLevelsResponseItemsItemLeftMin).optional(),
             ordered: zod.number().min(listPreorderLevelsResponseItemsItemOrderedMin)
         })
     ),
@@ -14216,7 +14773,7 @@ export const ReceiveStockResponse = zod.strictObject({
     onHand: zod.number().min(receiveStockResponseOnHandMin),
     reserved: zod.number().min(receiveStockResponseReservedMin),
     available: zod.number().min(receiveStockResponseAvailableMin),
-    backorderLimit: zod.number().min(receiveStockResponseBackorderLimitMin).nullable(),
+    backorderLimit: zod.number().min(receiveStockResponseBackorderLimitMin).optional(),
     backordered: zod.number().min(receiveStockResponseBackorderedMin)
 });
 /**
@@ -14264,7 +14821,7 @@ export const AdjustStockResponse = zod.strictObject({
     onHand: zod.number().min(adjustStockResponseOnHandMin),
     reserved: zod.number().min(adjustStockResponseReservedMin),
     available: zod.number().min(adjustStockResponseAvailableMin),
-    backorderLimit: zod.number().min(adjustStockResponseBackorderLimitMin).nullable(),
+    backorderLimit: zod.number().min(adjustStockResponseBackorderLimitMin).optional(),
     backordered: zod.number().min(adjustStockResponseBackorderedMin)
 });
 /**
@@ -15121,19 +15678,6 @@ export const TouchSessionResponse = zod.strictObject({
     idleTimeoutSeconds: zod.number().min(1).optional()
 });
 /**
- * Public, like `GET /antibot/config`: a client reads it once at boot and adapts, so it needs no switch of its own. `jwt` — a short access token in memory plus a rotating refresh cookie (`POST /account/refresh` exists). `cookie` — one HttpOnly `__Host-session` cookie, nothing to refresh, and every state-changing request that a cookie authenticates must come from an allowed `Origin`.
- * @summary How this deployment keeps people signed in
- */
-export const GetSessionConfigResponse = zod.strictObject({
-    mode: zod.enum(['jwt', 'cookie']),
-    lifetimeSeconds: zod.strictObject({
-        short: zod.number().min(1),
-        medium: zod.number().min(1),
-        long: zod.number().min(1)
-    }),
-    staffLifetimeSeconds: zod.number().min(1).optional()
-});
-/**
  * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Clears the account's review flag: placing a hold is acting on it. Audited as `admin.user.purchase_hold_set`.
  * @summary Put a purchase hold on a user
  */
@@ -15145,7 +15689,7 @@ export const SetUserPurchaseHoldParams = zod.strictObject({
 export const setUserPurchaseHoldBodyNoteMax = 500;
 export const SetUserPurchaseHoldBody = zod.strictObject({
     until: zod.iso.datetime({ offset: true }),
-    note: zod.string().max(setUserPurchaseHoldBodyNoteMax).optional()
+    note: zod.string().min(1).max(setUserPurchaseHoldBodyNoteMax).optional()
 });
 export const setUserPurchaseHoldResponseIdMax = 64;
 export const setUserPurchaseHoldResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -15163,7 +15707,7 @@ export const SetUserPurchaseHoldResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -15233,7 +15777,7 @@ export const LiftUserPurchaseHoldResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -15299,7 +15843,7 @@ export const ActivateUserByIdResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -15365,7 +15909,7 @@ export const DeactivateUserByIdResponse = zod.strictObject({
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
-    verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
@@ -15492,7 +16036,7 @@ export const MergeCartResponse = zod.strictObject({
         }),
         shipping: zod.strictObject({
             required: zod.boolean(),
-            selected: zod.string().nullable(),
+            selected: zod.string().optional(),
             options: zod.array(
                 zod.strictObject({
                     id: zod.string(),
@@ -15831,13 +16375,12 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.datetime({ offset: true }).optional(),
             promiseDated: zod.boolean().optional(),
-            current: zod.union([
-                zod.strictObject({
+            current: zod
+                .strictObject({
                     imageUrl: zod.string().min(1).optional(),
                     thumbnailUrl: zod.string().optional()
-                }),
-                zod.null()
-            ]),
+                })
+                .optional(),
             taxAmount: zod.number().min(correctOrderShippingAddressResponseItemsItemTaxAmountMin),
             netAmount: zod.number().min(correctOrderShippingAddressResponseItemsItemNetAmountMin)
         })
@@ -17405,6 +17948,10 @@ export const GetSalesStatsResponse = zod.strictObject({
             .default(getSalesStatsResponsePeriodIntervalDefault),
         timeZone: zod.string()
     }),
+    limits: zod.strictObject({
+        maxRangeDays: zod.number(),
+        maxBuckets: zod.number()
+    }),
     currencies: zod.array(
         zod.strictObject({
             currency: zod.string(),
@@ -17488,6 +18035,10 @@ export const GetProductStatsResponse = zod.strictObject({
             .default(getProductStatsResponsePeriodIntervalDefault),
         timeZone: zod.string()
     }),
+    limits: zod.strictObject({
+        maxRangeDays: zod.number(),
+        maxBuckets: zod.number()
+    }),
     products: zod.array(
         zod.strictObject({
             productId: zod
@@ -17535,6 +18086,10 @@ export const GetProductSalesSeriesResponse = zod.strictObject({
             .default(getProductSalesSeriesResponsePeriodIntervalDefault),
         timeZone: zod.string()
     }),
+    limits: zod.strictObject({
+        maxRangeDays: zod.number(),
+        maxBuckets: zod.number()
+    }),
     productId: zod
         .string()
         .min(1)
@@ -17567,6 +18122,10 @@ export const GetCategoryStatsResponse = zod.strictObject({
             .default(getCategoryStatsResponsePeriodIntervalDefault),
         timeZone: zod.string()
     }),
+    limits: zod.strictObject({
+        maxRangeDays: zod.number(),
+        maxBuckets: zod.number()
+    }),
     categories: zod.array(
         zod.strictObject({
             category: zod.string(),
@@ -17593,6 +18152,10 @@ export const GetPaymentMixStatsResponse = zod.strictObject({
             .enum(['day', 'week', 'month'])
             .default(getPaymentMixStatsResponsePeriodIntervalDefault),
         timeZone: zod.string()
+    }),
+    limits: zod.strictObject({
+        maxRangeDays: zod.number(),
+        maxBuckets: zod.number()
     }),
     rows: zod.array(
         zod.strictObject({
@@ -17625,6 +18188,10 @@ export const GetOperationsStatsResponse = zod.strictObject({
             .enum(['day', 'week', 'month'])
             .default(getOperationsStatsResponsePeriodIntervalDefault),
         timeZone: zod.string()
+    }),
+    limits: zod.strictObject({
+        maxRangeDays: zod.number(),
+        maxBuckets: zod.number()
     }),
     cancellation: zod.strictObject({
         placed: zod.number(),
@@ -17668,6 +18235,10 @@ export const GetCustomerStatsResponse = zod.strictObject({
             .default(getCustomerStatsResponsePeriodIntervalDefault),
         timeZone: zod.string()
     }),
+    limits: zod.strictObject({
+        maxRangeDays: zod.number(),
+        maxBuckets: zod.number()
+    }),
     customers: zod.number(),
     newCustomers: zod.number(),
     returningCustomers: zod.number(),
@@ -17690,14 +18261,6 @@ export const GetPipelineStatsResponse = zod.strictObject({
         })
     ),
     paidNotShipped: zod.number()
-});
-/**
- * The two ceilings every period read enforces, so a form can refuse a period before a round trip does: the most calendar days (inclusive) and the most buckets one request may cover. Needs `read:Stats`.
- * @summary How big a period may be (staff)
- */
-export const GetStatsLimitsResponse = zod.strictObject({
-    maxRangeDays: zod.number(),
-    maxBuckets: zod.number()
 });
 /**
  * One row of the stock board by product, with its counters and availability — the record `receive`, `adjust` and the `PATCH` act on. Same audience as the board (`read:StockLevel`). An unknown product, one with no level row and a malformed id are the same 404.
@@ -17729,7 +18292,7 @@ export const GetInventoryLevelResponse = zod.strictObject({
     onHand: zod.number().min(getInventoryLevelResponseOnHandMin),
     reserved: zod.number().min(getInventoryLevelResponseReservedMin),
     available: zod.number().min(getInventoryLevelResponseAvailableMin),
-    backorderLimit: zod.number().min(getInventoryLevelResponseBackorderLimitMin).nullable(),
+    backorderLimit: zod.number().min(getInventoryLevelResponseBackorderLimitMin).optional(),
     backordered: zod.number().min(getInventoryLevelResponseBackorderedMin)
 });
 /**
@@ -17768,7 +18331,7 @@ export const UpdateInventoryLevelResponse = zod.strictObject({
     onHand: zod.number().min(updateInventoryLevelResponseOnHandMin),
     reserved: zod.number().min(updateInventoryLevelResponseReservedMin),
     available: zod.number().min(updateInventoryLevelResponseAvailableMin),
-    backorderLimit: zod.number().min(updateInventoryLevelResponseBackorderLimitMin).nullable(),
+    backorderLimit: zod.number().min(updateInventoryLevelResponseBackorderLimitMin).optional(),
     backordered: zod.number().min(updateInventoryLevelResponseBackorderedMin)
 });
 /**

@@ -52,12 +52,12 @@ const { loading } = storeToRefs(inventoryStore);
 /**
  * The limit being typed; `undefined` while the field is empty.
  */
-const limit = ref<number | undefined>(props.level.backorderLimit ?? undefined);
+const limit = ref<number | undefined>(props.level.backorderLimit);
 
 /**
  * Whether the product has no cap at all.
  */
-const unlimited = ref(props.level.backorderLimit === null);
+const unlimited = ref(props.level.backorderLimit === undefined);
 
 /**
  * This dialog's own blocked state.
@@ -73,8 +73,8 @@ const {
  */
 watch(isOpen, (open) => {
     if (!open) return;
-    limit.value = props.level.backorderLimit ?? undefined;
-    unlimited.value = props.level.backorderLimit === null;
+    limit.value = props.level.backorderLimit;
+    unlimited.value = props.level.backorderLimit === undefined;
     clearLimitError();
 });
 

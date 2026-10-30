@@ -4,15 +4,15 @@
  * IN8 · An endpoint that never answers. A manager subscribes an address that is down. Each
  * delivery climbs the retry ladder (5 s, 5 min, 30 min, 2 h, 10 h) and ends `exhausted`; the
  * subscription stays on while the failures are young, and switches itself off only once five
- * chains in a row have failed AND the first of them is three days old. The manager is mailed, the
- * audit trail says so, the next order writes no row for it. Pointing it at a working address and
- * switching it on clears the count, and a replayed row then arrives.
+ * chains in a row have failed AND the first of them is three days old. The manager hears of it in
+ * the inbox (a work notice, no mail), the audit trail says so, the next order writes no row for
+ * it. Pointing it at a working address and switching it on clears the count, and a replayed row
+ * then arrives.
  *
  * Demo only: it moves the demo backend's clock for days (`cy.travel`) and pulls the retry sweep
  * with the job lever (`cy.runJob`). The dead address is a path on the receiver's own origin that
  * names `dead`, which the sink answers with a 503.
  */
-import { mailMentions } from '../../../../scripts/e2e/mail-message';
 import { forgetWebhooks } from '../../../support/e2e/harness';
 import {
     deliveriesOf,
@@ -170,14 +170,23 @@ describe('IN8 · An endpoint that never answers', () => {
             })
         );
 
-        cy.step('the manager sees it switched off, and was mailed which address it was');
-        cy.accountInRole('manager').then((manager) => {
-            cy.emailTo(
-                manager.email,
-                (mail) =>
-                    mail.template === 'webhooks.subscription-disabled' &&
-                    mailMentions(mail, deadUrl)
-            );
+        cy.step('the manager sees it switched off, and the staff notice names the subscription');
+        eventually(
+            () =>
+                cy.apiAs<{
+                    items: { code: string; params?: { subscriptionId?: string } }[];
+                }>('manager', 'GET', '/notifications'),
+            (inbox) =>
+                inbox?.items.some(
+                    ({ code, params }) =>
+                        code === 'notifications.staff.webhook-disabled' &&
+                        params?.subscriptionId === subscriptionId
+                ) ?? false
+        ).then((inbox) => {
+            expect(
+                inbox?.items.some(({ params }) => params?.subscriptionId === subscriptionId),
+                'the staff notice for the switch-off'
+            ).to.equal(true);
         });
         cy.loginAs('manager');
         cy.then(() => cy.visit(`/en/webhooks/subscriptions/${subscriptionId}`));

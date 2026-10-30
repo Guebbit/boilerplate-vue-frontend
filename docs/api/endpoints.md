@@ -1,7 +1,7 @@
 # Endpoints
 
 All HTTP endpoints grouped by domain. These are what the generated client in `contracts/rest/index.ts` calls.
-The **Auth** column shows what the backend requires: `none`, `user` (a signed-in visitor), or `permission` (a rule the caller's own `GET /account/abilities` must grant, e.g. `update Product` — there is no `admin` level). The tables list the common operations; `contracts/rest/routes.ts` is the complete, generated list.
+The **Auth** column shows what the backend requires: `none`, `user` (a signed-in visitor), or `permission` (a rule the caller's own `abilities` (on `GET /account`) must grant, e.g. `update Product` — there is no `admin` level). The tables list the common operations; `contracts/rest/routes.ts` is the complete, generated list.
 
 > The backend-specific implementation details (Redis caching strategy, RabbitMQ events, PDF generation) are intentionally omitted here — they are transparent to the FE. What matters to the FE is the HTTP method, path, auth requirement, and response shape.
 

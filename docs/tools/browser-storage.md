@@ -13,7 +13,7 @@ flowchart LR
     List --> Table["BrowserStorageTable\n#cookies on the privacy page"]
     Locales["src/locales/*.json\nbrowser-storage.rows.id.purpose / .lifetime"] --> Table
     Config["Umami / Faro configured?"] --> Table
-    Antibot["GET /antibot/config"] -->|turnstile| Table
+    Antibot["GET /config"] -->|turnstile| Table
 ```
 
 ## One row

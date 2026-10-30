@@ -14,6 +14,7 @@ import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts'
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { accountView } from '../../../../tests/support/unit/account-view.ts';
 
 wireModulesIntoCore();
 
@@ -47,7 +48,7 @@ const patchBodies = () =>
  * @param analyticsConsent - what the account record holds, `undefined` for never asked
  */
 const signInHolding = (analyticsConsent?: boolean) => {
-    responses['GET /account'] = { ...USER, analyticsConsent };
+    responses['GET /account'] = accountView({ ...USER, analyticsConsent });
     useProfileStore();
     return useAuthStore()
         .login('ada@example.com', 'hunter2hunter2')
@@ -62,13 +63,7 @@ beforeEach(() => {
     deleteCookie('analyticsConsent');
     responses = {
         'POST /account/login': { token: 'jwt-token' },
-        'PATCH /account': { ...USER, analyticsConsent: false },
-        'GET /account/abilities': {
-            platform: [],
-            tenant: [['read', 'Product', { active: true, deletedAt: null }]],
-            version: 36,
-            subjects: ['Product']
-        }
+        'PATCH /account': { ...USER, analyticsConsent: false }
     };
 });
 
@@ -89,7 +84,7 @@ describe('the account answer while signed in', () => {
         signInHolding(true)
             .then(() => {
                 const consent = useAnalyticsConsentStore();
-                responses['GET /account'] = { ...USER, analyticsConsent: false };
+                responses['GET /account'] = accountView({ ...USER, analyticsConsent: false });
                 consent.reopen();
                 consent.deny();
 
@@ -106,7 +101,7 @@ describe('the account answer while signed in', () => {
         signInHolding()
             .then(() => {
                 responses['PATCH /account'] = { ...USER, analyticsConsent: true };
-                responses['GET /account'] = { ...USER, analyticsConsent: true };
+                responses['GET /account'] = accountView({ ...USER, analyticsConsent: true });
                 useAnalyticsConsentStore().grant();
 
                 return vi.waitFor(() => {

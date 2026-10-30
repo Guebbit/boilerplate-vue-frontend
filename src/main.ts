@@ -146,9 +146,10 @@ const bootstrapApplication = () =>
             // eslint-disable-next-line @typescript-eslint/no-floating-promises -- loadShop never rejects (it logs and leaves the shop empty)
             void loadShop();
 
-            // How this deployment keeps people signed in, read once at boot: a sign-in on a fresh
-            // tab adopts its session by this mode, and no `isAuth` cookie exists yet to trigger
-            // the read in the restore guard. Shared with that guard's call; never rejects.
+            // The public config (`GET /config`: session mode, OAuth providers, human check), read
+            // once at boot beside `GET /shop`. A sign-in on a fresh tab adopts its session by the
+            // mode, and no `isAuth` cookie exists yet to trigger the read in the restore guard.
+            // Every other reader shares this one request; never rejects.
             // eslint-disable-next-line @typescript-eslint/no-floating-promises -- loadSessionMode never rejects (a failed read is dropped and retried)
             void useSessionStore().loadSessionMode();
 

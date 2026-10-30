@@ -12,7 +12,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import type { AxiosRequestConfig } from 'axios';
-import type { Account } from '@types';
+import type { Account, AccountView } from '@types';
 import {
     getAccount as apiGetAccount,
     requestAccountDelete as apiRequestAccountDelete,
@@ -105,9 +105,10 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * guards read never lag behind the record this store holds.
      *
      * @param user - The freshly loaded or updated account record.
-     * @returns A promise resolving once the shell also holds the rules that go with them.
+     * @param answer - The `abilities` and `activity` the same answer carried (`GET /account`, a
+     *  sign-in). Omitted for a write's answer, which carries none: the rules held stay.
      */
-    const publishViewer = (user?: Account) =>
+    const publishViewer = (user?: Account, answer?: Pick<AccountView, 'abilities' | 'activity'>) =>
         session.setViewer(
             user && {
                 id: user.id,
@@ -116,8 +117,9 @@ export const useProfileStore = defineStore('accountProfile', () => {
                 role: user.role,
                 imageUrl: user.imageUrl,
                 // Absent means unverified: the backend sends the field only once it's set.
-                verified: user.verifiedAt != null
-            }
+                verified: user.verifiedAt !== undefined
+            },
+            answer
         );
 
     /**
@@ -137,14 +139,18 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * an automatic refresh (using the jwt refresh cookie) and a retry.
      *
      * @param forced - Bypass the store cache and always hit the API.
+     * @param known - The account view a sign-in already answered with: adopted as if just read,
+     *  so a sign-in costs no `GET /account`.
      * @returns A promise resolving with the profile, or `undefined` when the
      *  response carries no payload.
      */
-    const fetchProfile = (forced = false) => {
+    const fetchProfile = (forced = false, known?: AccountView) => {
         return fetchTarget(
             () =>
-                apiGetAccount().then((data) => {
-                    const payload = data;
+                (known ? Promise.resolve(known) : apiGetAccount()).then((view) => {
+                    // The cached record is the writable `Account`; the view's two extra members
+                    // belong to the session store, and a `PUT` must never send them back.
+                    const { abilities, activity, ...payload } = view;
                     // to handle single-target stores we just need to select the correct identifier
                     selectedIdentifier.value = payload.id;
                     // Both trackers follow the visitor's own analytics consent, checked fresh on
@@ -157,7 +163,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
                     useAnalyticsConsentStore().setAccountChoice(payload.analyticsConsent);
                     // Keep the shell's projection in step with the record just loaded, rules
                     // included: a screen that renders before them hides what it should show.
-                    return publishViewer(payload).then(() => payload);
+                    publishViewer(payload, { abilities, activity });
+                    return payload;
                 }),
             undefined,
             { forced }
@@ -269,7 +276,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
                     : apiUpdateAccount(withImageUrl, options)
                 ).then((data) => {
                     // The projection must not lag the record — same rule as fetchProfile.
-                    return publishViewer(data).then(() => data);
+                    publishViewer(data);
+                    return data;
                 }),
             // The new imageUrl comes back from the API; a Blob has no business in store state.
             // `null` (image, phone, website) is dropped from this OPTIMISTIC patch only — the

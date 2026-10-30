@@ -20,6 +20,7 @@ import {
 
 import * as schemas from '@api/schemas';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
+import { accountView } from '../../../../tests/support/unit/account-view.ts';
 
 wireModulesIntoCore();
 
@@ -84,12 +85,6 @@ beforeEach(() => {
     responses = {
         // The caller's own rules. The session store fetches these for every identified viewer,
         // so every spec that logs somebody in needs an answer for them.
-        'GET /account/abilities': {
-            platform: [],
-            tenant: [['read', 'Product', { active: true, deletedAt: null }]],
-            version: 36,
-            subjects: ['Product']
-        },
         'GET /account/2fa': STATUS_OFF
     };
 });
@@ -419,12 +414,12 @@ describe('the login-time challenge', () => {
         const store = useTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, false);
         responses['POST /account/login/2fa'] = { token: 'stepped-up-jwt' };
-        responses['GET /account'] = {
+        responses['GET /account'] = accountView({
             id: 'u1',
             username: 'ada',
             email: 'ada@example.com',
             role: 'customer'
-        };
+        });
 
         return store.submitLoginCode('123456').then(() => {
             const session = useSessionStore();
@@ -456,12 +451,12 @@ describe('the login-time challenge', () => {
         const store = useTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, true);
         responses['POST /account/login/2fa'] = { token: 'stepped-up-jwt' };
-        responses['GET /account'] = {
+        responses['GET /account'] = accountView({
             id: 'u1',
             username: 'ada',
             email: 'ada@example.com',
             role: 'customer'
-        };
+        });
 
         return store.submitLoginCode('123456').then(() => {
             const last = vi
@@ -481,12 +476,12 @@ describe('the login-time challenge', () => {
         const store = useTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, false);
         responses['POST /account/login/2fa'] = { token: 'stepped-up-jwt' };
-        responses['GET /account'] = {
+        responses['GET /account'] = accountView({
             id: 'u1',
             username: 'ada',
             email: 'ada@example.com',
             role: 'customer'
-        };
+        });
 
         return store.submitLoginCode('123456').then(() => {
             const last = vi
@@ -502,12 +497,12 @@ describe('the login-time challenge', () => {
         const store = useTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, false);
         responses['POST /account/login/2fa'] = { token: 'stepped-up-jwt' };
-        responses['GET /account'] = {
+        responses['GET /account'] = accountView({
             id: 'u1',
             username: 'ada',
             email: 'ada@example.com',
             role: 'customer'
-        };
+        });
 
         return store.submitLoginCode('backup-code-xyz').then(() => {
             const last = vi
@@ -558,12 +553,12 @@ describe('the OAuth-originated login-time challenge (1b)', () => {
         const store = useTwoFactorStore();
         store.beginOAuthChallenge(OAUTH_CHALLENGE);
         responses['POST /account/login/2fa'] = { token: 'stepped-up-jwt' };
-        responses['GET /account'] = {
+        responses['GET /account'] = accountView({
             id: 'u1',
             username: 'ada',
             email: 'ada@example.com',
             role: 'customer'
-        };
+        });
 
         return store.submitLoginCode('123456').then(() => {
             const last = vi

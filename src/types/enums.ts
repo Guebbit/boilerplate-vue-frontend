@@ -55,5 +55,17 @@ export {
 // Example lifecycle: the list's status filter and its URL state.
 export { ExampleSortItem, ExampleStatus } from '@api';
 
+// Return decline codes and the channels staff record a statement through: the returns selects.
+export { ReturnDeclineReason, StaffStatementChannel } from '@api';
+
+// Preorder board: its state filter.
+export { PreorderFulfillmentState } from '@api';
+
+// Shipment and hold dialogs: the reasons staff pick between.
+export { ShipmentLostReason, HoldFulfillmentOrderRequestReason } from '@api';
+
+// Audit trail: the outcome filter, closed to this set in the URL.
+export { ListAuditEntriesOutcome } from '@api';
+
 // Webhook delivery states: the delivery log's status filter, closed to this set in the URL.
 export { WebhookDeliveryStatus } from '@api';
