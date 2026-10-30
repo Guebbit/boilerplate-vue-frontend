@@ -32,6 +32,7 @@
             "@api/schemas": ["./contracts/rest/schemas.zod"],
             "@api/error-codes": ["./contracts/rest/error-codes"],
             "@api/routes": ["./contracts/rest/routes"],
+            "@api/upload-types": ["./contracts/rest/upload-types"],
             "@api/permission-actions": ["./contracts/permission-actions"]
         }
     }
