@@ -35,7 +35,7 @@ target, title, body, order }`. `target` is the value of a `data-tour="…"` attr
   highlighting. `title` and `body` are i18n keys in the module's own `locales/*.json`.
 - **A step whose anchor is not on screen is skipped.** That is the whole per-role story: a nav
   entry an account cannot see is never rendered, so its step falls away. The FE never names roles.
-- **A new tour** needs one line in `TOURS` (`app/tours/catalogue.ts`), its steps, and a
+- **A new tour** needs one entry in `shared/rules/tours.yaml` (read by `app/tours/catalogue.ts`), its steps, and a
   `<TourButton tour="id" />` on the page. An unknown `?tour=` value is ignored.
 - **`useTour` is the only file that imports driver.js.** The library and its stylesheet load on
   first use, so they are not in the boot bundle.

@@ -158,7 +158,8 @@ export default withMermaid(
                         collapsed: false,
                         items: [
                             { text: 'Guided tours', link: '/tools/tours' },
-                            { text: 'Cookies and storage', link: '/tools/browser-storage' }
+                            { text: 'Cookies and storage', link: '/tools/browser-storage' },
+                            { text: 'Shared rules', link: '/tools/shared-rules' }
                         ]
                     },
                     {

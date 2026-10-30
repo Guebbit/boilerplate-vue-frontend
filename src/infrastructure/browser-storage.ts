@@ -7,6 +7,7 @@
  * Cookies the backend sets are listed too: the visitor's browser holds them all the same.
  * See `docs/theory/data-protection.md` for the legal reading of the two `necessity` values.
  */
+import { BROWSER_STORAGE_DATA, BROWSER_STORAGE_NAMES } from './browser-storage.generated';
 
 /**
  * Where an item is kept.
@@ -70,29 +71,7 @@ export interface BrowserStorageItem {
  * here, so this list cannot drift from what the browser actually holds. Two entries are prefixes:
  * `checkoutDraft` is followed by the signed-in user's id.
  */
-export const BROWSER_STORAGE_NAME = {
-    session: '__Host-session',
-    isAuth: 'isAuth',
-    device: '__Host-device',
-    oauthState: '__Host-oauth_state',
-    oauthVerifier: '__Host-oauth_verifier',
-    oauthContinue: '__Host-oauth_continue',
-    oauthLocale: '__Host-oauth_locale',
-    oauthLink: '__Host-oauth_link',
-    oauthMfaChallenge: '__Host-oauth_mfa_challenge',
-    oauthDeletionChallenge: '__Host-oauth_deletion_challenge',
-    rememberMe: 'rememberMe',
-    analyticsConsent: 'analyticsConsent',
-    themePreference: 'themePreference',
-    toursSeen: 'toursSeen',
-    guestCart: 'guest-cart',
-    guestCartMergeAttempt: 'guest-cart-merge-attempt',
-    umamiDisabled: 'umami.disabled',
-    staleDeployReloaded: 'app:stale-deploy-reloaded',
-    checkoutDraft: 'checkout-draft:',
-    checkoutAttempt: 'checkout-attempt',
-    faroNavigation: 'com.grafana.faro.lastNavigationId'
-} as const;
+export const BROWSER_STORAGE_NAME = BROWSER_STORAGE_NAMES;
 
 /**
  * Six months in days: the lifetime of a remembered answer (CNIL and Garante advise asking again
@@ -102,130 +81,12 @@ export const SIX_MONTHS_DAYS = 183;
 
 /**
  * The full inventory, in the order the privacy page shows it: what keeps a visitor signed in,
- * then their choices, then the cart and checkout, then what exists only after consent.
+ * then their choices, then the cart and checkout, then what exists only after consent. Built from
+ * the backend's synced cookie list and `shared/rules/browser-storage.yaml`.
  */
-export const BROWSER_STORAGE_ITEMS: readonly BrowserStorageItem[] = [
-    { id: 'session', kind: 'cookie', setter: 'backend', party: 'first', necessity: 'necessary' },
-    { id: 'isAuth', kind: 'cookie', setter: 'backend', party: 'first', necessity: 'necessary' },
-    {
-        id: 'rememberMe',
-        kind: 'cookie',
-        setter: 'frontend',
-        party: 'first',
-        necessity: 'necessary'
-    },
-    { id: 'device', kind: 'cookie', setter: 'backend', party: 'first', necessity: 'necessary' },
-    { id: 'oauthState', kind: 'cookie', setter: 'backend', party: 'first', necessity: 'necessary' },
-    {
-        id: 'oauthVerifier',
-        kind: 'cookie',
-        setter: 'backend',
-        party: 'first',
-        necessity: 'necessary'
-    },
-    {
-        id: 'oauthContinue',
-        kind: 'cookie',
-        setter: 'backend',
-        party: 'first',
-        necessity: 'necessary'
-    },
-    {
-        id: 'oauthLocale',
-        kind: 'cookie',
-        setter: 'backend',
-        party: 'first',
-        necessity: 'necessary'
-    },
-    { id: 'oauthLink', kind: 'cookie', setter: 'backend', party: 'first', necessity: 'necessary' },
-    {
-        id: 'oauthMfaChallenge',
-        kind: 'cookie',
-        setter: 'backend',
-        party: 'first',
-        necessity: 'necessary'
-    },
-    {
-        id: 'oauthDeletionChallenge',
-        kind: 'cookie',
-        setter: 'backend',
-        party: 'first',
-        necessity: 'necessary'
-    },
-    {
-        id: 'themePreference',
-        kind: 'cookie',
-        setter: 'frontend',
-        party: 'first',
-        necessity: 'necessary'
-    },
-    {
-        id: 'analyticsConsent',
-        kind: 'cookie',
-        setter: 'frontend',
-        party: 'first',
-        necessity: 'necessary',
-        when: 'analytics'
-    },
-    {
-        id: 'toursSeen',
-        kind: 'localStorage',
-        setter: 'frontend',
-        party: 'first',
-        necessity: 'necessary'
-    },
-    {
-        id: 'guestCart',
-        kind: 'localStorage',
-        setter: 'frontend',
-        party: 'first',
-        necessity: 'necessary'
-    },
-    {
-        id: 'guestCartMergeAttempt',
-        kind: 'localStorage',
-        setter: 'frontend',
-        party: 'first',
-        necessity: 'necessary'
-    },
-    {
-        id: 'checkoutDraft',
-        kind: 'sessionStorage',
-        setter: 'frontend',
-        party: 'first',
-        necessity: 'necessary'
-    },
-    {
-        id: 'checkoutAttempt',
-        kind: 'sessionStorage',
-        setter: 'frontend',
-        party: 'first',
-        necessity: 'necessary'
-    },
-    {
-        id: 'staleDeployReloaded',
-        kind: 'sessionStorage',
-        setter: 'frontend',
-        party: 'first',
-        necessity: 'necessary'
-    },
-    {
-        id: 'umamiDisabled',
-        kind: 'localStorage',
-        setter: 'library',
-        party: 'first',
-        necessity: 'necessary',
-        when: 'analytics'
-    },
-    {
-        id: 'faroNavigation',
-        kind: 'sessionStorage',
-        setter: 'library',
-        party: 'first',
-        necessity: 'consent',
-        when: 'faro'
-    }
-];
+export const BROWSER_STORAGE_ITEMS: readonly BrowserStorageItem[] = BROWSER_STORAGE_DATA.map(
+    (row) => ({ ...row, party: 'first' })
+);
 
 /**
  * The inventory a visitor of this deployment can actually hold: items whose condition does not

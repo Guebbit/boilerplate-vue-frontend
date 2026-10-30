@@ -8,6 +8,7 @@
 import { collectModuleTours } from '@/kernel/registry';
 import type { AppTourStep } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
+import { TOUR_DATA } from './tours.generated';
 
 /**
  * Id of the tour that opens by itself after a first sign-in and from the account menu.
@@ -31,14 +32,10 @@ export interface TourDefinition {
 }
 
 /**
- * Every tour this build can run, by id. A `?tour=` value outside this table is ignored.
+ * Every tour this build can run, by id (`shared/rules/tours.yaml`). A `?tour=` value outside
+ * this table is ignored.
  */
-export const TOURS: Record<string, TourDefinition> = {
-    [WELCOME_TOUR_ID]: { version: 1, auto: true },
-    checkout: { version: 1 },
-    'order-staff': { version: 1 },
-    'stock-board': { version: 1 }
-};
+export const TOURS: Record<string, TourDefinition> = TOUR_DATA;
 
 /**
  * Whether `tourId` is in {@link TOURS}. An unknown `?tour=` value is ignored silently.

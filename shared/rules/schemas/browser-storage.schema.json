@@ -1,0 +1,50 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "order": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+                "type": "string",
+                "pattern": "^[a-z][\\dA-Za-z]*$"
+            }
+        },
+        "items": {
+            "type": "object",
+            "propertyNames": {
+                "type": "string",
+                "pattern": "^[a-z][\\dA-Za-z]*$"
+            },
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "setter": {
+                        "type": "string",
+                        "enum": ["frontend", "library"]
+                    },
+                    "kind": {
+                        "type": "string",
+                        "enum": ["cookie", "localStorage", "sessionStorage"]
+                    },
+                    "necessity": {
+                        "type": "string",
+                        "enum": ["necessary", "consent"]
+                    },
+                    "when": {
+                        "type": "string",
+                        "enum": ["analytics", "faro"]
+                    }
+                },
+                "required": ["name", "setter", "kind", "necessity"],
+                "additionalProperties": false
+            }
+        }
+    },
+    "required": ["order", "items"],
+    "additionalProperties": false
+}

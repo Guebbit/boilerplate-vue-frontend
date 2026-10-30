@@ -8,6 +8,7 @@
  * product it is about. The contract types `params` per code, so the `switch` below narrows them.
  */
 import type { Notification, ProductTitles } from '@types';
+import { SUMMARY_SCREEN_DATA } from './notification-screens.generated';
 
 /**
  * The slice of vue-i18n's `t` this file needs: a key, plus named values to interpolate.
@@ -262,22 +263,6 @@ export type NotificationTarget =
       };
 
 /**
- * The list each summary notice counts, as a target.
- */
-const SUMMARY_SCREENS = {
-    'notifications.staff.transfers-due': 'sales-orders',
-    'notifications.staff.preorders-late': 'preorders',
-    'notifications.staff.delivery-holds-open': 'sales-orders',
-    'notifications.staff.withdrawals-awaiting-goods': 'returns',
-    'notifications.staff.returns-undecided': 'returns',
-    'notifications.staff.low-stock': 'inventory',
-    'notifications.staff.unshipped': 'sales-orders',
-    'notifications.staff.awaiting-tracking': 'sales-orders',
-    'notifications.staff.undelivered': 'sales-orders',
-    'notifications.staff.stale-refunds': 'payments'
-} as const;
-
-/**
  * The screen of the record a parked event was about, read off the event name's first segment. An
  * event of another kind has no screen here: a link to a guess would be worse than none.
  *
@@ -330,7 +315,7 @@ export const notificationTarget = (
         case 'notifications.staff.awaiting-tracking':
         case 'notifications.staff.undelivered':
         case 'notifications.staff.stale-refunds': {
-            return { screen: SUMMARY_SCREENS[notification.code] };
+            return { screen: SUMMARY_SCREEN_DATA[notification.code] };
         }
         default: {
             return undefined;

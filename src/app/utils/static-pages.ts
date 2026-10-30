@@ -4,11 +4,12 @@
  * turns a page name into its route name. The router, the footer and every page that cross-links
  * its siblings all read from here, so the mapping lives in exactly one place.
  */
+import { STATIC_PAGE_NAMES } from './static-pages.generated';
 
 /**
  * The shop's prose pages, in the order they are linked everywhere (footer, cross-links).
  */
-export const STATIC_PAGES = ['about', 'faq', 'terms', 'privacy', 'legal'] as const;
+export const STATIC_PAGES = STATIC_PAGE_NAMES;
 
 /**
  * One of the shop's prose pages.

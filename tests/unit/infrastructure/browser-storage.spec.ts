@@ -3,7 +3,9 @@
  * one row and the translated cells the privacy page shows, and an item tied to a feature the shop
  * did not configure is left out.
  */
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
 import {
     BROWSER_STORAGE_ITEMS,
     BROWSER_STORAGE_NAME,
@@ -20,11 +22,25 @@ describe('the inventory', () => {
         expect(new Set(Object.values(BROWSER_STORAGE_NAME)).size).toBe(ids.length);
     });
 
-    it('lists thirteen cookies and eight storage keys', () => {
-        const kinds = BROWSER_STORAGE_ITEMS.map(({ kind }) => kind);
+    it('holds every cookie the backend declares, under the name it declared', () => {
+        const backend = parse(readFileSync('contracts/cookies.yaml', 'utf8')) as {
+            cookies: Record<string, { name: string }>;
+        };
+        const ids = Object.keys(backend.cookies);
 
-        expect(kinds.filter((kind) => kind === 'cookie')).toHaveLength(13);
-        expect(kinds.filter((kind) => kind !== 'cookie')).toHaveLength(8);
+        // Can't pass empty: a missing or blank file would make the loop below vacuous.
+        expect(ids.length).toBeGreaterThan(0);
+        expect(
+            Object.fromEntries(
+                ids.map((id) => [id, BROWSER_STORAGE_NAME[id as keyof typeof BROWSER_STORAGE_NAME]])
+            )
+        ).toEqual(Object.fromEntries(ids.map((id) => [id, backend.cookies[id]?.name])));
+    });
+
+    it('holds both cookies and storage keys', () => {
+        const kinds = new Set(BROWSER_STORAGE_ITEMS.map(({ kind }) => kind));
+
+        expect(kinds).toEqual(new Set(['cookie', 'localStorage', 'sessionStorage']));
     });
 
     it.each([

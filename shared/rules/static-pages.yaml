@@ -1,0 +1,9 @@
+# The shop's prose pages, in the order they are linked everywhere (footer, cross-links).
+# A name is also its route name (`about` is `StaticAbout`) and its translation namespace, so a page
+# added here needs a view's text in both locale files; the router builds one route per entry.
+pages:
+    - about
+    - faq
+    - terms
+    - privacy
+    - legal

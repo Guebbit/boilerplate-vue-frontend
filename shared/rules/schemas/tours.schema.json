@@ -1,0 +1,30 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "tours": {
+            "type": "object",
+            "propertyNames": {
+                "type": "string",
+                "pattern": "^[a-z][\\da-z-]*$"
+            },
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "auto": {
+                        "type": "boolean"
+                    }
+                },
+                "required": ["version"],
+                "additionalProperties": false
+            }
+        }
+    },
+    "required": ["tours"],
+    "additionalProperties": false
+}

@@ -1,0 +1,14 @@
+# Every guided tour the shell can run, by id. The steps stay code: they are tied to the DOM.
+# `version`: bump it to show the tour once more to everyone (the seen record is keyed by it).
+# `auto`: opens by itself after a first sign-in on a browser. Only `welcome` does.
+# A `?tour=` value outside this map is ignored.
+tours:
+    welcome:
+        version: 1
+        auto: true
+    checkout:
+        version: 1
+    order-staff:
+        version: 1
+    stock-board:
+        version: 1

@@ -1,0 +1,94 @@
+# What the frontend itself leaves in a visitor's browser, plus the display order of the whole
+# inventory (the privacy page's table). The backend's cookies are NOT repeated here: they come from
+# `contracts/cookies.yaml`, which `sync:frontend` copies from the backend. Purpose and lifetime
+# texts are not data: they are translation keys under `browser-storage.rows.<id>`.
+#
+# `order` lists every id, backend ones included: what keeps a visitor signed in, then their choices,
+# then the cart and checkout, then what exists only after consent. The build fails when a backend
+# row is missing from it, or an id is listed twice or has no row.
+#
+# `when`: the row exists only where that feature is configured (`analytics`: a consent banner
+# exists; `faro`: a Faro receiver is configured). Absent: always.
+order:
+    - session
+    - isAuth
+    - rememberMe
+    - device
+    - oauthState
+    - oauthVerifier
+    - oauthContinue
+    - oauthLocale
+    - oauthLink
+    - oauthMfaChallenge
+    - oauthDeletionChallenge
+    - themePreference
+    - analyticsConsent
+    - toursSeen
+    - guestCart
+    - guestCartMergeAttempt
+    - checkoutDraft
+    - checkoutAttempt
+    - staleDeployReloaded
+    - umamiDisabled
+    - faroNavigation
+
+items:
+    rememberMe:
+        name: rememberMe
+        setter: frontend
+        kind: cookie
+        necessity: necessary
+    themePreference:
+        name: themePreference
+        setter: frontend
+        kind: cookie
+        necessity: necessary
+    analyticsConsent:
+        name: analyticsConsent
+        setter: frontend
+        kind: cookie
+        necessity: necessary
+        when: analytics
+    toursSeen:
+        name: toursSeen
+        setter: frontend
+        kind: localStorage
+        necessity: necessary
+    guestCart:
+        name: guest-cart
+        setter: frontend
+        kind: localStorage
+        necessity: necessary
+    guestCartMergeAttempt:
+        name: guest-cart-merge-attempt
+        setter: frontend
+        kind: localStorage
+        necessity: necessary
+    # A prefix: the signed-in user's id follows it.
+    checkoutDraft:
+        name: 'checkout-draft:'
+        setter: frontend
+        kind: sessionStorage
+        necessity: necessary
+    checkoutAttempt:
+        name: checkout-attempt
+        setter: frontend
+        kind: sessionStorage
+        necessity: necessary
+    staleDeployReloaded:
+        name: 'app:stale-deploy-reloaded'
+        setter: frontend
+        kind: sessionStorage
+        necessity: necessary
+    umamiDisabled:
+        name: umami.disabled
+        setter: library
+        kind: localStorage
+        necessity: necessary
+        when: analytics
+    faroNavigation:
+        name: com.grafana.faro.lastNavigationId
+        setter: library
+        kind: sessionStorage
+        necessity: consent
+        when: faro

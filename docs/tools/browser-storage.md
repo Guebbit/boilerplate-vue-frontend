@@ -1,15 +1,18 @@
 # Cookies and storage
 
 Everything the app leaves in a visitor's browser is listed once, in
-`src/infrastructure/browser-storage.ts`: twelve cookies and eight storage keys. The privacy page
-(`#cookies`) renders that list as a table, and the code that sets each item takes its name from the
-same list, so the page cannot drift from what the browser holds.
+`src/infrastructure/browser-storage.ts`. The list is data: the backend's cookies come from the
+synced `contracts/cookies.yaml`, the frontend's own items and the display order from
+`shared/rules/browser-storage.yaml` ([Shared rules](./shared-rules.md)). The privacy page (`#cookies`)
+renders that list as a table, and the code that sets each item takes its name from the same list,
+so the page cannot drift from what the browser holds.
 
 ## How it fits together
 
 ```mermaid
 flowchart LR
-    List["browser-storage.ts\nBROWSER_STORAGE_NAME + ITEMS"] --> Code["code that sets or reads\nan item imports its name"]
+    Data["cookies.yaml (backend, synced)\n+ browser-storage.yaml"] --> List["browser-storage.ts\nBROWSER_STORAGE_NAME + ITEMS"]
+    List --> Code["code that sets or reads\nan item imports its name"]
     List --> Table["BrowserStorageTable\n#cookies on the privacy page"]
     Locales["src/locales/*.json\nbrowser-storage.rows.id.purpose / .lifetime"] --> Table
     Config["Umami / Faro configured?"] --> Table
@@ -52,8 +55,10 @@ without both keys in both languages fails `tests/unit/infrastructure/browser-sto
   not travel with every request.
 - **"Remember me (uses a cookie)"**: the checkbox is the visitor's own request for the persistent
   session, which is why the cookie it sets is exempt from consent (WP29 Opinion 04/2012).
-- **A new cookie or key means a new row.** Add it to `BROWSER_STORAGE_NAME` and the list, and add its
-  two translated cells; there is no scan that finds a forgotten one, so the review does.
+- **A new cookie or key means a new row.** A frontend one goes in `shared/rules/browser-storage.yaml`
+  (the row and its place in `order`) with its two translated cells; a backend one arrives through
+  the sync and the build fails until `order` places it. No scan finds a forgotten frontend item, so
+  the review does.
 - **Cloudflare** is named under the table when the human check is Turnstile, because it is the one
   third party a visitor meets that the list cannot hold: its script runs on the shop's page.
 

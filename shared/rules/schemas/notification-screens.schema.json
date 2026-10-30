@@ -1,0 +1,19 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "summaryScreens": {
+            "type": "object",
+            "propertyNames": {
+                "type": "string",
+                "pattern": "^notifications\\.staff\\.[a-z-]+$"
+            },
+            "additionalProperties": {
+                "type": "string",
+                "enum": ["sales-orders", "payments", "returns", "preorders", "inventory"]
+            }
+        }
+    },
+    "required": ["summaryScreens"],
+    "additionalProperties": false
+}
