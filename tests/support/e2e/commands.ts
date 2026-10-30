@@ -284,7 +284,7 @@ export { byTemplate, inLocale } from '../../../scripts/e2e/mail-filters';
 /** Which of an address's emails a spec means — see `emailTo`'s `matches`. */
 export type MailFilter = (email: MailedEmail) => boolean;
 
-/** Mirrors `DemoOutboxEmail` in the backend's `src/infrastructure/adapters/demo-outbox.ts`. */
+/** Mirrors `DemoOutboxEmail` in the backend's `scenarios/support/doubles/mail-outbox.ts`. */
 export interface DemoOutboxEmail {
     to: string;
     subject: string;
