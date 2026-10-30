@@ -26,7 +26,7 @@ import {
     logoutAll as apiLogoutAll,
     touchSession as apiTouchSession
 } from '@api';
-import type { PermissionAction } from '@api/permission-actions';
+import type { ActionOn, PermissionAction, PermissionSubject } from '@api/permission-vocabulary';
 import { loadConfig } from '@/infrastructure/config.ts';
 import { clearEtags } from '@/infrastructure/http/etag.ts';
 import { asPassive } from '@/infrastructure/http/passive.ts';
@@ -81,8 +81,16 @@ const isDefinitiveAuthFailure = (error: unknown): boolean => {
  * @param packed - One scope's rules exactly as the ability endpoint returns them.
  * @returns Unpacked CASL rules, ready for {@link createMongoAbility}.
  */
-const unpackAbilityRules = (packed: PackedRules): RawRuleOf<MongoAbility>[] =>
-    unpackRules(packed as PackRule<RawRuleOf<MongoAbility>>[]);
+const unpackAbilityRules = (packed: PackedRules): RawRuleOf<SessionAbility>[] =>
+    unpackRules(packed as PackRule<RawRuleOf<SessionAbility>>[]);
+
+/**
+ * The ability the store holds: CASL's own typing (an action and a subject), narrowed to the
+ * backend's closed lists. A misspelled pair is a compile error; the pair map narrows further, in
+ * {@link RoutePermission} and `can()`.
+ * https://casl.js.org/v6/en/advanced/typescript
+ */
+type SessionAbility = MongoAbility<[PermissionAction, PermissionSubject]>;
 
 /**
  * The concrete actions a screen may ask about — generated from `actions:` in the backend's
@@ -90,7 +98,7 @@ const unpackAbilityRules = (packed: PackedRules): RawRuleOf<MongoAbility>[] =>
  * absent: no key declares it and there is no wildcard to expand into one, so asking for it always
  * answers no. A screen asks for the action it actually performs.
  */
-export type { PermissionAction } from '@api/permission-actions';
+export type { ActionOn, PermissionAction, PermissionSubject } from '@api/permission-vocabulary';
 
 /**
  * The least the app shell and the guards need to know about the signed-in visitor.
@@ -267,10 +275,10 @@ export const useSessionStore = defineStore('session', () => {
      * ability anyway; each is replaced wholesale when new rules arrive, which is exactly what a
      * shallow ref is for.
      */
-    const tenantAbility = shallowRef<MongoAbility>(createMongoAbility());
+    const tenantAbility = shallowRef<SessionAbility>(createMongoAbility<SessionAbility>());
 
     /** The caller's rules over the INSTALLATION — health, metrics, the operational audit. Empty for almost everyone. */
-    const platformAbility = shallowRef<MongoAbility>(createMongoAbility());
+    const platformAbility = shallowRef<SessionAbility>(createMongoAbility<SessionAbility>());
 
     /**
      * The tenant roles this caller may assign through the user writes, as last published by
@@ -300,8 +308,12 @@ export const useSessionStore = defineStore('session', () => {
             'tenant' | 'platform' | 'grantableRoles' | 'secondFactorRequired'
         > = {}
     ) => {
-        tenantAbility.value = createMongoAbility(unpackAbilityRules(rules.tenant ?? []));
-        platformAbility.value = createMongoAbility(unpackAbilityRules(rules.platform ?? []));
+        tenantAbility.value = createMongoAbility<SessionAbility>(
+            unpackAbilityRules(rules.tenant ?? [])
+        );
+        platformAbility.value = createMongoAbility<SessionAbility>(
+            unpackAbilityRules(rules.platform ?? [])
+        );
         grantableRoles.value = rules.grantableRoles ?? [];
         secondFactorRequired.value = rules.secondFactorRequired ?? false;
     };
@@ -328,7 +340,10 @@ export const useSessionStore = defineStore('session', () => {
      * @param action - a CASL action: `read`, `create`, `update`, `delete`
      * @param subject - the CASL subject type the key names, e.g. `Product`, `WebhookSubscription`
      */
-    const can = (action: PermissionAction, subject: string): boolean => {
+    const can = <TSubject extends PermissionSubject>(
+        action: ActionOn<TSubject>,
+        subject: TSubject
+    ): boolean => {
         return (
             isAuth.value &&
             (tenantAbility.value.can(action, subject) || platformAbility.value.can(action, subject))
