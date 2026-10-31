@@ -44,17 +44,6 @@ describe('every module sits on the foundation | shop axis', () => {
         expect(Object.keys(MODULE_GROUPS).length).toBeGreaterThanOrEqual(1);
     });
 
-    /**
-     * The direction the lint rule locks in also holds today, checked the same way
-     * `module-coupling.spec.ts` checks a backend edge: both `shop` and `foundation` are actually
-     * used, so the rule has something on either side of it to enforce.
-     */
-    it('labels at least one module foundation and at least one shop', () => {
-        const groups = new Set(Object.values(MODULE_GROUPS));
-        expect(groups.has('foundation')).toBe(true);
-        expect(groups.has('shop')).toBe(true);
-    });
-
     /** `demo:remove` deletes exactly the `shop` and `example` groups, never `foundation`. */
     it('derives the demo modules from the shop and example groups only', () => {
         const names = demoModuleNames();

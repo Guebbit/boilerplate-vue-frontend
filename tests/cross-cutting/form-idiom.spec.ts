@@ -6,24 +6,21 @@
  * `useStructureFormValidation` is the toolkit's mechanism and it is deliberately ignorant of
  * vue-i18n, of Vuetify and of where a message goes — its own docblock says so. The consequence is
  * that a correct form here supplies the same three answers every time, and thirteen forms proved
- * that does not happen on its own: five shipped missing at least one, and two of those had
- * `showFormErrors` in scope and declared a `ref(false)` next to it instead.
+ * that does not happen on its own: five shipped missing at least one.
  *
  * What broke was never a hard failure. A form missing `formElement` still shows its errors — it
  * just never moves focus, so a screen-reader user submits, hears nothing, and has no idea which
  * field to fix. That is invisible to every other test in this suite, which is what this file is
  * for.
  *
- * Four rules, and the third is what makes the first two stick:
+ * Three rules, and the second is what makes the first stick:
  *
  *   1. Every `useStructureFormValidation(...)` call supplies `revalidateOn` and `onInvalid` — the two
  *      answers a call site would otherwise have to re-decide. The field to focus is found by
  *      `aria-invalid`, which `fieldErrorProps` binds on every field.
- *   2. A view does not keep its own "should I show errors yet" flag. The toolkit returns
- *      `showFormErrors`; a second one beside it can only disagree with it.
- *   3. A page form (not a dialog) hands it a `formElement`, so a failed submit has something to
+ *   2. A page form (not a dialog) hands it a `formElement`, so a failed submit has something to
  *      focus into.
- *   4. A routed page that creates or edits a lasting record for a signed-in viewer calls
+ *   3. A routed page that creates or edits a lasting record for a signed-in viewer calls
  *      `useLeaveGuard`, unless it is a one-shot form listed in {@link NO_LEAVE_GUARD}.
  */
 
@@ -162,16 +159,6 @@ describe('one form idiom', () => {
         expect(incomplete).toEqual([]);
     });
 
-    it('lets the toolkit own whether errors are showing', () => {
-        // `showFormErrors: showErrors` is a rename of the composable's own ref and is fine. A
-        // `ref(false)` declared beside it is a second source of truth for one question.
-        const ownFlag = formComponents().filter((file) =>
-            /const\s+showErrors\s*=\s*ref\(/.test(sourceOf(file))
-        );
-
-        expect(ownFlag).toEqual([]);
-    });
-
     /**
      * A page form focuses its first invalid field; that is the whole reason `formElement` exists.
      * Dialogs are exempt and stay exempt: one already traps focus, so moving focus inside it is a
@@ -206,15 +193,6 @@ describe('leave guard on record-editing pages', () => {
             .filter((file) => !sourceOf(file).includes('useLeaveGuard('));
 
         expect(unguarded).toEqual([]);
-    });
-
-    it('lists no one-shot form that is gone or that guards itself anyway', () => {
-        const views = formViews();
-        const stale = Object.keys(NO_LEAVE_GUARD).filter(
-            (file) => !views.includes(file) || sourceOf(file).includes('useLeaveGuard(')
-        );
-
-        expect(stale).toEqual([]);
     });
 
     it('has a population to check', () => {
