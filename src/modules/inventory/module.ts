@@ -6,6 +6,7 @@
  */
 import { defineAsyncComponent } from 'vue';
 import { CalendarClock, Warehouse } from 'lucide-vue-next';
+import { useUnreadNoticeCount } from '@/kernel/inbox-notices';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
@@ -36,7 +37,9 @@ export default {
             plural: 1,
             order: 47,
             section: 'admin',
-            icon: Warehouse
+            icon: Warehouse,
+            // Unread work notices that point at this screen.
+            badge: () => useUnreadNoticeCount(['notifications.staff.low-stock'])
         },
         {
             name: 'PreordersBoard',
@@ -45,7 +48,9 @@ export default {
             order: 58,
             section: 'admin',
             group: 'navigation.group-sales',
-            icon: CalendarClock
+            icon: CalendarClock,
+            // Unread work notices that point at this screen.
+            badge: () => useUnreadNoticeCount(['notifications.staff.preorders-late'])
         }
     ],
     tours: [

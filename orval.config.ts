@@ -2,8 +2,9 @@ import { defineConfig } from 'orval';
 import type { GeneratorVerbOptions } from '@orval/core';
 
 /**
- * Seven operations accept the same payload as either JSON or multipart (anything with an
- * optional image: signup, create/update user, create/update product). Orval emits FormData
+ * Eight operations accept the same payload as either JSON or multipart (anything with an
+ * optional image: replace/update account, create/replace/update user, create/replace/update
+ * product). Orval emits FormData
  * encoding ONLY for operations with a single request content type — with two, it hands the
  * body straight to the mutator and generates no encoding at all.
  *

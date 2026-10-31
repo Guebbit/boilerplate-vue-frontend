@@ -59,7 +59,7 @@ export const useNotificationLink = () => {
                 return linkIfRouted(router, 'PaymentsList');
             }
             case 'returns': {
-                return linkIfRouted(router, 'ReturnsList');
+                return linkIfRouted(router, 'SalesReturns');
             }
             case 'preorders': {
                 return linkIfRouted(router, 'PreordersBoard');

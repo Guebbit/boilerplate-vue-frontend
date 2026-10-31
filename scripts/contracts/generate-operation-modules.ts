@@ -9,7 +9,7 @@
  * module-coupling.spec.ts` reads it to compare an import against `MODULE_EDGES`.
  *
  * Compatible with orval's `mode: 'single'` output (`orval.config.ts`'s `api` block): one entry per
- * generated function name. Most operations keep their `operationId` unchanged, but the seven
+ * generated function name. Most operations keep their `operationId` unchanged, but the eight
  * accepting either JSON or multipart are split and renamed by `contentTypeOperationNames` in
  * `orval.config.ts` — mirrored below so a name in this map always matches the name orval actually
  * generated for it. A path with no `x-module` (the handful of system endpoints the root document

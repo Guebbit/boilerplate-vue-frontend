@@ -51,7 +51,7 @@
         "compose": "${CONTAINER_ENGINE:-podman} compose",
         "compose:restart": "npm run compose -- down && npm run compose -- up -d",
         "compose:rebuild": "npm run compose -- down -v && npm run compose -- build --no-cache && npm run compose -- up -d",
-        "gen:api": "orval && tsx scripts/contracts/strip-schema-descriptions.ts --target contracts/rest/schemas.zod.ts && tsx scripts/contracts/generate-operation-modules.ts --out contracts/rest/operation-modules.ts && tsx scripts/contracts/generate-error-codes.ts --out contracts/rest/error-codes.ts && tsx scripts/contracts/generate-route-table.ts --out contracts/rest/routes.ts",
+        "gen:api": "orval && tsx scripts/contracts/strip-schema-descriptions.ts --target contracts/rest/schemas.zod.ts && tsx scripts/contracts/generate-operation-modules.ts --out contracts/rest/operation-modules.ts && tsx scripts/contracts/generate-error-codes.ts --out contracts/rest/error-codes.ts && tsx scripts/contracts/generate-route-table.ts --out contracts/rest/routes.ts && tsx scripts/contracts/generate-upload-types.ts --out contracts/rest/upload-types.ts",
         "gen:asyncapi": "tsx scripts/contracts/generate-asyncapi-types.ts --out contracts/asyncapi.generated.ts",
         "gen:permission-vocabulary": "tsx scripts/contracts/generate-permission-vocabulary.ts --in contracts/authorization-keys.yaml --out contracts/permission-vocabulary.ts",
         "regenerate": "npm run gen:api && npm run gen:asyncapi && npm run gen:permission-vocabulary && prettier --write contracts/rest",

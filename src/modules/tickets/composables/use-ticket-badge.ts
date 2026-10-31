@@ -8,35 +8,28 @@
 import { computed, watch } from 'vue';
 import type { Ref } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useInboxNotices } from '@/kernel/inbox-notices.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 import { useTicketsStore } from '../store';
 
 /**
- * The prefix of the two codes that say a ticket needs someone (`ticket-opened`, `ticket-assigned`).
+ * The prefix of the codes that say a ticket needs someone (`ticket-opened`, `ticket-overdue`,
+ * `ticket-assigned`).
  */
 const TICKET_NOTICE_PREFIX = 'notifications.staff.ticket-';
 
 /**
- * How many ticket notices the bell holds right now, read off the toolkit's message store.
- *
- * The notifications module keeps each server row in a persistent message's `meta`, stamped
- * `source: 'inbox'`; this reads that stamp and the row's `code` and nothing else, so it needs no
- * import from the notifications module. A notice arriving makes the count grow, which is the cue.
+ * How many ticket notices the bell holds right now. A notice arriving makes the count grow, which
+ * is the cue to re-read the summary.
  *
  * @returns A ref to the count of ticket notices in the bell.
  */
 const useTicketNoticeCount = (): Ref<number> => {
-    const { persistentMessages } = storeToRefs(useNotificationsStore());
+    const notices = useInboxNotices();
 
     return computed(
-        () =>
-            persistentMessages.value.filter(({ meta }) => {
-                const row = meta?.source === 'inbox' ? meta.notification : undefined;
-                const code = (row as { code?: unknown } | undefined)?.code;
-                return typeof code === 'string' && code.startsWith(TICKET_NOTICE_PREFIX);
-            }).length
+        () => notices.value.filter(({ code }) => code.startsWith(TICKET_NOTICE_PREFIX)).length
     );
 };
 

@@ -24,6 +24,7 @@ import {
 } from '@api';
 import type {
     Notification,
+    NotificationAudience,
     NotificationCreatedPayload,
     NotificationSeverity,
     NotificationsDeletedPayload,
@@ -189,6 +190,7 @@ export const useInboxStore = defineStore('inbox', () => {
             type: message.type,
             createdAt: notification.createdAt,
             unread: notification.readAt === undefined,
+            audience: notification.audience,
             orderId: notificationOrderId(notification),
             target: notificationTarget(notification)
         }))
@@ -198,6 +200,11 @@ export const useInboxStore = defineStore('inbox', () => {
      * How many notifications the owner has not seen yet: the bell's badge.
      */
     const unreadCount = computed(() => items.value.filter(({ unread }) => unread).length);
+
+    /**
+     * Whether the person holds any work notice: the cue that the panel splits into its two tabs.
+     */
+    const hasWork = computed(() => items.value.some(({ audience }) => audience === 'staff'));
 
     /**
      * Adds a notification to the toolkit store, or updates it in place when its id is known.
@@ -391,15 +398,20 @@ export const useInboxStore = defineStore('inbox', () => {
     };
 
     /**
-     * The owner deletes every notification, in one call. Those that were in the panel when it was
-     * pressed leave once the server has agreed; one that arrived meanwhile stays. A failure leaves
-     * them all in place and shows a toast.
+     * The owner deletes every notification, or one audience of them, in one call. Those that were
+     * in the panel when it was pressed leave once the server has agreed; one that arrived
+     * meanwhile stays. A failure leaves them all in place and shows a toast.
      *
+     * @param audience - Only this group (a panel tab); the whole inbox when omitted.
      * @returns A promise that always resolves.
      */
-    const dismissAll = (): Promise<void> => {
-        const ids = inbox.value.map(({ message }) => message.id);
-        return dismissAllNotifications()
+    const dismissAll = (audience?: NotificationAudience): Promise<void> => {
+        const ids = inbox.value
+            .filter(
+                ({ notification }) => audience === undefined || notification.audience === audience
+            )
+            .map(({ message }) => message.id);
+        return dismissAllNotifications(audience === undefined ? undefined : { audience })
             .then(() => {
                 drop(ids);
             })
@@ -416,6 +428,7 @@ export const useInboxStore = defineStore('inbox', () => {
     return {
         items,
         unreadCount,
+        hasWork,
         sync,
         receiveCreated,
         receiveDeleted,
