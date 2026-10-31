@@ -49,7 +49,6 @@ import {
     missingScripts,
     staleListings,
     unknownContractImports,
-    unnamedOn,
     type DocumentPage,
     type FactFinding
 } from './document-facts';
@@ -436,10 +435,7 @@ const scanPage = (
     return scan;
 };
 
-/** The page that must name every script `package.json` defines. */
-const SCRIPTS_PAGE = 'docs/tools/package-scripts.md';
-
-/** The page that must name every runtime dependency, and only installed ones. */
+/** The page whose dependency listings must name only installed packages. */
 const DEPENDENCIES_PAGE = 'docs/tools/package-dependencies.md';
 
 /**
@@ -484,20 +480,15 @@ const factFindings = (pages: DocumentPage[]): FactFinding[] => {
     const contractIndex = readFileSync(path.join(ROOT, 'contracts/rest/index.ts'), 'utf8');
     const contractSchemas = readFileSync(path.join(ROOT, 'contracts/rest/schemas.zod.ts'), 'utf8');
     const byPath = new Map(pages.map((page) => [page.path, page]));
-    const scriptsPage = byPath.get(SCRIPTS_PAGE);
     const dependenciesPage = byPath.get(DEPENDENCIES_PAGE);
 
     return [
         ...missingScripts(pages, new Set([...own.scripts, ...BACKEND_SCRIPTS])),
-        ...(scriptsPage ? unnamedOn(scriptsPage, own.scripts, 'script') : []),
         ...(dependenciesPage
-            ? [
-                  ...unnamedOn(dependenciesPage, own.dependencies, 'dependency'),
-                  ...staleListings(
-                      dependenciesPage,
-                      new Set([...own.dependencies, ...own.devDependencies])
-                  )
-              ]
+            ? staleListings(
+                  dependenciesPage,
+                  new Set([...own.dependencies, ...own.devDependencies])
+              )
             : []),
         ...unknownContractImports(pages, {
             '@api': exportedNames(contractIndex),

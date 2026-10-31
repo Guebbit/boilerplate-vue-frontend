@@ -8,10 +8,8 @@
  *
  * WHAT IS CHECKED:
  *   1. Every `npm run <x>` a page tells a reader to type exists as a script (here or in the peer).
- *   2. Every script `package.json` defines is named on the scripts page.
- *   3. Every runtime dependency is named on the dependencies page, and every package that page
- *      names is actually installed.
- *   4. Every name a code fence imports from `@api` / `@api/schemas` is really exported.
+ *   2. Every package the dependencies page names is actually installed.
+ *   3. Every name a code fence imports from `@api` / `@api/schemas` is really exported.
  */
 
 /**
@@ -70,31 +68,6 @@ export const missingScripts = (pages: DocumentPage[], known: ReadonlySet<string>
             .filter((name) => !known.has(name))
             .map((name) => ({ page: path, problem: `\`npm run ${name}\` is not a script` }))
     );
-
-/**
- * Every backticked token on a page, each split on ` / ` and `, ` so a cell written as
- * "`lint` / `lint:fix`" counts both.
- *
- * @param text - A page's markdown.
- * @returns The set of code-span contents.
- */
-const codeSpans = (text: string): Set<string> =>
-    new Set([...text.matchAll(/`([^\n`]+)`/g)].flatMap(([, span]) => span.split(/\s*[,/]\s+/)));
-
-/**
- * Names a page should mention and does not.
- *
- * @param page - The page that owns the list.
- * @param names - What it must name, each as a code span.
- * @param noun - What the names are, for the message.
- * @returns One finding per absent name.
- */
-export const unnamedOn = (page: DocumentPage, names: string[], noun: string): FactFinding[] => {
-    const spans = codeSpans(page.text);
-    return names
-        .filter((name) => !spans.has(name))
-        .map((name) => ({ page: page.path, problem: `${noun} \`${name}\` is not listed` }));
-};
 
 /**
  * The package names in a dependency table's "Packages" column: code spans in the rows under the

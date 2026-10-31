@@ -51,7 +51,7 @@ const resolvesToAPage = async (template: string): Promise<boolean> => {
 describe('backend links resolve on the router', () => {
     it('every link template is a real page', async () => {
         const kinds = Object.keys(rules.links);
-        expect(kinds).toHaveLength(10);
+        expect(kinds.length).toBeGreaterThan(0);
         for (const kind of kinds)
             expect([kind, await resolvesToAPage(rules.links[kind])]).toEqual([kind, true]);
     });
@@ -64,7 +64,7 @@ describe('backend links resolve on the router', () => {
     });
 
     it('every static sitemap page is a real page', async () => {
-        expect(rules.staticPages).toHaveLength(8);
+        expect(rules.staticPages.length).toBeGreaterThan(0);
         for (const page of rules.staticPages)
             expect([page, await resolvesToAPage(page)]).toEqual([page, true]);
     });

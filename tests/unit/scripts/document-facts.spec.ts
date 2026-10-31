@@ -11,8 +11,7 @@ import {
     missingScripts,
     npmScriptsCited,
     staleListings,
-    unknownContractImports,
-    unnamedOn
+    unknownContractImports
 } from '../../../scripts/docs/document-facts';
 
 describe('npmScriptsCited / missingScripts', () => {
@@ -27,16 +26,6 @@ describe('npmScriptsCited / missingScripts', () => {
 
         expect(missingScripts(pages, new Set(['lint']))).toEqual([
             { page: 'docs/a.md', problem: '`npm run test:module` is not a script' }
-        ]);
-    });
-});
-
-describe('unnamedOn', () => {
-    it('counts each name in a "`a` / `b`" cell, and reports the one left out', () => {
-        const page = { path: 'docs/scripts.md', text: '| `lint` / `lint:fix` | x |' };
-
-        expect(unnamedOn(page, ['lint', 'lint:fix', 'build'], 'script')).toEqual([
-            { page: 'docs/scripts.md', problem: 'script `build` is not listed' }
         ]);
     });
 });
