@@ -22,7 +22,11 @@ vi.mock('@/infrastructure/observability/store.ts', () => ({
 /** The parsed `contracts/frontend-links.yaml`. */
 const rules = parse(
     readFileSync(path.join(process.cwd(), 'contracts', 'frontend-links.yaml'), 'utf8')
-) as { links: Record<string, string>; staticPages: string[] };
+) as {
+    links: Record<string, string>;
+    staffPages: Record<string, string>;
+    staticPages: string[];
+};
 
 /** Pay for the router's module graph once, outside any test's budget (see `router.spec.ts`). */
 beforeAll(async () => {
@@ -50,6 +54,13 @@ describe('backend links resolve on the router', () => {
         expect(kinds).toHaveLength(10);
         for (const kind of kinds)
             expect([kind, await resolvesToAPage(rules.links[kind])]).toEqual([kind, true]);
+    });
+
+    it('every staff screen a notice mail links to is a real page', async () => {
+        const kinds = Object.keys(rules.staffPages);
+        expect(kinds).toHaveLength(9);
+        for (const kind of kinds)
+            expect([kind, await resolvesToAPage(rules.staffPages[kind])]).toEqual([kind, true]);
     });
 
     it('every static sitemap page is a real page', async () => {
