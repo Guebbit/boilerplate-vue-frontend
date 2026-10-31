@@ -29,6 +29,7 @@
             "purchase-hold-placed": "A buyer's checkout was paused until {until} after repeated cancellations. Review the account if you suspect abuse.",
             "webhook-disabled": "A webhook subscription was switched off after repeated delivery failures. Fix the endpoint, then re-enable it.",
             "ticket-opened": "New ticket: {what}. Open it to take it.",
+            "ticket-overdue": "Overdue ticket, still open: {what}. Open it to take it.",
             "ticket-assigned": "A ticket was given to you: {what}.",
             "return-requested": "A buyer asked to return goods. The request is waiting for a decision.",
             "outbox-dead": "An event ({event}) could not be delivered after every retry and was parked. Look at the record it was about.",

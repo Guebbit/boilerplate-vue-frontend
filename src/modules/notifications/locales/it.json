@@ -29,6 +29,7 @@
             "purchase-hold-placed": "Il checkout di un acquirente è sospeso fino al {until} dopo ripetuti annullamenti. Controlla l'account se sospetti un abuso.",
             "webhook-disabled": "Una sottoscrizione webhook è stata disattivata dopo ripetuti errori di consegna. Correggi l'endpoint, poi riattivala.",
             "ticket-opened": "Nuovo ticket: {what}. Aprilo per prenderlo in carico.",
+            "ticket-overdue": "Ticket in ritardo, ancora aperto: {what}. Aprilo per prenderlo in carico.",
             "ticket-assigned": "Ti è stato assegnato un ticket: {what}.",
             "return-requested": "Un acquirente ha chiesto di restituire della merce. La richiesta attende una decisione.",
             "outbox-dead": "Un evento ({event}) non è stato consegnato dopo tutti i tentativi ed è stato messo da parte. Controlla il record a cui si riferiva.",
