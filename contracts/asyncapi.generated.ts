@@ -62,9 +62,9 @@ export interface ShipmentPayload {
   'orderId': string;
   'shipmentId': string;
   'fulfillmentOrderId': string;
-  'lines': AnonymousSchema31[];
+  'lines': AnonymousSchema26[];
 }
-export interface AnonymousSchema31 {
+export interface AnonymousSchema26 {
   'productId': string;
   'quantity': number;
 }
@@ -84,14 +84,14 @@ export interface ShipmentLostPayload {
   'orderId': string;
   'shipmentId': string;
   'fulfillmentOrderId': string;
-  'lines': AnonymousSchema42[];
-  'reason': AnonymousSchema45;
+  'lines': AnonymousSchema33[];
+  'reason': AnonymousSchema35;
 }
-export interface AnonymousSchema42 {
+export interface AnonymousSchema33 {
   'productId': string;
   'quantity': number;
 }
-export type AnonymousSchema45 = "lost" | "damaged";
+export type AnonymousSchema35 = "lost" | "damaged";
 export interface PaymentSucceededEnvelope {
   'type': PaymentSucceededEventType;
   'timestamp': string;
@@ -133,9 +133,10 @@ export interface PaymentRefundFailedPayload {
   'refundId': string;
   'amount': number;
   'currency': string;
-  'failureReason': string;
+  'failureReason': AnonymousSchema48;
   'final': boolean;
 }
+export type AnonymousSchema48 = "declined" | "insufficient_funds" | "expired_or_canceled_card" | "lost_or_stolen_card" | "provider_removed" | "provider_unavailable" | "unknown" | "canceled" | "disputed";
 export interface PaymentRefundReversedEnvelope {
   'type': PaymentRefundReversedEventType;
   'timestamp': string;
@@ -148,8 +149,9 @@ export interface PaymentRefundReversedPayload {
   'refundId': string;
   'amount': number;
   'currency': string;
-  'failureReason': string;
+  'failureReason': AnonymousSchema54;
 }
+export type AnonymousSchema54 = "declined" | "insufficient_funds" | "expired_or_canceled_card" | "lost_or_stolen_card" | "provider_removed" | "provider_unavailable" | "unknown" | "canceled" | "disputed";
 export interface PaymentDisputeOpenedEnvelope {
   'type': PaymentDisputeOpenedEventType;
   'timestamp': string;
@@ -160,16 +162,17 @@ export interface PaymentDisputePayload {
   'paymentId': string;
   'orderId': string;
   'disputeId': string;
-  'kind': AnonymousSchema81;
-  'status': AnonymousSchema82;
-  'reason': string;
+  'kind': AnonymousSchema58;
+  'status': AnonymousSchema59;
+  'reason': AnonymousSchema60;
   'amount': number;
   'currency': string;
   'fundsWithdrawn': boolean;
   'evidenceDueBy'?: string;
 }
-export type AnonymousSchema81 = "inquiry" | "chargeback";
-export type AnonymousSchema82 = "needs_response" | "under_review" | "won" | "lost" | "accepted" | "closed";
+export type AnonymousSchema58 = "inquiry" | "chargeback";
+export type AnonymousSchema59 = "needs_response" | "under_review" | "won" | "lost" | "accepted" | "closed";
+export type AnonymousSchema60 = "bank_cannot_process" | "check_returned" | "credit_not_processed" | "customer_initiated" | "debit_not_authorized" | "duplicate" | "fraudulent" | "general" | "incorrect_account_details" | "insufficient_funds" | "product_not_received" | "product_unacceptable" | "subscription_canceled" | "unrecognized";
 export interface PaymentDisputeUpdatedEnvelope {
   'type': PaymentDisputeUpdatedEventType;
   'timestamp': string;
@@ -185,11 +188,12 @@ export type ReturnRequestedEventType = "return.requested";
 export interface ReturnRequestedPayload {
   'returnId': string;
   'orderId': string;
-  'reason': string;
+  'reason': AnonymousSchema69;
   'requestedAt': string;
-  'statedVia'?: AnonymousSchema96;
+  'statedVia'?: AnonymousSchema71;
 }
-export type AnonymousSchema96 = "online" | "phone" | "email" | "letter" | "other";
+export type AnonymousSchema69 = "withdrawal" | "defective" | "wrong_item" | "other";
+export type AnonymousSchema71 = "online" | "phone" | "email" | "letter" | "other";
 export interface ReturnReceivedEnvelope {
   'type': ReturnReceivedEventType;
   'timestamp': string;
@@ -211,9 +215,9 @@ export interface ReturnClosedPayload {
   'orderId': string;
   'refundAmount': number;
   'currency': string;
-  'remedy'?: AnonymousSchema107;
+  'remedy'?: AnonymousSchema78;
 }
-export type AnonymousSchema107 = "refund" | "replace" | "repair";
+export type AnonymousSchema78 = "refund" | "replace" | "repair";
 export interface ExamplePublishedEnvelope {
   'type': ExamplePublishedEventType;
   'timestamp': string;
@@ -249,43 +253,43 @@ export interface NotificationCreatedPayload {
 }
 export interface NotificationCartLineRemovedPayload {
   'id': string;
-  'audience': AnonymousSchema121;
-  'code': AnonymousSchema122;
+  'audience': AnonymousSchema89;
+  'code': AnonymousSchema90;
   'params': CartLineRemovedParamsPayload;
-  'severity': AnonymousSchema126;
+  'severity': AnonymousSchema94;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema121 = "own" | "staff";
-export type AnonymousSchema122 = "notifications.cart-line-removed";
+export type AnonymousSchema89 = "own" | "staff";
+export type AnonymousSchema90 = "notifications.cart-line-removed";
 export interface CartLineRemovedParamsPayload {
   'productId': string;
   'titles': { [name: string]: string };
 }
-export type AnonymousSchema126 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema94 = "info" | "success" | "warning" | "error";
 export interface NotificationWishlistItemRemovedPayload {
   'id': string;
-  'audience': AnonymousSchema130;
-  'code': AnonymousSchema131;
+  'audience': AnonymousSchema98;
+  'code': AnonymousSchema99;
   'params': CartLineRemovedParamsPayload;
-  'severity': AnonymousSchema132;
+  'severity': AnonymousSchema100;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema130 = "own" | "staff";
-export type AnonymousSchema131 = "notifications.wishlist-item-removed";
-export type AnonymousSchema132 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema98 = "own" | "staff";
+export type AnonymousSchema99 = "notifications.wishlist-item-removed";
+export type AnonymousSchema100 = "info" | "success" | "warning" | "error";
 export interface NotificationCartMergeRefusedPayload {
   'id': string;
-  'audience': AnonymousSchema136;
-  'code': AnonymousSchema137;
+  'audience': AnonymousSchema104;
+  'code': AnonymousSchema105;
   'params': CartMergeRefusedParamsPayload;
-  'severity': AnonymousSchema143;
+  'severity': AnonymousSchema111;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema136 = "own" | "staff";
-export type AnonymousSchema137 = "notifications.cart-merge-refused";
+export type AnonymousSchema104 = "own" | "staff";
+export type AnonymousSchema105 = "notifications.cart-merge-refused";
 export interface CartMergeRefusedParamsPayload {
   'lines': CartMergeRefusedLinePayload[];
 }
@@ -294,18 +298,18 @@ export interface CartMergeRefusedLinePayload {
   'requested': number;
   'titles': { [name: string]: string };
 }
-export type AnonymousSchema143 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema111 = "info" | "success" | "warning" | "error";
 export interface NotificationFulfillmentDelayedPayload {
   'id': string;
-  'audience': AnonymousSchema147;
-  'code': AnonymousSchema148;
+  'audience': AnonymousSchema115;
+  'code': AnonymousSchema116;
   'params': FulfillmentDelayedParamsPayload;
-  'severity': AnonymousSchema155;
+  'severity': AnonymousSchema123;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema147 = "own" | "staff";
-export type AnonymousSchema148 = "notifications.fulfillment-delayed";
+export type AnonymousSchema115 = "own" | "staff";
+export type AnonymousSchema116 = "notifications.fulfillment-delayed";
 export interface FulfillmentDelayedParamsPayload {
   'orderId': string;
   'fulfillmentOrderId': string;
@@ -313,278 +317,278 @@ export interface FulfillmentDelayedParamsPayload {
   'agreedAt': string;
   'expectedAt'?: string;
 }
-export type AnonymousSchema155 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema123 = "info" | "success" | "warning" | "error";
 export interface NotificationFulfillmentHeldPayload {
   'id': string;
-  'audience': AnonymousSchema159;
-  'code': AnonymousSchema160;
+  'audience': AnonymousSchema127;
+  'code': AnonymousSchema128;
   'params': FulfillmentHeldParamsPayload;
-  'severity': AnonymousSchema165;
+  'severity': AnonymousSchema133;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema159 = "own" | "staff";
-export type AnonymousSchema160 = "notifications.fulfillment-held";
+export type AnonymousSchema127 = "own" | "staff";
+export type AnonymousSchema128 = "notifications.fulfillment-held";
 export interface FulfillmentHeldParamsPayload {
   'orderId': string;
   'fulfillmentOrderId': string;
-  'notice': AnonymousSchema163;
+  'notice': AnonymousSchema131;
   'message'?: string;
 }
-export type AnonymousSchema163 = "check_address" | "delayed";
-export type AnonymousSchema165 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema131 = "check_address" | "delayed";
+export type AnonymousSchema133 = "info" | "success" | "warning" | "error";
 export interface NotificationShipmentLostPayload {
   'id': string;
-  'audience': AnonymousSchema169;
-  'code': AnonymousSchema170;
+  'audience': AnonymousSchema137;
+  'code': AnonymousSchema138;
   'params': ShipmentLostParamsPayload;
-  'severity': AnonymousSchema178;
+  'severity': AnonymousSchema146;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema169 = "own" | "staff";
-export type AnonymousSchema170 = "notifications.shipment-lost";
+export type AnonymousSchema137 = "own" | "staff";
+export type AnonymousSchema138 = "notifications.shipment-lost";
 export interface ShipmentLostParamsPayload {
   'orderId': string;
   'shipmentId': string;
-  'reason': AnonymousSchema173;
+  'reason': AnonymousSchema141;
   'message'?: string;
   'owed'?: string[];
   'expectedAt'?: string;
 }
-export type AnonymousSchema173 = "lost" | "damaged";
-export type AnonymousSchema178 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema141 = "lost" | "damaged";
+export type AnonymousSchema146 = "info" | "success" | "warning" | "error";
 export interface NotificationStockAlertPayload {
   'id': string;
-  'audience': AnonymousSchema182;
-  'code': AnonymousSchema183;
+  'audience': AnonymousSchema150;
+  'code': AnonymousSchema151;
   'params': CartLineRemovedParamsPayload;
-  'severity': AnonymousSchema184;
+  'severity': AnonymousSchema152;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema182 = "own" | "staff";
-export type AnonymousSchema183 = "notifications.stock-alert";
-export type AnonymousSchema184 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema150 = "own" | "staff";
+export type AnonymousSchema151 = "notifications.stock-alert";
+export type AnonymousSchema152 = "info" | "success" | "warning" | "error";
 export interface NotificationStaffPurchaseHoldPlacedPayload {
   'id': string;
-  'audience': AnonymousSchema188;
-  'code': AnonymousSchema189;
+  'audience': AnonymousSchema156;
+  'code': AnonymousSchema157;
   'params': PurchaseHoldPlacedParamsPayload;
-  'severity': AnonymousSchema192;
+  'severity': AnonymousSchema160;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema188 = "own" | "staff";
-export type AnonymousSchema189 = "notifications.staff.purchase-hold-placed";
+export type AnonymousSchema156 = "own" | "staff";
+export type AnonymousSchema157 = "notifications.staff.purchase-hold-placed";
 export interface PurchaseHoldPlacedParamsPayload {
   'userId': string;
   'until': string;
 }
-export type AnonymousSchema192 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema160 = "info" | "success" | "warning" | "error";
 export interface NotificationStaffWebhookDisabledPayload {
   'id': string;
-  'audience': AnonymousSchema196;
-  'code': AnonymousSchema197;
+  'audience': AnonymousSchema164;
+  'code': AnonymousSchema165;
   'params': WebhookDisabledParamsPayload;
-  'severity': AnonymousSchema199;
+  'severity': AnonymousSchema167;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema196 = "own" | "staff";
-export type AnonymousSchema197 = "notifications.staff.webhook-disabled";
+export type AnonymousSchema164 = "own" | "staff";
+export type AnonymousSchema165 = "notifications.staff.webhook-disabled";
 export interface WebhookDisabledParamsPayload {
   'subscriptionId': string;
 }
-export type AnonymousSchema199 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema167 = "info" | "success" | "warning" | "error";
 export interface NotificationStaffTicketOpenedPayload {
   'id': string;
-  'audience': AnonymousSchema203;
-  'code': AnonymousSchema204;
+  'audience': AnonymousSchema171;
+  'code': AnonymousSchema172;
   'params': TicketOpenedParamsPayload;
-  'severity': AnonymousSchema208;
+  'severity': AnonymousSchema176;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema203 = "own" | "staff";
-export type AnonymousSchema204 = "notifications.staff.ticket-opened";
+export type AnonymousSchema171 = "own" | "staff";
+export type AnonymousSchema172 = "notifications.staff.ticket-opened";
 export interface TicketOpenedParamsPayload {
   'ticketId': string;
   'kind': string;
   'category'?: string;
 }
-export type AnonymousSchema208 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema176 = "info" | "success" | "warning" | "error";
 export interface NotificationStaffTicketAssignedPayload {
   'id': string;
-  'audience': AnonymousSchema212;
-  'code': AnonymousSchema213;
+  'audience': AnonymousSchema180;
+  'code': AnonymousSchema181;
   'params': TicketAssignedParamsPayload;
-  'severity': AnonymousSchema216;
+  'severity': AnonymousSchema184;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema212 = "own" | "staff";
-export type AnonymousSchema213 = "notifications.staff.ticket-assigned";
+export type AnonymousSchema180 = "own" | "staff";
+export type AnonymousSchema181 = "notifications.staff.ticket-assigned";
 export interface TicketAssignedParamsPayload {
   'ticketId': string;
   'kind': string;
 }
-export type AnonymousSchema216 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema184 = "info" | "success" | "warning" | "error";
 export interface NotificationStaffReturnRequestedPayload {
   'id': string;
-  'audience': AnonymousSchema220;
-  'code': AnonymousSchema221;
+  'audience': AnonymousSchema188;
+  'code': AnonymousSchema189;
   'params': ReturnRequestedParamsPayload;
-  'severity': AnonymousSchema224;
+  'severity': AnonymousSchema192;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema220 = "own" | "staff";
-export type AnonymousSchema221 = "notifications.staff.return-requested";
+export type AnonymousSchema188 = "own" | "staff";
+export type AnonymousSchema189 = "notifications.staff.return-requested";
 export interface ReturnRequestedParamsPayload {
   'returnId': string;
   'orderId': string;
 }
-export type AnonymousSchema224 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema192 = "info" | "success" | "warning" | "error";
 export interface NotificationStaffOutboxDeadPayload {
   'id': string;
-  'audience': AnonymousSchema228;
-  'code': AnonymousSchema229;
+  'audience': AnonymousSchema196;
+  'code': AnonymousSchema197;
   'params': OutboxDeadParamsPayload;
-  'severity': AnonymousSchema232;
+  'severity': AnonymousSchema200;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema228 = "own" | "staff";
-export type AnonymousSchema229 = "notifications.staff.outbox-dead";
+export type AnonymousSchema196 = "own" | "staff";
+export type AnonymousSchema197 = "notifications.staff.outbox-dead";
 export interface OutboxDeadParamsPayload {
   'eventName': string;
   'aggregateId': string;
 }
-export type AnonymousSchema232 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema200 = "info" | "success" | "warning" | "error";
 export interface NotificationStaffTransfersDuePayload {
   'id': string;
-  'audience': AnonymousSchema236;
-  'code': AnonymousSchema237;
+  'audience': AnonymousSchema204;
+  'code': AnonymousSchema205;
   'params': WorkCountParamsPayload;
-  'severity': AnonymousSchema239;
+  'severity': AnonymousSchema207;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema236 = "own" | "staff";
-export type AnonymousSchema237 = "notifications.staff.transfers-due";
+export type AnonymousSchema204 = "own" | "staff";
+export type AnonymousSchema205 = "notifications.staff.transfers-due";
 export interface WorkCountParamsPayload {
   'count': number;
 }
-export type AnonymousSchema239 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema207 = "info" | "success" | "warning" | "error";
 export interface NotificationStaffPreordersLatePayload {
   'id': string;
-  'audience': AnonymousSchema243;
-  'code': AnonymousSchema244;
+  'audience': AnonymousSchema211;
+  'code': AnonymousSchema212;
   'params': WorkCountParamsPayload;
-  'severity': AnonymousSchema245;
+  'severity': AnonymousSchema213;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema243 = "own" | "staff";
-export type AnonymousSchema244 = "notifications.staff.preorders-late";
-export type AnonymousSchema245 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema211 = "own" | "staff";
+export type AnonymousSchema212 = "notifications.staff.preorders-late";
+export type AnonymousSchema213 = "info" | "success" | "warning" | "error";
 export interface NotificationStaffDeliveryHoldsOpenPayload {
   'id': string;
-  'audience': AnonymousSchema249;
-  'code': AnonymousSchema250;
+  'audience': AnonymousSchema217;
+  'code': AnonymousSchema218;
   'params': WorkCountParamsPayload;
-  'severity': AnonymousSchema251;
+  'severity': AnonymousSchema219;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema249 = "own" | "staff";
-export type AnonymousSchema250 = "notifications.staff.delivery-holds-open";
-export type AnonymousSchema251 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema217 = "own" | "staff";
+export type AnonymousSchema218 = "notifications.staff.delivery-holds-open";
+export type AnonymousSchema219 = "info" | "success" | "warning" | "error";
 export interface NotificationStaffWithdrawalsAwaitingGoodsPayload {
   'id': string;
-  'audience': AnonymousSchema255;
-  'code': AnonymousSchema256;
+  'audience': AnonymousSchema223;
+  'code': AnonymousSchema224;
   'params': WorkCountParamsPayload;
-  'severity': AnonymousSchema257;
+  'severity': AnonymousSchema225;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema255 = "own" | "staff";
-export type AnonymousSchema256 = "notifications.staff.withdrawals-awaiting-goods";
-export type AnonymousSchema257 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema223 = "own" | "staff";
+export type AnonymousSchema224 = "notifications.staff.withdrawals-awaiting-goods";
+export type AnonymousSchema225 = "info" | "success" | "warning" | "error";
 export interface NotificationStaffReturnsUndecidedPayload {
   'id': string;
-  'audience': AnonymousSchema261;
-  'code': AnonymousSchema262;
+  'audience': AnonymousSchema229;
+  'code': AnonymousSchema230;
   'params': WorkCountParamsPayload;
-  'severity': AnonymousSchema263;
+  'severity': AnonymousSchema231;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema261 = "own" | "staff";
-export type AnonymousSchema262 = "notifications.staff.returns-undecided";
-export type AnonymousSchema263 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema229 = "own" | "staff";
+export type AnonymousSchema230 = "notifications.staff.returns-undecided";
+export type AnonymousSchema231 = "info" | "success" | "warning" | "error";
 export interface NotificationStaffLowStockPayload {
   'id': string;
-  'audience': AnonymousSchema267;
-  'code': AnonymousSchema268;
+  'audience': AnonymousSchema235;
+  'code': AnonymousSchema236;
   'params': WorkCountParamsPayload;
-  'severity': AnonymousSchema269;
+  'severity': AnonymousSchema237;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema267 = "own" | "staff";
-export type AnonymousSchema268 = "notifications.staff.low-stock";
-export type AnonymousSchema269 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema235 = "own" | "staff";
+export type AnonymousSchema236 = "notifications.staff.low-stock";
+export type AnonymousSchema237 = "info" | "success" | "warning" | "error";
 export interface NotificationStaffUnshippedPayload {
   'id': string;
-  'audience': AnonymousSchema273;
-  'code': AnonymousSchema274;
+  'audience': AnonymousSchema241;
+  'code': AnonymousSchema242;
   'params': WorkCountParamsPayload;
-  'severity': AnonymousSchema275;
+  'severity': AnonymousSchema243;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema273 = "own" | "staff";
-export type AnonymousSchema274 = "notifications.staff.unshipped";
-export type AnonymousSchema275 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema241 = "own" | "staff";
+export type AnonymousSchema242 = "notifications.staff.unshipped";
+export type AnonymousSchema243 = "info" | "success" | "warning" | "error";
 export interface NotificationStaffAwaitingTrackingPayload {
   'id': string;
-  'audience': AnonymousSchema279;
-  'code': AnonymousSchema280;
+  'audience': AnonymousSchema247;
+  'code': AnonymousSchema248;
   'params': WorkCountParamsPayload;
-  'severity': AnonymousSchema281;
+  'severity': AnonymousSchema249;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema279 = "own" | "staff";
-export type AnonymousSchema280 = "notifications.staff.awaiting-tracking";
-export type AnonymousSchema281 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema247 = "own" | "staff";
+export type AnonymousSchema248 = "notifications.staff.awaiting-tracking";
+export type AnonymousSchema249 = "info" | "success" | "warning" | "error";
 export interface NotificationStaffUndeliveredPayload {
   'id': string;
-  'audience': AnonymousSchema285;
-  'code': AnonymousSchema286;
+  'audience': AnonymousSchema253;
+  'code': AnonymousSchema254;
   'params': WorkCountParamsPayload;
-  'severity': AnonymousSchema287;
+  'severity': AnonymousSchema255;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema285 = "own" | "staff";
-export type AnonymousSchema286 = "notifications.staff.undelivered";
-export type AnonymousSchema287 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema253 = "own" | "staff";
+export type AnonymousSchema254 = "notifications.staff.undelivered";
+export type AnonymousSchema255 = "info" | "success" | "warning" | "error";
 export interface NotificationStaffStaleRefundsPayload {
   'id': string;
-  'audience': AnonymousSchema291;
-  'code': AnonymousSchema292;
+  'audience': AnonymousSchema259;
+  'code': AnonymousSchema260;
   'params': WorkCountParamsPayload;
-  'severity': AnonymousSchema293;
+  'severity': AnonymousSchema261;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema291 = "own" | "staff";
-export type AnonymousSchema292 = "notifications.staff.stale-refunds";
-export type AnonymousSchema293 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema259 = "own" | "staff";
+export type AnonymousSchema260 = "notifications.staff.stale-refunds";
+export type AnonymousSchema261 = "info" | "success" | "warning" | "error";
 export interface NotificationsDeletedPayload {
   'all': boolean;
   'ids': string[];
@@ -723,7 +727,7 @@ export interface SseEventPayloadMap {
 }
 export type SseEventPayload<TEventName extends SseEventName> = SseEventPayloadMap[TEventName];
 export const SSE_EVENT_PAYLOAD_SCHEMAS: Record<SseEventName, Record<string, unknown>> = {
-    "notifications.created": {"title":"NotificationCreatedPayload","type":"object","required":["notification"],"properties":{"notification":{"title":"NotificationPayload","oneOf":[{"title":"NotificationCartLineRemovedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.cart-line-removed"]},"params":{"title":"CartLineRemovedParamsPayload","type":"object","required":["productId","titles"],"properties":{"productId":{"type":"string"},"titles":{"description":"Locale → the product's name in it.","type":"object","additionalProperties":{"type":"string"}}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationWishlistItemRemovedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.wishlist-item-removed"]},"params":{"title":"CartLineRemovedParamsPayload","type":"object","required":["productId","titles"],"properties":{"productId":{"type":"string"},"titles":{"description":"Locale → the product's name in it.","type":"object","additionalProperties":{"type":"string"}}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationCartMergeRefusedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.cart-merge-refused"]},"params":{"title":"CartMergeRefusedParamsPayload","type":"object","required":["lines"],"properties":{"lines":{"type":"array","items":{"title":"CartMergeRefusedLinePayload","type":"object","required":["productId","requested","titles"],"properties":{"productId":{"type":"string"},"requested":{"type":"integer"},"titles":{"description":"Locale → the product's name in it.","type":"object","additionalProperties":{"type":"string"}}},"additionalProperties":false}}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationFulfillmentDelayedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.fulfillment-delayed"]},"params":{"title":"FulfillmentDelayedParamsPayload","type":"object","required":["orderId","fulfillmentOrderId","titles","agreedAt"],"properties":{"orderId":{"type":"string"},"fulfillmentOrderId":{"type":"string"},"titles":{"type":"array","items":{"type":"string"}},"agreedAt":{"type":"string","format":"date-time"},"expectedAt":{"type":"string","format":"date-time"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationFulfillmentHeldPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.fulfillment-held"]},"params":{"title":"FulfillmentHeldParamsPayload","type":"object","required":["orderId","fulfillmentOrderId","notice"],"properties":{"orderId":{"type":"string"},"fulfillmentOrderId":{"type":"string"},"notice":{"type":"string","enum":["check_address","delayed"]},"message":{"type":"string","maxLength":500}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationShipmentLostPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.shipment-lost"]},"params":{"title":"ShipmentLostParamsPayload","type":"object","required":["orderId","shipmentId","reason"],"properties":{"orderId":{"type":"string"},"shipmentId":{"type":"string"},"reason":{"type":"string","enum":["lost","damaged"]},"message":{"type":"string","maxLength":500},"owed":{"type":"array","items":{"type":"string"}},"expectedAt":{"type":"string","format":"date-time"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStockAlertPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.stock-alert"]},"params":{"title":"CartLineRemovedParamsPayload","type":"object","required":["productId","titles"],"properties":{"productId":{"type":"string"},"titles":{"description":"Locale → the product's name in it.","type":"object","additionalProperties":{"type":"string"}}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffPurchaseHoldPlacedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.purchase-hold-placed"]},"params":{"title":"PurchaseHoldPlacedParamsPayload","type":"object","required":["userId","until"],"properties":{"userId":{"type":"string"},"until":{"type":"string","format":"date-time"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffWebhookDisabledPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.webhook-disabled"]},"params":{"title":"WebhookDisabledParamsPayload","type":"object","required":["subscriptionId"],"properties":{"subscriptionId":{"type":"string"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffTicketOpenedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.ticket-opened"]},"params":{"title":"TicketOpenedParamsPayload","type":"object","required":["ticketId","kind"],"properties":{"ticketId":{"type":"string"},"kind":{"type":"string"},"category":{"type":"string"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffTicketAssignedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.ticket-assigned"]},"params":{"title":"TicketAssignedParamsPayload","type":"object","required":["ticketId","kind"],"properties":{"ticketId":{"type":"string"},"kind":{"type":"string"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffReturnRequestedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.return-requested"]},"params":{"title":"ReturnRequestedParamsPayload","type":"object","required":["returnId","orderId"],"properties":{"returnId":{"type":"string"},"orderId":{"type":"string"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffOutboxDeadPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.outbox-dead"]},"params":{"title":"OutboxDeadParamsPayload","type":"object","required":["eventName","aggregateId"],"properties":{"eventName":{"type":"string"},"aggregateId":{"type":"string"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffTransfersDuePayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.transfers-due"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffPreordersLatePayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.preorders-late"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffDeliveryHoldsOpenPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.delivery-holds-open"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffWithdrawalsAwaitingGoodsPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.withdrawals-awaiting-goods"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffReturnsUndecidedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.returns-undecided"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffLowStockPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.low-stock"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffUnshippedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.unshipped"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffAwaitingTrackingPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.awaiting-tracking"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffUndeliveredPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.undelivered"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffStaleRefundsPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.stale-refunds"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false}],"discriminator":"code"}},"additionalProperties":false},
+    "notifications.created": {"title":"NotificationCreatedPayload","type":"object","required":["notification"],"properties":{"notification":{"title":"NotificationPayload","oneOf":[{"title":"NotificationCartLineRemovedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.cart-line-removed"]},"params":{"title":"CartLineRemovedParamsPayload","type":"object","required":["productId","titles"],"properties":{"productId":{"type":"string"},"titles":{"description":"Locale → the product's name in it.","type":"object","additionalProperties":{"type":"string"}}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationWishlistItemRemovedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.wishlist-item-removed"]},"params":{"title":"CartLineRemovedParamsPayload","type":"object","required":["productId","titles"],"properties":{"productId":{"type":"string"},"titles":{"description":"Locale → the product's name in it.","type":"object","additionalProperties":{"type":"string"}}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationCartMergeRefusedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.cart-merge-refused"]},"params":{"title":"CartMergeRefusedParamsPayload","type":"object","required":["lines"],"properties":{"lines":{"type":"array","items":{"title":"CartMergeRefusedLinePayload","type":"object","required":["productId","requested","titles"],"properties":{"productId":{"type":"string"},"requested":{"type":"integer","minimum":1},"titles":{"description":"Locale → the product's name in it.","type":"object","additionalProperties":{"type":"string"}}},"additionalProperties":false}}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationFulfillmentDelayedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.fulfillment-delayed"]},"params":{"title":"FulfillmentDelayedParamsPayload","type":"object","required":["orderId","fulfillmentOrderId","titles","agreedAt"],"properties":{"orderId":{"type":"string"},"fulfillmentOrderId":{"type":"string"},"titles":{"type":"array","items":{"type":"string"}},"agreedAt":{"type":"string","format":"date-time"},"expectedAt":{"type":"string","format":"date-time"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationFulfillmentHeldPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.fulfillment-held"]},"params":{"title":"FulfillmentHeldParamsPayload","type":"object","required":["orderId","fulfillmentOrderId","notice"],"properties":{"orderId":{"type":"string"},"fulfillmentOrderId":{"type":"string"},"notice":{"type":"string","enum":["check_address","delayed"]},"message":{"type":"string","maxLength":500}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationShipmentLostPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.shipment-lost"]},"params":{"title":"ShipmentLostParamsPayload","type":"object","required":["orderId","shipmentId","reason"],"properties":{"orderId":{"type":"string"},"shipmentId":{"type":"string"},"reason":{"type":"string","enum":["lost","damaged"]},"message":{"type":"string","maxLength":500},"owed":{"type":"array","items":{"type":"string"}},"expectedAt":{"type":"string","format":"date-time"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStockAlertPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.stock-alert"]},"params":{"title":"CartLineRemovedParamsPayload","type":"object","required":["productId","titles"],"properties":{"productId":{"type":"string"},"titles":{"description":"Locale → the product's name in it.","type":"object","additionalProperties":{"type":"string"}}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffPurchaseHoldPlacedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.purchase-hold-placed"]},"params":{"title":"PurchaseHoldPlacedParamsPayload","type":"object","required":["userId","until"],"properties":{"userId":{"type":"string"},"until":{"type":"string","format":"date-time"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffWebhookDisabledPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.webhook-disabled"]},"params":{"title":"WebhookDisabledParamsPayload","type":"object","required":["subscriptionId"],"properties":{"subscriptionId":{"type":"string"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffTicketOpenedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.ticket-opened"]},"params":{"title":"TicketOpenedParamsPayload","type":"object","required":["ticketId","kind"],"properties":{"ticketId":{"type":"string"},"kind":{"type":"string"},"category":{"type":"string"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffTicketAssignedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.ticket-assigned"]},"params":{"title":"TicketAssignedParamsPayload","type":"object","required":["ticketId","kind"],"properties":{"ticketId":{"type":"string"},"kind":{"type":"string"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffReturnRequestedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.return-requested"]},"params":{"title":"ReturnRequestedParamsPayload","type":"object","required":["returnId","orderId"],"properties":{"returnId":{"type":"string"},"orderId":{"type":"string"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffOutboxDeadPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.outbox-dead"]},"params":{"title":"OutboxDeadParamsPayload","type":"object","required":["eventName","aggregateId"],"properties":{"eventName":{"type":"string"},"aggregateId":{"type":"string"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffTransfersDuePayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.transfers-due"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffPreordersLatePayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.preorders-late"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffDeliveryHoldsOpenPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.delivery-holds-open"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffWithdrawalsAwaitingGoodsPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.withdrawals-awaiting-goods"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffReturnsUndecidedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.returns-undecided"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffLowStockPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.low-stock"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffUnshippedPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.unshipped"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffAwaitingTrackingPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.awaiting-tracking"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffUndeliveredPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.undelivered"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStaffStaleRefundsPayload","type":"object","required":["id","audience","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"audience":{"description":"Whose message it is — `own`, or a `staff` work notice.","type":"string","enum":["own","staff"]},"code":{"type":"string","enum":["notifications.staff.stale-refunds"]},"params":{"title":"WorkCountParamsPayload","type":"object","required":["count"],"properties":{"count":{"type":"integer","minimum":1}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false}],"discriminator":"code"}},"additionalProperties":false},
     "notifications.deleted": {"title":"NotificationsDeletedPayload","type":"object","required":["all","ids"],"properties":{"all":{"description":"True when the whole inbox went (`DELETE /notifications`); `ids` is then empty.","type":"boolean"},"ids":{"description":"The deleted notifications' ids.","type":"array","items":{"type":"string"}}},"additionalProperties":false},
     "notifications.read": {"title":"NotificationsReadPayload","type":"object","required":["readAt"],"properties":{"readAt":{"type":"string","format":"date-time"}},"additionalProperties":false},
     "observability.heartbeat": {"type":"object","required":["timestamp","uptimeSeconds","memory","http","realtime"],"properties":{"timestamp":{"type":"string","format":"date-time"},"uptimeSeconds":{"type":"integer","minimum":0},"memory":{"title":"MemoryUsage","type":"object","required":["rss","heapUsed","heapTotal","external"],"properties":{"rss":{"type":"integer","minimum":0},"heapUsed":{"type":"integer","minimum":0},"heapTotal":{"type":"integer","minimum":0},"external":{"type":"integer","minimum":0}},"additionalProperties":false},"http":{"title":"HttpMetrics","type":"object","required":["totalRequests","totalErrors"],"properties":{"totalRequests":{"type":"integer","minimum":0},"totalErrors":{"type":"integer","minimum":0}},"additionalProperties":false},"realtime":{"title":"RealtimeMetrics","type":"object","required":["sseClients"],"properties":{"sseClients":{"type":"integer","minimum":0}},"additionalProperties":false}},"additionalProperties":false},
