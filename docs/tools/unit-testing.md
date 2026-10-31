@@ -122,7 +122,6 @@ reads the real imports cannot disagree with them. See
 | `registry.spec.ts`              | A module whose manifest breaks an invariant every enabled module must satisfy                                                                                     |
 | `published-language.spec.ts`    | A barrel exporting more, or less, than its siblings import                                                                                                        |
 | `a11y-coverage.spec.ts`         | A routed module with no accessibility sweep — or a sweep outliving its routes                                                                                     |
-| `store-location.spec.ts`        | A `defineStore` outside the permitted places                                                                                                                      |
 | `form-idiom.spec.ts`            | A form reaching the toolkit directly, keeping its own "show errors" flag, leaving a page form with nothing to focus, or a record-editing page with no leave guard |
 | `schemas-i18n.spec.ts`          | A Zod message that stops following the active locale                                                                                                              |
 | `mutate-scope.spec.ts`          | A Stryker `mutate` pattern that matches no file                                                                                                                   |

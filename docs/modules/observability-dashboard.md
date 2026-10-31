@@ -71,7 +71,7 @@ a glance which shapes came from the contract and which this client invented. Put
 `src/types/` would blur exactly that line.
 :::
 
-Only a module with view-only shapes carries a `types.ts` — [`webhooks`](./webhooks.md) has one too, for its delivery filter bar — and the file-shape catalogue (`tests/cross-cutting/module-file-shapes.spec.ts`) says what one is for.
+Only a module with view-only shapes carries a `types.ts` — [`webhooks`](./webhooks.md) has one too, for its delivery filter bar.
 
 ## The audit table reads somebody else's writes
 

@@ -138,7 +138,7 @@ Already guarded elsewhere — do not report these:
 
 - Lint: `index.ts`-only reach and `MODULE_EDGES`, foundation → shop, the tier ladder, `domain/` purity, a
   module importing its own barrel, a `.vue` calling `@api` or runtime `@types`.
-- Specs: `published-language`, `module-coupling`, `route-name-coupling`, `store-location`,
+- Specs: `published-language`, `module-coupling`, `route-name-coupling`,
   `module-file-shapes`, `module-groups`, `registry`, `module-map`, and the sitemap block.
 - Neighbouring audits: spec-drift, spec-gaps, test-honesty, suite-bloat (tests), design-manual (styling),
   and compliance (run from the backend).

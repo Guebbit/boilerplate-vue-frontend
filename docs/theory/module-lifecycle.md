@@ -196,10 +196,6 @@ from the code. The two sections worth the most care are the ones only you can wr
 Then add a row to the pairing table in `docs/modules/index.md`, and the page to the `/modules/`
 sidebar in `docs/.vitepress/config.mts`.
 
-If the domain carries a file shape no other module has, add one line to
-`tests/cross-cutting/module-file-shapes.spec.ts` describing it — that spec fails on a shape nothing
-documents.
-
 ### 6 · Check
 
 ```bash
