@@ -11,7 +11,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { enabledModules } from '@/modules';
-import { MODULE_GROUPS } from '../../scripts/module-groups';
+import { demoModuleNames, MODULE_GROUPS } from '../../scripts/module-groups';
 
 describe('every module sits on the foundation | shop axis', () => {
     it('gives every enabled module a group', () => {
@@ -53,5 +53,13 @@ describe('every module sits on the foundation | shop axis', () => {
         const groups = new Set(Object.values(MODULE_GROUPS));
         expect(groups.has('foundation')).toBe(true);
         expect(groups.has('shop')).toBe(true);
+    });
+
+    /** `demo:remove` deletes exactly the `shop` and `example` groups, never `foundation`. */
+    it('derives the demo modules from the shop and example groups only', () => {
+        const names = demoModuleNames();
+
+        expect(names.length).toBeGreaterThan(0);
+        expect(names.map((name) => MODULE_GROUPS[name])).not.toContain('foundation');
     });
 });

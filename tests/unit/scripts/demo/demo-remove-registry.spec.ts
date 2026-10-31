@@ -11,7 +11,6 @@ import path from 'node:path';
 import {
     pruneModuleEdges,
     pruneModuleGroups,
-    removeManifest,
     removeModuleFolders,
     stripModuleRegistry
 } from '../../../../scripts/demo/demo-remove-registry';
@@ -179,20 +178,5 @@ describe('pruneModuleGroups', () => {
                 '};'
             ].join('\n')
         );
-    });
-});
-
-describe('removeManifest', () => {
-    it('deletes the manifest and its spec, naming both', () => {
-        write('src/demo-modules.ts', '');
-        write('tests/unit/demo-modules.spec.ts', '');
-
-        const deleted = removeManifest(root);
-
-        expect(deleted).toEqual([
-            path.join('src', 'demo-modules.ts'),
-            path.join('tests', 'unit', 'demo-modules.spec.ts')
-        ]);
-        expect(existsSync(path.join(root, 'src/demo-modules.ts'))).toBe(false);
     });
 });

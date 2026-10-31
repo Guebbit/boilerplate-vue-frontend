@@ -100,21 +100,3 @@ export const pruneModuleGroups = (root: string, names: readonly string[]): void 
 
     filterLines(path.join(root, 'scripts', 'module-groups.ts'), (line) => !entryPattern.test(line));
 };
-
-/**
- * Delete `src/demo-modules.ts` and its spec — their whole job was naming modules that no longer
- * exist. `scripts/demo/demo-module-names.ts` stays: `measure-demo-strip.ts` still needs it for
- * whatever this build's module set becomes next.
- *
- * @param root - the checkout root
- * @returns the files deleted, relative to `root`
- */
-export const removeManifest = (root: string): string[] => {
-    const files = [
-        path.join('src', 'demo-modules.ts'),
-        path.join('tests', 'unit', 'demo-modules.spec.ts')
-    ];
-    for (const file of files) rmSync(path.join(root, file), { force: true });
-
-    return files;
-};

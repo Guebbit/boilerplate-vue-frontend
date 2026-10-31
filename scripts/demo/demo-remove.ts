@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
  * `npm run demo:remove` — deletes every module
- * `src/demo-modules.ts` names, the one place that lists them, `src/modules.ts`, and their entries
+ * `scripts/module-groups.ts` puts in the `shop` or `example` group, `src/modules.ts`, and their entries
  * in `scripts/module-edges.ts`. Everything else that reaches a domain module — `src/app/router/index.ts`,
  * `src/infrastructure/http/response-schema-map.ts` — already reads `enabledModules` generically,
  * so a module's own folder is the only place its name is written down.
@@ -23,11 +23,10 @@
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readDemoModuleNames } from './demo-module-names';
+import { demoModuleNames } from '../module-groups';
 import {
     pruneModuleEdges,
     pruneModuleGroups,
-    removeManifest,
     removeModuleFolders,
     stripModuleRegistry
 } from './demo-remove-registry';
@@ -59,28 +58,25 @@ const findResidueTests = (names: readonly string[]): string[] => {
     }
 };
 
-/** The demo modules to delete, read off `src/demo-modules.ts`. */
-const demoModuleNames = readDemoModuleNames(REPO_ROOT);
-console.info(
-    `[demo-remove] removing ${demoModuleNames.length} demo module(s): ${demoModuleNames.join(', ')}`
-);
+/** The demo modules to delete: the `shop` and `example` groups of `scripts/module-groups.ts`. */
+const demoNames = demoModuleNames();
+console.info(`[demo-remove] removing ${demoNames.length} demo module(s): ${demoNames.join(', ')}`);
 console.info('\n[demo-remove] module folders:');
 // Delete each demo module's folder.
-for (const folder of removeModuleFolders(REPO_ROOT, demoModuleNames))
+for (const folder of removeModuleFolders(REPO_ROOT, demoNames))
     console.info(`  ${folder}/ — deleted`);
 
 console.info('\n[demo-remove] the module registry:');
-stripModuleRegistry(REPO_ROOT, demoModuleNames);
-console.info(`  src/modules.ts — removed ${demoModuleNames.join(', ')}`);
-pruneModuleEdges(REPO_ROOT, demoModuleNames);
+stripModuleRegistry(REPO_ROOT, demoNames);
+console.info(`  src/modules.ts — removed ${demoNames.join(', ')}`);
+pruneModuleEdges(REPO_ROOT, demoNames);
 console.info('  scripts/module-edges.ts — dropped their entries');
-pruneModuleGroups(REPO_ROOT, demoModuleNames);
+pruneModuleGroups(REPO_ROOT, demoNames);
 console.info('  scripts/module-groups.ts — dropped their entries');
-console.info(`  ${removeManifest(REPO_ROOT).join(', ')} — deleted`);
 
 console.info('\n[demo-remove] cross-module specs:');
 // Remove the cross-module specs that walk a deleted module, and say why for each.
-for (const note of removeResidueSpecs(REPO_ROOT, demoModuleNames))
+for (const note of removeResidueSpecs(REPO_ROOT, demoNames))
     console.info(`  ${note.file} — ${note.detail}`);
 
 console.info('\n[demo-remove] done. Next:');
@@ -88,7 +84,7 @@ console.info('  1. npm run type-check-only   — the module-owned specs are alre
 console.info('  2. npm run lint              — catches an import eslint-plugin-boundaries refused');
 
 /** Files that still import a deleted module, found by grep. */
-const residue = findResidueTests(demoModuleNames);
+const residue = findResidueTests(demoNames);
 // Name each leftover importer; fixing it is a human's call, not this script's.
 if (residue.length > 0) {
     console.info('\n[demo-remove] still importing a deleted module, from a grep:');

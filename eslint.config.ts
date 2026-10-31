@@ -169,7 +169,6 @@ const boundariesFiles = [
     { pattern: 'src/modules.ts', category: 'registry' },
     { pattern: 'src/globals.d.ts', category: 'ambient' },
     { pattern: 'src/vite-env.d.ts', category: 'ambient' },
-    { pattern: 'src/demo-modules.ts', category: 'demo-manifest' },
     { pattern: 'src/modules/*/tests/**/*.ts', category: 'spec' },
     { pattern: 'src/infrastructure/session.ts', category: 'infra-app-state' },
     { pattern: 'src/infrastructure/reauth.ts', category: 'infra-app-state' },

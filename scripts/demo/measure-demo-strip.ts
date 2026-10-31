@@ -2,7 +2,7 @@
 /**
  * The frontend twin of the backend's `measure:demo-strip`: how far "the demo
  * shop is removable" actually is, measured rather than assumed. Copies the checkout to a SCRATCH
- * directory, deletes every module `src/demo-modules.ts` names, and runs `type-check-only`, `lint`
+ * directory, deletes every module `scripts/module-groups.ts` puts in `shop` or `example`, and runs `type-check-only`, `lint`
  * and `build-only` against what's left.
  *
  * NOT `demo:remove` — that script edits THIS checkout for real; this one applies the same edits
@@ -22,11 +22,10 @@ import { spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readDemoModuleNames } from './demo-module-names';
+import { demoModuleNames } from '../module-groups';
 import {
     pruneModuleEdges,
     pruneModuleGroups,
-    removeManifest,
     removeModuleFolders,
     stripModuleRegistry
 } from './demo-remove-registry';
@@ -72,7 +71,7 @@ const assembleScratchCopy = (): void => {
 
 /**
  * Apply `demo:remove`'s own edits to the scratch copy: the module folders, the registry, the
- * coupling graph, the group map, the manifest and the cross-module specs. The checks below then ask whether what
+ * coupling graph, the group map and the cross-module specs. The checks below then ask whether what
  * is left stands up, which is the question `demo:remove` has to answer for a real checkout.
  */
 const stripDemoModules = (names: readonly string[]): void => {
@@ -80,7 +79,6 @@ const stripDemoModules = (names: readonly string[]): void => {
     stripModuleRegistry(SCRATCH, names);
     pruneModuleEdges(SCRATCH, names);
     pruneModuleGroups(SCRATCH, names);
-    removeManifest(SCRATCH);
     removeResidueSpecs(SCRATCH, names);
 };
 
@@ -99,13 +97,11 @@ const run = (check: Check): boolean => {
 };
 
 /** The demo modules to strip from the scratch copy. */
-const demoModuleNames = readDemoModuleNames(REPO_ROOT);
-console.info(
-    `[demo-strip] stripping ${demoModuleNames.length} demo module(s): ${demoModuleNames.join(', ')}`
-);
+const demoNames = demoModuleNames();
+console.info(`[demo-strip] stripping ${demoNames.length} demo module(s): ${demoNames.join(', ')}`);
 
 assembleScratchCopy();
-stripDemoModules(demoModuleNames);
+stripDemoModules(demoNames);
 
 /** Each check run against the stripped copy, with whether it passed. */
 const results = CHECKS.map((check) => ({ check, passed: run(check) }));
