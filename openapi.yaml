@@ -1677,6 +1677,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/ReplaceAccountRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "200":
           description: Replaced profile
@@ -1733,6 +1736,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/UpdateAccountRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "200":
           description: Updated profile
@@ -3607,6 +3613,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/CreateUserRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "201":
           description: Created user
@@ -3746,6 +3755,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/ReplaceUserByIdRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "200":
           description: Replaced user
@@ -3804,6 +3816,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/UpdateUserByIdRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "200":
           description: Updated user
@@ -4615,6 +4630,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/CreateProductRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "201":
           description: Created product
@@ -4798,6 +4816,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/ReplaceProductRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "200":
           description: Replaced product
@@ -4875,6 +4896,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/UpdateProductRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "200":
           description: Updated product
@@ -10639,6 +10663,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/ReplaceExampleCoverRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "200":
           description: The example, with its new cover
