@@ -4,6 +4,8 @@
  * The app bar's bell, contributed to the shell's `app-bar` slot by this module's manifest. A
  * badge counts the unread notifications; opening the panel marks them read on the server and lists
  * them newest first, each with a delete button, plus "Clear all". Renders nothing for a guest.
+ * A person who holds work notices (staff) gets two tabs, "Mine" and "Work"; the badge stays the
+ * total unread and the Work tab wears its own count.
  *
  * It is also where the inbox lifecycle starts, because it is mounted for as long as the shell is:
  * `useInboxLifecycle` fetches the inbox and opens the live stream while a person who may read
@@ -38,7 +40,17 @@ const inbox = useInboxStore();
 /**
  * The list the panel renders and the count the badge wears, reactive.
  */
-const { items, unreadCount } = storeToRefs(inbox);
+const { items, unreadCount, hasWork } = storeToRefs(inbox);
+
+/**
+ * The panel's two groups.
+ */
+type PanelTab = 'mine' | 'work';
+
+/**
+ * Which row audience each tab lists.
+ */
+const TAB_AUDIENCE = { mine: 'own', work: 'staff' } as const;
 
 /**
  * The panel heading's element id: what the dialog's `aria-labelledby` points at.
@@ -55,6 +67,43 @@ const open = ref(false);
  * this the reader would never see which ones were new.
  */
 const freshIds = ref<ReadonlySet<string>>(new Set());
+
+/**
+ * The tab shown when the panel is split. Falls back to `mine` the moment the last work notice
+ * goes, since the tabs go with it.
+ */
+const chosenTab = ref<PanelTab>('mine');
+
+/**
+ * The tab actually in force: `mine` whenever there are no tabs.
+ */
+const tab = computed<PanelTab>(() => (hasWork.value ? chosenTab.value : 'mine'));
+
+/**
+ * The rows of the tab in force. Without work notices there are no tabs and every row is shown.
+ */
+const shownItems = computed(() =>
+    hasWork.value
+        ? items.value.filter(({ audience }) => audience === TAB_AUDIENCE[tab.value])
+        : items.value
+);
+
+/**
+ * How many work notices the Work tab announces: the unread ones plus those that were new when the
+ * panel opened (opening marks them read, which would otherwise zero the count the moment it is seen).
+ */
+const workCount = computed(
+    () =>
+        items.value.filter(
+            ({ audience, unread, id }) => audience === 'staff' && (unread || freshIds.value.has(id))
+        ).length
+);
+
+/**
+ * "Clear all": the tab in view when the panel is split, else the whole inbox. One call either way;
+ * the server filters by audience.
+ */
+const clearAll = () => inbox.dismissAll(hasWork.value ? TAB_AUDIENCE[tab.value] : undefined);
 
 /**
  * The notice's order page, or nothing when it has none or this build ships no order page.
@@ -88,6 +137,8 @@ const bellLabel = computed(() =>
 const onToggle = (isOpen: boolean) => {
     if (!isOpen) return;
     freshIds.value = new Set(items.value.filter(({ unread }) => unread).map(({ id }) => id));
+    // The panel always opens on Mine; the Work tab's own count says when work is waiting.
+    chosenTab.value = 'mine';
     // eslint-disable-next-line @typescript-eslint/no-floating-promises -- the inbox store reports its own failure
     void inbox.markAllRead();
 };
@@ -154,87 +205,138 @@ const focusPanel = () => {
                     {{ t('notifications.panel-title') }}
                 </h2>
                 <v-btn
-                    v-if="items.length > 0"
+                    v-if="shownItems.length > 0"
                     variant="text"
                     size="small"
                     data-test="notifications-clear-all"
-                    @click="inbox.dismissAll()"
+                    @click="clearAll()"
                 >
                     {{ t('notifications.button-clear-all') }}
                 </v-btn>
             </div>
 
-            <p
-                v-if="items.length === 0"
-                class="px-4 py-6 text-center text-sm opacity-muted"
-                data-test="notifications-empty"
+            <!-- Staff only: the chip carries the count in the tab's accessible name too, so it is not read twice. -->
+            <v-tabs
+                v-if="hasWork"
+                v-model="chosenTab"
+                :aria-label="t('notifications.tabs-label')"
+                density="comfortable"
+                data-test="notifications-tabs"
             >
-                {{ t('notifications.empty') }}
-            </p>
-
-            <!-- eslint-disable-next-line better-tailwindcss/no-restricted-classes -- the list never outgrows a phone; a share of the viewport is the rule, not a scale step -->
-            <v-list v-else class="max-h-[60dvh] overflow-y-auto" lines="two">
-                <v-list-item
-                    v-for="item in items"
-                    :key="item.id"
-                    :data-test="`notification-${item.id}`"
+                <v-tab
+                    value="mine"
+                    id="notifications-tab-mine"
+                    aria-controls="notifications-tabpanel"
+                    data-test="notifications-tab-mine"
                 >
-                    <!-- `item.type` is a Vuetify theme colour name, so `bg-<type>` is its swatch. -->
-                    <template #prepend>
-                        <span
-                            class="mr-3 inline-block size-2.5 shrink-0 rounded-full"
-                            :class="`bg-${item.type}`"
-                            aria-hidden="true"
-                        />
-                    </template>
-
-                    <v-list-item-title class="whitespace-normal">{{ item.text }}</v-list-item-title>
-                    <v-list-item-subtitle>
-                        <time :datetime="item.createdAt">{{ formatDateTime(item.createdAt) }}</time>
-                        <v-chip
-                            v-if="freshIds.has(item.id)"
-                            size="x-small"
-                            color="primary"
-                            class="ml-2"
-                            data-test="notification-new"
-                        >
-                            {{ t('notifications.unread') }}
-                        </v-chip>
-                    </v-list-item-subtitle>
-                    <router-link
-                        v-if="orderLink(item.orderId)"
-                        :to="orderLink(item.orderId)!"
-                        class="text-sm underline"
-                        data-test="notification-order-link"
+                    {{ t('notifications.tab-mine') }}
+                </v-tab>
+                <v-tab
+                    value="work"
+                    id="notifications-tab-work"
+                    aria-controls="notifications-tabpanel"
+                    :aria-label="
+                        workCount > 0
+                            ? t('notifications.tab-work-unread', { count: workCount }, workCount)
+                            : undefined
+                    "
+                    data-test="notifications-tab-work"
+                >
+                    {{ t('notifications.tab-work') }}
+                    <v-chip
+                        v-if="workCount > 0"
+                        size="x-small"
+                        color="primary"
+                        class="ml-2"
+                        aria-hidden="true"
+                        data-test="notifications-tab-work-count"
                     >
-                        {{ t('notifications.link-order') }}
-                    </router-link>
+                        {{ workCount }}
+                    </v-chip>
+                </v-tab>
+            </v-tabs>
 
-                    <router-link
-                        v-if="targetLink(item.target)"
-                        :to="targetLink(item.target)!"
-                        class="text-sm underline"
-                        data-test="notification-target-link"
+            <div
+                id="notifications-tabpanel"
+                :role="hasWork ? 'tabpanel' : undefined"
+                :aria-labelledby="hasWork ? `notifications-tab-${tab}` : undefined"
+            >
+                <p
+                    v-if="shownItems.length === 0"
+                    class="px-4 py-6 text-center text-sm opacity-muted"
+                    data-test="notifications-empty"
+                >
+                    {{ t('notifications.empty') }}
+                </p>
+
+                <!-- eslint-disable-next-line better-tailwindcss/no-restricted-classes -- the list never outgrows a phone; a share of the viewport is the rule, not a scale step -->
+                <v-list v-else class="max-h-[60dvh] overflow-y-auto" lines="two">
+                    <v-list-item
+                        v-for="item in shownItems"
+                        :key="item.id"
+                        :data-test="`notification-${item.id}`"
                     >
-                        {{ t('notifications.link-target') }}
-                    </router-link>
+                        <!-- `item.type` is a Vuetify theme colour name, so `bg-<type>` is its swatch. -->
+                        <template #prepend>
+                            <span
+                                class="mr-3 inline-block size-2.5 shrink-0 rounded-full"
+                                :class="`bg-${item.type}`"
+                                aria-hidden="true"
+                            />
+                        </template>
 
-                    <template #append>
-                        <v-btn
-                            icon
-                            size="small"
-                            variant="text"
-                            :aria-label="
-                                t('notifications.button-delete-named', { text: item.text })
-                            "
-                            data-test="notification-delete"
-                            @click="inbox.dismiss(item.id)"
+                        <v-list-item-title class="whitespace-normal">{{
+                            item.text
+                        }}</v-list-item-title>
+                        <v-list-item-subtitle>
+                            <time :datetime="item.createdAt">{{
+                                formatDateTime(item.createdAt)
+                            }}</time>
+                            <v-chip
+                                v-if="freshIds.has(item.id)"
+                                size="x-small"
+                                color="primary"
+                                class="ml-2"
+                                data-test="notification-new"
+                            >
+                                {{ t('notifications.unread') }}
+                            </v-chip>
+                        </v-list-item-subtitle>
+                        <router-link
+                            v-if="orderLink(item.orderId)"
+                            :to="orderLink(item.orderId)!"
+                            class="text-sm underline"
+                            data-test="notification-order-link"
                         >
-                            <Trash2 :size="18" aria-hidden="true" />
-                        </v-btn>
-                    </template>
-                </v-list-item>
-            </v-list>
+                            {{ t('notifications.link-order') }}
+                        </router-link>
+
+                        <router-link
+                            v-if="targetLink(item.target)"
+                            :to="targetLink(item.target)!"
+                            class="text-sm underline"
+                            data-test="notification-target-link"
+                        >
+                            {{ t('notifications.link-target') }}
+                        </router-link>
+
+                        <template #append>
+                            <v-btn
+                                icon
+                                size="small"
+                                variant="text"
+                                :aria-label="
+                                    t('notifications.button-delete-named', { text: item.text })
+                                "
+                                data-test="notification-delete"
+                                @click="inbox.dismiss(item.id)"
+                            >
+                                <Trash2 :size="18" aria-hidden="true" />
+                            </v-btn>
+                        </template>
+                    </v-list-item>
+                </v-list>
+            </div>
         </v-card>
     </v-menu>
 </template>

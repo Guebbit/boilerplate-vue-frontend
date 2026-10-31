@@ -19713,9 +19713,12 @@ export const ListNotificationsResponse = zod.strictObject({
     )
 });
 /**
- * Permanently deletes every notification of the caller — a hard delete, like `DELETE /notifications/{id}`, on the collection itself (as `DELETE /account/sessions` and `DELETE /cart/items` are). Emptying an empty inbox is the state the caller asked for, so it answers 204 too. `POST /notifications/read-all` stays an action: it moves `readAt`, not membership.
+ * Permanently deletes every notification of the caller — a hard delete, like `DELETE /notifications/{id}`, on the collection itself (as `DELETE /account/sessions` and `DELETE /cart/items` are). With `audience` it deletes only that group: a bell with a Mine and a Work tab clears one tab in one call (the staff cap is 200 rows, more than the global rate limit allows as single deletes). Without it, everything. Emptying an empty inbox, or an empty group, is the state the caller asked for, so it answers 204 too. `POST /notifications/read-all` stays an action: it moves `readAt`, not membership.
  * @summary Delete every notification
  */
+export const DismissAllNotificationsQueryParams = zod.strictObject({
+    audience: zod.enum(['own', 'staff']).optional()
+});
 export const DismissAllNotificationsResponse = zod.void();
 /**
  * Server-Sent Events: a notification written, deleted or marked read for the caller reaches an open tab as it happens. The channels and their payloads are in `asyncapi.yaml` (`notifications.created`, `notifications.deleted`, `notifications.read`). Per process, like the observability stream: a message written by another worker process arrives at the next `GET /notifications` instead.

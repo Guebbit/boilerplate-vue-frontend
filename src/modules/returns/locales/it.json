@@ -1,6 +1,7 @@
 {
     "navigation": {
-        "label-returns": "Resi"
+        "label-returns": "Resi",
+        "label-sales-returns": "Resi vendite"
     },
     "returns-form": {
         "status-requested": "Richiesto",
@@ -16,6 +17,7 @@
     },
     "returns-list-page": {
         "page-title": "Resi",
+        "page-title-sales": "Tutti i resi",
         "empty": "Ancora nessun reso",
         "empty-search": "Nessun reso corrisponde alla ricerca",
         "filter-status": "Stato",
