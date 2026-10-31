@@ -16,7 +16,7 @@ import { mailMentions, type MailedEmail } from './mail-message';
  * everywhere else (`expectMailTemplate`), and a filter that refused every live email would hide
  * the one the spec is waiting for.
  *
- * @param name - the outbox template name, e.g. `orders.placed`
+ * @param name - the outbox template name, e.g. `orders.order-confirm`
  */
 export const byTemplate =
     (name: string) =>

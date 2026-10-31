@@ -60,6 +60,9 @@ const PERIOD = {
     timeZone: 'Europe/Rome'
 } as const;
 
+/** The ceilings every period answer carries. */
+const LIMITS = { maxRangeDays: 731, maxBuckets: 400 };
+
 /** A full set of figures, overridden per case. */
 const figures = (over: Partial<SalesFigures> = {}): SalesFigures => ({
     orders: 2,
@@ -84,6 +87,7 @@ describe('SalesSection', () => {
     /** One currency, two days, and a previous period 50% lower. */
     const SALES: SalesStats = {
         period: PERIOD,
+        limits: LIMITS,
         currencies: [
             {
                 currency: 'EUR',
@@ -166,6 +170,7 @@ describe('ProductsSection', () => {
     /** Two products and a category. */
     const PRODUCTS: ProductStats = {
         period: PERIOD,
+        limits: LIMITS,
         products: [
             {
                 productId: 'p1',
@@ -180,6 +185,7 @@ describe('ProductsSection', () => {
     };
     const CATEGORIES: CategoryStats = {
         period: PERIOD,
+        limits: LIMITS,
         categories: [{ category: 'Food', currency: 'EUR', unitsOrdered: 3, netSales: 40 }]
     };
 
@@ -214,7 +220,7 @@ describe('ProductsSection', () => {
     it('shows an empty line when nothing sold', () => {
         const wrapper = mount(ProductsSection, {
             props: {
-                products: { period: PERIOD, products: [] },
+                products: { period: PERIOD, limits: LIMITS, products: [] },
                 period: { from: '2026-10-01', to: '2026-10-07', interval: 'day' }
             },
             global: GLOBAL
@@ -227,12 +233,14 @@ describe('ProductsSection', () => {
 describe('OperationsSection', () => {
     const OPERATIONS: OperationsStats = {
         period: PERIOD,
+        limits: LIMITS,
         cancellation: { placed: 4, cancelled: 1, rate: 0.25 },
         returns: { unitsOrdered: 3, unitsReturned: 1, rate: 0.33 },
         refunds: [{ currency: 'EUR', invoiced: 90, credited: 12, rate: 0.13 }]
     };
     const CUSTOMERS: CustomerStats = {
         period: PERIOD,
+        limits: LIMITS,
         customers: 2,
         newCustomers: 1,
         returningCustomers: 1,
@@ -246,6 +254,7 @@ describe('OperationsSection', () => {
     };
     const MIX: PaymentMix = {
         period: PERIOD,
+        limits: LIMITS,
         rows: [
             { method: 'card', provider: 'fake', currency: 'EUR', payments: 3, amount: 90 },
             {

@@ -32,7 +32,7 @@ declare module '@/infrastructure/utils/logger.ts' {
  * entry and every screen disappear for anyone the server's rules do not let in; the one public
  * route needs neither.
  *
- * It is on `DEMO_MODULE_NAMES`, so `npm run demo:remove` deletes it with the shop: copy it first.
+ * It is in the `example` group of `scripts/module-groups.ts`, so `npm run demo:remove` deletes it with the shop: copy it first.
  *
  * Subdomain: none. It is the template a domain is copied from, not a subdomain.
  *

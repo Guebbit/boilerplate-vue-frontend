@@ -16,6 +16,8 @@ import vuetify from '@/ui/vuetify';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { configAnswer } from '../../../../tests/support/unit/config-answer.ts';
+import { resetConfig } from '@/infrastructure/config.ts';
 
 wireModulesIntoCore();
 
@@ -106,9 +108,10 @@ const fillAndSubmit = (wrapper: ReturnType<typeof mountSignup>) => {
 
 beforeEach(() => {
     setActivePinia(createPinia());
+    resetConfig();
     vi.clearAllMocks();
     responses = {
-        'GET /account/oauth/providers': { providers: [] },
+        'GET /config': configAnswer(),
         // A minimal `User`, matching `auth-signup.spec.ts`'s own fixture — `SignupResponse` needs
         // a real object not the bodyless `undefined` a 204 resolves to.
         'POST /account/signup': {

@@ -11,7 +11,7 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Provider-neutral human-challenge widget. Reads `GET /antibot/config` on mount and renders
+ * Provider-neutral human-challenge widget. Reads `antibot` on `GET /config` on mount and renders
  * whichever vendor is currently active: nothing for `none`, ALTCHA's web component for `altcha`,
  * Cloudflare Turnstile's vendor script for `turnstile`. A hosting form reads {@link token} through
  * a template ref once the visitor passes, and attaches it as `antibot-challenge-token` on its
@@ -33,7 +33,7 @@ import type { AltchaWidgetElement } from 'altcha';
 const emit = defineEmits<(event: 'solved', token: string) => void>();
 
 /**
- * The active provider's name, `undefined` while `GET /antibot/config` is still in flight.
+ * The active provider's name, `undefined` while `antibot` on `GET /config` is still in flight.
  * `'none'` renders nothing; anything else picks one branch below.
  */
 const provider = ref<string>();
@@ -149,7 +149,7 @@ const onAltchaVerified = (event: Event): void => {
 
 /**
  * Cloudflare Turnstile: renders the widget into {@link turnstileElement}. `sitekey` is the public
- * half of the pair `GET /antibot/config` published; `callback` is how Turnstile hands back the
+ * half of the pair `antibot` on `GET /config` published; `callback` is how Turnstile hands back the
  * solved token — there is no DOM event to listen for instead.
  * https://developers.cloudflare.com/turnstile/get-started/client-side-rendering/
  */

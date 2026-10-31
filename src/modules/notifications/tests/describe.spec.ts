@@ -437,6 +437,21 @@ describe('a ticket notice for staff', () => {
         );
     });
 
+    it('says an open ticket is overdue, naming it the way the opener does', () => {
+        expect(
+            describeNotification(
+                {
+                    code: 'notifications.staff.ticket-overdue',
+                    params: { ticketId: 't1', kind: 'contact', category: 'privacy' }
+                },
+                ['en'],
+                translate
+            )
+        ).toBe(
+            'notifications.staff.ticket-overdue|what=notifications.staff-ticket-kind-contact · notifications.staff-ticket-category-privacy'
+        );
+    });
+
     it('says a ticket was given to the reader', () => {
         expect(
             describeNotification(
@@ -450,10 +465,16 @@ describe('a ticket notice for staff', () => {
         ).toBe('notifications.staff.ticket-assigned|what=notifications.staff-ticket-kind-dispute');
     });
 
-    it('points both notices at the ticket page', () => {
+    it('points every ticket notice at the ticket page', () => {
         expect(notificationTarget(opened({ kind: 'contact' }))).toEqual({
             screen: 'ticket',
             id: 't1'
         });
+        expect(
+            notificationTarget({
+                code: 'notifications.staff.ticket-overdue',
+                params: { ticketId: 't2', kind: 'dispute' }
+            })
+        ).toEqual({ screen: 'ticket', id: 't2' });
     });
 });

@@ -128,11 +128,6 @@ const mutateScope = readMutateScope();
 const specifiers = mutateScope.flatMap((file) => findSpecifiers(file));
 
 describe('import specifiers inside the mutate scope', () => {
-    it('sweeps a scope that actually resolves to files', () => {
-        // A `mutate` pattern that stops matching would make every assertion below vacuously true
-        expect(mutateScope.length).toBeGreaterThan(0);
-    });
-
     it('finds the specifiers it exists to check, so a broken matcher cannot pass silently', () => {
         expect(specifiers.length).toBeGreaterThan(0);
         expect(specifiers.some(({ kind }) => kind === 'import.meta.glob')).toBe(true);

@@ -79,8 +79,8 @@ const routeAccess: Record<string, RouteAccess | undefined> = {
 /** The permission each route declares, where it declares one. */
 const routePermission: Record<string, RoutePermission | undefined> = {
     StaffThing: ['read', 'User'],
-    GroupedFirst: ['read', 'Group'],
-    GroupedSecond: ['read', 'Group'],
+    GroupedFirst: ['assign', 'Role'],
+    GroupedSecond: ['assign', 'Role'],
     OthersThing: ['display', 'Order']
 };
 
@@ -360,7 +360,7 @@ describe('Navigation', () => {
     describe('a menu group', () => {
         beforeEach(() => {
             session.isAuth.value = true;
-            held.value = ['read Group'];
+            held.value = ['assign Role'];
         });
 
         it('draws its heading once above the first of a run of neighbours, in the menu', () => {

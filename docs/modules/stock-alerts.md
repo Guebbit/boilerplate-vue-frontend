@@ -21,16 +21,7 @@
 
 ## The map
 
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
-flowchart LR
-    stockAlerts["<b>stock-alerts</b>"] -->|"conformist"| products["products"]
-
-    classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
-    classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
-    class products core;
-    class stockAlerts self;
-```
+The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
 - → `products` **conformist** — Reads the product's shelf state (`shelfStateOf`) to know when the button is offered, and its titles (`useProductLines`) for the list.
 

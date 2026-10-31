@@ -169,7 +169,6 @@
      * `transitionend`/`animationend` still fire: Vuetify's overlays wait for them to close.
      */
     @media (prefers-reduced-motion: reduce) {
-        /* css-allow important -- only !important beats an inline transition style (WCAG 2.3.3) */
         *,
         *::before,
         *::after {

@@ -71,7 +71,7 @@ a glance which shapes came from the contract and which this client invented. Put
 `src/types/` would blur exactly that line.
 :::
 
-Only a module with view-only shapes carries a `types.ts` — [`webhooks`](./webhooks.md) has one too, for its delivery filter bar — and the file-shape catalogue (`tests/cross-cutting/module-file-shapes.spec.ts`) says what one is for.
+Only a module with view-only shapes carries a `types.ts` — [`webhooks`](./webhooks.md) has one too, for its delivery filter bar.
 
 ## The audit table reads somebody else's writes
 
@@ -88,9 +88,8 @@ client could author is not evidence of anything.
 So it depends on nothing, reads the observability endpoints directly rather than through any other
 domain's store, and keeps its assembled shapes in its own folder.
 
-`rm -rf src/modules/observability`, one line of `src/modules.ts`, one sidebar entry, one pairing
-entry in `tests/cross-cutting/backend-pairing.spec.ts` — and that spec names the pairing if you
-miss it. The sidebar and this page are yours to remove.
+`rm -rf src/modules/observability`, one line of `src/modules.ts` and one sidebar entry. The
+sidebar and this page are yours to remove.
 :::
 
 ## Related pages

@@ -216,7 +216,7 @@ describe('FormImageUpload — the progress bar', () => {
 
 describe('FormImageUpload — the field', () => {
     it('restricts the picker to the types the backend accepts', () => {
-        // The picker's filter and the validation rule are both derived from ACCEPTED_IMAGE_TYPES
+        // The picker's filter and the validation rule are both derived from ACCEPTED_UPLOAD_TYPES
         // so they cannot disagree; this pins that the derivation actually reaches the DOM.
         expect(mountUpload().find('input[type=file]').attributes('accept')).toBe(
             ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE

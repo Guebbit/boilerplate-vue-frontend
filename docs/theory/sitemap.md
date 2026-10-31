@@ -54,6 +54,7 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`products`](../modules/products.md)                   | `products/:id`                         | `ProductTarget`           | `public` | —                            | `views/Product.vue`                 |
 | [`products`](../modules/products.md)                   | `products/:id/edit`                    | `ProductEdit`             | `auth`   | `update Product`             | `views/ProductEdit.vue`             |
 | [`returns`](../modules/returns.md)                     | `returns`                              | `ReturnsList`             | `auth`   | —                            | `views/ReturnsList.vue`             |
+| [`returns`](../modules/returns.md)                     | `sales/returns`                        | `SalesReturns`            | `auth`   | `read Return`                | `views/ReturnsList.vue`             |
 | [`returns`](../modules/returns.md)                     | `returns/:id`                          | `ReturnTarget`            | `auth`   | —                            | `views/Return.vue`                  |
 | [`stats`](../modules/stats.md)                         | `sales/stats`                          | `StatsDashboard`          | `auth`   | `read Stats`                 | `views/StatsDashboard.vue`          |
 | [`stats`](../modules/stats.md)                         | `sales/stats/products/:productId`      | `StatsProductSales`       | `auth`   | `read Stats`                 | `views/ProductSales.vue`            |
@@ -72,13 +73,13 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`webhooks`](../modules/webhooks.md)                   | `webhooks/deliveries`                  | `WebhookDeliveries`       | `auth`   | `read WebhookSubscription`   | `views/WebhookDeliveries.vue`       |
 | [`wishlist`](../modules/wishlist.md)                   | `wishlist`                             | `Wishlist`                | `auth`   | —                            | `views/Wishlist.vue`                |
 
-58 screens across 17 modules.
+59 screens across 17 modules.
 
 <!-- sitemap:end -->
 
 Paths are relative to the localised root. **Access** is the route’s own `meta.access` — the STANDING it requires — and **Permission** is its
 `meta.can`, the `[action, subject]` rule evaluated against the caller's own rules from
-`GET /account/abilities` — a staff screen asks the staff action (`display Order`), which a customer holding only
+the `abilities` of `GET /account` — a staff screen asks the staff action (`display Order`), which a customer holding only
 `read:Order` does not hold. Together they are the only place a screen's requirement is declared; a
 menu entry inherits both rather than restating them. There is no `admin` level: a screen names the
 permission it needs, because "administrator" could never say _of what_.

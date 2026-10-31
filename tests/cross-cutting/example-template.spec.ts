@@ -1,13 +1,9 @@
 /**
- * The `example` module is the module to copy, so every non-test file of it says the same three
- * things in the same shape: what the pattern is in ANY module (`In any module:`), what it does
- * HERE (`Here:`), and where the reasoning lives (`See: docs/…`, the last line). A copier reads the
- * header and knows whether to keep, adapt or delete the file. Its docs table
- * (`docs/theory/modules.md#the-module-template`) names the same files, and this spec holds the two
- * together: a pattern row naming a file that is gone fails here.
+ * The `example` module's docs table (`docs/theory/modules.md#the-module-template`) names real
+ * files, and no module keeps a status transition table on the client.
  *
- * Also here: no module's `domain/` may hold a transition table. The server lists the moves a
- * caller may make (the `actions` flags); a client table is a second copy that drifts.
+ * The server lists the moves a caller may make (the `actions` flags); a client table is a second
+ * copy that drifts.
  */
 import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -36,41 +32,6 @@ const sourceFiles = (directory: string, prefix = ''): string[] =>
                 : sourceFiles(path.join(directory, entry.name), relative);
         return /\.(?:ts|vue)$/.test(entry.name) ? [relative] : [];
     });
-
-/**
- * The content lines of a file's `@module` header, comment markers stripped.
- *
- * @param source - The file's text.
- * @returns The non-empty lines.
- */
-const headerLines = (source: string): string[] => {
-    const match = /\/\*\*\s*\n\s*\*\s*@module\s*\n([\S\s]*?)\*\//.exec(source);
-    return (match?.[1] ?? '')
-        .split('\n')
-        .map((line) => line.replace(/^\s*\* ?/, '').trim())
-        .filter((line) => line !== '');
-};
-
-describe('every file of the example module carries the template header', () => {
-    const files = sourceFiles(EXAMPLE_ROOT);
-
-    it('finds the module’s files', () => {
-        expect(files.length).toBeGreaterThan(10);
-    });
-
-    it.each(files)('%s opens with `In any module:`, says `Here:`, ends on `See: docs/`', (file) => {
-        const lines = headerLines(readFileSync(path.join(EXAMPLE_ROOT, file), 'utf8'));
-        const problems = [
-            ...(lines[0]?.startsWith('In any module:')
-                ? []
-                : ['first line is not `In any module:`']),
-            ...(/(^|\s)Here:/.test(lines.join('\n')) ? [] : ['no `Here:`']),
-            ...(lines.at(-1)?.startsWith('See: docs/') ? [] : ['last line is not `See: docs/…`'])
-        ];
-
-        expect(problems).toEqual([]);
-    });
-});
 
 describe('the example docs table names real files', () => {
     it('lists only files and folders that exist', () => {

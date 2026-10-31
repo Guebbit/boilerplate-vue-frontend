@@ -11,7 +11,7 @@
  * (`email-verification.ts`) and the language preference (`locale-preference.ts`) share no state
  * with them and live beside this file.
  *
- * Which of the two modes the deployment runs is read once from `GET /account/session-config`;
+ * Which of the two modes the deployment runs is read once from `GET /config` (`session`);
  * see `docs/tools/security.md`.
  */
 
@@ -21,20 +21,24 @@ import { deleteCookie, setCookie } from '@guebbit/js-toolkit';
 import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
 import {
     getAccount as apiGetAccount,
-    getMyAbilities as apiGetMyAbilities,
-    getSessionConfig as apiGetSessionConfig,
     refreshToken as apiRefreshToken,
     logout as apiLogout,
     logoutAll as apiLogoutAll,
     touchSession as apiTouchSession
 } from '@api';
-import type { PermissionAction } from '@api/permission-actions';
+import type { ActionOn, PermissionAction, PermissionSubject } from '@api/permission-vocabulary';
+import { loadConfig } from '@/infrastructure/config.ts';
 import { clearEtags } from '@/infrastructure/http/etag.ts';
 import { asPassive } from '@/infrastructure/http/passive.ts';
-import { warn } from '@/infrastructure/utils/logger.ts';
 import { createMongoAbility, type MongoAbility, type RawRuleOf } from '@casl/ability';
 import { unpackRules, type PackRule } from '@casl/ability/extra';
-import type { Abilities, SessionConfig, SessionConfigMode, PackedRules } from '@types';
+import type {
+    Abilities,
+    SessionActivity,
+    SessionConfig,
+    SessionConfigMode,
+    PackedRules
+} from '@types';
 import type { AxiosError } from 'axios';
 import type { AxiosRequestConfigWithRetry } from '@/infrastructure/http/types.ts';
 
@@ -64,7 +68,7 @@ const isDefinitiveAuthFailure = (error: unknown): boolean => {
 };
 
 /**
- * Turns one scope's packed rules — `GET /account/abilities`'s own wire shape — into the CASL
+ * Turns one scope's packed rules — the `abilities` wire shape — into the CASL
  * rule objects {@link createMongoAbility} builds an ability from.
  *
  * The cast is the one place this file trusts the contract rather than the compiler: OpenAPI/JSON
@@ -77,8 +81,16 @@ const isDefinitiveAuthFailure = (error: unknown): boolean => {
  * @param packed - One scope's rules exactly as the ability endpoint returns them.
  * @returns Unpacked CASL rules, ready for {@link createMongoAbility}.
  */
-const unpackAbilityRules = (packed: PackedRules): RawRuleOf<MongoAbility>[] =>
-    unpackRules(packed as PackRule<RawRuleOf<MongoAbility>>[]);
+const unpackAbilityRules = (packed: PackedRules): RawRuleOf<SessionAbility>[] =>
+    unpackRules(packed as PackRule<RawRuleOf<SessionAbility>>[]);
+
+/**
+ * The ability the store holds: CASL's own typing (an action and a subject), narrowed to the
+ * backend's closed lists. A misspelled pair is a compile error; the pair map narrows further, in
+ * {@link RoutePermission} and `can()`.
+ * https://casl.js.org/v6/en/advanced/typescript
+ */
+type SessionAbility = MongoAbility<[PermissionAction, PermissionSubject]>;
 
 /**
  * The concrete actions a screen may ask about — generated from `actions:` in the backend's
@@ -86,7 +98,7 @@ const unpackAbilityRules = (packed: PackedRules): RawRuleOf<MongoAbility>[] =>
  * absent: no key declares it and there is no wildcard to expand into one, so asking for it always
  * answers no. A screen asks for the action it actually performs.
  */
-export type { PermissionAction } from '@api/permission-actions';
+export type { ActionOn, PermissionAction, PermissionSubject } from '@api/permission-vocabulary';
 
 /**
  * The least the app shell and the guards need to know about the signed-in visitor.
@@ -240,19 +252,13 @@ export const useSessionStore = defineStore('session', () => {
     const idle = ref<{ timeoutMs: number; lastActiveAt: number }>();
 
     /**
-     * Whether this signed-in stretch has asked the server for its idle clock. A shopper's answer
-     * leaves {@link idle} empty, so "empty" alone cannot say "already asked".
-     */
-    let idleRead = false;
-
-    /**
      * Bumped when the session ended for inactivity — the server answered `SESSION_IDLE`, or the
      * clock ran out here first. `LayoutDefault.vue` turns it into its own toast and a redirect.
      */
     const idleSignal = ref(0);
 
     /**
-     * The rules the SERVER enforces, unpacked from `GET /account/abilities` — one ability per
+     * The rules the SERVER enforces, unpacked from the server's `abilities` — one ability per
      * scope, because the model has two worlds and they never merge. `tenant` is what the caller
      * may do inside this shop; `platform` is what they may do across the installation.
      *
@@ -269,55 +275,47 @@ export const useSessionStore = defineStore('session', () => {
      * ability anyway; each is replaced wholesale when new rules arrive, which is exactly what a
      * shallow ref is for.
      */
-    const tenantAbility = shallowRef<MongoAbility>(createMongoAbility());
+    const tenantAbility = shallowRef<SessionAbility>(createMongoAbility<SessionAbility>());
 
     /** The caller's rules over the INSTALLATION — health, metrics, the operational audit. Empty for almost everyone. */
-    const platformAbility = shallowRef<MongoAbility>(createMongoAbility());
-
-    /**
-     * Every CASL subject a declared key names, as last published by `GET /account/abilities` —
-     * not caller-specific (it is the registry's whole declared set, the same for everyone who
-     * asks), so unlike the two abilities above it is never emptied on logout; there is nothing
-     * privileged in it to revoke. Empty until the first fetch lands, which {@link can} treats as
-     * "not yet known" rather than "no subject is valid".
-     */
-    const declaredSubjects = ref<Set<string>>(new Set());
+    const platformAbility = shallowRef<SessionAbility>(createMongoAbility<SessionAbility>());
 
     /**
      * The tenant roles this caller may assign through the user writes, as last published by
-     * `GET /account/abilities` — computed by the server's own grant rule, so a role picker built
-     * from it offers what the write accepts. Caller-specific, so unlike {@link declaredSubjects} it
-     * is emptied with the rest of the abilities. No authority: the write is re-checked.
+     * the `abilities` answer — computed by the server's own grant rule, so a role picker built
+     * from it offers what the write accepts. Emptied with the rest of the abilities. No authority:
+     * the write is re-checked.
      */
     const grantableRoles = ref<string[]>([]);
 
     /**
      * Whether the caller holds a staff role that grants nothing yet, because no authenticator app is
-     * armed — as last published by `GET /account/abilities`. The rules above are then the account's
+     * armed — as last published in the `abilities`. The rules above are then the account's
      * customer ones; the shell shows an "enrol to use your staff tools" prompt. Emptied with the rest.
      */
     const secondFactorRequired = ref(false);
 
-    /** Subjects already warned about, so a route repeatedly asking about the same typo logs once. */
-    const warnedSubjects = new Set<string>();
-
     /**
      * Replace both rule sets wholesale with what the server just published.
      *
-     * @param rules - the payload's two packed-rule lists, exactly as `GET /account/abilities`
-     *  returns them, plus its declared subject set and grantable roles; omit `tenant`/`platform` to empty them
+     * @param rules - the `abilities` the server published (on `GET /account`, a sign-in or a
+     *  refresh): the two packed-rule lists, the grantable roles and the second-factor flag; omit
+     *  `tenant`/`platform` to empty them
      */
     const setAbilities = (
         rules: Pick<
             Partial<Abilities>,
-            'tenant' | 'platform' | 'subjects' | 'grantableRoles' | 'secondFactorRequired'
+            'tenant' | 'platform' | 'grantableRoles' | 'secondFactorRequired'
         > = {}
     ) => {
-        tenantAbility.value = createMongoAbility(unpackAbilityRules(rules.tenant ?? []));
-        platformAbility.value = createMongoAbility(unpackAbilityRules(rules.platform ?? []));
+        tenantAbility.value = createMongoAbility<SessionAbility>(
+            unpackAbilityRules(rules.tenant ?? [])
+        );
+        platformAbility.value = createMongoAbility<SessionAbility>(
+            unpackAbilityRules(rules.platform ?? [])
+        );
         grantableRoles.value = rules.grantableRoles ?? [];
         secondFactorRequired.value = rules.secondFactorRequired ?? false;
-        if (rules.subjects) declaredSubjects.value = new Set(rules.subjects);
     };
 
     /**
@@ -337,27 +335,15 @@ export const useSessionStore = defineStore('session', () => {
      * the `guest` role's, which is a value in the model, but nothing here is rendered for someone
      * the app has not identified yet.
      *
-     * A subject nothing declares matches no rule and answers `false` — the fail-closed direction,
-     * but in development it is also a LOUD one: {@link declaredSubjects} names the real set, so a
-     * typo in a route's `meta.can` warns once in the console instead of just rendering an
-     * unreachable page with no clue why.
+     * A subject nothing declares matches no rule and answers `false` — the fail-closed direction.
      *
      * @param action - a CASL action: `read`, `create`, `update`, `delete`
      * @param subject - the CASL subject type the key names, e.g. `Product`, `WebhookSubscription`
      */
-    const can = (action: PermissionAction, subject: string): boolean => {
-        if (
-            import.meta.env.DEV &&
-            declaredSubjects.value.size > 0 &&
-            !declaredSubjects.value.has(subject) &&
-            !warnedSubjects.has(subject)
-        ) {
-            warnedSubjects.add(subject);
-            warn(
-                `[session] "${subject}" is not a subject any declared key names — check meta.can for a typo. Known subjects: ${[...declaredSubjects.value].toSorted().join(', ')}`
-            );
-        }
-
+    const can = <TSubject extends PermissionSubject>(
+        action: ActionOn<TSubject>,
+        subject: TSubject
+    ): boolean => {
         return (
             isAuth.value &&
             (tenantAbility.value.can(action, subject) || platformAbility.value.can(action, subject))
@@ -414,31 +400,22 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     /**
-     * In flight or settled: the one `GET /account/session-config` this tab makes.
-     */
-    let modeRequest: Promise<void> | undefined;
-
-    /**
-     * Reads how this deployment keeps people signed in, once per tab (public, so it needs no
-     * session). A failed read is dropped and retried on the next call; until it lands the store
-     * behaves as `jwt`, the default, so an unreachable backend never invents a cookie session.
+     * Reads how this deployment keeps people signed in, once per tab, from the public config
+     * (`GET /config`, shared with every other reader of it). A failed read is dropped and retried
+     * on the next call; until it lands the store behaves as `jwt`, the default, so an unreachable
+     * backend never invents a cookie session.
      *
      * @returns A promise that always resolves, once {@link mode} is known or the read failed.
      */
-    const loadSessionMode = (): Promise<void> => {
-        modeRequest ??= apiGetSessionConfig()
-            .then((config) => {
-                mode.value = config.mode;
-                lifetimes.value = {
-                    lifetimeSeconds: config.lifetimeSeconds,
-                    staffLifetimeSeconds: config.staffLifetimeSeconds
-                };
-            })
-            .catch(() => {
-                modeRequest = undefined;
-            });
-        return modeRequest;
-    };
+    const loadSessionMode = (): Promise<void> =>
+        loadConfig().then((config) => {
+            if (!config) return;
+            mode.value = config.session.mode;
+            lifetimes.value = {
+                lifetimeSeconds: config.session.lifetimeSeconds,
+                staffLifetimeSeconds: config.session.staffLifetimeSeconds
+            };
+        });
 
     /**
      * Bumped each time {@link reloadAbilities} lands new rules. `LayoutDefault.vue` watches it to
@@ -449,28 +426,27 @@ export const useSessionStore = defineStore('session', () => {
 
     /**
      * The one abilities read in flight, or `undefined` between reads — single-flight, so a burst
-     * of 403s costs one `GET /account/abilities`.
+     * of 403s costs one `GET /account`.
      */
     let abilitiesInFlight: Promise<void> | undefined;
 
     /**
-     * Re-reads the rules the server enforces for the current token, without touching the viewer.
+     * Re-reads the rules the server enforces, from `GET /account`, without touching the viewer.
      * Called when the rules may have moved under a live session: after a 403 (a role was taken
-     * away) and after a token refresh. It changes rendering only; the server stays the authority.
+     * away). It changes rendering only; the server stays the authority. Sent passive, so the
+     * re-read is not counted as the person acting.
      *
      * Fails quietly and keeps the rules it already has: a read that cannot land must not grey out
      * a menu the visitor is still entitled to. A read issued with no viewer is skipped.
      *
-     * @param announce - Whether a landed read bumps {@link abilitiesSignal}. `setViewer` passes
-     *  `false`: the rules it loads are the first ones, not a change.
      * @returns A promise resolving once the read has settled. Never rejects.
      */
-    const reloadAbilities = (announce = true): Promise<void> => {
+    const reloadAbilities = (): Promise<void> => {
         if (!viewer.value) return Promise.resolve();
-        abilitiesInFlight ??= apiGetMyAbilities(asPassive())
+        abilitiesInFlight ??= apiGetAccount(asPassive())
             .then((answer) => {
-                setAbilities(answer);
-                if (announce) abilitiesSignal.value += 1;
+                setAbilities(answer.abilities);
+                abilitiesSignal.value += 1;
             })
             .catch(() => undefined)
             .finally(() => {
@@ -480,37 +456,48 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     /**
-     * Records who the token belongs to, and asks the server what they may do.
+     * Records the idle clock the server answered: from `GET /account`, a sign-in or a touch.
      *
-     * The two travel together on purpose: a viewer without rules is a shell that hides every
-     * control the visitor is entitled to, and the rules are fetched rather than derived from
+     * @param activity - the server's clock; `idleTimeoutSeconds` is absent for a shopper, whose
+     *  session never idles out
+     */
+    const applyActivity = (activity: SessionActivity) => {
+        idle.value = activity.idleTimeoutSeconds
+            ? {
+                  timeoutMs: activity.idleTimeoutSeconds * 1000,
+                  lastActiveAt: Date.parse(activity.lastActiveAt)
+              }
+            : undefined;
+        if (idle.value) sessionChannel?.postMessage({ type: 'activity', at: Date.now() });
+    };
+
+    /**
+     * Records who the token belongs to, with what they may do and their idle clock — the three the
+     * server answers together (`GET /account`, a sign-in).
+     *
+     * The three travel together on purpose: a viewer without rules is a shell that hides every
+     * control the visitor is entitled to, and the rules are the server's rather than derived from
      * `role` because only the server's own rules say what a name allows.
      *
-     * **Awaited by whoever restores the session**, so a route guard asking {@link can} decides on
-     * the rules rather than on the empty abilities that precede them — the redirect it would
-     * otherwise perform is indistinguishable from "not allowed".
-     *
-     * It fails quietly: an ability that never arrives is the empty one, which greys everything
-     * out. A shell that refused to render because it could not learn what to hide would be worse
-     * than one that hides too much.
-     *
-     * @param nextViewer - The claims projection, or `undefined` to forget it.
-     * @returns A promise resolving once the rules that go with the viewer have settled.
+     * @param nextViewer - The claims projection, or `undefined` to forget it (which also empties
+     *  the abilities).
+     * @param answer - The `abilities` and `activity` that came with it. Omitted where the answer
+     *  carries none (a profile write): the rules already held stay.
      */
-    const setViewer = (nextViewer?: SessionViewer): Promise<void> => {
+    const setViewer = (
+        nextViewer?: SessionViewer,
+        answer?: { abilities: Abilities; activity: SessionActivity }
+    ) => {
         viewer.value = nextViewer;
-
         if (!nextViewer) {
             setAbilities();
-            return Promise.resolve();
+            return;
         }
-
-        // Read the idle clock once per signed-in stretch, from the server's numbers. Not on
-        // every viewer load: a touch counts as activity, and a silent token refresh is not the
-        // person acting. Here and not in `loadViewer`, so a form sign-in (which never reloads the
-        // viewer) is asked too.
-        return reloadAbilities(false).then(() => (idleRead ? undefined : touchSession()));
+        if (!answer) return;
+        setAbilities(answer.abilities);
+        applyActivity(answer.activity);
     };
+
     /**
      * The one refresh attempt in flight, or `undefined` between attempts — single-flight (several
      * requests failing with 401 in the same tick must share one `POST /account/refresh`, not fire
@@ -544,13 +531,16 @@ export const useSessionStore = defineStore('session', () => {
                 asPassive({ _refreshed: true } as AxiosRequestConfigWithRetry)
             )
                 .then((data) => {
-                    const { token } = data;
+                    const { token, abilities } = data;
                     if (epochAtStart === sessionEpoch.value) {
                         setAccessToken(token);
-                        // The rules may have moved while the old token lived; the first restore
-                        // has no viewer yet and reads them with `loadViewer` instead.
-                        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- reloadAbilities never rejects (a failed read leaves the empty abilities)
-                        void reloadAbilities();
+                        // The rules may have moved while the old token lived, and the answer
+                        // carries them. The first restore has no viewer yet and reads them with
+                        // `loadViewer` instead.
+                        if (viewer.value) {
+                            setAbilities(abilities);
+                            abilitiesSignal.value += 1;
+                        }
                     }
                     return token;
                 })
@@ -594,16 +584,20 @@ export const useSessionStore = defineStore('session', () => {
         apiGetAccount().then((data) => {
             // Typed structurally rather than as the generated `User`: naming the domain entity
             // here would put a `User` back into `infrastructure`.
-            return setViewer({
-                id: data.id,
-                email: data.email,
-                // Absent for a plain customer: only a staff role is ever stored.
-                role: data.role,
-                imageUrl: data.imageUrl,
-                thumbnailUrl: data.thumbnailUrl,
-                // Absent means unverified: the backend sends the field only once it's set.
-                verified: data.verifiedAt !== undefined
-            }).then(() => data);
+            setViewer(
+                {
+                    id: data.id,
+                    email: data.email,
+                    // Absent for a plain customer: only a staff role is ever stored.
+                    role: data.role,
+                    imageUrl: data.imageUrl,
+                    thumbnailUrl: data.thumbnailUrl,
+                    // Absent means unverified: the backend sends the field only once it's set.
+                    verified: data.verifiedAt !== undefined
+                },
+                data
+            );
+            return data;
         });
 
     /**
@@ -623,7 +617,6 @@ export const useSessionStore = defineStore('session', () => {
         // The record versions the last person read are theirs; the next one must not send them.
         clearEtags();
         idle.value = undefined;
-        idleRead = false;
         // The httpOnly jwt cookie can only be cleared server-side; isAuth/rememberMe are JS-accessible.
         // js-toolkit `deleteCookie(name)`: rewrites it already expired on `path=/`, where both live.
         deleteCookie(BROWSER_STORAGE_NAME.isAuth);
@@ -655,29 +648,17 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     /**
-     * Counts the session as active and reads its idle clock — the "still there?" answer, and the
-     * first read after a sign-in or a restore. A failure is quiet: the clock then stays as it was,
-     * and the server's own `SESSION_IDLE` is the authority either way.
+     * Counts the session as active and reads its idle clock — the "still there?" answer. A failure
+     * is quiet: the clock then stays as it was, and the server's own `SESSION_IDLE` is the
+     * authority either way.
      *
      * @returns A promise resolving once the clock reflects the server's answer.
      */
-    const touchSession = (): Promise<void> => {
-        idleRead = true;
-        return apiTouchSession()
-            .then((data) => {
-                idle.value = data.idleTimeoutSeconds
-                    ? {
-                          timeoutMs: data.idleTimeoutSeconds * 1000,
-                          lastActiveAt: Date.parse(data.lastActiveAt)
-                      }
-                    : undefined;
-                if (idle.value) sessionChannel?.postMessage({ type: 'activity', at: Date.now() });
-            })
-            .catch(() => {
-                // Quiet, and asked again by the next viewer load.
-                idleRead = false;
-            });
-    };
+    const touchSession = (): Promise<void> =>
+        apiTouchSession()
+            .then(applyActivity)
+            // Quiet: the clock stays as it was.
+            .catch(() => undefined);
 
     /**
      * Takes up the session another tab just opened: renews the token or the cookie marker from
@@ -777,7 +758,6 @@ export const useSessionStore = defineStore('session', () => {
     return {
         tenantAbility,
         platformAbility,
-        declaredSubjects,
         grantableRoles,
         secondFactorRequired,
         setAbilities,

@@ -19,6 +19,9 @@ import {
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
+import { accountView } from '../../../../tests/support/unit/account-view.ts';
+import { configAnswer } from '../../../../tests/support/unit/config-answer.ts';
+
 import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
@@ -26,11 +29,13 @@ wireModulesIntoCore();
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) =>
         Promise.resolve(
-            parseOrvalFixture(config.method, config.url, {
-                id: 'u1',
-                username: 'ada',
-                email: 'ada@example.com'
-            })
+            parseOrvalFixture(
+                config.method,
+                config.url,
+                config.url === '/config'
+                    ? configAnswer()
+                    : accountView({ id: 'u1', username: 'ada', email: 'ada@example.com' })
+            )
         )
     )
 }));

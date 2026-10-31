@@ -6,14 +6,16 @@ import { byTemplate, inLocale, mailAbout } from '../../../../scripts/e2e/mail-fi
 
 describe('byTemplate', () => {
     it('keeps the named template and drops the others', () => {
-        const matches = byTemplate('orders.placed');
+        const matches = byTemplate('orders.order-confirm');
 
-        expect(matches({ to: 'a@b.c', subject: 's', template: 'orders.placed' })).toBe(true);
-        expect(matches({ to: 'a@b.c', subject: 's', template: 'orders.shipped' })).toBe(false);
+        expect(matches({ to: 'a@b.c', subject: 's', template: 'orders.order-confirm' })).toBe(true);
+        expect(matches({ to: 'a@b.c', subject: 's', template: 'orders.order-cancelled' })).toBe(
+            false
+        );
     });
 
     it('lets an inbox email through, which has no template name', () => {
-        expect(byTemplate('orders.placed')({ to: 'a@b.c', subject: 's' })).toBe(true);
+        expect(byTemplate('orders.order-confirm')({ to: 'a@b.c', subject: 's' })).toBe(true);
     });
 });
 

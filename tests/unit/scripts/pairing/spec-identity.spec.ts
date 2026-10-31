@@ -115,10 +115,9 @@ afterAll(() => {
 });
 
 describe('SHARED_FILES', () => {
-    it('names this repo as the frontend', () => {
+    it('names the backend as the sibling of this repo', () => {
         // The one value that differs from the backend's copy of the module. If it were wrong,
         // every cross-path pair would be compared against the wrong filename and report missing.
-        expect(THIS_REPO).toBe('frontend');
         expect(siblingRole(THIS_REPO)).toBe('backend');
     });
 

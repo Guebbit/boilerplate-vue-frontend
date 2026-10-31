@@ -176,10 +176,7 @@ interesting ones**, and until this table the asymmetry was written down nowhere 
 [`account`](./account.md) folds the address book and the account of record into one module, and
 [`observability`](./observability.md) renders three backend domains over one console and playground.
 
-`tests/cross-cutting/backend-pairing.spec.ts` holds the same table in code and fails when an enabled
-module has no entry, or when an entry pairs with something other than its own name and gives no
-reason. The gap cannot widen quietly — though keeping the table below in step with it is a review
-job, not a checked one.
+Keeping the table below in step with the backend is a review job, not a checked one.
 
 | This repository                                                | boilerplate-node-backend          | Note                                                                                                                                                                         |
 | -------------------------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

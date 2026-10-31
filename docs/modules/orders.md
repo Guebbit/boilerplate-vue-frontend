@@ -21,22 +21,7 @@
 
 ## The map
 
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
-flowchart LR
-    orders["<b>orders</b>"] ==>|"customer-supplier"| cart["cart"]
-    orders["<b>orders</b>"] -.->|"published-language"| delivery["delivery"]
-    orders["<b>orders</b>"] ==>|"customer-supplier"| payments["payments"]
-    orders["<b>orders</b>"] -.->|"published-language"| returns["returns"]
-
-    classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
-    classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
-    classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
-    classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
-    class cart core;
-    class delivery,payments,returns supporting;
-    class orders self;
-```
+The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
 - → `cart` **customer-supplier** — The reorder button asks the cart store to refill itself from a past order.
 - → `delivery` **published-language** — Mounts `ShipmentPanel`; the parcel renders itself and this module never touches a shipment.
@@ -186,7 +171,7 @@ Store `orders`, from `store.ts`. Only what the setup function returns is listed 
 | `orders/:id`      | `OrderTarget` | `auth` | —               | `views/Order.vue`      |
 | `orders/:id/edit` | `OrderEdit`   | `auth` | `update Order`  | `views/OrderEdit.vue`  |
 
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
+Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
 ## Wiring
 

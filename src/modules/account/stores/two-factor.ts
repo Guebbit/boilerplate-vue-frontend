@@ -408,7 +408,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
                 }
                 useSessionStore().adoptSession(data, remember);
                 return useProfileStore()
-                    .fetchProfile(true)
+                    .fetchProfile(true, data.account)
                     .then(() => {
                         clearChallenge();
                         return 'session' as const;

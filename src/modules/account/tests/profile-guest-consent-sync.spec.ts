@@ -14,6 +14,7 @@ import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts'
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { accountView } from '../../../../tests/support/unit/account-view.ts';
 
 wireModulesIntoCore();
 
@@ -49,16 +50,10 @@ beforeEach(() => {
     // same reasoning as `session.spec.ts`'s own `clearSession()` reset.
     deleteCookie('analyticsConsent');
     responses = {
-        'GET /account': NEVER_ASKED_USER,
-        'PATCH /account': { ...NEVER_ASKED_USER, analyticsConsent: true },
+        'GET /account': accountView(NEVER_ASKED_USER),
+        'PATCH /account': { ...NEVER_ASKED_USER, analyticsConsent: true }
         // The rules `setViewer` fetches for every freshly-loaded profile — same fixture shape as
         // `profile.spec.ts`'s own.
-        'GET /account/abilities': {
-            platform: [],
-            tenant: [['read', 'Product', { active: true, deletedAt: null }]],
-            version: 36,
-            subjects: ['Product']
-        }
     };
 });
 
@@ -93,10 +88,10 @@ describe('the guest-consent sync', () => {
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
         vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
         useAnalyticsConsentStore().grant();
-        responses['GET /account'] = {
+        responses['GET /account'] = accountView({
             ...NEVER_ASKED_USER,
             analyticsConsent: false
-        };
+        });
 
         return useProfileStore()
             .fetchProfile(true)

@@ -3,7 +3,7 @@
  * The OAuth half of the post-login redirect: `Login.vue`/`Signup.vue` must forward the page's own `?continue=` onto every
  * OAuth button's `href`, through the real `oauthStartUrl` (`oauth.spec.ts` already pins that
  * function's own `?continue=` encoding). The provider list is real too, off a mocked
- * `GET /account/oauth/providers` — same as `oauth.spec.ts`'s own transport mock — so the button
+ * `GET /config` — same as `oauth.spec.ts`'s own transport mock — so the button
  * this suite reads actually renders.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -18,12 +18,14 @@ import { orvalMutator } from '@/infrastructure/http';
 import { instance } from '@/infrastructure/http/client.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { configAnswer } from '../../../../tests/support/unit/config-answer.ts';
+import { resetConfig } from '@/infrastructure/config.ts';
 
 wireModulesIntoCore();
 
 /** Canned responses per `METHOD /url` key: one OAuth provider, `google`. */
 const RESPONSES: Record<string, unknown> = {
-    'GET /account/oauth/providers': { providers: ['google'] }
+    'GET /config': configAnswer({ oauthProviders: ['google'] })
 };
 
 vi.mock('@/infrastructure/http', () => ({
@@ -63,6 +65,7 @@ const mountView = (View: Component) => {
 };
 
 beforeEach(() => {
+    resetConfig();
     currentQuery = {};
     vi.mocked(orvalMutator).mockClear();
     instance.defaults.baseURL = '';

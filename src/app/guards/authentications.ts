@@ -5,7 +5,12 @@
  * shown can never disagree. `tryRestoreAuth` silently rehydrates the session before it runs.
  */
 import { storeToRefs } from 'pinia';
-import { useSessionStore, type PermissionAction } from '@/infrastructure/session';
+import {
+    useSessionStore,
+    type ActionOn,
+    type PermissionAction,
+    type PermissionSubject
+} from '@/infrastructure/session';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { getCookie } from '@guebbit/js-toolkit';
 import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
@@ -38,13 +43,13 @@ export type RouteAccess = 'guest' | 'auth' | 'open';
  * (`products`) and the subject is the singular type (`Product`), so a key string would have to be
  * translated here against a table this repo has no copy of.
  *
- * The subject is a plain string on purpose: the closed list lives in
- * `shared/authorization-keys.yaml`, which this repo does not carry, and a hand-kept union here
- * would be a duplicate free to drift. A subject nobody declares simply matches no rule, so a typo
- * makes a screen unreachable — the fail-closed direction, and each module's `tests/routes.spec.ts`
- * pins the pair it expects.
+ * A pair per declared subject: `['checkout', 'Order']` is a compile error, because no rule carries
+ * `checkout` on `Order`. The lists come from `@api/permission-vocabulary`, generated from the
+ * `authorization-keys.yaml` that `sync:frontend` hands over.
  */
-export type RoutePermission = readonly [action: PermissionAction, subject: string];
+export type RoutePermission = {
+    [TSubject in PermissionSubject]: readonly [action: ActionOn<TSubject>, subject: TSubject];
+}[PermissionSubject];
 
 /**
  * Declares `meta.access` so its VALUE is checked: `access: 'admni'` is a compile error.
@@ -110,7 +115,7 @@ export const canAccess = (
     meta: Pick<RouteMeta, 'access' | 'can'>,
     visitor: {
         isAuth: boolean;
-        can: (action: PermissionAction, subject: string) => boolean;
+        can: (action: PermissionAction, subject: PermissionSubject) => boolean;
     }
 ): boolean => {
     if (meta.access === 'guest') return !visitor.isAuth;
@@ -127,7 +132,7 @@ export const canAccess = (
  * Only attempted when the `isAuth` cookie is present — avoids a pointless
  * network round-trip for every guest page view. The cookie is written by the session store when
  * it adopts a session, so its presence means one existed on this browser at some point.
- * The mode is read first (`GET /account/session-config`, once per tab): `jwt` mints an access
+ * The mode is read first (from `GET /config`, once per tab): `jwt` mints an access
  * token from the refresh cookie, `cookie` has nothing to mint and goes straight to asking who
  * the cookie belongs to.
  *

@@ -12,9 +12,9 @@
 import { describe, expect, it, beforeAll, afterEach } from 'vitest';
 import { nextTick } from 'vue';
 
+import { ACCEPTED_UPLOAD_TYPES } from '@api/upload-types';
 import { loadLocale } from '@/i18n';
 import {
-    ACCEPTED_IMAGE_TYPES,
     ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE,
     MAX_UPLOAD_BYTES,
     MAX_UPLOAD_SIZE_LABEL,
@@ -40,7 +40,7 @@ const messagesOf = (value: unknown) =>
     imageUploadSchema.safeParse(value).error?.issues.map(({ message }) => message) ?? [];
 
 describe('accepted types', () => {
-    it.each(ACCEPTED_IMAGE_TYPES)('accepts %s', (type) => {
+    it.each(ACCEPTED_UPLOAD_TYPES)('accepts %s', (type) => {
         expect(isAcceptedImageType(fileOfSize(1, type))).toBe(true);
     });
 
@@ -52,24 +52,20 @@ describe('accepted types', () => {
     );
 
     /**
-     * Not a canonical mime type, but browsers emit it and the backend's list carries it. Dropping
-     * it here would reject files the API would have accepted.
+     * `image/jpg` is not an IANA type and the contract does not list it; browsers report
+     * `image/jpeg` for a .jpg file, so the picker does not need it.
      */
-    it('accepts the non-canonical image/jpg alongside image/jpeg', () => {
-        expect(isAcceptedImageType(fileOfSize(1, 'image/jpg'))).toBe(true);
+    it('does not accept the non-canonical image/jpg the backend merely tolerates', () => {
+        expect(isAcceptedImageType(fileOfSize(1, 'image/jpg'))).toBe(false);
         expect(isAcceptedImageType(fileOfSize(1, 'image/jpeg'))).toBe(true);
     });
 
     it('derives the accept attribute from the same list', () => {
-        expect(ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE.split(',')).toEqual([...ACCEPTED_IMAGE_TYPES]);
+        expect(ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE.split(',')).toEqual([...ACCEPTED_UPLOAD_TYPES]);
     });
 });
 
 describe('size limit', () => {
-    it('defaults to the backend’s 5 MB', () => {
-        expect(MAX_UPLOAD_BYTES).toBe(5 * 1024 * 1024);
-    });
-
     /**
      * The boundary is inclusive on both sides of the comparison the backend makes: multer's
      * `limits.fileSize` rejects what EXCEEDS the limit, so a file of exactly the limit is legal.

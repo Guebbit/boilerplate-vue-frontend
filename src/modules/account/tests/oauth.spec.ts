@@ -10,6 +10,8 @@ import { orvalMutator } from '@/infrastructure/http';
 import { instance } from '@/infrastructure/http/client.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { configAnswer } from '../../../../tests/support/unit/config-answer.ts';
+import { resetConfig } from '@/infrastructure/config.ts';
 
 wireModulesIntoCore();
 
@@ -30,9 +32,10 @@ vi.mock('@/infrastructure/http', () => ({
 
 beforeEach(() => {
     setActivePinia(createPinia());
+    resetConfig();
     vi.clearAllMocks();
     responses = {
-        'GET /account/oauth/providers': { providers: ['google', 'github'] }
+        'GET /config': configAnswer({ oauthProviders: ['google', 'github'] })
     };
 });
 
@@ -112,7 +115,7 @@ describe('useOAuthProvidersStore', () => {
             }));
 
     it('a failed request resolves to the empty list and stays retryable', () => {
-        responses['GET /account/oauth/providers'] = new Error('network down');
+        responses['GET /config'] = new Error('network down');
         const store = useOAuthProvidersStore();
 
         return store
@@ -120,9 +123,7 @@ describe('useOAuthProvidersStore', () => {
             .then((providers) => {
                 expect(providers).toEqual([]);
                 // Not cached as "no providers, forever" — a transient failure gets another try.
-                responses['GET /account/oauth/providers'] = {
-                    providers: ['github']
-                };
+                responses['GET /config'] = configAnswer({ oauthProviders: ['github'] });
                 return store.fetchProviders();
             })
             .then((providers) => {

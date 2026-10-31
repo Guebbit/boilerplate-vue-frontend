@@ -17,8 +17,7 @@ import {
     getPipelineStats,
     getProductSalesSeries,
     getProductStats,
-    getSalesStats,
-    getStatsLimits
+    getSalesStats
 } from '@api';
 import type {
     CategoryStats,
@@ -96,19 +95,21 @@ export const useStatsStore = defineStore('stats', () => {
     const productSeries = ref<ProductSeries>();
 
     /**
-     * The ceilings a period may not pass, as the API states them; `undefined` until read.
+     * The ceilings a period may not pass, as the API states them on every period answer;
+     * `undefined` until the first answer lands.
      */
     const limits = ref<StatsLimits>();
 
     /**
-     * Reads the period ceilings the form checks against.
+     * Keeps a period answer's ceilings, and hands the answer back for the caller to hold.
      *
-     * @returns A promise resolving once they are held.
+     * @param response - Any period answer.
+     * @returns The same answer.
      */
-    const loadLimits = () =>
-        getStatsLimits().then((response) => {
-            limits.value = response;
-        });
+    const takeLimits = <T extends { limits: StatsLimits }>(response: T): T => {
+        limits.value = response.limits;
+        return response;
+    };
 
     /**
      * Loads every dashboard block for one period, together.
@@ -122,22 +123,22 @@ export const useStatsStore = defineStore('stats', () => {
         return fetchAny(() =>
             Promise.all([
                 getSalesStats({ from, to, interval }).then((response) => {
-                    sales.value = response;
+                    sales.value = takeLimits(response);
                 }),
                 getProductStats({ from, to, limit: TOP_PRODUCTS }).then((response) => {
-                    products.value = response;
+                    products.value = takeLimits(response);
                 }),
                 getCategoryStats({ from, to }).then((response) => {
-                    categories.value = response;
+                    categories.value = takeLimits(response);
                 }),
                 getPaymentMixStats({ from, to }).then((response) => {
-                    paymentMix.value = response;
+                    paymentMix.value = takeLimits(response);
                 }),
                 getOperationsStats({ from, to }).then((response) => {
-                    operations.value = response;
+                    operations.value = takeLimits(response);
                 }),
                 getCustomerStats({ from, to }).then((response) => {
-                    customers.value = response;
+                    customers.value = takeLimits(response);
                 }),
                 // A snapshot of now: the period does not apply to it.
                 getPipelineStats().then((response) => {
@@ -157,7 +158,7 @@ export const useStatsStore = defineStore('stats', () => {
     const loadProductSales = (productId: string, period: StatsPeriodChoice) =>
         fetchAny(() =>
             getProductSalesSeries(productId, period).then((response) => {
-                productSeries.value = response;
+                productSeries.value = takeLimits(response);
                 return productSeries.value;
             })
         );
@@ -173,7 +174,6 @@ export const useStatsStore = defineStore('stats', () => {
         pipeline,
         productSeries,
         limits,
-        loadLimits,
         loadDashboard,
         loadProductSales
     };

@@ -97,7 +97,7 @@ describe('Image upload', () => {
         it('offers a file field that accepts only the types the API takes', () => {
             cy.get('input[type=file]')
                 .should('have.attr', 'accept')
-                .and('equal', 'image/png,image/jpg,image/jpeg,image/webp');
+                .and('equal', 'image/png,image/jpeg,image/webp');
         });
 
         /**

@@ -46,7 +46,7 @@ const openContact = (address: string) => {
                 global: {
                     plugins: [router, vuetify, i18n],
                     // HumanCheck's own branching is tests/unit/ui/human-check.spec.ts's job, and the
-                    // real thing would fire a real GET /antibot/config.
+                    // real thing would fire a real GET /config.
                     stubs: { HumanCheck: { template: '<div />' } }
                 }
             })

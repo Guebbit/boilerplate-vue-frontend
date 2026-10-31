@@ -12,15 +12,23 @@ import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { configAnswer } from '../../../../tests/support/unit/config-answer.ts';
+import { resetConfig } from '@/infrastructure/config.ts';
 
 wireModulesIntoCore();
 
-/** Which providers the mocked `GET /account/oauth/providers` answers with, set per test. */
+/** Which providers the mocked `GET /config` answers with, set per test. */
 let providers: string[] = [];
 
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) =>
-        Promise.resolve(parseOrvalFixture(config.method, config.url, { providers }))
+        Promise.resolve(
+            parseOrvalFixture(
+                config.method,
+                config.url,
+                configAnswer({ oauthProviders: providers })
+            )
+        )
     )
 }));
 
@@ -36,7 +44,10 @@ const mountBlock = () => {
     return flushPromises().then(() => wrapper);
 };
 
-beforeEach(() => loadLocale('en').then(() => (i18n.global.locale.value = 'en')));
+beforeEach(() => {
+    resetConfig();
+    return loadLocale('en').then(() => (i18n.global.locale.value = 'en'));
+});
 
 describe('OAuthButtons', () => {
     it('shows the notice with a link to the terms and one to the privacy notice', () => {

@@ -158,13 +158,13 @@ multi-layer gradient, a sticky table cell, or the last step of the
 - Secondary text is the theme's medium emphasis (`variables['medium-emphasis-opacity']`, 0.82):
   use `opacity-muted`, never a `.v-*` opacity rule.
 - `tests/cross-cutting/design-tokens.spec.ts` guards it: no literal, no unknown theme name, no
-  undeclared breakpoint, and no colour-bearing declaration repeated across SFC blocks.
+  undeclared breakpoint.
 
 ```mermaid
 flowchart LR
-    SFC["SFC style block"] --> Spec["design-tokens.spec<br/><i>literal · theme name · breakpoint · repeat</i>"]
-    Spec -->|"repeated"| Main["class in main.css<br/><i>.surface-glow</i>"]
-    Spec -->|"unique"| Stay["stays scoped"]
+    SFC["SFC style block"] --> Spec["design-tokens.spec<br/><i>literal · theme name · breakpoint</i>"]
+    Spec -->|"fails"| Main["use a theme token<br/><i>or a class in main.css</i>"]
+    Spec -->|"passes"| Stay["stays scoped"]
 ```
 
 ## Overriding Vuetify: the order of resort
@@ -186,8 +186,8 @@ flowchart TD
     Hook -->|no| Allow["an unlayered rule with<br/>/* css-allow check -- why */"]
 ```
 
-- `tests/cross-cutting/css-invasiveness.spec.ts` holds it: a `.v-*` selector, `:deep`, `!important`,
-  a `--v-*` override, a raw z-index, a utility that duplicates a prop. `npm run audit:css` lists every
+- `tests/cross-cutting/css-invasiveness.spec.ts` holds it: a `.v-*` selector, `:deep`,
+  a `--v-*` override, a raw z-index. `npm run audit:css` lists every
   hit with its fix. Today's hits are frozen in a baseline that only shrinks
   ([Design Lint](../tools/design-lint.md#the-invasive-css-scan)).
 - **The allowance** is the last step, never the first. It goes right before the one rule or element

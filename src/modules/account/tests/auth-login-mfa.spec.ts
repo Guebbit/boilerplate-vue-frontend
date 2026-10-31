@@ -14,6 +14,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { accountView } from '../../../../tests/support/unit/account-view.ts';
 
 wireModulesIntoCore();
 
@@ -46,14 +47,8 @@ beforeEach(() => {
     responses = {
         // The caller's own rules. The session store fetches these for every identified viewer,
         // so every spec that logs somebody in needs an answer for them.
-        'GET /account/abilities': {
-            platform: [],
-            tenant: [['read', 'Product', { active: true, deletedAt: null }]],
-            version: 36,
-            subjects: ['Product']
-        },
         'POST /account/login': { token: 'jwt-token' },
-        'GET /account': { id: 'u1', username: 'ada', email: 'ada@example.com' }
+        'GET /account': accountView({ id: 'u1', username: 'ada', email: 'ada@example.com' })
     };
 });
 

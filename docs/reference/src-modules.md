@@ -15,10 +15,6 @@ paired backend uses, so a domain is added or removed on both sides the same way.
 Everything below describes a **file shape** — what a `store.ts` is, wherever you find one. What each
 domain does with those shapes, which of them it carries, and what it owns is on its own page under
 [Modules](../modules/).
-
-The shapes below are also enforced. `tests/cross-cutting/module-file-shapes.spec.ts` holds the same
-catalogue in code, and fails on a file in a module folder that matches none of them — so a new shape
-costs one line here and one there, and stops being invisible.
 :::
 
 ## The shape of one module

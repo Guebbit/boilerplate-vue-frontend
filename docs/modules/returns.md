@@ -8,18 +8,18 @@ the staff queue that approves and receives them, cancelling what has not shipped
 **Breaks if you change** — the order page's withdrawal control and returns form.
 :::
 
-| Fact                    | This module                             |
-| ----------------------- | --------------------------------------- |
-| **Subdomain**           | `supporting`                            |
-| **Screens**             | 2 — `ReturnsList` · `ReturnTarget`      |
-| **Store**               | `returns`                               |
-| **Menu entries**        | `ReturnsList`                           |
-| **API calls**           | 7                                       |
-| **Depends on**          | _nothing_                               |
-| **Depended on by**      | [`orders`](./orders.md)                 |
-| **Languages**           | `en` · `it`                             |
-| **Publishes**           | `WithdrawalPanel`                       |
-| **Backend counterpart** | `returns` in `boilerplate-node-backend` |
+| Fact                    | This module                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| **Subdomain**           | `supporting`                                                                 |
+| **Screens**             | 3 — `ReturnsList` · `SalesReturns` · `ReturnTarget`                          |
+| **Store**               | `returns`                                                                    |
+| **Menu entries**        | `ReturnsList` (account) · `SalesReturns` (admin, wears the staff work badge) |
+| **API calls**           | 7                                                                            |
+| **Depends on**          | _nothing_                                                                    |
+| **Depended on by**      | [`orders`](./orders.md)                                                      |
+| **Languages**           | `en` · `it`                                                                  |
+| **Publishes**           | `WithdrawalPanel`                                                            |
+| **Backend counterpart** | `returns` in `boilerplate-node-backend`                                      |
 
 ## The map
 
@@ -27,28 +27,13 @@ the staff queue that approves and receives them, cancelling what has not shipped
 `WithdrawalPanel`, so the order never calls a returns operation itself. A return links back to its
 order by route name, guarded by `linkIfRouted`, so no edge points the other way.
 
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
-flowchart LR
-    orders["orders"] -.->|"published-language"| returns["<b>returns</b>"]
-```
+The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
 - `orders` → **published-language** — Mounts `WithdrawalPanel`; the withdrawal and the order's returns list are the component's own business.
 
 Inside the module, the pieces connect like this:
 
-```mermaid
-flowchart LR
-    orders["orders (Order.vue)"] -.->|mounts| panel["WithdrawalPanel"]
-    panel --> form["ReturnRequestForm"]
-    form --> store["returns store"]
-    panel --> store
-    list["ReturnsList"] --> store
-    detail["Return"] --> store
-    detail --> staff["ReturnStaffActions"]
-    staff --> store
-    store -->|"POST /returns · GET /returns · moves"| api[("backend returns")]
-```
+The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
 ## The story
 

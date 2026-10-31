@@ -23,6 +23,7 @@ import {
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 import * as schemas from '@api/schemas';
+import { accountView } from '../../../../tests/support/unit/account-view.ts';
 
 wireModulesIntoCore();
 
@@ -68,18 +69,9 @@ beforeEach(() => {
     vi.clearAllMocks();
     responses = {
         'POST /account/login': { token: 'jwt-token' },
-        'GET /account': USER,
+        'GET /account': accountView(USER),
         // The rules the server would publish for this viewer. The store unpacks them with CASL's
         // own reader, so a fixture that is not packed is a fixture no client could use.
-        'GET /account/abilities': {
-            platform: [],
-            tenant: [
-                ['read', 'Product', { active: true, deletedAt: null }],
-                ['read', 'Order', { userId: 'u1', deletedAt: null }]
-            ],
-            version: 36,
-            subjects: ['Order', 'Product']
-        },
         // `202`: the account is locked now and erased at `purgeAt` unless restored first.
         'DELETE /account': {
             requestedAt: '2026-10-24T10:00:00.000Z',
@@ -308,9 +300,7 @@ describe('the self-service actions', () => {
                 // learning what to hide would be worse than one that hides too much for a moment
                 // — so the order they land in, and the idle-clock read after them, are not facts
                 // worth pinning.
-                expect(requestedUrls().slice(-3)).toEqual(
-                    expect.arrayContaining(['/account', '/account/abilities'])
-                );
+                expect(requestedUrls().slice(-3)).toEqual(expect.arrayContaining(['/account']));
             });
     });
 
@@ -345,9 +335,7 @@ describe('the self-service actions', () => {
             .then(() => {
                 // Authenticated: the freshly swapped-in address is pulled back in, and the rules
                 // that go with it follow — same sorted-tail reasoning as the verification case.
-                expect(requestedUrls().slice(-3)).toEqual(
-                    expect.arrayContaining(['/account', '/account/abilities'])
-                );
+                expect(requestedUrls().slice(-3)).toEqual(expect.arrayContaining(['/account']));
             });
     });
 });

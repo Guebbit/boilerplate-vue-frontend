@@ -6,10 +6,10 @@
  * enforces.
  *
  * `foundation` ships with every deployment, whatever the next project turns this boilerplate
- * into. `shop` is the removable pet-supply demo domain — exactly `src/demo-modules.ts`'s
- * `DEMO_MODULE_NAMES` list, the manifest for `npm run demo:remove`. `example` is the one
- * module that exists only to be copied; it mirrors the backend's `example` group and is on that
- * list too, so `demo:remove` deletes it with the shop (copy it first).
+ * into. `shop` is the removable pet-supply demo domain. `example` is the one
+ * module that exists only to be copied; it mirrors the backend's `example` group. Both are what
+ * `npm run demo:remove` deletes ({@link demoModuleNames}), so the template goes with the shop
+ * (copy it first).
  *
  * Read by `eslint.config.ts`'s `foundation-may-not-import-shop` rule and by the spec above. No
  * folder move follows from this: a label locks in a direction the imports already respect,
@@ -20,9 +20,9 @@
 export type ModuleGroup = 'foundation' | 'shop' | 'example';
 
 /**
- * Every enabled module's group, by name. Deliberately explicit rather than derived from
- * `DEMO_MODULE_NAMES` — a module NOT on this list fails the spec instead of silently defaulting,
- * which is the whole point of asking a human to pick one.
+ * Every enabled module's group, by name. Deliberately explicit rather than derived — a
+ * module NOT on this list fails the spec instead of silently defaulting, which is the whole
+ * point of asking a human to pick one.
  */
 export const MODULE_GROUPS: Record<string, ModuleGroup> = {
     account: 'foundation',
@@ -45,3 +45,13 @@ export const MODULE_GROUPS: Record<string, ModuleGroup> = {
     webhooks: 'foundation',
     wishlist: 'shop'
 };
+
+/**
+ * Every module `npm run demo:remove` deletes: the `shop` and `example` groups.
+ *
+ * @returns The module names, in the map's order.
+ */
+export const demoModuleNames = (): string[] =>
+    Object.entries(MODULE_GROUPS)
+        .filter(([, group]) => group === 'shop' || group === 'example')
+        .map(([name]) => name);

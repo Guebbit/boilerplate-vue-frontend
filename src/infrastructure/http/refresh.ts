@@ -13,6 +13,7 @@
  */
 
 import { ERROR_CODES } from '@api/error-codes';
+import { ROUTES } from '@api/routes';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { instance } from './client.ts';
 import { onResponseReject } from './interceptors.ts';
@@ -25,34 +26,34 @@ import type {
 } from './types.ts';
 
 /**
- * Endpoints that must never trigger the refresh-and-retry flow: a 401 there is a genuine
- * credential failure, not an expired token.
+ * Operations that must never trigger the refresh-and-retry flow: a 401 there is a genuine
+ * credential failure, not an expired token. The contract marks them (`x-no-refresh`).
  */
-const REFRESH_EXCLUDED_PATHS = new Set([
-    '/account/login',
-    '/account/signup',
-    '/account/password/reset',
-    '/account/password/reset/confirm',
-    // A wrong or expired 2FA code answers 401 like any other business outcome. Without this, a
-    // visitor who still holds a valid refresh cookie from an earlier session gets a silent
-    // refresh-and-replay instead of "wrong code".
-    '/account/login/2fa',
-    '/account/login/2fa/send',
-    // A spent or expired claim check / restore link answers 401 or 422 like any business outcome.
-    '/account/login/restore',
-    '/account/restore'
-]);
+const NO_REFRESH_ROUTES = ROUTES.filter((route) => route.noRefresh);
 
 /**
  * Tells whether a failed request should skip the token refresh flow.
  *
  * @param url - Request URL, absolute or relative.
- * @returns `true` when the URL's pathname is one of {@link REFRESH_EXCLUDED_PATHS}.
+ * @param method - Request method; the route table is keyed on it as well.
+ * @returns `true` when the request is one of {@link NO_REFRESH_ROUTES}.
  */
-const shouldSkipRefresh = (url?: string) => {
+const shouldSkipRefresh = (url?: string, method = 'get') => {
     if (!url) return false;
-    return REFRESH_EXCLUDED_PATHS.has(toPathname(url));
+    const pathname = toPathname(url);
+    return NO_REFRESH_ROUTES.some(
+        (route) => route.method === method.toUpperCase() && route.pattern.test(pathname)
+    );
 };
+
+/**
+ * Whether a request is `GET /account` — the read that carries the abilities, so a 403 on it must
+ * not trigger another one.
+ *
+ * @param request - The failed request's config.
+ */
+const isAccountRead = (request?: AxiosRequestConfigWithRetry): boolean =>
+    request?.method?.toLowerCase() === 'get' && toPathname(request.url ?? '') === '/account';
 
 /**
  * Whether a 401 says the session ended for inactivity — the server's `SESSION_IDLE`.
@@ -105,7 +106,7 @@ export const onResponseRejectWithRefresh = (
     if (
         error.response?.status === 401 &&
         !originalRequest?._refreshed &&
-        !shouldSkipRefresh(originalRequest?.url)
+        !shouldSkipRefresh(originalRequest?.url, originalRequest?.method)
     ) {
         if (session.mode === 'cookie') return endCookieSession(error);
         return session.refreshToken().then((token) => {
@@ -119,13 +120,9 @@ export const onResponseRejectWithRefresh = (
         });
     }
     // A 403 on a signed-in request may mean the rules changed under the session (a role taken
-    // away): re-read them so the menu and buttons follow. The abilities call itself is excluded,
-    // or a refused read would ask again forever.
-    if (
-        error.response?.status === 403 &&
-        session.isAuth &&
-        toPathname(originalRequest?.url ?? '') !== '/account/abilities'
-    )
+    // away): re-read them (`GET /account` carries them) so the menu and buttons follow. That read
+    // itself is excluded, or a refused read would ask again forever.
+    if (error.response?.status === 403 && session.isAuth && !isAccountRead(originalRequest))
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- reloadAbilities never rejects (a failed read leaves the empty abilities)
         void session.reloadAbilities();
     return onResponseReject(error);

@@ -101,7 +101,7 @@ export const useDeletionRestoreStore = defineStore('accountDeletionRestore', () 
             }).then((data) => {
                 useSessionStore().adoptSession(data, remember ?? false);
                 return useProfileStore()
-                    .fetchProfile(true)
+                    .fetchProfile(true, data.account)
                     .then(() => {
                         clear();
                     });

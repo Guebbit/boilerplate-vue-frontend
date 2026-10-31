@@ -46,6 +46,7 @@
         "pagination-board": "Stock board pages",
         "pagination-ledger": "Ledger pages",
         "reason-backorder": "Backordered",
+        "reason-owed": "Owed",
         "reason-allocate": "Allocated",
         "column-backorder-limit": "Backorder limit",
         "column-backordered": "Backordered",

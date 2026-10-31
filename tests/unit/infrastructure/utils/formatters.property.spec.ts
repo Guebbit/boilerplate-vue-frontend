@@ -43,8 +43,8 @@ import {
     formatDateTime,
     formatDate
 } from '@/infrastructure/utils/formatters';
+import { ACCEPTED_UPLOAD_TYPES } from '@api/upload-types';
 import {
-    ACCEPTED_IMAGE_TYPES,
     MAX_UPLOAD_BYTES,
     isAcceptedImageType,
     isWithinUploadSizeLimit
@@ -252,7 +252,7 @@ describe('upload predicates', () => {
         fc.assert(
             fc.property(fc.string(), fc.nat(), (type, size) => {
                 expect(isAcceptedImageType(makeFile(type, size))).toBe(
-                    (ACCEPTED_IMAGE_TYPES as readonly string[]).includes(type)
+                    (ACCEPTED_UPLOAD_TYPES as readonly string[]).includes(type)
                 );
             }),
             RUN
@@ -260,7 +260,7 @@ describe('upload predicates', () => {
 
     it('is case-sensitive about the mime type, matching the backend', () =>
         fc.assert(
-            fc.property(fc.constantFrom(...ACCEPTED_IMAGE_TYPES), (type) => {
+            fc.property(fc.constantFrom(...ACCEPTED_UPLOAD_TYPES), (type) => {
                 // Documented rather than assumed: the backend's fileFilter compares verbatim, so
                 // a client-side check that lowercased first would accept files the server then
                 // rejects — a worse experience than rejecting early.

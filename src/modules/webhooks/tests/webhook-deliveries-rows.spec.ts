@@ -10,10 +10,10 @@ import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm';
 import WebhookDeliveriesFilters from '../components/WebhookDeliveriesFilters.vue';
 import { i18n } from '@/i18n';
 import vuetify from '@/ui/vuetify';
-import type { WebhookDelivery } from '@types';
+import type { WebhookDelivery, WebhookEventName } from '@types';
 
 /** Builds one delivery row; every field the contract requires, the rest left absent. */
-const delivery = (id: string, eventType: string): WebhookDelivery => ({
+const delivery = (id: string, eventType: WebhookEventName): WebhookDelivery => ({
     id,
     subscriptionId: 'sub-1',
     eventId: `evt-${id}`,

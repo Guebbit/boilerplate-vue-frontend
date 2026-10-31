@@ -203,7 +203,7 @@ const TICKET_CATEGORY_KEYS: Readonly<Record<string, string>> = {
  * The sentence of a ticket notice: what kind of ticket, and for a contact message its category.
  * Kind and category are closed codes the server sends; their words are this client's own.
  *
- * @param code - Which of the two ticket notices.
+ * @param code - Which of the three ticket notices.
  * @param parameters - The notice's facts.
  * @param parameters.kind - The ticket's kind.
  * @param parameters.category - A contact ticket's category, when the visitor chose one.
@@ -211,7 +211,10 @@ const TICKET_CATEGORY_KEYS: Readonly<Record<string, string>> = {
  * @returns The finished text.
  */
 const describeTicket = (
-    code: 'notifications.staff.ticket-opened' | 'notifications.staff.ticket-assigned',
+    code:
+        | 'notifications.staff.ticket-opened'
+        | 'notifications.staff.ticket-overdue'
+        | 'notifications.staff.ticket-assigned',
     parameters: { kind: string; category?: string },
     translate: Translate
 ): string => {
@@ -279,7 +282,7 @@ const outboxTarget = (eventName: string, aggregateId: string): NotificationTarge
 
 /**
  * The admin screen a work notice is about: the buyer's account for a purchase hold, the
- * subscription for a disabled webhook, the ticket for an opened or assigned one. Own messages point at none here (an order is
+ * subscription for a disabled webhook, the ticket for an opened, overdue or assigned one. Own messages point at none here (an order is
  * {@link notificationOrderId}'s job).
  *
  * @param notification - The stored row's `code` and `params`.
@@ -296,6 +299,7 @@ export const notificationTarget = (
             return { screen: 'webhook-subscription', id: notification.params.subscriptionId };
         }
         case 'notifications.staff.ticket-opened':
+        case 'notifications.staff.ticket-overdue':
         case 'notifications.staff.ticket-assigned': {
             return { screen: 'ticket', id: notification.params.ticketId };
         }
@@ -430,6 +434,7 @@ export const describeNotification = (
             return translate(notification.code, { n: notification.params.count });
         }
         case 'notifications.staff.ticket-opened':
+        case 'notifications.staff.ticket-overdue':
         case 'notifications.staff.ticket-assigned': {
             return describeTicket(notification.code, notification.params, translate);
         }
