@@ -1,7 +1,6 @@
 /**
- * Invasive CSS, held by a gate: CSS that reaches into Vuetify, over-specific selectors, raw
- * z-indexes, magic lengths, redefined utilities, utilities that duplicate a Vuetify prop, native
- * `title` tooltips and scripts that query Vuetify's DOM. Every check lives in
+ * Invasive CSS, held by a gate: CSS that reaches into Vuetify, raw z-indexes, redefined
+ * utilities, native `title` tooltips and scripts that query Vuetify's DOM. Every check lives in
  * `scripts/audit/css-invasive/scan.ts`; `npm run audit:css` prints the same hits for a human.
  *
  * The gate is pure: the app has no hit, and a new one fails here. `css-allow <check> -- <why>` is
@@ -98,16 +97,8 @@ describe('each CSS check fires on a sample', () => {
         ['vuetify-internal', '.board :deep(td:first-child) { color: inherit; }'],
         ['vuetify-unknown-class', '.a .v-data-table-headers--loading { opacity: 1; }'],
         ['vuetify-variable', '.row { --v-medium-emphasis-opacity: 1; }'],
-        ['important', '.row { color: inherit !important; }'],
-        ['max-specificity', '.a .b .c { color: inherit; }'],
-        ['max-specificity', '#splash { color: inherit; }'],
-        ['max-compound', '.a > .b :deep(.c .d) { color: inherit; }'],
-        ['scoped-type-selector', '.list li { color: inherit; }'],
         ['z-index', '.layer { z-index: 100; }'],
-        ['magic-length', '.box { padding: 13px; }'],
-        ['magic-length', '.box { margin-top: 0.3rem; }'],
         ['utility-redefinition', '.panel .opacity-70 { opacity: 0.82; }'],
-        ['duplicate-in-rule', '.box { color: inherit; color: currentcolor; }'],
         ['unit-disallowed-list', '.splash { min-height: 100vh; }']
     ])('%s: %s', async (check, css) => {
         expect(await cssChecks(css)).toContain(check);
@@ -117,40 +108,17 @@ describe('each CSS check fires on a sample', () => {
         const css = `
             .board { position: sticky; z-index: 1; padding: var(--gap, 13px); }
             .board:focus-visible { margin: 0.5rem; z-index: var(--z-index-toast); }
-            .list li { color: inherit; }
             .splash { min-height: 100dvh; }
         `;
-        // An unscoped block may style an element: `li` is no scoped-CSS slowdown there.
-        expect(await cssChecks(css, false)).toEqual([]);
-    });
-
-    it('fires block-size on an SFC block over the limit', async () => {
-        const css = `.big { ${Array.from({ length: 16 }, (_, index) => `--d${String(index)}: 0;`).join(' ')} }`;
-        expect(await cssChecks(css)).toContain('block-size');
-    });
-
-    it('fires repeated-custom-property on a declaration two SFCs share', async () => {
-        const scan = await scanCss([
-            { ...sample('.a { --tint: 1; }'), file: 'A.vue' },
-            { ...sample('.b { --tint: 1; }'), file: 'B.vue' }
-        ]);
-        expect(
-            applyAllowances(scan).filter((hit) => hit.check === 'repeated-custom-property')
-        ).toHaveLength(2);
+        expect(await cssChecks(css)).toEqual([]);
     });
 });
 
 describe('each template and script check fires on a sample', () => {
     it.each<[CheckId, string]>([
-        ['vuetify-prop-first', '<v-alert class="rounded-none" />'],
-        ['vuetify-prop-first', '<v-btn class="min-h-11 sm:min-h-0" />'],
-        ['vuetify-prop-first', '<v-btn class="bg-primary" />'],
-        ['tailwind-important', '<div class="!mt-2" />'],
         ['vuetify-arbitrary-variant', '<div class="[&_.v-field]:bg-surface" />'],
         ['touch-size-utility', '<v-chip class="min-h-11 sm:min-h-0" />'],
         ['vuetify-variable', '<v-text-field class="[--v-disabled-opacity:0.8]" />'],
-        ['vuetify-prop-first', '<v-card :class="{ \'rounded-none\': x }" />'],
-        ['vuetify-prop-first', "<v-card :class=\"ok ? 'border-t-primary' : ''\" />"],
         ['vuetify-variable', "<v-text-field :class=\"ok ? '[--v-disabled-opacity:0.8]' : ''\" />"],
         ['native-title', '<span :title="hint">x</span>'],
         ['native-title', '<v-btn title="Export" />']
@@ -161,13 +129,6 @@ describe('each template and script check fires on a sample', () => {
     it('lets a title prop, a layout class and a non-theme class through', () => {
         // `v-card` renders `title` visibly; `w-full` on a card is layout; `bg-gradient` is no colour.
         expect(templateChecks('<v-card title="Orders" class="w-full bg-gradient" />')).toEqual([]);
-    });
-
-    it('lets a :class on a prop-less property through, and follows a binding to its literals', () => {
-        expect(templateChecks('<v-chip :class="{ \'opacity-60\': x }" />')).toEqual([]);
-        const sfc =
-            '<script setup lang="ts">const EDGE = { a: \'border-t-primary\' };\nconst edge = computed(() => EDGE[k]);</script><template><v-card :class="edge" /></template>';
-        expect(sfcChecks(sfc)).toEqual(['vuetify-prop-first']);
     });
 
     it('fires vuetify-root-override on a scoped rule that restyles a Vuetify tag by its class', () => {

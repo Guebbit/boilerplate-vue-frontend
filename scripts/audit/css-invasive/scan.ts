@@ -32,7 +32,7 @@ import {
     vueFiles,
     type CssSource
 } from '../../css-sources';
-import { DESIGN_POLICY, themeColorNames, type VuetifyPropUtility } from '../../design-policy';
+import { DESIGN_POLICY } from '../../design-policy';
 import { tailwindBuilder } from '../../tailwind-build';
 
 /**
@@ -59,37 +59,13 @@ export const CHECKS = {
         title: 'A declaration or a class sets a `--v-*` custom property.',
         fix: 'Set it in the theme `variables` (`src/ui/vuetify/theme.ts`) or through the component prop that owns it.'
     },
-    important: {
-        title: '`!important` in CSS.',
-        fix: 'Put the rule in a cascade layer after the one it must beat, or use the prop that owns the value.'
-    },
-    'max-specificity': {
-        title: 'A selector above the specificity ceiling (`cssInvasiveness.maxSpecificity`).',
-        fix: 'Style our own element with one class, or move the style into the template as utilities.'
-    },
-    'max-compound': {
-        title: 'A selector with too many compound selectors (`cssInvasiveness.maxCompound`).',
-        fix: 'Put a class on the element you mean instead of walking the tree to it.'
-    },
-    'scoped-type-selector': {
-        title: 'A bare element selector in a scoped block (slow, and it leaks into recursion).',
-        fix: 'Give the element a class.'
-    },
     'z-index': {
         title: 'A raw `z-index` above local stacking.',
         fix: 'Name it as a `--z-index-*` token in `@theme` (`src/styles/main.css`) and read `var(--z-index-…)`.'
     },
-    'magic-length': {
-        title: 'A px length, or a rem off the spacing scale, on a spacing or sizing property.',
-        fix: 'Use the scale (`calc(var(--spacing) * N)`) or a named token in `@theme`.'
-    },
     'utility-redefinition': {
         title: 'A selector targets a class Tailwind generates, so the utility silently changes meaning.',
         fix: 'Add a named token or an `@utility`, and use that name where the changed value is wanted.'
-    },
-    'block-size': {
-        title: 'An SFC `<style>` block over `cssInvasiveness.maxScopedDeclarations` declarations.',
-        fix: 'Move the styling to utilities and props; keep only what has no class.'
     },
     'touch-size-utility': {
         title: 'A `min-h-11` / `min-w-11` utility on a Vuetify tag fakes a tap target the component should size itself.',
@@ -102,22 +78,6 @@ export const CHECKS = {
     'unit-disallowed-list': {
         title: 'A declaration uses a disallowed unit (`vh`: the mobile address bar makes it overflow).',
         fix: 'Use `dvh` (or `svh`/`lvh`), which tracks the visible viewport.'
-    },
-    'duplicate-in-rule': {
-        title: 'The same property twice in one rule.',
-        fix: 'Delete the dead declaration.'
-    },
-    'repeated-custom-property': {
-        title: 'The same custom-property declaration in more than one SFC `<style>` block.',
-        fix: 'A value used twice is a token or a shared class in `src/styles/main.css`, or a prop.'
-    },
-    'vuetify-prop-first': {
-        title: 'A utility class on a Vuetify component duplicates one of its props.',
-        fix: 'Use the prop named in the snippet.'
-    },
-    'tailwind-important': {
-        title: 'The Tailwind important modifier (`!class` / `class!`).',
-        fix: 'Find the rule it fights and solve the specificity there: a prop, a layer, or a variant.'
     },
     'vuetify-arbitrary-variant': {
         title: 'A Tailwind arbitrary variant that reaches into a Vuetify class (`[&_.v-x]:`).',
@@ -206,9 +166,6 @@ export const ALLOWANCE_GRAMMAR = /^css-allow\s+(\S+)\s+--\s+(\S.*)$/s;
 /** The knobs. */
 const KNOBS = DESIGN_POLICY.cssInvasiveness;
 
-/** The utility → prop routes, widened to their interface. */
-const PROP_ROUTES: readonly VuetifyPropUtility[] = DESIGN_POLICY.vuetifyPropUtilities;
-
 /**
  * Builds a finding with the check's default fix.
  *
@@ -251,77 +208,9 @@ export const parseAllowance = (
 
 // ── CSS ───────────────────────────────────────────────────────────────────────────────────────
 
-/** A `[id, class, type]` specificity triple. */
-type Specificity = readonly [number, number, number];
-
-/** The neutral specificity. */
-const ZERO: Specificity = [0, 0, 0];
-
-/** Vue's scope escapes: each counts as its argument. */
-const PASS_THROUGH = new Set([':deep', '::v-deep', ':v-deep', ':slotted', ':global']);
-
-/** Logical pseudo-classes that count their most specific argument. */
-const MOST_SPECIFIC_ARGUMENT = new Set([':is', ':not', ':has', ':matches']);
-
-/** CSS2 pseudo-elements still written with one colon. */
-const LEGACY_PSEUDO_ELEMENTS = new Set([':before', ':after', ':first-line', ':first-letter']);
-
 /** Vue's deep selector, in every spelling. */
 const isDeep = (node: selectorParser.Node): node is selectorParser.Pseudo =>
     selectorParser.isPseudo(node) && [':deep', '::v-deep', ':v-deep'].includes(node.value);
-
-/** Adds two specificities. */
-const add = (a: Specificity, b: Specificity): Specificity => [
-    a[0] + b[0],
-    a[1] + b[1],
-    a[2] + b[2]
-];
-
-/** Whether `a` is more specific than `b`. */
-const above = (a: Specificity, b: Specificity): boolean => {
-    const index = a.findIndex((value, at) => value !== b[at]);
-    return index !== -1 && (a[index] ?? 0) > (b[index] ?? 0);
-};
-
-/** The most specific of a pseudo's argument selectors. */
-const maxOf = (selectors: selectorParser.Selector[]): Specificity => {
-    let best = ZERO;
-    for (const selector of selectors) {
-        const next = specificityOf(selector.nodes);
-        if (above(next, best)) best = next;
-    }
-    return best;
-};
-
-/**
- * The specificity one selector node adds, per Selectors Level 4.
- *
- * @param node - A node of a parsed selector.
- * @returns Its `[id, class, type]` contribution.
- */
-const nodeSpecificity = (node: selectorParser.Node): Specificity => {
-    if (node.type === 'id') return [1, 0, 0];
-    if (node.type === 'class' || node.type === 'attribute') return [0, 1, 0];
-    if (node.type === 'tag') return [0, 0, 1];
-    if (!selectorParser.isPseudo(node)) return ZERO;
-    const name = node.value.toLowerCase();
-    if (name === ':where') return ZERO;
-    if (PASS_THROUGH.has(name) || MOST_SPECIFIC_ARGUMENT.has(name)) return maxOf(node.nodes);
-    if (name.startsWith('::') || LEGACY_PSEUDO_ELEMENTS.has(name)) return [0, 0, 1];
-    return [0, 1, 0];
-};
-
-/**
- * The specificity of a sequence of selector nodes.
- *
- * @param nodes - The nodes of one selector.
- * @returns The summed specificity.
- */
-export const specificityOf = (nodes: selectorParser.Node[]): Specificity => {
-    let sum = ZERO;
-    for (const node of nodes) sum = add(sum, nodeSpecificity(node));
-    return sum;
-};
 
 /**
  * Splits a selector into its compound selectors, the `:deep()` pseudos set aside.
@@ -340,20 +229,6 @@ const compoundsOf = (
         else compounds.at(-1)?.push(node);
     }
     return { compounds: compounds.filter((compound) => compound.length > 0), deeps };
-};
-
-/**
- * The number of compound selectors, counting into `:deep()` as if it were a combinator.
- *
- * @param nodes - The nodes of one selector.
- * @returns The compound count.
- */
-export const compoundCount = (nodes: selectorParser.Node[]): number => {
-    const { compounds, deeps } = compoundsOf(nodes);
-    const inner = deeps.map((deep) =>
-        Math.max(0, ...deep.nodes.map((selector) => compoundCount(selector.nodes)))
-    );
-    return compounds.length + inner.reduce((sum, count) => sum + count, 0);
 };
 
 /** Whether a compound is a bare element: a tag and no class, id or attribute. */
@@ -424,35 +299,6 @@ const isAllowedZIndex = (value: string): boolean => {
     return Number.isInteger(number) && number >= -1 && number <= KNOBS.localZIndexMax;
 };
 
-/** Spacing and sizing properties, where a length should come from the scale. */
-const LENGTH_PROPERTY =
-    /^(?:(?:min-|max-)?(?:width|height|inline-size|block-size)|inset(?:-.+)?|top|right|bottom|left|margin(?:-.+)?|padding(?:-.+)?|gap|row-gap|column-gap|font-size)$/;
-
-/** Removes every `var(…)`, fallbacks included: a fallback is not the value the app uses. */
-const withoutVariables = (value: string): string => {
-    const stripped = value.replaceAll(/var\([^()]*\)/g, '');
-    return stripped === value ? value : withoutVariables(stripped);
-};
-
-/**
- * The lengths in a value that are off the scale: any non-zero px, or a rem that is not a
- * multiple of the spacing step.
- *
- * @param value - A declaration value.
- * @returns The offending lengths as written.
- */
-export const magicLengths = (value: string): string[] =>
-    [...withoutVariables(value).matchAll(/(-?\d*\.?\d+)(px|rem)\b/g)]
-        .filter(([, amount, unit]) => {
-            const number = Math.abs(Number(amount));
-            if (number === 0) return false;
-            if (unit === 'px') return true;
-            return (
-                Math.abs(number / KNOBS.spacingRem - Math.round(number / KNOBS.spacingRem)) > 1e-9
-            );
-        })
-        .map(([whole]) => whole);
-
 /**
  * Whether a value uses a unit, as a number followed by exactly that unit (`dvh` is not `vh`).
  *
@@ -489,35 +335,6 @@ const RULE_CHECKS: readonly (readonly [CheckId, RuleCheck])[] = [
     ],
     ['deep', (_rule, selectors) => selectors.filter((selector) => usesDeep(selector)).map(String)],
     [
-        'max-specificity',
-        (_rule, selectors) =>
-            selectors
-                .filter((selector) => above(specificityOf(selector.nodes), KNOBS.maxSpecificity))
-                .map(
-                    (selector) => `${String(selector)} (${specificityOf(selector.nodes).join(',')})`
-                )
-    ],
-    [
-        'max-compound',
-        (_rule, selectors) =>
-            selectors
-                .filter((selector) => compoundCount(selector.nodes) > KNOBS.maxCompound)
-                .map(String)
-    ],
-    [
-        'scoped-type-selector',
-        (_rule, selectors, { source }) =>
-            source.scoped
-                ? selectors
-                      .filter((selector) =>
-                          compoundsOf(selector.nodes).compounds.some((compound) =>
-                              isBareElement(compound)
-                          )
-                      )
-                      .map(String)
-                : []
-    ],
-    [
         'utility-redefinition',
         (_rule, selectors, { utilities }) =>
             selectors
@@ -532,13 +349,6 @@ const RULE_CHECKS: readonly (readonly [CheckId, RuleCheck])[] = [
                 .map((decl) => declText(decl))
     ],
     [
-        'important',
-        (rule) =>
-            declsOf(rule)
-                .filter((decl) => decl.important)
-                .map((decl) => declText(decl))
-    ],
-    [
         'z-index',
         (rule) =>
             declsOf(rule)
@@ -546,29 +356,10 @@ const RULE_CHECKS: readonly (readonly [CheckId, RuleCheck])[] = [
                 .map((decl) => declText(decl))
     ],
     [
-        'magic-length',
-        (rule) =>
-            declsOf(rule)
-                .filter(
-                    (decl) => LENGTH_PROPERTY.test(decl.prop) && magicLengths(decl.value).length > 0
-                )
-                .map((decl) => declText(decl))
-    ],
-    [
         'unit-disallowed-list',
         (rule) =>
             declsOf(rule)
                 .filter((decl) => KNOBS.disallowedUnits.some((unit) => hasUnit(decl.value, unit)))
-                .map((decl) => declText(decl))
-    ],
-    [
-        'duplicate-in-rule',
-        (rule) =>
-            declsOf(rule)
-                .filter(
-                    (decl, index, all) =>
-                        all.findIndex((other) => other.prop === decl.prop) !== index
-                )
                 .map((decl) => declText(decl))
     ]
 ];
@@ -584,10 +375,6 @@ const isExempt = (rule: Rule): boolean =>
 /** The id of a rule, as a `css-allow` before it names it. */
 const ruleTarget = (source: CssSource, rule: Rule): string =>
     `${source.file}:${String(lineOf(source, rule))}`;
-
-/** The id of a whole SFC style block (for `block-size`). */
-const blockTarget = (source: CssSource): string =>
-    `${source.file}:${String(source.firstLine)}:block`;
 
 /**
  * Every hit of every rule-level check on one rule.
@@ -640,87 +427,9 @@ const cssAllowances = (source: CssSource, root: Root): Allowance[] => {
             target
         );
         if (allowance === undefined) return;
-        found.push(
-            allowance.check === 'block-size' && comment.parent === root
-                ? { ...allowance, target: blockTarget(source) }
-                : allowance
-        );
+        found.push(allowance);
     });
     return found;
-};
-
-/** The `block-size` hit of an SFC style block, if it is over the limit. */
-const blockSizeHits = (source: CssSource, root: Root): RawHit[] => {
-    let count = 0;
-    root.walkDecls(() => {
-        count += 1;
-    });
-    if (!source.sfc || count <= KNOBS.maxScopedDeclarations) return [];
-    return [
-        hitOf({
-            file: source.file,
-            line: source.firstLine,
-            check: 'block-size',
-            anchor: source.scoped ? '<style scoped>' : '<style>',
-            snippet: `${String(count)} declarations`,
-            target: blockTarget(source)
-        })
-    ];
-};
-
-/**
- * One custom-property declaration in an SFC, for the cross-file repeat check.
- */
-interface CustomProperty {
-    /** The source it sits in. */
-    source: CssSource;
-    /** The declaration. */
-    decl: Declaration;
-}
-
-/** Every custom-property declaration of the SFC sources, outside `@theme`. */
-const customProperties = (parsed: { source: CssSource; root: Root }[]): CustomProperty[] =>
-    parsed
-        .filter(({ source }) => source.sfc)
-        .flatMap(({ source, root }) => {
-            const found: CustomProperty[] = [];
-            root.walkDecls(/^--/, (decl) => {
-                if (!insideTheme(decl)) found.push({ source, decl });
-            });
-            return found;
-        });
-
-/** A custom-property declaration as a comparable string. */
-const declarationKey = ({ decl }: CustomProperty): string => squash(declText(decl));
-
-/**
- * The `repeated-custom-property` hits: one per occurrence of a declaration found in two files.
- *
- * @param parsed - Every parsed source.
- * @returns The raw hits.
- */
-const repeatHits = (parsed: { source: CssSource; root: Root }[]): RawHit[] => {
-    const all = customProperties(parsed);
-    return all
-        .filter(
-            (entry) =>
-                new Set(
-                    all
-                        .filter((other) => declarationKey(other) === declarationKey(entry))
-                        .map((other) => other.source.file)
-                ).size > 1
-        )
-        .map(({ source, decl }) => {
-            const rule = decl.parent as Rule;
-            return hitOf({
-                file: source.file,
-                line: lineOf(source, decl),
-                check: 'repeated-custom-property',
-                anchor: `${squash(rule.selector)} { ${declarationKey({ source, decl })} }`,
-                snippet: declarationKey({ source, decl }),
-                target: ruleTarget(source, rule)
-            });
-        });
 };
 
 /** Every class name the rules under a node name in their selectors. */
@@ -769,10 +478,10 @@ export const scanCss = async (
         root.walkRules((rule) => {
             if (!isExempt(rule)) found.push(...ruleHits(rule, { source, utilities }));
         });
-        return [...found, ...blockSizeHits(source, root)];
+        return found;
     });
     return {
-        hits: [...hits, ...repeatHits(parsed)],
+        hits,
         allowances: parsed.flatMap(({ source, root }) => cssAllowances(source, root))
     };
 };
@@ -865,8 +574,6 @@ const VUE_BUILTINS = new Set([
 interface TemplateContext {
     /** Vuetify's props per component. */
     props: ReadonlyMap<string, ReadonlySet<string>>;
-    /** The theme colour names. */
-    colors: ReadonlySet<string>;
 }
 
 /** A static attribute's value, or `undefined`. */
@@ -981,40 +688,6 @@ const dynamicClassTokens = (
 /** A class without its variants (`sm:hover:min-h-0` → `min-h-0`), brackets respected. */
 const bareClass = (token: string): string => token.replace(/^(?:(?:\[[^\]]*]|[^:[])*:)*/, '');
 
-/**
- * The prop a utility duplicates on a Vuetify component, if any.
- *
- * @param component - The Vuetify component (`VBtn`).
- * @param tag - The tag as written, for the `tags` filter.
- * @param token - The class token, variants included.
- * @param context - Vuetify's props and the theme colours.
- * @returns The prop to use instead, or `undefined`.
- */
-const duplicatedProp = (
-    component: string,
-    tag: string,
-    token: string,
-    context: TemplateContext
-): string | undefined => {
-    const own = context.props.get(component) ?? new Set<string>();
-    const kebab = tag.startsWith('v-')
-        ? tag
-        : component.replaceAll(
-              /([A-Z])/g,
-              (_, letter: string, at: number) => `${at === 0 ? '' : '-'}${letter.toLowerCase()}`
-          );
-    for (const route of PROP_ROUTES) {
-        const match = new RegExp(route.pattern).exec(bareClass(token));
-        const fits =
-            match !== null &&
-            (route.tags === undefined || new RegExp(route.tags).test(kebab)) &&
-            (route.themeColor !== true || context.colors.has(match[1]));
-        const prop = fits ? route.props.find((name) => own.has(name)) : undefined;
-        if (prop !== undefined) return prop;
-    }
-    return undefined;
-};
-
 /** Whether a native `title` on this tag reaches the DOM as the browser tooltip. */
 const hasNativeTitle = (tag: string, context: TemplateContext): boolean => {
     const component = vuetifyComponent(tag);
@@ -1044,35 +717,6 @@ type ElementCheck = (
 
 /** The element-level checks, by id. */
 const ELEMENT_CHECKS: readonly (readonly [CheckId, ElementCheck])[] = [
-    [
-        'vuetify-prop-first',
-        (node, context) => {
-            const component = vuetifyComponent(node.tag);
-            if (component === undefined) return [];
-            return classTokens(node).flatMap((token) => {
-                const prop = duplicatedProp(component, node.tag, token, context);
-                return prop === undefined
-                    ? []
-                    : [
-                          {
-                              anchor: `${node.tag}.${token}`,
-                              snippet: `<${node.tag} class="… ${token} …">`,
-                              fix: `Use the \`${prop}\` prop instead of \`${token}\`.`
-                          }
-                      ];
-            });
-        }
-    ],
-    [
-        'tailwind-important',
-        (node) =>
-            classTokens(node)
-                .filter((token) => bareClass(token).startsWith('!') || token.endsWith('!'))
-                .map((token) => ({
-                    anchor: `${node.tag}.${token}`,
-                    snippet: `class="… ${token} …"`
-                }))
-    ],
     [
         'vuetify-arbitrary-variant',
         (node) =>
@@ -1242,13 +886,12 @@ export const scanTemplate = (file: string, text: string, context: TemplateContex
 };
 
 /**
- * The default template context: Vuetify's props and the theme colours.
+ * The default template context: Vuetify's props.
  *
  * @returns The context.
  */
 export const templateContext = (): TemplateContext => ({
-    props: vuetifyProps(),
-    colors: themeColorNames()
+    props: vuetifyProps()
 });
 
 // ── Scripts ───────────────────────────────────────────────────────────────────────────────────

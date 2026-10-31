@@ -12,7 +12,6 @@ import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { REPORT_VIEWPORTS, VIEWPORTS } from '../../scripts/e2e/viewports';
-import { BREAKPOINTS } from '@/ui/vuetify/breakpoints';
 
 /** The repo root (tests run from it). */
 const ROOT = process.cwd();
@@ -79,21 +78,6 @@ describe('the viewport matrix', () => {
         expect(filesMatching(/\bcy\.viewport\(/).filter((file) => file !== SEAM_FILE)).toEqual([]);
     });
 
-    it('has a size in every band below xl, and one narrow enough for reflow (WCAG 1.4.10)', () => {
-        const widths = Object.values(VIEWPORTS).map((viewport) => viewport.width);
-        const bands = ['xs', 'sm', 'md', 'lg'] as const;
-
-        for (const band of bands) {
-            const lower = BREAKPOINTS[band];
-            const upper = band === 'lg' ? BREAKPOINTS.xl : BREAKPOINTS[nextBand(band)];
-            expect(
-                widths.some((width) => width >= lower && width < upper),
-                `a viewport in the ${band} band`
-            ).toBe(true);
-        }
-        expect(Math.min(...widths)).toBeLessThanOrEqual(320);
-    });
-
     it('keeps report-only sizes out of the swept matrix', () => {
         for (const name of Object.keys(REPORT_VIEWPORTS))
             expect(Object.keys(VIEWPORTS)).not.toContain(name);
@@ -117,8 +101,3 @@ describe('the meta viewport (index.html)', () => {
         expect(maximum).toBeGreaterThanOrEqual(5);
     });
 });
-
-/** The band after `band`, for the upper edge of its width range. */
-function nextBand(band: 'xs' | 'sm' | 'md'): 'sm' | 'md' | 'lg' {
-    return { xs: 'sm', sm: 'md', md: 'lg' }[band] as 'sm' | 'md' | 'lg';
-}

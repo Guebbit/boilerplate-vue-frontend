@@ -25,7 +25,7 @@ flowchart LR
         Col["utility-collisions.spec<br/>Vuetify vs Tailwind names"]
         Arb["design-arbitrary-values.spec<br/>repeats · stale exemptions"]
         Cfg["design-lint-config.spec<br/>the Tailwind rules, run for real"]
-        Inv["css-invasiveness.spec<br/>Vuetify internals · specificity · z-index · prop-first<br/>a pure gate: no hit, or a reasoned css-allow"]
+        Inv["css-invasiveness.spec<br/>Vuetify internals · z-index · native title<br/>a pure gate: no hit, or a reasoned css-allow"]
     end
 
     CSS -->|entryPoint| BTW
@@ -104,19 +104,9 @@ error cannot be frozen without a disable on each known line.
 | `vuetify-internal`                 | A selector naming a `.v-*` class, or a `:deep()` that reaches a bare element (`td`, `input::placeholder`) |
 | `deep`                             | `:deep()`, `::v-deep`, `>>>`                                                                              |
 | `vuetify-variable`                 | A declaration, or a class token (`[--v-x:1]`), that sets a `--v-*` property                               |
-| `important`                        | `!important`                                                                                              |
-| `max-specificity`                  | A selector above `0,2,0`, or any id; `:deep(x)` counts `x`, `:where` counts 0                             |
-| `max-compound`                     | More than 3 compound selectors; `:deep` counts as a combinator                                            |
-| `scoped-type-selector`             | A bare element selector in a scoped block, outside `:deep`                                                |
 | `z-index`                          | A `z-index` that is not `var(--z-index-*)` and not -1…9                                                   |
-| `magic-length`                     | A px length, or a rem off the 0.25rem step, on a spacing or sizing property                               |
 | `utility-redefinition`             | A selector on a class Tailwind generates (`.opacity-0`)                                                   |
-| `block-size`                       | An SFC `<style>` block over 15 declarations                                                               |
 | `unit-disallowed-list`             | A `vh` length (use `dvh`: the mobile address bar moves the viewport)                                      |
-| `duplicate-in-rule`                | The same property twice in a rule                                                                         |
-| `repeated-custom-property`         | The same `--*` declaration in two SFC blocks                                                              |
-| `vuetify-prop-first`               | A static utility on a `v-*` tag that duplicates a prop the component has                                  |
-| `tailwind-important`               | The `!` modifier                                                                                          |
 | `vuetify-arbitrary-variant`        | An arbitrary variant into a Vuetify class (`[&_.v-field]:`)                                               |
 | `native-title`                     | A native `title` (an HTML tag, or a Vuetify tag without a `title` prop)                                   |
 | `touch-size-utility`               | `min-h-11` / `min-w-11` on a `v-*` tag (use `useTouchTarget()` or a touch size composable)                |
@@ -144,21 +134,20 @@ flowchart LR
 
 All in `scripts/design-policy.ts`.
 
-| Field                  | What it sets                                                                                                                          |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `severity`             | Per check: `'error'` or `'off'`. A warning would only be an error in CI anyway                                                        |
-| `rootFontSize`         | Rem to pixels for the canonicaliser (16)                                                                                              |
-| `restrictedClasses`    | The refused class patterns, each with its message and way out                                                                         |
-| `ambiguousUtilities`   | The names both libraries generate with different meanings; `restrict: true` refuses one                                               |
-| `vuetifyOwnedClasses`  | Vuetify classes a template may use by name (`elevation-N`)                                                                            |
-| `arbitraryRepeatLimit` | How many places one arbitrary class may appear in (1)                                                                                 |
-| `mobileStrategy`       | The dialog binding, the table owner file and the scroll directive                                                                     |
-| `tailwindEntryPoint`   | The stylesheet whose `@theme` the plugin reads                                                                                        |
-| `colorProps`           | The Vuetify props that take a theme colour                                                                                            |
-| `colorKeywords`        | Strings that name no fixed colour (`transparent`, `currentcolor`, `inherit`)                                                          |
-| `cssInvasiveness`      | The invasive-CSS thresholds: specificity `0,2,0`, 3 compounds, 15 declarations per SFC block, local z-index up to 9, the 0.25rem step |
-| `vuetifyPropUtilities` | The utility → Vuetify prop routes `vuetify-prop-first` checks (`rounded-*` → `rounded`, `border-*` → `border`…)                       |
-| `themeColorNames()`    | The colour names a template may use, derived from the theme                                                                           |
+| Field                  | What it sets                                                                            |
+| ---------------------- | --------------------------------------------------------------------------------------- |
+| `severity`             | Per check: `'error'` or `'off'`. A warning would only be an error in CI anyway          |
+| `rootFontSize`         | Rem to pixels for the canonicaliser (16)                                                |
+| `restrictedClasses`    | The refused class patterns, each with its message and way out                           |
+| `ambiguousUtilities`   | The names both libraries generate with different meanings; `restrict: true` refuses one |
+| `vuetifyOwnedClasses`  | Vuetify classes a template may use by name (`elevation-N`)                              |
+| `arbitraryRepeatLimit` | How many places one arbitrary class may appear in (1)                                   |
+| `mobileStrategy`       | The dialog binding, the table owner file and the scroll directive                       |
+| `tailwindEntryPoint`   | The stylesheet whose `@theme` the plugin reads                                          |
+| `colorProps`           | The Vuetify props that take a theme colour                                              |
+| `colorKeywords`        | Strings that name no fixed colour (`transparent`, `currentcolor`, `inherit`)            |
+| `cssInvasiveness`      | The invasive-CSS thresholds: local z-index up to 9, the disallowed units                |
+| `themeColorNames()`    | The colour names a template may use, derived from the theme                             |
 
 ## Commands
 

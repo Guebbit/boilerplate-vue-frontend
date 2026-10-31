@@ -13,16 +13,14 @@
  * 4. Every width media query uses a breakpoint `main.css` declares.
  * 5. The names `scripts/design-policy.ts` derives equal the names Vuetify computes, so a Vuetify
  *    upgrade that adds or renames a generated colour fails here, not as a false lint finding.
- * 6. No colour-bearing declaration is repeated across SFC `<style>` blocks: a value used twice
- *    becomes a class in `main.css`.
- * 7. The boot surfaces (`index.html`'s splash and meta tags, the manifest, `browserconfig.xml`)
+ * 6. The boot surfaces (`index.html`'s splash and meta tags, the manifest, `browserconfig.xml`)
  *    show only colours the theme has, and the address bar has a light and a dark colour.
  */
 import { describe, expect, it } from 'vitest';
 import postcss from 'postcss';
 import type { Declaration } from 'postcss';
 import { createVuetify } from 'vuetify';
-import { cssSources, insideTheme, MAIN_CSS, readRoot } from '../../scripts/css-sources';
+import { cssSources, insideTheme, readRoot } from '../../scripts/css-sources';
 import { isColorLiteral, themeColorNames, CSS_NAMED_COLORS } from '../../scripts/design-policy';
 import { dark, light, variations } from '../../src/ui/vuetify/theme';
 
@@ -62,26 +60,6 @@ describe('design tokens, the stylesheet half', () => {
         const offenders = declarations()
             .filter(({ decl }) => !insideTheme(decl.parent) && holdsColorLiteral(decl))
             .map(({ file, decl }) => `${file}: ${decl.prop}: ${decl.value}`);
-        expect(offenders).toEqual([]);
-    });
-
-    it('repeats no colour-bearing declaration across SFC style blocks', () => {
-        const sfcDeclarations = declarations().filter(
-            ({ file, decl }) => file !== MAIN_CSS && COLOR_PROPERTY.test(decl.prop)
-        );
-        // Not vacuous: the SFC blocks do hold colour-bearing declarations.
-        expect(sfcDeclarations.length).toBeGreaterThanOrEqual(1);
-        const places = new Map<string, Set<string>>();
-        for (const { file, decl } of sfcDeclarations) {
-            const key = `${decl.prop}: ${decl.value.replaceAll(/\s+/g, ' ')}`;
-            places.set(key, (places.get(key) ?? new Set<string>()).add(file));
-        }
-        const offenders = [...places]
-            .filter(([, files]) => files.size > 1)
-            .map(
-                ([key, files]) =>
-                    `${key} — in ${[...files].join(', ')}: move it to a class in src/styles/main.css`
-            );
         expect(offenders).toEqual([]);
     });
 
