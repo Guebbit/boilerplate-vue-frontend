@@ -21,7 +21,6 @@ import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useInboxLifecycle } from '../composables/use-inbox-lifecycle';
 import { useNotificationLink } from '../composables/use-notification-link';
 import { useInboxStore } from '../store';
-import type { InboxItem } from '../types';
 
 /**
  * Translation function.
@@ -131,19 +130,6 @@ const bellLabel = computed(() =>
 );
 
 /**
- * The tab the panel opens on: Work when only Work has unread rows, Mine otherwise (a tie, or
- * nothing unread, stays on Mine).
- *
- * @param rows - The panel's rows as they are the moment it opens.
- * @returns The tab to show first.
- */
-const firstTab = (rows: readonly InboxItem[]): PanelTab => {
-    const unreadOf = (audience: InboxItem['audience']) =>
-        rows.some((row) => row.unread && row.audience === audience);
-    return unreadOf('staff') && !unreadOf('own') ? 'work' : 'mine';
-};
-
-/**
  * The panel opened or closed. Opening remembers what was new, then tells the server it was read.
  *
  * @param isOpen - The menu's new state.
@@ -151,7 +137,8 @@ const firstTab = (rows: readonly InboxItem[]): PanelTab => {
 const onToggle = (isOpen: boolean) => {
     if (!isOpen) return;
     freshIds.value = new Set(items.value.filter(({ unread }) => unread).map(({ id }) => id));
-    chosenTab.value = firstTab(items.value);
+    // The panel always opens on Mine; the Work tab's own count says when work is waiting.
+    chosenTab.value = 'mine';
     // eslint-disable-next-line @typescript-eslint/no-floating-promises -- the inbox store reports its own failure
     void inbox.markAllRead();
 };

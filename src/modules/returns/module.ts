@@ -32,6 +32,15 @@ export default {
             plural: 1,
             order: 92,
             section: 'account',
+            icon: Undo2
+        },
+        {
+            name: 'SalesReturns',
+            label: 'navigation.label-sales-returns',
+            plural: 1,
+            order: 59,
+            section: 'admin',
+            group: 'navigation.group-sales',
             icon: Undo2,
             // Unread work notices that point at this screen.
             badge: () =>

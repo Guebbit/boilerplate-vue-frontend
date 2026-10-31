@@ -482,35 +482,14 @@ describe('the panel for a person who holds work notices', () => {
         expect(listedIds()).toEqual(['n1']);
     });
 
-    it('opens on Work when only Work has unread rows', async () => {
+    it('opens on Mine even when only Work has unread rows', async () => {
         signIn();
         inboxOnServer = [row('n1', { readAt: '2026-10-04T12:00:00.000Z' }), holdNotice];
         await mountBell();
         await openPanel();
 
-        expect(tabButton('work')?.getAttribute('aria-selected')).toBe('true');
-        expect(listedIds()).toEqual(['w1']);
-    });
-
-    it('stays on Mine when both tabs have unread rows', async () => {
-        signIn();
-        inboxOnServer = [row('n1'), holdNotice];
-        await mountBell();
-        await openPanel();
-
         expect(tabButton('mine')?.getAttribute('aria-selected')).toBe('true');
-    });
-
-    it('stays on Mine when nothing is unread', async () => {
-        signIn();
-        inboxOnServer = [
-            row('n1', { readAt: '2026-10-04T12:00:00.000Z' }),
-            { ...holdNotice, readAt: '2026-10-04T12:00:00.000Z' }
-        ];
-        await mountBell();
-        await openPanel();
-
-        expect(tabButton('mine')?.getAttribute('aria-selected')).toBe('true');
+        expect(listedIds()).toEqual(['n1']);
     });
 
     it('lists only the work notices on the Work tab', async () => {

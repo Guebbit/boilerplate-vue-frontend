@@ -95,7 +95,7 @@ describe('the admin nav badges', () => {
         ['InventoryLedger', inventoryModule, ['low-stock']],
         ['PreordersBoard', inventoryModule, ['preorders-late']],
         [
-            'ReturnsList',
+            'SalesReturns',
             returnsModule,
             ['return-requested', 'withdrawals-awaiting-goods', 'returns-undecided']
         ],

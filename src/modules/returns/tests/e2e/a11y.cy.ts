@@ -19,6 +19,7 @@ sweepA11y(
     'returns — admin',
     [
         ['returns list', '/en/returns'],
+        ['sales returns', '/en/sales/returns'],
         ['return detail', returnDetail]
     ],
     'admin'

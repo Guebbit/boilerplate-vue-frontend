@@ -16,9 +16,15 @@ describe('returns route access', () => {
         expect(route?.meta).not.toHaveProperty('can');
     });
 
+    it('SalesReturns requires a session and the key that reads every return', () => {
+        const route = routes.find((record) => record.name === 'SalesReturns');
+        expect(route?.meta?.access).toBe('auth');
+        expect(route?.meta?.can).toEqual(['read', 'Return']);
+    });
+
     it('declares no route this file does not know about', () => {
         expect(routes.map(({ name }) => name).toSorted()).toEqual(
-            ['ReturnTarget', 'ReturnsList'].toSorted()
+            ['ReturnTarget', 'ReturnsList', 'SalesReturns'].toSorted()
         );
     });
 });
