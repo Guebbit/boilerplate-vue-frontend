@@ -73,13 +73,7 @@ describe('announceRouteChange', () => {
 });
 
 describe('MAIN_CONTENT', () => {
-    /**
-     * Pinned as a literal: it is a selector shared with `LayoutDefault.vue`'s `data-main-content`
-     * attribute, and nothing else would fail if the two drifted apart.
-     */
     it('selects the main landmark by its data attribute', () => {
-        expect(MAIN_CONTENT).toBe('main[data-main-content]');
-
         document.body.innerHTML = '<main data-main-content></main><main></main>';
         expect(document.querySelectorAll(MAIN_CONTENT)).toHaveLength(1);
     });

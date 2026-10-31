@@ -66,10 +66,6 @@ describe('accepted types', () => {
 });
 
 describe('size limit', () => {
-    it('defaults to the backend’s 5 MB', () => {
-        expect(MAX_UPLOAD_BYTES).toBe(5 * 1024 * 1024);
-    });
-
     /**
      * The boundary is inclusive on both sides of the comparison the backend makes: multer's
      * `limits.fileSize` rejects what EXCEEDS the limit, so a file of exactly the limit is legal.

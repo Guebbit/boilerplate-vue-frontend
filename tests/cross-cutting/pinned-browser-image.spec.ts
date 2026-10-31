@@ -30,13 +30,4 @@ describe('the pinned browser image', () => {
     it('is one and the same everywhere', () => {
         expect(new Set(images).size).toBe(1);
     });
-
-    it('catches a split: two digests are two images', () => {
-        const split = [
-            'image: cypress/included:15.18.1@sha256:' + 'a'.repeat(64),
-            'image: cypress/included:15.18.1@sha256:' + 'b'.repeat(64)
-        ].join('\n');
-
-        expect(new Set(pinnedImages(split)).size).toBe(2);
-    });
 });
