@@ -13,6 +13,7 @@
  */
 import { asStub } from '../../../../tests/support/stub';
 import type { ZodType } from 'zod';
+import type { WebhookEventFilter } from '@types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { effectScope, nextTick, ref } from 'vue';
@@ -34,7 +35,7 @@ wireModulesIntoCore();
 const SUBSCRIPTION = {
     id: 'sub1',
     url: 'https://example.com/hook',
-    eventTypes: ['order.created'],
+    eventTypes: ['order.created'] as WebhookEventFilter[],
     enabled: true,
     consecutiveFailures: 0,
     secretIds: ['sec1'],

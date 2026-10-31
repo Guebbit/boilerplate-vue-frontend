@@ -5719,6 +5719,7 @@ export interface PreorderLevelsResponse {
  * * `adjust` — a stocktake correction, signed. `onHand` moves either way.
  * * `restock` — returned goods were received back on the shelf. `onHand` up.
  * * `backorder` — an order claimed units that do not exist yet. `backordered` up; the shelf is untouched.
+ * * `owed` — units a lost parcel's order is still owed that the shelf could not cover. `backordered` up, the shelf untouched, outside the preorder cap: the shop owes it, the allowance is for new sales.
  * * `allocate` — stock arrived for a paid preorder. `backordered` down, `reserved` up: the claim is now a real hold. Written in the receipt's own transaction, oldest payment first.
  *
  * `release` and `expire` of a preorder claim give back the allowance (`backordered` down) instead of `reserved`.
@@ -5734,6 +5735,7 @@ export const StockMovementReason = {
     adjust: 'adjust',
     restock: 'restock',
     backorder: 'backorder',
+    owed: 'owed',
     allocate: 'allocate'
 } as const;
 
@@ -5806,6 +5808,36 @@ export const WebhookSubscriptionSortItem = {
  */
 export type WebhookSubscriptionSort = WebhookSubscriptionSortItem[];
 
+/**
+ * One event name from `GET /webhooks/events`, or `*` for every event.
+ * @maxLength 100
+ */
+export type WebhookEventFilter = (typeof WebhookEventFilter)[keyof typeof WebhookEventFilter];
+
+export const WebhookEventFilter = {
+    ordercreated: 'order.created',
+    orderpaid: 'order.paid',
+    ordercancelled: 'order.cancelled',
+    orderredacted: 'order.redacted',
+    shipmentshipped: 'shipment.shipped',
+    shipmentdelivered: 'shipment.delivered',
+    shipmentlost: 'shipment.lost',
+    paymentsucceeded: 'payment.succeeded',
+    paymentfailed: 'payment.failed',
+    paymentrefunded: 'payment.refunded',
+    paymentrefund_failed: 'payment.refund_failed',
+    paymentrefund_reversed: 'payment.refund_reversed',
+    paymentdispute_opened: 'payment.dispute_opened',
+    paymentdispute_updated: 'payment.dispute_updated',
+    returnrequested: 'return.requested',
+    returnreceived: 'return.received',
+    returnclosed: 'return.closed',
+    examplepublished: 'example.published',
+    usererased: 'user.erased',
+    userupdated: 'user.updated',
+    '*': '*'
+} as const;
+
 export interface WebhookRetiringSecret {
     /** A ring entry's id, one of `secretIds`. */
     id: string;
@@ -5837,7 +5869,7 @@ export interface WebhookSubscription {
      * Names from `GET /webhooks/events` this subscription receives, or `*` for every event.
      * @minItems 1
      */
-    eventTypes: string[];
+    eventTypes: WebhookEventFilter[];
     /** Read-only, derived — true while `disabledAt` is absent. Change it with `POST .../enable` or `POST .../disable`. */
     enabled: boolean;
     /** @minimum 0 */
@@ -5875,10 +5907,8 @@ export interface CreateWebhookSubscriptionRequest {
     /**
      * A name from `GET /webhooks/events`, or `*` for every event. Any other name is a 422 naming `eventTypes`.
      * @minItems 1
-     * @items.minLength 1
-     * @items.maxLength 100
      */
-    eventTypes: string[];
+    eventTypes: WebhookEventFilter[];
 }
 
 export interface WebhookSubscriptionCreated {
@@ -5887,7 +5917,7 @@ export interface WebhookSubscriptionCreated {
     url: string;
     description?: string;
     /** @minItems 1 */
-    eventTypes: string[];
+    eventTypes: WebhookEventFilter[];
     enabled: boolean;
     /** @minimum 0 */
     consecutiveFailures: number;
@@ -5920,10 +5950,8 @@ export interface ReplaceWebhookSubscriptionRequest {
     /**
      * A name from `GET /webhooks/events`, or `*` for every event. Any other name is a 422 naming `eventTypes`.
      * @minItems 1
-     * @items.minLength 1
-     * @items.maxLength 100
      */
-    eventTypes: string[];
+    eventTypes: WebhookEventFilter[];
 }
 
 export interface UpdateWebhookSubscriptionRequest {
@@ -5942,10 +5970,8 @@ export interface UpdateWebhookSubscriptionRequest {
     /**
      * A name from `GET /webhooks/events`, or `*` for every event. Any other name is a 422 naming `eventTypes`.
      * @minItems 1
-     * @items.minLength 1
-     * @items.maxLength 100
      */
-    eventTypes?: string[];
+    eventTypes?: WebhookEventFilter[];
 }
 
 export type WebhookDeliveryStatus =
@@ -5958,6 +5984,34 @@ export const WebhookDeliveryStatus = {
     exhausted: 'exhausted'
 } as const;
 
+/**
+ * The name of one event a subscription can receive, as `GET /webhooks/events` lists it.
+ */
+export type WebhookEventName = (typeof WebhookEventName)[keyof typeof WebhookEventName];
+
+export const WebhookEventName = {
+    ordercreated: 'order.created',
+    orderpaid: 'order.paid',
+    ordercancelled: 'order.cancelled',
+    orderredacted: 'order.redacted',
+    shipmentshipped: 'shipment.shipped',
+    shipmentdelivered: 'shipment.delivered',
+    shipmentlost: 'shipment.lost',
+    paymentsucceeded: 'payment.succeeded',
+    paymentfailed: 'payment.failed',
+    paymentrefunded: 'payment.refunded',
+    paymentrefund_failed: 'payment.refund_failed',
+    paymentrefund_reversed: 'payment.refund_reversed',
+    paymentdispute_opened: 'payment.dispute_opened',
+    paymentdispute_updated: 'payment.dispute_updated',
+    returnrequested: 'return.requested',
+    returnreceived: 'return.received',
+    returnclosed: 'return.closed',
+    examplepublished: 'example.published',
+    usererased: 'user.erased',
+    userupdated: 'user.updated'
+} as const;
+
 export interface WebhookDeliveryActions {
     /** Whether `POST /webhooks/deliveries/{id}/replay` would be accepted — false while the delivery's subscription is disabled or gone. */
     replay: boolean;
@@ -5967,7 +6021,7 @@ export interface WebhookDelivery {
     id: Id;
     subscriptionId: Id;
     eventId: Id;
-    eventType: string;
+    eventType: WebhookEventName;
     /** @minimum 1 */
     attempt: number;
     status: WebhookDeliveryStatus;
@@ -5976,6 +6030,7 @@ export interface WebhookDelivery {
      * @maximum 599
      */
     responseCode?: number;
+    /** @minimum 0 */
     durationMs?: number;
     error?: string;
     nextAttemptAt?: string;
@@ -5990,7 +6045,7 @@ export interface WebhookDeliveriesResponse {
 }
 
 export interface WebhookEventCatalogueEntry {
-    name: string;
+    name: WebhookEventName;
     description?: string;
 }
 

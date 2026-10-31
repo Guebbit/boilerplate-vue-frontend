@@ -15202,6 +15202,7 @@ export const ListStockMovementsQueryParams = zod.strictObject({
             'adjust',
             'restock',
             'backorder',
+            'owed',
             'allocate'
         ])
         .optional()
@@ -15238,6 +15239,7 @@ export const ListStockMovementsResponse = zod.strictObject({
                 'adjust',
                 'restock',
                 'backorder',
+                'owed',
                 'allocate'
             ]),
             onHandDelta: zod.number(),
@@ -15420,7 +15422,33 @@ export const ListWebhookSubscriptionsResponse = zod.strictObject({
                 .regex(listWebhookSubscriptionsResponseItemsItemIdRegExp),
             url: zod.url().regex(listWebhookSubscriptionsResponseItemsItemUrlRegExp),
             description: zod.string().optional(),
-            eventTypes: zod.array(zod.string()).min(1),
+            eventTypes: zod
+                .array(
+                    zod.enum([
+                        'order.created',
+                        'order.paid',
+                        'order.cancelled',
+                        'order.redacted',
+                        'shipment.shipped',
+                        'shipment.delivered',
+                        'shipment.lost',
+                        'payment.succeeded',
+                        'payment.failed',
+                        'payment.refunded',
+                        'payment.refund_failed',
+                        'payment.refund_reversed',
+                        'payment.dispute_opened',
+                        'payment.dispute_updated',
+                        'return.requested',
+                        'return.received',
+                        'return.closed',
+                        'example.published',
+                        'user.erased',
+                        'user.updated',
+                        '*'
+                    ])
+                )
+                .min(1),
             enabled: zod.boolean(),
             consecutiveFailures: zod
                 .number()
@@ -15475,7 +15503,6 @@ export const ListWebhookSubscriptionsResponse = zod.strictObject({
 export const createWebhookSubscriptionBodyUrlMax = 2048;
 export const createWebhookSubscriptionBodyUrlRegExp = new RegExp('(?:^https://)');
 export const createWebhookSubscriptionBodyDescriptionMax = 500;
-export const createWebhookSubscriptionBodyEventTypesItemMax = 100;
 export const CreateWebhookSubscriptionBody = zod.strictObject({
     url: zod
         .url()
@@ -15483,7 +15510,31 @@ export const CreateWebhookSubscriptionBody = zod.strictObject({
         .regex(createWebhookSubscriptionBodyUrlRegExp),
     description: zod.string().min(1).max(createWebhookSubscriptionBodyDescriptionMax).optional(),
     eventTypes: zod
-        .array(zod.string().min(1).max(createWebhookSubscriptionBodyEventTypesItemMax))
+        .array(
+            zod.enum([
+                'order.created',
+                'order.paid',
+                'order.cancelled',
+                'order.redacted',
+                'shipment.shipped',
+                'shipment.delivered',
+                'shipment.lost',
+                'payment.succeeded',
+                'payment.failed',
+                'payment.refunded',
+                'payment.refund_failed',
+                'payment.refund_reversed',
+                'payment.dispute_opened',
+                'payment.dispute_updated',
+                'return.requested',
+                'return.received',
+                'return.closed',
+                'example.published',
+                'user.erased',
+                'user.updated',
+                '*'
+            ])
+        )
         .min(1)
 });
 export const createWebhookSubscriptionResponseIdMax = 64;
@@ -15498,7 +15549,33 @@ export const CreateWebhookSubscriptionResponse = zod.strictObject({
         .regex(createWebhookSubscriptionResponseIdRegExp),
     url: zod.url().regex(createWebhookSubscriptionResponseUrlRegExp),
     description: zod.string().optional(),
-    eventTypes: zod.array(zod.string()).min(1),
+    eventTypes: zod
+        .array(
+            zod.enum([
+                'order.created',
+                'order.paid',
+                'order.cancelled',
+                'order.redacted',
+                'shipment.shipped',
+                'shipment.delivered',
+                'shipment.lost',
+                'payment.succeeded',
+                'payment.failed',
+                'payment.refunded',
+                'payment.refund_failed',
+                'payment.refund_reversed',
+                'payment.dispute_opened',
+                'payment.dispute_updated',
+                'return.requested',
+                'return.received',
+                'return.closed',
+                'example.published',
+                'user.erased',
+                'user.updated',
+                '*'
+            ])
+        )
+        .min(1),
     enabled: zod.boolean(),
     consecutiveFailures: zod.number().min(createWebhookSubscriptionResponseConsecutiveFailuresMin),
     disabledAt: zod.iso.datetime({ offset: true }).optional(),
@@ -15549,7 +15626,33 @@ export const GetWebhookSubscriptionResponse = zod.strictObject({
         .regex(getWebhookSubscriptionResponseIdRegExp),
     url: zod.url().regex(getWebhookSubscriptionResponseUrlRegExp),
     description: zod.string().optional(),
-    eventTypes: zod.array(zod.string()).min(1),
+    eventTypes: zod
+        .array(
+            zod.enum([
+                'order.created',
+                'order.paid',
+                'order.cancelled',
+                'order.redacted',
+                'shipment.shipped',
+                'shipment.delivered',
+                'shipment.lost',
+                'payment.succeeded',
+                'payment.failed',
+                'payment.refunded',
+                'payment.refund_failed',
+                'payment.refund_reversed',
+                'payment.dispute_opened',
+                'payment.dispute_updated',
+                'return.requested',
+                'return.received',
+                'return.closed',
+                'example.published',
+                'user.erased',
+                'user.updated',
+                '*'
+            ])
+        )
+        .min(1),
     enabled: zod.boolean(),
     consecutiveFailures: zod.number().min(getWebhookSubscriptionResponseConsecutiveFailuresMin),
     disabledAt: zod.iso.datetime({ offset: true }).optional(),
@@ -15590,7 +15693,6 @@ export const ReplaceWebhookSubscriptionParams = zod.strictObject({
 export const replaceWebhookSubscriptionBodyUrlMax = 2048;
 export const replaceWebhookSubscriptionBodyUrlRegExp = new RegExp('(?:^https://)');
 export const replaceWebhookSubscriptionBodyDescriptionMax = 500;
-export const replaceWebhookSubscriptionBodyEventTypesItemMax = 100;
 export const ReplaceWebhookSubscriptionBody = zod.strictObject({
     url: zod
         .url()
@@ -15598,7 +15700,31 @@ export const ReplaceWebhookSubscriptionBody = zod.strictObject({
         .regex(replaceWebhookSubscriptionBodyUrlRegExp),
     description: zod.string().min(1).max(replaceWebhookSubscriptionBodyDescriptionMax).nullish(),
     eventTypes: zod
-        .array(zod.string().min(1).max(replaceWebhookSubscriptionBodyEventTypesItemMax))
+        .array(
+            zod.enum([
+                'order.created',
+                'order.paid',
+                'order.cancelled',
+                'order.redacted',
+                'shipment.shipped',
+                'shipment.delivered',
+                'shipment.lost',
+                'payment.succeeded',
+                'payment.failed',
+                'payment.refunded',
+                'payment.refund_failed',
+                'payment.refund_reversed',
+                'payment.dispute_opened',
+                'payment.dispute_updated',
+                'return.requested',
+                'return.received',
+                'return.closed',
+                'example.published',
+                'user.erased',
+                'user.updated',
+                '*'
+            ])
+        )
         .min(1)
 });
 export const replaceWebhookSubscriptionResponseIdMax = 64;
@@ -15613,7 +15739,33 @@ export const ReplaceWebhookSubscriptionResponse = zod.strictObject({
         .regex(replaceWebhookSubscriptionResponseIdRegExp),
     url: zod.url().regex(replaceWebhookSubscriptionResponseUrlRegExp),
     description: zod.string().optional(),
-    eventTypes: zod.array(zod.string()).min(1),
+    eventTypes: zod
+        .array(
+            zod.enum([
+                'order.created',
+                'order.paid',
+                'order.cancelled',
+                'order.redacted',
+                'shipment.shipped',
+                'shipment.delivered',
+                'shipment.lost',
+                'payment.succeeded',
+                'payment.failed',
+                'payment.refunded',
+                'payment.refund_failed',
+                'payment.refund_reversed',
+                'payment.dispute_opened',
+                'payment.dispute_updated',
+                'return.requested',
+                'return.received',
+                'return.closed',
+                'example.published',
+                'user.erased',
+                'user.updated',
+                '*'
+            ])
+        )
+        .min(1),
     enabled: zod.boolean(),
     consecutiveFailures: zod.number().min(replaceWebhookSubscriptionResponseConsecutiveFailuresMin),
     disabledAt: zod.iso.datetime({ offset: true }).optional(),
@@ -15654,7 +15806,6 @@ export const UpdateWebhookSubscriptionParams = zod.strictObject({
 export const updateWebhookSubscriptionBodyUrlMax = 2048;
 export const updateWebhookSubscriptionBodyUrlRegExp = new RegExp('(?:^https://)');
 export const updateWebhookSubscriptionBodyDescriptionMax = 500;
-export const updateWebhookSubscriptionBodyEventTypesItemMax = 100;
 export const UpdateWebhookSubscriptionBody = zod.strictObject({
     url: zod
         .url()
@@ -15663,7 +15814,31 @@ export const UpdateWebhookSubscriptionBody = zod.strictObject({
         .optional(),
     description: zod.string().min(1).max(updateWebhookSubscriptionBodyDescriptionMax).nullish(),
     eventTypes: zod
-        .array(zod.string().min(1).max(updateWebhookSubscriptionBodyEventTypesItemMax))
+        .array(
+            zod.enum([
+                'order.created',
+                'order.paid',
+                'order.cancelled',
+                'order.redacted',
+                'shipment.shipped',
+                'shipment.delivered',
+                'shipment.lost',
+                'payment.succeeded',
+                'payment.failed',
+                'payment.refunded',
+                'payment.refund_failed',
+                'payment.refund_reversed',
+                'payment.dispute_opened',
+                'payment.dispute_updated',
+                'return.requested',
+                'return.received',
+                'return.closed',
+                'example.published',
+                'user.erased',
+                'user.updated',
+                '*'
+            ])
+        )
         .min(1)
         .optional()
 });
@@ -15679,7 +15854,33 @@ export const UpdateWebhookSubscriptionResponse = zod.strictObject({
         .regex(updateWebhookSubscriptionResponseIdRegExp),
     url: zod.url().regex(updateWebhookSubscriptionResponseUrlRegExp),
     description: zod.string().optional(),
-    eventTypes: zod.array(zod.string()).min(1),
+    eventTypes: zod
+        .array(
+            zod.enum([
+                'order.created',
+                'order.paid',
+                'order.cancelled',
+                'order.redacted',
+                'shipment.shipped',
+                'shipment.delivered',
+                'shipment.lost',
+                'payment.succeeded',
+                'payment.failed',
+                'payment.refunded',
+                'payment.refund_failed',
+                'payment.refund_reversed',
+                'payment.dispute_opened',
+                'payment.dispute_updated',
+                'return.requested',
+                'return.received',
+                'return.closed',
+                'example.published',
+                'user.erased',
+                'user.updated',
+                '*'
+            ])
+        )
+        .min(1),
     enabled: zod.boolean(),
     consecutiveFailures: zod.number().min(updateWebhookSubscriptionResponseConsecutiveFailuresMin),
     disabledAt: zod.iso.datetime({ offset: true }).optional(),
@@ -15745,7 +15946,33 @@ export const RemoveWebhookSubscriptionSecretResponse = zod.strictObject({
         .regex(removeWebhookSubscriptionSecretResponseIdRegExp),
     url: zod.url().regex(removeWebhookSubscriptionSecretResponseUrlRegExp),
     description: zod.string().optional(),
-    eventTypes: zod.array(zod.string()).min(1),
+    eventTypes: zod
+        .array(
+            zod.enum([
+                'order.created',
+                'order.paid',
+                'order.cancelled',
+                'order.redacted',
+                'shipment.shipped',
+                'shipment.delivered',
+                'shipment.lost',
+                'payment.succeeded',
+                'payment.failed',
+                'payment.refunded',
+                'payment.refund_failed',
+                'payment.refund_reversed',
+                'payment.dispute_opened',
+                'payment.dispute_updated',
+                'return.requested',
+                'return.received',
+                'return.closed',
+                'example.published',
+                'user.erased',
+                'user.updated',
+                '*'
+            ])
+        )
+        .min(1),
     enabled: zod.boolean(),
     consecutiveFailures: zod
         .number()
@@ -15809,6 +16036,7 @@ export const listWebhookDeliveriesResponseItemsItemEventIdMax = 64;
 export const listWebhookDeliveriesResponseItemsItemEventIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listWebhookDeliveriesResponseItemsItemResponseCodeMin = 100;
 export const listWebhookDeliveriesResponseItemsItemResponseCodeMax = 599;
+export const listWebhookDeliveriesResponseItemsItemDurationMsMin = 0;
 export const listWebhookDeliveriesResponseMetaPageDefault = 1;
 export const listWebhookDeliveriesResponseMetaPageMax = 10000;
 export const listWebhookDeliveriesResponseMetaPageSizeDefault = 10;
@@ -15833,7 +16061,28 @@ export const ListWebhookDeliveriesResponse = zod.strictObject({
                 .min(1)
                 .max(listWebhookDeliveriesResponseItemsItemEventIdMax)
                 .regex(listWebhookDeliveriesResponseItemsItemEventIdRegExp),
-            eventType: zod.string(),
+            eventType: zod.enum([
+                'order.created',
+                'order.paid',
+                'order.cancelled',
+                'order.redacted',
+                'shipment.shipped',
+                'shipment.delivered',
+                'shipment.lost',
+                'payment.succeeded',
+                'payment.failed',
+                'payment.refunded',
+                'payment.refund_failed',
+                'payment.refund_reversed',
+                'payment.dispute_opened',
+                'payment.dispute_updated',
+                'return.requested',
+                'return.received',
+                'return.closed',
+                'example.published',
+                'user.erased',
+                'user.updated'
+            ]),
             attempt: zod.number().min(1),
             status: zod.enum(['pending', 'in-flight', 'succeeded', 'exhausted']),
             responseCode: zod
@@ -15841,7 +16090,10 @@ export const ListWebhookDeliveriesResponse = zod.strictObject({
                 .min(listWebhookDeliveriesResponseItemsItemResponseCodeMin)
                 .max(listWebhookDeliveriesResponseItemsItemResponseCodeMax)
                 .optional(),
-            durationMs: zod.number().optional(),
+            durationMs: zod
+                .number()
+                .min(listWebhookDeliveriesResponseItemsItemDurationMsMin)
+                .optional(),
             error: zod.string().optional(),
             nextAttemptAt: zod.iso.datetime({ offset: true }).optional(),
             actions: zod.strictObject({
@@ -15893,6 +16145,7 @@ export const replayWebhookDeliveryResponseEventIdMax = 64;
 export const replayWebhookDeliveryResponseEventIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const replayWebhookDeliveryResponseResponseCodeMin = 100;
 export const replayWebhookDeliveryResponseResponseCodeMax = 599;
+export const replayWebhookDeliveryResponseDurationMsMin = 0;
 export const ReplayWebhookDeliveryResponse = zod.strictObject({
     id: zod
         .string()
@@ -15909,7 +16162,28 @@ export const ReplayWebhookDeliveryResponse = zod.strictObject({
         .min(1)
         .max(replayWebhookDeliveryResponseEventIdMax)
         .regex(replayWebhookDeliveryResponseEventIdRegExp),
-    eventType: zod.string(),
+    eventType: zod.enum([
+        'order.created',
+        'order.paid',
+        'order.cancelled',
+        'order.redacted',
+        'shipment.shipped',
+        'shipment.delivered',
+        'shipment.lost',
+        'payment.succeeded',
+        'payment.failed',
+        'payment.refunded',
+        'payment.refund_failed',
+        'payment.refund_reversed',
+        'payment.dispute_opened',
+        'payment.dispute_updated',
+        'return.requested',
+        'return.received',
+        'return.closed',
+        'example.published',
+        'user.erased',
+        'user.updated'
+    ]),
     attempt: zod.number().min(1),
     status: zod.enum(['pending', 'in-flight', 'succeeded', 'exhausted']),
     responseCode: zod
@@ -15917,7 +16191,7 @@ export const ReplayWebhookDeliveryResponse = zod.strictObject({
         .min(replayWebhookDeliveryResponseResponseCodeMin)
         .max(replayWebhookDeliveryResponseResponseCodeMax)
         .optional(),
-    durationMs: zod.number().optional(),
+    durationMs: zod.number().min(replayWebhookDeliveryResponseDurationMsMin).optional(),
     error: zod.string().optional(),
     nextAttemptAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
@@ -15936,7 +16210,28 @@ export const ReplayWebhookDeliveryResponse = zod.strictObject({
 export const ListWebhookEventsResponse = zod.strictObject({
     items: zod.array(
         zod.strictObject({
-            name: zod.string(),
+            name: zod.enum([
+                'order.created',
+                'order.paid',
+                'order.cancelled',
+                'order.redacted',
+                'shipment.shipped',
+                'shipment.delivered',
+                'shipment.lost',
+                'payment.succeeded',
+                'payment.failed',
+                'payment.refunded',
+                'payment.refund_failed',
+                'payment.refund_reversed',
+                'payment.dispute_opened',
+                'payment.dispute_updated',
+                'return.requested',
+                'return.received',
+                'return.closed',
+                'example.published',
+                'user.erased',
+                'user.updated'
+            ]),
             description: zod.string().optional()
         })
     )
@@ -19187,7 +19482,33 @@ export const EnableWebhookSubscriptionResponse = zod.strictObject({
         .regex(enableWebhookSubscriptionResponseIdRegExp),
     url: zod.url().regex(enableWebhookSubscriptionResponseUrlRegExp),
     description: zod.string().optional(),
-    eventTypes: zod.array(zod.string()).min(1),
+    eventTypes: zod
+        .array(
+            zod.enum([
+                'order.created',
+                'order.paid',
+                'order.cancelled',
+                'order.redacted',
+                'shipment.shipped',
+                'shipment.delivered',
+                'shipment.lost',
+                'payment.succeeded',
+                'payment.failed',
+                'payment.refunded',
+                'payment.refund_failed',
+                'payment.refund_reversed',
+                'payment.dispute_opened',
+                'payment.dispute_updated',
+                'return.requested',
+                'return.received',
+                'return.closed',
+                'example.published',
+                'user.erased',
+                'user.updated',
+                '*'
+            ])
+        )
+        .min(1),
     enabled: zod.boolean(),
     consecutiveFailures: zod.number().min(enableWebhookSubscriptionResponseConsecutiveFailuresMin),
     disabledAt: zod.iso.datetime({ offset: true }).optional(),
@@ -19238,7 +19559,33 @@ export const DisableWebhookSubscriptionResponse = zod.strictObject({
         .regex(disableWebhookSubscriptionResponseIdRegExp),
     url: zod.url().regex(disableWebhookSubscriptionResponseUrlRegExp),
     description: zod.string().optional(),
-    eventTypes: zod.array(zod.string()).min(1),
+    eventTypes: zod
+        .array(
+            zod.enum([
+                'order.created',
+                'order.paid',
+                'order.cancelled',
+                'order.redacted',
+                'shipment.shipped',
+                'shipment.delivered',
+                'shipment.lost',
+                'payment.succeeded',
+                'payment.failed',
+                'payment.refunded',
+                'payment.refund_failed',
+                'payment.refund_reversed',
+                'payment.dispute_opened',
+                'payment.dispute_updated',
+                'return.requested',
+                'return.received',
+                'return.closed',
+                'example.published',
+                'user.erased',
+                'user.updated',
+                '*'
+            ])
+        )
+        .min(1),
     enabled: zod.boolean(),
     consecutiveFailures: zod.number().min(disableWebhookSubscriptionResponseConsecutiveFailuresMin),
     disabledAt: zod.iso.datetime({ offset: true }).optional(),
@@ -19294,7 +19641,33 @@ export const CreateWebhookSubscriptionSecretResponse = zod.strictObject({
         .regex(createWebhookSubscriptionSecretResponseIdRegExp),
     url: zod.url().regex(createWebhookSubscriptionSecretResponseUrlRegExp),
     description: zod.string().optional(),
-    eventTypes: zod.array(zod.string()).min(1),
+    eventTypes: zod
+        .array(
+            zod.enum([
+                'order.created',
+                'order.paid',
+                'order.cancelled',
+                'order.redacted',
+                'shipment.shipped',
+                'shipment.delivered',
+                'shipment.lost',
+                'payment.succeeded',
+                'payment.failed',
+                'payment.refunded',
+                'payment.refund_failed',
+                'payment.refund_reversed',
+                'payment.dispute_opened',
+                'payment.dispute_updated',
+                'return.requested',
+                'return.received',
+                'return.closed',
+                'example.published',
+                'user.erased',
+                'user.updated',
+                '*'
+            ])
+        )
+        .min(1),
     enabled: zod.boolean(),
     consecutiveFailures: zod
         .number()
@@ -19338,6 +19711,7 @@ export const getWebhookDeliveryResponseEventIdMax = 64;
 export const getWebhookDeliveryResponseEventIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getWebhookDeliveryResponseResponseCodeMin = 100;
 export const getWebhookDeliveryResponseResponseCodeMax = 599;
+export const getWebhookDeliveryResponseDurationMsMin = 0;
 export const GetWebhookDeliveryResponse = zod.strictObject({
     id: zod
         .string()
@@ -19354,7 +19728,28 @@ export const GetWebhookDeliveryResponse = zod.strictObject({
         .min(1)
         .max(getWebhookDeliveryResponseEventIdMax)
         .regex(getWebhookDeliveryResponseEventIdRegExp),
-    eventType: zod.string(),
+    eventType: zod.enum([
+        'order.created',
+        'order.paid',
+        'order.cancelled',
+        'order.redacted',
+        'shipment.shipped',
+        'shipment.delivered',
+        'shipment.lost',
+        'payment.succeeded',
+        'payment.failed',
+        'payment.refunded',
+        'payment.refund_failed',
+        'payment.refund_reversed',
+        'payment.dispute_opened',
+        'payment.dispute_updated',
+        'return.requested',
+        'return.received',
+        'return.closed',
+        'example.published',
+        'user.erased',
+        'user.updated'
+    ]),
     attempt: zod.number().min(1),
     status: zod.enum(['pending', 'in-flight', 'succeeded', 'exhausted']),
     responseCode: zod
@@ -19362,7 +19757,7 @@ export const GetWebhookDeliveryResponse = zod.strictObject({
         .min(getWebhookDeliveryResponseResponseCodeMin)
         .max(getWebhookDeliveryResponseResponseCodeMax)
         .optional(),
-    durationMs: zod.number().optional(),
+    durationMs: zod.number().min(getWebhookDeliveryResponseDurationMsMin).optional(),
     error: zod.string().optional(),
     nextAttemptAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
