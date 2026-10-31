@@ -46,6 +46,7 @@
         "pagination-board": "Pagine della giacenza",
         "pagination-ledger": "Pagine del registro",
         "reason-backorder": "Preordinato",
+        "reason-owed": "Dovute",
         "reason-allocate": "Assegnato",
         "column-backorder-limit": "Limite su esaurito",
         "column-backordered": "Preordinati",
