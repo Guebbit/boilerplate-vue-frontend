@@ -149,7 +149,7 @@ Two more things need care that are not fields at all:
 
 - **which subdomain the module sits in, and what kind of relationship each import to a sibling is** —
   write the subdomain in the docblock above the manifest, the way the `widgets` example above does,
-  and each edge's kind on the module's docs page under "The map". Nothing reads either at runtime,
+  and each edge's kind in the overview's "The whole map" (`docs/modules/index.md`). Nothing reads either at runtime,
   so neither is a typed field — see [Strategic DDD](./strategic-ddd.md) §2 and §4 for why.
 - **which siblings the module may import at all** — add the module to `MODULE_EDGES` in
   `eslint.config.ts` the moment it reaches a sibling, naming which one(s). This is the part that

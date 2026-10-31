@@ -21,21 +21,7 @@
 
 ## The map
 
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
-flowchart LR
-    cart["cart"] -.->|"published-language"| delivery["<b>delivery</b>"]
-    orders["orders"] -.->|"published-language"| delivery["<b>delivery</b>"]
-    inventory["inventory"] -.->|"published-language"| delivery["<b>delivery</b>"]
-
-    classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
-    classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
-    classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
-    classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
-    class cart,orders core;
-    class inventory supporting;
-    class delivery self;
-```
+The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
 - `cart` → **published-language** — Mounts `ShippingSelector`, a self-contained component that renders shipping without this module learning what a rate is.
 - `orders` → **published-language** — Mounts `ShipmentPanel`; the parcel renders itself and this module never touches a shipment.

@@ -21,20 +21,7 @@
 
 ## The map
 
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
-flowchart LR
-    inventory["<b>inventory</b>"] ==>|"customer-supplier"| products["products"]
-    inventory["<b>inventory</b>"] -.->|"published-language"| delivery["delivery"]
-
-    classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
-    classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
-    classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
-    classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
-    class products core;
-    class delivery supporting;
-    class inventory self;
-```
+The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
 - → `products` **customer-supplier** — Asks the products store to drop its cached catalogue after a recorded movement (`invalidateProductsCache`), and reads the ledger's titles through `useProductLines`.
 - → `delivery` **published-language** — Mounts `PreorderFulfillmentTable` and reads `usePreorderSummaries` on the preorder board; the fulfillment orders stay `delivery`'s.

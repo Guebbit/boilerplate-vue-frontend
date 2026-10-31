@@ -21,22 +21,7 @@
 
 ## The map
 
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
-flowchart LR
-    inventory["inventory"] ==>|"customer-supplier"| products["<b>products</b>"]
-    cart["cart"] ==>|"customer-supplier"| products["<b>products</b>"]
-    wishlist["wishlist"] -->|"conformist"| products["<b>products</b>"]
-    stockAlerts["stock-alerts"] -->|"conformist"| products["<b>products</b>"]
-
-    classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
-    classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
-    classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
-    classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
-    class cart core;
-    class wishlist,inventory,stockAlerts supporting;
-    class products self;
-```
+The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
 - `inventory` → **customer-supplier** — Asks the products store to drop its cached catalogue after a recorded movement (`invalidateProductsCache`), and reads the ledger's titles through `useProductLines`.
 - `cart` → **customer-supplier** — Reads its lines' products through `useProductLines` and asks the cache to drop after a checkout (`invalidateProductsCache`).

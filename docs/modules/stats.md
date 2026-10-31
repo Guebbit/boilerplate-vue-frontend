@@ -21,11 +21,7 @@
 
 ## The map
 
-```mermaid
-flowchart LR
-    stats["<b>stats</b>"] -. "route name only" .-> orders["orders"]
-    stats -->|"GET /stats/*"| api[("backend stats")]
-```
+The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
 `stats` imports no sibling. The one link out, from a product's page to the staff orders list
 (filtered by product and paid days), is resolved with `linkIfRouted`: a build with no `orders`

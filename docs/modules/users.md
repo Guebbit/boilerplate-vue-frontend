@@ -22,18 +22,7 @@
 
 ## The map
 
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
-flowchart LR
-    account["account"] -.->|"published-language"| users["<b>users</b>"]
-
-    classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
-    classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
-    classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
-    classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
-    class account generic;
-    class users self;
-```
+The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
 - `account` → **published-language** — Validates every form against `usersSchema`/`usersPasswordSchema` — shared field rules, not a shared store.
 

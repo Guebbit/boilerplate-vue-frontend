@@ -59,9 +59,9 @@ and the kinds differ enormously in what they cost when the upstream moves:
 
 ### Where the map lives
 
-On each module's docs page, under "The map": a Mermaid diagram plus one bullet per edge. That is the
-only place a kind is written. [Modules](../modules/index.md#the-whole-map) draws the overview, and
-`tests/cross-cutting/module-map.spec.ts` holds the overview and the pages to each other. A
+[Modules](../modules/index.md#the-whole-map) draws the map once, and that is the only place a kind
+is drawn. Each module's page, under "The map", links there and keeps one bullet per edge saying why.
+`tests/cross-cutting/module-map.spec.ts` holds the overview to `MODULE_EDGES`. A
 `module.ts` docblock points at its page and states no kind. `cart` reaches four siblings, and its
 page says how it depends on each: three `published-language` vocabularies (`delivery`, `payments`,
 `account`) and one `customer-supplier` call (`products`, whose cached catalogue it drops after each

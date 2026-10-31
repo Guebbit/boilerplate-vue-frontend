@@ -21,19 +21,7 @@
 
 ## The map
 
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
-flowchart LR
-    wishlist["<b>wishlist</b>"] ==>|"customer-supplier"| cart["cart"]
-    wishlist["<b>wishlist</b>"] -->|"conformist"| products["products"]
-
-    classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
-    classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
-    classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
-    classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
-    class cart,products core;
-    class wishlist self;
-```
+The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
 - → `products` **conformist** — Joins its saved lines to their product records (`useProductLines`), read as they are.
 - → `cart` **customer-supplier** — Move-to-cart calls a wishlist endpoint and then asks the cart store to refetch itself; the cart is never asked to write.

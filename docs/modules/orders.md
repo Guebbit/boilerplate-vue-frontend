@@ -21,22 +21,7 @@
 
 ## The map
 
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
-flowchart LR
-    orders["<b>orders</b>"] ==>|"customer-supplier"| cart["cart"]
-    orders["<b>orders</b>"] -.->|"published-language"| delivery["delivery"]
-    orders["<b>orders</b>"] ==>|"customer-supplier"| payments["payments"]
-    orders["<b>orders</b>"] -.->|"published-language"| returns["returns"]
-
-    classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
-    classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
-    classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
-    classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
-    class cart core;
-    class delivery,payments,returns supporting;
-    class orders self;
-```
+The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
 - → `cart` **customer-supplier** — The reorder button asks the cart store to refill itself from a past order.
 - → `delivery` **published-language** — Mounts `ShipmentPanel`; the parcel renders itself and this module never touches a shipment.
