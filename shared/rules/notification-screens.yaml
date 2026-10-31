@@ -1,6 +1,7 @@
 # The admin list each staff summary notice counts, by notification code.
 # A summary row carries a count and no id, so it points at a list, never at a record.
-# The same codes are the backend's `staffPages` link keys; the code-to-screen choice lives here.
+# The backend's `staffPages` (contracts/frontend-links.yaml) are page ids, not notice codes; this
+# map is the frontend's own choice of which list a notice opens.
 summaryScreens:
     notifications.staff.transfers-due: sales-orders
     notifications.staff.preorders-late: preorders
