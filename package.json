@@ -23,6 +23,7 @@
         "audit:design:plan": "tsx scripts/audit/design-manual/scripts/plan.ts",
         "audit:design:check": "tsx scripts/audit/design-manual/scripts/check.ts",
         "audit:css": "tsx scripts/audit/css-invasive/report.ts",
+        "audit:locale-keys": "tsx scripts/audit/unused-locale-keys/report.ts",
         "audit:shallow": "tsx scripts/audit/code-shape/scripts/generate-shallow-candidates.ts",
         "audit:unused": "knip --no-progress --no-exit-code",
         "audit:duplicates": "jscpd",
