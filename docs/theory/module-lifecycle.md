@@ -39,10 +39,9 @@ generated from it.
 That asymmetry is the single most important thing to know before deleting anything — see
 [the contract is not ours alone](#the-contract-is-not-ours-alone).
 
-The second registry is not runtime: `tests/cross-cutting/backend-pairing.spec.ts` names the
-**backend** module each domain here answers, or a sentence saying why none does. It fails on a
-missing entry, which is what stops the FE/BE gap from widening unnoticed — and it is the only file
-in this repository that names a domain on the other side.
+The second registry is not runtime: the table in
+[`docs/modules/index.md`](../modules/index.md#the-two-repositories) names the **backend** module
+each domain here answers. It is prose, kept in step by review.
 
 ---
 
@@ -194,9 +193,8 @@ from the code. The two sections worth the most care are the ones only you can wr
 - the **At a glance** box — what it owns, what it depends on, what breaks if you change it
 - **The story** — why the domain exists, the decisions that are not obvious from the code, the traps
 
-Then add the entry to `BACKEND_PAIRING` in `tests/cross-cutting/backend-pairing.spec.ts`, and the
-page to the `/modules/` sidebar in `docs/.vitepress/config.mts`. That spec fails until the pairing
-entry exists.
+Then add a row to the pairing table in `docs/modules/index.md`, and the page to the `/modules/`
+sidebar in `docs/.vitepress/config.mts`.
 
 If the domain carries a file shape no other module has, add one line to
 `tests/cross-cutting/module-file-shapes.spec.ts` describing it — that spec fails on a shape nothing
@@ -223,13 +221,13 @@ wiring silently measures an app with no domain vocabulary and no contract valida
 
 A scaffold `events` module, measured:
 
-|                                                  |                                                                                                                                                                                |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| files added                                      | 8 — `module.ts`, `routes.ts`, one view, `locales/{en,it}.json`, `tests/routes.spec.ts`, `tests/e2e/a11y.cy.ts`, its `docs/modules/` page                                       |
-| lines, across those 8 files                      | ~196                                                                                                                                                                           |
-| existing files needing an edit to accommodate it | **3** — `src/modules.ts` (the import and the array entry), `tests/cross-cutting/backend-pairing.spec.ts` (the pairing row), the sidebar config in `docs/.vitepress/config.mts` |
-| documentation written by hand                    | the whole page — every block, per step 5 above                                                                                                                                 |
-| result                                           | type-check, lint and the unit suite green; the view built into its own lazy chunk                                                                                              |
+|                                                  |                                                                                                                                                             |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| files added                                      | 8 — `module.ts`, `routes.ts`, one view, `locales/{en,it}.json`, `tests/routes.spec.ts`, `tests/e2e/a11y.cy.ts`, its `docs/modules/` page                    |
+| lines, across those 8 files                      | ~196                                                                                                                                                        |
+| existing files needing an edit to accommodate it | **3** — `src/modules.ts` (the import and the array entry), the pairing table in `docs/modules/index.md`, the sidebar config in `docs/.vitepress/config.mts` |
+| documentation written by hand                    | the whole page — every block, per step 5 above                                                                                                              |
+| result                                           | type-check, lint and the unit suite green; the view built into its own lazy chunk                                                                           |
 
 ---
 
@@ -256,9 +254,8 @@ rm docs/modules/<name>.md
 npm run complete
 ```
 
-Then drop its entry from `BACKEND_PAIRING` in `tests/cross-cutting/backend-pairing.spec.ts`, and its
-sidebar entries from `docs/.vitepress/config.mts`. That spec names a stale pairing entry by itself;
-the pages and the sidebar are yours to check, since nothing generates them.
+Then drop its row from the pairing table in `docs/modules/index.md`, and its sidebar entries from
+`docs/.vitepress/config.mts`. The pages and the sidebar are yours to check, since nothing generates them.
 
 Deleting a module a sibling still imports fails `npm run build` at the unresolved `@/modules/<name>`
 specifier, with the importing file and line named — not a blank page on whichever navigation first
