@@ -26,6 +26,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
 import { aProblem } from '../../../support/unit/fixtures.ts';
+import { ROUTES } from '@api/routes';
 
 /** Base URL the axios instance is built against; also what the handlers below are mounted on. */
 const API = 'http://api.test';
@@ -34,8 +35,9 @@ const API = 'http://api.test';
 const FRESH_TOKEN = 'fresh-token';
 
 /**
- * Endpoints that must never trigger a refresh, mirroring `refreshExcludedPaths` in
- * `src/infrastructure/http/refresh.ts`.
+ * Endpoints that must never trigger a refresh. The contract marks them (`x-no-refresh`, which
+ * the generated route table carries as `noRefresh`); the first test below holds this list equal
+ * to those rows.
  *
  * A 401 from any of them is a normal business outcome — wrong password, expired reset link, a
  * session already invalidated — so refreshing there turns a clean error message into an extra
@@ -448,6 +450,16 @@ describe('401 refresh flow', () => {
      * the very code under test.
      */
     describe('when the 401 comes from an excluded endpoint', () => {
+        it('is exactly the operations the contract marks x-no-refresh', () => {
+            const marked = ROUTES.filter((route) => route.noRefresh);
+
+            expect(marked).toHaveLength(EXCLUDED_PATHS.length);
+            for (const path of EXCLUDED_PATHS)
+                expect(
+                    marked.some((route) => route.method === 'POST' && route.pattern.test(path))
+                ).toBe(true);
+        });
+
         it.each([
             ...EXCLUDED_PATHS,
             ABSOLUTE_EXCLUDED_URL,

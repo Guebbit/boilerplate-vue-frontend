@@ -71,6 +71,14 @@ export type Id = string;
 export type Text = string;
 
 /**
+ * ISO 4217 alphabetic currency code, upper case (e.g. `EUR`)
+ * @minLength 3
+ * @maxLength 3
+ * @pattern ^[A-Z]{3}$
+ */
+export type CurrencyCode = string;
+
+/**
  * @maxLength 254
  */
 export type Email = string;
@@ -382,6 +390,7 @@ export interface Abilities {
      * when a role does. A client caches these; this is what tells it the cache is
      * about a different model, not merely a different person. One number for both
      * lists — the keys file they are declared in is one file.
+     * @minimum 1
      */
     version: number;
 }
@@ -949,7 +958,9 @@ export interface ProcessMemory {
 
 export interface ObservabilityHealthSystem {
     platform: string;
+    /** @minimum 1 */
     cpuCount: number;
+    /** @items.minimum 0 */
     loadAvg: number[];
 }
 
@@ -1340,7 +1351,10 @@ export interface UpdateAccountRequestMultipart {
 }
 
 export interface EmailVerificationRequested {
-    /** Seconds before another verification email may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the server. */
+    /**
+     * Seconds before another verification email may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the server.
+     * @minimum 0
+     */
     resendAfter: number;
 }
 
@@ -1585,7 +1599,10 @@ export interface TwoFactorMethodSummary {
     target?: string;
     /** When this factor was armed. Absent while its enrollment is still pending confirmation. */
     enrolledAt?: string;
-    /** Seconds between two deliveries of this method. Absent for device methods. */
+    /**
+     * Seconds between two deliveries of this method. Absent for device methods.
+     * @minimum 0
+     */
     resendAfter?: number;
     /** Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`. */
     enrollable?: boolean;
@@ -2042,7 +2059,7 @@ export interface ExportOrder {
      */
     totalPrice: number;
     /** ISO-4217 currency code this order was priced in (e.g. EUR). */
-    readonly currency: string;
+    readonly currency: CurrencyCode;
     /**
      * Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
      * @minimum 0
@@ -2214,7 +2231,7 @@ export interface Refund {
      */
     amount: number;
     /** ISO-4217 currency code, copied from the payment. */
-    currency: string;
+    currency: CurrencyCode;
     /** `pending` while the provider is being asked (or, on a hand-paid payment, until an operator reports the money back); `failed` when it refused — the sweep retries it with the same idempotency key unless the refusal is final, and an operator may report it returned by hand when the money provably did not move (see `RefundFailureReason`); `succeeded` once the money is confirmed back, or reported back by the operator. A `failed` refund with `failureReason: canceled` was voided by staff and is closed for good. */
     status: RefundStatus;
     reason: RefundReason;
@@ -2249,7 +2266,7 @@ export interface ExportPayment {
     orderId: Id;
     /** @minimum 0 */
     amount: number;
-    currency: string;
+    currency: CurrencyCode;
     /** @minimum 0 */
     amountRefunded: number;
     refunds: Refund[];
@@ -2265,7 +2282,7 @@ export interface ExportInvoiceDocument {
     orderId: Id;
     number: string;
     issuedAt: string;
-    currency: string;
+    currency: CurrencyCode;
     /** @minimum 0 */
     grandTotal: number;
 }
@@ -3319,7 +3336,10 @@ export interface TwoFactorDelivery {
     method: string;
     /** Masked destination — enough for the user to recognise the mailbox, not enough to learn a new address from. */
     sentTo: string;
-    /** Seconds before another code may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the rate limiter. */
+    /**
+     * Seconds before another code may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the rate limiter.
+     * @minimum 0
+     */
     resendAfter: number;
     /** When this code stops being accepted. */
     expiresAt: string;
@@ -3332,7 +3352,10 @@ export interface TwoFactorStatus {
     methods: TwoFactorMethodSummary[];
     /** What this account could still add. A method this deployment cannot reach at all is absent; one the account is not yet eligible for is present with `enrollable: false` and a `reason`. */
     available: TwoFactorMethodSummary[];
-    /** How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery. */
+    /**
+     * How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery.
+     * @minimum 0
+     */
     backupCodesRemaining: number;
 }
 
@@ -3356,7 +3379,10 @@ export interface TwoFactorSetup {
     otpauthUri?: string;
     /** Masked destination the enrollment code just went to. Absent unless `delivers`. */
     sentTo?: string;
-    /** Seconds before another code may be requested. Absent unless `delivers`. */
+    /**
+     * Seconds before another code may be requested. Absent unless `delivers`.
+     * @minimum 0
+     */
     resendAfter?: number;
     /** When the delivered code stops being accepted. Absent unless `delivers`. */
     expiresAt?: string;
@@ -3376,7 +3402,10 @@ export interface TwoFactorConfirmed {
     method: string;
     /** One-time recovery codes, in the clear, shown exactly once and never retrievable again. Present ONLY when this was the first factor the account armed — they recover the account, not the method, so a second factor mints none. */
     backupCodes?: string[];
-    /** How many unused backup codes the account now holds. */
+    /**
+     * How many unused backup codes the account now holds.
+     * @minimum 0
+     */
     backupCodesRemaining: number;
     /** The replacement `ses_…` id, for a bearer client of a `cookie`-mode deployment: arming a factor revoked every session, this one included, and the old id no longer works. Absent otherwise (a browser's cookie was refreshed in place). */
     sessionToken?: string;
@@ -3394,7 +3423,10 @@ export interface TwoFactorCodeRequest {
 export interface TwoFactorBackupCodesRegenerated {
     /** The account's new one-time recovery codes, in the clear, shown exactly once — the old set no longer verifies. */
     backupCodes: string[];
-    /** How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate. */
+    /**
+     * How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate.
+     * @minimum 0
+     */
     backupCodesRemaining: number;
 }
 
@@ -3840,7 +3872,7 @@ export interface Product {
      */
     price: number;
     /** ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting. */
-    readonly currency: string;
+    readonly currency: CurrencyCode;
     taxClass?: TaxClass;
     rateType?: RateType;
     sku?: Sku;
@@ -4260,12 +4292,8 @@ export interface ExpectedTotal {
      * @minimum 0
      */
     amount: number;
-    /**
-     * The ISO-4217 code the total is priced in.
-     * @minLength 3
-     * @maxLength 3
-     */
-    currency: string;
+    /** The ISO-4217 code the total is priced in. */
+    currency: CurrencyCode;
 }
 
 export interface CartSummaryResponse {
@@ -4295,7 +4323,7 @@ export interface CartSummaryResponse {
      */
     totalPrice: number;
     /** ISO-4217 currency code (e.g. USD) */
-    currency: string;
+    currency: CurrencyCode;
     /** `totalPrice` in minor units, exactly as `POST /cart/checkout` compares it: send it back unchanged as the checkout's `expectedTotal`. A client never converts the decimal itself, so it needs no table of currency exponents. */
     expectedTotal: ExpectedTotal;
 }
@@ -4442,7 +4470,7 @@ export interface Order {
      */
     totalPrice: number;
     /** ISO-4217 currency code this order was priced in (e.g. EUR). */
-    readonly currency: string;
+    readonly currency: CurrencyCode;
     /**
      * Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
      * @minimum 0
@@ -4662,7 +4690,7 @@ export interface CreditNoteSummary {
     number: string;
     issuedAt: string;
     /** ISO-4217 currency code (e.g. EUR) */
-    currency: string;
+    currency: CurrencyCode;
     /**
      * The gross amount this credit note reverses.
      * @minimum 0
@@ -4770,7 +4798,7 @@ export interface Dispute {
     reason: DisputeReason;
     /** @minimum 0 */
     amount: number;
-    currency: string;
+    currency: CurrencyCode;
     evidenceDueBy?: string;
     fundsWithdrawn: boolean;
     /** The provider's time of the first report of this dispute. */
@@ -4834,7 +4862,7 @@ export interface Payment {
      */
     amount: number;
     /** ISO-4217 currency code (e.g. EUR) */
-    currency: string;
+    currency: CurrencyCode;
     /**
      * How much of `amount` has been asked back, pending and succeeded together — the same reading as Stripe's `amount_refunded`. Counted when a refund is opened, so two racing partial refunds cannot return more than was paid.
      * @minimum 0
@@ -5039,12 +5067,8 @@ export interface RefundPaymentRequest {
      * @exclusiveMinimum 0
      */
     amount?: number;
-    /**
-     * ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
-     * @minLength 1
-     * @maxLength 3
-     */
-    currency?: string;
+    /** ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one. */
+    currency?: CurrencyCode;
 }
 
 export interface ConfirmPaymentRequest {
@@ -5074,11 +5098,8 @@ export interface DisputeReport {
      * @minimum 0
      */
     amount: number;
-    /**
-     * ISO-4217 code, upper case.
-     * @maxLength 3
-     */
-    currency: string;
+    /** ISO-4217 code, upper case. */
+    currency: CurrencyCode;
     /** When the provider stops accepting evidence. Absent when it gave no deadline. */
     evidenceDueBy?: string;
     /** Whether the bank has taken the money out of the shop's balance (`false` for an inquiry, and again after a win reinstated it). */
@@ -5123,7 +5144,7 @@ export interface ShippingMethod {
      */
     price: number;
     /** ISO-4217 currency code (e.g. EUR) — this deployment's `NODE_DEFAULT_CURRENCY`. */
-    currency: string;
+    currency: CurrencyCode;
     /**
      * Items total at which this method becomes free. Absent — it never does.
      * @minimum 0
@@ -5417,7 +5438,7 @@ export interface Return {
     /** The order's human number. */
     orderNumber: string;
     /** ISO-4217 code of the order's own currency. */
-    currency: string;
+    currency: CurrencyCode;
     status: ReturnStatus;
     reason: ReturnReason;
     kind: ReturnKind;
@@ -5561,7 +5582,7 @@ export interface CancellableFulfillmentOrder {
 export interface ReturnOptions {
     orderId: Id;
     /** ISO-4217 code of the order's own currency. */
-    currency: string;
+    currency: CurrencyCode;
     /** The reasons THIS caller can still name, so a client offers no door that is shut. The buyer's are the ones whose deadline is open: empty once every deadline has passed. `withdrawal` and `other` last for the withdrawal period; `defective` and `wrong_item` for two years from delivery (the legal guarantee of conformity), made-to-order goods included. Staff holding `update:Return` get every reason: they open a return, or record a withdrawal, for the buyer. */
     reasons?: ReturnReason[];
     /** For staff, the non-withdrawal reasons that are past their deadline now: opening a return for one is recorded as an exception (`window_closed`). Empty for the buyer. A preview: the server judges the deadline on `requestedAt` when it opens. */
@@ -6173,7 +6194,7 @@ export interface RefundListItem {
     orderId: Id;
     /** @minimum 0 */
     amount: number;
-    currency: string;
+    currency: CurrencyCode;
     status: RefundStatus;
     reason: RefundReason;
     returnId?: Id;
@@ -6222,7 +6243,7 @@ export interface PaymentAttentionItem {
     alreadyRefunded?: number;
     /** @minimum 0 */
     amount: number;
-    currency: string;
+    currency: CurrencyCode;
     failureReason?: RefundFailureReason;
     /** When the problem was recorded, so the page can sort by age. */
     since: string;
@@ -6313,26 +6334,50 @@ export interface StatsPeriod {
 }
 
 export interface StatsLimits {
-    /** The most calendar days one period may cover, both ends counted. */
+    /**
+     * The most calendar days one period may cover, both ends counted.
+     * @minimum 1
+     */
     maxRangeDays: number;
-    /** The most buckets one series may hold, the first possibly starting before `from`. */
+    /**
+     * The most buckets one series may hold, the first possibly starting before `from`.
+     * @minimum 1
+     */
     maxBuckets: number;
 }
 
 export interface SalesFigures {
-    /** Orders paid in the period, by `paidAt`. */
+    /**
+     * Orders paid in the period, by `paidAt`.
+     * @minimum 0
+     */
     orders: number;
-    /** Units on those orders. */
+    /**
+     * Units on those orders.
+     * @minimum 0
+     */
     unitsOrdered: number;
-    /** Units of returns received in the period. A cancellation is not counted, since it has no date. */
+    /**
+     * Units of returns received in the period. A cancellation is not counted, since it has no date.
+     * @minimum 0
+     */
     unitsReversed: number;
     /** `unitsOrdered` minus `unitsReversed`. */
     netUnits: number;
-    /** Goods net of VAT on invoices issued in the period, before shipping, discounts and reversals. */
+    /**
+     * Goods net of VAT on invoices issued in the period, before shipping, discounts and reversals.
+     * @minimum 0
+     */
     grossSales: number;
-    /** Always 0 until a discount exists. */
+    /**
+     * Always 0 until a discount exists.
+     * @minimum 0
+     */
     discounts: number;
-    /** The goods part (net of VAT) of credit notes issued in the period. */
+    /**
+     * The goods part (net of VAT) of credit notes issued in the period.
+     * @minimum 0
+     */
     reversals: number;
     /** `grossSales` minus `discounts` minus `reversals`. */
     netSales: number;
@@ -6342,9 +6387,15 @@ export interface SalesFigures {
     taxes: number;
     /** `netSales` plus `shipping` plus `taxes`. */
     totalSales: number;
-    /** Credit notes issued in the period, VAT included. */
+    /**
+     * Credit notes issued in the period, VAT included.
+     * @minimum 0
+     */
     refunds: number;
-    /** (`grossSales` minus `discounts`) divided by `orders`; 0 with no orders. */
+    /**
+     * (`grossSales` minus `discounts`) divided by `orders`; 0 with no orders.
+     * @minimum 0
+     */
     averageOrderValue: number;
 }
 
@@ -6355,7 +6406,7 @@ export interface SalesBucket {
 }
 
 export interface SalesCurrency {
-    currency: string;
+    currency: CurrencyCode;
     totals: SalesFigures;
     /** The same totals over the equal-length period just before, for the "vs previous" figure. */
     previous: SalesFigures;
@@ -6372,8 +6423,10 @@ export interface SalesStats {
 export interface ProductSalesRow {
     productId: Id;
     title: string;
-    currency: string;
+    currency: CurrencyCode;
+    /** @minimum 0 */
     unitsOrdered: number;
+    /** @minimum 0 */
     unitsReversed: number;
     netUnits: number;
     /** Net of VAT, from the frozen line price and rate. */
@@ -6388,7 +6441,9 @@ export interface ProductStats {
 
 export interface ProductSeriesBucket {
     start: string;
+    /** @minimum 0 */
     unitsOrdered: number;
+    /** @minimum 0 */
     unitsReversed: number;
 }
 
@@ -6403,7 +6458,8 @@ export interface ProductSeries {
 
 export interface CategorySalesRow {
     category: string;
-    currency: string;
+    currency: CurrencyCode;
+    /** @minimum 0 */
     unitsOrdered: number;
     netSales: number;
 }
@@ -6426,8 +6482,10 @@ export const PaymentMixRowMethod = {
 export interface PaymentMixRow {
     method: PaymentMixRowMethod;
     provider: string;
-    currency: string;
+    currency: CurrencyCode;
+    /** @minimum 0 */
     payments: number;
+    /** @minimum 0 */
     amount: number;
 }
 
@@ -6441,7 +6499,9 @@ export interface PaymentMix {
  * A cohort, meaning orders placed in the period that ended cancelled, not cancellations dated by when they happened.
  */
 export type OperationsStatsCancellation = {
+    /** @minimum 0 */
     placed: number;
+    /** @minimum 0 */
     cancelled: number;
     /**
      * @minimum 0
@@ -6451,17 +6511,25 @@ export type OperationsStatsCancellation = {
 };
 
 export type OperationsStatsReturns = {
+    /** @minimum 0 */
     unitsOrdered: number;
+    /** @minimum 0 */
     unitsReturned: number;
     /** @minimum 0 */
     rate: number;
 };
 
 export type OperationsStatsRefundsItem = {
-    currency: string;
-    /** Invoices issued in the period, VAT included. */
+    currency: CurrencyCode;
+    /**
+     * Invoices issued in the period, VAT included.
+     * @minimum 0
+     */
     invoiced: number;
-    /** Credit notes issued in the period, VAT included. */
+    /**
+     * Credit notes issued in the period, VAT included.
+     * @minimum 0
+     */
     credited: number;
     /** @minimum 0 */
     rate: number;
@@ -6479,10 +6547,17 @@ export interface OperationsStats {
 export interface CustomerStats {
     period: StatsPeriod;
     limits: StatsLimits;
-    /** Accounts with at least one paid order in the period. */
+    /**
+     * Accounts with at least one paid order in the period.
+     * @minimum 0
+     */
     customers: number;
-    /** Of those, accounts whose first paid order is in the period. */
+    /**
+     * Of those, accounts whose first paid order is in the period.
+     * @minimum 0
+     */
     newCustomers: number;
+    /** @minimum 0 */
     returningCustomers: number;
     /**
      * @minimum 0
@@ -6492,15 +6567,20 @@ export interface CustomerStats {
 }
 
 export type PipelineStatsAwaitingTransfersItem = {
-    currency: string;
+    currency: CurrencyCode;
+    /** @minimum 0 */
     count: number;
+    /** @minimum 0 */
     amount: number;
     nearestPayBy?: string;
 };
 
 export interface PipelineStats {
     awaitingTransfers: PipelineStatsAwaitingTransfersItem[];
-    /** Orders `paid` or `processing`, so not yet handed to a carrier. */
+    /**
+     * Orders `paid` or `processing`, so not yet handed to a carrier.
+     * @minimum 0
+     */
     paidNotShipped: number;
 }
 
@@ -6653,7 +6733,7 @@ export interface Shop {
     email: Email;
     phone: string;
     /** ISO-4217 currency code (e.g. EUR) — the shop's one currency, the same one `Product.currency` reports. */
-    currency: string;
+    currency: CurrencyCode;
     /** Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`) — checkout refuses a method that `requiresAddress` once the resolved address falls outside it. */
     shipToCountries: CountryCode[];
     returnAddress: ShopAddress;

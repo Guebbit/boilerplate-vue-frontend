@@ -210,6 +210,9 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           description: Booting, draining, or the database is unreachable.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
   /.well-known/security.txt:
     get:
       tags:
@@ -1362,6 +1365,9 @@ paths:
         "500":
           x-not-problem: true
           description: "The registry could not be read. Prometheus text, not a problem body: a scraper parses the exposition format only."
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
           content:
             text/plain:
               schema:
@@ -1371,6 +1377,9 @@ paths:
             No metrics token is configured. The endpoint denies by default rather
             than opening: an unauthenticated metrics endpoint is not a state to arrive
             at by forgetting an environment variable.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
           content:
             application/problem+json:
               schema:
@@ -2576,6 +2585,7 @@ paths:
       summary: Cancel a scheduled account deletion with the mailed link
       description: "Spends the one-time restore token mailed by `DELETE /account` and brings the account back, provided its `purgeAt` has not passed. Public: the token is the credential. Restoring does NOT sign the person in: holding the mailbox is not a login, the same rule as a password reset. Unknown, expired and already-spent tokens answer alike (`422`). Answers 429 once an address (or its network block) has sent too many wrong tokens, like the other one-time-token confirms."
       operationId: restoreAccount
+      x-no-refresh: true
       security: []
       requestBody:
         required: true
@@ -2608,6 +2618,7 @@ paths:
       summary: Login
       description: "Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`session.mode` of `GET /config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call."
       operationId: login
+      x-no-refresh: true
       security: []
       requestBody:
         required: true
@@ -2648,6 +2659,7 @@ paths:
       summary: Restore an account in its deletion grace and sign in
       description: "The last step of a sign-in by an account whose owner asked to delete it (`DELETE /account`) and whose `purgeAt` has not passed. Submits the `DeletionPending` claim check that `POST /account/login` (or `POST /account/login/2fa`) answered: it cancels the deletion, then starts the session exactly as `POST /account/login` does, `remember` and `transport` included. A client that does not want the account back simply never calls it, and the account is erased at `purgeAt`. Omit `challenge` for an OAuth-originated sign-in: that claim check never reached the client and is read from the httpOnly cookie the callback set. An unknown, expired or spent challenge answers 401."
       operationId: loginRestore
+      x-no-refresh: true
       security: []
       requestBody:
         required: true
@@ -2686,6 +2698,7 @@ paths:
       summary: Signup
       description: "Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account is an `unverified` audience until `POST /account/email-verification/confirm` proves the address — it browses freely and is stopped only at `checkout:Cart`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards."
       operationId: signup
+      x-no-refresh: true
       security: []
       parameters:
         - $ref: "#/components/parameters/AntibotChallengeTokenHeader"
@@ -2731,6 +2744,7 @@ paths:
         - Auth
       summary: Request password reset
       operationId: requestPasswordReset
+      x-no-refresh: true
       description: Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/password/reset/confirm`.
       security: []
       parameters:
@@ -2767,6 +2781,7 @@ paths:
         - Auth
       summary: Confirm password reset
       operationId: confirmPasswordReset
+      x-no-refresh: true
       description: Completes the password-reset flow. Validates the one-time reset token issued by `/account/password/reset` and, if valid, updates the user's password to the supplied value.
       security: []
       requestBody:
@@ -2898,6 +2913,7 @@ paths:
         - Auth
       summary: Download an export of the caller's own data
       description: "Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. An account has one export, so there is no id to name: the caller's own is the one served. A FRESH session (`requireFreshAuth`), same as the request. `404` unless the export is `ready` and within its retention. A `ready` export whose file is missing from the store answers `404` too: the file honestly does not exist."
+      x-cache: no-store
       operationId: downloadAccountExport
       security:
         - bearerAuth: []
@@ -2908,6 +2924,10 @@ paths:
           headers:
             Content-Disposition:
               description: '`attachment; filename="account-export-<date>.json"`, e.g. `account-export-2026-10-27.json`; the date is the UTC day the export was requested.'
+              schema:
+                type: string
+            Cache-Control:
+              description: "`no-store`: no cache, shared or private, may keep the answer."
               schema:
                 type: string
           content:
@@ -2932,6 +2952,7 @@ paths:
       summary: Complete a two-factor login
       description: The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, starts the session exactly as `POST /account/login` does for an account with no second factor, `transport` included. For an account inside the grace of its own deletion the second factor passing answers a `DeletionPending` claim check instead of a session, so two-factor is asked once and `POST /account/login/restore` finishes.
       operationId: loginTwoFactor
+      x-no-refresh: true
       security: []
       requestBody:
         required: true
@@ -2970,6 +2991,7 @@ paths:
       summary: Send a login code
       description: Delivers a fresh code for one armed delivered method, against a live challenge. Public like the rest of the login flow — the challenge token is the credential. Answers 429 while the previous code is still inside its cooldown, so a client that respects `resendAfter` never sees one; the cooldown exists because this endpoint sends mail on an unauthenticated caller's say-so.
       operationId: sendTwoFactorCode
+      x-no-refresh: true
       security: []
       requestBody:
         required: true
@@ -3489,12 +3511,27 @@ paths:
       responses:
         "302":
           description: Redirect to the frontend, session cookies set on success
+          x-redirect-query:
+            error:
+              type: string
+              enum:
+                - access_denied
+                - provider_error
+                - already_linked
+                - link_expired
+                - email_unverified
+                - account_exists
+                - account_unverified
+              description: "`access_denied`: the user declined consent. `provider_error`: the provider failed or answered something unusable. `already_linked`: that provider account belongs to another account. `link_expired`: the minutes a connect attempt lives ran out. `email_unverified`: the provider does not vouch for the address. `account_exists`: a verified-email match, so nothing was linked. `account_unverified`: the matching account never proved its address."
           headers:
             Location:
               schema:
                 type: string
         "400":
           description: Missing or mismatched CSRF state
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
           content:
             application/problem+json:
               schema:
@@ -4579,6 +4616,11 @@ paths:
       responses:
         "200":
           description: Products page
+          headers:
+            Cache-Control:
+              description: "`public, max-age=3600, stale-while-revalidate=60, stale-if-error=300` for a caller who reads what a guest reads, who shares one cached answer; `private, no-cache` for staff who see more (inactive products, stock counters, every language); `private, no-store` for a draft-language preview."
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -6163,6 +6205,7 @@ paths:
       x-module: orders
   /orders/{id}/invoice:
     get:
+      x-cache: no-store
       tags:
         - Invoicing
       summary: Download the order's invoice (PDF)
@@ -6179,6 +6222,10 @@ paths:
           headers:
             Content-Disposition:
               description: '`inline; filename="invoice-<invoice number>.pdf"`, e.g. `invoice-2026-0042.pdf`.'
+              schema:
+                type: string
+            Cache-Control:
+              description: "`no-store`: no cache, shared or private, may keep the answer."
               schema:
                 type: string
           content:
@@ -6229,6 +6276,7 @@ paths:
       x-module: invoicing
   /orders/{id}/credit-notes/{creditNoteId}:
     get:
+      x-cache: no-store
       tags:
         - Invoicing
       summary: Download one credit note (PDF)
@@ -6251,6 +6299,10 @@ paths:
           headers:
             Content-Disposition:
               description: '`inline; filename="credit-note-<credit note number>.pdf"`, e.g. `credit-note-2026-0007.pdf`.'
+              schema:
+                type: string
+            Cache-Control:
+              description: "`no-store`: no cache, shared or private, may keep the answer."
               schema:
                 type: string
           content:
@@ -7735,6 +7787,9 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           description: The correction would leave fewer units than are already reserved
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
           content:
             application/problem+json:
               schema:
@@ -11296,6 +11351,13 @@ components:
       description: "The challenge a 401 carries (RFC 9110 §11.6.1, §15.5.2; RFC 6750 §3): which scheme the API takes (`Bearer realm=\"api\"`), or, where a guard knows more, why the credential was refused (`error=\"invalid_token\"`, or `error=\"insufficient_user_authentication\"` with a `max_age` for a step-up). A generic HTTP client reads this; this app's own clients read `errors[].code` and never the header."
       schema:
         type: string
+    CacheControlNoStore:
+      required: true
+      description: "Always `no-store`: no cache, shared or private, may keep an error answer (RFC 9111 section 5.2.2.5). Every refusal sets it, whichever layer produced it."
+      schema:
+        type: string
+        enum:
+          - no-store
   responses:
     NoContent:
       description: Done. There is nothing to say, so the body is empty (RFC 9110 section 15.3.5).
@@ -11309,6 +11371,9 @@ components:
             type: string
     BadRequest:
       description: "The request could not be understood or authenticated as what it claims to be — distinct from `ValidationError`, which is a well-formed request whose FIELDS are wrong. Used where a caller is a machine rather than a form: an unverifiable webhook signature is the case that needs it."
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
@@ -11316,6 +11381,8 @@ components:
     Unauthorized:
       description: Unauthorized
       headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
         WWW-Authenticate:
           $ref: "#/components/headers/WWW-Authenticate"
       content:
@@ -11324,42 +11391,63 @@ components:
             $ref: "#/components/schemas/Problem"
     Forbidden:
       description: Forbidden
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
     NotFound:
       description: Resource not found
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
     Conflict:
       description: The request conflicts with the current state of the resource
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
     PreconditionFailed:
       description: "The request's `If-Match` no longer matches the stored resource: it was changed (or removed) after the caller read it. Nothing was written. Read it again, reapply the edit, and resend with the new `ETag`."
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
     ValidationError:
       description: Validation failed
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
     PayloadTooLarge:
       description: "The request body is larger than this deployment accepts: a JSON body over `NODE_JSON_BODY_LIMIT` (100kb by default), an uploaded file over `NODE_MAX_UPLOAD_BYTES`, or a multipart field value over 100 KB. Refused by the body parser or the upload middleware, which is why it is declared for every body-accepting operation rather than by hand. The other multipart limits (counts, shapes) answer `400`."
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
     UnsupportedMediaType:
       description: The body's media type is not one the operation declares (`details.accepted` lists them), or its charset or encoding cannot be read. Refused before any route runs, like `413` above. A request with no body is never judged. A `DELETE` that declares no body refuses any body, and `details.accepted` is then empty.
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
@@ -11367,6 +11455,8 @@ components:
     TooManyRequests:
       description: The caller has spent a rate-limit budget and must wait. The wait is in the standard `RateLimit`/`Retry-After` headers, and — where the endpoint has a budget of its own to report, like a resend cooldown — in the error `details` too.
       headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
         Retry-After:
           $ref: "#/components/headers/Retry-After"
         RateLimit-Policy:
@@ -11380,6 +11470,8 @@ components:
     ServiceUnavailable:
       description: "A dependency the request needed (Mongo, Redis) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from."
       headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
         Retry-After:
           $ref: "#/components/headers/Retry-After"
       content:
@@ -11388,6 +11480,9 @@ components:
             $ref: "#/components/schemas/Problem"
     InternalError:
       description: Internal server error
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
@@ -11416,6 +11511,12 @@ components:
       minLength: 1
       maxLength: 200
       description: Free-text search string
+    CurrencyCode:
+      type: string
+      minLength: 3
+      maxLength: 3
+      pattern: ^[A-Z]{3}$
+      description: ISO 4217 alphabetic currency code, upper case (e.g. `EUR`)
     Email:
       type: string
       maxLength: 254
@@ -12559,10 +12660,12 @@ components:
           type: string
         cpuCount:
           type: integer
+          minimum: 1
         loadAvg:
           type: array
           items:
             type: number
+            minimum: 0
     ObservabilityHealthJob:
       type: object
       additionalProperties: false
@@ -13038,6 +13141,7 @@ components:
             most callers: an operator is not a super-member and holds no shop's keys.
         version:
           type: integer
+          minimum: 1
           description: |
             The permission model's own version, bumped when the RULES change rather than
             when a role does. A client caches these; this is what tells it the cache is
@@ -13204,6 +13308,7 @@ components:
       properties:
         resendAfter:
           type: integer
+          minimum: 0
           description: Seconds before another verification email may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the server.
     Password:
       type: string
@@ -13565,6 +13670,7 @@ components:
           description: When this factor was armed. Absent while its enrollment is still pending confirmation.
         resendAfter:
           type: integer
+          minimum: 0
           description: Seconds between two deliveries of this method. Absent for device methods.
         enrollable:
           type: boolean
@@ -14262,7 +14368,8 @@ components:
           description: Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
           example: 149.97
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           readOnly: true
           description: ISO-4217 currency code this order was priced in (e.g. EUR).
         netTotal:
@@ -14469,7 +14576,8 @@ components:
           minimum: 0
           description: The amount returned, in the payment's own `currency`.
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code, copied from the payment.
         status:
           allOf:
@@ -14523,7 +14631,7 @@ components:
           format: double
           minimum: 0
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         amountRefunded:
           type: number
           format: double
@@ -14570,7 +14678,7 @@ components:
           type: string
           format: date-time
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         grandTotal:
           type: number
           format: double
@@ -16146,6 +16254,7 @@ components:
           description: Masked destination — enough for the user to recognise the mailbox, not enough to learn a new address from.
         resendAfter:
           type: integer
+          minimum: 0
           description: Seconds before another code may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the rate limiter.
         expiresAt:
           type: string
@@ -16175,6 +16284,7 @@ components:
           description: "What this account could still add. A method this deployment cannot reach at all is absent; one the account is not yet eligible for is present with `enrollable: false` and a `reason`."
         backupCodesRemaining:
           type: integer
+          minimum: 0
           description: How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery.
     TwoFactorSetupRequest:
       type: object
@@ -16209,6 +16319,7 @@ components:
           description: Masked destination the enrollment code just went to. Absent unless `delivers`.
         resendAfter:
           type: integer
+          minimum: 0
           description: Seconds before another code may be requested. Absent unless `delivers`.
         expiresAt:
           type: string
@@ -16242,6 +16353,7 @@ components:
           description: One-time recovery codes, in the clear, shown exactly once and never retrievable again. Present ONLY when this was the first factor the account armed — they recover the account, not the method, so a second factor mints none.
         backupCodesRemaining:
           type: integer
+          minimum: 0
           description: How many unused backup codes the account now holds.
         sessionToken:
           type: string
@@ -16271,6 +16383,7 @@ components:
           description: The account's new one-time recovery codes, in the clear, shown exactly once — the old set no longer verifies.
         backupCodesRemaining:
           type: integer
+          minimum: 0
           description: How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate.
     OAuthLink:
       type: object
@@ -16903,7 +17016,8 @@ components:
           minimum: 0
           description: "Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around."
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           readOnly: true
           description: ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting.
         taxClass:
@@ -17598,9 +17712,8 @@ components:
           minimum: 0
           description: The total in minor units of `currency` (EUR 71.00 is 7100).
         currency:
-          type: string
-          minLength: 3
-          maxLength: 3
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: The ISO-4217 code the total is priced in.
     CartSummaryResponse:
       type: object
@@ -17638,7 +17751,8 @@ components:
           minimum: 0
           description: itemsTotal + shippingCost
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code (e.g. USD)
         expectedTotal:
           allOf:
@@ -17886,7 +18000,8 @@ components:
           description: Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
           example: 149.97
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           readOnly: true
           description: ISO-4217 currency code this order was priced in (e.g. EUR).
         netTotal:
@@ -18239,7 +18354,8 @@ components:
           type: string
           format: date-time
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code (e.g. EUR)
         grandTotal:
           type: number
@@ -18369,7 +18485,7 @@ components:
           format: double
           minimum: 0
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         evidenceDueBy:
           type: string
           format: date-time
@@ -18447,7 +18563,8 @@ components:
           minimum: 0
           description: The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation. If the provider reports a success for a different amount or currency, the payment reads `succeeded` with what ARRIVED here, its order is cancelled and the money is returned.
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code (e.g. EUR)
         amountRefunded:
           type: number
@@ -18781,9 +18898,8 @@ components:
           exclusiveMinimum: 0
           description: How much to return, a decimal in the payment's own currency. Absent means everything still refundable.
         currency:
-          type: string
-          maxLength: 3
-          minLength: 1
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
     ConfirmPaymentRequest:
       type: object
@@ -18827,8 +18943,8 @@ components:
           minimum: 0
           description: The disputed amount, in `currency`.
         currency:
-          type: string
-          maxLength: 3
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 code, upper case.
         evidenceDueBy:
           type: string
@@ -18885,7 +19001,8 @@ components:
           minimum: 0
           description: Flat rate, in `currency`.
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code (e.g. EUR) — this deployment's `NODE_DEFAULT_CURRENCY`.
         freeAbove:
           type: number
@@ -19258,7 +19375,8 @@ components:
           type: string
           description: The order's human number.
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 code of the order's own currency.
         status:
           $ref: "#/components/schemas/ReturnStatus"
@@ -19487,7 +19605,8 @@ components:
         orderId:
           $ref: "#/components/schemas/Id"
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 code of the order's own currency.
         reasons:
           type: array
@@ -20477,7 +20596,7 @@ components:
           format: double
           minimum: 0
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         status:
           $ref: "#/components/schemas/RefundStatus"
         reason:
@@ -20557,7 +20676,7 @@ components:
           format: double
           minimum: 0
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         failureReason:
           $ref: "#/components/schemas/RefundFailureReason"
         since:
@@ -20677,9 +20796,11 @@ components:
       properties:
         maxRangeDays:
           type: integer
+          minimum: 1
           description: The most calendar days one period may cover, both ends counted.
         maxBuckets:
           type: integer
+          minimum: 1
           description: The most buckets one series may hold, the first possibly starting before `from`.
     SalesFigures:
       type: object
@@ -20701,12 +20822,15 @@ components:
       properties:
         orders:
           type: integer
+          minimum: 0
           description: Orders paid in the period, by `paidAt`.
         unitsOrdered:
           type: integer
+          minimum: 0
           description: Units on those orders.
         unitsReversed:
           type: integer
+          minimum: 0
           description: Units of returns received in the period. A cancellation is not counted, since it has no date.
         netUnits:
           type: integer
@@ -20714,14 +20838,17 @@ components:
         grossSales:
           type: number
           format: double
+          minimum: 0
           description: Goods net of VAT on invoices issued in the period, before shipping, discounts and reversals.
         discounts:
           type: number
           format: double
+          minimum: 0
           description: Always 0 until a discount exists.
         reversals:
           type: number
           format: double
+          minimum: 0
           description: The goods part (net of VAT) of credit notes issued in the period.
         netSales:
           type: number
@@ -20742,10 +20869,12 @@ components:
         refunds:
           type: number
           format: double
+          minimum: 0
           description: Credit notes issued in the period, VAT included.
         averageOrderValue:
           type: number
           format: double
+          minimum: 0
           description: (`grossSales` minus `discounts`) divided by `orders`; 0 with no orders.
     SalesBucket:
       type: object
@@ -20770,7 +20899,7 @@ components:
         - buckets
       properties:
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         totals:
           $ref: "#/components/schemas/SalesFigures"
         previous:
@@ -20815,11 +20944,13 @@ components:
         title:
           type: string
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         unitsOrdered:
           type: integer
+          minimum: 0
         unitsReversed:
           type: integer
+          minimum: 0
         netUnits:
           type: integer
         netSales:
@@ -20855,8 +20986,10 @@ components:
           format: date-time
         unitsOrdered:
           type: integer
+          minimum: 0
         unitsReversed:
           type: integer
+          minimum: 0
     ProductSeries:
       type: object
       additionalProperties: false
@@ -20891,9 +21024,10 @@ components:
         category:
           type: string
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         unitsOrdered:
           type: integer
+          minimum: 0
         netSales:
           type: number
           format: double
@@ -20933,12 +21067,14 @@ components:
         provider:
           type: string
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         payments:
           type: integer
+          minimum: 0
         amount:
           type: number
           format: double
+          minimum: 0
     PaymentMix:
       type: object
       additionalProperties: false
@@ -20980,8 +21116,10 @@ components:
           properties:
             placed:
               type: integer
+              minimum: 0
             cancelled:
               type: integer
+              minimum: 0
             rate:
               type: number
               format: double
@@ -20997,8 +21135,10 @@ components:
           properties:
             unitsOrdered:
               type: integer
+              minimum: 0
             unitsReturned:
               type: integer
+              minimum: 0
             rate:
               type: number
               format: double
@@ -21015,15 +21155,17 @@ components:
               - rate
             properties:
               currency:
-                type: string
+                $ref: "#/components/schemas/CurrencyCode"
               invoiced:
                 type: number
                 format: double
                 description: Invoices issued in the period, VAT included.
+                minimum: 0
               credited:
                 type: number
                 format: double
                 description: Credit notes issued in the period, VAT included.
+                minimum: 0
               rate:
                 type: number
                 format: double
@@ -21046,11 +21188,14 @@ components:
         customers:
           type: integer
           description: Accounts with at least one paid order in the period.
+          minimum: 0
         newCustomers:
           type: integer
           description: Of those, accounts whose first paid order is in the period.
+          minimum: 0
         returningCustomers:
           type: integer
+          minimum: 0
         returningRate:
           type: number
           format: double
@@ -21074,17 +21219,20 @@ components:
               - amount
             properties:
               currency:
-                type: string
+                $ref: "#/components/schemas/CurrencyCode"
               count:
                 type: integer
+                minimum: 0
               amount:
                 type: number
                 format: double
+                minimum: 0
               nearestPayBy:
                 type: string
                 format: date-time
         paidNotShipped:
           type: integer
+          minimum: 0
           description: Orders `paid` or `processing`, so not yet handed to a carrier.
     UpdateInventoryLevelRequest:
       type: object
@@ -21331,7 +21479,8 @@ components:
         phone:
           type: string
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code (e.g. EUR) — the shop's one currency, the same one `Product.currency` reports.
         shipToCountries:
           type: array

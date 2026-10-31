@@ -22,7 +22,7 @@ export default {
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { providerLabel } from '../stores/oauth.ts';
+import { OAUTH_CALLBACK_ERRORS, providerLabel } from '../stores/oauth.ts';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { parseJsonSafe } from '@/infrastructure/utils/safe-storage.ts';
@@ -58,18 +58,11 @@ const { addMessage } = useNotificationsStore();
 const { redirectAfterLogin } = usePostLoginRedirect();
 
 /**
- * The closed set of codes the backend redirects with. Anything else — a future code this build
- * predates — falls back to the generic `provider_error` copy rather than showing a raw string.
+ * The closed set of codes the backend redirects with (the contract's). Anything else — a future
+ * code this build predates — falls back to the generic `provider_error` copy rather than showing
+ * a raw string.
  */
-const KNOWN_ERROR_CODES = [
-    'access_denied',
-    'email_unverified',
-    'account_unverified',
-    'account_exists',
-    'already_linked',
-    'link_expired',
-    'provider_error'
-] as const;
+const KNOWN_ERROR_CODES = OAUTH_CALLBACK_ERRORS;
 
 /**
  * The translated failure reason, or `undefined` when the login actually succeeded.

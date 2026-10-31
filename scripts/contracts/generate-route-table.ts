@@ -23,6 +23,11 @@
  * `--check` compares against the committed file and exits 1 on a mismatch — the same contract
  * every generator in this family keeps.
  *
+ * Two more hints ride along, both read off `x-` keys a backend fragment sets: `noRefresh`
+ * (`x-no-refresh`: a 401 there is a real credential failure, so the interceptor never refreshes and
+ * replays) and `REDIRECT_QUERY_ENUMS` (`x-redirect-query` on a redirect response: the closed set of
+ * values a query parameter of that redirect takes, e.g. the OAuth callback's `error`).
+ *
  * Usage: tsx scripts/contracts/generate-route-table.ts --out <path> [--check]
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -35,6 +40,8 @@ interface OpenApiOperation {
     operationId?: string;
     requestBody?: { content?: Record<string, unknown> };
     'x-module'?: string;
+    'x-no-refresh'?: boolean;
+    responses?: Record<string, { 'x-redirect-query'?: Record<string, { enum?: string[] }> }>;
 }
 
 /** The slice of the bundled OpenAPI document this generator reads. */
@@ -144,6 +151,7 @@ interface Row {
     schemaName: string;
     bodySchemaName: string | undefined;
     moduleName: string | undefined;
+    noRefresh: boolean;
 }
 
 /**
@@ -151,6 +159,18 @@ interface Row {
  * its `any` to the slice this file reads. https://eemeli.org/yaml/#yaml-parse
  */
 const document = parse(readFileSync(INPUT, 'utf8')) as OpenApiDocument;
+
+/** `operationId` → query parameter → the values a redirect of that operation sends in it. */
+const redirectEnums: Record<string, Record<string, string[]>> = {};
+
+/** Records every `x-redirect-query` enum an operation's responses declare. */
+const collectRedirectEnums = (operation: OpenApiOperation): void => {
+    for (const response of Object.values(operation.responses ?? {}))
+        for (const [parameter, schema] of Object.entries(response['x-redirect-query'] ?? {})) {
+            if (!operation.operationId || !schema.enum) continue;
+            (redirectEnums[operation.operationId] ??= {})[parameter] = schema.enum;
+        }
+};
 
 /** One row per operation that has an `operationId`. */
 const rows: Row[] = [];
@@ -166,8 +186,10 @@ for (const [openApiPath, pathItem] of Object.entries(document.paths ?? {}))
             paramCount: openApiPath.split('/').filter((segment) => /{[^}]+}/.test(segment)).length,
             schemaName: schemaNameFor(operation.operationId),
             bodySchemaName: bodySchemaNameFor(operation),
-            moduleName: operation['x-module']
+            moduleName: operation['x-module'],
+            noRefresh: operation['x-no-refresh'] === true
         });
+        collectRedirectEnums(operation);
     }
 
 // `paramCount` ascending first — see this file's own header for why a literal segment must sort
@@ -183,7 +205,7 @@ rows.sort(
 
 /** Renders one row as a TypeScript object literal. */
 const renderRow = (row: Row): string =>
-    `    { method: ${JSON.stringify(row.method)}, pattern: /${row.patternSource}/, schemaName: ${JSON.stringify(row.schemaName)}, bodySchemaName: ${row.bodySchemaName ? JSON.stringify(row.bodySchemaName) : 'undefined'}, module: ${row.moduleName ? JSON.stringify(row.moduleName) : 'undefined'} },`;
+    `    { method: ${JSON.stringify(row.method)}, pattern: /${row.patternSource}/, schemaName: ${JSON.stringify(row.schemaName)}, bodySchemaName: ${row.bodySchemaName ? JSON.stringify(row.bodySchemaName) : 'undefined'}, module: ${row.moduleName ? JSON.stringify(row.moduleName) : 'undefined'}, noRefresh: ${String(row.noRefresh)} },`;
 
 /** The whole generated file's text. */
 const output =
@@ -197,6 +219,7 @@ const output =
     " * `src/infrastructure/http/response-schema-map.ts`'s `ResponseSchemaRoute` is resolved into,\n" +
     ' * once `schemaName` is looked up against the real `@api/schemas` namespace. `module` is the\n' +
     " * backend's `x-module` stamp — `undefined` for the handful of system endpoints no module owns.\n" +
+    ' * `noRefresh` is its `x-no-refresh`: a 401 there never triggers a token refresh.\n' +
     ' */\n' +
     'export interface GeneratedRoute {\n' +
     '    method: string;\n' +
@@ -204,9 +227,15 @@ const output =
     '    schemaName: string;\n' +
     '    bodySchemaName: string | undefined;\n' +
     '    module: string | undefined;\n' +
+    '    noRefresh: boolean;\n' +
     '}\n\n' +
     '/** Every operation this contract declares, response-schema row shape — see {@link GeneratedRoute}. */\n' +
-    `export const ROUTES: GeneratedRoute[] = [\n${rows.map((row) => renderRow(row)).join('\n')}\n];\n`;
+    `export const ROUTES: GeneratedRoute[] = [\n${rows.map((row) => renderRow(row)).join('\n')}\n];\n\n` +
+    '/**\n' +
+    ' * The values a redirect puts in a query parameter, by operation id then parameter name — the\n' +
+    " * backend's `x-redirect-query`.\n" +
+    ' */\n' +
+    `export const REDIRECT_QUERY_ENUMS = ${JSON.stringify(redirectEnums, null, 4)} as const;\n`;
 
 // Write the file, or under `--check` compare it with what is on disk.
 if (!checkOnly) {

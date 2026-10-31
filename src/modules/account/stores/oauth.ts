@@ -12,6 +12,14 @@ import { loadConfig } from '@/infrastructure/config.ts';
 import { instance } from '@/infrastructure/http/client.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import type { StartOAuthLoginParams } from '@api';
+import { REDIRECT_QUERY_ENUMS } from '@api/routes';
+
+/**
+ * The closed set of codes the backend's OAuth callback redirects with in `?error=`, read from the
+ * contract (`x-redirect-query`). Lives here, not in the view: a component does not import the
+ * contract's tables.
+ */
+export const OAUTH_CALLBACK_ERRORS = REDIRECT_QUERY_ENUMS.completeOAuthLogin.error;
 
 /**
  * Display names for the providers this app knows about. A name absent here still renders — see
