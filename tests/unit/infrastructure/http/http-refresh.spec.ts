@@ -26,6 +26,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
 import { aProblem } from '../../../support/unit/fixtures.ts';
+import { ROUTES } from '@api/routes';
 
 /** Base URL the axios instance is built against; also what the handlers below are mounted on. */
 const API = 'http://api.test';
@@ -34,8 +35,9 @@ const API = 'http://api.test';
 const FRESH_TOKEN = 'fresh-token';
 
 /**
- * Endpoints that must never trigger a refresh, mirroring `refreshExcludedPaths` in
- * `src/infrastructure/http/refresh.ts`.
+ * Endpoints that must never trigger a refresh. The contract marks them (`x-no-refresh`, which
+ * the generated route table carries as `noRefresh`); the first test below holds this list equal
+ * to those rows.
  *
  * A 401 from any of them is a normal business outcome — wrong password, expired reset link, a
  * session already invalidated — so refreshing there turns a clean error message into an extra
@@ -80,7 +82,7 @@ interface Scenario {
     protectedIdle: boolean;
     /** Whether the protected route answers `403`: the rules changed under a live session. */
     protectedForbidden: boolean;
-    /** Whether `GET /account/abilities` itself answers `403`. */
+    /** Whether `GET /account` (the read that carries the abilities) itself answers `403`. */
     abilitiesForbidden: boolean;
 }
 
@@ -126,7 +128,16 @@ const handlers = [
 
         return scenario.refreshOmitsToken
             ? HttpResponse.json({})
-            : HttpResponse.json({ token: FRESH_TOKEN });
+            : HttpResponse.json({
+                  token: FRESH_TOKEN,
+                  abilities: {
+                      platform: [],
+                      tenant: [],
+                      version: 1,
+                      grantableRoles: [],
+                      secondFactorRequired: false
+                  }
+              });
     }),
 
     /**
@@ -153,20 +164,25 @@ const handlers = [
             : unauthorized('Unauthorized');
     }),
 
-    /** `GET /account/abilities` — what a 403 sends the session back to read. */
-    http.get(`${API}/account/abilities`, () => {
-        requestLog.push({ route: 'GET /account/abilities' });
+    /** `GET /account` — what a 403 sends the session back to read: it carries the abilities. */
+    http.get(`${API}/account`, () => {
+        requestLog.push({ route: 'GET /account' });
         return scenario.abilitiesForbidden
             ? HttpResponse.json(aProblem(403, [{ code: 'FORBIDDEN', message: 'Forbidden' }]), {
                   status: 403
               })
             : HttpResponse.json({
-                  platform: [],
-                  tenant: [],
-                  version: 1,
-                  subjects: [],
-                  grantableRoles: [],
-                  secondFactorRequired: false
+                  id: '1',
+                  email: 'a@b.c',
+                  username: 'ada',
+                  abilities: {
+                      platform: [],
+                      tenant: [],
+                      version: 1,
+                      grantableRoles: [],
+                      secondFactorRequired: false
+                  },
+                  activity: { lastActiveAt: '2026-01-01T00:00:00.000Z' }
               });
     }),
 
@@ -284,7 +300,7 @@ describe('a 403 on a signed-in request', () => {
             )
             .then(() => vi.waitFor(() => expect(session.abilitiesSignal).toBe(1)))
             .then(() => {
-                expect(routes()).toEqual(['GET /orders', 'GET /account/abilities']);
+                expect(routes()).toEqual(['GET /orders', 'GET /account']);
             });
     });
 
@@ -295,10 +311,10 @@ describe('a 403 on a signed-in request', () => {
             .then(signIn)
             .then(() => import('@/infrastructure/http'))
             .then(({ orvalMutator }) =>
-                orvalMutator({ url: '/account/abilities', method: 'GET' }).catch(() => undefined)
+                orvalMutator({ url: '/account', method: 'GET' }).catch(() => undefined)
             )
             .then(() => {
-                expect(routes()).toEqual(['GET /account/abilities']);
+                expect(routes()).toEqual(['GET /account']);
             });
     });
 
@@ -434,6 +450,16 @@ describe('401 refresh flow', () => {
      * the very code under test.
      */
     describe('when the 401 comes from an excluded endpoint', () => {
+        it('is exactly the operations the contract marks x-no-refresh', () => {
+            const marked = ROUTES.filter((route) => route.noRefresh);
+
+            expect(marked).toHaveLength(EXCLUDED_PATHS.length);
+            for (const path of EXCLUDED_PATHS)
+                expect(
+                    marked.some((route) => route.method === 'POST' && route.pattern.test(path))
+                ).toBe(true);
+        });
+
         it.each([
             ...EXCLUDED_PATHS,
             ABSOLUTE_EXCLUDED_URL,

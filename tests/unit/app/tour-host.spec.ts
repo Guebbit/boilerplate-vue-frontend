@@ -46,7 +46,7 @@ const mountHost = async (path = '/') => {
 const signIn = (rules: number) => {
     const session = useSessionStore();
     session.viewer = { id: 'acc-1', email: 'a@b.c', role: 'user' };
-    // Packed rules: `[action, subject, conditions]` rows, as `GET /account/abilities` sends them.
+    // Packed rules: `[action, subject, conditions]` rows, as the `abilities` of `GET /account` sends them.
     session.setAbilities({
         tenant: Array.from(
             { length: rules },

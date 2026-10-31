@@ -238,8 +238,8 @@ describe('the correlation ids', () => {
         outcome: 'success',
         timestamp: '2026-10-18T08:00:00.000Z',
         level: 'info',
-        requestId: 'req-0123456789abcdef',
-        traceId: 'trace-0123456789abcdef'
+        requestId: '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d',
+        traceId: '0123456789abcdef0123456789abcdef'
     };
 
     it('gives each id a copy button that names the full id, and puts no title on the cell', () => {
@@ -256,10 +256,10 @@ describe('the correlation ids', () => {
 
         return flushPromises().then(() => {
             expect(wrapper.get('[data-test=audit-copy-requestId]').attributes('aria-label')).toBe(
-                'Copy request ID req-0123456789abcdef'
+                'Copy request ID 0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d'
             );
             expect(wrapper.get('[data-test=audit-copy-traceId]').attributes('aria-label')).toBe(
-                'Copy trace ID trace-0123456789abcdef'
+                'Copy trace ID 0123456789abcdef0123456789abcdef'
             );
             expect(wrapper.find('[title]').exists()).toBe(false);
         });

@@ -1,6 +1,7 @@
 {
     "navigation": {
-        "label-returns": "Returns"
+        "label-returns": "Returns",
+        "label-sales-returns": "Sales returns"
     },
     "returns-form": {
         "status-requested": "Requested",
@@ -16,6 +17,7 @@
     },
     "returns-list-page": {
         "page-title": "Returns",
+        "page-title-sales": "All returns",
         "empty": "No returns yet",
         "empty-search": "No returns match this search",
         "filter-status": "Status",

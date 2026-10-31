@@ -5,6 +5,7 @@
  */
 
 import { z } from 'zod';
+import { ACCEPTED_UPLOAD_TYPES } from '@api/upload-types';
 import { formatFileSize, isAcceptedFileType, isWithinFileSize } from '@guebbit/js-toolkit';
 import { translate } from '@/i18n';
 import { runtimeValue } from '@/infrastructure/runtime-config';
@@ -12,10 +13,9 @@ import { runtimeValue } from '@/infrastructure/runtime-config';
 /**
  * Client-side limits for the `imageUpload` multipart fields.
  *
- * These numbers are a COPY of the backend's (`src/infrastructure/adapters/storage.ts`), restated
- * rather than derived because `openapi.yaml` declares every `imageUpload` field as a bare
- * `type: string, format: binary` — orval's zod generator short-circuits on that and emits no
- * constant, so there is nothing generated to read and nothing that will announce a drift.
+ * The accepted TYPES are the contract's (`encoding.imageUpload.contentType`, generated into
+ * `@api/upload-types`). The SIZE is a restated number: the contract cannot carry it, so it is
+ * configured per deployment to follow the backend's `NODE_MAX_UPLOAD_BYTES`.
  *
  * A UX affordance, never a security control: the backend gates uploads on the declared
  * `Content-Type` and again on the actual magic bytes. Checking here only spares someone waiting
@@ -23,18 +23,10 @@ import { runtimeValue } from '@/infrastructure/runtime-config';
  */
 
 /**
- * Mime types the backend's `fileFilter` accepts.
- *
- * Note `image/jpg` alongside `image/jpeg`: not canonical, but browsers emit it and the backend's
- * list carries it for that reason. Keep the two lists identical.
- */
-export const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpg', 'image/jpeg', 'image/webp'] as const;
-
-/**
- * Value for a file input's `accept` attribute, derived from {@link ACCEPTED_IMAGE_TYPES} so the
+ * Value for a file input's `accept` attribute, derived from `ACCEPTED_UPLOAD_TYPES` so the
  * picker's filter and the validation rule can never disagree.
  */
-export const ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE = ACCEPTED_IMAGE_TYPES.join(',');
+export const ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE = ACCEPTED_UPLOAD_TYPES.join(',');
 
 /**
  * Largest upload the backend will accept, in bytes.
@@ -64,7 +56,7 @@ export const MAX_UPLOAD_SIZE_LABEL = formatFileSize(MAX_UPLOAD_BYTES);
 export const isAcceptedImageType = (file: File) =>
     // `caseSensitive`, because the backend's fileFilter compares verbatim: lowercasing first here
     // would accept files the server then rejects.
-    isAcceptedFileType(file, ACCEPTED_IMAGE_TYPES, { caseSensitive: true });
+    isAcceptedFileType(file, ACCEPTED_UPLOAD_TYPES, { caseSensitive: true });
 
 /**
  * @param file - The picked file.

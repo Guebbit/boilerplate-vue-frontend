@@ -32,8 +32,8 @@ const stubFetch = (...responses: Response[]) => {
     return calls;
 };
 
-/** `GET /account/session-config`'s answer for the given mode. */
-const modeAnswer = (mode: 'jwt' | 'cookie') => answer(200, { mode });
+/** `GET /config`'s answer for the given mode. */
+const modeAnswer = (mode: 'jwt' | 'cookie') => answer(200, { session: { mode } });
 
 /** A `jwt`-mode device: an access token and a refresh cookie. */
 const device: Device = {

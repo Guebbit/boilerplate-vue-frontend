@@ -14,7 +14,7 @@ export default {
  * The "set up an authenticator app" banner, mounted in the shell so it rides EVERY page: a staff
  * role grants nothing until one is armed, so the staff menu is simply absent and the person needs
  * to be told why and where to go. Keys on the server's own answer (`secondFactorRequired` on
- * `GET /account/abilities`), never on a role name.
+ * the `abilities` of `GET /account`), never on a role name.
  */
 import { storeToRefs } from 'pinia';
 import { RouterLink } from 'vue-router';

@@ -49,7 +49,7 @@ flowchart LR
 Twelve screens, seven stores, and the widest API surface of any module here — which makes it a
 misleadingly ordinary-looking domain. Five things about it are worth knowing before you edit it.
 
-**The session is not in here.** The credential (an access token in `jwt` mode, a held-cookie flag in `cookie` mode: the backend's `NODE_SESSION_MODE`, read from `GET /account/session-config`) lives in `infrastructure/session`, because
+**The session is not in here.** The credential (an access token in `jwt` mode, a held-cookie flag in `cookie` mode: the backend's `NODE_SESSION_MODE`, read from `GET /config`) lives in `infrastructure/session`, because
 `infrastructure/http` has to read it on every request and the router guards read `isAuth` and the
 caller's own rules before any domain code runs. A module cannot sit below the layer that needs it. This module owns the
 _editable record_, not the credential.
@@ -128,7 +128,7 @@ Seven stores, listed by what each one's setup function returns — an internal r
 | `profile`                | `Profile`                 | `auth`   | —          | `views/Profile.vue`                 |
 | `logout`                 | `Logout`                  | `public` | `—`        |
 
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
+Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
 ## Wiring
 
@@ -157,7 +157,6 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `POST /account/login/restore`                | `LoginRestoreResponse`             |
 | `POST /account/login/2fa/send`               | `SendTwoFactorCodeResponse`        |
 | `POST /account/logout`                       | `LogoutResponse`                   |
-| `GET /account/oauth/providers`               | `ListOAuthProvidersResponse`       |
 | `GET /account/oauth/{provider}`              | `StartOAuthLoginResponse`          |
 | `GET /account/oauth/{provider}/callback`     | `CompleteOAuthLoginResponse`       |
 | `POST /account/oauth/links/{provider}`       | `StartOAuthLinkResponse`           |

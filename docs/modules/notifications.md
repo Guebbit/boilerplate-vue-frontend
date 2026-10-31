@@ -142,13 +142,46 @@ The bell is contributed to the `app-bar` slot the shell owns (`src/kernel/slots.
 renders whatever arrives and never imports this module. It renders nothing for a guest or for a
 session without `read:Notification`.
 
-| Behaviour       | Detail                                                                                                                                                                                              |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Badge           | The unread count: notifications with no `readAt`.                                                                                                                                                   |
-| Accessible name | "Notifications", or "Notifications: 3 unread" — the badge alone is a bare number.                                                                                                                   |
-| Opening         | `POST /notifications/read-all`, so the badge clears everywhere (the stream tells other tabs). Nothing is sent when nothing is unread. Rows that were new stay marked "New" while the panel is open. |
-| Panel           | A `dialog`, newest first: text, date, an "Open the order" link on a notice about an order, a delete button named after its message, and "Clear all".                                                |
-| Focus           | Moves into the panel on open; Escape closes it and returns focus to the bell.                                                                                                                       |
+| Behaviour       | Detail                                                                                                                                                                                                                                                                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Badge           | The unread count: notifications with no `readAt`.                                                                                                                                                                                                                                                                                                             |
+| Accessible name | "Notifications", or "Notifications: 3 unread" — the badge alone is a bare number.                                                                                                                                                                                                                                                                             |
+| Opening         | `POST /notifications/read-all`, so the badge clears everywhere (the stream tells other tabs). Nothing is sent when nothing is unread. Rows that were new stay marked "New" while the panel is open.                                                                                                                                                           |
+| Panel           | A `dialog`, newest first: text, date, an "Open the order" link on a notice about an order, a delete button named after its message, and "Clear all".                                                                                                                                                                                                          |
+| Tabs            | Only while the inbox holds a work notice (`audience: 'staff'`): "Mine" (`own` rows) and "Work" (`staff` rows). The panel always opens on Mine. The bell badge stays the total unread; the Work tab wears its own count (unread plus those that were new when the panel opened) and names it in its accessible label. Without a work notice there are no tabs. |
+| Clear all       | With tabs: `DELETE /notifications?audience=` (`own` or `staff`), the tab in view, one call; the server filters. Without tabs: the unfiltered bulk call.                                                                                                                                                                                                       |
+| Focus           | Moves into the panel on open; Escape closes it and returns focus to the bell.                                                                                                                                                                                                                                                                                 |
+
+## Nav badges
+
+An admin entry wears the number of unread work notices that point at its screen. The notifications
+module is not imported for it: `src/kernel/inbox-notices.ts` reads the toolkit's persistent
+messages that carry the inbox's `meta.source: 'inbox'` stamp, and each module's `badge` accessor
+names the codes it counts (typed against the contract's code union).
+
+```mermaid
+flowchart LR
+    S["inbox store<br/>(this module)"] -->|"persistent message,<br/>meta.notification"| T[(toolkit message store)]
+    T --> K["kernel/inbox-notices<br/>useUnreadNoticeCount(codes)"]
+    K --> P[payments badge]
+    K --> O[orders badge]
+    K --> M[... one per entry]
+    P & O & M --> N[app navigation]
+```
+
+| Entry             | Module    | Codes counted                                                                           |
+| ----------------- | --------- | --------------------------------------------------------------------------------------- |
+| `PaymentsList`    | payments  | `stale-refunds`                                                                         |
+| `UsersList`       | users     | `purchase-hold-placed`                                                                  |
+| `WebhooksList`    | webhooks  | `webhook-disabled`                                                                      |
+| `InventoryLedger` | inventory | `low-stock`                                                                             |
+| `PreordersBoard`  | inventory | `preorders-late`                                                                        |
+| `SalesReturns`    | returns   | `return-requested`, `withdrawals-awaiting-goods`, `returns-undecided`                   |
+| `SalesOrders`     | orders    | `transfers-due`, `delivery-holds-open`, `unshipped`, `awaiting-tracking`, `undelivered` |
+
+Codes are `notifications.staff.<name>`. Opening the bell marks every row read, so the badges clear
+with it; the next notice raises them again. The tickets entry keeps its own badge, which also reads
+`GET /tickets/summary`.
 
 ## Screens
 

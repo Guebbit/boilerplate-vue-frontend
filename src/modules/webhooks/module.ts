@@ -4,6 +4,7 @@
  * into the app's module registry.
  */
 import { Webhook, History } from 'lucide-vue-next';
+import { useUnreadNoticeCount } from '@/kernel/inbox-notices';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
@@ -34,7 +35,9 @@ export default {
             plural: 2,
             order: 48,
             section: 'admin',
-            icon: Webhook
+            icon: Webhook,
+            // Unread work notices that point at this screen.
+            badge: () => useUnreadNoticeCount(['notifications.staff.webhook-disabled'])
         },
         {
             name: 'WebhookDeliveries',

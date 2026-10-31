@@ -609,6 +609,35 @@ describe('dismissAll', () => {
             });
     });
 
+    it('with an audience, sends it and drops only that audience', () => {
+        const inbox = useInboxStore();
+        serverHolds([
+            row('n1'),
+            {
+                id: 'w1',
+                audience: 'staff',
+                code: 'notifications.staff.purchase-hold-placed',
+                params: { userId: 'u9', until: '2026-10-30T09:00:00.000Z' },
+                severity: 'warning',
+                createdAt: '2026-10-04T10:00:00.000Z'
+            }
+        ]);
+
+        return inbox
+            .sync()
+            .then(() => inbox.dismissAll('staff'))
+            .then(() => {
+                const calls = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.map(([config]) => config as { method: string; params?: unknown })
+                    .filter(({ method }) => method === 'DELETE');
+
+                expect(calls).toHaveLength(1);
+                expect(calls[0]?.params).toEqual({ audience: 'staff' });
+                expect(inbox.items.map(({ id }) => id)).toEqual(['n1']);
+            });
+    });
+
     it('leaves a notification that arrived while the call was out', async () => {
         const inbox = useInboxStore();
         inbox.receiveCreated({ notification: row('n1') });

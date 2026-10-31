@@ -106,7 +106,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
 
         session.adoptSession(data, remember);
         return useProfileStore()
-            .fetchProfile(true)
+            .fetchProfile(true, data.account)
             .then(() => ({ kind: 'session' }) as const);
     };
 

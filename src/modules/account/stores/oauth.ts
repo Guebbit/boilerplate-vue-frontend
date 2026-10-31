@@ -8,10 +8,18 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
-import { listOAuthProviders as apiListOAuthProviders } from '@api';
+import { loadConfig } from '@/infrastructure/config.ts';
 import { instance } from '@/infrastructure/http/client.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import type { StartOAuthLoginParams } from '@api';
+import { REDIRECT_QUERY_ENUMS } from '@api/routes';
+
+/**
+ * The closed set of codes the backend's OAuth callback redirects with in `?error=`, read from the
+ * contract (`x-redirect-query`). Lives here, not in the view: a component does not import the
+ * contract's tables.
+ */
+export const OAUTH_CALLBACK_ERRORS = REDIRECT_QUERY_ENUMS.completeOAuthLogin.error;
 
 /**
  * Display names for the providers this app knows about. A name absent here still renders — see
@@ -108,8 +116,10 @@ export const useOAuthProvidersStore = defineStore('accountOAuthProviders', () =>
     const fetchProviders = () => {
         if (loaded.value) return Promise.resolve(providers.value);
         return fetchAny(() =>
-            apiListOAuthProviders().then((data) => {
-                providers.value = data.providers;
+            loadConfig().then((config) => {
+                // A failed read leaves `loaded` false, so the next mount asks again.
+                if (!config) return providers.value;
+                providers.value = config.oauthProviders;
                 loaded.value = true;
                 return providers.value;
             })

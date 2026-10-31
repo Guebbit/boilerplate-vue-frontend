@@ -23,7 +23,7 @@ import type { OAuthLink } from '@types';
  * the account is only linked once the browser comes back through the callback, and the panel
  * re-reads the list then.
  *
- * @param provider - Registry key from `GET /account/oauth/providers`, e.g. `'google'`.
+ * @param provider - Registry key from `oauthProviders` on `GET /config`, e.g. `'google'`.
  * @param options - Where to land afterwards (a same-origin path) and the visitor's language.
  * @returns A promise resolving with the provider's consent URL.
  * @throws {Error} when the server answers no URL to go to.

@@ -33,9 +33,19 @@ describe('Sales dashboard', () => {
         });
 
         it('refuses an impossible period before asking the server', () => {
-            cy.get('[data-test=stats-from] input').clear();
-            cy.get('[data-test=stats-from] input').type('2020-01-01');
-            cy.get('[data-test=stats-period-problem]').should('contain.text', 'two years');
+            // The ceiling is the server's, read from a period answer, so a changed limit cannot stale this spec.
+            cy.intercept('GET', '**/stats/sales*').as('sales');
+            cy.get('[data-test=stats-preset-last-7]').click();
+            cy.wait('@sales')
+                .its('response.body.limits.maxRangeDays')
+                .then((maxRangeDays) => {
+                    cy.get('[data-test=stats-from] input').clear();
+                    cy.get('[data-test=stats-from] input').type('2020-01-01');
+                    cy.get('[data-test=stats-period-problem]').should(
+                        'contain.text',
+                        `at most ${String(maxRangeDays)} days`
+                    );
+                });
             cy.get('[data-test=stats-apply]').should('be.disabled');
         });
 

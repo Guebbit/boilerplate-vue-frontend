@@ -9,7 +9,8 @@
  * `src/infrastructure/http/middlewares/human-challenge.ts`.
  */
 import type { AxiosRequestConfig } from 'axios';
-import { getAntibotConfig, getAntibotChallenge } from '@api';
+import { getAntibotChallenge } from '@api';
+import { loadConfig } from '@/infrastructure/config.ts';
 import { getFirstApiError } from './envelope.ts';
 import { ERROR_CODES } from '@api/error-codes';
 
@@ -49,10 +50,15 @@ export const isAntibotVerificationFailed = (error: unknown): boolean =>
     getFirstApiError(error)?.code === ERROR_CODES.ANTIBOT_VERIFICATION_FAILED;
 
 /**
- * Which provider is active, and what `HumanCheck.vue` needs to render its widget. Re-exported
- * rather than called straight from the component — see the module doc.
+ * Which provider is active, and what `HumanCheck.vue` needs to render its widget: the `antibot`
+ * member of the public config, shared with every other reader. Rejects when the config could not
+ * be read.
  */
-export const fetchAntibotConfig = () => getAntibotConfig();
+export const fetchAntibotConfig = () =>
+    loadConfig().then((config) => {
+        if (!config) throw new Error('The public config could not be read');
+        return config.antibot;
+    });
 
 /**
  * A fresh ALTCHA challenge for the widget to solve. Only meaningful once `fetchAntibotConfig`

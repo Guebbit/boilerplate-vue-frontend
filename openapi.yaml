@@ -129,6 +129,41 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+  /config:
+    get:
+      tags:
+        - System
+      summary: What a client needs to boot, before it has a session
+      description: |
+        One public answer for the three things a client reads before anyone has signed in:
+        how the deployment keeps people signed in (`session`), which "Continue with..."
+        buttons to render (`oauthProviders`) and which human challenge a protected form
+        asks for (`antibot`). Each piece is owned by its own module and composed here, so
+        a client makes one call at start instead of three.
+
+        None of it is secret and none of it changes while the process runs, so it is
+        cached for a short while. `GET /shop` stays its own call: the shop is removable and
+        this answer must exist without it.
+      operationId: getConfig
+      security: []
+      responses:
+        "200":
+          description: The deployment's public configuration
+          headers:
+            Cache-Control:
+              description: A short public lifetime; the values only change with a restart.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Config"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
   /livez:
     get:
       tags:
@@ -175,6 +210,9 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           description: Booting, draining, or the database is unreachable.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
   /.well-known/security.txt:
     get:
       tags:
@@ -204,6 +242,7 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
   /locales:
     get:
+      x-cache: revalidate
       tags:
         - Locales
       summary: Supported languages
@@ -319,6 +358,7 @@ paths:
       x-module: locales
   /locales/apps:
     get:
+      x-cache: revalidate
       tags:
         - Locales
       summary: Translation apps
@@ -358,6 +398,7 @@ paths:
       x-module: locales
   /locales/{locale}:
     get:
+      x-cache: revalidate
       tags:
         - Locales
       summary: Read a language
@@ -553,6 +594,7 @@ paths:
       x-module: locales
   /locales/{locale}/dictionary:
     get:
+      x-cache: revalidate
       tags:
         - Locales
       summary: API message dictionary
@@ -599,6 +641,7 @@ paths:
       x-module: locales
   /locales/{locale}/messages:
     get:
+      x-cache: revalidate
       tags:
         - Locales
       summary: Client message dictionary
@@ -1322,6 +1365,9 @@ paths:
         "500":
           x-not-problem: true
           description: "The registry could not be read. Prometheus text, not a problem body: a scraper parses the exposition format only."
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
           content:
             text/plain:
               schema:
@@ -1331,6 +1377,9 @@ paths:
             No metrics token is configured. The endpoint denies by default rather
             than opening: an unauthenticated metrics endpoint is not a state to arrive
             at by forgetting an environment variable.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
           content:
             application/problem+json:
               schema:
@@ -1514,29 +1563,6 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: audit-logs
-  /antibot/config:
-    get:
-      tags:
-        - Antibot
-      summary: Read the active human-challenge provider's public parameters, and every rung's status
-      description: |
-        Rung 3 of the anti-automation ladder, plus a `rungs` summary of every other one. Always answers 200; the default `none` provider reports an empty parameter map, which means there is no widget to render and no token to send. Reachable with no credential; guarding it behind a login would defeat signup, which has none yet.
-      operationId: getAntibotConfig
-      security: []
-      responses:
-        "200":
-          description: The active provider and what the client needs to render it
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AntibotConfig"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: antibot
   /antibot/challenge:
     get:
       tags:
@@ -1606,18 +1632,30 @@ paths:
       tags:
         - Account
       summary: Current user info
-      description: Returns the full profile of the currently authenticated user
+      description: |
+        Returns the full profile of the currently authenticated user, plus two read-only
+        members that ride with it so a client needs no second call: `abilities` (the
+        rules the SERVER enforces, packed for the client to evaluate) and `activity` (the
+        session's idle clock).
+
+        `abilities` is the same object a sign-in and a token refresh carry. The client's
+        copy has NO AUTHORITY: it decides what to render, never what is allowed, and every
+        request is re-evaluated server-side. A non-passive `GET /account` also counts as
+        activity, so a restore needs no separate touch.
+
+        The `ETag` is computed over the stored account, not over this body: a role change
+        does not make an `If-Match` taken from an earlier read answer `412`.
       operationId: getAccount
       security:
         - bearerAuth: []
         - cookieAuth: []
       responses:
         "200":
-          description: Current user info
+          description: Current user info, with the caller's abilities and idle clock
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Account"
+                $ref: "#/components/schemas/AccountView"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -1648,6 +1686,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/ReplaceAccountRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "200":
           description: Replaced profile
@@ -1704,6 +1745,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/UpdateAccountRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "200":
           description: Updated profile
@@ -1817,55 +1861,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "415":
           $ref: "#/components/responses/UnsupportedMediaType"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: account
-  /account/abilities:
-    get:
-      tags:
-        - Account
-      summary: The caller's own authorization rules
-      description: |
-        The rules the SERVER enforces, packed for a client to evaluate.
-
-        Published so a client can grey out what it would be refused, from the same rules
-        rather than from a copy of them — a hand-maintained duplicate of "what may I do"
-        drifts, and the drift is silent until somebody is shown a button that answers 403.
-
-        Answered in BOTH scopes, as two separate lists. A request acts in exactly one — the
-        one its key declares — but a client renders the shop's screens and the
-        installation's health dashboard from a single navigation, so it needs both and must
-        never merge them.
-
-        **The client's copy has no authority.** It decides what to RENDER, never what is
-        allowed; every request is re-evaluated server-side. Published here because the
-        alternative is every client inventing the same guess.
-
-        `grantableRoles` lists the tenant-scope roles the caller may assign through the user
-        writes, computed by the same rule as their `403`/`422`; a role picker reads it instead of a
-        hard-coded list. Empty for an anonymous caller. It has no authority either.
-
-        Answered for an anonymous caller too: a stranger holds the `guest` role, which is
-        a value in the model rather than an absence, and a shop front that greys nothing
-        out for a visitor is a shop front that lies twice.
-      operationId: getMyAbilities
-      security:
-        - {}
-        - bearerAuth: []
-        - cookieAuth: []
-      responses:
-        "200":
-          description: The caller's packed rules.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Abilities"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -2596,6 +2591,7 @@ paths:
       summary: Cancel a scheduled account deletion with the mailed link
       description: "Spends the one-time restore token mailed by `DELETE /account` and brings the account back, provided its `purgeAt` has not passed. Public: the token is the credential. Restoring does NOT sign the person in: holding the mailbox is not a login, the same rule as a password reset. Unknown, expired and already-spent tokens answer alike (`422`). Answers 429 once an address (or its network block) has sent too many wrong tokens, like the other one-time-token confirms."
       operationId: restoreAccount
+      x-no-refresh: true
       security: []
       requestBody:
         required: true
@@ -2626,8 +2622,9 @@ paths:
       tags:
         - Auth
       summary: Login
-      description: "Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call."
+      description: "Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`session.mode` of `GET /config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call."
       operationId: login
+      x-no-refresh: true
       security: []
       requestBody:
         required: true
@@ -2668,6 +2665,7 @@ paths:
       summary: Restore an account in its deletion grace and sign in
       description: "The last step of a sign-in by an account whose owner asked to delete it (`DELETE /account`) and whose `purgeAt` has not passed. Submits the `DeletionPending` claim check that `POST /account/login` (or `POST /account/login/2fa`) answered: it cancels the deletion, then starts the session exactly as `POST /account/login` does, `remember` and `transport` included. A client that does not want the account back simply never calls it, and the account is erased at `purgeAt`. Omit `challenge` for an OAuth-originated sign-in: that claim check never reached the client and is read from the httpOnly cookie the callback set. An unknown, expired or spent challenge answers 401."
       operationId: loginRestore
+      x-no-refresh: true
       security: []
       requestBody:
         required: true
@@ -2706,6 +2704,7 @@ paths:
       summary: Signup
       description: "Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account is an `unverified` audience until `POST /account/email-verification/confirm` proves the address — it browses freely and is stopped only at `checkout:Cart`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards."
       operationId: signup
+      x-no-refresh: true
       security: []
       parameters:
         - $ref: "#/components/parameters/AntibotChallengeTokenHeader"
@@ -2751,6 +2750,7 @@ paths:
         - Auth
       summary: Request password reset
       operationId: requestPasswordReset
+      x-no-refresh: true
       description: Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/password/reset/confirm`.
       security: []
       parameters:
@@ -2787,6 +2787,7 @@ paths:
         - Auth
       summary: Confirm password reset
       operationId: confirmPasswordReset
+      x-no-refresh: true
       description: Completes the password-reset flow. Validates the one-time reset token issued by `/account/password/reset` and, if valid, updates the user's password to the supplied value.
       security: []
       requestBody:
@@ -2918,6 +2919,7 @@ paths:
         - Auth
       summary: Download an export of the caller's own data
       description: "Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. An account has one export, so there is no id to name: the caller's own is the one served. A FRESH session (`requireFreshAuth`), same as the request. `404` unless the export is `ready` and within its retention. A `ready` export whose file is missing from the store answers `404` too: the file honestly does not exist."
+      x-cache: no-store
       operationId: downloadAccountExport
       security:
         - bearerAuth: []
@@ -2928,6 +2930,10 @@ paths:
           headers:
             Content-Disposition:
               description: '`attachment; filename="account-export-<date>.json"`, e.g. `account-export-2026-10-27.json`; the date is the UTC day the export was requested.'
+              schema:
+                type: string
+            Cache-Control:
+              description: "`no-store`: no cache, shared or private, may keep the answer."
               schema:
                 type: string
           content:
@@ -2952,6 +2958,7 @@ paths:
       summary: Complete a two-factor login
       description: The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, starts the session exactly as `POST /account/login` does for an account with no second factor, `transport` included. For an account inside the grace of its own deletion the second factor passing answers a `DeletionPending` claim check instead of a session, so two-factor is asked once and `POST /account/login/restore` finishes.
       operationId: loginTwoFactor
+      x-no-refresh: true
       security: []
       requestBody:
         required: true
@@ -2990,6 +2997,7 @@ paths:
       summary: Send a login code
       description: Delivers a fresh code for one armed delivered method, against a live challenge. Public like the rest of the login flow — the challenge token is the credential. Answers 429 while the previous code is still inside its cooldown, so a client that respects `resendAfter` never sees one; the cooldown exists because this endpoint sends mail on an unauthenticated caller's say-so.
       operationId: sendTwoFactorCode
+      x-no-refresh: true
       security: []
       requestBody:
         required: true
@@ -3305,30 +3313,6 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
-  /account/oauth/providers:
-    get:
-      tags:
-        - Auth
-      summary: List enabled OAuth providers
-      description: The OAuth providers this deployment holds credentials for — an empty list means none are configured. The frontend uses this to decide which "Continue with…" buttons to render.
-      operationId: listOAuthProviders
-      security: []
-      responses:
-        "200":
-          description: Enabled provider names
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OAuthProviders"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: account
   /account/oauth/links:
     get:
       tags:
@@ -3372,7 +3356,7 @@ paths:
           schema:
             type: string
             maxLength: 32
-          description: One of the `provider` names `GET /account/oauth/providers` lists.
+          description: One of the `oauthProviders` names `GET /config` lists.
         - name: continue
           in: query
           required: false
@@ -3463,7 +3447,7 @@ paths:
           schema:
             type: string
             maxLength: 32
-          description: One of the names `GET /account/oauth/providers` lists.
+          description: One of the `oauthProviders` names `GET /config` lists.
         - name: continue
           in: query
           required: false
@@ -3533,12 +3517,27 @@ paths:
       responses:
         "302":
           description: Redirect to the frontend, session cookies set on success
+          x-redirect-query:
+            error:
+              type: string
+              enum:
+                - access_denied
+                - provider_error
+                - already_linked
+                - link_expired
+                - email_unverified
+                - account_exists
+                - account_unverified
+              description: "`access_denied`: the user declined consent. `provider_error`: the provider failed or answered something unusable. `already_linked`: that provider account belongs to another account. `link_expired`: the minutes a connect attempt lives ran out. `email_unverified`: the provider does not vouch for the address. `account_exists`: a verified-email match, so nothing was linked. `account_unverified`: the matching account never proved its address."
           headers:
             Location:
               schema:
                 type: string
         "400":
           description: Missing or mismatched CSRF state
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
           content:
             application/problem+json:
               schema:
@@ -3556,6 +3555,7 @@ paths:
       x-module: account
   /users:
     get:
+      x-cache: private-no-cache
       tags:
         - Users
       summary: List users (paginated)
@@ -3650,6 +3650,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/CreateUserRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "201":
           description: Created user
@@ -3730,6 +3733,7 @@ paths:
       - patch
       - delete
     get:
+      x-cache: private-no-cache
       tags:
         - Users
       summary: User details
@@ -3788,6 +3792,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/ReplaceUserByIdRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "200":
           description: Replaced user
@@ -3846,6 +3853,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/UpdateUserByIdRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "200":
           description: Updated user
@@ -4080,6 +4090,7 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: tickets
     get:
+      x-cache: private-no-cache
       tags:
         - Tickets
       summary: List tickets
@@ -4236,6 +4247,7 @@ paths:
       x-module: tickets
   /tickets/{id}:
     get:
+      x-cache: private-no-cache
       tags:
         - Tickets
       summary: Get a ticket
@@ -4548,6 +4560,7 @@ paths:
       x-module: tickets
   /products:
     get:
+      x-cache: "max-age: 3600"
       tags:
         - Products
       summary: List products (paginated)
@@ -4618,6 +4631,11 @@ paths:
       responses:
         "200":
           description: Products page
+          headers:
+            Cache-Control:
+              description: "`public, max-age=3600, stale-while-revalidate=60, stale-if-error=300` for a caller who reads what a guest reads, who shares one cached answer; `private, no-cache` for staff who see more (inactive products, stock counters, every language); `private, no-store` for a draft-language preview."
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -4654,6 +4672,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/CreateProductRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "201":
           description: Created product
@@ -4730,6 +4751,7 @@ paths:
       x-module: products
   /products/facets:
     get:
+      x-cache: "max-age: 3600"
       tags:
         - Products
       summary: Catalogue facets
@@ -4766,6 +4788,7 @@ paths:
       - patch
       - delete
     get:
+      x-cache: revalidate
       tags:
         - Products
       summary: Product details
@@ -4835,6 +4858,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/ReplaceProductRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "200":
           description: Replaced product
@@ -4912,6 +4938,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/UpdateProductRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "200":
           description: Updated product
@@ -5600,6 +5629,7 @@ paths:
       x-module: wishlist
   /orders:
     get:
+      x-cache: private-no-cache
       tags:
         - Orders
       summary: List orders (paginated)
@@ -5845,6 +5875,7 @@ paths:
       - patch
       - delete
     get:
+      x-cache: private-no-cache
       tags:
         - Orders
       summary: Order details
@@ -6198,6 +6229,7 @@ paths:
       x-module: orders
   /orders/{id}/invoice:
     get:
+      x-cache: no-store
       tags:
         - Invoicing
       summary: Download the order's invoice (PDF)
@@ -6214,6 +6246,10 @@ paths:
           headers:
             Content-Disposition:
               description: '`inline; filename="invoice-<invoice number>.pdf"`, e.g. `invoice-2026-0042.pdf`.'
+              schema:
+                type: string
+            Cache-Control:
+              description: "`no-store`: no cache, shared or private, may keep the answer."
               schema:
                 type: string
           content:
@@ -6264,6 +6300,7 @@ paths:
       x-module: invoicing
   /orders/{id}/credit-notes/{creditNoteId}:
     get:
+      x-cache: no-store
       tags:
         - Invoicing
       summary: Download one credit note (PDF)
@@ -6286,6 +6323,10 @@ paths:
           headers:
             Content-Disposition:
               description: '`inline; filename="credit-note-<credit note number>.pdf"`, e.g. `credit-note-2026-0007.pdf`.'
+              schema:
+                type: string
+            Cache-Control:
+              description: "`no-store`: no cache, shared or private, may keep the answer."
               schema:
                 type: string
           content:
@@ -7236,6 +7277,7 @@ paths:
       x-module: delivery
   /returns:
     get:
+      x-cache: private-no-cache
       tags:
         - Returns
       summary: List returns (paginated)
@@ -7343,6 +7385,7 @@ paths:
       x-module: returns
   /returns/options:
     get:
+      x-cache: private-no-cache
       tags:
         - Returns
       summary: What an order can still send back or cancel
@@ -7381,6 +7424,7 @@ paths:
       x-module: returns
   /returns/{id}:
     get:
+      x-cache: private-no-cache
       tags:
         - Returns
       summary: Get a return
@@ -7767,6 +7811,9 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           description: The correction would leave fewer units than are already reserved
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
           content:
             application/problem+json:
               schema:
@@ -8581,30 +8628,6 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
-  /account/session-config:
-    get:
-      tags:
-        - Auth
-      summary: How this deployment keeps people signed in
-      description: "Public, like `GET /antibot/config`: a client reads it once at boot and adapts, so it needs no switch of its own. `jwt` — a short access token in memory plus a rotating refresh cookie (`POST /account/refresh` exists). `cookie` — one HttpOnly `__Host-session` cookie, nothing to refresh, and every state-changing request that a cookie authenticates must come from an allowed `Origin`."
-      operationId: getSessionConfig
-      security: []
-      responses:
-        "200":
-          description: The active session mode
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SessionConfig"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: account
   /users/{id}/purchase-hold:
     put:
       tags:
@@ -8925,6 +8948,7 @@ paths:
       x-module: orders
   /orders/{id}/timeline:
     get:
+      x-cache: private-no-cache
       tags:
         - Orders
       summary: The order's timeline
@@ -9005,6 +9029,7 @@ paths:
       x-module: orders
   /payments:
     get:
+      x-cache: private-no-cache
       tags:
         - Payments
       summary: List payments (staff)
@@ -9210,6 +9235,7 @@ paths:
       x-module: payments
   /payments/refunds:
     get:
+      x-cache: private-no-cache
       tags:
         - Payments
       summary: List refunds (staff)
@@ -9267,6 +9293,7 @@ paths:
       x-module: payments
   /payments/attention:
     get:
+      x-cache: private-no-cache
       tags:
         - Payments
       summary: Payments that need a person (staff)
@@ -9697,6 +9724,7 @@ paths:
       x-module: returns
   /stats/sales:
     get:
+      x-cache: private-no-cache
       tags:
         - Stats
       summary: Sales over time (staff)
@@ -9733,6 +9761,7 @@ paths:
       x-module: stats
   /stats/products:
     get:
+      x-cache: private-no-cache
       tags:
         - Stats
       summary: Top products (staff)
@@ -9776,6 +9805,7 @@ paths:
       x-module: stats
   /stats/products/{productId}:
     get:
+      x-cache: private-no-cache
       tags:
         - Stats
       summary: One product's sales over time (staff)
@@ -9819,6 +9849,7 @@ paths:
       x-module: stats
   /stats/categories:
     get:
+      x-cache: private-no-cache
       tags:
         - Stats
       summary: Sales by category (staff)
@@ -9854,6 +9885,7 @@ paths:
       x-module: stats
   /stats/payments:
     get:
+      x-cache: private-no-cache
       tags:
         - Stats
       summary: Payments mix (staff)
@@ -9889,6 +9921,7 @@ paths:
       x-module: stats
   /stats/operations:
     get:
+      x-cache: private-no-cache
       tags:
         - Stats
       summary: Operations rates (staff)
@@ -9924,6 +9957,7 @@ paths:
       x-module: stats
   /stats/customers:
     get:
+      x-cache: private-no-cache
       tags:
         - Stats
       summary: New and returning customers (staff)
@@ -9959,6 +9993,7 @@ paths:
       x-module: stats
   /stats/pipeline:
     get:
+      x-cache: private-no-cache
       tags:
         - Stats
       summary: What is waiting right now (staff)
@@ -9974,36 +10009,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PipelineStats"
-        "304":
-          $ref: "#/components/responses/NotModified"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: stats
-  /stats/limits:
-    get:
-      tags:
-        - Stats
-      summary: How big a period may be (staff)
-      description: "The two ceilings every period read enforces, so a form can refuse a period before a round trip does: the most calendar days (inclusive) and the most buckets one request may cover. Needs `read:Stats`."
-      operationId: getStatsLimits
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      responses:
-        "200":
-          description: The ceilings
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/StatsLimits"
         "304":
           $ref: "#/components/responses/NotModified"
         "401":
@@ -10272,6 +10277,7 @@ paths:
       x-module: webhooks
   /examples:
     get:
+      x-cache: private-no-cache
       tags:
         - Examples
       summary: List examples
@@ -10416,6 +10422,7 @@ paths:
       - patch
       - delete
     get:
+      x-cache: private-no-cache
       tags:
         - Examples
       summary: Read an example
@@ -10711,6 +10718,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/ReplaceExampleCoverRequestMultipart"
+            encoding:
+              imageUpload:
+                contentType: image/png, image/jpeg, image/webp
       responses:
         "200":
           description: The example, with its new cover
@@ -10771,11 +10781,18 @@ paths:
       tags:
         - Notifications
       summary: Delete every notification
-      description: "Permanently deletes every notification of the caller — a hard delete, like `DELETE /notifications/{id}`, on the collection itself (as `DELETE /account/sessions` and `DELETE /cart/items` are). Emptying an empty inbox is the state the caller asked for, so it answers 204 too. `POST /notifications/read-all` stays an action: it moves `readAt`, not membership."
+      description: "Permanently deletes every notification of the caller — a hard delete, like `DELETE /notifications/{id}`, on the collection itself (as `DELETE /account/sessions` and `DELETE /cart/items` are). With `audience` it deletes only that group: a bell with a Mine and a Work tab clears one tab in one call (the staff cap is 200 rows, more than the global rate limit allows as single deletes). Without it, everything. Emptying an empty inbox, or an empty group, is the state the caller asked for, so it answers 204 too. `POST /notifications/read-all` stays an action: it moves `readAt`, not membership."
       operationId: dismissAllNotifications
       security:
         - bearerAuth: []
         - cookieAuth: []
+      parameters:
+        - name: audience
+          in: query
+          required: false
+          description: Delete only this group of the caller's notifications.
+          schema:
+            $ref: "#/components/schemas/NotificationAudience"
       responses:
         "204":
           $ref: "#/components/responses/NoContent"
@@ -10785,6 +10802,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "415":
           $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -11171,7 +11190,7 @@ components:
         type: string
         maxLength: 4096
       description: |
-        The token the active human-challenge provider issued to the client — see `GET /antibot/config`. Absent when that provider is `none`.
+        The token the active human-challenge provider issued to the client — see `antibot` on `GET /config`. Absent when that provider is `none`.
     RequiredIdempotencyKeyHeader:
       name: Idempotency-Key
       in: header
@@ -11368,6 +11387,13 @@ components:
       description: "The challenge a 401 carries (RFC 9110 §11.6.1, §15.5.2; RFC 6750 §3): which scheme the API takes (`Bearer realm=\"api\"`), or, where a guard knows more, why the credential was refused (`error=\"invalid_token\"`, or `error=\"insufficient_user_authentication\"` with a `max_age` for a step-up). A generic HTTP client reads this; this app's own clients read `errors[].code` and never the header."
       schema:
         type: string
+    CacheControlNoStore:
+      required: true
+      description: "Always `no-store`: no cache, shared or private, may keep an error answer (RFC 9111 section 5.2.2.5). Every refusal sets it, whichever layer produced it."
+      schema:
+        type: string
+        enum:
+          - no-store
   responses:
     NoContent:
       description: Done. There is nothing to say, so the body is empty (RFC 9110 section 15.3.5).
@@ -11381,6 +11407,9 @@ components:
             type: string
     BadRequest:
       description: "The request could not be understood or authenticated as what it claims to be — distinct from `ValidationError`, which is a well-formed request whose FIELDS are wrong. Used where a caller is a machine rather than a form: an unverifiable webhook signature is the case that needs it."
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
@@ -11388,6 +11417,8 @@ components:
     Unauthorized:
       description: Unauthorized
       headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
         WWW-Authenticate:
           $ref: "#/components/headers/WWW-Authenticate"
       content:
@@ -11396,42 +11427,63 @@ components:
             $ref: "#/components/schemas/Problem"
     Forbidden:
       description: Forbidden
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
     NotFound:
       description: Resource not found
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
     Conflict:
       description: The request conflicts with the current state of the resource
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
     PreconditionFailed:
       description: "The request's `If-Match` no longer matches the stored resource: it was changed (or removed) after the caller read it. Nothing was written. Read it again, reapply the edit, and resend with the new `ETag`."
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
     ValidationError:
       description: Validation failed
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
     PayloadTooLarge:
       description: "The request body is larger than this deployment accepts: a JSON body over `NODE_JSON_BODY_LIMIT` (100kb by default), an uploaded file over `NODE_MAX_UPLOAD_BYTES`, or a multipart field value over 100 KB. Refused by the body parser or the upload middleware, which is why it is declared for every body-accepting operation rather than by hand. The other multipart limits (counts, shapes) answer `400`."
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
     UnsupportedMediaType:
       description: The body's media type is not one the operation declares (`details.accepted` lists them), or its charset or encoding cannot be read. Refused before any route runs, like `413` above. A request with no body is never judged. A `DELETE` that declares no body refuses any body, and `details.accepted` is then empty.
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
@@ -11439,6 +11491,8 @@ components:
     TooManyRequests:
       description: The caller has spent a rate-limit budget and must wait. The wait is in the standard `RateLimit`/`Retry-After` headers, and — where the endpoint has a budget of its own to report, like a resend cooldown — in the error `details` too.
       headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
         Retry-After:
           $ref: "#/components/headers/Retry-After"
         RateLimit-Policy:
@@ -11452,6 +11506,8 @@ components:
     ServiceUnavailable:
       description: "A dependency the request needed (Mongo, Redis) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from."
       headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
         Retry-After:
           $ref: "#/components/headers/Retry-After"
       content:
@@ -11460,6 +11516,9 @@ components:
             $ref: "#/components/schemas/Problem"
     InternalError:
       description: Internal server error
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
       content:
         application/problem+json:
           schema:
@@ -11488,6 +11547,12 @@ components:
       minLength: 1
       maxLength: 200
       description: Free-text search string
+    CurrencyCode:
+      type: string
+      minLength: 3
+      maxLength: 3
+      pattern: ^[A-Z]{3}$
+      description: ISO 4217 alphabetic currency code, upper case (e.g. `EUR`)
     Email:
       type: string
       maxLength: 254
@@ -11675,6 +11740,88 @@ components:
           format: date-time
         purchaseHold:
           $ref: "#/components/schemas/PurchaseHold"
+    Config:
+      type: object
+      additionalProperties: false
+      required:
+        - session
+        - oauthProviders
+        - antibot
+      properties:
+        session:
+          $ref: "#/components/schemas/SessionConfig"
+        oauthProviders:
+          type: array
+          items:
+            type: string
+          description: Registry names this deployment holds OAuth credentials for, e.g. `["google", "github"]`. Empty when none are configured.
+        antibot:
+          $ref: "#/components/schemas/AntibotConfig"
+    AccountView:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - email
+        - username
+        - abilities
+        - activity
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        email:
+          $ref: "#/components/schemas/Email"
+        username:
+          type: string
+        role:
+          type: string
+        active:
+          type: boolean
+        verifiedAt:
+          type: string
+          format: date-time
+        pendingEmail:
+          type: string
+          format: email
+          readOnly: true
+        imageUrl:
+          $ref: "#/components/schemas/ImageUrl"
+        thumbnailUrl:
+          $ref: "#/components/schemas/ThumbnailUrl"
+        locale:
+          $ref: "#/components/schemas/Locale"
+        phone:
+          type: string
+        website:
+          type: string
+        analyticsConsent:
+          type: boolean
+        analyticsConsentAt:
+          type: string
+          format: date-time
+        termsAcceptedAt:
+          type: string
+          format: date-time
+        termsVersion:
+          type: string
+        twoFactorEnabledAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+        purchaseHold:
+          $ref: "#/components/schemas/PurchaseHold"
+        abilities:
+          $ref: "#/components/schemas/Abilities"
+        activity:
+          $ref: "#/components/schemas/SessionActivity"
     User:
       type: object
       additionalProperties: false
@@ -11822,6 +11969,82 @@ components:
           enum:
             - ok
           description: Liveness indicator. Always `ok` when the process is answering.
+    SessionConfig:
+      type: object
+      additionalProperties: false
+      required:
+        - mode
+        - lifetimeSeconds
+      properties:
+        mode:
+          type: string
+          enum:
+            - jwt
+            - cookie
+          description: The deployment's `NODE_SESSION_MODE`.
+        lifetimeSeconds:
+          type: object
+          additionalProperties: false
+          required:
+            - short
+            - medium
+            - long
+          description: How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own.
+          properties:
+            short:
+              type: integer
+              minimum: 1
+            medium:
+              type: integer
+              minimum: 1
+            long:
+              type: integer
+              minimum: 1
+        staffLifetimeSeconds:
+          type: integer
+          minimum: 1
+          description: The longest a staff or admin session lives from sign-in, whatever the tier (`NODE_SESSION_LIFETIME_STAFF`). Absent when the cap is off.
+    AntibotRungs:
+      type: object
+      additionalProperties: false
+      required:
+        - identityBudgets
+        - emailPolicy
+      description: |
+        Every rung's status, not just rung 3's provider — one answer to "what is active on this deployment" instead of asking each rung to publish its own.
+      properties:
+        identityBudgets:
+          type: boolean
+          description: |
+            Rung 1 — always `true`. The identity/address/address-block budgets have no off switch.
+        emailPolicy:
+          type: string
+          enum:
+            - off
+            - disposable
+            - mx
+          description: |
+            Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused.
+    AntibotConfig:
+      type: object
+      additionalProperties: false
+      required:
+        - provider
+        - parameters
+        - rungs
+      properties:
+        provider:
+          type: string
+          description: |
+            The active implementation's name (`none` by default). `none` means no challenge is required — send no token.
+        parameters:
+          type: object
+          additionalProperties:
+            type: string
+          description: |
+            What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.
+        rungs:
+          $ref: "#/components/schemas/AntibotRungs"
     LocaleDirection:
       type: string
       enum:
@@ -12473,10 +12696,12 @@ components:
           type: string
         cpuCount:
           type: integer
+          minimum: 1
         loadAvg:
           type: array
           items:
             type: number
+            minimum: 0
     ObservabilityHealthJob:
       type: object
       additionalProperties: false
@@ -12693,6 +12918,7 @@ components:
           description: Which world this action happened in — a shop or the installation.
         action:
           type: string
+          pattern: ^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$
           description: Dot-notation action name (e.g. order.created)
         outcome:
           type: string
@@ -12706,8 +12932,10 @@ components:
           type: string
         requestId:
           type: string
+          format: uuid
         traceId:
           type: string
+          pattern: ^[0-9a-f]{32}$
         targetType:
           type: string
         targetId:
@@ -12761,47 +12989,6 @@ components:
             $ref: "#/components/schemas/AuditEntryItem"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    AntibotRungs:
-      type: object
-      additionalProperties: false
-      required:
-        - identityBudgets
-        - emailPolicy
-      description: |
-        Every rung's status, not just rung 3's provider — one answer to "what is active on this deployment" instead of asking each rung to publish its own.
-      properties:
-        identityBudgets:
-          type: boolean
-          description: |
-            Rung 1 — always `true`. The identity/address/address-block budgets have no off switch.
-        emailPolicy:
-          type: string
-          enum:
-            - off
-            - disposable
-            - mx
-          description: |
-            Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused.
-    AntibotConfig:
-      type: object
-      additionalProperties: false
-      required:
-        - provider
-        - parameters
-        - rungs
-      properties:
-        provider:
-          type: string
-          description: |
-            The active implementation's name (`none` by default). `none` means no challenge is required — send no token.
-        parameters:
-          type: object
-          additionalProperties:
-            type: string
-          description: |
-            What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.
-        rungs:
-          $ref: "#/components/schemas/AntibotRungs"
     AntibotChallengeParameters:
       type: object
       additionalProperties: false
@@ -12898,6 +13085,118 @@ components:
           description: How many products the search found.
         page:
           $ref: "#/components/schemas/Page"
+    PackedRules:
+      type: array
+      description: |
+        CASL packed rules — `[action, subject, conditions | 0, inverted 1 | 0, fields, reason]`,
+        with trailing absent members omitted. `0` stands in for an absent `conditions` or
+        `inverted: false` when a later member is present.
+      items:
+        type: array
+        description: |
+          One packed rule. OpenAPI has no tuple, so a position is declared as the union of
+          what it may hold: the action, the subject, the comma-joined `fields` and the
+          `reason` are strings, `conditions` an object, and `inverted` (and the absent
+          `conditions`) the numbers `1` and `0`.
+        items:
+          oneOf:
+            - type: string
+            - type: integer
+              enum:
+                - 0
+                - 1
+            - type: object
+    Abilities:
+      type: object
+      additionalProperties: false
+      description: |
+        What the caller may do, as CASL's packed-rule format — the shape `unpackRules`
+        takes. A tuple per rule rather than an object, which is what makes shipping a few
+        dozen of them cheap.
+
+        BOTH SCOPES ARE ANSWERED, and that is the whole reason this is not a single rule
+        list. A request resolves to exactly one scope — the one the key it is asking about
+        declares — but a CLIENT renders screens from both at once: a shop's catalogue and
+        the installation's health dashboard sit in one navigation. Publishing only the
+        caller's tenant rules left every platform screen with no rule to grey out, so it
+        was gated on a tenant key that happened to correlate, which is exactly the
+        hand-maintained guess these rules exist to abolish.
+
+        The two lists never merge. A tenant rule can never satisfy a platform key and the
+        reverse is equally impossible (`shared/authorization-keys.yaml`'s one invariant),
+        so a client builds ONE ABILITY PER SCOPE and asks the one that owns the subject.
+
+        The client's copy has NO AUTHORITY: it decides what to render, never what is
+        allowed, and every request is re-evaluated server-side. Published so a client greys
+        out what it would be refused from the same rules the server enforces, rather than
+        from a hand-maintained duplicate that drifts — the drift is silent until somebody
+        is shown a button that answers 403.
+      required:
+        - tenant
+        - platform
+        - version
+        - grantableRoles
+        - secondFactorRequired
+      properties:
+        secondFactorRequired:
+          type: boolean
+          description: |
+            `true` when the caller holds a staff role that grants nothing yet because no
+            authenticator app is armed. The rules above are then the account's customer
+            ones; a client shows an "enrol to use your staff tools" prompt instead of
+            a staff menu. `false` for everyone else.
+        grantableRoles:
+          type: array
+          items:
+            type: string
+          description: |
+            The tenant-scope roles this caller may assign through `POST`/`PUT`/`PATCH
+            /users`, in the order `shared/authorization-roles.yaml` declares them.
+            Computed by the same rule as the `403`/`422` those writes answer, so a role
+            picker built from it offers exactly what the write accepts. Empty for a
+            caller who may grant nothing. It has NO
+            AUTHORITY: the write is re-checked server-side.
+        tenantId:
+          type: string
+          description: |
+            The shop `tenant`'s rules are about. Absent when the caller has no tenant
+            membership at all — a pure platform operator administers the installation
+            rather than acting inside one shop.
+        tenant:
+          allOf:
+            - $ref: "#/components/schemas/PackedRules"
+          description: |
+            What the caller may do INSIDE their shop. Empty for a caller with no tenant
+            membership.
+        platform:
+          allOf:
+            - $ref: "#/components/schemas/PackedRules"
+          description: |
+            What the caller may do ACROSS the installation — health, metrics, the
+            operational audit. Empty for everyone but a platform operator, which is
+            most callers: an operator is not a super-member and holds no shop's keys.
+        version:
+          type: integer
+          minimum: 1
+          description: |
+            The permission model's own version, bumped when the RULES change rather than
+            when a role does. A client caches these; this is what tells it the cache is
+            about a different model, not merely a different person. One number for both
+            lists — the keys file they are declared in is one file.
+    SessionActivity:
+      type: object
+      additionalProperties: false
+      required:
+        - lastActiveAt
+      properties:
+        lastActiveAt:
+          type: string
+          format: date-time
+          description: When the session last saw a real request — now, for a touch.
+        idleTimeoutSeconds:
+          type: integer
+          minimum: 1
+          description: How long the session may then sit unused before it ends. Absent when no idle timeout applies to this account (a shopper, or the timeout is switched off).
     ReplaceAccountRequest:
       type: object
       additionalProperties: false
@@ -13045,114 +13344,8 @@ components:
       properties:
         resendAfter:
           type: integer
+          minimum: 0
           description: Seconds before another verification email may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the server.
-    PackedRules:
-      type: array
-      description: |
-        CASL packed rules — `[action, subject, conditions?, fields?, inverted?, reason?]`,
-        with trailing absent members omitted.
-      items:
-        type: array
-        description: |
-          One packed rule. OpenAPI 3.0 has no tuple, so a position is declared as the
-          union of what it may hold: the action and the subject are strings, `conditions`
-          an object, `fields` a list of strings and `inverted` a boolean.
-        items:
-          oneOf:
-            - type: string
-            - type: boolean
-            - type: object
-            - type: array
-              items:
-                type: string
-    Abilities:
-      type: object
-      additionalProperties: false
-      description: |
-        What the caller may do, as CASL's packed-rule format — the shape `unpackRules`
-        takes. A tuple per rule rather than an object, which is what makes shipping a few
-        dozen of them cheap.
-
-        BOTH SCOPES ARE ANSWERED, and that is the whole reason this is not a single rule
-        list. A request resolves to exactly one scope — the one the key it is asking about
-        declares — but a CLIENT renders screens from both at once: a shop's catalogue and
-        the installation's health dashboard sit in one navigation. Publishing only the
-        caller's tenant rules left every platform screen with no rule to grey out, so it
-        was gated on a tenant key that happened to correlate, which is exactly the
-        hand-maintained guess this endpoint exists to abolish.
-
-        The two lists never merge. A tenant rule can never satisfy a platform key and the
-        reverse is equally impossible (`shared/authorization-keys.yaml`'s one invariant),
-        so a client builds ONE ABILITY PER SCOPE and asks the one that owns the subject.
-
-        The client's copy has NO AUTHORITY: it decides what to render, never what is
-        allowed, and every request is re-evaluated server-side. Published so a client greys
-        out what it would be refused from the same rules the server enforces, rather than
-        from a hand-maintained duplicate that drifts — the drift is silent until somebody
-        is shown a button that answers 403.
-      required:
-        - tenant
-        - platform
-        - version
-        - subjects
-        - grantableRoles
-        - secondFactorRequired
-      properties:
-        secondFactorRequired:
-          type: boolean
-          description: |
-            `true` when the caller holds a staff role that grants nothing yet because no
-            authenticator app is armed. The rules above are then the account's customer
-            ones; a client shows an "enrol to use your staff tools" prompt instead of
-            a staff menu. `false` for everyone else, an anonymous caller and an API key
-            included.
-        subjects:
-          type: array
-          items:
-            type: string
-          description: |
-            Every CASL subject a declared key names, deduplicated and sorted — the
-            `Order`/`Product`/`ApiKey`/... a rule's second element may be. Published so
-            a client's own `meta.can` rules are typed against the real set rather than
-            an unchecked string a typo can silently fail closed on.
-        grantableRoles:
-          type: array
-          items:
-            type: string
-          description: |
-            The tenant-scope roles this caller may assign through `POST`/`PUT`/`PATCH
-            /users`, in the order `shared/authorization-roles.yaml` declares them.
-            Computed by the same rule as the `403`/`422` those writes answer, so a role
-            picker built from it offers exactly what the write accepts. Empty for a
-            caller who may grant nothing, an anonymous one included. It has NO
-            AUTHORITY: the write is re-checked server-side.
-        tenantId:
-          type: string
-          description: |
-            The shop `tenant`'s rules are about. Absent when the caller has no tenant
-            membership at all — a pure platform operator administers the installation
-            rather than acting inside one shop.
-        tenant:
-          allOf:
-            - $ref: "#/components/schemas/PackedRules"
-          description: |
-            What the caller may do INSIDE their shop. Empty for a caller with no tenant
-            membership; for an anonymous visitor it is the `guest` role's rules, which
-            are a value in the model rather than an absence.
-        platform:
-          allOf:
-            - $ref: "#/components/schemas/PackedRules"
-          description: |
-            What the caller may do ACROSS the installation — health, metrics, the
-            operational audit. Empty for everyone but a platform operator, which is
-            most callers: an operator is not a super-member and holds no shop's keys.
-        version:
-          type: integer
-          description: |
-            The permission model's own version, bumped when the RULES change rather than
-            when a role does. A client caches these; this is what tells it the cache is
-            about a different model, not merely a different person. One number for both
-            lists — the keys file they are declared in is one file.
     Password:
       type: string
       maxLength: 128
@@ -13187,6 +13380,9 @@ components:
         sessionToken:
           type: string
           description: "The `ses_…` session id, to send back as `Authorization: Bearer ses_…`. Present only for a `cookie`-mode login that asked for `transport: bearer` (or a re-proof by such a client); that login sets no cookie."
+        account:
+          $ref: "#/components/schemas/AccountView"
+          description: The signed-in account, with its abilities and idle clock — exactly what `GET /account` answers, so a sign-in needs no follow-up read. Present on the answers that START a session (login, its second step, restore); absent on a re-mint after a password or factor change.
     PasswordCheckRequest:
       type: object
       additionalProperties: false
@@ -13510,6 +13706,7 @@ components:
           description: When this factor was armed. Absent while its enrollment is still pending confirmation.
         resendAfter:
           type: integer
+          minimum: 0
           description: Seconds between two deliveries of this method. Absent for device methods.
         enrollable:
           type: boolean
@@ -13646,10 +13843,14 @@ components:
       additionalProperties: false
       required:
         - token
+        - abilities
       properties:
         token:
           type: string
           description: New access JWT
+        abilities:
+          $ref: "#/components/schemas/Abilities"
+          description: The caller's abilities as they stand now, so a role granted mid-session shows within one refresh.
     AccountExport:
       type: object
       additionalProperties: false
@@ -14203,7 +14404,8 @@ components:
           description: Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
           example: 149.97
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           readOnly: true
           description: ISO-4217 currency code this order was priced in (e.g. EUR).
         netTotal:
@@ -14410,7 +14612,8 @@ components:
           minimum: 0
           description: The amount returned, in the payment's own `currency`.
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code, copied from the payment.
         status:
           allOf:
@@ -14464,7 +14667,7 @@ components:
           format: double
           minimum: 0
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         amountRefunded:
           type: number
           format: double
@@ -14486,6 +14689,7 @@ components:
           type: string
         cardLast4:
           type: string
+          pattern: ^\d{4}$
         createdAt:
           type: string
           format: date-time
@@ -14510,7 +14714,7 @@ components:
           type: string
           format: date-time
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         grandTotal:
           type: number
           format: double
@@ -15356,6 +15560,37 @@ components:
         createdAt:
           type: string
           format: date-time
+    NotificationStaffTicketOverdue:
+      type: object
+      additionalProperties: false
+      description: An open ticket in a jurisdiction the caller works passed its due date; said once per ticket.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - notifications.staff.ticket-overdue
+        params:
+          $ref: "#/components/schemas/TicketOpenedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
     TicketAssignedParams:
       type: object
       additionalProperties: false
@@ -15820,6 +16055,7 @@ components:
         - $ref: "#/components/schemas/NotificationStaffPurchaseHoldPlaced"
         - $ref: "#/components/schemas/NotificationStaffWebhookDisabled"
         - $ref: "#/components/schemas/NotificationStaffTicketOpened"
+        - $ref: "#/components/schemas/NotificationStaffTicketOverdue"
         - $ref: "#/components/schemas/NotificationStaffTicketAssigned"
         - $ref: "#/components/schemas/NotificationStaffReturnRequested"
         - $ref: "#/components/schemas/NotificationStaffOutboxDead"
@@ -15846,6 +16082,7 @@ components:
           notifications.staff.purchase-hold-placed: "#/components/schemas/NotificationStaffPurchaseHoldPlaced"
           notifications.staff.webhook-disabled: "#/components/schemas/NotificationStaffWebhookDisabled"
           notifications.staff.ticket-opened: "#/components/schemas/NotificationStaffTicketOpened"
+          notifications.staff.ticket-overdue: "#/components/schemas/NotificationStaffTicketOverdue"
           notifications.staff.ticket-assigned: "#/components/schemas/NotificationStaffTicketAssigned"
           notifications.staff.return-requested: "#/components/schemas/NotificationStaffReturnRequested"
           notifications.staff.outbox-dead: "#/components/schemas/NotificationStaffOutboxDead"
@@ -16086,6 +16323,7 @@ components:
           description: Masked destination — enough for the user to recognise the mailbox, not enough to learn a new address from.
         resendAfter:
           type: integer
+          minimum: 0
           description: Seconds before another code may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the rate limiter.
         expiresAt:
           type: string
@@ -16115,6 +16353,7 @@ components:
           description: "What this account could still add. A method this deployment cannot reach at all is absent; one the account is not yet eligible for is present with `enrollable: false` and a `reason`."
         backupCodesRemaining:
           type: integer
+          minimum: 0
           description: How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery.
     TwoFactorSetupRequest:
       type: object
@@ -16149,6 +16388,7 @@ components:
           description: Masked destination the enrollment code just went to. Absent unless `delivers`.
         resendAfter:
           type: integer
+          minimum: 0
           description: Seconds before another code may be requested. Absent unless `delivers`.
         expiresAt:
           type: string
@@ -16182,6 +16422,7 @@ components:
           description: One-time recovery codes, in the clear, shown exactly once and never retrievable again. Present ONLY when this was the first factor the account armed — they recover the account, not the method, so a second factor mints none.
         backupCodesRemaining:
           type: integer
+          minimum: 0
           description: How many unused backup codes the account now holds.
         sessionToken:
           type: string
@@ -16211,18 +16452,8 @@ components:
           description: The account's new one-time recovery codes, in the clear, shown exactly once — the old set no longer verifies.
         backupCodesRemaining:
           type: integer
+          minimum: 0
           description: How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate.
-    OAuthProviders:
-      type: object
-      additionalProperties: false
-      required:
-        - providers
-      properties:
-        providers:
-          type: array
-          items:
-            type: string
-          description: Registry names this deployment holds credentials for, e.g. `["google", "github"]`.
     OAuthLink:
       type: object
       additionalProperties: false
@@ -16854,7 +17085,8 @@ components:
           minimum: 0
           description: "Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around."
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           readOnly: true
           description: ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting.
         taxClass:
@@ -17549,9 +17781,8 @@ components:
           minimum: 0
           description: The total in minor units of `currency` (EUR 71.00 is 7100).
         currency:
-          type: string
-          minLength: 3
-          maxLength: 3
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: The ISO-4217 code the total is priced in.
     CartSummaryResponse:
       type: object
@@ -17589,7 +17820,8 @@ components:
           minimum: 0
           description: itemsTotal + shippingCost
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code (e.g. USD)
         expectedTotal:
           allOf:
@@ -17837,7 +18069,8 @@ components:
           description: Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
           example: 149.97
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           readOnly: true
           description: ISO-4217 currency code this order was priced in (e.g. EUR).
         netTotal:
@@ -18190,7 +18423,8 @@ components:
           type: string
           format: date-time
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code (e.g. EUR)
         grandTotal:
           type: number
@@ -18320,7 +18554,7 @@ components:
           format: double
           minimum: 0
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         evidenceDueBy:
           type: string
           format: date-time
@@ -18398,7 +18632,8 @@ components:
           minimum: 0
           description: The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation. If the provider reports a success for a different amount or currency, the payment reads `succeeded` with what ARRIVED here, its order is cancelled and the money is returned.
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code (e.g. EUR)
         amountRefunded:
           type: number
@@ -18431,7 +18666,7 @@ components:
           type: string
           description: The order's number. Present on `GET /payments` rows only.
         email:
-          type: string
+          $ref: "#/components/schemas/Email"
           description: The order's customer email. Present on `GET /payments` rows only.
         provider:
           type: string
@@ -18457,6 +18692,7 @@ components:
           description: "Returned by `POST /payments` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response."
         cardLast4:
           type: string
+          pattern: ^\d{4}$
           description: The only card digits a payment system may remember. Survives a refund — refunding does not clear it.
         disputes:
           type: array
@@ -18731,9 +18967,8 @@ components:
           exclusiveMinimum: 0
           description: How much to return, a decimal in the payment's own currency. Absent means everything still refundable.
         currency:
-          type: string
-          maxLength: 3
-          minLength: 1
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
     ConfirmPaymentRequest:
       type: object
@@ -18777,8 +19012,8 @@ components:
           minimum: 0
           description: The disputed amount, in `currency`.
         currency:
-          type: string
-          maxLength: 3
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 code, upper case.
         evidenceDueBy:
           type: string
@@ -18835,7 +19070,8 @@ components:
           minimum: 0
           description: Flat rate, in `currency`.
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code (e.g. EUR) — this deployment's `NODE_DEFAULT_CURRENCY`.
         freeAbove:
           type: number
@@ -18884,7 +19120,7 @@ components:
         userId:
           $ref: "#/components/schemas/Id"
         email:
-          type: string
+          $ref: "#/components/schemas/Email"
     PreorderFulfillmentOrder:
       type: object
       additionalProperties: false
@@ -19208,7 +19444,8 @@ components:
           type: string
           description: The order's human number.
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 code of the order's own currency.
         status:
           $ref: "#/components/schemas/ReturnStatus"
@@ -19437,7 +19674,8 @@ components:
         orderId:
           $ref: "#/components/schemas/Id"
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 code of the order's own currency.
         reasons:
           type: array
@@ -19693,7 +19931,7 @@ components:
       properties:
         delta:
           type: integer
-          description: Signed. Negative is shrinkage or damage; positive is a miscount found in your favour.
+          description: Signed and non-zero (0 is a 422 naming `delta`). Negative is shrinkage or damage; positive is a miscount found in your favour.
         note:
           type: string
           maxLength: 1000
@@ -20009,7 +20247,7 @@ components:
         subscriptionId:
           $ref: "#/components/schemas/Id"
         eventId:
-          type: string
+          $ref: "#/components/schemas/Id"
         eventType:
           type: string
         attempt:
@@ -20019,6 +20257,8 @@ components:
           $ref: "#/components/schemas/WebhookDeliveryStatus"
         responseCode:
           type: integer
+          minimum: 100
+          maximum: 599
         durationMs:
           type: integer
         error:
@@ -20220,55 +20460,6 @@ components:
         secret:
           type: string
           description: The newly minted credential, in plaintext — `sk_<prefix>_<secret>`. Shown here once, on creation, and never again.
-    SessionActivity:
-      type: object
-      additionalProperties: false
-      required:
-        - lastActiveAt
-      properties:
-        lastActiveAt:
-          type: string
-          format: date-time
-          description: When the session last saw a real request — now, for a touch.
-        idleTimeoutSeconds:
-          type: integer
-          minimum: 1
-          description: How long the session may then sit unused before it ends. Absent when no idle timeout applies to this account (a shopper, or the timeout is switched off).
-    SessionConfig:
-      type: object
-      additionalProperties: false
-      required:
-        - mode
-        - lifetimeSeconds
-      properties:
-        mode:
-          type: string
-          enum:
-            - jwt
-            - cookie
-          description: The deployment's `NODE_SESSION_MODE`.
-        lifetimeSeconds:
-          type: object
-          additionalProperties: false
-          required:
-            - short
-            - medium
-            - long
-          description: How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own.
-          properties:
-            short:
-              type: integer
-              minimum: 1
-            medium:
-              type: integer
-              minimum: 1
-            long:
-              type: integer
-              minimum: 1
-        staffLifetimeSeconds:
-          type: integer
-          minimum: 1
-          description: The longest a staff or admin session lives from sign-in, whatever the tier (`NODE_SESSION_LIFETIME_STAFF`). Absent when the cap is off.
     SetPurchaseHoldRequest:
       type: object
       additionalProperties: false
@@ -20474,7 +20665,7 @@ components:
           format: double
           minimum: 0
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         status:
           $ref: "#/components/schemas/RefundStatus"
         reason:
@@ -20554,7 +20745,7 @@ components:
           format: double
           minimum: 0
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         failureReason:
           $ref: "#/components/schemas/RefundFailureReason"
         since:
@@ -20665,6 +20856,21 @@ components:
         timeZone:
           type: string
           description: The shop's IANA time zone every day and bucket edge follows.
+    StatsLimits:
+      type: object
+      additionalProperties: false
+      required:
+        - maxRangeDays
+        - maxBuckets
+      properties:
+        maxRangeDays:
+          type: integer
+          minimum: 1
+          description: The most calendar days one period may cover, both ends counted.
+        maxBuckets:
+          type: integer
+          minimum: 1
+          description: The most buckets one series may hold, the first possibly starting before `from`.
     SalesFigures:
       type: object
       additionalProperties: false
@@ -20685,12 +20891,15 @@ components:
       properties:
         orders:
           type: integer
+          minimum: 0
           description: Orders paid in the period, by `paidAt`.
         unitsOrdered:
           type: integer
+          minimum: 0
           description: Units on those orders.
         unitsReversed:
           type: integer
+          minimum: 0
           description: Units of returns received in the period. A cancellation is not counted, since it has no date.
         netUnits:
           type: integer
@@ -20698,14 +20907,17 @@ components:
         grossSales:
           type: number
           format: double
+          minimum: 0
           description: Goods net of VAT on invoices issued in the period, before shipping, discounts and reversals.
         discounts:
           type: number
           format: double
+          minimum: 0
           description: Always 0 until a discount exists.
         reversals:
           type: number
           format: double
+          minimum: 0
           description: The goods part (net of VAT) of credit notes issued in the period.
         netSales:
           type: number
@@ -20726,10 +20938,12 @@ components:
         refunds:
           type: number
           format: double
+          minimum: 0
           description: Credit notes issued in the period, VAT included.
         averageOrderValue:
           type: number
           format: double
+          minimum: 0
           description: (`grossSales` minus `discounts`) divided by `orders`; 0 with no orders.
     SalesBucket:
       type: object
@@ -20754,7 +20968,7 @@ components:
         - buckets
       properties:
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         totals:
           $ref: "#/components/schemas/SalesFigures"
         previous:
@@ -20771,10 +20985,13 @@ components:
       additionalProperties: false
       required:
         - period
+        - limits
         - currencies
       properties:
         period:
           $ref: "#/components/schemas/StatsPeriod"
+        limits:
+          $ref: "#/components/schemas/StatsLimits"
         currencies:
           type: array
           items:
@@ -20796,11 +21013,13 @@ components:
         title:
           type: string
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         unitsOrdered:
           type: integer
+          minimum: 0
         unitsReversed:
           type: integer
+          minimum: 0
         netUnits:
           type: integer
         netSales:
@@ -20812,10 +21031,13 @@ components:
       additionalProperties: false
       required:
         - period
+        - limits
         - products
       properties:
         period:
           $ref: "#/components/schemas/StatsPeriod"
+        limits:
+          $ref: "#/components/schemas/StatsLimits"
         products:
           type: array
           items:
@@ -20833,18 +21055,23 @@ components:
           format: date-time
         unitsOrdered:
           type: integer
+          minimum: 0
         unitsReversed:
           type: integer
+          minimum: 0
     ProductSeries:
       type: object
       additionalProperties: false
       required:
         - period
+        - limits
         - productId
         - buckets
       properties:
         period:
           $ref: "#/components/schemas/StatsPeriod"
+        limits:
+          $ref: "#/components/schemas/StatsLimits"
         productId:
           $ref: "#/components/schemas/Id"
         title:
@@ -20866,9 +21093,10 @@ components:
         category:
           type: string
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         unitsOrdered:
           type: integer
+          minimum: 0
         netSales:
           type: number
           format: double
@@ -20877,10 +21105,13 @@ components:
       additionalProperties: false
       required:
         - period
+        - limits
         - categories
       properties:
         period:
           $ref: "#/components/schemas/StatsPeriod"
+        limits:
+          $ref: "#/components/schemas/StatsLimits"
         categories:
           type: array
           items:
@@ -20905,21 +21136,26 @@ components:
         provider:
           type: string
         currency:
-          type: string
+          $ref: "#/components/schemas/CurrencyCode"
         payments:
           type: integer
+          minimum: 0
         amount:
           type: number
           format: double
+          minimum: 0
     PaymentMix:
       type: object
       additionalProperties: false
       required:
         - period
+        - limits
         - rows
       properties:
         period:
           $ref: "#/components/schemas/StatsPeriod"
+        limits:
+          $ref: "#/components/schemas/StatsLimits"
         rows:
           type: array
           items:
@@ -20929,12 +21165,15 @@ components:
       additionalProperties: false
       required:
         - period
+        - limits
         - cancellation
         - returns
         - refunds
       properties:
         period:
           $ref: "#/components/schemas/StatsPeriod"
+        limits:
+          $ref: "#/components/schemas/StatsLimits"
         cancellation:
           type: object
           additionalProperties: false
@@ -20946,8 +21185,10 @@ components:
           properties:
             placed:
               type: integer
+              minimum: 0
             cancelled:
               type: integer
+              minimum: 0
             rate:
               type: number
               format: double
@@ -20963,8 +21204,10 @@ components:
           properties:
             unitsOrdered:
               type: integer
+              minimum: 0
             unitsReturned:
               type: integer
+              minimum: 0
             rate:
               type: number
               format: double
@@ -20981,15 +21224,17 @@ components:
               - rate
             properties:
               currency:
-                type: string
+                $ref: "#/components/schemas/CurrencyCode"
               invoiced:
                 type: number
                 format: double
                 description: Invoices issued in the period, VAT included.
+                minimum: 0
               credited:
                 type: number
                 format: double
                 description: Credit notes issued in the period, VAT included.
+                minimum: 0
               rate:
                 type: number
                 format: double
@@ -20999,6 +21244,7 @@ components:
       additionalProperties: false
       required:
         - period
+        - limits
         - customers
         - newCustomers
         - returningCustomers
@@ -21006,14 +21252,19 @@ components:
       properties:
         period:
           $ref: "#/components/schemas/StatsPeriod"
+        limits:
+          $ref: "#/components/schemas/StatsLimits"
         customers:
           type: integer
           description: Accounts with at least one paid order in the period.
+          minimum: 0
         newCustomers:
           type: integer
           description: Of those, accounts whose first paid order is in the period.
+          minimum: 0
         returningCustomers:
           type: integer
+          minimum: 0
         returningRate:
           type: number
           format: double
@@ -21037,31 +21288,21 @@ components:
               - amount
             properties:
               currency:
-                type: string
+                $ref: "#/components/schemas/CurrencyCode"
               count:
                 type: integer
+                minimum: 0
               amount:
                 type: number
                 format: double
+                minimum: 0
               nearestPayBy:
                 type: string
                 format: date-time
         paidNotShipped:
           type: integer
+          minimum: 0
           description: Orders `paid` or `processing`, so not yet handed to a carrier.
-    StatsLimits:
-      type: object
-      additionalProperties: false
-      required:
-        - maxRangeDays
-        - maxBuckets
-      properties:
-        maxRangeDays:
-          type: integer
-          description: The most calendar days one period may cover, both ends counted.
-        maxBuckets:
-          type: integer
-          description: The most buckets one series may hold, the first possibly starting before `from`.
     UpdateInventoryLevelRequest:
       type: object
       additionalProperties: false
@@ -21307,7 +21548,8 @@ components:
         phone:
           type: string
         currency:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code (e.g. EUR) — the shop's one currency, the same one `Product.currency` reports.
         shipToCountries:
           type: array
