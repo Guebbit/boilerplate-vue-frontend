@@ -124,4 +124,23 @@ describe('the ticket badge', () => {
         expect(reads).toHaveLength(2);
         expect(badge?.value).toBe(6);
     });
+
+    it('reads again when a ticket goes overdue: the reminder is a ticket notice too', async () => {
+        signIn([['read', 'Ticket']]);
+        wireBadge();
+        await flushPromises();
+
+        useNotificationsStore().addMessage('late', undefined, -1, {
+            id: 'n3',
+            persistent: true,
+            meta: {
+                source: 'inbox',
+                notification: { code: 'notifications.staff.ticket-overdue' }
+            }
+        });
+        await nextTick();
+        await flushPromises();
+
+        expect(reads).toHaveLength(2);
+    });
 });

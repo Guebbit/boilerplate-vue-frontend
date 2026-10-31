@@ -14,7 +14,8 @@ import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 import { useTicketsStore } from '../store';
 
 /**
- * The prefix of the two codes that say a ticket needs someone (`ticket-opened`, `ticket-assigned`).
+ * The prefix of the codes that say a ticket needs someone (`ticket-opened`, `ticket-overdue`,
+ * `ticket-assigned`).
  */
 const TICKET_NOTICE_PREFIX = 'notifications.staff.ticket-';
 

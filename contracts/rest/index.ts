@@ -2885,6 +2885,27 @@ export interface NotificationStaffTicketOpened {
     createdAt: string;
 }
 
+export type NotificationStaffTicketOverdueCode =
+    (typeof NotificationStaffTicketOverdueCode)[keyof typeof NotificationStaffTicketOverdueCode];
+
+export const NotificationStaffTicketOverdueCode = {
+    'notificationsstaffticket-overdue': 'notifications.staff.ticket-overdue'
+} as const;
+
+/**
+ * An open ticket in a jurisdiction the caller works passed its due date; said once per ticket.
+ */
+export interface NotificationStaffTicketOverdue {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffTicketOverdueCode;
+    params: TicketOpenedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
 /**
  * A ticket was given to the caller by someone else.
  */
@@ -3204,6 +3225,7 @@ export type Notification =
     | NotificationStaffPurchaseHoldPlaced
     | NotificationStaffWebhookDisabled
     | NotificationStaffTicketOpened
+    | NotificationStaffTicketOverdue
     | NotificationStaffTicketAssigned
     | NotificationStaffReturnRequested
     | NotificationStaffOutboxDead
