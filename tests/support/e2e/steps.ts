@@ -601,3 +601,21 @@ export const paymentOfOrder = <T>(
     cy
         .apiAs<{ items: T[] }>(persona, 'GET', `/orders/${orderId}/payments`)
         .then((list) => cy.wrap<T | undefined>(list?.items[0], { log: false }));
+
+/**
+ * An order's credit notes as the API serves them (`GET /orders/{id}/credit-notes`), read until
+ * the first one is listed: the note is written after the refund, off the request's path. The last
+ * read is yielded either way, so the caller's own assertion reports what it gave up on.
+ *
+ * @param persona - who reads them
+ * @param orderId - the order
+ * @returns a chain yielding the list
+ */
+export const creditNotesOf = (
+    persona: E2ERole,
+    orderId: string
+): Cypress.Chainable<{ items: unknown[] } | null> =>
+    eventually(
+        () => cy.apiAs<{ items: unknown[] }>(persona, 'GET', `/orders/${orderId}/credit-notes`),
+        (notes) => (notes?.items.length ?? 0) > 0
+    );

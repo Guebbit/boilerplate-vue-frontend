@@ -11,7 +11,7 @@
  * everything the payment took, less the deduction.
  */
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
-import { centsOf, eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
+import { centsOf, creditNotesOf, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** What the warehouse keeps back for handling, in cents. */
 const DEDUCTION_CENTS = 200;
@@ -38,11 +38,6 @@ interface OptionsLike {
 interface PaymentLike {
     amount: number;
     amountRefunded: number;
-}
-
-/** A credit note, as far as this story cares: that it is listed. */
-interface CreditNoteLike {
-    grandTotal: number;
 }
 
 /**
@@ -167,15 +162,7 @@ describe('OP22 · A defective item comes back', () => {
                             .should('contain.text', 'Restock');
 
                         cy.step('a credit note records the money that went back');
-                        eventually(
-                            () =>
-                                cy.apiAs<{ items: CreditNoteLike[] }>(
-                                    'admin',
-                                    'GET',
-                                    `/orders/${orderId}/credit-notes`
-                                ),
-                            (notes) => (notes?.items.length ?? 0) > 0
-                        ).should((notes) => {
+                        creditNotesOf('admin', orderId).should((notes) => {
                             expect(notes?.items).to.have.length(1);
                         });
                     }

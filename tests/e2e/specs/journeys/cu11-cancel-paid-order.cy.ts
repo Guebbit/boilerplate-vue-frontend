@@ -8,7 +8,7 @@
  * The buyer is mailed twice: the cancellation, and the refund that follows it. The order is the
  * seeded `order.paid`, so the story spends no card budget; paying is N1's and CU1's business.
  */
-import { eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
+import { creditNotesOf, eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** The slice of a payment this story reads: where the money stands. */
 interface PaymentLike {
@@ -22,11 +22,6 @@ interface PaymentLike {
 interface OrderLike {
     status: string;
     items: { quantity: number }[];
-}
-
-/** A credit note, as far as this story cares: that it is listed. */
-interface CreditNoteLike {
-    grandTotal: number;
 }
 
 /**
@@ -111,15 +106,7 @@ describe('CU11 · I cancel a paid order and get my money back', () => {
 
                 cy.step('a credit note is issued, and the order page lists it');
                 // Written after the refund, off the request's path, so the page is read until it is there.
-                eventually(
-                    () =>
-                        cy.apiAs<{ items: CreditNoteLike[] }>(
-                            'user',
-                            'GET',
-                            `/orders/${orderId}/credit-notes`
-                        ),
-                    (notes) => (notes?.items.length ?? 0) > 0
-                ).should((notes) => {
+                creditNotesOf('user', orderId).should((notes) => {
                     expect(notes?.items).to.have.length(1);
                 });
                 cy.visit(`/en/orders/${orderId}`);

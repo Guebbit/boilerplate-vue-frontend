@@ -10,7 +10,7 @@
  * The payments drawer and the refunds tab are OP36's. The order is the seeded `order.paid`, so no
  * card budget is spent.
  */
-import { eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
+import { creditNotesOf, eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** The goodwill amount, in the payment's currency. */
 const GOODWILL = 5;
@@ -89,15 +89,9 @@ describe('OP26 · A goodwill refund, in part', () => {
 
                 cy.step('the customer is mailed, and holds a credit note for it');
                 orderMailTo('user', orderId, 'Your refund has been issued');
-                eventually(
-                    () =>
-                        cy.apiAs<{ items: unknown[] }>(
-                            'user',
-                            'GET',
-                            `/orders/${orderId}/credit-notes`
-                        ),
-                    (answer) => (answer?.items.length ?? 0) > 0
-                ).should((answer) => expect(answer?.items).to.have.length(1));
+                creditNotesOf('user', orderId).should((answer) =>
+                    expect(answer?.items).to.have.length(1)
+                );
 
                 cy.step('the rest goes back in one more press, and then nothing can be refunded');
                 cy.get('[data-test=refund-amount] input').clear();
