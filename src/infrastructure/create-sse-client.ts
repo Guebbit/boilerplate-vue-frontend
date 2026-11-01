@@ -84,7 +84,7 @@ const payloadSchemaFor = (eventName: SseEventName): zod.ZodType => {
  * Whether a parsed frame may be handed on: always with validation off; with it on, only when it
  * matches its event's contract. A mismatch is logged loudly. In dev, unit and e2e the frame is
  * dropped — an event listener has no caller to reject to, and a malformed payload must not reach
- * the UI. In production ({@link isReportOnly}) it is forwarded: one added optional field on the
+ * the UI. In production ({@link isReportOnly}; the e2e build opts out with `VITE_CONTRACT_THROW`) it is forwarded: one added optional field on the
  * backend must not silence a stream for every deployed frontend, exactly as for REST.
  *
  * @param eventName - The SSE event the frame arrived as.

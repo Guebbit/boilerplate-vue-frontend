@@ -12,7 +12,7 @@
         "demo:remove": "tsx scripts/demo/demo-remove.ts",
         "measure:demo-strip": "tsx scripts/demo/measure-demo-strip.ts",
         "build-only": "vite build",
-        "build:e2e": "cross-env VITE_VALIDATE_RESPONSES=true VITE_VALIDATE_REQUESTS=true VITE_TEST_CARDS=true vite build --outDir dist-e2e",
+        "build:e2e": "cross-env VITE_VALIDATE_RESPONSES=true VITE_VALIDATE_REQUESTS=true VITE_CONTRACT_THROW=true VITE_TEST_CARDS=true vite build --outDir dist-e2e",
         "type-check-only": "vue-tsc --build --force",
         "lint": "node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js --max-warnings 0",
         "lint:fix": "node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js --fix",

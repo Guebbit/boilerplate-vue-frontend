@@ -213,12 +213,32 @@ describe('createSseClient', () => {
                 expect(logged).toHaveBeenCalledWith(expect.stringContaining('uptimeSeconds'));
             }));
 
+        it('drops a frame that breaks it in a production build with VITE_CONTRACT_THROW (e2e)', () =>
+            Promise.all([
+                import('@/infrastructure/create-sse-client'),
+                import('@/infrastructure/utils/logger.ts')
+            ]).then(([{ createSseClient }, { logger }]) => {
+                vi.stubEnv('PROD', true);
+                vi.stubEnv('VITE_CONTRACT_THROW', 'true');
+                const logged = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
+                const onEvent = vi.fn();
+                createSseClient('/observability/events', ['observability.heartbeat'], { onEvent });
+
+                source.emit('observability.heartbeat', {
+                    data: JSON.stringify({ ...VALID_METRICS, uptimeSeconds: 'soon' })
+                } as MessageEvent);
+
+                expect(onEvent).not.toHaveBeenCalled();
+                expect(logged).toHaveBeenCalledWith(expect.stringContaining('uptimeSeconds'));
+            }));
+
         it('logs a frame that breaks it but forwards it in production, as REST does', () =>
             Promise.all([
                 import('@/infrastructure/create-sse-client'),
                 import('@/infrastructure/utils/logger.ts')
             ]).then(([{ createSseClient }, { logger }]) => {
                 vi.stubEnv('PROD', true);
+                vi.stubEnv('VITE_CONTRACT_THROW', '');
                 const logged = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
                 const onEvent = vi.fn();
                 createSseClient('/observability/events', ['observability.heartbeat'], { onEvent });

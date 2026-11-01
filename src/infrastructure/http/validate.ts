@@ -63,8 +63,13 @@ export const shouldValidateRequests = (): boolean => {
  * every deployed frontend before it redeploys — production still catches drift, it just never
  * blocks a call on it. Unknown keys are stripped rather than rejected for the same reason; a
  * missing or mistyped field is still a real defect, so it is still reported, just not thrown.
+ *
+ * `VITE_CONTRACT_THROW=true` is the opt-out: the e2e bundle is a production build (`PROD` is
+ * true), so without the flag it would be report-only too. Only `build:e2e` sets it. It is an
+ * explicit opt-in, so any other build fails open (report-only) by default.
  */
-export const isReportOnly = (): boolean => import.meta.env.PROD;
+export const isReportOnly = (): boolean =>
+    import.meta.env.PROD && import.meta.env.VITE_CONTRACT_THROW !== 'true';
 
 /**
  * Parses a response body through the schema matching its request, rejecting on a mismatch.
@@ -80,7 +85,7 @@ export const isReportOnly = (): boolean => import.meta.env.PROD;
  * In {@link isReportOnly} mode, unknown keys are stripped before parsing — an additive backend
  * field is not this deployment's problem — and a remaining mismatch (a field missing or the
  * wrong type) is sent to Faro but never thrown; the caller gets the response exactly as it
- * arrived, same as validation being off. Dev, unit and every e2e profile keep throwing: that is
+ * arrived, same as validation being off. Dev, unit and every e2e profile (`VITE_CONTRACT_THROW`) keep throwing: that is
  * the whole point of catching drift where it happened, before it reaches production.
  *
  * @param config - The request config that produced `data` (used to resolve the schema).
@@ -126,6 +131,10 @@ export const validateResponseAgainstContract = (
 
     if (reportOnly) return;
 
+    // Faro is a no-op in e2e and stores swallow the rejection: the console is the one place the
+    // field list survives. The Cypress `[contract]` hook fails the running test on this line.
+    logger.error(diagnostic);
+
     const message = translate('api-errors.unknown');
 
     // eslint-disable-next-line @typescript-eslint/only-throw-error -- the envelope IS this client's rejection contract; every catch downstream destructures it, same as `onResponseReject`
@@ -158,7 +167,7 @@ const isJsonPayload = (data: unknown): boolean =>
  *
  * | Profile | Behaviour |
  * | --- | --- |
- * | dev, unit, e2e | throws, naming the operation, the field and the rule — it is our bug |
+ * | dev, unit, e2e (`VITE_CONTRACT_THROW`) | throws, naming the operation, the field and the rule — it is our bug |
  * | production | reports to Faro and sends anyway — the backend answers 422 with a real message |
  *
  * @param config - The request config about to be sent.
@@ -178,5 +187,7 @@ export const validateRequestAgainstContract = (config: AxiosRequestConfig): void
     const diagnostic = `[contract] request body for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} does not match the OpenAPI schema:\n${issues}`;
     useObservabilityStore().captureException(new Error(diagnostic));
 
-    if (!isReportOnly()) throw new Error(diagnostic);
+    if (isReportOnly()) return;
+    logger.error(diagnostic);
+    throw new Error(diagnostic);
 };
