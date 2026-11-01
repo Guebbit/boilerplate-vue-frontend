@@ -4,7 +4,7 @@
  * CU23 · The days run out. The right of withdrawal has an end, and the end is a whole calendar day:
  * on the last day the button is still offered, even at one in the morning; only after that day is it
  * gone, and the API agrees with `RETURN_WINDOW_CLOSED`. Nothing here names the length of the period:
- * the deadline is read off the order (`actions.withdrawUntil`), so a deployment that offers longer
+ * the deadline is read off the order (`Order.withdrawUntil`), so a deployment that offers longer
  * than the law's fourteen days changes nothing in the story.
  *
  * The legal guarantee outlives the withdrawal, so after the last day the form is still there for
@@ -20,7 +20,7 @@ const HOUR_MS = 60 * 60 * 1000;
 
 /** The slice of an order this story reads: the deadline the server decided. */
 interface OrderLike {
-    actions?: { withdraw?: boolean; withdrawUntil?: string };
+    withdrawUntil?: string;
 }
 
 /** The error envelope a refused call carries. */
@@ -113,7 +113,7 @@ describe('CU23 · The days run out', () => {
             cy.get('[data-test=withdrawal-until]').should('exist');
             const deadline = { at: 0 };
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).then((order) => {
-                deadline.at = Date.parse(String(order?.actions?.withdrawUntil));
+                deadline.at = Date.parse(String(order?.withdrawUntil));
                 expect(deadline.at, 'a deadline in the future').to.be.greaterThan(Date.now());
             });
 
