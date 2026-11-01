@@ -8,6 +8,7 @@
         "scripts/**/*.ts",
         "src/ui/vuetify/theme.ts",
         "src/ui/vuetify/breakpoints.ts",
+        "src/infrastructure/http/contract-mismatch-text.ts",
         "tests/support/e2e/layout-task.ts",
         "cypress.config.*",
         "tests/support/e2e/visual-task.ts",
