@@ -33,7 +33,18 @@ The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
 Inside the module, the pieces connect like this:
 
-The context map is drawn once, in [the whole map](./index.md#the-whole-map).
+```mermaid
+flowchart LR
+    orders["orders (Order.vue)"] -.->|mounts| panel["WithdrawalPanel"]
+    panel --> form["ReturnRequestForm"]
+    form --> store["returns store"]
+    panel --> store
+    list["ReturnsList"] --> store
+    detail["Return"] --> store
+    detail --> staff["ReturnStaffActions"]
+    staff --> store
+    store -->|"POST /returns · GET /returns · moves"| api[("backend returns")]
+```
 
 ## The story
 
