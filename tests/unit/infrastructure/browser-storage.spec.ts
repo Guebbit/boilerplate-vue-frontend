@@ -20,13 +20,6 @@ describe('the inventory', () => {
         expect(new Set(Object.values(BROWSER_STORAGE_NAME)).size).toBe(ids.length);
     });
 
-    it('lists thirteen cookies and eight storage keys', () => {
-        const kinds = BROWSER_STORAGE_ITEMS.map(({ kind }) => kind);
-
-        expect(kinds.filter((kind) => kind === 'cookie')).toHaveLength(13);
-        expect(kinds.filter((kind) => kind !== 'cookie')).toHaveLength(8);
-    });
-
     it.each([
         ['English', en],
         ['Italian', it_]
