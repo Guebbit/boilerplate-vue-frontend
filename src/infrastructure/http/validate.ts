@@ -15,6 +15,7 @@ import {
     resolveResponseSchema
 } from './response-schema-map.ts';
 import { syntheticProblem } from './problem.ts';
+import { CONTRACT_MISMATCH_TEXT } from './contract-mismatch-text.ts';
 import type { AxiosRequestConfig } from 'axios';
 import type { AxiosResponseErrorData } from './types.ts';
 
@@ -64,9 +65,9 @@ export const shouldValidateRequests = (): boolean => {
  * blocks a call on it. Unknown keys are stripped rather than rejected for the same reason; a
  * missing or mistyped field is still a real defect, so it is still reported, just not thrown.
  *
- * `VITE_CONTRACT_THROW=true` is the opt-out: the e2e bundle is a production build (`PROD` is
- * true), so without the flag it would be report-only too. Only `build:e2e` sets it. It is an
- * explicit opt-in, so any other build fails open (report-only) by default.
+ * `VITE_CONTRACT_THROW=true` is the opt-in to throwing in a production build: the e2e bundle is
+ * one (`PROD` is true), so without the flag it would be report-only too. Only `build:e2e` sets
+ * it, so any other build fails open (report-only) by default.
  */
 export const isReportOnly = (): boolean =>
     import.meta.env.PROD && import.meta.env.VITE_CONTRACT_THROW !== 'true';
@@ -126,7 +127,7 @@ export const validateResponseAgainstContract = (
     const issues = result.error.issues
         .map((issue) => `  - ${issue.path.join('.') || '(root)'}: ${issue.message}`)
         .join('\n');
-    const diagnostic = `[contract] response for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} does not match the OpenAPI schema:\n${issues}`;
+    const diagnostic = `[contract] response for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} ${CONTRACT_MISMATCH_TEXT} OpenAPI schema:\n${issues}`;
     useObservabilityStore().captureException(new Error(diagnostic));
 
     if (reportOnly) return;
@@ -184,7 +185,7 @@ export const validateRequestAgainstContract = (config: AxiosRequestConfig): void
     const issues = result.error.issues
         .map((issue) => `  - ${issue.path.join('.') || '(root)'}: ${issue.message}`)
         .join('\n');
-    const diagnostic = `[contract] request body for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} does not match the OpenAPI schema:\n${issues}`;
+    const diagnostic = `[contract] request body for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} ${CONTRACT_MISMATCH_TEXT} OpenAPI schema:\n${issues}`;
     useObservabilityStore().captureException(new Error(diagnostic));
 
     if (isReportOnly()) return;
