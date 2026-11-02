@@ -6,6 +6,7 @@ import { withScenario } from '../../../scripts/e2e/reset-command';
 import { asStub } from '../stub';
 import { parseMailpitMessage, type MailedEmail } from '../../../scripts/e2e/mail-message';
 import { answerChallengePage } from './login-challenge';
+import { isContractMismatch } from '../../../scripts/e2e/contract-mismatch';
 
 /*
  * A demo restore empties the in-memory database and puts a scenario back inside the backend
@@ -353,6 +354,27 @@ Cypress.on('window:before:load', (contentWindow) => {
                 __APP_CONFIG?: { API_URL?: string; TOURS_ENABLED?: string };
             }
         ).__APP_CONFIG = { API_URL: injectedApiUrl, TOURS_ENABLED: 'false' };
+});
+
+/**
+ * Fails the running test on any contract mismatch the page logs. The e2e bundle rejects the
+ * call (`VITE_CONTRACT_THROW`), but a store swallows the rejection and a background poll or an
+ * SSE frame has no caller, so without this a mismatch only shows up as an unrelated assertion
+ * timing out. Wraps `console.error` only, never `warn`.
+ *
+ * The throw is deferred to the page's own `setTimeout`: a throw inside `console.error` would
+ * unwind the app's logger, while an uncaught page error is what `uncaught:exception` (e2e.ts)
+ * turns into a failure of the test that is running.
+ */
+Cypress.on('window:before:load', (contentWindow) => {
+    const originalError = contentWindow.console.error.bind(contentWindow.console);
+    contentWindow.console.error = (...parameters: unknown[]) => {
+        originalError(...parameters);
+        if (!isContractMismatch('error', parameters)) return;
+        contentWindow.setTimeout(() => {
+            throw new Error(String(parameters[0]));
+        }, 0);
+    };
 });
 
 // `allowCypressEnv: false` in cypress.config.ts disables `Cypress.env()`, so the profile flag is

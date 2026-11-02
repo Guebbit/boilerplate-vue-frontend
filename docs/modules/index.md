@@ -141,10 +141,6 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 `demo:remove` deletes it with the shop (copy it first). It mirrors the paired backend's own per-module `group` field. `scripts/module-groups.ts` holds the same map in code, and
 `eslint.config.ts` refuses a `foundation` module importing a `shop` one.
 
-| Modules | core | supporting | generic | Screens | Stores | Context edges |
-| ------- | ---- | ---------- | ------- | ------- | ------ | ------------- |
-| 19      | 3    | 8          | 7       | 49      | 18     | 14            |
-
 `example` is unclassified: it is the template a new domain is copied from, not a subdomain.
 
 | Module                                                         | Subdomain    | Group        | Screens | Store                    | API calls | Depends on | Depended on by |

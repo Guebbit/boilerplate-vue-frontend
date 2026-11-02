@@ -5184,7 +5184,7 @@ export const StartOAuthLinkResponse = zod.strictObject({
     authorizeUrl: zod.url().max(startOAuthLinkResponseAuthorizeUrlMax)
 });
 /**
- * Removes the link between the account and `provider`, so that provider can no longer sign in to it, and mails the owner that a sign-in method was removed. Nothing re-links it by email match, so reconnecting is `POST /account/oauth/links/{provider}` from a signed-in session. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked. A link is a line of the caller's links list, so the answer is that list as it now stands (200 + the links left).
+ * Removes the link between the account and `provider`, so that provider can no longer sign in to it, and mails the owner that a sign-in method was removed. Nothing re-links it by email match, so reconnecting is `POST /account/oauth/links/{provider}` from a signed-in session. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, on purpose (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked. A link is a line of the caller's links list, so the answer is that list as it now stands (200 + the links left).
  * @summary Disconnect a linked sign-in provider
  */
 export const unlinkOAuthProviderPathProviderMax = 32;
@@ -16123,8 +16123,7 @@ export const ListWebhookDeliveriesResponse = zod.strictObject({
  * secret ring — not the ones this row was originally attempted with. Updates the same
  * row: `attempt` advances exactly like a real queued attempt would (one step forward
  * on a failure with backoff tiers left, unchanged on success or exhaustion), and
- * `status`/`responseCode`/`durationMs`/`error` reflect this replay. The single
- * most-requested support action, per the design doc. Refused while the subscription is
+ * `status`/`responseCode`/`durationMs`/`error` reflect this replay. Refused while the subscription is
  * disabled (`actions.replay` is false): enable it first.
  * @summary Re-send one delivery
  */

@@ -169,14 +169,14 @@ describe('OP22 · A defective item comes back', () => {
                         cy.step('a credit note records the money that went back');
                         eventually(
                             () =>
-                                cy.apiAs<CreditNoteLike[]>(
+                                cy.apiAs<{ items: CreditNoteLike[] }>(
                                     'admin',
                                     'GET',
                                     `/orders/${orderId}/credit-notes`
                                 ),
-                            (notes) => (notes?.length ?? 0) > 0
+                            (notes) => (notes?.items.length ?? 0) > 0
                         ).should((notes) => {
-                            expect(notes).to.have.length(1);
+                            expect(notes?.items).to.have.length(1);
                         });
                     }
                 );

@@ -75,8 +75,8 @@ describe('OP36 · The payments page’s two doors', () => {
             paymentOfOrder<PaymentLike>('user', cardId)
                 .its('amountRefunded')
                 .should('be.greaterThan', 0);
-            cy.apiAs<unknown[]>('user', 'GET', `/orders/${cardId}/credit-notes`)
-                .its('length')
+            cy.apiAs<{ items: unknown[] }>('user', 'GET', `/orders/${cardId}/credit-notes`)
+                .its('items.length')
                 .should('be.greaterThan', 0);
         });
     });

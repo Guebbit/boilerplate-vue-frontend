@@ -107,6 +107,7 @@ describe('orvalMutator request validation', () => {
     it('report-only (PROD): reports to Faro and still sends', () => {
         vi.stubEnv('VITE_VALIDATE_REQUESTS', 'true');
         vi.stubEnv('PROD', true);
+        vi.stubEnv('VITE_CONTRACT_THROW', '');
         const captureException = vi.spyOn(useObservabilityStore(), 'captureException');
 
         return patchAccount({ phone: '' }).then(() => {
@@ -118,6 +119,16 @@ describe('orvalMutator request validation', () => {
                 })
             );
         });
+    });
+
+    it('PROD + VITE_CONTRACT_THROW (the e2e build): throws like dev and never sends', () => {
+        vi.stubEnv('VITE_VALIDATE_REQUESTS', 'true');
+        vi.stubEnv('PROD', true);
+        vi.stubEnv('VITE_CONTRACT_THROW', 'true');
+
+        return expect(patchAccount({ phone: '' })).rejects.toThrow(
+            /request body for PATCH \/account/
+        );
     });
 
     it('skips a multipart body: the JSON schema of the same route does not describe a FormData', () => {

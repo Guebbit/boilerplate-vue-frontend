@@ -121,7 +121,7 @@ A full live run is minutes to hours, not seconds, and live CI must stay a signal
 
 What carries the weight for the infrastructure the demo profile lacks:
 
-- **response validation** (`VITE_VALIDATE_RESPONSES`), which turns any live contract violation into a hard failure instead of something that only surfaces if an unrelated assertion happens to trip on it
+- **response validation** (`VITE_VALIDATE_RESPONSES`), which, with `VITE_CONTRACT_THROW` (both set by `build:e2e`), turns any live contract violation into a hard failure: the call rejects, a `[contract]` line reaches `console.error`, and a global Cypress hook fails the running test on it
 - the **specs themselves**, which run unchanged against the real API: a handler that has drifted from the service it mirrors fails here, on the push that introduced it (when the test is `@smoke`) or the next morning
 
 ## Architecture
@@ -159,7 +159,7 @@ Plain `docker run` (or `podman run`) is enough; nothing needs compose.
 ```sh
 # Mongo must be a REPLICA SET: the backend runs transactions, a standalone mongod refuses them.
 # The member host must be 127.0.0.1.
-docker run -d --name e2e-mongo -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
+docker run -d --name e2e-mongo -p 27017:27017 mongo:8.2.12 --replSet rs0 --bind_ip_all
 docker exec e2e-mongo mongosh --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
 
 docker run -d --name e2e-redis -p 6379:6379 redis:8

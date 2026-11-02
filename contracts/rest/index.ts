@@ -337,9 +337,9 @@ export type PackedRules = PackedRulesItemItem[][];
  * list. A request resolves to exactly one scope — the one the key it is asking about
  * declares — but a CLIENT renders screens from both at once: a shop's catalogue and
  * the installation's health dashboard sit in one navigation. Publishing only the
- * caller's tenant rules left every platform screen with no rule to grey out, so it
- * was gated on a tenant key that happened to correlate, which is exactly the
- * hand-maintained guess these rules exist to abolish.
+ * caller's tenant rules would leave every platform screen with no rule to grey out,
+ * so it would be gated on a tenant key that happens to correlate, which is exactly
+ * the hand-maintained guess these rules exist to abolish.
  *
  * The two lists never merge. A tenant rule can never satisfy a platform key and the
  * reverse is equally impossible (`shared/authorization-keys.yaml`'s one invariant),
@@ -2201,7 +2201,7 @@ export const RefundReason = {
 } as const;
 
 /**
- * Why the provider last refused a refund, as a closed code. Staff only (`display:Payment`). `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
+ * Why the provider last refused a refund, as a closed code. `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
  * Money did NOT move for `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` (the payment's provider is no longer installed, so nothing was asked): the refund may be marked returned by hand once the money went back another way. `declined`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` are final and are not retried; `insufficient_funds` (the shop's own provider balance is short) and the unclear `provider_unavailable` and `unknown` are retried with a growing delay. An unclear refusal may have gone through, so it is never offered for hand settlement.
  * `disputed`: the buyer's bank took the money back in a dispute (chargeback). It is final like the refusals above, and it is not offered for hand settlement while the chargeback is open: the bank already returned the money. Once the chargeback is lost for an amount that covers the refund, the refund may be marked returned (the bank paid the buyer); once the dispute is decided in the shop's favour the refund may only be canceled.
  * `canceled` is not a refusal: staff voided the refund (`POST /payments/{id}/refunds/{refundId}/cancel`). Nothing was sent, it is never retried and it can neither be settled by hand nor canceled again.
@@ -2242,6 +2242,7 @@ export interface Refund {
     settledByHand?: boolean;
     /** The provider's id for the refund (Stripe's `re_…`). Staff only. */
     providerRefundRef?: string;
+    /** Staff only (`display:Payment`). */
     failureReason?: RefundFailureReason;
     /** `true` while this refund is open and the money cannot go back to the card: the provider refused it for good, or took it back after settling it. The buyer is emailed to agree how they would like to receive it, at no cost to them (Consumer Rights Directive Art. 13(1)), and the order page says so instead of "retried automatically". Carries no reason: that stays staff-only. Absent otherwise. */
     owedAnotherWay?: boolean;
@@ -6276,6 +6277,7 @@ export interface RefundListItem {
     reason: RefundReason;
     returnId?: Id;
     providerRefundRef?: string;
+    /** Staff only (`display:Payment`). */
     failureReason?: RefundFailureReason;
     settledAt?: string;
     reversedAt?: string;
@@ -6321,6 +6323,7 @@ export interface PaymentAttentionItem {
     /** @minimum 0 */
     amount: number;
     currency: CurrencyCode;
+    /** Staff only (`display:Payment`). */
     failureReason?: RefundFailureReason;
     /** When the problem was recorded, so the page can sort by age. */
     since: string;
@@ -9496,7 +9499,7 @@ export const startOAuthLink = (
 };
 
 /**
- * Removes the link between the account and `provider`, so that provider can no longer sign in to it, and mails the owner that a sign-in method was removed. Nothing re-links it by email match, so reconnecting is `POST /account/oauth/links/{provider}` from a signed-in session. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked. A link is a line of the caller's links list, so the answer is that list as it now stands (200 + the links left).
+ * Removes the link between the account and `provider`, so that provider can no longer sign in to it, and mails the owner that a sign-in method was removed. Nothing re-links it by email match, so reconnecting is `POST /account/oauth/links/{provider}` from a signed-in session. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, on purpose (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked. A link is a line of the caller's links list, so the answer is that list as it now stands (200 + the links left).
  * @summary Disconnect a linked sign-in provider
  */
 export const unlinkOAuthProvider = (
@@ -11673,8 +11676,7 @@ export const listWebhookDeliveries = (
  * secret ring — not the ones this row was originally attempted with. Updates the same
  * row: `attempt` advances exactly like a real queued attempt would (one step forward
  * on a failure with backoff tiers left, unchanged on success or exhaustion), and
- * `status`/`responseCode`/`durationMs`/`error` reflect this replay. The single
- * most-requested support action, per the design doc. Refused while the subscription is
+ * `status`/`responseCode`/`durationMs`/`error` reflect this replay. Refused while the subscription is
  * disabled (`actions.replay` is false): enable it first.
  * @summary Re-send one delivery
  */
