@@ -331,14 +331,14 @@ describe('a work notice for staff', () => {
 });
 
 /**
- * A `ticket-opened` notice about a ticket of the given kind.
+ * A `task-opened` notice about a task of the given kind.
  *
  * @param parameters - the kind, and a contact message's category
  */
 const opened = (parameters: { kind: string; category?: string }) =>
     ({
-        code: 'notifications.staff.ticket-opened',
-        params: { ticketId: 't1', ...parameters }
+        code: 'notifications.staff.task-opened',
+        params: { taskId: 't1', ...parameters }
     }) as const;
 
 describe('a return request and a dead event for staff', () => {
@@ -400,7 +400,7 @@ describe('a digest summary for staff', () => {
     });
 });
 
-describe('a ticket notice for staff', () => {
+describe('a task notice for staff', () => {
     it('names a contact message by its category', () => {
         expect(
             describeNotification(
@@ -409,17 +409,17 @@ describe('a ticket notice for staff', () => {
                 translate
             )
         ).toBe(
-            'notifications.staff.ticket-opened|what=notifications.staff-ticket-kind-contact · notifications.staff-ticket-category-privacy'
+            'notifications.staff.task-opened|what=notifications.staff-task-kind-contact · notifications.staff-task-category-privacy'
         );
     });
 
     it('calls a contact message with no category uncategorised', () => {
         expect(describeNotification(opened({ kind: 'contact' }), ['en'], translate)).toContain(
-            'notifications.staff-ticket-category-none'
+            'notifications.staff-task-category-none'
         );
     });
 
-    it('names a system ticket by its kind alone, even when a category were sent', () => {
+    it('names a system task by its kind alone, even when a category were sent', () => {
         const text = describeNotification(
             opened({ kind: 'dispute', category: 'privacy' }),
             ['en'],
@@ -427,54 +427,54 @@ describe('a ticket notice for staff', () => {
         );
 
         expect(text).toBe(
-            'notifications.staff.ticket-opened|what=notifications.staff-ticket-kind-dispute'
+            'notifications.staff.task-opened|what=notifications.staff-task-kind-dispute'
         );
     });
 
-    it('reads a kind from a newer backend as a plain ticket, never as its key', () => {
+    it('reads a kind from a newer backend as a plain task, never as its key', () => {
         expect(describeNotification(opened({ kind: 'from_the_future' }), ['en'], translate)).toBe(
-            'notifications.staff.ticket-opened|what=notifications.staff-ticket-kind-unknown'
+            'notifications.staff.task-opened|what=notifications.staff-task-kind-unknown'
         );
     });
 
-    it('says an open ticket is overdue, naming it the way the opener does', () => {
+    it('says an open task is overdue, naming it the way the opener does', () => {
         expect(
             describeNotification(
                 {
-                    code: 'notifications.staff.ticket-overdue',
-                    params: { ticketId: 't1', kind: 'contact', category: 'privacy' }
+                    code: 'notifications.staff.task-overdue',
+                    params: { taskId: 't1', kind: 'contact', category: 'privacy' }
                 },
                 ['en'],
                 translate
             )
         ).toBe(
-            'notifications.staff.ticket-overdue|what=notifications.staff-ticket-kind-contact · notifications.staff-ticket-category-privacy'
+            'notifications.staff.task-overdue|what=notifications.staff-task-kind-contact · notifications.staff-task-category-privacy'
         );
     });
 
-    it('says a ticket was given to the reader', () => {
+    it('says a task was given to the reader', () => {
         expect(
             describeNotification(
                 {
-                    code: 'notifications.staff.ticket-assigned',
-                    params: { ticketId: 't1', kind: 'dispute' }
+                    code: 'notifications.staff.task-assigned',
+                    params: { taskId: 't1', kind: 'dispute' }
                 },
                 ['en'],
                 translate
             )
-        ).toBe('notifications.staff.ticket-assigned|what=notifications.staff-ticket-kind-dispute');
+        ).toBe('notifications.staff.task-assigned|what=notifications.staff-task-kind-dispute');
     });
 
-    it('points every ticket notice at the ticket page', () => {
+    it('points every task notice at the task page', () => {
         expect(notificationTarget(opened({ kind: 'contact' }))).toEqual({
-            screen: 'ticket',
+            screen: 'task',
             id: 't1'
         });
         expect(
             notificationTarget({
-                code: 'notifications.staff.ticket-overdue',
-                params: { ticketId: 't2', kind: 'dispute' }
+                code: 'notifications.staff.task-overdue',
+                params: { taskId: 't2', kind: 'dispute' }
             })
-        ).toEqual({ screen: 'ticket', id: 't2' });
+        ).toEqual({ screen: 'task', id: 't2' });
     });
 });

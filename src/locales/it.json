@@ -327,11 +327,11 @@
                         },
                         {
                             "q": "Dove finiscono i messaggi del modulo contatti?",
-                            "a": "Nella casella admin di questo stesso sito. Accedi come amministratore e puoi gestire lo stato di ogni messaggio."
+                            "a": "Nella pagina Attività admin di questo stesso sito. Accedi come amministratore e puoi gestire lo stato di ogni messaggio."
                         },
                         {
                             "q": "Cosa c'è dal lato admin?",
-                            "a": "Gestione di utenti, prodotti e ordini, il registro di magazzino, l'editor delle traduzioni, la casella dei messaggi, e una console di osservabilità con stato, metriche e log di audit."
+                            "a": "Gestione di utenti, prodotti e ordini, il registro di magazzino, l'editor delle traduzioni, la pagina Attività, e una console di osservabilità con stato, metriche e log di audit."
                         },
                         {
                             "q": "Che lingue parla?",

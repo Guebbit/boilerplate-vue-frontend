@@ -1,6 +1,6 @@
 /**
  * @module
- * Cart store, answers out of order. Every write takes a ticket when it leaves and its answer lands
+ * Cart store, answers out of order. Every write takes a task when it leaves and its answer lands
  * only if no fresher one did first, so the cart shown is the answer to the last request issued,
  * whatever order the network delivers them in. The control with the same pairs delivered in order is
  * `store-interleavings.spec.ts`.

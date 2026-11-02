@@ -1,4 +1,4 @@
-// requires-module: tickets, products
+// requires-module: tasks, products
 /**
  * @module
  * FR7 · The API goes away mid-session. A visitor is using the shop when the connection to the API

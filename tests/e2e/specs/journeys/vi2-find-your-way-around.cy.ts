@@ -1,4 +1,4 @@
-// requires-module: tickets, products
+// requires-module: tasks, products
 /**
  * @module
  * VI2 · Find your way around. A guest who has never signed in moves about the shop the way people

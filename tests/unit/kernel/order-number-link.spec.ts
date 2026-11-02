@@ -1,6 +1,6 @@
 /**
- * `useOrderNumberLink` — `src/kernel/order-link.ts` — the ticket inbox's way to the staff orders
- * list filtered to the number a ticket quotes, only when the build ships that list.
+ * `useOrderNumberLink` — `src/kernel/order-link.ts` — the task inbox's way to the staff orders
+ * list filtered to the number a task quotes, only when the build ships that list.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useOrderNumberLink } from '@/kernel/order-link';

@@ -40,8 +40,8 @@ export const useNotificationLink = () => {
             case 'account': {
                 return linkIfRouted(router, 'UserTarget', { id: target.id });
             }
-            case 'ticket': {
-                return linkIfRouted(router, 'TicketDetail', { id: target.id });
+            case 'task': {
+                return linkIfRouted(router, 'TaskDetail', { id: target.id });
             }
             case 'webhook-subscription': {
                 return linkIfRouted(router, 'WebhookTarget', { id: target.id });

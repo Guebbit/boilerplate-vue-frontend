@@ -327,11 +327,11 @@
                         },
                         {
                             "q": "Where do my contact messages go?",
-                            "a": "Into the admin inbox on this very site. Sign in as an admin and you can move each message through its statuses."
+                            "a": "Into the admin Tasks page on this very site. Sign in as an admin and you can move each message through its statuses."
                         },
                         {
                             "q": "What is on the admin side?",
-                            "a": "Users, products and orders management, the inventory ledger, the translations editor, the ticket inbox, and an observability console with health, metrics and an audit log."
+                            "a": "Users, products and orders management, the inventory ledger, the translations editor, the Tasks page, and an observability console with health, metrics and an audit log."
                         },
                         {
                             "q": "Which languages does it speak?",

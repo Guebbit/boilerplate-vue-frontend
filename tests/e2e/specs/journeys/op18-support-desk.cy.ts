@@ -1,4 +1,4 @@
-// requires-module: account, tickets, observability, returns, users
+// requires-module: account, tasks, observability, returns, users
 /**
  * @module
  * OP18 · The support desk. A visitor writes through the contact form; support works the inbox
@@ -13,10 +13,10 @@
 import { adminMenuLinks, eventually } from '../../../support/e2e/steps';
 import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
 
-/** The visitor, and the subject of the ticket they write. */
+/** The visitor, and the subject of the task they write. */
 const VISITOR = { email: 'op18.visitor@example.com', subject: 'OP18 where is my parcel' };
 
-/** The note support keeps on the ticket, and the phone they fix on the customer. */
+/** The note support keeps on the task, and the phone they fix on the customer. */
 const NOTE = 'Rang the courier, parcel is at the depot.';
 
 /** The phone number support types into the edit form. */
@@ -31,8 +31,8 @@ interface AuditRowLike {
     actorRole: string;
 }
 
-/** A ticket, as far as this story reads it. */
-interface TicketLike {
+/** A task, as far as this story reads it. */
+interface TaskLike {
     id: string;
 }
 
@@ -60,7 +60,7 @@ const search = (): void => {
  * Waits until the admin's audit trail holds a row of one action against a target, written by the
  * support role.
  *
- * @param targetId - the ticket, user or return the row names
+ * @param targetId - the task, user or return the row names
  * @param action - the dotted action
  */
 const auditedAsSupport = (targetId: string, action: string): void => {
@@ -85,14 +85,14 @@ describe('OP18 · The support desk', () => {
     });
 
     it('support works the inbox, fixes an account and declines a return, and every action is on record', () => {
-        cy.step('a visitor writes to the shop, and two more tickets are waiting');
+        cy.step('a visitor writes to the shop, and two more tasks are waiting');
         writeToTheShop();
-        cy.apiAs('admin', 'POST', '/tickets', {
+        cy.apiAs('admin', 'POST', '/tasks', {
             email: 'op18.other@example.com',
             subject: 'OP18 invoice question',
             message: 'Please resend my invoice.'
         });
-        cy.apiAs('admin', 'POST', '/tickets', {
+        cy.apiAs('admin', 'POST', '/tasks', {
             email: 'op18.third@example.com',
             subject: 'OP18 kennel question',
             message: 'Does the kennel come flat-packed?'
@@ -102,7 +102,7 @@ describe('OP18 · The support desk', () => {
         cy.loginAs('support');
         adminMenuLinks().should((links) => {
             expect(links).to.include('/en/users');
-            expect(links).to.include('/en/tickets');
+            expect(links).to.include('/en/tasks');
             // No Audit entry: the trail is the moderator's and the admin's, not the desk's.
             for (const page of ['/inventory', '/locales', '/admin', '/api-keys', '/audit']) {
                 expect(links, page).to.not.include(`/en${page}`);
@@ -114,23 +114,23 @@ describe('OP18 · The support desk', () => {
 
         cy.step('the inbox filters by text and by status, and a note sticks on the detail page');
         cy.trackNetwork();
-        cy.visit('/en/tickets');
+        cy.visit('/en/tasks');
         cy.settleNetwork();
-        cy.get('[data-test=ticket-item]').should('have.length', 3);
+        cy.get('[data-test=task-item]').should('have.length', 3);
         cy.get('[data-test=filter-text] input').type('parcel');
         search();
-        cy.get('[data-test=ticket-item]').should('have.length', 1);
-        cy.get('[data-test=ticket-item]').should('contain.text', VISITOR.subject);
+        cy.get('[data-test=task-item]').should('have.length', 1);
+        cy.get('[data-test=task-item]').should('contain.text', VISITOR.subject);
         // The filter lives in the address, so coming back keeps the narrowed list.
-        cy.get('[data-test=ticket-open]').click();
-        cy.textareaIn('ticket-note-draft').type(NOTE);
-        cy.get('[data-test=ticket-note-add]').click();
+        cy.get('[data-test=task-open]').click();
+        cy.textareaIn('task-note-draft').type(NOTE);
+        cy.get('[data-test=task-note-add]').click();
         cy.contains('Note added.').should('exist');
         cy.reload();
-        cy.get('[data-test=ticket-note]').should('contain.text', NOTE);
+        cy.get('[data-test=task-note]').should('contain.text', NOTE);
 
         cy.step('resolving it moves it out of New and into Resolved');
-        cy.get('[data-test=ticket-resolve]').click();
+        cy.get('[data-test=task-resolve]').click();
         cy.contains('Status updated.').should('exist');
         cy.go('back');
         cy.settleNetwork();
@@ -138,9 +138,9 @@ describe('OP18 · The support desk', () => {
         cy.settleNetwork();
         cy.pickOption('[data-test=filter-status]', 'Resolved');
         search();
-        cy.get('[data-test=ticket-item]').should('have.length', 1);
-        cy.get('[data-test=ticket-item]').should('contain.text', VISITOR.subject);
-        cy.get('[data-test=ticket-responded-at]').should('exist');
+        cy.get('[data-test=task-item]').should('have.length', 1);
+        cy.get('[data-test=task-item]').should('contain.text', VISITOR.subject);
+        cy.get('[data-test=task-responded-at]').should('exist');
 
         cy.step('the customer’s phone is fixed in the user form; support has no create or erase');
         cy.accountInRole('user').then(({ id: customerId }) => {
@@ -190,31 +190,31 @@ describe('OP18 · The support desk', () => {
             cy.get('[data-test=return-decline-reason-text]').should('contain.text', DECLINE_REASON);
         });
 
-        cy.step('the ticket’s resolving is on record under the support role');
-        cy.apiAs<{ items: TicketLike[] }>('admin', 'POST', '/tickets/search', {
+        cy.step('the task’s resolving is on record under the support role');
+        cy.apiAs<{ items: TaskLike[] }>('admin', 'POST', '/tasks/search', {
             text: VISITOR.subject
         }).then((found) => {
-            auditedAsSupport(String(found?.items[0]?.id), 'admin.ticket.resolved');
+            auditedAsSupport(String(found?.items[0]?.id), 'admin.task.resolved');
         });
     });
 
     it('the inbox is paged, and the second page holds the rest', () => {
         cy.skipUnlessDemo();
 
-        cy.step('twelve tickets, ten to a page');
-        for (let ticket = 1; ticket <= 12; ticket += 1) {
-            cy.apiAs('admin', 'POST', '/tickets', {
-                email: `op18.page${String(ticket)}@example.com`,
-                subject: `OP18 page ticket ${String(ticket)}`,
+        cy.step('twelve tasks, ten to a page');
+        for (let task = 1; task <= 12; task += 1) {
+            cy.apiAs('admin', 'POST', '/tasks', {
+                email: `op18.page${String(task)}@example.com`,
+                subject: `OP18 page task ${String(task)}`,
                 message: 'Filling the inbox.'
             });
         }
         cy.loginAs('support');
-        cy.visit('/en/tickets');
-        cy.get('[data-test=ticket-item]').should('have.length', 10);
+        cy.visit('/en/tasks');
+        cy.get('[data-test=task-item]').should('have.length', 10);
 
         cy.step('the second page has the other two');
         cy.get('[data-test=pagination]').contains('button', '2').click();
-        cy.get('[data-test=ticket-item]').should('have.length', 2);
+        cy.get('[data-test=task-item]').should('have.length', 2);
     });
 });

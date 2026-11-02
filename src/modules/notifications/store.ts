@@ -32,7 +32,7 @@ import type {
 } from '@types';
 import { i18n, translate } from '@/i18n';
 import { notifyErrorMessages, rethrowUnlessAbsent } from '@/infrastructure/utils/errors.ts';
-import { createRequestTickets } from '@/infrastructure/utils/request-ticket.ts';
+import { createRequestTasks } from '@/infrastructure/utils/request-task.ts';
 import { formatDate } from '@/infrastructure/utils/formatters.ts';
 import { asPassive } from '@/infrastructure/http/passive.ts';
 import { describeNotification, notificationOrderId, notificationTarget } from './domain';
@@ -163,7 +163,7 @@ export const useInboxStore = defineStore('inbox', () => {
     /**
      * Orders the reads, and is the barrier that kills every read still out when the person changes.
      */
-    const readTickets = createRequestTickets();
+    const readTasks = createRequestTasks();
 
     /**
      * The reads in flight, each remembering what happened to the inbox since it left.
@@ -278,7 +278,7 @@ export const useInboxStore = defineStore('inbox', () => {
      * @returns A promise that always resolves, once the store matches the server or the failure was reported.
      */
     const sync = (): Promise<void> => {
-        const claim = readTickets.take();
+        const claim = readTasks.take();
         const guard: ReadGuard = { pushed: new Set(), deleted: new Set(), deletedAll: false };
         readsInFlight.add(guard);
         return listNotifications(asPassive())
@@ -316,7 +316,7 @@ export const useInboxStore = defineStore('inbox', () => {
      * the previous one.
      */
     const reset = () => {
-        readTickets.reset();
+        readTasks.reset();
         for (const { message } of inbox.value) messages.removeMessage(message.id);
     };
 

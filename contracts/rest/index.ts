@@ -1381,7 +1381,7 @@ export interface ChangePasswordRequest {
 export interface AuthTokens {
     /** The access JWT — `jwt` mode only. Absent in `cookie` mode, where a browser holds no credential it can read. */
     token?: string;
-    /** The `ses_…` session id, to send back as `Authorization: Bearer ses_…`. Present only for a `cookie`-mode login that asked for `transport: bearer` (or a re-proof by such a client); that login sets no cookie. */
+    /** The `ses_…` session id, to send back as `Authorization: Bearer ses_…`. Present only for a `cookie`-mode login that asked for `transport: bearer` (or a re-proof by such a client); that login sets no session cookie (the `__Host-device` cookie is still set). */
     sessionToken?: string;
     /** The signed-in account, with its abilities and idle clock — exactly what `GET /account` answers, so a sign-in needs no follow-up read. Present on the answers that START a session (login, its second step, restore); absent on a re-mint after a password or factor change. */
     account?: AccountView;
@@ -1751,9 +1751,9 @@ export interface ExportSignInMethods {
     twoFactor: ExportTwoFactorMethod[];
 }
 
-export type TicketCategory = (typeof TicketCategory)[keyof typeof TicketCategory];
+export type TaskCategory = (typeof TaskCategory)[keyof typeof TaskCategory];
 
-export const TicketCategory = {
+export const TaskCategory = {
     order: 'order',
     cancellation: 'cancellation',
     return: 'return',
@@ -1763,37 +1763,37 @@ export const TicketCategory = {
     other: 'other'
 } as const;
 
-export type TicketStatus = (typeof TicketStatus)[keyof typeof TicketStatus];
+export type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus];
 
-export const TicketStatus = {
+export const TaskStatus = {
     new: 'new',
     in_progress: 'in_progress',
     resolved: 'resolved',
     spam: 'spam'
 } as const;
 
-export interface ExportTicketNote {
+export interface ExportTaskNote {
     body: string;
     at: string;
 }
 
-export interface ExportTicket {
+export interface ExportTask {
     id: Id;
     name?: string;
     email: Email;
     subject: string;
     message: string;
-    category?: TicketCategory;
+    category?: TaskCategory;
     orderNumber?: string;
-    status: TicketStatus;
-    notes: ExportTicketNote[];
+    status: TaskStatus;
+    notes: ExportTaskNote[];
     respondedAt?: string;
     createdAt?: string;
 }
 
-export type TicketKind = (typeof TicketKind)[keyof typeof TicketKind];
+export type TaskKind = (typeof TaskKind)[keyof typeof TaskKind];
 
-export const TicketKind = {
+export const TaskKind = {
     contact: 'contact',
     account_review: 'account_review',
     manual_refund_owed: 'manual_refund_owed',
@@ -1805,9 +1805,9 @@ export const TicketKind = {
     dispute: 'dispute'
 } as const;
 
-export type TicketLinkType = (typeof TicketLinkType)[keyof typeof TicketLinkType];
+export type TaskLinkType = (typeof TaskLinkType)[keyof typeof TaskLinkType];
 
-export const TicketLinkType = {
+export const TaskLinkType = {
     order: 'order',
     user: 'user',
     payment: 'payment',
@@ -1817,31 +1817,31 @@ export const TicketLinkType = {
 } as const;
 
 /**
- * The record a system ticket is about.
+ * The record a system task is about.
  */
-export interface TicketLink {
-    type: TicketLinkType;
+export interface TaskLink {
+    type: TaskLinkType;
     id: string;
 }
 
-export type TicketResolution = (typeof TicketResolution)[keyof typeof TicketResolution];
+export type TaskResolution = (typeof TaskResolution)[keyof typeof TaskResolution];
 
-export const TicketResolution = {
+export const TaskResolution = {
     staff: 'staff',
     cleared: 'cleared',
     spam: 'spam'
 } as const;
 
-export interface ExportSystemTicket {
+export interface ExportSystemTask {
     id: Id;
-    kind: TicketKind;
+    kind: TaskKind;
     subject: string;
     message: string;
-    link?: TicketLink;
+    link?: TaskLink;
     routeSet: string;
-    status: TicketStatus;
-    resolution?: TicketResolution;
-    notes: ExportTicketNote[];
+    status: TaskStatus;
+    resolution?: TaskResolution;
+    notes: ExportTaskNote[];
     dueAt?: string;
     lastSeenAt?: string;
     /** @minimum 1 */
@@ -2872,52 +2872,52 @@ export interface NotificationStaffWebhookDisabled {
 }
 
 /**
- * A ticket opened in the caller's jurisdiction. Ids and closed codes only: the ticket page has the rest, and no visitor text travels in a notice.
+ * A task opened in the caller's jurisdiction. Ids and closed codes only: the task page has the rest, and no visitor text travels in a notice.
  */
-export interface TicketOpenedParams {
-    ticketId: Id;
-    /** The ticket's kind (`contact`, `account_review`, ...). */
+export interface TaskOpenedParams {
+    taskId: Id;
+    /** The task's kind (`contact`, `account_review`, ...). */
     kind: string;
-    /** A contact ticket's category, when the visitor chose one. */
+    /** A contact task's category, when the visitor chose one. */
     category?: string;
 }
 
-export type NotificationStaffTicketOpenedCode =
-    (typeof NotificationStaffTicketOpenedCode)[keyof typeof NotificationStaffTicketOpenedCode];
+export type NotificationStaffTaskOpenedCode =
+    (typeof NotificationStaffTaskOpenedCode)[keyof typeof NotificationStaffTaskOpenedCode];
 
-export const NotificationStaffTicketOpenedCode = {
-    'notificationsstaffticket-opened': 'notifications.staff.ticket-opened'
+export const NotificationStaffTaskOpenedCode = {
+    'notificationsstafftask-opened': 'notifications.staff.task-opened'
 } as const;
 
 /**
- * A ticket opened in a jurisdiction the caller works; whoever holds its permission set takes it.
+ * A task opened in a jurisdiction the caller works; whoever holds its permission set takes it.
  */
-export interface NotificationStaffTicketOpened {
+export interface NotificationStaffTaskOpened {
     id: Id;
     audience: NotificationAudience;
-    code: NotificationStaffTicketOpenedCode;
-    params: TicketOpenedParams;
+    code: NotificationStaffTaskOpenedCode;
+    params: TaskOpenedParams;
     severity: NotificationSeverity;
     /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
     readAt?: string;
     createdAt: string;
 }
 
-export type NotificationStaffTicketOverdueCode =
-    (typeof NotificationStaffTicketOverdueCode)[keyof typeof NotificationStaffTicketOverdueCode];
+export type NotificationStaffTaskOverdueCode =
+    (typeof NotificationStaffTaskOverdueCode)[keyof typeof NotificationStaffTaskOverdueCode];
 
-export const NotificationStaffTicketOverdueCode = {
-    'notificationsstaffticket-overdue': 'notifications.staff.ticket-overdue'
+export const NotificationStaffTaskOverdueCode = {
+    'notificationsstafftask-overdue': 'notifications.staff.task-overdue'
 } as const;
 
 /**
- * An open ticket in a jurisdiction the caller works passed its due date; said once per ticket.
+ * An open task in a jurisdiction the caller works passed its due date; said once per task.
  */
-export interface NotificationStaffTicketOverdue {
+export interface NotificationStaffTaskOverdue {
     id: Id;
     audience: NotificationAudience;
-    code: NotificationStaffTicketOverdueCode;
-    params: TicketOpenedParams;
+    code: NotificationStaffTaskOverdueCode;
+    params: TaskOpenedParams;
     severity: NotificationSeverity;
     /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
     readAt?: string;
@@ -2925,29 +2925,29 @@ export interface NotificationStaffTicketOverdue {
 }
 
 /**
- * A ticket was given to the caller by someone else.
+ * A task was given to the caller by someone else.
  */
-export interface TicketAssignedParams {
-    ticketId: Id;
-    /** The ticket's kind. */
+export interface TaskAssignedParams {
+    taskId: Id;
+    /** The task's kind. */
     kind: string;
 }
 
-export type NotificationStaffTicketAssignedCode =
-    (typeof NotificationStaffTicketAssignedCode)[keyof typeof NotificationStaffTicketAssignedCode];
+export type NotificationStaffTaskAssignedCode =
+    (typeof NotificationStaffTaskAssignedCode)[keyof typeof NotificationStaffTaskAssignedCode];
 
-export const NotificationStaffTicketAssignedCode = {
-    'notificationsstaffticket-assigned': 'notifications.staff.ticket-assigned'
+export const NotificationStaffTaskAssignedCode = {
+    'notificationsstafftask-assigned': 'notifications.staff.task-assigned'
 } as const;
 
 /**
- * A colleague gave the caller a ticket.
+ * A colleague gave the caller a task.
  */
-export interface NotificationStaffTicketAssigned {
+export interface NotificationStaffTaskAssigned {
     id: Id;
     audience: NotificationAudience;
-    code: NotificationStaffTicketAssignedCode;
-    params: TicketAssignedParams;
+    code: NotificationStaffTaskAssignedCode;
+    params: TaskAssignedParams;
     severity: NotificationSeverity;
     /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
     readAt?: string;
@@ -3242,9 +3242,9 @@ export type Notification =
     | NotificationStockAlert
     | NotificationStaffPurchaseHoldPlaced
     | NotificationStaffWebhookDisabled
-    | NotificationStaffTicketOpened
-    | NotificationStaffTicketOverdue
-    | NotificationStaffTicketAssigned
+    | NotificationStaffTaskOpened
+    | NotificationStaffTaskOverdue
+    | NotificationStaffTaskAssigned
     | NotificationStaffReturnRequested
     | NotificationStaffOutboxDead
     | NotificationStaffTransfersDue
@@ -3298,9 +3298,9 @@ export interface AccountExportResponse {
     addresses: Address[];
     signInMethods: ExportSignInMethods;
     /** The contact messages this person owns: what they sent while signed in, plus what was sent under their verified email address. Staff notes are included without their author. Always present, empty when there are none. */
-    tickets: ExportTicket[];
-    /** The tickets the system opened about this person (a refund owed, an account under review, an export that failed). Every field except the staff who handled them. Always present, empty when there are none. */
-    systemTickets: ExportSystemTicket[];
+    tasks: ExportTask[];
+    /** The tasks the system opened about this person (a refund owed, an account under review, an export that failed). Every field except the staff who handled them. Always present, empty when there are none. */
+    systemTasks: ExportSystemTask[];
     cart: CartItem[];
     wishlist: WishlistExportItem[];
     orders: ExportOrder[];
@@ -3660,9 +3660,9 @@ export interface SearchUsersRequest {
     purchaseHoldReview?: true;
 }
 
-export type TicketSortItem = (typeof TicketSortItem)[keyof typeof TicketSortItem];
+export type TaskSortItem = (typeof TaskSortItem)[keyof typeof TaskSortItem];
 
-export const TicketSortItem = {
+export const TaskSortItem = {
     createdAt: 'createdAt',
     '-createdAt': '-createdAt',
     dueAt: 'dueAt',
@@ -3677,11 +3677,11 @@ export const TicketSortItem = {
  * @minItems 1
  * @maxItems 3
  */
-export type TicketSort = TicketSortItem[];
+export type TaskSort = TaskSortItem[];
 
-export type TicketSource = (typeof TicketSource)[keyof typeof TicketSource];
+export type TaskSource = (typeof TaskSource)[keyof typeof TaskSource];
 
-export const TicketSource = {
+export const TaskSource = {
     visitor: 'visitor',
     system: 'system'
 } as const;
@@ -3690,9 +3690,9 @@ export const TicketSource = {
  * @minLength 2
  * @maxLength 24
  */
-export type TicketAssigneeFilter = string;
+export type TaskAssigneeFilter = string;
 
-export interface TicketNote {
+export interface TaskNote {
     /** Absent once the author's account is erased. */
     authorId?: Id;
     body: string;
@@ -3700,56 +3700,56 @@ export interface TicketNote {
 }
 
 /**
- * An earlier ticket about the same record.
+ * An earlier task about the same record.
  */
-export interface TicketRef {
+export interface TaskRef {
     id: Id;
-    kind?: TicketKind;
-    status: TicketStatus;
+    kind?: TaskKind;
+    status: TaskStatus;
     createdAt: string;
 }
 
 /**
- * What the requesting caller may do to this ticket, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the right to work the ticket (and its route set, for a system ticket) and a status the act can run from. `assign` covers taking it and assigning someone else.
+ * What the requesting caller may do to this task, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the right to work the task (and its route set, for a system task) and a status the act can run from. `assign` covers taking it and assigning someone else.
  */
-export interface TicketActions {
-    /** Whether `POST /tickets/{id}/resolve` would be accepted. */
+export interface TaskActions {
+    /** Whether `POST /tasks/{id}/resolve` would be accepted. */
     resolve: boolean;
-    /** Whether `POST /tickets/{id}/mark-spam` would be accepted. */
+    /** Whether `POST /tasks/{id}/mark-spam` would be accepted. */
     markSpam: boolean;
-    /** Whether `POST /tickets/{id}/reopen` would be accepted. */
+    /** Whether `POST /tasks/{id}/reopen` would be accepted. */
     reopen: boolean;
-    /** Whether `PUT /tickets/{id}/assignee` would be accepted. */
+    /** Whether `PUT /tasks/{id}/assignee` would be accepted. */
     assign: boolean;
-    /** Whether `DELETE /tickets/{id}/assignee` would change anything. */
+    /** Whether `DELETE /tasks/{id}/assignee` would change anything. */
     unassign: boolean;
-    /** Whether `POST /tickets/{id}/notes` would be accepted. */
+    /** Whether `POST /tasks/{id}/notes` would be accepted. */
     note: boolean;
-    /** Whether `DELETE /tickets/{id}` would be accepted. */
+    /** Whether `DELETE /tasks/{id}` would be accepted. */
     delete: boolean;
 }
 
-export interface Ticket {
+export interface Task {
     id: Id;
-    source: TicketSource;
-    kind: TicketKind;
+    source: TaskSource;
+    kind: TaskKind;
     name?: string;
-    /** The account the sender was signed in as; absent for an anonymous sender. On a system ticket, the account the situation is about. */
+    /** The account the sender was signed in as; absent for an anonymous sender. On a system task, the account the situation is about. */
     subjectId?: Id;
-    /** The sender's address. Present on a visitor ticket, absent on a system one. */
+    /** The sender's address. Present on a visitor task, absent on a system one. */
     email?: Email;
     subject: string;
     message: string;
-    category?: TicketCategory;
+    category?: TaskCategory;
     /** The order the visitor said this is about, as they typed it. Not checked against any order. */
     orderNumber?: string;
-    link?: TicketLink;
-    /** The permission set that works this ticket, frozen when it opened. */
+    link?: TaskLink;
+    /** The permission set that works this task, frozen when it opened. */
     routeSet: string;
     assigneeId?: Id;
     /** The assignee's username. */
     assigneeName?: string;
-    notes: TicketNote[];
+    notes: TaskNote[];
     /** When it falls overdue. Kept across a reopen. */
     dueAt?: string;
     /** Open and past `dueAt`, computed at read time. */
@@ -3757,23 +3757,23 @@ export interface Ticket {
     lastSeenAt?: string;
     /** @minimum 1 */
     seenCount?: number;
-    readonly status: TicketStatus;
+    readonly status: TaskStatus;
     closedAt?: string;
-    resolution?: TicketResolution;
+    resolution?: TaskResolution;
     respondedAt?: string;
-    /** Present on `GET /tickets/{id}` only. */
-    earlierTickets?: TicketRef[];
-    actions: TicketActions;
+    /** Present on `GET /tasks/{id}` only. */
+    earlierTasks?: TaskRef[];
+    actions: TaskActions;
     createdAt: string;
     updatedAt?: string;
 }
 
-export interface TicketsResponse {
-    items: Ticket[];
+export interface TasksResponse {
+    items: Task[];
     meta: PaginationMeta;
 }
 
-export interface CreateContactTicketRequest {
+export interface CreateContactTaskRequest {
     /**
      * @minLength 1
      * @maxLength 120
@@ -3790,7 +3790,7 @@ export interface CreateContactTicketRequest {
      * @maxLength 5000
      */
     message: string;
-    category?: TicketCategory;
+    category?: TaskCategory;
     /**
      * The order the visitor says this is about, free text. Not checked against any order.
      * @minLength 1
@@ -3798,22 +3798,22 @@ export interface CreateContactTicketRequest {
      */
     orderNumber?: string;
     /**
-     * Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `Ticket`, which does not declare it.
+     * Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `Task`, which does not declare it.
      * @maxLength 200
      */
     website?: string;
 }
 
-export interface SearchTicketsRequest {
+export interface SearchTasksRequest {
     page?: Page;
     pageSize?: PageSize;
-    sort?: TicketSort;
+    sort?: TaskSort;
     text?: Text;
-    status?: TicketStatus;
-    category?: TicketCategory;
-    source?: TicketSource;
-    kind?: TicketKind;
-    assignee?: TicketAssigneeFilter;
+    status?: TaskStatus;
+    category?: TaskCategory;
+    source?: TaskSource;
+    kind?: TaskKind;
+    assignee?: TaskAssigneeFilter;
     overdue?: boolean;
     email?: Email;
 }
@@ -3821,7 +3821,7 @@ export interface SearchTicketsRequest {
 /**
  * Counts over the caller's jurisdiction.
  */
-export interface TicketSummary {
+export interface TaskSummary {
     /** @minimum 0 */
     open: number;
     /** @minimum 0 */
@@ -3832,11 +3832,11 @@ export interface TicketSummary {
     unassigned: number;
 }
 
-export interface AssignTicketRequest {
+export interface AssignTaskRequest {
     userId: Id;
 }
 
-export interface CreateTicketNoteRequest {
+export interface CreateTaskNoteRequest {
     /**
      * @minLength 1
      * @maxLength 5000
@@ -7220,7 +7220,7 @@ export type DeleteUserByIdParams = {
     hardDelete?: HardDeleteParamParameter;
 };
 
-export type ListTicketsParams = {
+export type ListTasksParams = {
     /**
      * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
      * @minimum 1
@@ -7233,7 +7233,7 @@ export type ListTicketsParams = {
      * @maximum 100
      */
     pageSize?: PageSizeParamParameter;
-    sort?: TicketSort;
+    sort?: TaskSort;
     /**
      * Free-text search string
      * @minLength 1
@@ -7241,16 +7241,16 @@ export type ListTicketsParams = {
      */
     text?: TextParamParameter;
     email?: Email;
-    status?: TicketStatus;
-    category?: TicketCategory;
-    source?: TicketSource;
-    kind?: TicketKind;
+    status?: TaskStatus;
+    category?: TaskCategory;
+    source?: TaskSource;
+    kind?: TaskKind;
     /**
      * `me`, `none` (unassigned) or a user id.
      */
-    assignee?: TicketAssigneeFilter;
+    assignee?: TaskAssigneeFilter;
     /**
-     * Only open tickets whose `dueAt` has passed.
+     * Only open tasks whose `dueAt` has passed.
      */
     overdue?: boolean;
 };
@@ -9175,7 +9175,7 @@ export const restoreAccount = (
 };
 
 /**
- * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`session.mode` of `GET /config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
+ * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`session.mode` of `GET /config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no session cookie (the `__Host-device` cookie is still set) and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
  * @summary Login
  */
 export const login = (
@@ -9829,160 +9829,148 @@ export const searchUsers = (
 };
 
 /**
- * Creates a contact ticket and notifies the support mailbox by email. Open to anyone. A valid session bearer token, when one is sent, records the sender's account on the ticket (`subjectId`), so the account's data export and erasure include it; an absent or expired token files it as anonymous.
+ * Creates a contact task and notifies the support mailbox by email. Open to anyone. A valid session bearer token, when one is sent, records the sender's account on the task (`subjectId`), so the account's data export and erasure include it; an absent or expired token files it as anonymous.
  * @summary Submit contact request
  */
-export const createContactTicket = (
-    createContactTicketRequest: CreateContactTicketRequest,
-    options?: SecondParameter<typeof orvalMutator<Ticket>>
+export const createContactTask = (
+    createContactTaskRequest: CreateContactTaskRequest,
+    options?: SecondParameter<typeof orvalMutator<Task>>
 ) => {
-    return orvalMutator<Ticket>(
+    return orvalMutator<Task>(
         {
-            url: `/tickets`,
+            url: `/tasks`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: createContactTicketRequest
+            data: createContactTaskRequest
         },
         options
     );
 };
 
 /**
- * Returns the tickets the caller may work: every visitor message, and the system tickets whose route set the caller holds (an administrator holds them all). Open work first when sorted by `dueAt`.
- * @summary List tickets
+ * Returns the tasks the caller may work: every visitor message, and the system tasks whose route set the caller holds (an administrator holds them all). Open work first when sorted by `dueAt`.
+ * @summary List tasks
  */
-export const listTickets = (
-    params?: ListTicketsParams,
-    options?: SecondParameter<typeof orvalMutator<TicketsResponse>>
+export const listTasks = (
+    params?: ListTasksParams,
+    options?: SecondParameter<typeof orvalMutator<TasksResponse>>
 ) => {
-    return orvalMutator<TicketsResponse>({ url: `/tickets`, method: 'GET', params }, options);
+    return orvalMutator<TasksResponse>({ url: `/tasks`, method: 'GET', params }, options);
 };
 
 /**
- * Searches and filters tickets via a JSON request body. Functionally equivalent to `GET /tickets` with query parameters.
- * @summary Search tickets (DTO-friendly)
+ * Searches and filters tasks via a JSON request body. Functionally equivalent to `GET /tasks` with query parameters.
+ * @summary Search tasks (DTO-friendly)
  */
-export const searchTickets = (
-    searchTicketsRequest: SearchTicketsRequest,
-    options?: SecondParameter<typeof orvalMutator<TicketsResponse>>
+export const searchTasks = (
+    searchTasksRequest: SearchTasksRequest,
+    options?: SecondParameter<typeof orvalMutator<TasksResponse>>
 ) => {
-    return orvalMutator<TicketsResponse>(
+    return orvalMutator<TasksResponse>(
         {
-            url: `/tickets/search`,
+            url: `/tasks/search`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: searchTicketsRequest
+            data: searchTasksRequest
         },
         options
     );
 };
 
 /**
- * How much work the caller's jurisdiction holds: open tickets, the caller's own, the overdue ones and the unassigned ones. Never cached: it is one person's view.
+ * How much work the caller's jurisdiction holds: open tasks, the caller's own, the overdue ones and the unassigned ones. Never cached: it is one person's view.
  * @summary Counts for the staff badge
  */
-export const getTicketSummary = (options?: SecondParameter<typeof orvalMutator<TicketSummary>>) => {
-    return orvalMutator<TicketSummary>({ url: `/tickets/summary`, method: 'GET' }, options);
+export const getTaskSummary = (options?: SecondParameter<typeof orvalMutator<TaskSummary>>) => {
+    return orvalMutator<TaskSummary>({ url: `/tasks/summary`, method: 'GET' }, options);
 };
 
 /**
- * One ticket with its notes, assignee and the earlier tickets about the same record. A visitor ticket names a person, so staff reading it is audited. An unknown, malformed or out-of-jurisdiction id is a 404.
- * @summary Get a ticket
+ * One task with its notes, assignee and the earlier tasks about the same record. A visitor task names a person, so staff reading it is audited. An unknown, malformed or out-of-jurisdiction id is a 404.
+ * @summary Get a task
  */
-export const getTicket = (id: string, options?: SecondParameter<typeof orvalMutator<Ticket>>) => {
-    return orvalMutator<Ticket>({ url: `/tickets/${id}`, method: 'GET' }, options);
+export const getTask = (id: string, options?: SecondParameter<typeof orvalMutator<Task>>) => {
+    return orvalMutator<Task>({ url: `/tasks/${id}`, method: 'GET' }, options);
 };
 
 /**
- * Permanently removes the ticket identified by `{id}`. Needs `delete:Ticket` and, for a system ticket, the ticket's route set.
- * @summary Delete a ticket
+ * Permanently removes the task identified by `{id}`. Needs `delete:Task` and, for a system task, the task's route set.
+ * @summary Delete a task
  */
-export const deleteTicket = (
+export const deleteTask = (
     id: string,
     options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<NoContentResponse>({ url: `/tickets/${id}`, method: 'DELETE' }, options);
+    return orvalMutator<NoContentResponse>({ url: `/tasks/${id}`, method: 'DELETE' }, options);
 };
 
 /**
- * From `new`, `in_progress` or `spam` to `resolved`, with `resolution: staff`. Stamps `closedAt` (kept when it was already closed) and `respondedAt` (once), and releases the dedup key. No body. Needs `update:Ticket` and, for a system ticket, its route set. The move is conditional on the status read, so a repeat answers 409.
- * @summary Resolve a ticket
+ * From `new`, `in_progress` or `spam` to `resolved`, with `resolution: staff`. Stamps `closedAt` (kept when it was already closed) and `respondedAt` (once), and releases the dedup key. No body. Needs `update:Task` and, for a system task, its route set. The move is conditional on the status read, so a repeat answers 409.
+ * @summary Resolve a task
  */
-export const resolveTicket = (
-    id: string,
-    options?: SecondParameter<typeof orvalMutator<Ticket>>
-) => {
-    return orvalMutator<Ticket>({ url: `/tickets/${id}/resolve`, method: 'POST' }, options);
+export const resolveTask = (id: string, options?: SecondParameter<typeof orvalMutator<Task>>) => {
+    return orvalMutator<Task>({ url: `/tasks/${id}/resolve`, method: 'POST' }, options);
 };
 
 /**
- * From `new`, `in_progress` or `resolved` to `spam`, with `resolution: spam`. Same stamps as a resolve, without `respondedAt`. Also undoes a false resolve. No body. Needs `update:Ticket` and, for a system ticket, its route set.
- * @summary Mark a ticket as spam
+ * From `new`, `in_progress` or `resolved` to `spam`, with `resolution: spam`. Same stamps as a resolve, without `respondedAt`. Also undoes a false resolve. No body. Needs `update:Task` and, for a system task, its route set.
+ * @summary Mark a task as spam
  */
-export const markTicketSpam = (
-    id: string,
-    options?: SecondParameter<typeof orvalMutator<Ticket>>
-) => {
-    return orvalMutator<Ticket>({ url: `/tickets/${id}/mark-spam`, method: 'POST' }, options);
+export const markTaskSpam = (id: string, options?: SecondParameter<typeof orvalMutator<Task>>) => {
+    return orvalMutator<Task>({ url: `/tasks/${id}/mark-spam`, method: 'POST' }, options);
 };
 
 /**
- * From `resolved` or `spam` to `in_progress` when it has an assignee, else `new`. Clears `closedAt` and `resolution` (the retention clock stops) and restores the dedup key of a linked ticket. `dueAt` is kept: the deadline belongs to the situation, not to the reopen. When a newer open ticket already covers the same situation the answer is 409 `TICKET_SUPERSEDED` with `details.ticketId`. No body. Needs `update:Ticket` and, for a system ticket, its route set.
- * @summary Reopen a ticket
+ * From `resolved` or `spam` to `in_progress` when it has an assignee, else `new`. Clears `closedAt` and `resolution` (the retention clock stops) and restores the dedup key of a linked task. `dueAt` is kept: the deadline belongs to the situation, not to the reopen. When a newer open task already covers the same situation the answer is 409 `TASK_SUPERSEDED` with `details.taskId`. No body. Needs `update:Task` and, for a system task, its route set.
+ * @summary Reopen a task
  */
-export const reopenTicket = (
-    id: string,
-    options?: SecondParameter<typeof orvalMutator<Ticket>>
-) => {
-    return orvalMutator<Ticket>({ url: `/tickets/${id}/reopen`, method: 'POST' }, options);
+export const reopenTask = (id: string, options?: SecondParameter<typeof orvalMutator<Task>>) => {
+    return orvalMutator<Task>({ url: `/tasks/${id}/reopen`, method: 'POST' }, options);
 };
 
 /**
- * Hands the ticket to one person (taking it is assigning yourself). A `new` ticket becomes `in_progress`. The person must hold the permission set that works the ticket. Replaces any earlier assignee. A closed ticket answers 409 `TICKET_NOT_OPEN`.
- * @summary Assign a ticket
+ * Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`.
+ * @summary Assign a task
  */
-export const assignTicket = (
+export const assignTask = (
     id: string,
-    assignTicketRequest: AssignTicketRequest,
-    options?: SecondParameter<typeof orvalMutator<Ticket>>
+    assignTaskRequest: AssignTaskRequest,
+    options?: SecondParameter<typeof orvalMutator<Task>>
 ) => {
-    return orvalMutator<Ticket>(
+    return orvalMutator<Task>(
         {
-            url: `/tickets/${id}/assignee`,
+            url: `/tasks/${id}/assignee`,
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            data: assignTicketRequest
+            data: assignTaskRequest
         },
         options
     );
 };
 
 /**
- * Clears the assignee. An `in_progress` ticket goes back to `new`. Answers 200 whether or not anyone held it.
- * @summary Give a ticket back
+ * Clears the assignee. An `in_progress` task goes back to `new`. Answers 200 whether or not anyone held it.
+ * @summary Give a task back
  */
-export const unassignTicket = (
-    id: string,
-    options?: SecondParameter<typeof orvalMutator<Ticket>>
-) => {
-    return orvalMutator<Ticket>({ url: `/tickets/${id}/assignee`, method: 'DELETE' }, options);
+export const unassignTask = (id: string, options?: SecondParameter<typeof orvalMutator<Task>>) => {
+    return orvalMutator<Task>({ url: `/tasks/${id}/assignee`, method: 'DELETE' }, options);
 };
 
 /**
  * Appends a note to the staff thread: append-only, with its author and time. Notes are written and read by staff, and the data subject's export carries them without the author. Write each one as if the customer will read it.
  * @summary Add a staff note
  */
-export const createTicketNote = (
+export const createTaskNote = (
     id: string,
-    createTicketNoteRequest: CreateTicketNoteRequest,
-    options?: SecondParameter<typeof orvalMutator<Ticket>>
+    createTaskNoteRequest: CreateTaskNoteRequest,
+    options?: SecondParameter<typeof orvalMutator<Task>>
 ) => {
-    return orvalMutator<Ticket>(
+    return orvalMutator<Task>(
         {
-            url: `/tickets/${id}/notes`,
+            url: `/tasks/${id}/notes`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: createTicketNoteRequest
+            data: createTaskNoteRequest
         },
         options
     );
@@ -12956,20 +12944,18 @@ export type DeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof deleteU
 export type RestoreUserByIdResult = NonNullable<Awaited<ReturnType<typeof restoreUserById>>>;
 export type HardDeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof hardDeleteUserById>>>;
 export type SearchUsersResult = NonNullable<Awaited<ReturnType<typeof searchUsers>>>;
-export type CreateContactTicketResult = NonNullable<
-    Awaited<ReturnType<typeof createContactTicket>>
->;
-export type ListTicketsResult = NonNullable<Awaited<ReturnType<typeof listTickets>>>;
-export type SearchTicketsResult = NonNullable<Awaited<ReturnType<typeof searchTickets>>>;
-export type GetTicketSummaryResult = NonNullable<Awaited<ReturnType<typeof getTicketSummary>>>;
-export type GetTicketResult = NonNullable<Awaited<ReturnType<typeof getTicket>>>;
-export type DeleteTicketResult = NonNullable<Awaited<ReturnType<typeof deleteTicket>>>;
-export type ResolveTicketResult = NonNullable<Awaited<ReturnType<typeof resolveTicket>>>;
-export type MarkTicketSpamResult = NonNullable<Awaited<ReturnType<typeof markTicketSpam>>>;
-export type ReopenTicketResult = NonNullable<Awaited<ReturnType<typeof reopenTicket>>>;
-export type AssignTicketResult = NonNullable<Awaited<ReturnType<typeof assignTicket>>>;
-export type UnassignTicketResult = NonNullable<Awaited<ReturnType<typeof unassignTicket>>>;
-export type CreateTicketNoteResult = NonNullable<Awaited<ReturnType<typeof createTicketNote>>>;
+export type CreateContactTaskResult = NonNullable<Awaited<ReturnType<typeof createContactTask>>>;
+export type ListTasksResult = NonNullable<Awaited<ReturnType<typeof listTasks>>>;
+export type SearchTasksResult = NonNullable<Awaited<ReturnType<typeof searchTasks>>>;
+export type GetTaskSummaryResult = NonNullable<Awaited<ReturnType<typeof getTaskSummary>>>;
+export type GetTaskResult = NonNullable<Awaited<ReturnType<typeof getTask>>>;
+export type DeleteTaskResult = NonNullable<Awaited<ReturnType<typeof deleteTask>>>;
+export type ResolveTaskResult = NonNullable<Awaited<ReturnType<typeof resolveTask>>>;
+export type MarkTaskSpamResult = NonNullable<Awaited<ReturnType<typeof markTaskSpam>>>;
+export type ReopenTaskResult = NonNullable<Awaited<ReturnType<typeof reopenTask>>>;
+export type AssignTaskResult = NonNullable<Awaited<ReturnType<typeof assignTask>>>;
+export type UnassignTaskResult = NonNullable<Awaited<ReturnType<typeof unassignTask>>>;
+export type CreateTaskNoteResult = NonNullable<Awaited<ReturnType<typeof createTaskNote>>>;
 export type ListProductsResult = NonNullable<Awaited<ReturnType<typeof listProducts>>>;
 export type CreateProductResult = NonNullable<Awaited<ReturnType<typeof createProduct>>>;
 export type CreateProductWithMultipartResult = NonNullable<

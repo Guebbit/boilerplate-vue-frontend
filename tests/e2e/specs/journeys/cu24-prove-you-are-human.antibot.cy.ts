@@ -1,4 +1,4 @@
-// requires-module: account, cart, delivery, tickets, inventory, orders, payments, products
+// requires-module: account, cart, delivery, tasks, inventory, orders, payments, products
 /**
  * @module
  * CU24 · Prove you are human. A backend with a human-check provider on does not nag an honest
@@ -16,25 +16,25 @@ import {
     solveHumanCheck
 } from '../../../support/e2e/steps';
 
-/** One ticket as far as this story reads it. */
-interface TicketLike {
+/** One task as far as this story reads it. */
+interface TaskLike {
     subject: string;
 }
 
 /**
- * The tickets the admin's inbox holds for a subject.
+ * The tasks the admin's inbox holds for a subject.
  *
  * @param subject - the unique subject
  */
-const ticketsAbout = (subject: string): Cypress.Chainable<TicketLike[]> =>
+const tasksAbout = (subject: string): Cypress.Chainable<TaskLike[]> =>
     cy
-        .apiAs<{ items: TicketLike[] }>('admin', 'POST', '/tickets/search', { text: subject })
+        .apiAs<{ items: TaskLike[] }>('admin', 'POST', '/tasks/search', { text: subject })
         .then((found) => found?.items ?? []);
 
 /**
  * Fills the contact form and presses send, without touching the human check.
  *
- * @param subject - the ticket's subject, unique to the story
+ * @param subject - the task's subject, unique to the story
  */
 const writeToTheShop = (subject: string): void => {
     cy.get('[data-test=contact-email] input').type('cu24.guest@example.com');
@@ -89,19 +89,19 @@ describe('CU24 · Prove you are human', () => {
         cy.get('#contact-page').should('exist');
         cy.get('[data-test=human-check-altcha]').should('exist');
 
-        cy.step('a send without its token is refused, and no ticket is made');
+        cy.step('a send without its token is refused, and no task is made');
         const run = String(Date.now());
         const refused = `CU24 refused ${run}`;
         writeToTheShop(refused);
         cy.get('[data-test=contact-submit-error]').should('be.visible');
         cy.get('[data-test=contact-subject] input').should('have.value', refused);
-        ticketsAbout(refused).should('have.length', 0);
+        tasksAbout(refused).should('have.length', 0);
 
         cy.step('solving the check lets the same send through');
         solveHumanCheck();
         cy.get('[data-test=contact-submit]').click();
         cy.get('[data-test=contact-subject] input').should('have.value', '');
         cy.get('[data-test=contact-submit-error]').should('not.exist');
-        ticketsAbout(refused).should('have.length', 1);
+        tasksAbout(refused).should('have.length', 1);
     });
 });

@@ -212,20 +212,20 @@ to delete once you have your own. Every non-test file opens with the same header
 `Delete it if:`, an optional `Instead see:` and a closing `See:` — and a spec holds them to it.
 Its backend twin, `../boilerplate-node-backend/src/modules/example`, shows the same patterns.
 
-| Pattern                                 | Show / point | Where                                                        |
-| --------------------------------------- | ------------ | ------------------------------------------------------------ |
-| Manifest, routes, loading keys, locales | show         | `module.ts`, `routes.ts`, `locales/`                         |
-| Store over the generated client         | show         | `store.ts`                                                   |
-| Server-decided controls (`actions`)     | show         | list rows, detail, `components/ExampleStatusActions.vue`     |
-| An action door and its 409              | show         | `composables/use-example-transition.ts`                      |
-| A stale edit (412, "reload latest")     | show         | `views/ExampleEdit.vue`                                      |
-| An idempotent create                    | show         | `store.ts` (`useIdempotencyKey`)                             |
-| A reading rule in `domain/`             | show         | `domain/publication.ts`                                      |
-| Upload with progress                    | show         | `views/ExampleEdit.vue`                                      |
-| Typed provide/inject                    | show         | `provided.ts`                                                |
-| A barrel                                | point        | `cart/index.ts` (forbidden here: nothing imports `example`)  |
-| A slot contribution                     | point        | `wishlist/module.ts`                                         |
-| Step-up, antibot, realtime              | point        | `infrastructure/http/step-up.ts`, `tickets`, `observability` |
+| Pattern                                 | Show / point | Where                                                       |
+| --------------------------------------- | ------------ | ----------------------------------------------------------- |
+| Manifest, routes, loading keys, locales | show         | `module.ts`, `routes.ts`, `locales/`                        |
+| Store over the generated client         | show         | `store.ts`                                                  |
+| Server-decided controls (`actions`)     | show         | list rows, detail, `components/ExampleStatusActions.vue`    |
+| An action door and its 409              | show         | `composables/use-example-transition.ts`                     |
+| A stale edit (412, "reload latest")     | show         | `views/ExampleEdit.vue`                                     |
+| An idempotent create                    | show         | `store.ts` (`useIdempotencyKey`)                            |
+| A reading rule in `domain/`             | show         | `domain/publication.ts`                                     |
+| Upload with progress                    | show         | `views/ExampleEdit.vue`                                     |
+| Typed provide/inject                    | show         | `provided.ts`                                               |
+| A barrel                                | point        | `cart/index.ts` (forbidden here: nothing imports `example`) |
+| A slot contribution                     | point        | `wishlist/module.ts`                                        |
+| Step-up, antibot, realtime              | point        | `infrastructure/http/step-up.ts`, `tasks`, `observability`  |
 
 ```mermaid
 flowchart LR

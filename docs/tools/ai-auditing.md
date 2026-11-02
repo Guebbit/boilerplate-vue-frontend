@@ -2,7 +2,7 @@
 
 Every other instrument in this repo compares the system **to itself**: component to snapshot, mutant
 to suite, response to generated schema. That is what makes them deterministic, and it is also their
-ceiling. Stryker cannot read `docs/theory/domain-layer.md`. axe cannot read a ticket. orval cannot
+ceiling. Stryker cannot read `docs/theory/domain-layer.md`. axe cannot read a task. orval cannot
 notice that the docs promise a rule the contract never encodes.
 
 **Prose ↔ code is the gap**, and it is the one place a language model beats a program rather than

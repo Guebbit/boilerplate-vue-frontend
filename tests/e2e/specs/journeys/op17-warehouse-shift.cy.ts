@@ -77,14 +77,7 @@ describe('OP17 · A warehouse shift', () => {
         cy.loginAs('warehouse');
         adminMenuLinks().should((links) => {
             expect(links).to.include('/en/inventory');
-            for (const page of [
-                '/users',
-                '/tickets',
-                '/locales',
-                '/audit',
-                '/admin',
-                '/api-keys'
-            ]) {
+            for (const page of ['/users', '/tasks', '/locales', '/audit', '/admin', '/api-keys']) {
                 expect(links, page).to.not.include(`/en${page}`);
             }
         });

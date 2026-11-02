@@ -1,4 +1,4 @@
-// requires-module: tickets
+// requires-module: tasks
 /**
  * @module
  * VI3 · A guest writes to the shop. Someone with no account fills the contact form from the Italian
@@ -24,8 +24,8 @@ const BUDGET = 5;
 /** What the real limiter answers with: the problem details and their sentence, in the language the request asked for. */
 const TOO_MANY = rejectEnvelope(429, 'RATE_LIMITED', 'Troppe richieste. Riprova tra poco.');
 
-/** One ticket as far as this story reads it. */
-interface TicketLike {
+/** One task as far as this story reads it. */
+interface TaskLike {
     subject: string;
     status: string;
     name?: string;
@@ -34,7 +34,7 @@ interface TicketLike {
 /**
  * Fills the contact form and presses send. The name is left out unless given.
  *
- * @param subject - the ticket's subject, unique to the story
+ * @param subject - the task's subject, unique to the story
  * @param extra - a hidden honeypot value to type in, when the sender is a bot
  */
 const writeToTheShop = (subject: string, extra?: { honeypot: string }): void => {
@@ -50,13 +50,13 @@ const writeToTheShop = (subject: string, extra?: { honeypot: string }): void => 
 };
 
 /**
- * The tickets the admin's inbox holds for a subject.
+ * The tasks the admin's inbox holds for a subject.
  *
  * @param subject - the unique subject
  */
-const ticketsAbout = (subject: string): Cypress.Chainable<TicketLike[]> =>
+const tasksAbout = (subject: string): Cypress.Chainable<TaskLike[]> =>
     cy
-        .apiAs<{ items: TicketLike[] }>('admin', 'POST', '/tickets/search', { text: subject })
+        .apiAs<{ items: TaskLike[] }>('admin', 'POST', '/tasks/search', { text: subject })
         .then((found) => found?.items ?? []);
 
 describe('VI3 · A guest writes to the shop', () => {
@@ -79,10 +79,10 @@ describe('VI3 · A guest writes to the shop', () => {
         cy.get('[data-test=contact-subject] input').should('have.value', '');
         cy.get('[data-test=contact-email] input').should('have.value', '');
         cy.get('[data-test=contact-submit-error]').should('not.exist');
-        ticketsAbout(first).should((tickets) => {
-            expect(tickets).to.have.length(1);
-            expect(tickets[0].status).to.equal('new');
-            expect(tickets[0].name ?? '').to.equal('');
+        tasksAbout(first).should((tasks) => {
+            expect(tasks).to.have.length(1);
+            expect(tasks[0].status).to.equal('new');
+            expect(tasks[0].name ?? '').to.equal('');
         });
 
         cy.step("the operator's mail is in the shop's language, whatever language the guest used");
@@ -103,9 +103,9 @@ describe('VI3 · A guest writes to the shop', () => {
         writeToTheShop(bot, { honeypot: 'https://spam.example' });
         cy.get('[data-test=contact-subject] input').should('have.value', '');
         cy.get('[data-test=contact-submit-error]').should('not.exist');
-        ticketsAbout(bot).should((tickets) => {
-            expect(tickets).to.have.length(1);
-            expect(tickets[0].status).to.equal('spam');
+        tasksAbout(bot).should((tasks) => {
+            expect(tasks).to.have.length(1);
+            expect(tasks[0].status).to.equal('spam');
         });
         // A later honest message is mailed first in line: once its mail has arrived, the bot's
         // (sent earlier) would have arrived too, so its absence now means it was never sent.
@@ -124,7 +124,7 @@ describe('VI3 · A guest writes to the shop', () => {
         }
         cy.env(['liveProfile']).then(({ liveProfile }) => {
             // Demo budgets are raised far past this, so the answer a spent budget gives is stubbed.
-            if (liveProfile !== true) cy.intercept('POST', '**/tickets', TOO_MANY);
+            if (liveProfile !== true) cy.intercept('POST', '**/tasks', TOO_MANY);
         });
         const sixth = `VI3 sixth ${run}`;
         writeToTheShop(sixth);
@@ -133,6 +133,6 @@ describe('VI3 · A guest writes to the shop', () => {
             .and('contain.text', TOO_MANY.body.errors[0].message);
         // What the guest typed is still there to send later; nothing was lost.
         cy.get('[data-test=contact-subject] input').should('have.value', sixth);
-        ticketsAbout(sixth).should('have.length', 0);
+        tasksAbout(sixth).should('have.length', 0);
     });
 });

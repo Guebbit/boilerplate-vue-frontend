@@ -164,63 +164,63 @@ const describeLost = (
         .join(' ');
 
 /**
- * The dictionary entry of each ticket kind, as literals so the unused-key check can see them. A
- * kind this client does not know (a newer backend) reads as {@link TICKET_KIND_UNKNOWN_KEY}.
+ * The dictionary entry of each task kind, as literals so the unused-key check can see them. A
+ * kind this client does not know (a newer backend) reads as {@link TASK_KIND_UNKNOWN_KEY}.
  */
-const TICKET_KIND_KEYS: Readonly<Record<string, string>> = {
-    contact: 'notifications.staff-ticket-kind-contact',
-    account_review: 'notifications.staff-ticket-kind-account_review',
-    manual_refund_owed: 'notifications.staff-ticket-kind-manual_refund_owed',
-    amount_mismatch: 'notifications.staff-ticket-kind-amount_mismatch',
-    paid_without_hold: 'notifications.staff-ticket-kind-paid_without_hold',
-    export_failed: 'notifications.staff-ticket-kind-export_failed',
-    consent_due: 'notifications.staff-ticket-kind-consent_due',
-    refund_refused: 'notifications.staff-ticket-kind-refund_refused',
-    dispute: 'notifications.staff-ticket-kind-dispute'
+const TASK_KIND_KEYS: Readonly<Record<string, string>> = {
+    contact: 'notifications.staff-task-kind-contact',
+    account_review: 'notifications.staff-task-kind-account_review',
+    manual_refund_owed: 'notifications.staff-task-kind-manual_refund_owed',
+    amount_mismatch: 'notifications.staff-task-kind-amount_mismatch',
+    paid_without_hold: 'notifications.staff-task-kind-paid_without_hold',
+    export_failed: 'notifications.staff-task-kind-export_failed',
+    consent_due: 'notifications.staff-task-kind-consent_due',
+    refund_refused: 'notifications.staff-task-kind-refund_refused',
+    dispute: 'notifications.staff-task-kind-dispute'
 };
 
 /**
- * Dictionary key for a ticket kind this client has no word for.
+ * Dictionary key for a task kind this client has no word for.
  */
-const TICKET_KIND_UNKNOWN_KEY = 'notifications.staff-ticket-kind-unknown';
+const TASK_KIND_UNKNOWN_KEY = 'notifications.staff-task-kind-unknown';
 
 /**
  * The dictionary entry of each contact category, as literals for the same reason. `none` is a
  * message the visitor sent without one.
  */
-const TICKET_CATEGORY_KEYS: Readonly<Record<string, string>> = {
-    order: 'notifications.staff-ticket-category-order',
-    cancellation: 'notifications.staff-ticket-category-cancellation',
-    return: 'notifications.staff-ticket-category-return',
-    payment: 'notifications.staff-ticket-category-payment',
-    account: 'notifications.staff-ticket-category-account',
-    privacy: 'notifications.staff-ticket-category-privacy',
-    other: 'notifications.staff-ticket-category-other',
-    none: 'notifications.staff-ticket-category-none'
+const TASK_CATEGORY_KEYS: Readonly<Record<string, string>> = {
+    order: 'notifications.staff-task-category-order',
+    cancellation: 'notifications.staff-task-category-cancellation',
+    return: 'notifications.staff-task-category-return',
+    payment: 'notifications.staff-task-category-payment',
+    account: 'notifications.staff-task-category-account',
+    privacy: 'notifications.staff-task-category-privacy',
+    other: 'notifications.staff-task-category-other',
+    none: 'notifications.staff-task-category-none'
 };
 
 /**
- * The sentence of a ticket notice: what kind of ticket, and for a contact message its category.
+ * The sentence of a task notice: what kind of task, and for a contact message its category.
  * Kind and category are closed codes the server sends; their words are this client's own.
  *
- * @param code - Which of the three ticket notices.
+ * @param code - Which of the three task notices.
  * @param parameters - The notice's facts.
- * @param parameters.kind - The ticket's kind.
- * @param parameters.category - A contact ticket's category, when the visitor chose one.
+ * @param parameters.kind - The task's kind.
+ * @param parameters.category - A contact task's category, when the visitor chose one.
  * @param translate - The translate function.
  * @returns The finished text.
  */
-const describeTicket = (
+const describeTask = (
     code:
-        | 'notifications.staff.ticket-opened'
-        | 'notifications.staff.ticket-overdue'
-        | 'notifications.staff.ticket-assigned',
+        | 'notifications.staff.task-opened'
+        | 'notifications.staff.task-overdue'
+        | 'notifications.staff.task-assigned',
     parameters: { kind: string; category?: string },
     translate: Translate
 ): string => {
-    const kind = translate(TICKET_KIND_KEYS[parameters.kind] ?? TICKET_KIND_UNKNOWN_KEY);
+    const kind = translate(TASK_KIND_KEYS[parameters.kind] ?? TASK_KIND_UNKNOWN_KEY);
     const category = translate(
-        TICKET_CATEGORY_KEYS[parameters.category ?? 'none'] ?? TICKET_CATEGORY_KEYS.none
+        TASK_CATEGORY_KEYS[parameters.category ?? 'none'] ?? TASK_CATEGORY_KEYS.none
     );
     return translate(code, {
         what: parameters.kind === 'contact' ? `${kind} · ${category}` : kind
@@ -248,10 +248,10 @@ export const notificationOrderId = (notification: DescribableNotification): stri
 export type NotificationTarget =
     | {
           /**
-           * A record's own page: a buyer's account, a webhook subscription, a ticket, a return or
+           * A record's own page: a buyer's account, a webhook subscription, a task, a return or
            * an order.
            */
-          screen: 'account' | 'webhook-subscription' | 'ticket' | 'return' | 'order';
+          screen: 'account' | 'webhook-subscription' | 'task' | 'return' | 'order';
           /**
            * The id of that record.
            */
@@ -282,7 +282,7 @@ const outboxTarget = (eventName: string, aggregateId: string): NotificationTarge
 
 /**
  * The admin screen a work notice is about: the buyer's account for a purchase hold, the
- * subscription for a disabled webhook, the ticket for an opened, overdue or assigned one. Own messages point at none here (an order is
+ * subscription for a disabled webhook, the task for an opened, overdue or assigned one. Own messages point at none here (an order is
  * {@link notificationOrderId}'s job).
  *
  * @param notification - The stored row's `code` and `params`.
@@ -298,10 +298,10 @@ export const notificationTarget = (
         case 'notifications.staff.webhook-disabled': {
             return { screen: 'webhook-subscription', id: notification.params.subscriptionId };
         }
-        case 'notifications.staff.ticket-opened':
-        case 'notifications.staff.ticket-overdue':
-        case 'notifications.staff.ticket-assigned': {
-            return { screen: 'ticket', id: notification.params.ticketId };
+        case 'notifications.staff.task-opened':
+        case 'notifications.staff.task-overdue':
+        case 'notifications.staff.task-assigned': {
+            return { screen: 'task', id: notification.params.taskId };
         }
         case 'notifications.staff.return-requested': {
             return { screen: 'return', id: notification.params.returnId };
@@ -433,10 +433,10 @@ export const describeNotification = (
         case 'notifications.staff.stale-refunds': {
             return translate(notification.code, { n: notification.params.count });
         }
-        case 'notifications.staff.ticket-opened':
-        case 'notifications.staff.ticket-overdue':
-        case 'notifications.staff.ticket-assigned': {
-            return describeTicket(notification.code, notification.params, translate);
+        case 'notifications.staff.task-opened':
+        case 'notifications.staff.task-overdue':
+        case 'notifications.staff.task-assigned': {
+            return describeTask(notification.code, notification.params, translate);
         }
         default: {
             return translate(UNKNOWN_CODE_KEY);

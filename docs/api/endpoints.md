@@ -161,17 +161,17 @@ Full user management. Self-service actions (`GET /account`, `DELETE /account`) l
 | DELETE | `/users/:id`         | permission | Soft-delete a user     |
 | POST   | `/users/:id/restore` | permission | Undo a soft delete     |
 
-## Tickets
+## Tasks
 
 Contact messages from any visitor, triaged by staff.
 
-| Method | Endpoint          | Auth       | Description                |
-| ------ | ----------------- | ---------- | -------------------------- |
-| POST   | `/tickets`        | none       | Submit a contact form      |
-| GET    | `/tickets`        | permission | List all tickets           |
-| POST   | `/tickets/search` | permission | Search tickets             |
-| PATCH  | `/tickets/:id`    | permission | Update the ticket's status |
-| DELETE | `/tickets/:id`    | permission | Delete a ticket            |
+| Method | Endpoint        | Auth       | Description              |
+| ------ | --------------- | ---------- | ------------------------ |
+| POST   | `/tasks`        | none       | Submit a contact form    |
+| GET    | `/tasks`        | permission | List all tasks           |
+| POST   | `/tasks/search` | permission | Search tasks             |
+| PATCH  | `/tasks/:id`    | permission | Update the task's status |
+| DELETE | `/tasks/:id`    | permission | Delete a task            |
 
 ## SSE
 

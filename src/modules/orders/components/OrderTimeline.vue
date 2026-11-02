@@ -110,7 +110,7 @@ const isByBuyer = (entry: OrderTimelineEntry): boolean =>
     props.ownerId !== undefined && entry.actor === props.ownerId;
 
 /**
- * Ticket of the newest read; an older read finishing late sees it moved on and drops its answer.
+ * Task of the newest read; an older read finishing late sees it moved on and drops its answer.
  */
 let latestRead = 0;
 

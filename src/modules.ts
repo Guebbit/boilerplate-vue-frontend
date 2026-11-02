@@ -26,7 +26,7 @@ import products from '@/modules/products/module';
 import returns from '@/modules/returns/module';
 import stats from '@/modules/stats/module';
 import stockAlerts from '@/modules/stock-alerts/module';
-import tickets from '@/modules/tickets/module';
+import tasks from '@/modules/tasks/module';
 import users from '@/modules/users/module';
 import webhooks from '@/modules/webhooks/module';
 import wishlist from '@/modules/wishlist/module';
@@ -50,7 +50,7 @@ export const enabledModules: AppModule[] = [
     returns,
     stats,
     stockAlerts,
-    tickets,
+    tasks,
     users,
     webhooks,
     wishlist

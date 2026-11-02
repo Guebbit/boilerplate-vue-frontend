@@ -62,7 +62,7 @@ Checkout lives in this store and not in the orders store, even though it answers
 cart this store is responsible for. Owned from anywhere else, the local cart survives a completed
 order and the header keeps showing items the server has already turned into one.
 
-The store keeps every write to `cart` and its ordering rules (tickets, epoch, seeding, the reset barrier)
+The store keeps every write to `cart` and its ordering rules (tasks, epoch, seeding, the reset barrier)
 in one file, so "can a poll land over a merge?" is answered by reading one place. What touches no store
 state — the key header, the in-flight retry ladder, the empty-cart shape — lives in
 `composables/idempotent-calls.ts` and `domain/empty-cart.ts`.
@@ -284,8 +284,8 @@ narrows the gap; the shopper who never leaves the page is covered by
 
 ### Answers in order
 
-Every call that writes the cart takes a **ticket** when it leaves, and its answer is applied only
-if no fresher answer was applied first (`infrastructure/utils/request-ticket.ts`). A slow, older
+Every call that writes the cart takes a **task** when it leaves, and its answer is applied only
+if no fresher answer was applied first (`infrastructure/utils/request-task.ts`). A slow, older
 answer therefore never overwrites a newer one, whatever order the network delivers them in.
 
 ```mermaid
@@ -293,17 +293,17 @@ sequenceDiagram
     participant U as shopper
     participant S as cart store
     participant API as backend
-    U->>S: step quantity (ticket 1)
+    U->>S: step quantity (task 1)
     S->>API: PUT /cart/p1
-    U->>S: remove another line (ticket 2)
+    U->>S: remove another line (task 2)
     S->>API: DELETE /cart/p2
-    API-->>S: answer to ticket 2
-    S->>S: apply: the cart is now ticket 2's
-    API-->>S: answer to ticket 1 (late)
-    S->>S: drop: ticket 1 is older than what is applied
+    API-->>S: answer to task 2
+    S->>S: apply: the cart is now task 2's
+    API-->>S: answer to task 1 (late)
+    S->>S: drop: task 1 is older than what is applied
 ```
 
-A change of viewer is a **barrier**: it kills every ticket taken before it, so an answer still on the
+A change of viewer is a **barrier**: it kills every task taken before it, so an answer still on the
 wire for the previous person lands nowhere, and neither does their merge report. The badge's
 summary read has its own ordering, kept apart so a summary answered first can never make a write's
 answer stale. The wishlist store uses the same helper.

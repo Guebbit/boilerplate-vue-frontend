@@ -2610,7 +2610,7 @@ export const RestoreAccountBody = zod.strictObject({
 });
 export const RestoreAccountResponse = zod.void();
 /**
- * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`session.mode` of `GET /config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
+ * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`session.mode` of `GET /config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no session cookie (the `__Host-device` cookie is still set) and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
  * @summary Login
  */
 export const loginBodyEmailMax = 254;
@@ -3030,13 +3030,11 @@ export const downloadAccountExportResponseAddressesItemZipMax = 20;
 export const downloadAccountExportResponseAddressesItemCountryMax = 2;
 export const downloadAccountExportResponseAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const downloadAccountExportResponseAddressesItemPhoneMax = 32;
-export const downloadAccountExportResponseTicketsItemIdMax = 64;
-export const downloadAccountExportResponseTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const downloadAccountExportResponseTicketsItemEmailMax = 254;
-export const downloadAccountExportResponseSystemTicketsItemIdMax = 64;
-export const downloadAccountExportResponseSystemTicketsItemIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
+export const downloadAccountExportResponseTasksItemIdMax = 64;
+export const downloadAccountExportResponseTasksItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const downloadAccountExportResponseTasksItemEmailMax = 254;
+export const downloadAccountExportResponseSystemTasksItemIdMax = 64;
+export const downloadAccountExportResponseSystemTasksItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseCartItemProductIdMax = 64;
 export const downloadAccountExportResponseCartItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseWishlistItemProductIdMax = 64;
@@ -3296,24 +3294,24 @@ export const downloadAccountExportResponseNotificationsItemOnezeroIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemOnezeroIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseNotificationsItemOnezeroParamsTicketIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemOnezeroParamsTicketIdRegExp = new RegExp(
+export const downloadAccountExportResponseNotificationsItemOnezeroParamsTaskIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemOnezeroParamsTaskIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const downloadAccountExportResponseNotificationsItemOneoneIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemOneoneIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseNotificationsItemOneoneParamsTicketIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemOneoneParamsTicketIdRegExp = new RegExp(
+export const downloadAccountExportResponseNotificationsItemOneoneParamsTaskIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemOneoneParamsTaskIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const downloadAccountExportResponseNotificationsItemOnetwoIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemOnetwoIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseNotificationsItemOnetwoParamsTicketIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemOnetwoParamsTicketIdRegExp = new RegExp(
+export const downloadAccountExportResponseNotificationsItemOnetwoParamsTaskIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemOnetwoParamsTaskIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const downloadAccountExportResponseNotificationsItemOnethreeIdMax = 64;
@@ -3496,15 +3494,15 @@ export const DownloadAccountExportResponse = zod.strictObject({
             })
         )
     }),
-    tickets: zod.array(
+    tasks: zod.array(
         zod.strictObject({
             id: zod
                 .string()
                 .min(1)
-                .max(downloadAccountExportResponseTicketsItemIdMax)
-                .regex(downloadAccountExportResponseTicketsItemIdRegExp),
+                .max(downloadAccountExportResponseTasksItemIdMax)
+                .regex(downloadAccountExportResponseTasksItemIdRegExp),
             name: zod.string().optional(),
-            email: zod.email().max(downloadAccountExportResponseTicketsItemEmailMax),
+            email: zod.email().max(downloadAccountExportResponseTasksItemEmailMax),
             subject: zod.string(),
             message: zod.string(),
             category: zod
@@ -3522,13 +3520,13 @@ export const DownloadAccountExportResponse = zod.strictObject({
             createdAt: zod.iso.datetime({ offset: true }).optional()
         })
     ),
-    systemTickets: zod.array(
+    systemTasks: zod.array(
         zod.strictObject({
             id: zod
                 .string()
                 .min(1)
-                .max(downloadAccountExportResponseSystemTicketsItemIdMax)
-                .regex(downloadAccountExportResponseSystemTicketsItemIdRegExp),
+                .max(downloadAccountExportResponseSystemTasksItemIdMax)
+                .regex(downloadAccountExportResponseSystemTasksItemIdRegExp),
             kind: zod.enum([
                 'contact',
                 'account_review',
@@ -4464,14 +4462,14 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemOnezeroIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemOnezeroIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['notifications.staff.ticket-opened']),
+                code: zod.enum(['notifications.staff.task-opened']),
                 params: zod.strictObject({
-                    ticketId: zod
+                    taskId: zod
                         .string()
                         .min(1)
-                        .max(downloadAccountExportResponseNotificationsItemOnezeroParamsTicketIdMax)
+                        .max(downloadAccountExportResponseNotificationsItemOnezeroParamsTaskIdMax)
                         .regex(
-                            downloadAccountExportResponseNotificationsItemOnezeroParamsTicketIdRegExp
+                            downloadAccountExportResponseNotificationsItemOnezeroParamsTaskIdRegExp
                         ),
                     kind: zod.string(),
                     category: zod.string().optional()
@@ -4487,14 +4485,14 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemOneoneIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemOneoneIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['notifications.staff.ticket-overdue']),
+                code: zod.enum(['notifications.staff.task-overdue']),
                 params: zod.strictObject({
-                    ticketId: zod
+                    taskId: zod
                         .string()
                         .min(1)
-                        .max(downloadAccountExportResponseNotificationsItemOneoneParamsTicketIdMax)
+                        .max(downloadAccountExportResponseNotificationsItemOneoneParamsTaskIdMax)
                         .regex(
-                            downloadAccountExportResponseNotificationsItemOneoneParamsTicketIdRegExp
+                            downloadAccountExportResponseNotificationsItemOneoneParamsTaskIdRegExp
                         ),
                     kind: zod.string(),
                     category: zod.string().optional()
@@ -4510,14 +4508,14 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemOnetwoIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemOnetwoIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['notifications.staff.ticket-assigned']),
+                code: zod.enum(['notifications.staff.task-assigned']),
                 params: zod.strictObject({
-                    ticketId: zod
+                    taskId: zod
                         .string()
                         .min(1)
-                        .max(downloadAccountExportResponseNotificationsItemOnetwoParamsTicketIdMax)
+                        .max(downloadAccountExportResponseNotificationsItemOnetwoParamsTaskIdMax)
                         .regex(
-                            downloadAccountExportResponseNotificationsItemOnetwoParamsTicketIdRegExp
+                            downloadAccountExportResponseNotificationsItemOnetwoParamsTaskIdRegExp
                         ),
                     kind: zod.string()
                 }),
@@ -5911,58 +5909,58 @@ export const SearchUsersResponse = zod.strictObject({
     })
 });
 /**
- * Creates a contact ticket and notifies the support mailbox by email. Open to anyone. A valid session bearer token, when one is sent, records the sender's account on the ticket (`subjectId`), so the account's data export and erasure include it; an absent or expired token files it as anonymous.
+ * Creates a contact task and notifies the support mailbox by email. Open to anyone. A valid session bearer token, when one is sent, records the sender's account on the task (`subjectId`), so the account's data export and erasure include it; an absent or expired token files it as anonymous.
  * @summary Submit contact request
  */
-export const createContactTicketHeaderAntibotChallengeTokenMax = 4096;
-export const createContactTicketHeaderIdempotencyKeyMax = 200;
-export const createContactTicketHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
-export const CreateContactTicketHeader = zod.strictObject({
+export const createContactTaskHeaderAntibotChallengeTokenMax = 4096;
+export const createContactTaskHeaderIdempotencyKeyMax = 200;
+export const createContactTaskHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const CreateContactTaskHeader = zod.strictObject({
     'Antibot-Challenge-Token': zod
         .string()
-        .max(createContactTicketHeaderAntibotChallengeTokenMax)
+        .max(createContactTaskHeaderAntibotChallengeTokenMax)
         .optional(),
     'Idempotency-Key': zod
         .string()
         .min(1)
-        .max(createContactTicketHeaderIdempotencyKeyMax)
-        .regex(createContactTicketHeaderIdempotencyKeyRegExp)
+        .max(createContactTaskHeaderIdempotencyKeyMax)
+        .regex(createContactTaskHeaderIdempotencyKeyRegExp)
         .optional()
 });
-export const createContactTicketBodyNameMax = 120;
-export const createContactTicketBodyEmailMax = 254;
-export const createContactTicketBodySubjectMax = 200;
-export const createContactTicketBodyMessageMax = 5000;
-export const createContactTicketBodyOrderNumberMax = 40;
-export const createContactTicketBodyWebsiteMax = 200;
-export const CreateContactTicketBody = zod.strictObject({
-    name: zod.string().min(1).max(createContactTicketBodyNameMax).optional(),
-    email: zod.email().max(createContactTicketBodyEmailMax),
-    subject: zod.string().min(1).max(createContactTicketBodySubjectMax),
-    message: zod.string().min(1).max(createContactTicketBodyMessageMax),
+export const createContactTaskBodyNameMax = 120;
+export const createContactTaskBodyEmailMax = 254;
+export const createContactTaskBodySubjectMax = 200;
+export const createContactTaskBodyMessageMax = 5000;
+export const createContactTaskBodyOrderNumberMax = 40;
+export const createContactTaskBodyWebsiteMax = 200;
+export const CreateContactTaskBody = zod.strictObject({
+    name: zod.string().min(1).max(createContactTaskBodyNameMax).optional(),
+    email: zod.email().max(createContactTaskBodyEmailMax),
+    subject: zod.string().min(1).max(createContactTaskBodySubjectMax),
+    message: zod.string().min(1).max(createContactTaskBodyMessageMax),
     category: zod
         .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
         .optional(),
-    orderNumber: zod.string().min(1).max(createContactTicketBodyOrderNumberMax).optional(),
-    website: zod.string().max(createContactTicketBodyWebsiteMax).optional()
+    orderNumber: zod.string().min(1).max(createContactTaskBodyOrderNumberMax).optional(),
+    website: zod.string().max(createContactTaskBodyWebsiteMax).optional()
 });
-export const createContactTicketResponseIdMax = 64;
-export const createContactTicketResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const createContactTicketResponseSubjectIdMax = 64;
-export const createContactTicketResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const createContactTicketResponseEmailMax = 254;
-export const createContactTicketResponseAssigneeIdMax = 64;
-export const createContactTicketResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const createContactTicketResponseNotesItemAuthorIdMax = 64;
-export const createContactTicketResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const createContactTicketResponseEarlierTicketsItemIdMax = 64;
-export const createContactTicketResponseEarlierTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const CreateContactTicketResponse = zod.strictObject({
+export const createContactTaskResponseIdMax = 64;
+export const createContactTaskResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createContactTaskResponseSubjectIdMax = 64;
+export const createContactTaskResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createContactTaskResponseEmailMax = 254;
+export const createContactTaskResponseAssigneeIdMax = 64;
+export const createContactTaskResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createContactTaskResponseNotesItemAuthorIdMax = 64;
+export const createContactTaskResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createContactTaskResponseEarlierTasksItemIdMax = 64;
+export const createContactTaskResponseEarlierTasksItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const CreateContactTaskResponse = zod.strictObject({
     id: zod
         .string()
         .min(1)
-        .max(createContactTicketResponseIdMax)
-        .regex(createContactTicketResponseIdRegExp),
+        .max(createContactTaskResponseIdMax)
+        .regex(createContactTaskResponseIdRegExp),
     source: zod.enum(['visitor', 'system']),
     kind: zod.enum([
         'contact',
@@ -5979,10 +5977,10 @@ export const CreateContactTicketResponse = zod.strictObject({
     subjectId: zod
         .string()
         .min(1)
-        .max(createContactTicketResponseSubjectIdMax)
-        .regex(createContactTicketResponseSubjectIdRegExp)
+        .max(createContactTaskResponseSubjectIdMax)
+        .regex(createContactTaskResponseSubjectIdRegExp)
         .optional(),
-    email: zod.email().max(createContactTicketResponseEmailMax).optional(),
+    email: zod.email().max(createContactTaskResponseEmailMax).optional(),
     subject: zod.string(),
     message: zod.string(),
     category: zod
@@ -5999,8 +5997,8 @@ export const CreateContactTicketResponse = zod.strictObject({
     assigneeId: zod
         .string()
         .min(1)
-        .max(createContactTicketResponseAssigneeIdMax)
-        .regex(createContactTicketResponseAssigneeIdRegExp)
+        .max(createContactTaskResponseAssigneeIdMax)
+        .regex(createContactTaskResponseAssigneeIdRegExp)
         .optional(),
     assigneeName: zod.string().optional(),
     notes: zod.array(
@@ -6008,8 +6006,8 @@ export const CreateContactTicketResponse = zod.strictObject({
             authorId: zod
                 .string()
                 .min(1)
-                .max(createContactTicketResponseNotesItemAuthorIdMax)
-                .regex(createContactTicketResponseNotesItemAuthorIdRegExp)
+                .max(createContactTaskResponseNotesItemAuthorIdMax)
+                .regex(createContactTaskResponseNotesItemAuthorIdRegExp)
                 .optional(),
             body: zod.string(),
             at: zod.iso.datetime({ offset: true })
@@ -6023,14 +6021,14 @@ export const CreateContactTicketResponse = zod.strictObject({
     closedAt: zod.iso.datetime({ offset: true }).optional(),
     resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
     respondedAt: zod.iso.datetime({ offset: true }).optional(),
-    earlierTickets: zod
+    earlierTasks: zod
         .array(
             zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(createContactTicketResponseEarlierTicketsItemIdMax)
-                    .regex(createContactTicketResponseEarlierTicketsItemIdRegExp),
+                    .max(createContactTaskResponseEarlierTasksItemIdMax)
+                    .regex(createContactTaskResponseEarlierTasksItemIdRegExp),
                 kind: zod
                     .enum([
                         'contact',
@@ -6062,25 +6060,25 @@ export const CreateContactTicketResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Returns the tickets the caller may work: every visitor message, and the system tickets whose route set the caller holds (an administrator holds them all). Open work first when sorted by `dueAt`.
- * @summary List tickets
+ * Returns the tasks the caller may work: every visitor message, and the system tasks whose route set the caller holds (an administrator holds them all). Open work first when sorted by `dueAt`.
+ * @summary List tasks
  */
-export const listTicketsQueryPageDefault = 1;
-export const listTicketsQueryPageMax = 10000;
-export const listTicketsQueryPageSizeDefault = 10;
-export const listTicketsQueryPageSizeMax = 100;
-export const listTicketsQuerySortMax = 3;
-export const listTicketsQueryTextMax = 200;
-export const listTicketsQueryEmailMax = 254;
-export const listTicketsQueryAssigneeMin = 2;
-export const listTicketsQueryAssigneeMax = 24;
-export const ListTicketsQueryParams = zod.strictObject({
-    page: zod.number().min(1).max(listTicketsQueryPageMax).default(listTicketsQueryPageDefault),
+export const listTasksQueryPageDefault = 1;
+export const listTasksQueryPageMax = 10000;
+export const listTasksQueryPageSizeDefault = 10;
+export const listTasksQueryPageSizeMax = 100;
+export const listTasksQuerySortMax = 3;
+export const listTasksQueryTextMax = 200;
+export const listTasksQueryEmailMax = 254;
+export const listTasksQueryAssigneeMin = 2;
+export const listTasksQueryAssigneeMax = 24;
+export const ListTasksQueryParams = zod.strictObject({
+    page: zod.number().min(1).max(listTasksQueryPageMax).default(listTasksQueryPageDefault),
     pageSize: zod
         .number()
         .min(1)
-        .max(listTicketsQueryPageSizeMax)
-        .default(listTicketsQueryPageSizeDefault),
+        .max(listTasksQueryPageSizeMax)
+        .default(listTasksQueryPageSizeDefault),
     sort: zod
         .array(
             zod.enum([
@@ -6095,10 +6093,10 @@ export const ListTicketsQueryParams = zod.strictObject({
             ])
         )
         .min(1)
-        .max(listTicketsQuerySortMax)
+        .max(listTasksQuerySortMax)
         .optional(),
-    text: zod.string().min(1).max(listTicketsQueryTextMax).optional(),
-    email: zod.email().max(listTicketsQueryEmailMax).optional(),
+    text: zod.string().min(1).max(listTasksQueryTextMax).optional(),
+    email: zod.email().max(listTasksQueryEmailMax).optional(),
     status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
     category: zod
         .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
@@ -6117,40 +6115,34 @@ export const ListTicketsQueryParams = zod.strictObject({
             'dispute'
         ])
         .optional(),
-    assignee: zod
-        .string()
-        .min(listTicketsQueryAssigneeMin)
-        .max(listTicketsQueryAssigneeMax)
-        .optional(),
+    assignee: zod.string().min(listTasksQueryAssigneeMin).max(listTasksQueryAssigneeMax).optional(),
     overdue: zod.boolean().optional()
 });
-export const listTicketsResponseItemsItemIdMax = 64;
-export const listTicketsResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listTicketsResponseItemsItemSubjectIdMax = 64;
-export const listTicketsResponseItemsItemSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listTicketsResponseItemsItemEmailMax = 254;
-export const listTicketsResponseItemsItemAssigneeIdMax = 64;
-export const listTicketsResponseItemsItemAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listTicketsResponseItemsItemNotesItemAuthorIdMax = 64;
-export const listTicketsResponseItemsItemNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listTicketsResponseItemsItemEarlierTicketsItemIdMax = 64;
-export const listTicketsResponseItemsItemEarlierTicketsItemIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const listTicketsResponseMetaPageDefault = 1;
-export const listTicketsResponseMetaPageMax = 10000;
-export const listTicketsResponseMetaPageSizeDefault = 10;
-export const listTicketsResponseMetaPageSizeMax = 100;
-export const listTicketsResponseMetaTotalItemsMin = 0;
-export const listTicketsResponseMetaTotalPagesMin = 0;
-export const ListTicketsResponse = zod.strictObject({
+export const listTasksResponseItemsItemIdMax = 64;
+export const listTasksResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listTasksResponseItemsItemSubjectIdMax = 64;
+export const listTasksResponseItemsItemSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listTasksResponseItemsItemEmailMax = 254;
+export const listTasksResponseItemsItemAssigneeIdMax = 64;
+export const listTasksResponseItemsItemAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listTasksResponseItemsItemNotesItemAuthorIdMax = 64;
+export const listTasksResponseItemsItemNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listTasksResponseItemsItemEarlierTasksItemIdMax = 64;
+export const listTasksResponseItemsItemEarlierTasksItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listTasksResponseMetaPageDefault = 1;
+export const listTasksResponseMetaPageMax = 10000;
+export const listTasksResponseMetaPageSizeDefault = 10;
+export const listTasksResponseMetaPageSizeMax = 100;
+export const listTasksResponseMetaTotalItemsMin = 0;
+export const listTasksResponseMetaTotalPagesMin = 0;
+export const ListTasksResponse = zod.strictObject({
     items: zod.array(
         zod.strictObject({
             id: zod
                 .string()
                 .min(1)
-                .max(listTicketsResponseItemsItemIdMax)
-                .regex(listTicketsResponseItemsItemIdRegExp),
+                .max(listTasksResponseItemsItemIdMax)
+                .regex(listTasksResponseItemsItemIdRegExp),
             source: zod.enum(['visitor', 'system']),
             kind: zod.enum([
                 'contact',
@@ -6167,10 +6159,10 @@ export const ListTicketsResponse = zod.strictObject({
             subjectId: zod
                 .string()
                 .min(1)
-                .max(listTicketsResponseItemsItemSubjectIdMax)
-                .regex(listTicketsResponseItemsItemSubjectIdRegExp)
+                .max(listTasksResponseItemsItemSubjectIdMax)
+                .regex(listTasksResponseItemsItemSubjectIdRegExp)
                 .optional(),
-            email: zod.email().max(listTicketsResponseItemsItemEmailMax).optional(),
+            email: zod.email().max(listTasksResponseItemsItemEmailMax).optional(),
             subject: zod.string(),
             message: zod.string(),
             category: zod
@@ -6194,8 +6186,8 @@ export const ListTicketsResponse = zod.strictObject({
             assigneeId: zod
                 .string()
                 .min(1)
-                .max(listTicketsResponseItemsItemAssigneeIdMax)
-                .regex(listTicketsResponseItemsItemAssigneeIdRegExp)
+                .max(listTasksResponseItemsItemAssigneeIdMax)
+                .regex(listTasksResponseItemsItemAssigneeIdRegExp)
                 .optional(),
             assigneeName: zod.string().optional(),
             notes: zod.array(
@@ -6203,8 +6195,8 @@ export const ListTicketsResponse = zod.strictObject({
                     authorId: zod
                         .string()
                         .min(1)
-                        .max(listTicketsResponseItemsItemNotesItemAuthorIdMax)
-                        .regex(listTicketsResponseItemsItemNotesItemAuthorIdRegExp)
+                        .max(listTasksResponseItemsItemNotesItemAuthorIdMax)
+                        .regex(listTasksResponseItemsItemNotesItemAuthorIdRegExp)
                         .optional(),
                     body: zod.string(),
                     at: zod.iso.datetime({ offset: true })
@@ -6218,14 +6210,14 @@ export const ListTicketsResponse = zod.strictObject({
             closedAt: zod.iso.datetime({ offset: true }).optional(),
             resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
             respondedAt: zod.iso.datetime({ offset: true }).optional(),
-            earlierTickets: zod
+            earlierTasks: zod
                 .array(
                     zod.strictObject({
                         id: zod
                             .string()
                             .min(1)
-                            .max(listTicketsResponseItemsItemEarlierTicketsItemIdMax)
-                            .regex(listTicketsResponseItemsItemEarlierTicketsItemIdRegExp),
+                            .max(listTasksResponseItemsItemEarlierTasksItemIdMax)
+                            .regex(listTasksResponseItemsItemEarlierTasksItemIdRegExp),
                         kind: zod
                             .enum([
                                 'contact',
@@ -6261,37 +6253,37 @@ export const ListTicketsResponse = zod.strictObject({
         page: zod
             .number()
             .min(1)
-            .max(listTicketsResponseMetaPageMax)
-            .default(listTicketsResponseMetaPageDefault),
+            .max(listTasksResponseMetaPageMax)
+            .default(listTasksResponseMetaPageDefault),
         pageSize: zod
             .number()
             .min(1)
-            .max(listTicketsResponseMetaPageSizeMax)
-            .default(listTicketsResponseMetaPageSizeDefault),
-        totalItems: zod.number().min(listTicketsResponseMetaTotalItemsMin),
-        totalPages: zod.number().min(listTicketsResponseMetaTotalPagesMin)
+            .max(listTasksResponseMetaPageSizeMax)
+            .default(listTasksResponseMetaPageSizeDefault),
+        totalItems: zod.number().min(listTasksResponseMetaTotalItemsMin),
+        totalPages: zod.number().min(listTasksResponseMetaTotalPagesMin)
     })
 });
 /**
- * Searches and filters tickets via a JSON request body. Functionally equivalent to `GET /tickets` with query parameters.
- * @summary Search tickets (DTO-friendly)
+ * Searches and filters tasks via a JSON request body. Functionally equivalent to `GET /tasks` with query parameters.
+ * @summary Search tasks (DTO-friendly)
  */
-export const searchTicketsBodyPageDefault = 1;
-export const searchTicketsBodyPageMax = 10000;
-export const searchTicketsBodyPageSizeDefault = 10;
-export const searchTicketsBodyPageSizeMax = 100;
-export const searchTicketsBodySortMax = 3;
-export const searchTicketsBodyTextMax = 200;
-export const searchTicketsBodyAssigneeMin = 2;
-export const searchTicketsBodyAssigneeMax = 24;
-export const searchTicketsBodyEmailMax = 254;
-export const SearchTicketsBody = zod.strictObject({
-    page: zod.number().min(1).max(searchTicketsBodyPageMax).default(searchTicketsBodyPageDefault),
+export const searchTasksBodyPageDefault = 1;
+export const searchTasksBodyPageMax = 10000;
+export const searchTasksBodyPageSizeDefault = 10;
+export const searchTasksBodyPageSizeMax = 100;
+export const searchTasksBodySortMax = 3;
+export const searchTasksBodyTextMax = 200;
+export const searchTasksBodyAssigneeMin = 2;
+export const searchTasksBodyAssigneeMax = 24;
+export const searchTasksBodyEmailMax = 254;
+export const SearchTasksBody = zod.strictObject({
+    page: zod.number().min(1).max(searchTasksBodyPageMax).default(searchTasksBodyPageDefault),
     pageSize: zod
         .number()
         .min(1)
-        .max(searchTicketsBodyPageSizeMax)
-        .default(searchTicketsBodyPageSizeDefault),
+        .max(searchTasksBodyPageSizeMax)
+        .default(searchTasksBodyPageSizeDefault),
     sort: zod
         .array(
             zod.enum([
@@ -6306,9 +6298,9 @@ export const SearchTicketsBody = zod.strictObject({
             ])
         )
         .min(1)
-        .max(searchTicketsBodySortMax)
+        .max(searchTasksBodySortMax)
         .optional(),
-    text: zod.string().min(1).max(searchTicketsBodyTextMax).optional(),
+    text: zod.string().min(1).max(searchTasksBodyTextMax).optional(),
     status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
     category: zod
         .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
@@ -6329,39 +6321,37 @@ export const SearchTicketsBody = zod.strictObject({
         .optional(),
     assignee: zod
         .string()
-        .min(searchTicketsBodyAssigneeMin)
-        .max(searchTicketsBodyAssigneeMax)
+        .min(searchTasksBodyAssigneeMin)
+        .max(searchTasksBodyAssigneeMax)
         .optional(),
     overdue: zod.boolean().optional(),
-    email: zod.email().max(searchTicketsBodyEmailMax).optional()
+    email: zod.email().max(searchTasksBodyEmailMax).optional()
 });
-export const searchTicketsResponseItemsItemIdMax = 64;
-export const searchTicketsResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const searchTicketsResponseItemsItemSubjectIdMax = 64;
-export const searchTicketsResponseItemsItemSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const searchTicketsResponseItemsItemEmailMax = 254;
-export const searchTicketsResponseItemsItemAssigneeIdMax = 64;
-export const searchTicketsResponseItemsItemAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const searchTicketsResponseItemsItemNotesItemAuthorIdMax = 64;
-export const searchTicketsResponseItemsItemNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const searchTicketsResponseItemsItemEarlierTicketsItemIdMax = 64;
-export const searchTicketsResponseItemsItemEarlierTicketsItemIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const searchTicketsResponseMetaPageDefault = 1;
-export const searchTicketsResponseMetaPageMax = 10000;
-export const searchTicketsResponseMetaPageSizeDefault = 10;
-export const searchTicketsResponseMetaPageSizeMax = 100;
-export const searchTicketsResponseMetaTotalItemsMin = 0;
-export const searchTicketsResponseMetaTotalPagesMin = 0;
-export const SearchTicketsResponse = zod.strictObject({
+export const searchTasksResponseItemsItemIdMax = 64;
+export const searchTasksResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const searchTasksResponseItemsItemSubjectIdMax = 64;
+export const searchTasksResponseItemsItemSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const searchTasksResponseItemsItemEmailMax = 254;
+export const searchTasksResponseItemsItemAssigneeIdMax = 64;
+export const searchTasksResponseItemsItemAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const searchTasksResponseItemsItemNotesItemAuthorIdMax = 64;
+export const searchTasksResponseItemsItemNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const searchTasksResponseItemsItemEarlierTasksItemIdMax = 64;
+export const searchTasksResponseItemsItemEarlierTasksItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const searchTasksResponseMetaPageDefault = 1;
+export const searchTasksResponseMetaPageMax = 10000;
+export const searchTasksResponseMetaPageSizeDefault = 10;
+export const searchTasksResponseMetaPageSizeMax = 100;
+export const searchTasksResponseMetaTotalItemsMin = 0;
+export const searchTasksResponseMetaTotalPagesMin = 0;
+export const SearchTasksResponse = zod.strictObject({
     items: zod.array(
         zod.strictObject({
             id: zod
                 .string()
                 .min(1)
-                .max(searchTicketsResponseItemsItemIdMax)
-                .regex(searchTicketsResponseItemsItemIdRegExp),
+                .max(searchTasksResponseItemsItemIdMax)
+                .regex(searchTasksResponseItemsItemIdRegExp),
             source: zod.enum(['visitor', 'system']),
             kind: zod.enum([
                 'contact',
@@ -6378,10 +6368,10 @@ export const SearchTicketsResponse = zod.strictObject({
             subjectId: zod
                 .string()
                 .min(1)
-                .max(searchTicketsResponseItemsItemSubjectIdMax)
-                .regex(searchTicketsResponseItemsItemSubjectIdRegExp)
+                .max(searchTasksResponseItemsItemSubjectIdMax)
+                .regex(searchTasksResponseItemsItemSubjectIdRegExp)
                 .optional(),
-            email: zod.email().max(searchTicketsResponseItemsItemEmailMax).optional(),
+            email: zod.email().max(searchTasksResponseItemsItemEmailMax).optional(),
             subject: zod.string(),
             message: zod.string(),
             category: zod
@@ -6405,8 +6395,8 @@ export const SearchTicketsResponse = zod.strictObject({
             assigneeId: zod
                 .string()
                 .min(1)
-                .max(searchTicketsResponseItemsItemAssigneeIdMax)
-                .regex(searchTicketsResponseItemsItemAssigneeIdRegExp)
+                .max(searchTasksResponseItemsItemAssigneeIdMax)
+                .regex(searchTasksResponseItemsItemAssigneeIdRegExp)
                 .optional(),
             assigneeName: zod.string().optional(),
             notes: zod.array(
@@ -6414,8 +6404,8 @@ export const SearchTicketsResponse = zod.strictObject({
                     authorId: zod
                         .string()
                         .min(1)
-                        .max(searchTicketsResponseItemsItemNotesItemAuthorIdMax)
-                        .regex(searchTicketsResponseItemsItemNotesItemAuthorIdRegExp)
+                        .max(searchTasksResponseItemsItemNotesItemAuthorIdMax)
+                        .regex(searchTasksResponseItemsItemNotesItemAuthorIdRegExp)
                         .optional(),
                     body: zod.string(),
                     at: zod.iso.datetime({ offset: true })
@@ -6429,14 +6419,14 @@ export const SearchTicketsResponse = zod.strictObject({
             closedAt: zod.iso.datetime({ offset: true }).optional(),
             resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
             respondedAt: zod.iso.datetime({ offset: true }).optional(),
-            earlierTickets: zod
+            earlierTasks: zod
                 .array(
                     zod.strictObject({
                         id: zod
                             .string()
                             .min(1)
-                            .max(searchTicketsResponseItemsItemEarlierTicketsItemIdMax)
-                            .regex(searchTicketsResponseItemsItemEarlierTicketsItemIdRegExp),
+                            .max(searchTasksResponseItemsItemEarlierTasksItemIdMax)
+                            .regex(searchTasksResponseItemsItemEarlierTasksItemIdRegExp),
                         kind: zod
                             .enum([
                                 'contact',
@@ -6472,53 +6462,53 @@ export const SearchTicketsResponse = zod.strictObject({
         page: zod
             .number()
             .min(1)
-            .max(searchTicketsResponseMetaPageMax)
-            .default(searchTicketsResponseMetaPageDefault),
+            .max(searchTasksResponseMetaPageMax)
+            .default(searchTasksResponseMetaPageDefault),
         pageSize: zod
             .number()
             .min(1)
-            .max(searchTicketsResponseMetaPageSizeMax)
-            .default(searchTicketsResponseMetaPageSizeDefault),
-        totalItems: zod.number().min(searchTicketsResponseMetaTotalItemsMin),
-        totalPages: zod.number().min(searchTicketsResponseMetaTotalPagesMin)
+            .max(searchTasksResponseMetaPageSizeMax)
+            .default(searchTasksResponseMetaPageSizeDefault),
+        totalItems: zod.number().min(searchTasksResponseMetaTotalItemsMin),
+        totalPages: zod.number().min(searchTasksResponseMetaTotalPagesMin)
     })
 });
 /**
- * How much work the caller's jurisdiction holds: open tickets, the caller's own, the overdue ones and the unassigned ones. Never cached: it is one person's view.
+ * How much work the caller's jurisdiction holds: open tasks, the caller's own, the overdue ones and the unassigned ones. Never cached: it is one person's view.
  * @summary Counts for the staff badge
  */
-export const getTicketSummaryResponseOpenMin = 0;
-export const getTicketSummaryResponseMineMin = 0;
-export const getTicketSummaryResponseOverdueMin = 0;
-export const getTicketSummaryResponseUnassignedMin = 0;
-export const GetTicketSummaryResponse = zod.strictObject({
-    open: zod.number().min(getTicketSummaryResponseOpenMin),
-    mine: zod.number().min(getTicketSummaryResponseMineMin),
-    overdue: zod.number().min(getTicketSummaryResponseOverdueMin),
-    unassigned: zod.number().min(getTicketSummaryResponseUnassignedMin)
+export const getTaskSummaryResponseOpenMin = 0;
+export const getTaskSummaryResponseMineMin = 0;
+export const getTaskSummaryResponseOverdueMin = 0;
+export const getTaskSummaryResponseUnassignedMin = 0;
+export const GetTaskSummaryResponse = zod.strictObject({
+    open: zod.number().min(getTaskSummaryResponseOpenMin),
+    mine: zod.number().min(getTaskSummaryResponseMineMin),
+    overdue: zod.number().min(getTaskSummaryResponseOverdueMin),
+    unassigned: zod.number().min(getTaskSummaryResponseUnassignedMin)
 });
 /**
- * One ticket with its notes, assignee and the earlier tickets about the same record. A visitor ticket names a person, so staff reading it is audited. An unknown, malformed or out-of-jurisdiction id is a 404.
- * @summary Get a ticket
+ * One task with its notes, assignee and the earlier tasks about the same record. A visitor task names a person, so staff reading it is audited. An unknown, malformed or out-of-jurisdiction id is a 404.
+ * @summary Get a task
  */
-export const getTicketPathIdMax = 64;
-export const getTicketPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const GetTicketParams = zod.strictObject({
-    id: zod.string().min(1).max(getTicketPathIdMax).regex(getTicketPathIdRegExp)
+export const getTaskPathIdMax = 64;
+export const getTaskPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetTaskParams = zod.strictObject({
+    id: zod.string().min(1).max(getTaskPathIdMax).regex(getTaskPathIdRegExp)
 });
-export const getTicketResponseIdMax = 64;
-export const getTicketResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getTicketResponseSubjectIdMax = 64;
-export const getTicketResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getTicketResponseEmailMax = 254;
-export const getTicketResponseAssigneeIdMax = 64;
-export const getTicketResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getTicketResponseNotesItemAuthorIdMax = 64;
-export const getTicketResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getTicketResponseEarlierTicketsItemIdMax = 64;
-export const getTicketResponseEarlierTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const GetTicketResponse = zod.strictObject({
-    id: zod.string().min(1).max(getTicketResponseIdMax).regex(getTicketResponseIdRegExp),
+export const getTaskResponseIdMax = 64;
+export const getTaskResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getTaskResponseSubjectIdMax = 64;
+export const getTaskResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getTaskResponseEmailMax = 254;
+export const getTaskResponseAssigneeIdMax = 64;
+export const getTaskResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getTaskResponseNotesItemAuthorIdMax = 64;
+export const getTaskResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getTaskResponseEarlierTasksItemIdMax = 64;
+export const getTaskResponseEarlierTasksItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetTaskResponse = zod.strictObject({
+    id: zod.string().min(1).max(getTaskResponseIdMax).regex(getTaskResponseIdRegExp),
     source: zod.enum(['visitor', 'system']),
     kind: zod.enum([
         'contact',
@@ -6535,10 +6525,10 @@ export const GetTicketResponse = zod.strictObject({
     subjectId: zod
         .string()
         .min(1)
-        .max(getTicketResponseSubjectIdMax)
-        .regex(getTicketResponseSubjectIdRegExp)
+        .max(getTaskResponseSubjectIdMax)
+        .regex(getTaskResponseSubjectIdRegExp)
         .optional(),
-    email: zod.email().max(getTicketResponseEmailMax).optional(),
+    email: zod.email().max(getTaskResponseEmailMax).optional(),
     subject: zod.string(),
     message: zod.string(),
     category: zod
@@ -6555,8 +6545,8 @@ export const GetTicketResponse = zod.strictObject({
     assigneeId: zod
         .string()
         .min(1)
-        .max(getTicketResponseAssigneeIdMax)
-        .regex(getTicketResponseAssigneeIdRegExp)
+        .max(getTaskResponseAssigneeIdMax)
+        .regex(getTaskResponseAssigneeIdRegExp)
         .optional(),
     assigneeName: zod.string().optional(),
     notes: zod.array(
@@ -6564,8 +6554,8 @@ export const GetTicketResponse = zod.strictObject({
             authorId: zod
                 .string()
                 .min(1)
-                .max(getTicketResponseNotesItemAuthorIdMax)
-                .regex(getTicketResponseNotesItemAuthorIdRegExp)
+                .max(getTaskResponseNotesItemAuthorIdMax)
+                .regex(getTaskResponseNotesItemAuthorIdRegExp)
                 .optional(),
             body: zod.string(),
             at: zod.iso.datetime({ offset: true })
@@ -6579,14 +6569,14 @@ export const GetTicketResponse = zod.strictObject({
     closedAt: zod.iso.datetime({ offset: true }).optional(),
     resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
     respondedAt: zod.iso.datetime({ offset: true }).optional(),
-    earlierTickets: zod
+    earlierTasks: zod
         .array(
             zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(getTicketResponseEarlierTicketsItemIdMax)
-                    .regex(getTicketResponseEarlierTicketsItemIdRegExp),
+                    .max(getTaskResponseEarlierTasksItemIdMax)
+                    .regex(getTaskResponseEarlierTasksItemIdRegExp),
                 kind: zod
                     .enum([
                         'contact',
@@ -6618,37 +6608,37 @@ export const GetTicketResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Permanently removes the ticket identified by `{id}`. Needs `delete:Ticket` and, for a system ticket, the ticket's route set.
- * @summary Delete a ticket
+ * Permanently removes the task identified by `{id}`. Needs `delete:Task` and, for a system task, the task's route set.
+ * @summary Delete a task
  */
-export const deleteTicketPathIdMax = 64;
-export const deleteTicketPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const DeleteTicketParams = zod.strictObject({
-    id: zod.string().min(1).max(deleteTicketPathIdMax).regex(deleteTicketPathIdRegExp)
+export const deleteTaskPathIdMax = 64;
+export const deleteTaskPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const DeleteTaskParams = zod.strictObject({
+    id: zod.string().min(1).max(deleteTaskPathIdMax).regex(deleteTaskPathIdRegExp)
 });
-export const DeleteTicketResponse = zod.void();
+export const DeleteTaskResponse = zod.void();
 /**
- * From `new`, `in_progress` or `spam` to `resolved`, with `resolution: staff`. Stamps `closedAt` (kept when it was already closed) and `respondedAt` (once), and releases the dedup key. No body. Needs `update:Ticket` and, for a system ticket, its route set. The move is conditional on the status read, so a repeat answers 409.
- * @summary Resolve a ticket
+ * From `new`, `in_progress` or `spam` to `resolved`, with `resolution: staff`. Stamps `closedAt` (kept when it was already closed) and `respondedAt` (once), and releases the dedup key. No body. Needs `update:Task` and, for a system task, its route set. The move is conditional on the status read, so a repeat answers 409.
+ * @summary Resolve a task
  */
-export const resolveTicketPathIdMax = 64;
-export const resolveTicketPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const ResolveTicketParams = zod.strictObject({
-    id: zod.string().min(1).max(resolveTicketPathIdMax).regex(resolveTicketPathIdRegExp)
+export const resolveTaskPathIdMax = 64;
+export const resolveTaskPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ResolveTaskParams = zod.strictObject({
+    id: zod.string().min(1).max(resolveTaskPathIdMax).regex(resolveTaskPathIdRegExp)
 });
-export const resolveTicketResponseIdMax = 64;
-export const resolveTicketResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const resolveTicketResponseSubjectIdMax = 64;
-export const resolveTicketResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const resolveTicketResponseEmailMax = 254;
-export const resolveTicketResponseAssigneeIdMax = 64;
-export const resolveTicketResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const resolveTicketResponseNotesItemAuthorIdMax = 64;
-export const resolveTicketResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const resolveTicketResponseEarlierTicketsItemIdMax = 64;
-export const resolveTicketResponseEarlierTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const ResolveTicketResponse = zod.strictObject({
-    id: zod.string().min(1).max(resolveTicketResponseIdMax).regex(resolveTicketResponseIdRegExp),
+export const resolveTaskResponseIdMax = 64;
+export const resolveTaskResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const resolveTaskResponseSubjectIdMax = 64;
+export const resolveTaskResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const resolveTaskResponseEmailMax = 254;
+export const resolveTaskResponseAssigneeIdMax = 64;
+export const resolveTaskResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const resolveTaskResponseNotesItemAuthorIdMax = 64;
+export const resolveTaskResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const resolveTaskResponseEarlierTasksItemIdMax = 64;
+export const resolveTaskResponseEarlierTasksItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ResolveTaskResponse = zod.strictObject({
+    id: zod.string().min(1).max(resolveTaskResponseIdMax).regex(resolveTaskResponseIdRegExp),
     source: zod.enum(['visitor', 'system']),
     kind: zod.enum([
         'contact',
@@ -6665,10 +6655,10 @@ export const ResolveTicketResponse = zod.strictObject({
     subjectId: zod
         .string()
         .min(1)
-        .max(resolveTicketResponseSubjectIdMax)
-        .regex(resolveTicketResponseSubjectIdRegExp)
+        .max(resolveTaskResponseSubjectIdMax)
+        .regex(resolveTaskResponseSubjectIdRegExp)
         .optional(),
-    email: zod.email().max(resolveTicketResponseEmailMax).optional(),
+    email: zod.email().max(resolveTaskResponseEmailMax).optional(),
     subject: zod.string(),
     message: zod.string(),
     category: zod
@@ -6685,8 +6675,8 @@ export const ResolveTicketResponse = zod.strictObject({
     assigneeId: zod
         .string()
         .min(1)
-        .max(resolveTicketResponseAssigneeIdMax)
-        .regex(resolveTicketResponseAssigneeIdRegExp)
+        .max(resolveTaskResponseAssigneeIdMax)
+        .regex(resolveTaskResponseAssigneeIdRegExp)
         .optional(),
     assigneeName: zod.string().optional(),
     notes: zod.array(
@@ -6694,8 +6684,8 @@ export const ResolveTicketResponse = zod.strictObject({
             authorId: zod
                 .string()
                 .min(1)
-                .max(resolveTicketResponseNotesItemAuthorIdMax)
-                .regex(resolveTicketResponseNotesItemAuthorIdRegExp)
+                .max(resolveTaskResponseNotesItemAuthorIdMax)
+                .regex(resolveTaskResponseNotesItemAuthorIdRegExp)
                 .optional(),
             body: zod.string(),
             at: zod.iso.datetime({ offset: true })
@@ -6709,14 +6699,14 @@ export const ResolveTicketResponse = zod.strictObject({
     closedAt: zod.iso.datetime({ offset: true }).optional(),
     resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
     respondedAt: zod.iso.datetime({ offset: true }).optional(),
-    earlierTickets: zod
+    earlierTasks: zod
         .array(
             zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(resolveTicketResponseEarlierTicketsItemIdMax)
-                    .regex(resolveTicketResponseEarlierTicketsItemIdRegExp),
+                    .max(resolveTaskResponseEarlierTasksItemIdMax)
+                    .regex(resolveTaskResponseEarlierTasksItemIdRegExp),
                 kind: zod
                     .enum([
                         'contact',
@@ -6748,27 +6738,27 @@ export const ResolveTicketResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * From `new`, `in_progress` or `resolved` to `spam`, with `resolution: spam`. Same stamps as a resolve, without `respondedAt`. Also undoes a false resolve. No body. Needs `update:Ticket` and, for a system ticket, its route set.
- * @summary Mark a ticket as spam
+ * From `new`, `in_progress` or `resolved` to `spam`, with `resolution: spam`. Same stamps as a resolve, without `respondedAt`. Also undoes a false resolve. No body. Needs `update:Task` and, for a system task, its route set.
+ * @summary Mark a task as spam
  */
-export const markTicketSpamPathIdMax = 64;
-export const markTicketSpamPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const MarkTicketSpamParams = zod.strictObject({
-    id: zod.string().min(1).max(markTicketSpamPathIdMax).regex(markTicketSpamPathIdRegExp)
+export const markTaskSpamPathIdMax = 64;
+export const markTaskSpamPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const MarkTaskSpamParams = zod.strictObject({
+    id: zod.string().min(1).max(markTaskSpamPathIdMax).regex(markTaskSpamPathIdRegExp)
 });
-export const markTicketSpamResponseIdMax = 64;
-export const markTicketSpamResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const markTicketSpamResponseSubjectIdMax = 64;
-export const markTicketSpamResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const markTicketSpamResponseEmailMax = 254;
-export const markTicketSpamResponseAssigneeIdMax = 64;
-export const markTicketSpamResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const markTicketSpamResponseNotesItemAuthorIdMax = 64;
-export const markTicketSpamResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const markTicketSpamResponseEarlierTicketsItemIdMax = 64;
-export const markTicketSpamResponseEarlierTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const MarkTicketSpamResponse = zod.strictObject({
-    id: zod.string().min(1).max(markTicketSpamResponseIdMax).regex(markTicketSpamResponseIdRegExp),
+export const markTaskSpamResponseIdMax = 64;
+export const markTaskSpamResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const markTaskSpamResponseSubjectIdMax = 64;
+export const markTaskSpamResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const markTaskSpamResponseEmailMax = 254;
+export const markTaskSpamResponseAssigneeIdMax = 64;
+export const markTaskSpamResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const markTaskSpamResponseNotesItemAuthorIdMax = 64;
+export const markTaskSpamResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const markTaskSpamResponseEarlierTasksItemIdMax = 64;
+export const markTaskSpamResponseEarlierTasksItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const MarkTaskSpamResponse = zod.strictObject({
+    id: zod.string().min(1).max(markTaskSpamResponseIdMax).regex(markTaskSpamResponseIdRegExp),
     source: zod.enum(['visitor', 'system']),
     kind: zod.enum([
         'contact',
@@ -6785,10 +6775,10 @@ export const MarkTicketSpamResponse = zod.strictObject({
     subjectId: zod
         .string()
         .min(1)
-        .max(markTicketSpamResponseSubjectIdMax)
-        .regex(markTicketSpamResponseSubjectIdRegExp)
+        .max(markTaskSpamResponseSubjectIdMax)
+        .regex(markTaskSpamResponseSubjectIdRegExp)
         .optional(),
-    email: zod.email().max(markTicketSpamResponseEmailMax).optional(),
+    email: zod.email().max(markTaskSpamResponseEmailMax).optional(),
     subject: zod.string(),
     message: zod.string(),
     category: zod
@@ -6805,8 +6795,8 @@ export const MarkTicketSpamResponse = zod.strictObject({
     assigneeId: zod
         .string()
         .min(1)
-        .max(markTicketSpamResponseAssigneeIdMax)
-        .regex(markTicketSpamResponseAssigneeIdRegExp)
+        .max(markTaskSpamResponseAssigneeIdMax)
+        .regex(markTaskSpamResponseAssigneeIdRegExp)
         .optional(),
     assigneeName: zod.string().optional(),
     notes: zod.array(
@@ -6814,8 +6804,8 @@ export const MarkTicketSpamResponse = zod.strictObject({
             authorId: zod
                 .string()
                 .min(1)
-                .max(markTicketSpamResponseNotesItemAuthorIdMax)
-                .regex(markTicketSpamResponseNotesItemAuthorIdRegExp)
+                .max(markTaskSpamResponseNotesItemAuthorIdMax)
+                .regex(markTaskSpamResponseNotesItemAuthorIdRegExp)
                 .optional(),
             body: zod.string(),
             at: zod.iso.datetime({ offset: true })
@@ -6829,14 +6819,14 @@ export const MarkTicketSpamResponse = zod.strictObject({
     closedAt: zod.iso.datetime({ offset: true }).optional(),
     resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
     respondedAt: zod.iso.datetime({ offset: true }).optional(),
-    earlierTickets: zod
+    earlierTasks: zod
         .array(
             zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(markTicketSpamResponseEarlierTicketsItemIdMax)
-                    .regex(markTicketSpamResponseEarlierTicketsItemIdRegExp),
+                    .max(markTaskSpamResponseEarlierTasksItemIdMax)
+                    .regex(markTaskSpamResponseEarlierTasksItemIdRegExp),
                 kind: zod
                     .enum([
                         'contact',
@@ -6868,27 +6858,27 @@ export const MarkTicketSpamResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * From `resolved` or `spam` to `in_progress` when it has an assignee, else `new`. Clears `closedAt` and `resolution` (the retention clock stops) and restores the dedup key of a linked ticket. `dueAt` is kept: the deadline belongs to the situation, not to the reopen. When a newer open ticket already covers the same situation the answer is 409 `TICKET_SUPERSEDED` with `details.ticketId`. No body. Needs `update:Ticket` and, for a system ticket, its route set.
- * @summary Reopen a ticket
+ * From `resolved` or `spam` to `in_progress` when it has an assignee, else `new`. Clears `closedAt` and `resolution` (the retention clock stops) and restores the dedup key of a linked task. `dueAt` is kept: the deadline belongs to the situation, not to the reopen. When a newer open task already covers the same situation the answer is 409 `TASK_SUPERSEDED` with `details.taskId`. No body. Needs `update:Task` and, for a system task, its route set.
+ * @summary Reopen a task
  */
-export const reopenTicketPathIdMax = 64;
-export const reopenTicketPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const ReopenTicketParams = zod.strictObject({
-    id: zod.string().min(1).max(reopenTicketPathIdMax).regex(reopenTicketPathIdRegExp)
+export const reopenTaskPathIdMax = 64;
+export const reopenTaskPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ReopenTaskParams = zod.strictObject({
+    id: zod.string().min(1).max(reopenTaskPathIdMax).regex(reopenTaskPathIdRegExp)
 });
-export const reopenTicketResponseIdMax = 64;
-export const reopenTicketResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const reopenTicketResponseSubjectIdMax = 64;
-export const reopenTicketResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const reopenTicketResponseEmailMax = 254;
-export const reopenTicketResponseAssigneeIdMax = 64;
-export const reopenTicketResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const reopenTicketResponseNotesItemAuthorIdMax = 64;
-export const reopenTicketResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const reopenTicketResponseEarlierTicketsItemIdMax = 64;
-export const reopenTicketResponseEarlierTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const ReopenTicketResponse = zod.strictObject({
-    id: zod.string().min(1).max(reopenTicketResponseIdMax).regex(reopenTicketResponseIdRegExp),
+export const reopenTaskResponseIdMax = 64;
+export const reopenTaskResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const reopenTaskResponseSubjectIdMax = 64;
+export const reopenTaskResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const reopenTaskResponseEmailMax = 254;
+export const reopenTaskResponseAssigneeIdMax = 64;
+export const reopenTaskResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const reopenTaskResponseNotesItemAuthorIdMax = 64;
+export const reopenTaskResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const reopenTaskResponseEarlierTasksItemIdMax = 64;
+export const reopenTaskResponseEarlierTasksItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ReopenTaskResponse = zod.strictObject({
+    id: zod.string().min(1).max(reopenTaskResponseIdMax).regex(reopenTaskResponseIdRegExp),
     source: zod.enum(['visitor', 'system']),
     kind: zod.enum([
         'contact',
@@ -6905,10 +6895,10 @@ export const ReopenTicketResponse = zod.strictObject({
     subjectId: zod
         .string()
         .min(1)
-        .max(reopenTicketResponseSubjectIdMax)
-        .regex(reopenTicketResponseSubjectIdRegExp)
+        .max(reopenTaskResponseSubjectIdMax)
+        .regex(reopenTaskResponseSubjectIdRegExp)
         .optional(),
-    email: zod.email().max(reopenTicketResponseEmailMax).optional(),
+    email: zod.email().max(reopenTaskResponseEmailMax).optional(),
     subject: zod.string(),
     message: zod.string(),
     category: zod
@@ -6925,8 +6915,8 @@ export const ReopenTicketResponse = zod.strictObject({
     assigneeId: zod
         .string()
         .min(1)
-        .max(reopenTicketResponseAssigneeIdMax)
-        .regex(reopenTicketResponseAssigneeIdRegExp)
+        .max(reopenTaskResponseAssigneeIdMax)
+        .regex(reopenTaskResponseAssigneeIdRegExp)
         .optional(),
     assigneeName: zod.string().optional(),
     notes: zod.array(
@@ -6934,8 +6924,8 @@ export const ReopenTicketResponse = zod.strictObject({
             authorId: zod
                 .string()
                 .min(1)
-                .max(reopenTicketResponseNotesItemAuthorIdMax)
-                .regex(reopenTicketResponseNotesItemAuthorIdRegExp)
+                .max(reopenTaskResponseNotesItemAuthorIdMax)
+                .regex(reopenTaskResponseNotesItemAuthorIdRegExp)
                 .optional(),
             body: zod.string(),
             at: zod.iso.datetime({ offset: true })
@@ -6949,14 +6939,14 @@ export const ReopenTicketResponse = zod.strictObject({
     closedAt: zod.iso.datetime({ offset: true }).optional(),
     resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
     respondedAt: zod.iso.datetime({ offset: true }).optional(),
-    earlierTickets: zod
+    earlierTasks: zod
         .array(
             zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(reopenTicketResponseEarlierTicketsItemIdMax)
-                    .regex(reopenTicketResponseEarlierTicketsItemIdRegExp),
+                    .max(reopenTaskResponseEarlierTasksItemIdMax)
+                    .regex(reopenTaskResponseEarlierTasksItemIdRegExp),
                 kind: zod
                     .enum([
                         'contact',
@@ -6988,32 +6978,32 @@ export const ReopenTicketResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Hands the ticket to one person (taking it is assigning yourself). A `new` ticket becomes `in_progress`. The person must hold the permission set that works the ticket. Replaces any earlier assignee. A closed ticket answers 409 `TICKET_NOT_OPEN`.
- * @summary Assign a ticket
+ * Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`.
+ * @summary Assign a task
  */
-export const assignTicketPathIdMax = 64;
-export const assignTicketPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const AssignTicketParams = zod.strictObject({
-    id: zod.string().min(1).max(assignTicketPathIdMax).regex(assignTicketPathIdRegExp)
+export const assignTaskPathIdMax = 64;
+export const assignTaskPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const AssignTaskParams = zod.strictObject({
+    id: zod.string().min(1).max(assignTaskPathIdMax).regex(assignTaskPathIdRegExp)
 });
-export const assignTicketBodyUserIdMax = 64;
-export const assignTicketBodyUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const AssignTicketBody = zod.strictObject({
-    userId: zod.string().min(1).max(assignTicketBodyUserIdMax).regex(assignTicketBodyUserIdRegExp)
+export const assignTaskBodyUserIdMax = 64;
+export const assignTaskBodyUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const AssignTaskBody = zod.strictObject({
+    userId: zod.string().min(1).max(assignTaskBodyUserIdMax).regex(assignTaskBodyUserIdRegExp)
 });
-export const assignTicketResponseIdMax = 64;
-export const assignTicketResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const assignTicketResponseSubjectIdMax = 64;
-export const assignTicketResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const assignTicketResponseEmailMax = 254;
-export const assignTicketResponseAssigneeIdMax = 64;
-export const assignTicketResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const assignTicketResponseNotesItemAuthorIdMax = 64;
-export const assignTicketResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const assignTicketResponseEarlierTicketsItemIdMax = 64;
-export const assignTicketResponseEarlierTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const AssignTicketResponse = zod.strictObject({
-    id: zod.string().min(1).max(assignTicketResponseIdMax).regex(assignTicketResponseIdRegExp),
+export const assignTaskResponseIdMax = 64;
+export const assignTaskResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const assignTaskResponseSubjectIdMax = 64;
+export const assignTaskResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const assignTaskResponseEmailMax = 254;
+export const assignTaskResponseAssigneeIdMax = 64;
+export const assignTaskResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const assignTaskResponseNotesItemAuthorIdMax = 64;
+export const assignTaskResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const assignTaskResponseEarlierTasksItemIdMax = 64;
+export const assignTaskResponseEarlierTasksItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const AssignTaskResponse = zod.strictObject({
+    id: zod.string().min(1).max(assignTaskResponseIdMax).regex(assignTaskResponseIdRegExp),
     source: zod.enum(['visitor', 'system']),
     kind: zod.enum([
         'contact',
@@ -7030,10 +7020,10 @@ export const AssignTicketResponse = zod.strictObject({
     subjectId: zod
         .string()
         .min(1)
-        .max(assignTicketResponseSubjectIdMax)
-        .regex(assignTicketResponseSubjectIdRegExp)
+        .max(assignTaskResponseSubjectIdMax)
+        .regex(assignTaskResponseSubjectIdRegExp)
         .optional(),
-    email: zod.email().max(assignTicketResponseEmailMax).optional(),
+    email: zod.email().max(assignTaskResponseEmailMax).optional(),
     subject: zod.string(),
     message: zod.string(),
     category: zod
@@ -7050,8 +7040,8 @@ export const AssignTicketResponse = zod.strictObject({
     assigneeId: zod
         .string()
         .min(1)
-        .max(assignTicketResponseAssigneeIdMax)
-        .regex(assignTicketResponseAssigneeIdRegExp)
+        .max(assignTaskResponseAssigneeIdMax)
+        .regex(assignTaskResponseAssigneeIdRegExp)
         .optional(),
     assigneeName: zod.string().optional(),
     notes: zod.array(
@@ -7059,8 +7049,8 @@ export const AssignTicketResponse = zod.strictObject({
             authorId: zod
                 .string()
                 .min(1)
-                .max(assignTicketResponseNotesItemAuthorIdMax)
-                .regex(assignTicketResponseNotesItemAuthorIdRegExp)
+                .max(assignTaskResponseNotesItemAuthorIdMax)
+                .regex(assignTaskResponseNotesItemAuthorIdRegExp)
                 .optional(),
             body: zod.string(),
             at: zod.iso.datetime({ offset: true })
@@ -7074,14 +7064,14 @@ export const AssignTicketResponse = zod.strictObject({
     closedAt: zod.iso.datetime({ offset: true }).optional(),
     resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
     respondedAt: zod.iso.datetime({ offset: true }).optional(),
-    earlierTickets: zod
+    earlierTasks: zod
         .array(
             zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(assignTicketResponseEarlierTicketsItemIdMax)
-                    .regex(assignTicketResponseEarlierTicketsItemIdRegExp),
+                    .max(assignTaskResponseEarlierTasksItemIdMax)
+                    .regex(assignTaskResponseEarlierTasksItemIdRegExp),
                 kind: zod
                     .enum([
                         'contact',
@@ -7113,27 +7103,27 @@ export const AssignTicketResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Clears the assignee. An `in_progress` ticket goes back to `new`. Answers 200 whether or not anyone held it.
- * @summary Give a ticket back
+ * Clears the assignee. An `in_progress` task goes back to `new`. Answers 200 whether or not anyone held it.
+ * @summary Give a task back
  */
-export const unassignTicketPathIdMax = 64;
-export const unassignTicketPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const UnassignTicketParams = zod.strictObject({
-    id: zod.string().min(1).max(unassignTicketPathIdMax).regex(unassignTicketPathIdRegExp)
+export const unassignTaskPathIdMax = 64;
+export const unassignTaskPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const UnassignTaskParams = zod.strictObject({
+    id: zod.string().min(1).max(unassignTaskPathIdMax).regex(unassignTaskPathIdRegExp)
 });
-export const unassignTicketResponseIdMax = 64;
-export const unassignTicketResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const unassignTicketResponseSubjectIdMax = 64;
-export const unassignTicketResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const unassignTicketResponseEmailMax = 254;
-export const unassignTicketResponseAssigneeIdMax = 64;
-export const unassignTicketResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const unassignTicketResponseNotesItemAuthorIdMax = 64;
-export const unassignTicketResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const unassignTicketResponseEarlierTicketsItemIdMax = 64;
-export const unassignTicketResponseEarlierTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const UnassignTicketResponse = zod.strictObject({
-    id: zod.string().min(1).max(unassignTicketResponseIdMax).regex(unassignTicketResponseIdRegExp),
+export const unassignTaskResponseIdMax = 64;
+export const unassignTaskResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const unassignTaskResponseSubjectIdMax = 64;
+export const unassignTaskResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const unassignTaskResponseEmailMax = 254;
+export const unassignTaskResponseAssigneeIdMax = 64;
+export const unassignTaskResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const unassignTaskResponseNotesItemAuthorIdMax = 64;
+export const unassignTaskResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const unassignTaskResponseEarlierTasksItemIdMax = 64;
+export const unassignTaskResponseEarlierTasksItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const UnassignTaskResponse = zod.strictObject({
+    id: zod.string().min(1).max(unassignTaskResponseIdMax).regex(unassignTaskResponseIdRegExp),
     source: zod.enum(['visitor', 'system']),
     kind: zod.enum([
         'contact',
@@ -7150,10 +7140,10 @@ export const UnassignTicketResponse = zod.strictObject({
     subjectId: zod
         .string()
         .min(1)
-        .max(unassignTicketResponseSubjectIdMax)
-        .regex(unassignTicketResponseSubjectIdRegExp)
+        .max(unassignTaskResponseSubjectIdMax)
+        .regex(unassignTaskResponseSubjectIdRegExp)
         .optional(),
-    email: zod.email().max(unassignTicketResponseEmailMax).optional(),
+    email: zod.email().max(unassignTaskResponseEmailMax).optional(),
     subject: zod.string(),
     message: zod.string(),
     category: zod
@@ -7170,8 +7160,8 @@ export const UnassignTicketResponse = zod.strictObject({
     assigneeId: zod
         .string()
         .min(1)
-        .max(unassignTicketResponseAssigneeIdMax)
-        .regex(unassignTicketResponseAssigneeIdRegExp)
+        .max(unassignTaskResponseAssigneeIdMax)
+        .regex(unassignTaskResponseAssigneeIdRegExp)
         .optional(),
     assigneeName: zod.string().optional(),
     notes: zod.array(
@@ -7179,8 +7169,8 @@ export const UnassignTicketResponse = zod.strictObject({
             authorId: zod
                 .string()
                 .min(1)
-                .max(unassignTicketResponseNotesItemAuthorIdMax)
-                .regex(unassignTicketResponseNotesItemAuthorIdRegExp)
+                .max(unassignTaskResponseNotesItemAuthorIdMax)
+                .regex(unassignTaskResponseNotesItemAuthorIdRegExp)
                 .optional(),
             body: zod.string(),
             at: zod.iso.datetime({ offset: true })
@@ -7194,14 +7184,14 @@ export const UnassignTicketResponse = zod.strictObject({
     closedAt: zod.iso.datetime({ offset: true }).optional(),
     resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
     respondedAt: zod.iso.datetime({ offset: true }).optional(),
-    earlierTickets: zod
+    earlierTasks: zod
         .array(
             zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(unassignTicketResponseEarlierTicketsItemIdMax)
-                    .regex(unassignTicketResponseEarlierTicketsItemIdRegExp),
+                    .max(unassignTaskResponseEarlierTasksItemIdMax)
+                    .regex(unassignTaskResponseEarlierTasksItemIdRegExp),
                 kind: zod
                     .enum([
                         'contact',
@@ -7236,32 +7226,28 @@ export const UnassignTicketResponse = zod.strictObject({
  * Appends a note to the staff thread: append-only, with its author and time. Notes are written and read by staff, and the data subject's export carries them without the author. Write each one as if the customer will read it.
  * @summary Add a staff note
  */
-export const createTicketNotePathIdMax = 64;
-export const createTicketNotePathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const CreateTicketNoteParams = zod.strictObject({
-    id: zod.string().min(1).max(createTicketNotePathIdMax).regex(createTicketNotePathIdRegExp)
+export const createTaskNotePathIdMax = 64;
+export const createTaskNotePathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const CreateTaskNoteParams = zod.strictObject({
+    id: zod.string().min(1).max(createTaskNotePathIdMax).regex(createTaskNotePathIdRegExp)
 });
-export const createTicketNoteBodyBodyMax = 5000;
-export const CreateTicketNoteBody = zod.strictObject({
-    body: zod.string().min(1).max(createTicketNoteBodyBodyMax)
+export const createTaskNoteBodyBodyMax = 5000;
+export const CreateTaskNoteBody = zod.strictObject({
+    body: zod.string().min(1).max(createTaskNoteBodyBodyMax)
 });
-export const createTicketNoteResponseIdMax = 64;
-export const createTicketNoteResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const createTicketNoteResponseSubjectIdMax = 64;
-export const createTicketNoteResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const createTicketNoteResponseEmailMax = 254;
-export const createTicketNoteResponseAssigneeIdMax = 64;
-export const createTicketNoteResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const createTicketNoteResponseNotesItemAuthorIdMax = 64;
-export const createTicketNoteResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const createTicketNoteResponseEarlierTicketsItemIdMax = 64;
-export const createTicketNoteResponseEarlierTicketsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const CreateTicketNoteResponse = zod.strictObject({
-    id: zod
-        .string()
-        .min(1)
-        .max(createTicketNoteResponseIdMax)
-        .regex(createTicketNoteResponseIdRegExp),
+export const createTaskNoteResponseIdMax = 64;
+export const createTaskNoteResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createTaskNoteResponseSubjectIdMax = 64;
+export const createTaskNoteResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createTaskNoteResponseEmailMax = 254;
+export const createTaskNoteResponseAssigneeIdMax = 64;
+export const createTaskNoteResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createTaskNoteResponseNotesItemAuthorIdMax = 64;
+export const createTaskNoteResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createTaskNoteResponseEarlierTasksItemIdMax = 64;
+export const createTaskNoteResponseEarlierTasksItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const CreateTaskNoteResponse = zod.strictObject({
+    id: zod.string().min(1).max(createTaskNoteResponseIdMax).regex(createTaskNoteResponseIdRegExp),
     source: zod.enum(['visitor', 'system']),
     kind: zod.enum([
         'contact',
@@ -7278,10 +7264,10 @@ export const CreateTicketNoteResponse = zod.strictObject({
     subjectId: zod
         .string()
         .min(1)
-        .max(createTicketNoteResponseSubjectIdMax)
-        .regex(createTicketNoteResponseSubjectIdRegExp)
+        .max(createTaskNoteResponseSubjectIdMax)
+        .regex(createTaskNoteResponseSubjectIdRegExp)
         .optional(),
-    email: zod.email().max(createTicketNoteResponseEmailMax).optional(),
+    email: zod.email().max(createTaskNoteResponseEmailMax).optional(),
     subject: zod.string(),
     message: zod.string(),
     category: zod
@@ -7298,8 +7284,8 @@ export const CreateTicketNoteResponse = zod.strictObject({
     assigneeId: zod
         .string()
         .min(1)
-        .max(createTicketNoteResponseAssigneeIdMax)
-        .regex(createTicketNoteResponseAssigneeIdRegExp)
+        .max(createTaskNoteResponseAssigneeIdMax)
+        .regex(createTaskNoteResponseAssigneeIdRegExp)
         .optional(),
     assigneeName: zod.string().optional(),
     notes: zod.array(
@@ -7307,8 +7293,8 @@ export const CreateTicketNoteResponse = zod.strictObject({
             authorId: zod
                 .string()
                 .min(1)
-                .max(createTicketNoteResponseNotesItemAuthorIdMax)
-                .regex(createTicketNoteResponseNotesItemAuthorIdRegExp)
+                .max(createTaskNoteResponseNotesItemAuthorIdMax)
+                .regex(createTaskNoteResponseNotesItemAuthorIdRegExp)
                 .optional(),
             body: zod.string(),
             at: zod.iso.datetime({ offset: true })
@@ -7322,14 +7308,14 @@ export const CreateTicketNoteResponse = zod.strictObject({
     closedAt: zod.iso.datetime({ offset: true }).optional(),
     resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
     respondedAt: zod.iso.datetime({ offset: true }).optional(),
-    earlierTickets: zod
+    earlierTasks: zod
         .array(
             zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(createTicketNoteResponseEarlierTicketsItemIdMax)
-                    .regex(createTicketNoteResponseEarlierTicketsItemIdRegExp),
+                    .max(createTaskNoteResponseEarlierTasksItemIdMax)
+                    .regex(createTaskNoteResponseEarlierTasksItemIdRegExp),
                 kind: zod
                     .enum([
                         'contact',
@@ -20361,20 +20347,20 @@ export const listNotificationsResponseItemsItemNineParamsSubscriptionIdRegExp = 
 );
 export const listNotificationsResponseItemsItemOnezeroIdMax = 64;
 export const listNotificationsResponseItemsItemOnezeroIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listNotificationsResponseItemsItemOnezeroParamsTicketIdMax = 64;
-export const listNotificationsResponseItemsItemOnezeroParamsTicketIdRegExp = new RegExp(
+export const listNotificationsResponseItemsItemOnezeroParamsTaskIdMax = 64;
+export const listNotificationsResponseItemsItemOnezeroParamsTaskIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const listNotificationsResponseItemsItemOneoneIdMax = 64;
 export const listNotificationsResponseItemsItemOneoneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listNotificationsResponseItemsItemOneoneParamsTicketIdMax = 64;
-export const listNotificationsResponseItemsItemOneoneParamsTicketIdRegExp = new RegExp(
+export const listNotificationsResponseItemsItemOneoneParamsTaskIdMax = 64;
+export const listNotificationsResponseItemsItemOneoneParamsTaskIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const listNotificationsResponseItemsItemOnetwoIdMax = 64;
 export const listNotificationsResponseItemsItemOnetwoIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listNotificationsResponseItemsItemOnetwoParamsTicketIdMax = 64;
-export const listNotificationsResponseItemsItemOnetwoParamsTicketIdRegExp = new RegExp(
+export const listNotificationsResponseItemsItemOnetwoParamsTaskIdMax = 64;
+export const listNotificationsResponseItemsItemOnetwoParamsTaskIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const listNotificationsResponseItemsItemOnethreeIdMax = 64;
@@ -20638,13 +20624,13 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemOnezeroIdMax)
                     .regex(listNotificationsResponseItemsItemOnezeroIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['notifications.staff.ticket-opened']),
+                code: zod.enum(['notifications.staff.task-opened']),
                 params: zod.strictObject({
-                    ticketId: zod
+                    taskId: zod
                         .string()
                         .min(1)
-                        .max(listNotificationsResponseItemsItemOnezeroParamsTicketIdMax)
-                        .regex(listNotificationsResponseItemsItemOnezeroParamsTicketIdRegExp),
+                        .max(listNotificationsResponseItemsItemOnezeroParamsTaskIdMax)
+                        .regex(listNotificationsResponseItemsItemOnezeroParamsTaskIdRegExp),
                     kind: zod.string(),
                     category: zod.string().optional()
                 }),
@@ -20659,13 +20645,13 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemOneoneIdMax)
                     .regex(listNotificationsResponseItemsItemOneoneIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['notifications.staff.ticket-overdue']),
+                code: zod.enum(['notifications.staff.task-overdue']),
                 params: zod.strictObject({
-                    ticketId: zod
+                    taskId: zod
                         .string()
                         .min(1)
-                        .max(listNotificationsResponseItemsItemOneoneParamsTicketIdMax)
-                        .regex(listNotificationsResponseItemsItemOneoneParamsTicketIdRegExp),
+                        .max(listNotificationsResponseItemsItemOneoneParamsTaskIdMax)
+                        .regex(listNotificationsResponseItemsItemOneoneParamsTaskIdRegExp),
                     kind: zod.string(),
                     category: zod.string().optional()
                 }),
@@ -20680,13 +20666,13 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemOnetwoIdMax)
                     .regex(listNotificationsResponseItemsItemOnetwoIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['notifications.staff.ticket-assigned']),
+                code: zod.enum(['notifications.staff.task-assigned']),
                 params: zod.strictObject({
-                    ticketId: zod
+                    taskId: zod
                         .string()
                         .min(1)
-                        .max(listNotificationsResponseItemsItemOnetwoParamsTicketIdMax)
-                        .regex(listNotificationsResponseItemsItemOnetwoParamsTicketIdRegExp),
+                        .max(listNotificationsResponseItemsItemOnetwoParamsTaskIdMax)
+                        .regex(listNotificationsResponseItemsItemOnetwoParamsTaskIdRegExp),
                     kind: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
@@ -20967,18 +20953,16 @@ export const getNotificationByIdResponseNineParamsSubscriptionIdRegExp = new Reg
 );
 export const getNotificationByIdResponseOnezeroIdMax = 64;
 export const getNotificationByIdResponseOnezeroIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseOnezeroParamsTicketIdMax = 64;
-export const getNotificationByIdResponseOnezeroParamsTicketIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
+export const getNotificationByIdResponseOnezeroParamsTaskIdMax = 64;
+export const getNotificationByIdResponseOnezeroParamsTaskIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getNotificationByIdResponseOneoneIdMax = 64;
 export const getNotificationByIdResponseOneoneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseOneoneParamsTicketIdMax = 64;
-export const getNotificationByIdResponseOneoneParamsTicketIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseOneoneParamsTaskIdMax = 64;
+export const getNotificationByIdResponseOneoneParamsTaskIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getNotificationByIdResponseOnetwoIdMax = 64;
 export const getNotificationByIdResponseOnetwoIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseOnetwoParamsTicketIdMax = 64;
-export const getNotificationByIdResponseOnetwoParamsTicketIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseOnetwoParamsTaskIdMax = 64;
+export const getNotificationByIdResponseOnetwoParamsTaskIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getNotificationByIdResponseOnethreeIdMax = 64;
 export const getNotificationByIdResponseOnethreeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getNotificationByIdResponseOnethreeParamsReturnIdMax = 64;
@@ -21224,13 +21208,13 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseOnezeroIdMax)
             .regex(getNotificationByIdResponseOnezeroIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['notifications.staff.ticket-opened']),
+        code: zod.enum(['notifications.staff.task-opened']),
         params: zod.strictObject({
-            ticketId: zod
+            taskId: zod
                 .string()
                 .min(1)
-                .max(getNotificationByIdResponseOnezeroParamsTicketIdMax)
-                .regex(getNotificationByIdResponseOnezeroParamsTicketIdRegExp),
+                .max(getNotificationByIdResponseOnezeroParamsTaskIdMax)
+                .regex(getNotificationByIdResponseOnezeroParamsTaskIdRegExp),
             kind: zod.string(),
             category: zod.string().optional()
         }),
@@ -21245,13 +21229,13 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseOneoneIdMax)
             .regex(getNotificationByIdResponseOneoneIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['notifications.staff.ticket-overdue']),
+        code: zod.enum(['notifications.staff.task-overdue']),
         params: zod.strictObject({
-            ticketId: zod
+            taskId: zod
                 .string()
                 .min(1)
-                .max(getNotificationByIdResponseOneoneParamsTicketIdMax)
-                .regex(getNotificationByIdResponseOneoneParamsTicketIdRegExp),
+                .max(getNotificationByIdResponseOneoneParamsTaskIdMax)
+                .regex(getNotificationByIdResponseOneoneParamsTaskIdRegExp),
             kind: zod.string(),
             category: zod.string().optional()
         }),
@@ -21266,13 +21250,13 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseOnetwoIdMax)
             .regex(getNotificationByIdResponseOnetwoIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['notifications.staff.ticket-assigned']),
+        code: zod.enum(['notifications.staff.task-assigned']),
         params: zod.strictObject({
-            ticketId: zod
+            taskId: zod
                 .string()
                 .min(1)
-                .max(getNotificationByIdResponseOnetwoParamsTicketIdMax)
-                .regex(getNotificationByIdResponseOnetwoParamsTicketIdRegExp),
+                .max(getNotificationByIdResponseOnetwoParamsTaskIdMax)
+                .regex(getNotificationByIdResponseOnetwoParamsTaskIdRegExp),
             kind: zod.string()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),

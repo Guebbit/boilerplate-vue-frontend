@@ -43,7 +43,7 @@ export const SECONDS: Record<string, number> = {
     wishlist: 18,
     orders: 33,
     registration: 30,
-    tickets: 26,
+    tasks: 26,
     commerce: 25,
     home: 20,
     'password-reset': 19,

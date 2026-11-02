@@ -1,19 +1,19 @@
-// requires-module: account, cart, notifications, products, tickets
+// requires-module: account, cart, notifications, products, tasks
 /**
  * @module
  * SB1 · Clearing one bell tab keeps the other. A staff member holds messages on both bell tabs:
- * "Mine" (a pulled product left their cart) and "Work" (a customer opened a ticket). "Clear all"
+ * "Mine" (a pulled product left their cart) and "Work" (a customer opened a task). "Clear all"
  * on one tab empties only that tab, and a reload proves it is the server that agrees.
  *
  * - **Mine cleared**: Mine reads empty, and after a reload the Work tab still holds this spec's
- *   ticket notice, told apart by the ticket its "Open it" link points at.
+ *   task notice, told apart by the task its "Open it" link points at.
  * - **Work cleared**: "Clear all" empties the whole tab, seeded notices included, so after a
  *   reload the tabs are gone and the cart message is still there.
  *
  * The editor and the customer work through the API: they are the cause, the admin's bell is the
  * subject. The admin's cart is filled through the API too: the bell is under test, not the cart
  * screen (staff see the product table, not the storefront cards). The admin is the staff member,
- * so the ticket is opened by someone else (an actor never hears their own act).
+ * so the task is opened by someone else (an actor never hears their own act).
  */
 
 /** The bell's button. */
@@ -26,41 +26,41 @@ const PANEL = '[data-test=notifications-panel]';
 const CART_MESSAGE = 'Removed from your cart';
 
 /**
- * This spec's own work notice: the row whose "Open it" link goes to its ticket. Its text is the
- * ticket's kind, shared with any other contact message, so the link is what tells it apart.
+ * This spec's own work notice: the row whose "Open it" link goes to its task. Its text is the
+ * task's kind, shared with any other contact message, so the link is what tells it apart.
  *
- * @param ticketId - the ticket the spec opened
+ * @param taskId - the task the spec opened
  */
-const WORK_ROW = (ticketId: string) =>
-    `${PANEL} [data-test=notification-target-link][href$="/tickets/${ticketId}"]`;
+const WORK_ROW = (taskId: string) =>
+    `${PANEL} [data-test=notification-target-link][href$="/tasks/${taskId}"]`;
 
 /** One bell tab's button. */
 const TAB = (name: 'mine' | 'work') => `[data-test=notifications-tab-${name}]`;
 
-/** Marks the ticket this spec opens, so the work row can be told from any other. */
+/** Marks the task this spec opens, so the work row can be told from any other. */
 const SUBJECT = 'SB1 a question about the cats';
 
 /**
- * The id of the ticket this spec opened, read the way staff would: from the list, by the subject
+ * The id of the task this spec opened, read the way staff would: from the list, by the subject
  * only this spec uses. Asserts there is exactly one, so a second match cannot pass unnoticed.
  */
-const openedTicketId = () =>
+const openedTaskId = () =>
     cy
         .apiAs<{ items: { id: string; subject: string }[] }>(
             'admin',
             'GET',
-            `/tickets?text=${encodeURIComponent(SUBJECT)}`
+            `/tasks?text=${encodeURIComponent(SUBJECT)}`
         )
         .then((list) => {
-            const mine = (list?.items ?? []).filter((ticket) => ticket.subject === SUBJECT);
-            expect(mine, 'tickets with the spec subject').to.have.length(1);
+            const mine = (list?.items ?? []).filter((task) => task.subject === SUBJECT);
+            expect(mine, 'tasks with the spec subject').to.have.length(1);
             return mine[0]?.id ?? '';
         });
 
 /**
  * Leaves the admin with one message on each tab, and the bell open on its panel.
  *
- * @returns the product id (to put the shop back as found) and the ticket id (to find its notice).
+ * @returns the product id (to put the shop back as found) and the task id (to find its notice).
  */
 const holdOneOnEachTab = () => {
     cy.step('the admin has a product in the cart, then a pulled product leaves a message');
@@ -72,8 +72,8 @@ const holdOneOnEachTab = () => {
         cy.apiAs('editor', 'DELETE', `/products/${productId}`);
         cy.contains('no longer available').should('exist');
 
-        cy.step('a customer opens a ticket, and the admin gets a work notice for it');
-        cy.apiAs('user', 'POST', '/tickets', {
+        cy.step('a customer opens a task, and the admin gets a work notice for it');
+        cy.apiAs('user', 'POST', '/tasks', {
             email: 'sb1-customer@example.com',
             subject: SUBJECT,
             message: 'Are they really illegal in 400 countries?'
@@ -84,9 +84,9 @@ const holdOneOnEachTab = () => {
         cy.get(TAB('mine')).click();
         cy.get(PANEL).should('contain.text', CART_MESSAGE);
         cy.get(TAB('work')).click();
-        return openedTicketId().then((ticketId) => {
-            cy.get(WORK_ROW(ticketId)).should('exist');
-            return cy.wrap({ productId, ticketId });
+        return openedTaskId().then((taskId) => {
+            cy.get(WORK_ROW(taskId)).should('exist');
+            return cy.wrap({ productId, taskId });
         });
     });
 };
@@ -99,7 +99,7 @@ describe('SB1 · Clearing one bell tab keeps the other', () => {
     });
 
     it('clearing Mine leaves the work notice, even after a reload', () => {
-        holdOneOnEachTab().then(({ productId, ticketId }) => {
+        holdOneOnEachTab().then(({ productId, taskId }) => {
             cy.step('"Clear all" on Mine');
             cy.get(TAB('mine')).click();
             cy.get('[data-test=notifications-clear-all]').click();
@@ -111,7 +111,7 @@ describe('SB1 · Clearing one bell tab keeps the other', () => {
             cy.get(TAB('mine')).click();
             cy.get('[data-test=notifications-empty]').should('exist');
             cy.get(TAB('work')).click();
-            cy.get(WORK_ROW(ticketId)).should('exist');
+            cy.get(WORK_ROW(taskId)).should('exist');
 
             // Leave the shop as found.
             cy.apiAs('editor', 'POST', `/products/${productId}/restore`);

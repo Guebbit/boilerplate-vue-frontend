@@ -74,7 +74,7 @@ than rendering an answer. See [Security](../tools/security.md#route-guards).
 | **Example** | A small note with an owner and a draft, published, archived life. Written to be copied. |
 | **Cover**   | The optional image an example carries, uploaded through its own route.                  |
 
-## `tickets`
+## `tasks`
 
 | Term                | What it means here                                                          |
 | ------------------- | --------------------------------------------------------------------------- |

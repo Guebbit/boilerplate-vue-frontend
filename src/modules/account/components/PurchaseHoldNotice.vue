@@ -36,7 +36,7 @@ const props = defineProps<{ refreshSignal?: number }>();
 const { t } = useI18n();
 
 /**
- * The router, to ask whether this build ships a contact page (the `tickets` module's).
+ * The router, to ask whether this build ships a contact page (the `tasks` module's).
  */
 const router = useRouter();
 

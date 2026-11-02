@@ -2,8 +2,8 @@
  * @module
  * The wishlist store's answers in the wrong order, and for the wrong person: a later write's
  * answer is the list on screen however the network delivers them, and an answer still on the wire
- * when the viewer changes lands nowhere. Same ticket rule as the cart store
- * (`infrastructure/utils/request-ticket.ts`); the generated client is the held seam.
+ * when the viewer changes lands nowhere. Same task rule as the cart store
+ * (`infrastructure/utils/request-task.ts`); the generated client is the held seam.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';

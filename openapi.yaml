@@ -69,7 +69,7 @@ tags:
     description: The signed-in user's own account - profile, credentials, two-factor, data export and deletion.
   - name: Users
     description: Administration of user accounts and their roles.
-  - name: Tickets
+  - name: Tasks
     description: Situations someone must take and close — what visitors tell the shop, and what the system opens for staff.
   - name: Products
     description: The catalogue - browsing, searching and managing products and their images.
@@ -3393,7 +3393,7 @@ paths:
       tags:
         - Auth
       summary: Login
-      description: "Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`session.mode` of `GET /config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call."
+      description: "Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`session.mode` of `GET /config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no session cookie (the `__Host-device` cookie is still set) and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call."
       operationId: login
       x-no-refresh: true
       security: []
@@ -5262,14 +5262,14 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
-  /tickets:
+  /tasks:
     post:
       tags:
-        - Tickets
+        - Tasks
       summary: Submit contact request
       description: |
-        Creates a contact ticket and notifies the support mailbox by email. Open to anyone. A valid session bearer token, when one is sent, records the sender's account on the ticket (`subjectId`), so the account's data export and erasure include it; an absent or expired token files it as anonymous.
-      operationId: createContactTicket
+        Creates a contact task and notifies the support mailbox by email. Open to anyone. A valid session bearer token, when one is sent, records the sender's account on the task (`subjectId`), so the account's data export and erasure include it; an absent or expired token files it as anonymous.
+      operationId: createContactTask
       x-error-codes:
         "409":
           - IDEMPOTENCY_IN_FLIGHT
@@ -5284,10 +5284,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateContactTicketRequest"
+              $ref: "#/components/schemas/CreateContactTaskRequest"
       responses:
         "201":
-          description: Created ticket
+          description: Created task
           headers:
             Location:
               $ref: "#/components/headers/Location"
@@ -5310,7 +5310,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Ticket"
+                $ref: "#/components/schemas/Task"
         "400":
           $ref: "#/components/responses/BadRequest"
         "403":
@@ -5329,15 +5329,15 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: tickets
+      x-module: tasks
     get:
       x-cache: private-no-cache
       tags:
-        - Tickets
-      summary: List tickets
+        - Tasks
+      summary: List tasks
       description: |
-        Returns the tickets the caller may work: every visitor message, and the system tickets whose route set the caller holds (an administrator holds them all). Open work first when sorted by `dueAt`.
-      operationId: listTickets
+        Returns the tasks the caller may work: every visitor message, and the system tasks whose route set the caller holds (an administrator holds them all). Open work first when sorted by `dueAt`.
+      operationId: listTasks
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -5351,7 +5351,7 @@ paths:
           style: form
           explode: false
           schema:
-            $ref: "#/components/schemas/TicketSort"
+            $ref: "#/components/schemas/TaskSort"
         - $ref: "#/components/parameters/TextParam"
         - name: email
           in: query
@@ -5362,41 +5362,41 @@ paths:
           in: query
           required: false
           schema:
-            $ref: "#/components/schemas/TicketStatus"
+            $ref: "#/components/schemas/TaskStatus"
         - name: category
           in: query
           required: false
           schema:
-            $ref: "#/components/schemas/TicketCategory"
+            $ref: "#/components/schemas/TaskCategory"
         - name: source
           in: query
           required: false
           schema:
-            $ref: "#/components/schemas/TicketSource"
+            $ref: "#/components/schemas/TaskSource"
         - name: kind
           in: query
           required: false
           schema:
-            $ref: "#/components/schemas/TicketKind"
+            $ref: "#/components/schemas/TaskKind"
         - name: assignee
           in: query
           required: false
           description: "`me`, `none` (unassigned) or a user id."
           schema:
-            $ref: "#/components/schemas/TicketAssigneeFilter"
+            $ref: "#/components/schemas/TaskAssigneeFilter"
         - name: overdue
           in: query
           required: false
-          description: Only open tickets whose `dueAt` has passed.
+          description: Only open tasks whose `dueAt` has passed.
           schema:
             type: boolean
       responses:
         "200":
-          description: Ticket list
+          description: Task list
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TicketsResponse"
+                $ref: "#/components/schemas/TasksResponse"
           headers:
             x-request-id:
               $ref: "#/components/headers/RequestId"
@@ -5426,15 +5426,15 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: tickets
-  /tickets/search:
+      x-module: tasks
+  /tasks/search:
     post:
       tags:
-        - Tickets
-      summary: Search tickets (DTO-friendly)
-      description: Searches and filters tickets via a JSON request body. Functionally equivalent to `GET /tickets` with query parameters.
-      operationId: searchTickets
-      x-alias-of: listTickets
+        - Tasks
+      summary: Search tasks (DTO-friendly)
+      description: Searches and filters tasks via a JSON request body. Functionally equivalent to `GET /tasks` with query parameters.
+      operationId: searchTasks
+      x-alias-of: listTasks
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -5444,14 +5444,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SearchTicketsRequest"
+              $ref: "#/components/schemas/SearchTasksRequest"
       responses:
         "200":
-          description: Ticket search results
+          description: Task search results
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TicketsResponse"
+                $ref: "#/components/schemas/TasksResponse"
           headers:
             x-request-id:
               $ref: "#/components/headers/RequestId"
@@ -5485,15 +5485,15 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: tickets
-  /tickets/summary:
+      x-module: tasks
+  /tasks/summary:
     get:
       tags:
-        - Tickets
+        - Tasks
       summary: Counts for the staff badge
       description: |
-        How much work the caller's jurisdiction holds: open tickets, the caller's own, the overdue ones and the unassigned ones. Never cached: it is one person's view.
-      operationId: getTicketSummary
+        How much work the caller's jurisdiction holds: open tasks, the caller's own, the overdue ones and the unassigned ones. Never cached: it is one person's view.
+      operationId: getTaskSummary
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -5504,7 +5504,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TicketSummary"
+                $ref: "#/components/schemas/TaskSummary"
           headers:
             x-request-id:
               $ref: "#/components/headers/RequestId"
@@ -5530,16 +5530,16 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: tickets
-  /tickets/{id}:
+      x-module: tasks
+  /tasks/{id}:
     get:
       x-cache: private-no-cache
       tags:
-        - Tickets
-      summary: Get a ticket
+        - Tasks
+      summary: Get a task
       description: |
-        One ticket with its notes, assignee and the earlier tickets about the same record. A visitor ticket names a person, so staff reading it is audited. An unknown, malformed or out-of-jurisdiction id is a 404.
-      operationId: getTicket
+        One task with its notes, assignee and the earlier tasks about the same record. A visitor task names a person, so staff reading it is audited. An unknown, malformed or out-of-jurisdiction id is a 404.
+      operationId: getTask
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -5548,11 +5548,11 @@ paths:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
         "200":
-          description: The ticket
+          description: The task
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Ticket"
+                $ref: "#/components/schemas/Task"
           headers:
             x-request-id:
               $ref: "#/components/headers/RequestId"
@@ -5582,13 +5582,13 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: tickets
+      x-module: tasks
     delete:
       tags:
-        - Tickets
-      summary: Delete a ticket
-      description: Permanently removes the ticket identified by `{id}`. Needs `delete:Ticket` and, for a system ticket, the ticket's route set.
-      operationId: deleteTicket
+        - Tasks
+      summary: Delete a task
+      description: Permanently removes the task identified by `{id}`. Needs `delete:Task` and, for a system task, the task's route set.
+      operationId: deleteTask
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -5612,18 +5612,18 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: tickets
-  /tickets/{id}/resolve:
+      x-module: tasks
+  /tasks/{id}/resolve:
     post:
       tags:
-        - Tickets
-      summary: Resolve a ticket
+        - Tasks
+      summary: Resolve a task
       description: |
-        From `new`, `in_progress` or `spam` to `resolved`, with `resolution: staff`. Stamps `closedAt` (kept when it was already closed) and `respondedAt` (once), and releases the dedup key. No body. Needs `update:Ticket` and, for a system ticket, its route set. The move is conditional on the status read, so a repeat answers 409.
-      operationId: resolveTicket
+        From `new`, `in_progress` or `spam` to `resolved`, with `resolution: staff`. Stamps `closedAt` (kept when it was already closed) and `respondedAt` (once), and releases the dedup key. No body. Needs `update:Task` and, for a system task, its route set. The move is conditional on the status read, so a repeat answers 409.
+      operationId: resolveTask
       x-error-codes:
         "409":
-          - TICKET_ALREADY_RESOLVED
+          - TASK_ALREADY_RESOLVED
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -5632,11 +5632,11 @@ paths:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
         "200":
-          description: The ticket as it now stands
+          description: The task as it now stands
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Ticket"
+                $ref: "#/components/schemas/Task"
           headers:
             x-request-id:
               $ref: "#/components/headers/RequestId"
@@ -5668,18 +5668,18 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: tickets
-  /tickets/{id}/mark-spam:
+      x-module: tasks
+  /tasks/{id}/mark-spam:
     post:
       tags:
-        - Tickets
-      summary: Mark a ticket as spam
+        - Tasks
+      summary: Mark a task as spam
       description: |
-        From `new`, `in_progress` or `resolved` to `spam`, with `resolution: spam`. Same stamps as a resolve, without `respondedAt`. Also undoes a false resolve. No body. Needs `update:Ticket` and, for a system ticket, its route set.
-      operationId: markTicketSpam
+        From `new`, `in_progress` or `resolved` to `spam`, with `resolution: spam`. Same stamps as a resolve, without `respondedAt`. Also undoes a false resolve. No body. Needs `update:Task` and, for a system task, its route set.
+      operationId: markTaskSpam
       x-error-codes:
         "409":
-          - TICKET_ALREADY_SPAM
+          - TASK_ALREADY_SPAM
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -5688,11 +5688,11 @@ paths:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
         "200":
-          description: The ticket as it now stands
+          description: The task as it now stands
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Ticket"
+                $ref: "#/components/schemas/Task"
           headers:
             x-request-id:
               $ref: "#/components/headers/RequestId"
@@ -5724,19 +5724,19 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: tickets
-  /tickets/{id}/reopen:
+      x-module: tasks
+  /tasks/{id}/reopen:
     post:
       tags:
-        - Tickets
-      summary: Reopen a ticket
+        - Tasks
+      summary: Reopen a task
       description: |
-        From `resolved` or `spam` to `in_progress` when it has an assignee, else `new`. Clears `closedAt` and `resolution` (the retention clock stops) and restores the dedup key of a linked ticket. `dueAt` is kept: the deadline belongs to the situation, not to the reopen. When a newer open ticket already covers the same situation the answer is 409 `TICKET_SUPERSEDED` with `details.ticketId`. No body. Needs `update:Ticket` and, for a system ticket, its route set.
-      operationId: reopenTicket
+        From `resolved` or `spam` to `in_progress` when it has an assignee, else `new`. Clears `closedAt` and `resolution` (the retention clock stops) and restores the dedup key of a linked task. `dueAt` is kept: the deadline belongs to the situation, not to the reopen. When a newer open task already covers the same situation the answer is 409 `TASK_SUPERSEDED` with `details.taskId`. No body. Needs `update:Task` and, for a system task, its route set.
+      operationId: reopenTask
       x-error-codes:
         "409":
-          - TICKET_ALREADY_OPEN
-          - TICKET_SUPERSEDED
+          - TASK_ALREADY_OPEN
+          - TASK_SUPERSEDED
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -5745,11 +5745,11 @@ paths:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
         "200":
-          description: The ticket as it now stands
+          description: The task as it now stands
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Ticket"
+                $ref: "#/components/schemas/Task"
           headers:
             x-request-id:
               $ref: "#/components/headers/RequestId"
@@ -5781,18 +5781,18 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: tickets
-  /tickets/{id}/assignee:
+      x-module: tasks
+  /tasks/{id}/assignee:
     put:
       tags:
-        - Tickets
-      summary: Assign a ticket
+        - Tasks
+      summary: Assign a task
       description: |
-        Hands the ticket to one person (taking it is assigning yourself). A `new` ticket becomes `in_progress`. The person must hold the permission set that works the ticket. Replaces any earlier assignee. A closed ticket answers 409 `TICKET_NOT_OPEN`.
-      operationId: assignTicket
+        Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`.
+      operationId: assignTask
       x-error-codes:
         "409":
-          - TICKET_NOT_OPEN
+          - TASK_NOT_OPEN
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -5804,14 +5804,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AssignTicketRequest"
+              $ref: "#/components/schemas/AssignTaskRequest"
       responses:
         "200":
-          description: The ticket as it now stands
+          description: The task as it now stands
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Ticket"
+                $ref: "#/components/schemas/Task"
           headers:
             x-request-id:
               $ref: "#/components/headers/RequestId"
@@ -5849,13 +5849,13 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: tickets
+      x-module: tasks
     delete:
       tags:
-        - Tickets
-      summary: Give a ticket back
-      description: Clears the assignee. An `in_progress` ticket goes back to `new`. Answers 200 whether or not anyone held it.
-      operationId: unassignTicket
+        - Tasks
+      summary: Give a task back
+      description: Clears the assignee. An `in_progress` task goes back to `new`. Answers 200 whether or not anyone held it.
+      operationId: unassignTask
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -5864,11 +5864,11 @@ paths:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
         "200":
-          description: The ticket as it now stands
+          description: The task as it now stands
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Ticket"
+                $ref: "#/components/schemas/Task"
           headers:
             x-request-id:
               $ref: "#/components/headers/RequestId"
@@ -5898,15 +5898,15 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: tickets
-  /tickets/{id}/notes:
+      x-module: tasks
+  /tasks/{id}/notes:
     post:
       tags:
-        - Tickets
+        - Tasks
       summary: Add a staff note
       description: |
         Appends a note to the staff thread: append-only, with its author and time. Notes are written and read by staff, and the data subject's export carries them without the author. Write each one as if the customer will read it.
-      operationId: createTicketNote
+      operationId: createTaskNote
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -5918,14 +5918,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateTicketNoteRequest"
+              $ref: "#/components/schemas/CreateTaskNoteRequest"
       responses:
         "200":
-          description: The ticket with the note appended
+          description: The task with the note appended
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Ticket"
+                $ref: "#/components/schemas/Task"
           headers:
             x-request-id:
               $ref: "#/components/headers/RequestId"
@@ -5961,7 +5961,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-      x-module: tickets
+      x-module: tasks
   /products:
     get:
       x-cache: "max-age: 3600"
@@ -17351,7 +17351,7 @@ components:
           description: The access JWT — `jwt` mode only. Absent in `cookie` mode, where a browser holds no credential it can read.
         sessionToken:
           type: string
-          description: "The `ses_…` session id, to send back as `Authorization: Bearer ses_…`. Present only for a `cookie`-mode login that asked for `transport: bearer` (or a re-proof by such a client); that login sets no cookie."
+          description: "The `ses_…` session id, to send back as `Authorization: Bearer ses_…`. Present only for a `cookie`-mode login that asked for `transport: bearer` (or a re-proof by such a client); that login sets no session cookie (the `__Host-device` cookie is still set)."
         account:
           $ref: "#/components/schemas/AccountView"
           description: The signed-in account, with its abilities and idle clock — exactly what `GET /account` answers, so a sign-in needs no follow-up read. Present on the answers that START a session (login, its second step, restore); absent on a re-mint after a password or factor change.
@@ -17933,7 +17933,7 @@ components:
           description: The second factors armed on the account. A setup never confirmed is left out.
           items:
             $ref: "#/components/schemas/ExportTwoFactorMethod"
-    TicketCategory:
+    TaskCategory:
       type: string
       enum:
         - order
@@ -17943,14 +17943,14 @@ components:
         - account
         - privacy
         - other
-    TicketStatus:
+    TaskStatus:
       type: string
       enum:
         - new
         - in_progress
         - resolved
         - spam
-    ExportTicketNote:
+    ExportTaskNote:
       type: object
       additionalProperties: false
       required:
@@ -17962,7 +17962,7 @@ components:
         at:
           type: string
           format: date-time
-    ExportTicket:
+    ExportTask:
       type: object
       additionalProperties: false
       required:
@@ -17984,22 +17984,22 @@ components:
         message:
           type: string
         category:
-          $ref: "#/components/schemas/TicketCategory"
+          $ref: "#/components/schemas/TaskCategory"
         orderNumber:
           type: string
         status:
-          $ref: "#/components/schemas/TicketStatus"
+          $ref: "#/components/schemas/TaskStatus"
         notes:
           type: array
           items:
-            $ref: "#/components/schemas/ExportTicketNote"
+            $ref: "#/components/schemas/ExportTaskNote"
         respondedAt:
           type: string
           format: date-time
         createdAt:
           type: string
           format: date-time
-    TicketKind:
+    TaskKind:
       type: string
       enum:
         - contact
@@ -18011,7 +18011,7 @@ components:
         - consent_due
         - refund_refused
         - dispute
-    TicketLinkType:
+    TaskLinkType:
       type: string
       enum:
         - order
@@ -18020,25 +18020,25 @@ components:
         - refund
         - fulfillment_order
         - export
-    TicketLink:
+    TaskLink:
       type: object
       additionalProperties: false
       required:
         - type
         - id
-      description: The record a system ticket is about.
+      description: The record a system task is about.
       properties:
         type:
-          $ref: "#/components/schemas/TicketLinkType"
+          $ref: "#/components/schemas/TaskLinkType"
         id:
           type: string
-    TicketResolution:
+    TaskResolution:
       type: string
       enum:
         - staff
         - cleared
         - spam
-    ExportSystemTicket:
+    ExportSystemTask:
       type: object
       additionalProperties: false
       required:
@@ -18053,23 +18053,23 @@ components:
         id:
           $ref: "#/components/schemas/Id"
         kind:
-          $ref: "#/components/schemas/TicketKind"
+          $ref: "#/components/schemas/TaskKind"
         subject:
           type: string
         message:
           type: string
         link:
-          $ref: "#/components/schemas/TicketLink"
+          $ref: "#/components/schemas/TaskLink"
         routeSet:
           type: string
         status:
-          $ref: "#/components/schemas/TicketStatus"
+          $ref: "#/components/schemas/TaskStatus"
         resolution:
-          $ref: "#/components/schemas/TicketResolution"
+          $ref: "#/components/schemas/TaskResolution"
         notes:
           type: array
           items:
-            $ref: "#/components/schemas/ExportTicketNote"
+            $ref: "#/components/schemas/ExportTaskNote"
         dueAt:
           type: string
           format: date-time
@@ -19486,26 +19486,26 @@ components:
         createdAt:
           type: string
           format: date-time
-    TicketOpenedParams:
+    TaskOpenedParams:
       type: object
       additionalProperties: false
       required:
-        - ticketId
+        - taskId
         - kind
-      description: "A ticket opened in the caller's jurisdiction. Ids and closed codes only: the ticket page has the rest, and no visitor text travels in a notice."
+      description: "A task opened in the caller's jurisdiction. Ids and closed codes only: the task page has the rest, and no visitor text travels in a notice."
       properties:
-        ticketId:
+        taskId:
           $ref: "#/components/schemas/Id"
         kind:
           type: string
-          description: The ticket's kind (`contact`, `account_review`, ...).
+          description: The task's kind (`contact`, `account_review`, ...).
         category:
           type: string
-          description: A contact ticket's category, when the visitor chose one.
-    NotificationStaffTicketOpened:
+          description: A contact task's category, when the visitor chose one.
+    NotificationStaffTaskOpened:
       type: object
       additionalProperties: false
-      description: A ticket opened in a jurisdiction the caller works; whoever holds its permission set takes it.
+      description: A task opened in a jurisdiction the caller works; whoever holds its permission set takes it.
       required:
         - id
         - audience
@@ -19521,9 +19521,9 @@ components:
         code:
           type: string
           enum:
-            - notifications.staff.ticket-opened
+            - notifications.staff.task-opened
         params:
-          $ref: "#/components/schemas/TicketOpenedParams"
+          $ref: "#/components/schemas/TaskOpenedParams"
         severity:
           $ref: "#/components/schemas/NotificationSeverity"
         readAt:
@@ -19533,10 +19533,10 @@ components:
         createdAt:
           type: string
           format: date-time
-    NotificationStaffTicketOverdue:
+    NotificationStaffTaskOverdue:
       type: object
       additionalProperties: false
-      description: An open ticket in a jurisdiction the caller works passed its due date; said once per ticket.
+      description: An open task in a jurisdiction the caller works passed its due date; said once per task.
       required:
         - id
         - audience
@@ -19552,9 +19552,9 @@ components:
         code:
           type: string
           enum:
-            - notifications.staff.ticket-overdue
+            - notifications.staff.task-overdue
         params:
-          $ref: "#/components/schemas/TicketOpenedParams"
+          $ref: "#/components/schemas/TaskOpenedParams"
         severity:
           $ref: "#/components/schemas/NotificationSeverity"
         readAt:
@@ -19564,23 +19564,23 @@ components:
         createdAt:
           type: string
           format: date-time
-    TicketAssignedParams:
+    TaskAssignedParams:
       type: object
       additionalProperties: false
       required:
-        - ticketId
+        - taskId
         - kind
-      description: A ticket was given to the caller by someone else.
+      description: A task was given to the caller by someone else.
       properties:
-        ticketId:
+        taskId:
           $ref: "#/components/schemas/Id"
         kind:
           type: string
-          description: The ticket's kind.
-    NotificationStaffTicketAssigned:
+          description: The task's kind.
+    NotificationStaffTaskAssigned:
       type: object
       additionalProperties: false
-      description: A colleague gave the caller a ticket.
+      description: A colleague gave the caller a task.
       required:
         - id
         - audience
@@ -19596,9 +19596,9 @@ components:
         code:
           type: string
           enum:
-            - notifications.staff.ticket-assigned
+            - notifications.staff.task-assigned
         params:
-          $ref: "#/components/schemas/TicketAssignedParams"
+          $ref: "#/components/schemas/TaskAssignedParams"
         severity:
           $ref: "#/components/schemas/NotificationSeverity"
         readAt:
@@ -20027,9 +20027,9 @@ components:
         - $ref: "#/components/schemas/NotificationStockAlert"
         - $ref: "#/components/schemas/NotificationStaffPurchaseHoldPlaced"
         - $ref: "#/components/schemas/NotificationStaffWebhookDisabled"
-        - $ref: "#/components/schemas/NotificationStaffTicketOpened"
-        - $ref: "#/components/schemas/NotificationStaffTicketOverdue"
-        - $ref: "#/components/schemas/NotificationStaffTicketAssigned"
+        - $ref: "#/components/schemas/NotificationStaffTaskOpened"
+        - $ref: "#/components/schemas/NotificationStaffTaskOverdue"
+        - $ref: "#/components/schemas/NotificationStaffTaskAssigned"
         - $ref: "#/components/schemas/NotificationStaffReturnRequested"
         - $ref: "#/components/schemas/NotificationStaffOutboxDead"
         - $ref: "#/components/schemas/NotificationStaffTransfersDue"
@@ -20054,9 +20054,9 @@ components:
           notifications.stock-alert: "#/components/schemas/NotificationStockAlert"
           notifications.staff.purchase-hold-placed: "#/components/schemas/NotificationStaffPurchaseHoldPlaced"
           notifications.staff.webhook-disabled: "#/components/schemas/NotificationStaffWebhookDisabled"
-          notifications.staff.ticket-opened: "#/components/schemas/NotificationStaffTicketOpened"
-          notifications.staff.ticket-overdue: "#/components/schemas/NotificationStaffTicketOverdue"
-          notifications.staff.ticket-assigned: "#/components/schemas/NotificationStaffTicketAssigned"
+          notifications.staff.task-opened: "#/components/schemas/NotificationStaffTaskOpened"
+          notifications.staff.task-overdue: "#/components/schemas/NotificationStaffTaskOverdue"
+          notifications.staff.task-assigned: "#/components/schemas/NotificationStaffTaskAssigned"
           notifications.staff.return-requested: "#/components/schemas/NotificationStaffReturnRequested"
           notifications.staff.outbox-dead: "#/components/schemas/NotificationStaffOutboxDead"
           notifications.staff.transfers-due: "#/components/schemas/NotificationStaffTransfersDue"
@@ -20107,8 +20107,8 @@ components:
         - sessions
         - addresses
         - signInMethods
-        - tickets
-        - systemTickets
+        - tasks
+        - systemTasks
         - cart
         - wishlist
         - orders
@@ -20144,18 +20144,18 @@ components:
             $ref: "#/components/schemas/Address"
         signInMethods:
           $ref: "#/components/schemas/ExportSignInMethods"
-        tickets:
+        tasks:
           type: array
           description: |
             The contact messages this person owns: what they sent while signed in, plus what was sent under their verified email address. Staff notes are included without their author. Always present, empty when there are none.
           items:
-            $ref: "#/components/schemas/ExportTicket"
-        systemTickets:
+            $ref: "#/components/schemas/ExportTask"
+        systemTasks:
           type: array
           description: |
-            The tickets the system opened about this person (a refund owed, an account under review, an export that failed). Every field except the staff who handled them. Always present, empty when there are none.
+            The tasks the system opened about this person (a refund owed, an account under review, an export that failed). Every field except the staff who handled them. Always present, empty when there are none.
           items:
-            $ref: "#/components/schemas/ExportSystemTicket"
+            $ref: "#/components/schemas/ExportSystemTask"
         cart:
           type: array
           items:
@@ -20708,7 +20708,7 @@ components:
           type: boolean
           enum:
             - true
-    TicketSort:
+    TaskSort:
       type: array
       minItems: 1
       maxItems: 3
@@ -20723,16 +20723,16 @@ components:
           - -status
           - email
           - -email
-    TicketSource:
+    TaskSource:
       type: string
       enum:
         - visitor
         - system
-    TicketAssigneeFilter:
+    TaskAssigneeFilter:
       type: string
       minLength: 2
       maxLength: 24
-    TicketNote:
+    TaskNote:
       type: object
       additionalProperties: false
       required:
@@ -20747,25 +20747,25 @@ components:
         at:
           type: string
           format: date-time
-    TicketRef:
+    TaskRef:
       type: object
       additionalProperties: false
       required:
         - id
         - status
         - createdAt
-      description: An earlier ticket about the same record.
+      description: An earlier task about the same record.
       properties:
         id:
           $ref: "#/components/schemas/Id"
         kind:
-          $ref: "#/components/schemas/TicketKind"
+          $ref: "#/components/schemas/TaskKind"
         status:
-          $ref: "#/components/schemas/TicketStatus"
+          $ref: "#/components/schemas/TaskStatus"
         createdAt:
           type: string
           format: date-time
-    TicketActions:
+    TaskActions:
       type: object
       additionalProperties: false
       required:
@@ -20776,30 +20776,30 @@ components:
         - unassign
         - note
         - delete
-      description: What the requesting caller may do to this ticket, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the right to work the ticket (and its route set, for a system ticket) and a status the act can run from. `assign` covers taking it and assigning someone else.
+      description: What the requesting caller may do to this task, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the right to work the task (and its route set, for a system task) and a status the act can run from. `assign` covers taking it and assigning someone else.
       properties:
         resolve:
           type: boolean
-          description: Whether `POST /tickets/{id}/resolve` would be accepted.
+          description: Whether `POST /tasks/{id}/resolve` would be accepted.
         markSpam:
           type: boolean
-          description: Whether `POST /tickets/{id}/mark-spam` would be accepted.
+          description: Whether `POST /tasks/{id}/mark-spam` would be accepted.
         reopen:
           type: boolean
-          description: Whether `POST /tickets/{id}/reopen` would be accepted.
+          description: Whether `POST /tasks/{id}/reopen` would be accepted.
         assign:
           type: boolean
-          description: Whether `PUT /tickets/{id}/assignee` would be accepted.
+          description: Whether `PUT /tasks/{id}/assignee` would be accepted.
         unassign:
           type: boolean
-          description: Whether `DELETE /tickets/{id}/assignee` would change anything.
+          description: Whether `DELETE /tasks/{id}/assignee` would change anything.
         note:
           type: boolean
-          description: Whether `POST /tickets/{id}/notes` would be accepted.
+          description: Whether `POST /tasks/{id}/notes` would be accepted.
         delete:
           type: boolean
-          description: Whether `DELETE /tickets/{id}` would be accepted.
-    Ticket:
+          description: Whether `DELETE /tasks/{id}` would be accepted.
+    Task:
       type: object
       additionalProperties: false
       required:
@@ -20818,32 +20818,32 @@ components:
         id:
           $ref: "#/components/schemas/Id"
         source:
-          $ref: "#/components/schemas/TicketSource"
+          $ref: "#/components/schemas/TaskSource"
         kind:
-          $ref: "#/components/schemas/TicketKind"
+          $ref: "#/components/schemas/TaskKind"
         name:
           type: string
         subjectId:
           $ref: "#/components/schemas/Id"
           description: |
-            The account the sender was signed in as; absent for an anonymous sender. On a system ticket, the account the situation is about.
+            The account the sender was signed in as; absent for an anonymous sender. On a system task, the account the situation is about.
         email:
           $ref: "#/components/schemas/Email"
-          description: The sender's address. Present on a visitor ticket, absent on a system one.
+          description: The sender's address. Present on a visitor task, absent on a system one.
         subject:
           type: string
         message:
           type: string
         category:
-          $ref: "#/components/schemas/TicketCategory"
+          $ref: "#/components/schemas/TaskCategory"
         orderNumber:
           type: string
           description: The order the visitor said this is about, as they typed it. Not checked against any order.
         link:
-          $ref: "#/components/schemas/TicketLink"
+          $ref: "#/components/schemas/TaskLink"
         routeSet:
           type: string
-          description: The permission set that works this ticket, frozen when it opened.
+          description: The permission set that works this task, frozen when it opened.
         assigneeId:
           $ref: "#/components/schemas/Id"
         assigneeName:
@@ -20852,7 +20852,7 @@ components:
         notes:
           type: array
           items:
-            $ref: "#/components/schemas/TicketNote"
+            $ref: "#/components/schemas/TaskNote"
         dueAt:
           type: string
           format: date-time
@@ -20867,30 +20867,30 @@ components:
           type: integer
           minimum: 1
         status:
-          $ref: "#/components/schemas/TicketStatus"
+          $ref: "#/components/schemas/TaskStatus"
           readOnly: true
         closedAt:
           type: string
           format: date-time
         resolution:
-          $ref: "#/components/schemas/TicketResolution"
+          $ref: "#/components/schemas/TaskResolution"
         respondedAt:
           type: string
           format: date-time
-        earlierTickets:
+        earlierTasks:
           type: array
-          description: Present on `GET /tickets/{id}` only.
+          description: Present on `GET /tasks/{id}` only.
           items:
-            $ref: "#/components/schemas/TicketRef"
+            $ref: "#/components/schemas/TaskRef"
         actions:
-          $ref: "#/components/schemas/TicketActions"
+          $ref: "#/components/schemas/TaskActions"
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
-    TicketsResponse:
+    TasksResponse:
       type: object
       additionalProperties: false
       required:
@@ -20900,10 +20900,10 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/Ticket"
+            $ref: "#/components/schemas/Task"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    CreateContactTicketRequest:
+    CreateContactTaskRequest:
       type: object
       additionalProperties: false
       required:
@@ -20926,7 +20926,7 @@ components:
           minLength: 1
           maxLength: 5000
         category:
-          $ref: "#/components/schemas/TicketCategory"
+          $ref: "#/components/schemas/TaskCategory"
         orderNumber:
           type: string
           minLength: 1
@@ -20936,8 +20936,8 @@ components:
           type: string
           maxLength: 200
           description: |
-            Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `Ticket`, which does not declare it.
-    SearchTicketsRequest:
+            Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `Task`, which does not declare it.
+    SearchTasksRequest:
       type: object
       additionalProperties: false
       properties:
@@ -20946,24 +20946,24 @@ components:
         pageSize:
           $ref: "#/components/schemas/PageSize"
         sort:
-          $ref: "#/components/schemas/TicketSort"
+          $ref: "#/components/schemas/TaskSort"
         text:
           $ref: "#/components/schemas/Text"
         status:
-          $ref: "#/components/schemas/TicketStatus"
+          $ref: "#/components/schemas/TaskStatus"
         category:
-          $ref: "#/components/schemas/TicketCategory"
+          $ref: "#/components/schemas/TaskCategory"
         source:
-          $ref: "#/components/schemas/TicketSource"
+          $ref: "#/components/schemas/TaskSource"
         kind:
-          $ref: "#/components/schemas/TicketKind"
+          $ref: "#/components/schemas/TaskKind"
         assignee:
-          $ref: "#/components/schemas/TicketAssigneeFilter"
+          $ref: "#/components/schemas/TaskAssigneeFilter"
         overdue:
           type: boolean
         email:
           $ref: "#/components/schemas/Email"
-    TicketSummary:
+    TaskSummary:
       type: object
       additionalProperties: false
       required:
@@ -20985,7 +20985,7 @@ components:
         unassigned:
           type: integer
           minimum: 0
-    AssignTicketRequest:
+    AssignTaskRequest:
       type: object
       additionalProperties: false
       required:
@@ -20993,7 +20993,7 @@ components:
       properties:
         userId:
           $ref: "#/components/schemas/Id"
-    CreateTicketNoteRequest:
+    CreateTaskNoteRequest:
       type: object
       additionalProperties: false
       required:
@@ -25974,24 +25974,24 @@ x-error-codes:
   STOCK_ALERT_PRODUCT_BUYABLE:
     status: 409
     description: The product can be ordered now, so there is nothing to wait for. The button is only offered while it cannot.
-  TICKET_ALREADY_OPEN:
+  TASK_ALREADY_OPEN:
     status: 409
-    description: The ticket is already open (new or in progress), so there is nothing to reopen.
-  TICKET_ALREADY_RESOLVED:
+    description: The task is already open (new or in progress), so there is nothing to reopen.
+  TASK_ALREADY_RESOLVED:
     status: 409
-    description: The ticket is already resolved.
-  TICKET_ALREADY_SPAM:
+    description: The task is already resolved.
+  TASK_ALREADY_SPAM:
     status: 409
-    description: The ticket is already marked as spam.
-  TICKET_ASSIGNEE_INVALID:
+    description: The task is already marked as spam.
+  TASK_ASSIGNEE_INVALID:
     status: 422
-    description: The person does not exist, or does not hold the permission set that works this ticket.
-  TICKET_NOT_OPEN:
+    description: The person does not exist, or does not hold the permission set that works this task.
+  TASK_NOT_OPEN:
     status: 409
-    description: The ticket is closed; reopen it before assigning it.
-  TICKET_SUPERSEDED:
+    description: The task is closed; reopen it before assigning it.
+  TASK_SUPERSEDED:
     status: 409
-    description: A newer open ticket already covers the same situation, so this one cannot be reopened. `details.ticketId` names the newer one.
+    description: A newer open task already covers the same situation, so this one cannot be reopened. `details.taskId` names the newer one.
   TOO_MANY_REQUESTS:
     status: 429
     description: The derived code of a status-only 429, one no budget named. Nothing sends it today; it keeps the status-to-code rule total.

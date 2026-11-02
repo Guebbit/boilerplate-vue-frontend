@@ -22,7 +22,7 @@ import type {
     Return,
     Shipment,
     Shop,
-    Ticket,
+    Task,
     User,
     UserActions
 } from '@types';
@@ -406,16 +406,16 @@ export const aProblem = (
 });
 
 /**
- * A new, unassigned visitor ticket the way the API answers it; a case overrides what it needs.
+ * A new, unassigned visitor task the way the API answers it; a case overrides what it needs.
  *
  * @param overrides - Fields to replace.
- * @returns A ticket that passes the response schema.
+ * @returns A task that passes the response schema.
  */
-export const aTicket = (overrides: Partial<Ticket> = {}): Ticket => ({
+export const aTask = (overrides: Partial<Task> = {}): Task => ({
     id: 't1',
     source: 'visitor',
     kind: 'contact',
-    routeSet: 'TicketDisplay',
+    routeSet: 'TaskDisplay',
     notes: [],
     overdue: false,
     actions: {

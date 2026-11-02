@@ -104,12 +104,12 @@ const opened = ref<Return[]>([]);
 const options = ref<ReturnOptions>();
 
 /**
- * The router, to ask whether this build ships a contact page at all (the `tickets` module's).
+ * The router, to ask whether this build ships a contact page at all (the `tasks` module's).
  */
 const router = useRouter();
 
 /**
- * Whether the "contact us" link has somewhere to go: a build without the tickets module has no
+ * Whether the "contact us" link has somewhere to go: a build without the tasks module has no
  * `Contact` route, and shows the reason without the link.
  */
 const hasContact = computed(() => router.hasRoute('Contact'));

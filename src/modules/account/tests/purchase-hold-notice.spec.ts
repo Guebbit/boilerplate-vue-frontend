@@ -34,7 +34,7 @@ vi.mock('pinia', async (importOriginal) => ({
 /**
  * A router with a `Contact` page, or without one.
  *
- * @param withContact - Whether the build ships the tickets module's page.
+ * @param withContact - Whether the build ships the tasks module's page.
  */
 const routerWith = (withContact: boolean) =>
     createRouter({

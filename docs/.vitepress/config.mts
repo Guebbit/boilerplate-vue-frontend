@@ -90,7 +90,7 @@ export default withMermaid(
                                 text: 'example',
                                 link: '/theory/modules#the-module-template'
                             },
-                            { text: 'tickets', link: '/modules/tickets' },
+                            { text: 'tasks', link: '/modules/tasks' },
                             {
                                 text: 'locales',
                                 link: '/modules/locales',
