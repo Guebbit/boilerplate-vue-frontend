@@ -3,20 +3,20 @@
  * @module
  * OP22 · A defective item comes back. The non-withdrawal path of a return: the customer says the
  * goods were faulty, and nothing happens until staff answer. Support decides (approve, or decline
- * with a reason the customer will read); the warehouse, which holds the parcel, receives it. Each
- * role does only its own part — support is never offered "receive", the warehouse never "approve".
+ * with a coded reason and a message the customer will read); the warehouse, which holds the
+ * parcel, receives it. Each role does only its own part — support is never offered "receive", the warehouse never "approve".
  *
  * Two seeded requests, since the story is about the answering. Opening one is CU31's story.
  * Faulty goods are the seller's own doing, so the delivery charge goes back too: the refund is
- * everything the payment took, less the deduction.
+ * the full amount, delivery included, as the guarantee requires. No handling deduction applies.
  */
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
 import { centsOf, creditNotesOf, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
 
-/** What the warehouse keeps back for handling, in cents. */
-const DEDUCTION_CENTS = 200;
+/** The coded reason support picks for declining: the goods show no fault. Shown by its label. */
+const DECLINE_CODE_LABEL = 'No defect found';
 
-/** The reason support gives for declining, which the customer must be able to read. */
+/** The message support writes to the buyer, which the customer must be able to read. */
 const DECLINE_REASON = 'The photos show ordinary wear, not a fault.';
 
 /** Returns the seed already holds besides the two requests: one closed withdrawal cancellation. */
@@ -102,7 +102,7 @@ describe('OP22 · A defective item comes back', () => {
                     }
                 );
 
-                cy.step('and declines the second, which needs a reason');
+                cy.step('and declines the second, which needs a coded reason');
                 cy.visit(`/en/returns/${declinedId}`);
                 cy.get('[data-test=return-decline]').click();
                 cy.get('[data-test=return-decline-form]').should(
@@ -116,10 +116,15 @@ describe('OP22 · A defective item comes back', () => {
                         );
                     }
                 );
-                cy.get('[data-test=return-decline-reason] input').type(DECLINE_REASON);
+                cy.pickOption('[data-test=return-decline-reason]', DECLINE_CODE_LABEL);
+                cy.get('[data-test=return-decline-message] textarea').type(DECLINE_REASON);
                 cy.get('[data-test=return-decline]').click();
                 cy.get('[data-test=return-decline-form]').should('not.exist');
                 cy.get('[data-test=return-decline-reason-text]').should(
+                    'contain.text',
+                    DECLINE_CODE_LABEL
+                );
+                cy.get('[data-test=return-decline-message-text]').should(
                     'contain.text',
                     DECLINE_REASON
                 );
@@ -131,19 +136,17 @@ describe('OP22 · A defective item comes back', () => {
                 filterReturnsBy('status', 'Approved');
                 listShows([approvedId]);
 
-                cy.step('the warehouse receives the approved return, keeping part for handling');
+                cy.step('the warehouse receives the approved return, which offers no deduction');
                 cy.switchUser('warehouse');
                 cy.visit(`/en/returns/${approvedId}`);
                 cy.get('[data-test=return-approve]').should('not.exist');
                 cy.get('[data-test=return-decline-form]').should('not.exist');
-                cy.get('[data-test=return-receive-deduction] input').should('not.be.disabled');
-                cy.get('[data-test=return-receive-deduction] input').type(
-                    (DEDUCTION_CENTS / 100).toFixed(2)
-                );
+                cy.get('[data-test=return-receive-deduction]').should('not.exist');
+                cy.get('[data-test=return-receive-remedy-refund] input').should('be.checked');
                 cy.get('[data-test=return-receive]').click();
                 cy.get('[data-test=return-receive-form]').should('not.exist');
 
-                cy.step('the refund is what the order cost, delivery included, less the deduction');
+                cy.step('the refund is everything the payment took, delivery included');
                 cy.apiAs<ReturnLike>('warehouse', 'GET', `/returns/${approvedId}`).then(
                     (received) => {
                         expect(received?.status).to.equal('closed');
@@ -151,7 +154,7 @@ describe('OP22 · A defective item comes back', () => {
                         paymentOfOrder<PaymentLike>('admin', orderId).then((payment) => {
                             const paidCents = Math.round(Number(payment?.amount) * 100);
                             centsOf('[data-test=return-refund]').should((refund) => {
-                                expect(refund).to.equal(paidCents - DEDUCTION_CENTS);
+                                expect(refund).to.equal(paidCents);
                             });
                         });
 
@@ -176,6 +179,10 @@ describe('OP22 · A defective item comes back', () => {
                 listShows([approvedId, declinedId], SEEDED_CANCELLATIONS);
                 cy.get(`[data-test=return-open][href$="/returns/${declinedId}"]`).click();
                 cy.get('[data-test=return-decline-reason-text]').should(
+                    'contain.text',
+                    DECLINE_CODE_LABEL
+                );
+                cy.get('[data-test=return-decline-message-text]').should(
                     'contain.text',
                     DECLINE_REASON
                 );
