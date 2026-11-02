@@ -9,7 +9,6 @@
  * ANOTHER dictionary entry's string (a linked message, `@:a.b.c`). A key built dynamically
  * (`` t(`generic.${code}`) ``) never appears as a literal, so any key under a template-literal
  * prefix is exempt — permissive on purpose, since this audit never blocks anything.
- *
  */
 import { globSync, readFileSync } from 'node:fs';
 

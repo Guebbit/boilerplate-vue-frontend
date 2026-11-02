@@ -10,7 +10,13 @@
  * goods were faulty or not what was ordered. Money is compared in cents against what the API says
  * the order cost, never a sum made on the page.
  */
-import { centsOf, eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
+import {
+    creditNotesOf,
+    centsOf,
+    eventually,
+    orderMailTo,
+    paymentOfOrder
+} from '../../../support/e2e/steps';
 
 /** The slice of an order this story reads. */
 interface OrderLike {
@@ -184,15 +190,9 @@ describe('CU31 · It arrived broken', () => {
                         expect(inCents(Number(payment?.amountRefunded))).to.equal(a.cents);
                         expect(payment?.displayStatus).to.equal('partially_refunded');
                     });
-                    eventually(
-                        () =>
-                            cy.apiAs<{ items: unknown[] }>(
-                                'user',
-                                'GET',
-                                `/orders/${orderId}/credit-notes`
-                            ),
-                        (notes) => (notes?.items.length ?? 0) > 0
-                    ).should((notes) => expect(notes?.items).to.have.length(1));
+                    creditNotesOf('user', orderId).should((notes) =>
+                        expect(notes?.items).to.have.length(1)
+                    );
                     orderMailTo('user', orderId, 'Your return was refunded');
                     cy.switchUser('user');
                     cy.visit(`/en/orders/${orderId}`);

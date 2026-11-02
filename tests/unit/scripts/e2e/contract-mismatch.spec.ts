@@ -12,27 +12,23 @@ const DIAGNOSTIC =
 
 describe('isContractMismatch', () => {
     it('matches the contract diagnostic logged through console.error', () => {
-        expect(isContractMismatch('error', [DIAGNOSTIC])).toBe(true);
-    });
-
-    it('ignores the same text through console.warn', () => {
-        expect(isContractMismatch('warn', [DIAGNOSTIC])).toBe(false);
+        expect(isContractMismatch([DIAGNOSTIC])).toBe(true);
     });
 
     it('ignores an unrelated console.error', () => {
-        expect(isContractMismatch('error', ['TypeError: x is undefined'])).toBe(false);
+        expect(isContractMismatch(['TypeError: x is undefined'])).toBe(false);
     });
 
     it('ignores a [contract] line that does not say it does not match', () => {
         expect(
-            isContractMismatch('error', [
+            isContractMismatch([
                 '[contract] no response schema mapped for GET /x — skipping validation'
             ])
         ).toBe(false);
     });
 
     it('ignores a call whose first argument is not a string', () => {
-        expect(isContractMismatch('error', [new Error(DIAGNOSTIC)])).toBe(false);
-        expect(isContractMismatch('error', [])).toBe(false);
+        expect(isContractMismatch([new Error(DIAGNOSTIC)])).toBe(false);
+        expect(isContractMismatch([])).toBe(false);
     });
 });

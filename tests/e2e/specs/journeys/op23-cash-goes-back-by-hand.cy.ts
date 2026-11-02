@@ -11,7 +11,7 @@
  * cancel and after the refund, while a credit note joins it. One download is enough: the invoicing
  * budget is spent per download, and the story is the money, not the PDF.
  */
-import { eventually, paymentOfOrder } from '../../../support/e2e/steps';
+import { creditNotesOf, eventually, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** The slice of a payment this story reads: the method, and where the money stands. */
 interface PaymentLike {
@@ -21,11 +21,6 @@ interface PaymentLike {
     amountRefunded: number;
     refunds: { settledByHand?: boolean }[];
     actions: { refund: boolean; settleByHand: string[] };
-}
-
-/** A credit note, as far as this story cares: that it is listed. */
-interface CreditNoteLike {
-    grandTotal: number;
 }
 
 describe('OP23 · Cash goes back by hand', () => {
@@ -86,15 +81,7 @@ describe('OP23 · Cash goes back by hand', () => {
             cy.get('[data-test=payment-offline-detail]').should('exist');
 
             cy.step('a credit note joins the invoice, and the invoice still downloads');
-            eventually(
-                () =>
-                    cy.apiAs<{ items: CreditNoteLike[] }>(
-                        'moderator',
-                        'GET',
-                        `/orders/${orderId}/credit-notes`
-                    ),
-                (notes) => (notes?.items.length ?? 0) > 0
-            ).should((notes) => {
+            creditNotesOf('moderator', orderId).should((notes) => {
                 expect(notes?.items).to.have.length(1);
             });
             cy.visit(`/en/orders/${orderId}`);

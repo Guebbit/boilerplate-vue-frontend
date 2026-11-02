@@ -9,7 +9,7 @@
  * The customer is the witness: their own order page shows the refund and the credit note that
  * goes with it. The order is `order.delivered`, paid by card weeks ago, so nothing is spent.
  */
-import { eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
+import { creditNotesOf, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** The slice of a payment this story reads: where the money stands. */
 interface PaymentLike {
@@ -22,11 +22,6 @@ interface PaymentLike {
 /** The slice of an order this story reads. */
 interface OrderLike {
     status: string;
-}
-
-/** A credit note, as far as this story cares: that it is listed. */
-interface CreditNoteLike {
-    grandTotal: number;
 }
 
 describe('OP4 · A return: refund a delivered order', () => {
@@ -62,15 +57,7 @@ describe('OP4 · A return: refund a delivered order', () => {
             cy.apiAs<OrderLike>('moderator', 'GET', `/orders/${orderId}`).should((order) => {
                 expect(order?.status).to.equal('delivered');
             });
-            eventually(
-                () =>
-                    cy.apiAs<{ items: CreditNoteLike[] }>(
-                        'moderator',
-                        'GET',
-                        `/orders/${orderId}/credit-notes`
-                    ),
-                (notes) => (notes?.items.length ?? 0) > 0
-            ).should((notes) => {
+            creditNotesOf('moderator', orderId).should((notes) => {
                 expect(notes?.items).to.have.length(1);
             });
 

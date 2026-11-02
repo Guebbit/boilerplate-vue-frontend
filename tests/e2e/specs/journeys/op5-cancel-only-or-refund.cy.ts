@@ -12,7 +12,7 @@
  * Two seeded paid orders, one for each branch. Stock is read as the admin sees it, off the API,
  * beside the shelf before and after.
  */
-import { eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
+import { creditNotesOf, eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/steps';
 
 /** The slice of a payment this story reads: where the money stands. */
 interface PaymentLike {
@@ -26,11 +26,6 @@ interface PaymentLike {
 interface OrderLike {
     status: string;
     items: { quantity: number }[];
-}
-
-/** A credit note, as far as this story cares: that it is listed. */
-interface CreditNoteLike {
-    grandTotal: number;
 }
 
 /** The units a product has available, as the admin reads it. */
@@ -113,15 +108,7 @@ describe('OP5 · Cancel only versus cancel and refund', () => {
 
                     cy.step('a credit note is issued for each refund');
                     for (const orderId of [keptId, refundedId])
-                        eventually(
-                            () =>
-                                cy.apiAs<{ items: CreditNoteLike[] }>(
-                                    'admin',
-                                    'GET',
-                                    `/orders/${orderId}/credit-notes`
-                                ),
-                            (notes) => (notes?.items.length ?? 0) > 0
-                        ).should((notes) => {
+                        creditNotesOf('admin', orderId).should((notes) => {
                             expect(notes?.items).to.have.length(1);
                         });
 

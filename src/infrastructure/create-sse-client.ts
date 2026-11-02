@@ -14,6 +14,7 @@
 import * as zod from 'zod';
 import { SSE_EVENT_PAYLOAD_SCHEMAS, type SseEventName, type SseEventPayload } from '@types';
 import { isReportOnly, shouldValidateResponses } from '@/infrastructure/http/validate.ts';
+import { CONTRACT_MISMATCH_TEXT } from '@/infrastructure/http/contract-mismatch-text.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import { parseJsonSafe } from '@/infrastructure/utils/safe-storage.ts';
 
@@ -100,7 +101,7 @@ const passesContract = (eventName: SseEventName, payload: unknown): boolean => {
         .map((issue) => `  - ${issue.path.join('.') || '(root)'}: ${issue.message}`)
         .join('\n');
     logger.error(
-        `[contract] SSE frame "${eventName}" does not match the AsyncAPI schema:\n${issues}`
+        `[contract] SSE frame "${eventName}" ${CONTRACT_MISMATCH_TEXT} AsyncAPI schema:\n${issues}`
     );
     return isReportOnly();
 };

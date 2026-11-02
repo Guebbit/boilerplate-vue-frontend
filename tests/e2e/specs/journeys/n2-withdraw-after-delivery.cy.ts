@@ -15,6 +15,7 @@
  */
 import {
     centsOf,
+    creditNotesOf,
     eventually,
     idFromLocation,
     orderMailTo,
@@ -37,11 +38,6 @@ interface PaymentLike {
 interface ReturnLike {
     status: string;
     reason: string;
-}
-
-/** A credit note, as far as this story cares: that one exists and what it gives back. */
-interface CreditNoteLike {
-    grandTotal: number;
 }
 
 describe('N2 · Withdraw after delivery', () => {
@@ -120,15 +116,7 @@ describe('N2 · Withdraw after delivery', () => {
                 );
                 expect(payment?.displayStatus, 'part of the money stayed').to.not.equal('refunded');
             });
-            eventually(
-                () =>
-                    cy.apiAs<{ items: CreditNoteLike[] }>(
-                        'user',
-                        'GET',
-                        `/orders/${orderId}/credit-notes`
-                    ),
-                (notes) => (notes?.items.length ?? 0) > 0
-            ).should((notes) => {
+            creditNotesOf('user', orderId).should((notes) => {
                 expect(notes?.items).to.have.length(1);
             });
 

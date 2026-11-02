@@ -668,6 +668,11 @@ jobs:
             - build
             - test-unit
         uses: ./.github/workflows/e2e-live.yml
+        # A ceiling for the called workflow's own job permissions: `e2e-live-notify` asks for
+        # `issues: write`, and GitHub refuses the whole call if the caller grants less.
+        permissions:
+            contents: read
+            issues: write
         with:
             # Only the `@smoke` tests gate a push; the full live run is the nightly's.
             grep: '@smoke'

@@ -370,7 +370,7 @@ Cypress.on('window:before:load', (contentWindow) => {
     const originalError = contentWindow.console.error.bind(contentWindow.console);
     contentWindow.console.error = (...parameters: unknown[]) => {
         originalError(...parameters);
-        if (!isContractMismatch('error', parameters)) return;
+        if (!isContractMismatch(parameters)) return;
         contentWindow.setTimeout(() => {
             throw new Error(String(parameters[0]));
         }, 0);

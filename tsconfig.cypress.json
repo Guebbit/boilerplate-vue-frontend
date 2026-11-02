@@ -29,7 +29,9 @@
         // `scripts/design-policy.ts` reads the theme's colour maps, and is itself under `scripts/**`.
         "src/ui/vuetify/theme.ts",
         // `tests/support/e2e/sweep-state.ts` reads where the phone layout starts.
-        "src/ui/vuetify/breakpoints.ts"
+        "src/ui/vuetify/breakpoints.ts",
+        // `scripts/e2e/contract-mismatch.ts` matches the diagnostic text the app writes.
+        "src/infrastructure/http/contract-mismatch-text.ts"
     ],
     "exclude": [],
     "compilerOptions": {
