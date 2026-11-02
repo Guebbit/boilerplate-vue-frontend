@@ -194,7 +194,7 @@
                 },
                 "contact": {
                     "title": "Get in touch",
-                    "text": "A contact form whose messages land in an admin inbox on this very site, where each one moves through its statuses."
+                    "text": "A contact form whose messages land in an admin Tasks page on this very site, where each one moves through its statuses."
                 },
                 "languages": {
                     "title": "Two languages",
@@ -239,7 +239,7 @@
                     "Sign up with any email you like; nothing is sent to it.",
                     "Add a few products to the cart, then try ordering more of one than the shelf holds.",
                     "Check out with a saved address and a shipping method, then open the order and watch it progress.",
-                    "Send a message through the contact form — an admin will find it in the inbox."
+                    "Send a message through the contact form — an admin will find it on the Tasks page."
                 ],
                 "note": "The data resets from time to time, so do not keep anything here you would miss — and please do not enter real personal details.",
                 "button-products": "Browse products",
@@ -342,7 +342,7 @@
             },
             "contact": {
                 "title": "Still have a question?",
-                "text": "Send it through the contact form — it lands in the admin inbox.",
+                "text": "Send it through the contact form — it lands in the admin Tasks page.",
                 "button": "Contact us"
             }
         },

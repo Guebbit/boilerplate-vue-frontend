@@ -22,7 +22,7 @@ export default [
         meta: {
             access: 'auth',
             can: ['read', 'Task'],
-            title: 'task-inbox-page.page-title'
+            title: 'tasks-page.page-title'
         },
         component: () => import('./views/TaskInbox.vue')
     },

@@ -1,7 +1,7 @@
 # tasks
 
 ::: tip At a glance
-**Owns** — the public contact form and the admin inbox behind it.
+**Owns** — the public contact form and the admin tasks page behind it.
 **Depends on** — nothing, and nothing depends on it. A leaf in both directions.
 **Breaks if you change** — nothing outside this folder.
 :::

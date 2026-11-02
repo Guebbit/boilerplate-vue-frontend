@@ -123,13 +123,13 @@ const handleNote = () =>
                 <div>
                     <h1 class="text-xl font-semibold">{{ task.subject }}</h1>
                     <p class="text-sm opacity-muted">
-                        {{ t(`task-inbox-page.kind-${task.kind}`) }} ·
+                        {{ t(`tasks-page.kind-${task.kind}`) }} ·
                         {{ formatDateTime(task.createdAt) }}
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <v-chip size="small" variant="tonal" label data-test="task-status">
-                        {{ t(`task-inbox-page.status-${task.status}`) }}
+                        {{ t(`tasks-page.status-${task.status}`) }}
                     </v-chip>
                     <v-chip
                         v-if="task.dueAt"
@@ -140,19 +140,16 @@ const handleNote = () =>
                         data-test="task-due"
                     >
                         {{
-                            t(
-                                task.overdue
-                                    ? 'task-inbox-page.label-overdue'
-                                    : 'task-inbox-page.label-due',
-                                { date: formatDateTime(task.dueAt) }
-                            )
+                            t(task.overdue ? 'tasks-page.label-overdue' : 'tasks-page.label-due', {
+                                date: formatDateTime(task.dueAt)
+                            })
                         }}
                     </v-chip>
                 </div>
             </div>
 
             <div v-if="task.email" class="mt-3 text-sm" data-test="task-visitor">
-                {{ task.name || t('task-inbox-page.anonymous') }} —
+                {{ task.name || t('tasks-page.anonymous') }} —
                 <a :href="`mailto:${task.email}`">{{ task.email }}</a>
             </div>
             <p class="mt-3 whitespace-pre-line">{{ task.message }}</p>
@@ -168,7 +165,7 @@ const handleNote = () =>
             </p>
 
             <p v-if="task.assigneeName" class="mt-3 text-sm" data-test="task-assignee">
-                {{ t('task-inbox-page.label-assignee', { name: task.assigneeName }) }}
+                {{ t('tasks-page.label-assignee', { name: task.assigneeName }) }}
             </p>
 
             <div class="mt-4 flex flex-wrap gap-2">
@@ -180,11 +177,11 @@ const handleNote = () =>
                     @click="
                         handle(
                             () => store.assign(task!.id, session.viewer?.id ?? ''),
-                            t('task-inbox-page.success-take')
+                            t('tasks-page.success-take')
                         )
                     "
                 >
-                    {{ t('task-inbox-page.button-take') }}
+                    {{ t('tasks-page.button-take') }}
                 </v-btn>
                 <v-btn
                     v-if="task.actions.unassign"
@@ -205,33 +202,27 @@ const handleNote = () =>
                     size="small"
                     variant="tonal"
                     data-test="task-resolve"
-                    @click="
-                        handle(() => store.resolve(task!.id), t('task-inbox-page.success-status'))
-                    "
+                    @click="handle(() => store.resolve(task!.id), t('tasks-page.success-status'))"
                 >
-                    {{ t('task-inbox-page.button-resolve') }}
+                    {{ t('tasks-page.button-resolve') }}
                 </v-btn>
                 <v-btn
                     v-if="task.actions.markSpam"
                     size="small"
                     variant="tonal"
                     data-test="task-spam"
-                    @click="
-                        handle(() => store.markSpam(task!.id), t('task-inbox-page.success-status'))
-                    "
+                    @click="handle(() => store.markSpam(task!.id), t('tasks-page.success-status'))"
                 >
-                    {{ t('task-inbox-page.button-spam') }}
+                    {{ t('tasks-page.button-spam') }}
                 </v-btn>
                 <v-btn
                     v-if="task.actions.reopen"
                     size="small"
                     variant="tonal"
                     data-test="task-reopen"
-                    @click="
-                        handle(() => store.reopen(task!.id), t('task-inbox-page.success-status'))
-                    "
+                    @click="handle(() => store.reopen(task!.id), t('tasks-page.success-status'))"
                 >
-                    {{ t('task-inbox-page.button-reopen') }}
+                    {{ t('tasks-page.button-reopen') }}
                 </v-btn>
             </div>
         </v-card>
@@ -278,7 +269,7 @@ const handleNote = () =>
             <ul class="mt-2">
                 <li v-for="earlier in task.earlierTasks" :key="earlier.id">
                     <router-link :to="{ name: 'TaskDetail', params: { id: earlier.id } }">
-                        {{ t(`task-inbox-page.status-${earlier.status}`) }} ·
+                        {{ t(`tasks-page.status-${earlier.status}`) }} ·
                         {{ formatDateTime(earlier.createdAt) }}
                     </router-link>
                 </li>

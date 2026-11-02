@@ -14,7 +14,7 @@ sweepA11y('tasks — public', [['contact', '/en/contact']]);
 sweepA11y(
     'tasks — admin',
     [
-        ['task inbox', '/en/tasks'],
+        ['tasks page', '/en/tasks'],
         {
             name: 'task detail',
             // No seeded task: file one through the public door and open it.

@@ -194,7 +194,7 @@
                 },
                 "contact": {
                     "title": "Contattaci",
-                    "text": "Un modulo di contatto i cui messaggi finiscono in una casella admin su questo stesso sito, dove ognuno passa per i suoi stati."
+                    "text": "Un modulo di contatto i cui messaggi finiscono in una pagina Attività admin su questo stesso sito, dove ognuno passa per i suoi stati."
                 },
                 "languages": {
                     "title": "Due lingue",
@@ -239,7 +239,7 @@
                     "Registrati con l'email che preferisci; non le viene inviato nulla.",
                     "Aggiungi qualche prodotto al carrello, poi prova a ordinarne più di quanti ce ne sono a scaffale.",
                     "Completa l'acquisto con un indirizzo salvato e un metodo di spedizione, poi apri l'ordine e guardalo avanzare.",
-                    "Invia un messaggio dal modulo di contatto — un amministratore lo troverà nella casella."
+                    "Invia un messaggio dal modulo di contatto — un amministratore lo troverà nella pagina Attività."
                 ],
                 "note": "I dati vengono azzerati di tanto in tanto, quindi non tenere qui nulla a cui tieni — e per favore non inserire dati personali reali.",
                 "button-products": "Sfoglia i prodotti",
@@ -342,7 +342,7 @@
             },
             "contact": {
                 "title": "Hai ancora una domanda?",
-                "text": "Inviala dal modulo di contatto — arriva nella casella admin.",
+                "text": "Inviala dal modulo di contatto — arriva nella pagina Attività admin.",
                 "button": "Contattaci"
             }
         },

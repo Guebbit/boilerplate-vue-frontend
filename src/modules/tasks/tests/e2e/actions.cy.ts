@@ -1,6 +1,6 @@
 /**
  * @module
- * The task inbox's failure rows, run through the shared `actionTable` runner: deleting a
+ * The tasks page's failure rows, run through the shared `actionTable` runner: deleting a
  * message answered with a server fault keeps it listed and shows the alert, and a retry works.
  */
 import { actionTable } from '../../../../../tests/support/e2e/action-table';

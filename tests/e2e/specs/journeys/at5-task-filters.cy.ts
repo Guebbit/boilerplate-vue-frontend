@@ -1,7 +1,7 @@
 // requires-module: tasks
 /**
  * @module
- * AT5 · Task inbox filters. The `shop` seed holds no tasks, so three are written here: two
+ * AT5 · Tasks page filters. The `shop` seed holds no tasks, so three are written here: two
  * ordinary from different addresses, and one the honeypot turns into spam. Text, email and status
  * each narrow the inbox to the tasks that match; reset brings all three back.
  */
@@ -32,7 +32,7 @@ const search = (): void => {
     cy.settleNetwork();
 };
 
-describe('AT5 · Task inbox filters', () => {
+describe('AT5 · Tasks page filters', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();

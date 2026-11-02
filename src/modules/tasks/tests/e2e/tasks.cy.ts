@@ -1,7 +1,7 @@
 /**
  * @module
  * Cypress end-to-end spec driving the real app: submits the public contact form, then reads the
- * resulting task back through the admin inbox — the tasks module's whole loop, driven the way
+ * resulting task back through the admin tasks page — the tasks module's whole loop, driven the way
  * a visitor and then an admin would drive it. The inbox starts empty on purpose — the demo profile
  * seeds no tasks — so the form IS the fixture.
  */
@@ -77,7 +77,7 @@ describe('Tasks', () => {
         // A fresh load must not hand the row back — the inbox reads through POST /tasks/search,
         // which no browser cache answers, unlike GET /tasks's 30-second max-age.
         cy.reload();
-        cy.get('#task-inbox-page').should('exist');
+        cy.get('#tasks-page').should('exist');
         cy.get('[data-test=task-item]').should('have.length', 0);
     });
 
@@ -179,7 +179,7 @@ describe('Tasks', () => {
         // Not merely "the inbox is absent" — where they LANDED is the assertion, because a
         // blank error page would also have no inbox and prove nothing.
         cy.get('#home-page').should('exist');
-        cy.get('#task-inbox-page').should('not.exist');
+        cy.get('#tasks-page').should('not.exist');
         // The notice is asserted as shown, not by its wording: the copy belongs to the guard's
         // own unit spec.
         cy.get('.v-alert[role=status]').should('be.visible');

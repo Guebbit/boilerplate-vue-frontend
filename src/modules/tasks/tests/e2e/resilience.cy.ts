@@ -17,6 +17,6 @@ describe('the contact form and the inbox render whatever the inbox holds', () =>
 
     it('serves the staff inbox quietly and inside the viewport', () => {
         cy.loginAs('admin');
-        assertRouteIsHealthy('/en/tasks', '#task-inbox-page');
+        assertRouteIsHealthy('/en/tasks', '#tasks-page');
     });
 });

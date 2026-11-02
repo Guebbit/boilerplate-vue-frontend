@@ -10,7 +10,7 @@ import routes from './routes';
 import { useTaskBadge } from './composables/use-task-badge';
 
 /**
- * The contact form and its admin inbox.
+ * The contact form and its admin tasks page.
  *
  * Depends on nothing: a task references no other domain's records, and both views talk only
  * to this module's own endpoints.

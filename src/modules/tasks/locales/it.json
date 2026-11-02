@@ -23,8 +23,8 @@
         "category-privacy": "I miei dati personali",
         "category-other": "Altro"
     },
-    "task-inbox-page": {
-        "page-title": "Casella task",
+    "tasks-page": {
+        "page-title": "Attività",
         "empty": "Nessun messaggio",
         "empty-search": "Nessun task corrisponde alla ricerca",
         "filter-text": "Cerca nel testo",

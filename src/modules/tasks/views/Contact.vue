@@ -31,7 +31,7 @@ import { withAntibotToken } from '@/infrastructure/http/antibot.ts';
 
 /**
  * The public contact form. No login required — it exists for the visitor who cannot log in —
- * and the admin reads what lands here in the task inbox.
+ * and the admin reads what lands here in the tasks page.
  */
 interface ContactForm {
     name?: string;

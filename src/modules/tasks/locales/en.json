@@ -23,8 +23,8 @@
         "category-privacy": "My personal data",
         "category-other": "Something else"
     },
-    "task-inbox-page": {
-        "page-title": "Task inbox",
+    "tasks-page": {
+        "page-title": "Tasks",
         "empty": "No messages yet",
         "empty-search": "No tasks match this search",
         "filter-text": "Search text",

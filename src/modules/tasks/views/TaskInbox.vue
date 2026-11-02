@@ -41,7 +41,7 @@ import { TaskCategory, TaskKind, TaskSource, TaskStatus } from '@/types/enums.ts
 import type { Task } from '@types';
 
 /**
- * The admin inbox for the public contact form: every task, movable through its statuses.
+ * The admin tasks page for the public contact form: every task, movable through its statuses.
  */
 const { t } = useI18n();
 
@@ -79,7 +79,7 @@ const { filters, pageItemList, pageCurrent, pageSize, pageTotal, loading } =
 const statusOptions = computed(() =>
     Object.values(TaskStatus).map((status) => ({
         value: status,
-        title: t(`task-inbox-page.status-${status}`)
+        title: t(`tasks-page.status-${status}`)
     }))
 );
 
@@ -92,7 +92,7 @@ const statusOptions = computed(() =>
  * @returns The filter's select items, re-translated on locale change.
  */
 const filterStatusOptions = computed(() => [
-    { value: null, title: t('task-inbox-page.filter-status-any') },
+    { value: null, title: t('tasks-page.filter-status-any') },
     ...statusOptions.value
 ]);
 
@@ -111,7 +111,7 @@ const statusChoice = useAnyFilterChoice(
  * as {@link filterStatusOptions}) and one row per category the contact form offers.
  */
 const filterCategoryOptions = computed(() => [
-    { value: null, title: t('task-inbox-page.filter-category-any') },
+    { value: null, title: t('tasks-page.filter-category-any') },
     ...Object.values(TaskCategory).map((category) => ({
         value: category,
         title: t(`contact-page.category-${category}`)
@@ -132,9 +132,9 @@ const categoryChoice = useAnyFilterChoice(
  * The assignee filter's choices: anyone, the viewer's own, or nobody yet.
  */
 const filterAssigneeOptions = computed(() => [
-    { value: null, title: t('task-inbox-page.filter-assignee-any') },
-    { value: 'me', title: t('task-inbox-page.filter-assignee-me') },
-    { value: 'none', title: t('task-inbox-page.filter-assignee-none') }
+    { value: null, title: t('tasks-page.filter-assignee-any') },
+    { value: 'me', title: t('tasks-page.filter-assignee-me') },
+    { value: 'none', title: t('tasks-page.filter-assignee-none') }
 ]);
 
 /**
@@ -151,10 +151,10 @@ const assigneeChoice = useAnyFilterChoice(
  * The source filter's choices: a contact message from a visitor, or a task the system opened.
  */
 const filterSourceOptions = computed(() => [
-    { value: null, title: t('task-inbox-page.filter-source-any') },
+    { value: null, title: t('tasks-page.filter-source-any') },
     ...Object.values(TaskSource).map((source) => ({
         value: source,
-        title: t(`task-inbox-page.source-${source}`)
+        title: t(`tasks-page.source-${source}`)
     }))
 ]);
 
@@ -172,10 +172,10 @@ const sourceChoice = useAnyFilterChoice(
  * The kind filter's choices: one row per situation a task can be about.
  */
 const filterKindOptions = computed(() => [
-    { value: null, title: t('task-inbox-page.filter-kind-any') },
+    { value: null, title: t('tasks-page.filter-kind-any') },
     ...Object.values(TaskKind).map((kind) => ({
         value: kind,
-        title: t(`task-inbox-page.kind-${kind}`)
+        title: t(`tasks-page.kind-${kind}`)
     }))
 ]);
 
@@ -246,10 +246,10 @@ const { choice: sortChoice } = useServerSort({ filters, apply: handleSearch });
  * @returns The select's options, re-translated on locale change.
  */
 const sortOptions = computed(() => [
-    { value: 'createdAt', title: t('task-inbox-page.sort-oldest') },
-    { value: 'dueAt', title: t('task-inbox-page.sort-due') },
-    { value: 'status', title: t('task-inbox-page.sort-status') },
-    { value: 'email', title: t('task-inbox-page.sort-email') }
+    { value: 'createdAt', title: t('tasks-page.sort-oldest') },
+    { value: 'dueAt', title: t('tasks-page.sort-due') },
+    { value: 'status', title: t('tasks-page.sort-status') },
+    { value: 'email', title: t('tasks-page.sort-email') }
 ]);
 
 /**
@@ -284,7 +284,7 @@ const { run, runConfirmed } = useRowActions({
 const handleDoor = (move: (id: string) => Promise<unknown>, requestId: string) =>
     run({
         action: () => move(requestId),
-        success: t('task-inbox-page.success-status'),
+        success: t('tasks-page.success-status'),
         afterwards: () => search(true)
     });
 
@@ -297,7 +297,7 @@ const handleDoor = (move: (id: string) => Promise<unknown>, requestId: string) =
 const handleTake = (request: Task) =>
     run({
         action: () => assign(request.id, session.viewer?.id ?? ''),
-        success: t('task-inbox-page.success-take'),
+        success: t('tasks-page.success-take'),
         afterwards: () => search(true)
     });
 
@@ -312,34 +312,34 @@ const handleTake = (request: Task) =>
  */
 const handleDelete = (requestId: string, subject: string) =>
     runConfirmed({
-        confirm: t('task-inbox-page.confirm-delete', { subject }),
+        confirm: t('tasks-page.confirm-delete', { subject }),
         action: () => deleteRequest(requestId),
-        success: t('task-inbox-page.success-delete')
+        success: t('tasks-page.success-delete')
     });
 </script>
 
 <template>
-    <div id="task-inbox-page">
+    <div id="tasks-page">
         <v-card class="mx-auto mb-6 w-full max-w-3xl p-5">
             <form novalidate @submit.prevent="handleSearch">
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
                     <v-text-field
                         v-model="filters.text"
                         data-test="filter-text"
-                        :label="t('task-inbox-page.filter-text')"
+                        :label="t('tasks-page.filter-text')"
                         maxlength="200"
                         hide-details
                     />
                     <v-text-field
                         v-model="filters.email"
                         data-test="filter-email"
-                        :label="t('task-inbox-page.filter-email')"
+                        :label="t('tasks-page.filter-email')"
                         hide-details
                     />
                     <v-select
                         v-model="statusChoice"
                         data-test="filter-status"
-                        :label="t('task-inbox-page.filter-status')"
+                        :label="t('tasks-page.filter-status')"
                         :items="filterStatusOptions"
                         item-title="title"
                         item-value="value"
@@ -348,7 +348,7 @@ const handleDelete = (requestId: string, subject: string) =>
                     <v-select
                         v-model="categoryChoice"
                         data-test="filter-category"
-                        :label="t('task-inbox-page.filter-category')"
+                        :label="t('tasks-page.filter-category')"
                         :items="filterCategoryOptions"
                         item-title="title"
                         item-value="value"
@@ -357,7 +357,7 @@ const handleDelete = (requestId: string, subject: string) =>
                     <v-select
                         v-model="assigneeChoice"
                         data-test="filter-assignee"
-                        :label="t('task-inbox-page.filter-assignee')"
+                        :label="t('tasks-page.filter-assignee')"
                         :items="filterAssigneeOptions"
                         item-title="title"
                         item-value="value"
@@ -366,7 +366,7 @@ const handleDelete = (requestId: string, subject: string) =>
                     <v-select
                         v-model="sourceChoice"
                         data-test="filter-source"
-                        :label="t('task-inbox-page.filter-source')"
+                        :label="t('tasks-page.filter-source')"
                         :items="filterSourceOptions"
                         item-title="title"
                         item-value="value"
@@ -375,7 +375,7 @@ const handleDelete = (requestId: string, subject: string) =>
                     <v-select
                         v-model="kindChoice"
                         data-test="filter-kind"
-                        :label="t('task-inbox-page.filter-kind')"
+                        :label="t('tasks-page.filter-kind')"
                         :items="filterKindOptions"
                         item-title="title"
                         item-value="value"
@@ -384,13 +384,13 @@ const handleDelete = (requestId: string, subject: string) =>
                     <v-checkbox
                         v-model="filters.overdue"
                         data-test="filter-overdue"
-                        :label="t('task-inbox-page.filter-overdue')"
+                        :label="t('tasks-page.filter-overdue')"
                         hide-details
                     />
                     <SortSelect
                         v-model="sortChoice"
-                        :label="t('task-inbox-page.sort-label')"
-                        :default-label="t('task-inbox-page.sort-newest')"
+                        :label="t('tasks-page.sort-label')"
+                        :default-label="t('tasks-page.sort-newest')"
                         :options="sortOptions"
                     />
                     <PageSizeSelect v-model="pageSize" />
@@ -401,7 +401,7 @@ const handleDelete = (requestId: string, subject: string) =>
 
         <ListEmptyState
             v-if="pageItemList.length === 0"
-            :title="isFiltered ? t('task-inbox-page.empty-search') : t('task-inbox-page.empty')"
+            :title="isFiltered ? t('tasks-page.empty-search') : t('tasks-page.empty')"
             :icon="Inbox"
         >
         </ListEmptyState>
@@ -419,8 +419,8 @@ const handleDelete = (requestId: string, subject: string) =>
                     <div>
                         <h2 class="text-lg font-semibold">{{ request.subject }}</h2>
                         <p class="text-sm opacity-muted">
-                            {{ request.name || t('task-inbox-page.anonymous') }} —
-                            {{ request.email ?? t(`task-inbox-page.kind-${request.kind}`) }} ·
+                            {{ request.name || t('tasks-page.anonymous') }} —
+                            {{ request.email ?? t(`tasks-page.kind-${request.kind}`) }} ·
                             {{ formatDateTime(request.createdAt) }}
                         </p>
                         <p
@@ -438,14 +438,14 @@ const handleDelete = (requestId: string, subject: string) =>
                                     data-test="task-order-link"
                                 >
                                     {{
-                                        t('task-inbox-page.label-order', {
+                                        t('tasks-page.label-order', {
                                             number: request.orderNumber
                                         })
                                     }}
                                 </router-link>
                                 <template v-else>
                                     {{
-                                        t('task-inbox-page.label-order', {
+                                        t('tasks-page.label-order', {
                                             number: request.orderNumber
                                         })
                                     }}
@@ -458,7 +458,7 @@ const handleDelete = (requestId: string, subject: string) =>
                             data-test="task-responded-at"
                         >
                             {{
-                                t('task-inbox-page.label-responded-at', {
+                                t('tasks-page.label-responded-at', {
                                     date: formatDateTime(request.respondedAt)
                                 })
                             }}
@@ -466,7 +466,7 @@ const handleDelete = (requestId: string, subject: string) =>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
                         <v-chip size="small" variant="tonal" label data-test="task-status">
-                            {{ t(`task-inbox-page.status-${request.status}`) }}
+                            {{ t(`tasks-page.status-${request.status}`) }}
                         </v-chip>
                         <v-chip
                             v-if="request.dueAt"
@@ -479,8 +479,8 @@ const handleDelete = (requestId: string, subject: string) =>
                             {{
                                 t(
                                     request.overdue
-                                        ? 'task-inbox-page.label-overdue'
-                                        : 'task-inbox-page.label-due',
+                                        ? 'tasks-page.label-overdue'
+                                        : 'tasks-page.label-due',
                                     { date: formatDateTime(request.dueAt) }
                                 )
                             }}
@@ -493,7 +493,7 @@ const handleDelete = (requestId: string, subject: string) =>
                             data-test="task-assignee"
                         >
                             {{
-                                t('task-inbox-page.label-assignee', {
+                                t('tasks-page.label-assignee', {
                                     name: request.assigneeName
                                 })
                             }}
@@ -511,7 +511,7 @@ const handleDelete = (requestId: string, subject: string) =>
                         data-test="task-take"
                         @click="handleTake(request)"
                     >
-                        {{ t('task-inbox-page.button-take') }}
+                        {{ t('tasks-page.button-take') }}
                     </v-btn>
                     <v-btn
                         v-if="request.actions.resolve"
@@ -520,13 +520,13 @@ const handleDelete = (requestId: string, subject: string) =>
                         :disabled="loading"
                         data-test="task-resolve"
                         :aria-label="
-                            t('task-inbox-page.button-resolve-named', {
+                            t('tasks-page.button-resolve-named', {
                                 subject: request.subject
                             })
                         "
                         @click="handleDoor(resolve, request.id)"
                     >
-                        {{ t('task-inbox-page.button-resolve') }}
+                        {{ t('tasks-page.button-resolve') }}
                     </v-btn>
                     <v-btn
                         v-if="request.actions.markSpam"
@@ -535,11 +535,11 @@ const handleDelete = (requestId: string, subject: string) =>
                         :disabled="loading"
                         data-test="task-spam"
                         :aria-label="
-                            t('task-inbox-page.button-spam-named', { subject: request.subject })
+                            t('tasks-page.button-spam-named', { subject: request.subject })
                         "
                         @click="handleDoor(markSpam, request.id)"
                     >
-                        {{ t('task-inbox-page.button-spam') }}
+                        {{ t('tasks-page.button-spam') }}
                     </v-btn>
                     <v-btn
                         v-if="request.actions.reopen"
@@ -548,11 +548,11 @@ const handleDelete = (requestId: string, subject: string) =>
                         :disabled="loading"
                         data-test="task-reopen"
                         :aria-label="
-                            t('task-inbox-page.button-reopen-named', { subject: request.subject })
+                            t('tasks-page.button-reopen-named', { subject: request.subject })
                         "
                         @click="handleDoor(reopen, request.id)"
                     >
-                        {{ t('task-inbox-page.button-reopen') }}
+                        {{ t('tasks-page.button-reopen') }}
                     </v-btn>
                     <v-btn
                         size="small"
@@ -561,7 +561,7 @@ const handleDelete = (requestId: string, subject: string) =>
                         data-test="task-open"
                         :to="{ name: 'TaskDetail', params: { id: request.id } }"
                     >
-                        {{ t('task-inbox-page.button-open') }}
+                        {{ t('tasks-page.button-open') }}
                     </v-btn>
                     <v-btn
                         v-if="request.actions.delete"
@@ -570,12 +570,12 @@ const handleDelete = (requestId: string, subject: string) =>
                         color="error"
                         data-test="task-delete"
                         :aria-label="
-                            t('task-inbox-page.button-delete-named', { subject: request.subject })
+                            t('tasks-page.button-delete-named', { subject: request.subject })
                         "
                         :disabled="loading"
                         @click="handleDelete(request.id, request.subject)"
                     >
-                        {{ t('task-inbox-page.button-delete') }}
+                        {{ t('tasks-page.button-delete') }}
                     </v-btn>
                 </div>
             </v-card>

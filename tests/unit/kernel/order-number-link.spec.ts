@@ -1,5 +1,5 @@
 /**
- * `useOrderNumberLink` — `src/kernel/order-link.ts` — the task inbox's way to the staff orders
+ * `useOrderNumberLink` — `src/kernel/order-link.ts` — the tasks page's way to the staff orders
  * list filtered to the number a task quotes, only when the build ships that list.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';

@@ -18,7 +18,7 @@ import routes from './routes';
  *
  * Two nav entries, not one: subscriptions (creating/rotating/removing) and the delivery log
  * (reading/replaying) are different jobs an operator reaches for at different times, same split
- * the `tasks` module uses for its public form vs. its admin inbox.
+ * the `tasks` module uses for its public form vs. its admin tasks page.
  *
  * Context map: `docs/modules/webhooks.md` § "The map".
  *
