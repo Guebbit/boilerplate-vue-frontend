@@ -100,7 +100,7 @@ victim's cookies, storage and permissions.
 | XSS — stored                                   | script saved once, served to many                        | unescaped user content (comments, names, profiles) rendered later                            |
 | XSS — DOM-based                                | script never touches the server                          | client code writes `location`, `hash`, `postMessage` data into the DOM unsafely              |
 | XSS — mutation (mXSS)                          | sanitiser bypassed by the parser                         | markup that is safe as text but mutates into script when the browser re-serialises it        |
-| XSS — blind                                    | payload fires where the attacker cannot see              | stored in a support task, log viewer, admin dashboard                                        |
+| XSS — blind                                    | payload fires where the attacker cannot see              | stored in a support ticket, log viewer, admin dashboard                                      |
 | XSS — universal (UXSS)                         | browser bug crossing origins                             | flaw in the browser rather than the site; site cannot prevent, only reduce impact            |
 | HTML injection                                 | markup, not script, injected                             | phishing forms, fake login boxes, defacement inside a trusted page                           |
 | CSS injection                                  | attacker-controlled stylesheet                           | attribute selectors leaking values char by char, layout for clickjacking                     |

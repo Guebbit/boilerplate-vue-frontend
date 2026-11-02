@@ -75,7 +75,7 @@ silently. A read may have been answered just before something else happened, so 
 flight remembers what landed meanwhile and wins over its own answer: a row the stream pushed is not
 dropped, a row deleted (by a frame, the owner or "Clear all") is not brought back, and a row read
 meanwhile stays read. A read that answers after the person changed, or after a fresher read, writes
-nothing (the same task rule as [the cart](./cart.md#answers-in-order)). A failed read is reported by
+nothing (the same ticket rule as [the cart](./cart.md#answers-in-order)). A failed read is reported by
 the store itself, as a toast.
 
 The stream authenticates with the refresh cookie (an `EventSource` cannot send a header), so the

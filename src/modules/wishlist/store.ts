@@ -13,7 +13,7 @@ import { useCartStore } from '@/modules/cart';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
-import { createRequestTasks } from '@/infrastructure/utils/request-task.ts';
+import { createRequestTickets } from '@/infrastructure/utils/request-ticket.ts';
 
 /**
  * The visitor's saved products — ids only, like the cart's lines: the view joins them against
@@ -42,7 +42,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
      * Orders the answers that write {@link items}: a slow older answer never lands over a newer
      * one, and a viewer change kills every answer still on the wire for the previous person.
      */
-    const tasks = createRequestTasks();
+    const tickets = createRequestTickets();
 
     /**
      * A call that answers with the whole list, stored unless a fresher answer already landed.
@@ -52,7 +52,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
      */
     const replaceItems = (call: () => Promise<{ items: WishlistItem[] }>) =>
         fetchAny(() => {
-            const claim = tasks.take();
+            const claim = tickets.take();
             return call().then((data) => {
                 if (claim()) items.value = data.items;
                 return items.value;
@@ -143,7 +143,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
      * person's heart asks the server rather than trusting someone else's answer.
      */
     useResetOnViewerChange(() => {
-        tasks.reset();
+        tickets.reset();
         items.value = [];
         shared = undefined;
     });

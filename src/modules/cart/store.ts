@@ -31,7 +31,7 @@ import type {
 } from '@types';
 import { rethrowUnlessAbsent, isRetryableFailure } from '@/infrastructure/utils/errors';
 import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
-import { createRequestTasks } from '@/infrastructure/utils/request-task.ts';
+import { createRequestTickets } from '@/infrastructure/utils/request-ticket.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { invalidateProductsCache } from '@/modules/products';
 import { changedMergeLines, classifyCheckoutError, emptyCart, subtractGuestLines } from './domain';
@@ -89,25 +89,25 @@ export const useCartStore = defineStore('cart', () => {
     let writesInFlight = 0;
 
     /**
-     * Orders the answers that write `cart`: each call takes a task when it leaves, and an answer
+     * Orders the answers that write `cart`: each call takes a ticket when it leaves, and an answer
      * lands only if no fresher one did first. A viewer change is a barrier that kills every
-     * task taken before it. See `docs/modules/cart.md`.
+     * ticket taken before it. See `docs/modules/cart.md`.
      */
-    const cartTasks = createRequestTasks();
+    const cartTickets = createRequestTickets();
 
     /**
-     * The same ordering for the badge's summary read, kept apart from {@link cartTasks}: a summary
+     * The same ordering for the badge's summary read, kept apart from {@link cartTickets}: a summary
      * only seeds the badge, so one answered first must never make a cart write's answer stale.
      */
-    const summaryTasks = createRequestTasks();
+    const summaryTickets = createRequestTickets();
 
     /**
-     * Takes a task for a call about to leave, and returns the way to store its answer.
+     * Takes a ticket for a call about to leave, and returns the way to store its answer.
      *
      * @returns A function that replaces `cart` with the answer unless a fresher one already did.
      */
     const takeCartSlot = () => {
-        const claim = cartTasks.take();
+        const claim = cartTickets.take();
         return (next: CartResponse) => {
             if (claim()) cart.value = next;
         };
@@ -235,8 +235,8 @@ export const useCartStore = defineStore('cart', () => {
         // Any background read still out was asked for the previous person.
         cartEpoch += 1;
         // The barrier: an answer still on the wire for the previous person lands nowhere.
-        cartTasks.reset();
-        summaryTasks.reset();
+        cartTickets.reset();
+        summaryTickets.reset();
         seeding = undefined;
         cart.value = undefined;
         summarySeed.value = undefined;
@@ -253,7 +253,7 @@ export const useCartStore = defineStore('cart', () => {
      * @returns A promise resolving with the summary, or nothing.
      */
     const fetchSummary = () => {
-        const claim = summaryTasks.take();
+        const claim = summaryTickets.take();
         return getCartSummary()
             .then((response) => {
                 if (claim()) summarySeed.value = response;
@@ -277,7 +277,7 @@ export const useCartStore = defineStore('cart', () => {
 
     /**
      * A call that replaces `cart` with the server's answer: tracked for `loading` and for the
-     * background poll, and ordered by task so a slow older answer never lands over a newer one.
+     * background poll, and ordered by ticket so a slow older answer never lands over a newer one.
      *
      * @param call - The generated client call.
      * @param cartOf - Picks the cart out of the answer.
@@ -520,7 +520,7 @@ export const useCartStore = defineStore('cart', () => {
      */
     const sendMerge = (sent: readonly GuestCartLine[], key: string) =>
         fetchTracked(() => {
-            const claim = cartTasks.take();
+            const claim = cartTickets.take();
             return mergeCart({ lines: [...sent] }, { headers: { [IDEMPOTENCY_KEY_HEADER]: key } })
                 .then((response) => {
                     if (claim()) cart.value = response.cart;
@@ -576,7 +576,7 @@ export const useCartStore = defineStore('cart', () => {
     const mergeGuestCart = (): Promise<MergeCartResponse | undefined> => {
         // The report is the previous person's once the tab has moved on, so it lands only for the
         // one who asked.
-        const sameEra = cartTasks.take().isSameEra;
+        const sameEra = cartTickets.take().isSameEra;
         const lost = lostMergeToReplay();
         if (!lost) {
             const lines = guestLines.value;

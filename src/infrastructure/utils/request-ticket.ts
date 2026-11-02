@@ -1,8 +1,8 @@
 /**
  * @module
- * Orders the answers of requests that all write the same state. Each request takes a task when
+ * Orders the answers of requests that all write the same state. Each request takes a ticket when
  * it leaves; an answer is applied only if no fresher answer has been applied since, so a slow
- * old answer can never overwrite a newer one. A reset is a barrier: every task taken before it
+ * old answer can never overwrite a newer one. A reset is a barrier: every ticket taken before it
  * is dead, which is how a late answer for the previous person is kept out of the next one's store.
  * Pure: no Vue, no timers.
  */
@@ -29,13 +29,13 @@ export interface RequestClaim {
 /**
  * One ordering for one piece of state: a store's cart, a store's list.
  */
-export interface RequestTasks {
+export interface RequestTickets {
     /**
-     * Takes the next task. Call it synchronously where the request is sent.
+     * Takes the next ticket. Call it synchronously where the request is sent.
      */
     take: () => RequestClaim;
     /**
-     * Kills every task taken so far, and returns nothing: the next task is the first of a new era.
+     * Kills every ticket taken so far, and returns nothing: the next ticket is the first of a new era.
      */
     reset: () => void;
 }
@@ -43,21 +43,21 @@ export interface RequestTasks {
 /**
  * Creates the ordering.
  *
- * @returns The task dispenser and its reset barrier.
+ * @returns The ticket dispenser and its reset barrier.
  */
-export const createRequestTasks = (): RequestTasks => {
+export const createRequestTickets = (): RequestTickets => {
     /**
-     * The newest task handed out.
+     * The newest ticket handed out.
      */
     let issued = 0;
 
     /**
-     * The newest task whose answer was applied, or the barrier a reset raised.
+     * The newest ticket whose answer was applied, or the barrier a reset raised.
      */
     let applied = 0;
 
     /**
-     * Counts resets, so a task can tell whether one happened after it was taken.
+     * Counts resets, so a ticket can tell whether one happened after it was taken.
      */
     let era = 0;
 
