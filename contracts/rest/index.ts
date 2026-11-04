@@ -1574,7 +1574,7 @@ export const RememberTier = {
 } as const;
 
 /**
- * How a `cookie`-mode login hands its credential back. `cookie` (the default): the HttpOnly `__Host-session` cookie, nothing in the body — what a browser wants. `bearer`: no cookie is set and the body returns the `ses_…` id as `sessionToken`, for a client with no cookie jar (a script, a mobile app). Ignored in `jwt` mode, which always sets its refresh cookie and returns an access token.
+ * How a `cookie`-mode login hands its credential back. `cookie` (the default): the HttpOnly `__Host-session` cookie, nothing in the body — what a browser wants. `bearer`: no session cookie is set (the `__Host-device` cookie still is, as on any login) and the body returns the `ses_…` id as `sessionToken`, for a client with no cookie jar (a script, a mobile app). Ignored in `jwt` mode, which always sets its refresh cookie and returns an access token.
  */
 export type SessionTransport = (typeof SessionTransport)[keyof typeof SessionTransport];
 
