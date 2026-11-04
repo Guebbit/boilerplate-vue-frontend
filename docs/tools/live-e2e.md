@@ -159,7 +159,7 @@ Plain `docker run` (or `podman run`) is enough; nothing needs compose.
 ```sh
 # Mongo must be a REPLICA SET: the backend runs transactions, a standalone mongod refuses them.
 # The member host must be 127.0.0.1.
-docker run -d --name e2e-mongo -p 27017:27017 mongo:8.2.12 --replSet rs0 --bind_ip_all
+docker run -d --name e2e-mongo -p 27017:27017 mongo:9.0.4 --replSet rs0 --bind_ip_all
 docker exec e2e-mongo mongosh --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
 
 docker run -d --name e2e-redis -p 6379:6379 redis:8
