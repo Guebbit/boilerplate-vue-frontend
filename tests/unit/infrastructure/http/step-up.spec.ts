@@ -90,7 +90,6 @@ beforeEach(() => {
     requestLog = [];
     scenario = { requiresReauth: true };
     demandedMethods = undefined;
-    vi.unstubAllEnvs();
 });
 
 describe('the REAUTH_REQUIRED step-up flow', () => {

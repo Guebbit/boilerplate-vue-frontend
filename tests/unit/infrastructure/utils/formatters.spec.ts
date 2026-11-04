@@ -107,10 +107,6 @@ const pretendBrowserZone = (zone: string) => {
 };
 
 describe('formatUtcDate', () => {
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
     it('prints the UTC day of a deadline east of UTC, where the local date is already the next', () => {
         pretendBrowserZone('Pacific/Auckland');
         const deadline = '2026-10-30T23:59:59.999Z';
@@ -358,11 +354,9 @@ describe('formatUptime', () => {
 describe('the app-shaped bindings', () => {
     beforeEach(() => {
         vi.resetModules();
-        vi.unstubAllEnvs();
     });
 
     afterEach(() => {
-        vi.unstubAllEnvs();
         vi.doUnmock('@/i18n');
     });
 

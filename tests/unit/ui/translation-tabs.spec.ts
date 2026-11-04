@@ -8,7 +8,7 @@
  */
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import axe from 'axe-core';
+import { axeViolations } from '../../support/unit/axe.ts';
 import vuetify from '@/ui/vuetify';
 import { i18n, loadLocale } from '@/i18n';
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
@@ -51,7 +51,7 @@ afterEach(() => {
  * https://github.com/dequelabs/axe-core/blob/master/doc/API.md#api-name-axerun
  */
 const auditTablist = (root: Element) =>
-    axe.run(root, {
+    axeViolations(root, {
         runOnly: { type: 'rule', values: ['nested-interactive', 'aria-required-children'] }
     });
 
@@ -61,7 +61,7 @@ describe('TranslationTabs — the tablist shape axe cares about', () => {
         // `wrapper.element` resolves through `TranslationTabs.vue`'s own unresolved SFC type —
         // TypeScript-ESLint's usual `.vue` limitation — so it is cast to the real DOM type here.
         return auditTablist(wrapper.element as Element).then((results) => {
-            expect(results.violations).toEqual([]);
+            expect(results).toEqual([]);
         });
     });
 
@@ -160,6 +160,6 @@ describe('TranslationTabs — a draft language', () => {
         // Cast for the same `.vue` typing limit as the first case's.
         const results = await auditTablist(wrapper.element as Element);
 
-        expect(results.violations).toEqual([]);
+        expect(results).toEqual([]);
     });
 });

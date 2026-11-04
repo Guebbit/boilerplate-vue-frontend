@@ -74,7 +74,6 @@ beforeEach(() => {
     setActivePinia(createPinia());
     serverVersion = 100;
     patchIfMatch = [];
-    vi.unstubAllEnvs();
 });
 
 describe('conditional writes over the wire', () => {

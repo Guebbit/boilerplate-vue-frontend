@@ -86,6 +86,28 @@ beforeEach(() => {
 
 `tests/unit/infrastructure/http/http-validate-responses.spec.ts` unit-tests the load-bearing piece behind both e2e profiles: `orvalMutator`'s contract check, which parses every response through its OpenAPI-derived Zod schema and rejects a 2xx that violates it.
 
+## What the harness enforces for every spec
+
+`tests/support/unit/setup.ts` and `vitest.config.ts` carry the rules no spec varies.
+
+**A Vue warning fails the test that caused it.** Vue, and Vuetify's deprecations through it, report misuse as `[Vue warn]` on the console, and a green run hides it. A watcher (`tests/support/unit/expect-warning.ts`) wraps `console.warn` and `console.error` around every test and fails it on a message that starts with `[Vue warn]` and was not declared. A test that provokes one on purpose says so:
+
+```ts
+import { expectWarning } from '../../../../tests/support/unit/expect-warning.ts';
+
+expectWarning('after-enter'); // the warning must fire, or the test fails: a stale declaration cannot linger
+```
+
+Only the `[Vue warn]` prefix counts. Not every `console.warn`: the app's logger writes there, and an error-path spec would fail for doing its job. `[intlify]` is left out for the same reason. It is a hand-written watcher, not `vitest-fail-on-console`, whose last release predates Vitest 4.
+
+**Mocks, env and globals reset on their own.** `restoreMocks`, `unstubEnvs` and `unstubGlobals` are on in `vitest.config.ts`, so a spec never calls `vi.restoreAllMocks()`, `vi.unstubAllEnvs()` or `vi.unstubAllGlobals()` in a hook. They run BEFORE each test, so create a spy or a stub in `beforeEach` (or in the test), never at module scope or in `beforeAll`: it would be undone before the first test.
+
+**One accessibility helper.** `tests/support/unit/axe.ts` exports `axeViolations(root?, options?)`: axe-core with the two rules jsdom cannot judge (`color-contrast`, `region`) off, returning one `rule: first node html` line per violation. A spec asserts `expect(await axeViolations()).toEqual([])`. The real-browser half is the Cypress sweep: see [Accessibility Testing](./accessibility-testing.md).
+
+**Generated payloads and depth knobs.** `tests/support/unit/contract-data.ts` builds a valid body, and one body per broken field, from a generated Zod schema in `contracts/rest/schemas.zod.ts`. `TEST_PROPERTY_RUNS` and `RANDOM_DATA_SEED` (`.env`, or the shell, which wins) set the fast-check depth and the seed: see [Property-Based Testing](./property-testing.md#running-budget).
+
+**Declared forks.** `contract-data.ts`, `pattern-samples.ts`, `knobs.ts`, `expect-warning.ts` and `tests/cross-cutting/ci-covers-the-gate.spec.ts` are forks of backend files. Each header says so; nothing keeps them in step.
+
 ## File map
 
 | Path                                                                        | Contents                                                                                                                                                              |
@@ -97,6 +119,10 @@ beforeEach(() => {
 | `tests/unit/scripts/**`                                                     | The repo's own tooling — the shared-file identity check, the mutation ratchet, the backend path, the Cypress spec globs. Scripts nobody runs by hand until they break |
 | `tests/cross-cutting/**`                                                    | The architectural invariants. See below — this is a layer, not a folder                                                                                               |
 | `tests/support/unit/setup.ts`                                               | Global Vitest setup (runs before every file)                                                                                                                          |
+| `tests/support/unit/expect-warning.ts`                                      | The `[Vue warn]` watcher `setup.ts` runs around every test, and `expectWarning` to declare one                                                                        |
+| `tests/support/unit/axe.ts`                                                 | `axeViolations`: the one unit accessibility audit                                                                                                                     |
+| `tests/support/unit/knobs.ts`                                               | `PROPERTY_RUNS`, from `TEST_PROPERTY_RUNS`                                                                                                                            |
+| `tests/support/unit/contract-data.ts`                                       | `validPayload` / `invalidPayloads` over a Zod schema (fork of the backend's generator)                                                                                |
 | `tests/support/stub.ts`                                                     | `asStub`, for reading a `vi.fn()` back with its type intact                                                                                                           |
 | `tests/support/unit/wire-modules.ts`                                        | Registers the modules' response schemas and dictionaries into `infrastructure`, as `src/main.ts` does. Any spec touching either subsystem needs it                    |
 | `tests/support/unit/jsdom-quiet-css.environment.ts`                         | Custom environment: plain jsdom with one class of CSS-parser noise filtered — see the file's own comment                                                              |

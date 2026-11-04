@@ -5,7 +5,7 @@
  * choice saved via `PATCH /account`, exactly once. Mocks only the transport, same pattern as
  * `profile.spec.ts`; the guest choice itself goes through the real `useAnalyticsConsentStore`.
  */
-import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 import { deleteCookie } from '@guebbit/js-toolkit';
@@ -56,8 +56,6 @@ beforeEach(() => {
         // `profile.spec.ts`'s own.
     };
 });
-
-afterEach(() => vi.unstubAllEnvs());
 
 describe('the guest-consent sync', () => {
     it('does nothing when neither Umami nor Faro is configured, even with an answered guest cookie', () => {

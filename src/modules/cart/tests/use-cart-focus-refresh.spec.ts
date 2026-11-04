@@ -68,7 +68,6 @@ beforeEach(() => {
 afterEach(() => {
     scope?.stop();
     scope = undefined;
-    vi.restoreAllMocks();
 });
 
 describe('coming back to the cart page', () => {

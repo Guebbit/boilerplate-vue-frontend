@@ -33,18 +33,6 @@ import {
     LIVE_SCENARIO_FILE
 } from '../../../../scripts/pairing/paired-backend-path';
 
-/** The `BACKEND_PATH` the shell had, restored after each case. */
-const previous = process.env.BACKEND_PATH;
-
-/** The `BACKEND_DEMO_COMMAND` the shell had, restored after each case. */
-const previousDemoCommand = process.env.BACKEND_DEMO_COMMAND;
-
-/** The `LIVE_RESET_COMMAND` the shell had, restored after each case. */
-const previousResetCommand = process.env.LIVE_RESET_COMMAND;
-
-/** The `BACKEND_DEMO_SHARD_LIMIT` the shell had, restored after each case. */
-const previousShardLimit = process.env.BACKEND_DEMO_SHARD_LIMIT;
-
 /** The throwaway working directory of the current case. */
 let workingDirectory: string;
 
@@ -63,24 +51,11 @@ const writeEnvironmentFile = (contents: string): void => {
 beforeEach(() => {
     workingDirectory = mkdtempSync(path.join(tmpdir(), 'paired-backend-path-'));
     vi.spyOn(process, 'cwd').mockReturnValue(workingDirectory);
-    delete process.env.BACKEND_PATH;
+    vi.stubEnv('BACKEND_PATH', undefined);
 });
 
 afterEach(() => {
-    vi.restoreAllMocks();
     rmSync(workingDirectory, { recursive: true, force: true });
-
-    if (previous === undefined) delete process.env.BACKEND_PATH;
-    else process.env.BACKEND_PATH = previous;
-
-    if (previousDemoCommand === undefined) delete process.env.BACKEND_DEMO_COMMAND;
-    else process.env.BACKEND_DEMO_COMMAND = previousDemoCommand;
-
-    if (previousResetCommand === undefined) delete process.env.LIVE_RESET_COMMAND;
-    else process.env.LIVE_RESET_COMMAND = previousResetCommand;
-
-    if (previousShardLimit === undefined) delete process.env.BACKEND_DEMO_SHARD_LIMIT;
-    else process.env.BACKEND_DEMO_SHARD_LIMIT = previousShardLimit;
 });
 
 describe('resolveBackendPath', () => {
@@ -89,34 +64,34 @@ describe('resolveBackendPath', () => {
     });
 
     it('treats an empty BACKEND_PATH as unset, rather than as this repo', () => {
-        process.env.BACKEND_PATH = '';
+        vi.stubEnv('BACKEND_PATH', '');
 
         expect(resolveBackendPath()).toBe(sibling());
         expect(resolveBackendPath()).not.toBe(process.cwd());
     });
 
     it('treats a whitespace-only BACKEND_PATH as unset too', () => {
-        process.env.BACKEND_PATH = '   ';
+        vi.stubEnv('BACKEND_PATH', '   ');
 
         expect(resolveBackendPath()).toBe(sibling());
     });
 
     it('honours a relative override, resolved against the working directory', () => {
-        process.env.BACKEND_PATH = '.spec-sibling';
+        vi.stubEnv('BACKEND_PATH', '.spec-sibling');
 
         // The shape ci.yml uses, where the sibling is checked out into the workspace
         expect(resolveBackendPath()).toBe(path.resolve(process.cwd(), '.spec-sibling'));
     });
 
     it('returns an absolute override unchanged', () => {
-        process.env.BACKEND_PATH = '/srv/checkouts/backend';
+        vi.stubEnv('BACKEND_PATH', '/srv/checkouts/backend');
 
         expect(resolveBackendPath()).toBe('/srv/checkouts/backend');
     });
 
     it('always answers with an absolute path, whatever it was given', () => {
         for (const value of ['', '   ', 'relative/path', '/absolute/path']) {
-            process.env.BACKEND_PATH = value;
+            vi.stubEnv('BACKEND_PATH', value);
             expect(path.isAbsolute(resolveBackendPath())).toBe(true);
         }
     });
@@ -135,7 +110,7 @@ describe('resolveBackendPath', () => {
 
     it('lets the shell win over .env, so a one-off run needs no file edit', () => {
         writeEnvironmentFile('BACKEND_PATH=/srv/lanes/from-file\n');
-        process.env.BACKEND_PATH = '/srv/lanes/from-shell';
+        vi.stubEnv('BACKEND_PATH', '/srv/lanes/from-shell');
 
         expect(resolveBackendPath()).toBe('/srv/lanes/from-shell');
     });
@@ -167,19 +142,19 @@ describe('resolveBackendPath', () => {
  */
 describe('resolveLiveResetCommand', () => {
     it('answers undefined when LIVE_RESET_COMMAND is unset, so no reset is attempted', () => {
-        delete process.env.LIVE_RESET_COMMAND;
+        vi.stubEnv('LIVE_RESET_COMMAND', undefined);
 
         expect(resolveLiveResetCommand()).toBeUndefined();
     });
 
     it('treats an empty LIVE_RESET_COMMAND as unset', () => {
-        process.env.LIVE_RESET_COMMAND = '   ';
+        vi.stubEnv('LIVE_RESET_COMMAND', '   ');
 
         expect(resolveLiveResetCommand()).toBeUndefined();
     });
 
     it('substitutes {backend} into the value — the Node pairing `.env-example` ships', () => {
-        process.env.LIVE_RESET_COMMAND = 'npm --prefix {backend} run host -- db:seed:reset';
+        vi.stubEnv('LIVE_RESET_COMMAND', 'npm --prefix {backend} run host -- db:seed:reset');
 
         expect(resolveLiveResetCommand()).toBe(
             `npm --prefix ${sibling()} run host -- db:seed:reset`
@@ -187,8 +162,8 @@ describe('resolveLiveResetCommand', () => {
     });
 
     it('substitutes {backend} into the PHP pairing too', () => {
-        process.env.LIVE_RESET_COMMAND = 'composer --working-dir={backend} host -- db:seed:reset';
-        process.env.BACKEND_PATH = '/srv/checkouts/php-backend';
+        vi.stubEnv('LIVE_RESET_COMMAND', 'composer --working-dir={backend} host -- db:seed:reset');
+        vi.stubEnv('BACKEND_PATH', '/srv/checkouts/php-backend');
 
         expect(resolveLiveResetCommand()).toBe(
             'composer --working-dir=/srv/checkouts/php-backend host -- db:seed:reset'
@@ -198,7 +173,7 @@ describe('resolveLiveResetCommand', () => {
     // The live profile's only way to learn the seeded accounts and subject ids: a live deployment
     // mounts no `GET /__test/scenario`, so the reset writes the same JSON to a file instead.
     it('substitutes {describeTo} with the file the description is read back from', () => {
-        process.env.LIVE_RESET_COMMAND = 'reset --describe-to={describeTo}';
+        vi.stubEnv('LIVE_RESET_COMMAND', 'reset --describe-to={describeTo}');
 
         expect(resolveLiveResetCommand()).toBe(`reset --describe-to=${LIVE_SCENARIO_FILE}`);
     });
@@ -206,26 +181,26 @@ describe('resolveLiveResetCommand', () => {
 
 describe('resolveBackendDemoCommand', () => {
     it('answers undefined when BACKEND_DEMO_COMMAND is unset, so nothing is booted', () => {
-        delete process.env.BACKEND_DEMO_COMMAND;
+        vi.stubEnv('BACKEND_DEMO_COMMAND', undefined);
 
         expect(resolveBackendDemoCommand()).toBeUndefined();
     });
 
     it('treats an empty BACKEND_DEMO_COMMAND as unset', () => {
-        process.env.BACKEND_DEMO_COMMAND = '   ';
+        vi.stubEnv('BACKEND_DEMO_COMMAND', '   ');
 
         expect(resolveBackendDemoCommand()).toBeUndefined();
     });
 
     it('substitutes {backend} into the value — the Node pairing `.env-example` ships', () => {
-        process.env.BACKEND_DEMO_COMMAND = 'npm --prefix {backend} run demo';
+        vi.stubEnv('BACKEND_DEMO_COMMAND', 'npm --prefix {backend} run demo');
 
         expect(resolveBackendDemoCommand()).toEqual(['npm', '--prefix', sibling(), 'run', 'demo']);
     });
 
     it('substitutes {backend} into the PHP pairing too', () => {
-        process.env.BACKEND_DEMO_COMMAND = 'composer --working-dir={backend} demo';
-        process.env.BACKEND_PATH = '/srv/checkouts/php-backend';
+        vi.stubEnv('BACKEND_DEMO_COMMAND', 'composer --working-dir={backend} demo');
+        vi.stubEnv('BACKEND_PATH', '/srv/checkouts/php-backend');
 
         expect(resolveBackendDemoCommand()).toEqual([
             'composer',
@@ -235,7 +210,7 @@ describe('resolveBackendDemoCommand', () => {
     });
 
     it('never answers with an empty argument, which spawn would reject', () => {
-        process.env.BACKEND_DEMO_COMMAND = '  npm   --prefix {backend}   run  demo  ';
+        vi.stubEnv('BACKEND_DEMO_COMMAND', '  npm   --prefix {backend}   run  demo  ');
 
         expect(resolveBackendDemoCommand()?.every(Boolean)).toBe(true);
     });
@@ -243,39 +218,39 @@ describe('resolveBackendDemoCommand', () => {
 
 describe('resolveBackendDemoShardLimit', () => {
     it('answers undefined when BACKEND_DEMO_SHARD_LIMIT is unset, so the pairing is unbounded', () => {
-        delete process.env.BACKEND_DEMO_SHARD_LIMIT;
+        vi.stubEnv('BACKEND_DEMO_SHARD_LIMIT', undefined);
 
         expect(resolveBackendDemoShardLimit()).toBeUndefined();
     });
 
     it('treats the empty value `.env-example` ships as unset rather than as zero', () => {
-        process.env.BACKEND_DEMO_SHARD_LIMIT = '   ';
+        vi.stubEnv('BACKEND_DEMO_SHARD_LIMIT', '   ');
 
         expect(resolveBackendDemoShardLimit()).toBeUndefined();
     });
 
     it('reads the provisioned count of a backend that has one — the PHP pairing', () => {
-        process.env.BACKEND_DEMO_SHARD_LIMIT = '4';
+        vi.stubEnv('BACKEND_DEMO_SHARD_LIMIT', '4');
 
         expect(resolveBackendDemoShardLimit()).toBe(4);
     });
 
     it('treats a non-numeric value as unset, so a typo cannot forbid every shard', () => {
-        process.env.BACKEND_DEMO_SHARD_LIMIT = 'four';
+        vi.stubEnv('BACKEND_DEMO_SHARD_LIMIT', 'four');
 
         expect(resolveBackendDemoShardLimit()).toBeUndefined();
     });
 
     it('treats zero and negatives as unset, for the same reason', () => {
-        process.env.BACKEND_DEMO_SHARD_LIMIT = '0';
+        vi.stubEnv('BACKEND_DEMO_SHARD_LIMIT', '0');
         expect(resolveBackendDemoShardLimit()).toBeUndefined();
 
-        process.env.BACKEND_DEMO_SHARD_LIMIT = '-2';
+        vi.stubEnv('BACKEND_DEMO_SHARD_LIMIT', '-2');
         expect(resolveBackendDemoShardLimit()).toBeUndefined();
     });
 
     it('treats a fractional value as unset — half a database is not provisioned', () => {
-        process.env.BACKEND_DEMO_SHARD_LIMIT = '2.5';
+        vi.stubEnv('BACKEND_DEMO_SHARD_LIMIT', '2.5');
 
         expect(resolveBackendDemoShardLimit()).toBeUndefined();
     });

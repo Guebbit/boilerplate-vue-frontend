@@ -3,7 +3,7 @@
  * The guest cart's copy in `localStorage`: what a round trip keeps, what it refuses to trust, and
  * that storage being blocked or full never turns into an error the visitor sees.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     GUEST_CART_STORAGE_KEY,
     GUEST_MERGE_ATTEMPT_STORAGE_KEY,
@@ -15,10 +15,6 @@ import {
 
 beforeEach(() => {
     localStorage.clear();
-});
-
-afterEach(() => {
-    vi.restoreAllMocks();
 });
 
 describe('readGuestCart', () => {

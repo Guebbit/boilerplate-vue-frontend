@@ -31,6 +31,7 @@
         "prettier:fix": "prettier . --write",
         "test": "npm run test:unit && npm run test:e2e",
         "test:unit": "vitest run",
+        "test:order-random": "vitest run --sequence.shuffle",
         "test:unit:ci": "vitest run --reporter=default --reporter=json --outputFile=reports/test-report.json",
         "test:lighthouse": "tsx scripts/lighthouse/build.ts && start-server-and-test 'npm run backend:demo' http-get://localhost:3100 'vite preview --outDir dist-lighthouse --port 8085 --strictPort --host 127.0.0.1' http://localhost:8085 'tsx scripts/lighthouse/run.ts'",
         "test:lighthouse:baseline": "tsx scripts/lighthouse/update-baseline.ts",

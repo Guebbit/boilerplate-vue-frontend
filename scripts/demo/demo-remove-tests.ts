@@ -91,6 +91,15 @@ export const removeResidueSpecs = (repoRoot: string, names: readonly string[]): 
 };
 
 /**
+ * The files `headerProblems` reads: every `.ts` under `tests/e2e/specs/`. Exported so a spec can
+ * count them against an independent glob and refuse a scan that found nothing.
+ *
+ * @param repoRoot - the checkout root
+ */
+export const scannedSpecFiles = (repoRoot: string): string[] =>
+    walkTypeScript(path.join(repoRoot, 'tests', 'e2e', 'specs'));
+
+/**
  * What is wrong with the `requires-module` headers under `tests/e2e/specs/`, one sentence each.
  *
  * Fail-closed in both directions: a spec in `journeys/` with no header would survive
@@ -102,7 +111,7 @@ export const removeResidueSpecs = (repoRoot: string, names: readonly string[]): 
  * @returns the problems; empty when every header is sound
  */
 export const headerProblems = (repoRoot: string, knownModules: readonly string[]): string[] =>
-    walkTypeScript(path.join(repoRoot, 'tests', 'e2e', 'specs')).flatMap((file) => {
+    scannedSpecFiles(repoRoot).flatMap((file) => {
         const relative = path.relative(repoRoot, file).split(path.sep).join('/');
         const required = requiredModules(readFileSync(file, 'utf8'));
 

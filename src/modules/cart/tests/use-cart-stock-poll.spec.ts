@@ -104,9 +104,6 @@ beforeEach(() => {
 afterEach(() => {
     scope?.stop();
     scope = undefined;
-    vi.unstubAllEnvs();
-    vi.unstubAllGlobals();
-    vi.restoreAllMocks();
     vi.useRealTimers();
 });
 

@@ -10,7 +10,7 @@
  * `instance.request` is spied rather than driven through MSW: what is under test is the object
  * `orvalMutator` BUILDS before axios ever sends it, not the network call itself.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { asStub } from '../../../support/stub';
 import { instance } from '@/infrastructure/http/client.ts';
@@ -23,10 +23,6 @@ const okResponse = (data: unknown): AxiosResponse => ({
     statusText: 'OK',
     headers: {},
     config: asStub<InternalAxiosRequestConfig>({})
-});
-
-afterEach(() => {
-    vi.restoreAllMocks();
 });
 
 describe('orvalMutator', () => {

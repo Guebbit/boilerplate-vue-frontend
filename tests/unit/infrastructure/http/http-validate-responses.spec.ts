@@ -48,7 +48,6 @@ const loadHttp = () => {
 
 beforeEach(() => {
     setActivePinia(createPinia());
-    vi.unstubAllEnvs();
 });
 
 describe('orvalMutator contract validation', () => {

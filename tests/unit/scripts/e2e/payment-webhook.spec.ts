@@ -3,17 +3,12 @@
  * verifies it: `t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>">`.
  */
 import { createHmac } from 'node:crypto';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
     DEMO_PAYMENT_WEBHOOK_SECRET,
     postPaymentWebhook,
     signPaymentWebhook
 } from '../../../../scripts/e2e/payment-webhook';
-
-afterEach(() => {
-    vi.unstubAllGlobals();
-    vi.unstubAllEnvs();
-});
 
 describe('signPaymentWebhook', () => {
     it('is the hex HMAC of "<t>.<body>" under the secret, tagged with its timestamp', () => {

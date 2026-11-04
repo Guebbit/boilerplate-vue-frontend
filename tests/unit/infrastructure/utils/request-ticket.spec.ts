@@ -45,7 +45,7 @@ describe('createRequestTickets', () => {
                 expect(applied).toEqual(applied.toSorted((a, b) => a - b));
                 expect(applied.at(-1)).toBe(4);
             }),
-            { seed: 20_261_005, numRuns: 100 }
+            { seed: 20_261_005 }
         );
     });
 

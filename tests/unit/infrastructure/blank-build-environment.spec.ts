@@ -20,7 +20,6 @@ const loadWith = <T>(environment: Record<string, string>, load: () => Promise<T>
 };
 
 afterEach(() => {
-    vi.unstubAllEnvs();
     Reflect.deleteProperty(globalThis, '__APP_CONFIG');
 });
 

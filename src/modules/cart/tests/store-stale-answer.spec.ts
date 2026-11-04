@@ -117,7 +117,7 @@ describe('answers that arrive in the wrong order', () => {
 
                 expect(store.cart).toEqual(answers[2]);
             }),
-            { seed: 20_261_004, numRuns: 50, endOnFailure: true }
+            { seed: 20_261_004, endOnFailure: true }
         );
     });
 

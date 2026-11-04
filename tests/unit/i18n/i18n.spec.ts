@@ -289,8 +289,6 @@ describe('_changeLanguage', () => {
 
 describe('getDefaultLocale', () => {
     afterEach(() => {
-        vi.unstubAllGlobals();
-        vi.unstubAllEnvs();
         vi.resetModules();
     });
 

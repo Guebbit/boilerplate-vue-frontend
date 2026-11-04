@@ -9,7 +9,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router';
-import axe from 'axe-core';
+import { axeViolations } from '../../../../tests/support/unit/axe.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import GuestCart from '../components/GuestCart.vue';
 import { MAX_GUEST_LINE_QUANTITY } from '../domain';
@@ -388,12 +388,6 @@ describe('the page, audited', () => {
             ['p2', 1]
         ]);
 
-        // https://github.com/dequelabs/axe-core/blob/master/doc/API.md#api-name-axerun
-        // `color-contrast` needs real layout and styles, which jsdom does not compute.
-        const results = await axe.run(document.body, {
-            rules: { 'color-contrast': { enabled: false }, region: { enabled: false } }
-        });
-
-        expect(results.violations.map(({ id, nodes }) => `${id}: ${nodes[0]?.html}`)).toEqual([]);
+        expect(await axeViolations()).toEqual([]);
     });
 });

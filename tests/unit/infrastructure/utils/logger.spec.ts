@@ -37,7 +37,6 @@ beforeEach(() => {
 
 afterEach(() => {
     for (const spy of Object.values(spies)) spy.mockRestore();
-    vi.unstubAllEnvs();
 });
 
 describe('scope filtering', () => {

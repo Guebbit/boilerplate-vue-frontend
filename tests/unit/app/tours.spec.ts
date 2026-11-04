@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import axe from 'axe-core';
+import { axeViolations } from '../../support/unit/axe.ts';
 import { isKnownTour, stepsOfTour, TOURS, visibleSteps } from '@/app/tours/catalogue.ts';
 import { isAnchorVisible, useTour } from '@/app/tours/use-tour.ts';
 import { collectModuleTours } from '@/kernel/registry';
@@ -183,8 +183,7 @@ describe('useTour', () => {
         expect(tour.hasSeen('welcome')).toBe(true);
         expect(hasSeenTour(tourSeenKey('acc-1', 'welcome', TOURS.welcome.version))).toBe(true);
 
-        const results = await axe.run(document.body, { rules: { region: { enabled: false } } });
-        expect(results.violations.map(({ id }) => id)).toEqual([]);
+        expect(await axeViolations()).toEqual([]);
 
         await closeWithEscape();
         wrapper.unmount();

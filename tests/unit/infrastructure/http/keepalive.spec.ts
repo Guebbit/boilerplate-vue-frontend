@@ -21,7 +21,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    vi.unstubAllGlobals();
     vi.clearAllMocks();
 });
 

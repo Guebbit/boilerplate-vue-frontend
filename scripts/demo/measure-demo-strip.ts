@@ -2,8 +2,8 @@
 /**
  * The frontend twin of the backend's `measure:demo-strip`: how far "the demo
  * shop is removable" actually is, measured rather than assumed. Copies the checkout to a SCRATCH
- * directory, deletes every module `scripts/module-groups.ts` puts in `shop` or `example`, and runs `type-check-only`, `lint`
- * and `build-only` against what's left.
+ * directory, deletes every module `scripts/module-groups.ts` puts in `shop` or `example`, and runs `type-check-only`, `lint`,
+ * `build-only` and the cross-cutting specs against what's left.
  *
  * NOT `demo:remove` — that script edits THIS checkout for real; this one applies the same edits
  * (`./demo-remove-registry`, `./demo-remove-tests`) to the copy. Report-only, on purpose, the same
@@ -47,11 +47,14 @@ interface Check {
     args: readonly string[];
 }
 
-/** `type-check-only`, `lint` and `build-only` — the three checks a stripped copy must pass. */
+/** `type-check-only`, `lint`, `build-only` and the cross-cutting specs: the checks a stripped copy must pass. */
 const CHECKS: readonly Check[] = [
     { label: 'type-check-only', command: 'npm', args: ['run', 'type-check-only'] },
     { label: 'lint', command: 'npm', args: ['run', 'lint'] },
-    { label: 'build-only', command: 'npm', args: ['run', 'build-only'] }
+    { label: 'build-only', command: 'npm', args: ['run', 'build-only'] },
+    // The rules that hold across every module (headers, coupling, tokens) are the ones a stripped
+    // tree can break without a type error.
+    { label: 'cross-cutting', command: 'npx', args: ['vitest', 'run', 'tests/cross-cutting'] }
 ];
 
 /** Copy the checkout into `SCRATCH`, skipping what {@link SKIP_ENTRIES} names. */

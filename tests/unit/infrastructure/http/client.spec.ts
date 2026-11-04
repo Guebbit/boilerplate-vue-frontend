@@ -23,7 +23,6 @@ const loadClient = (environment: Record<string, string | undefined>) => {
 };
 
 afterEach(() => {
-    vi.unstubAllEnvs();
     Reflect.deleteProperty(globalThis, '__APP_CONFIG');
 });
 

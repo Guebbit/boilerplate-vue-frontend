@@ -148,6 +148,7 @@ jobs:
         # Mirrors the backend's job of the same name — asyncapi.yaml is kept byte-identical
         # between the two repos by hand, and this is the within-repo half of that guard:
         # it cannot detect cross-repo drift, only a spec edited without regenerating here.
+        # Also carries the permission-vocabulary freshness check, the other generated contract file.
         runs-on: ubuntu-latest
         timeout-minutes: 10
         permissions:
@@ -165,6 +166,19 @@ jobs:
             # the job needs no git state to read a verdict out of.
             - name: Check generated AsyncAPI types are fresh
               run: npx tsx scripts/contracts/generate-asyncapi-types.ts --check --out contracts/asyncapi.generated.ts
+
+            # The same comparison for the permission vocabulary. `npm run check` carries it locally,
+            # and the pre-commit hook runs that; nothing in CI did.
+            - name: Check generated permission vocabulary is fresh
+              run: npx tsx scripts/contracts/generate-permission-vocabulary.ts --check --in contracts/authorization-keys.yaml --out contracts/permission-vocabulary.ts
+
+            # The route table and the shared-rules output are the other two generated files `npm run check`
+            # compares; without these steps a stale one would pass CI.
+            - name: Check generated route table is fresh
+              run: npx tsx scripts/contracts/generate-route-table.ts --check --out contracts/rest/routes.ts
+
+            - name: Check generated shared rules are fresh
+              run: npx tsx scripts/contracts/generate-shared-rules.ts --check
 
     docs-references:
         # Every path the docs CLAIM exists, checked against the files that do. `docs:build` fails

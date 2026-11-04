@@ -180,10 +180,6 @@ describe('createSseClient', () => {
             vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
         });
 
-        afterEach(() => {
-            vi.unstubAllEnvs();
-        });
-
         it('forwards a frame that matches its event contract', () =>
             import('@/infrastructure/create-sse-client').then(({ createSseClient }) => {
                 const onEvent = vi.fn();

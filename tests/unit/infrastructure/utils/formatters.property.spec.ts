@@ -22,7 +22,7 @@
  *      the seed that found it in a comment. The property stays as the general statement; the
  *      example stays as the thing that once broke.
  *
- * `numRuns` is deliberately modest. These run on the pre-commit path, where the frontend gate is
+ * `numRuns` comes from the `TEST_PROPERTY_RUNS` knob and is deliberately modest. These run on the pre-commit path, where the frontend gate is
  * already ~8.5 minutes; a property that needs ten thousand cases to find its bug is a property
  * that wants a nightly, not a commit hook.
  *
@@ -56,7 +56,7 @@ import {
  * `endOnFailure` trims the shrunk counterexample instead of continuing to shrink for a while
  * after it has one, which keeps a failure message short enough to paste into a regression case.
  */
-const RUN = { seed: 20_260_808, numRuns: 200, endOnFailure: true } as const;
+const RUN = { seed: 20_260_808, endOnFailure: true } as const;
 
 /**
  * The two nullish spellings these signatures actually accept.

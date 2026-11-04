@@ -11,7 +11,8 @@ import type { VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createMongoAbility } from '@casl/ability';
 import { createMemoryHistory, createRouter } from 'vue-router';
-import axe from 'axe-core';
+import { axeViolations } from '../../../../tests/support/unit/axe.ts';
+import { expectWarning } from '../../../../tests/support/unit/expect-warning.ts';
 import { VMenu } from 'vuetify/components';
 import NotificationsBell from '../components/NotificationsBell.vue';
 import { useInboxStore } from '../store';
@@ -312,6 +313,7 @@ describe('inside the panel', () => {
         await openPanel();
 
         // `after-enter` fires on the transition's end, which jsdom never plays: call what it calls.
+        expectWarning('emitted event "after-enter"');
         wrapper!.findComponent(VMenu).vm.$emit('after-enter');
         await flushPromises();
 
@@ -326,13 +328,7 @@ describe('the open panel, audited', () => {
         await mountBell();
         await openPanel();
 
-        // https://github.com/dequelabs/axe-core/blob/master/doc/API.md#api-name-axerun
-        // `color-contrast` needs real layout and styles, which jsdom does not compute.
-        const results = await axe.run(document.body, {
-            rules: { 'color-contrast': { enabled: false }, region: { enabled: false } }
-        });
-
-        expect(results.violations.map(({ id, nodes }) => `${id}: ${nodes[0]?.html}`)).toEqual([]);
+        expect(await axeViolations()).toEqual([]);
     });
 });
 
@@ -565,10 +561,6 @@ describe('the panel for a person who holds work notices', () => {
         tabButton('work')!.click();
         await flushPromises();
 
-        const results = await axe.run(document.body, {
-            rules: { 'color-contrast': { enabled: false }, region: { enabled: false } }
-        });
-
-        expect(results.violations.map(({ id, nodes }) => `${id}: ${nodes[0]?.html}`)).toEqual([]);
+        expect(await axeViolations()).toEqual([]);
     });
 });

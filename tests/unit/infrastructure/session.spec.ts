@@ -171,7 +171,6 @@ describe('setAccessToken — the rememberMe marker, with the isAuth hint left to
 
         afterEach(() => {
             setterSpy.mockRestore();
-            vi.unstubAllGlobals();
         });
 
         const cookiesWritten = (): string[] =>
@@ -500,10 +499,6 @@ describe('reloadAbilities', () => {
 });
 
 describe('clearSession', () => {
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
     it("broadcasts a logout to this browser's other tabs", () => {
         const postMessage = vi.spyOn(BroadcastChannel.prototype, 'postMessage');
         signedIn().clearSession();
@@ -789,10 +784,6 @@ describe('session modes', () => {
 const SECOND_PERSON = '65e1a0000000000000000e99';
 
 describe('a sign-in in another tab', () => {
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
     it('is broadcast by a login, and by nothing that keeps the same person', () => {
         const postMessage = vi.spyOn(BroadcastChannel.prototype, 'postMessage');
         const store = useSessionStore();

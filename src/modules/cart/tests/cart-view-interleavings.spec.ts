@@ -52,7 +52,6 @@ beforeEach(() => {
 
 afterEach(() => {
     // Puts back what a case spied on (`router.push`, the products read) for the next one.
-    vi.restoreAllMocks();
 });
 
 /**

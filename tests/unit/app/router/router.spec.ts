@@ -64,10 +64,6 @@ beforeEach(() => {
     globalThis.history.replaceState({}, '', '/');
 });
 
-afterEach(() => {
-    vi.unstubAllEnvs();
-});
-
 /**
  * The tab title and the route announcer (WCAG 2.4.2 / 4.1.3), both written by the same
  * `afterEach` from the route's `meta.title`.

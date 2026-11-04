@@ -4,7 +4,7 @@
  * grow to a finger's 44 px below `sm` or whenever the primary pointer is coarse. `useTouchTarget`
  * answers the same question with a pixel size for buttons whose size prop would change the look.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { effectScope, ref } from 'vue';
 import {
     TOUCH_TARGET_PX,
@@ -35,10 +35,6 @@ const stubPointer = (coarse: boolean): void => {
 };
 
 describe('useTouchFriendlySize', () => {
-    afterEach(() => {
-        vi.unstubAllGlobals();
-    });
-
     it.each([
         { width: 'wide', mobile: false, coarse: false, size: 'small' },
         { width: 'narrow', mobile: true, coarse: false, size: 'large' },
@@ -63,10 +59,6 @@ describe('useTouchFriendlySize', () => {
 });
 
 describe('useTouchTarget', () => {
-    afterEach(() => {
-        vi.unstubAllGlobals();
-    });
-
     it.each([
         { mobile: false, coarse: false, px: undefined },
         { mobile: true, coarse: false, px: TOUCH_TARGET_PX },
@@ -80,10 +72,6 @@ describe('useTouchTarget', () => {
 });
 
 describe('useTouchChipSize', () => {
-    afterEach(() => {
-        vi.unstubAllGlobals();
-    });
-
     it.each([
         { mobile: false, coarse: false, size: 'small' },
         { mobile: true, coarse: false, size: 'x-large' },

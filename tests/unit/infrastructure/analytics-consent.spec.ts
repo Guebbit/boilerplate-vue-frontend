@@ -80,8 +80,6 @@ describe('promptOpen, reopen and the Umami tracker', () => {
         document.head.innerHTML = '';
     });
 
-    afterEach(() => vi.unstubAllEnvs());
-
     it('prompts while unknown, stops once answered, and prompts again after reopen()', () => {
         const store = useAnalyticsConsentStore();
         expect(store.promptOpen).toBe(true);
@@ -188,7 +186,6 @@ describe('syncTracker while a signed-in account answer is still on its way', () 
     });
 
     afterEach(() => {
-        vi.unstubAllEnvs();
         deleteCookie('isAuth');
     });
 
@@ -243,8 +240,6 @@ describe('trackBrowsing', () => {
         createAnalyticsEvent.mockClear();
     });
 
-    afterEach(() => vi.unstubAllEnvs());
-
     it('sends nothing before the visitor answers', () => {
         useAnalyticsConsentStore().trackBrowsing(VIEW);
 
@@ -295,8 +290,6 @@ describe('trackBrowsing', () => {
 });
 
 describe('isAnalyticsConsentEnabled', () => {
-    afterEach(() => vi.unstubAllEnvs());
-
     it('is off while neither Umami nor Faro is configured', () => {
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', '');
         vi.stubEnv('VITE_FARO_URL', '');

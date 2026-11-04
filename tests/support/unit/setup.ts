@@ -1,6 +1,6 @@
 /**
- * Vitest setup: polyfills jsdom for Vuetify components, and clears the app's shared TanStack
- * query cache before every test.
+ * Vitest setup: polyfills jsdom for Vuetify components, clears the app's shared TanStack query
+ * cache before every test, and fails a test on a `[Vue warn]` it did not declare.
  *
  * Deliberately imports NOTHING from `@/modules` or `@/kernel`. A setup file is evaluated before
  * the spec module, so anything it imports is resolved and bound before a spec's hoisted
@@ -9,9 +9,12 @@
  * `@/infrastructure/query-client.ts` is safe to import here regardless — it pulls in only
  * `@tanstack/vue-query`, never the API client or a module.
  */
+import fc from 'fast-check';
 import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest';
 import { server } from './msw-server.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import { warnings } from './expect-warning.ts';
+import { PROPERTY_RUNS } from './knobs.ts';
 
 // ResizeObserver — used by v-app-bar, v-number-input & friends
 class ResizeObserverStub {
@@ -56,6 +59,29 @@ Object.defineProperty(globalThis, 'visualViewport', {
  */
 beforeEach(() => {
     queryClient.clear();
+});
+
+/**
+ * fast-check's defaults for every property: the depth knob, and `RANDOM_DATA_SEED` when set.
+ * A spec that pins its own `seed` keeps it, so a committed counterexample stays reproducible.
+ * https://fast-check.dev/docs/configuration/global-settings/
+ */
+fc.configureGlobal({
+    numRuns: PROPERTY_RUNS,
+    ...(process.env.RANDOM_DATA_SEED ? { seed: Number(process.env.RANDOM_DATA_SEED) } : {})
+});
+
+/**
+ * Watches every test for a `[Vue warn]` and fails the ones that cause one they did not declare
+ * with `expectWarning`. `afterEach` hooks run last-registered-first, so a spec's own cleanup
+ * (an unmount that warns) is still inside the window.
+ */
+beforeEach(() => {
+    warnings.start();
+});
+
+afterEach(() => {
+    warnings.finish();
 });
 
 /**

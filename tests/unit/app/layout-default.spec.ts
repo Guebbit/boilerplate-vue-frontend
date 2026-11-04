@@ -6,7 +6,7 @@
  * the dialog hosts) are stubbed: none of that is this file's own behaviour, already proven by
  * their own specs.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory } from 'vue-router';
@@ -199,8 +199,6 @@ describe('LayoutDefault — the seller line', () => {
 });
 
 describe('LayoutDefault — the privacy choices link', () => {
-    afterEach(() => vi.unstubAllEnvs());
-
     it('is absent when neither Umami nor Faro is configured', () => {
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', '');
         vi.stubEnv('VITE_FARO_URL', '');

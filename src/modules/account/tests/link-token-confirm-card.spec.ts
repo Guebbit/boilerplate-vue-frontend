@@ -5,7 +5,7 @@
  * mount, a submit spends exactly that token and lands on the page's own route, and a refusal
  * blocks the form in place. The store calls are spied at the profile store.
  */
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
@@ -62,10 +62,6 @@ const submit = (wrapper: ReturnType<typeof mountPage>['wrapper']) =>
 beforeEach(() => {
     setActivePinia(createPinia());
     return loadLocale('en');
-});
-
-afterEach(() => {
-    vi.restoreAllMocks();
 });
 
 describe('LinkTokenConfirmCard', () => {

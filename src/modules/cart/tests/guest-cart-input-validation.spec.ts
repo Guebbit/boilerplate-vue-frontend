@@ -12,7 +12,7 @@ import { readGuestCart, writeGuestCart } from '../composables/guest-cart-storage
 /**
  * One seed for the file.
  */
-const RUN = { seed: 20_261_004, numRuns: 300, endOnFailure: true } as const;
+const RUN = { seed: 20_261_004, endOnFailure: true } as const;
 
 afterEach(() => {
     localStorage.clear();

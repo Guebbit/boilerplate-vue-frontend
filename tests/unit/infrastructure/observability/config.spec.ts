@@ -35,7 +35,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    vi.unstubAllEnvs();
     Reflect.deleteProperty(globalThis, '__APP_CONFIG');
 });
 

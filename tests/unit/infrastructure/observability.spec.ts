@@ -20,7 +20,7 @@
  * has to be a safe no-op while it is off, and that is the state a visitor with telemetry
  * disabled is actually in.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
@@ -40,10 +40,6 @@ describe('useObservabilityStore', () => {
         setActivePinia(createPinia());
         vi.clearAllMocks();
         document.head.innerHTML = '';
-    });
-
-    afterEach(() => {
-        vi.unstubAllEnvs();
     });
 
     describe('setUmamiConsent', () => {

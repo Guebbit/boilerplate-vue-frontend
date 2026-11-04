@@ -10,7 +10,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { defineComponent } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
-import axe from 'axe-core';
+import { axeViolations } from '../../../../tests/support/unit/axe.ts';
 import Cart from '../views/Cart.vue';
 import { useCartStore } from '../store.ts';
 import type { MergeReportLine } from '../domain';
@@ -1064,18 +1064,10 @@ describe('the merge alert', () => {
             held: A_SHORT_CART,
             attach: true
         }).then(({ wrapper }) =>
-            axe
-                // https://github.com/dequelabs/axe-core/blob/master/doc/API.md#api-name-axerun
-                // `color-contrast` needs real layout and styles, which jsdom does not compute.
-                .run(document.body, {
-                    rules: { 'color-contrast': { enabled: false }, region: { enabled: false } }
-                })
-                .then((results) => {
-                    wrapper.unmount();
-                    expect(
-                        results.violations.map(({ id, nodes }) => `${id}: ${nodes[0]?.html}`)
-                    ).toEqual([]);
-                })
+            axeViolations().then((violations) => {
+                wrapper.unmount();
+                expect(violations).toEqual([]);
+            })
         ));
 });
 
@@ -1207,7 +1199,6 @@ describe('the stock poll on the page', () => {
     });
 
     afterEach(() => {
-        vi.unstubAllEnvs();
         vi.useRealTimers();
     });
 

@@ -2,7 +2,7 @@
  * @module
  * `useMediaQuery` — a ref that follows a media query and lets go of it with its scope.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
 import { useMediaQuery } from '@/ui/composables/use-media-query.ts';
 import { asStub } from '../../support/stub.ts';
@@ -27,10 +27,6 @@ const fakeList = (initial: boolean) => {
 };
 
 describe('useMediaQuery', () => {
-    afterEach(() => {
-        vi.unstubAllGlobals();
-    });
-
     it('starts at the current answer and follows a change', () => {
         const { list, fire } = fakeList(false);
         vi.stubGlobal('matchMedia', () => list);

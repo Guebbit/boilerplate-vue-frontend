@@ -3,9 +3,8 @@
  * Turns a runner's JSON report into the two things a raw log cannot tell you: which MODULE a
  * failure belongs to, and where the time went — `npm run test:report`.
  *
- * SHARED SCRIPT — started byte-identical in `boilerplate-node-backend` and
- * `boilerplate-vue-frontend`. Not in `SHARED_FILES` (`scripts/pairing/spec-identity.ts`), so
- * nothing enforces it — `diff` is the tool, by hand, when you change one copy. What makes sharing
+ * Fork of the backend's `scripts/testing/report-results.ts`, not kept in step and not in
+ * `SHARED_FILES` (`scripts/pairing/spec-identity.ts`). What made copying
  * it possible at all: Vitest's `json` reporter emits the same shape Jest's `--json` does, a
  * `testResults[]` of files, each with `assertionResults[]`. Verified rather than assumed — both
  * were run and their keys diffed before this was written.

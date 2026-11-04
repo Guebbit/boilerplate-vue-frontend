@@ -41,6 +41,7 @@ import {
 import { canAccess } from '@/app/guards/authentications.ts';
 import { readToursEnabled } from '@/infrastructure/runtime-config.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import * as logger from '@/infrastructure/utils/logger.ts';
 import { writeThemePreference } from '@/infrastructure/theme-preference.ts';
 import { collectModuleNavigation, groupNavigation, NAVIGATION_SECTIONS } from '@/kernel/registry';
 import type { AppNavigationEntry, AppNavigationSection } from '@/kernel/registry';
@@ -290,7 +291,8 @@ const theme = useTheme();
  */
 const toggleTheme = () => {
     const next = theme.current.value.dark ? 'light' : 'dark';
-    theme.global.name.value = next;
+    // A failed transition leaves the page on the old theme; the saved preference still applies on reload.
+    theme.change(next).catch((error: unknown) => logger.error('theme change failed', error));
     writeThemePreference(next);
 };
 </script>

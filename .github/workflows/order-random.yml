@@ -1,0 +1,46 @@
+name: Order-random (nightly)
+
+# Runs the unit suite with Vitest's `--sequence.shuffle`, which shuffles the order of test files and
+# of the tests inside each. A test that only passes because an earlier one left state behind (a
+# store, a cached module, a stubbed global) fails here on the night the order changes.
+#
+# A HUNTER, not a gate: report-only, so a red run is a finding for a person to read. It is not in
+# `ci.yml`'s `needs:` and opens no issue. The seed is printed first; rerun the same order locally with
+# `npm run test:order-random -- --sequence.seed=<seed>`. Fork of the backend's workflow of the
+# same name, not kept in step.
+
+on:
+    schedule:
+        # 04:30 UTC, after mutation.yml's nightly, so the two do not compete for runners.
+        - cron: '30 4 * * *'
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: order-random-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    order-random:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+              with:
+                  persist-credentials: false # no step after the checkout needs the token on disk
+
+            - name: Setup Node and install
+              uses: ./.github/actions/setup-node-and-install
+
+            - name: Run the unit suite in shuffled order
+              # The seed is chosen here so it can be printed before anything can fail.
+              # https://vitest.dev/config/sequence#sequence-seed
+              run: |
+                  SEED="$(date +%s)"
+                  echo "order seed: ${SEED}"
+                  npm run test:order-random -- --sequence.seed="${SEED}"

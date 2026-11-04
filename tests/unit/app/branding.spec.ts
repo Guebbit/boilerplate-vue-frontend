@@ -3,13 +3,8 @@
  * Each reads a deployment value with a build-time fallback, and the logo resolves a path against
  * the app's base so a sub-path deployment still finds it.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { brandLogoSource, brandName } from '@/app/utils/branding.ts';
-
-afterEach(() => {
-    vi.unstubAllEnvs();
-    vi.unstubAllGlobals();
-});
 
 describe('brandName', () => {
     it('is Guebbit until a deployment names itself', () => {

@@ -4,7 +4,7 @@
  * `watch*` `onError` to land in. A 404 or 403 must still send the visitor to the Error page (not
  * leave an empty form), and any other failure must toast instead of redirecting.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, type MockInstance } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
@@ -45,8 +45,11 @@ const router = createRouter({
 const apiRefusal = (status: number, message: string) =>
     Object.assign(new Error(message), { status, errors: [{ message }] });
 
-/** Where a missing record goes: the router's `replace`, stubbed so nothing navigates. */
-const replace = vi.spyOn(router, 'replace').mockResolvedValue(undefined);
+/**
+ * Where a missing record goes: the router's `replace`, stubbed so nothing navigates.
+ * Re-created in `beforeEach`, because the config's `restoreMocks` undoes a spy before each test.
+ */
+let replace: MockInstance<typeof router.replace>;
 
 /**
  * Mounts the edit page with the admin read rejecting the given way.
@@ -69,7 +72,7 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.mocked(orvalMutator).mockReset();
     addMessageMock.mockReset();
-    replace.mockClear();
+    replace = vi.spyOn(router, 'replace').mockResolvedValue(undefined);
     return loadLocale('en');
 });
 

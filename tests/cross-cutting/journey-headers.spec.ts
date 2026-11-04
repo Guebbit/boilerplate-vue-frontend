@@ -8,9 +8,10 @@
  * `tests/unit/scripts/demo/demo-remove-tests.spec.ts`; this runs it on the real tree.
  */
 import { describe, expect, it } from 'vitest';
+import { globSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { headerProblems } from '../../scripts/demo/demo-remove-tests';
+import { headerProblems, scannedSpecFiles } from '../../scripts/demo/demo-remove-tests';
 import { MODULE_GROUPS } from '../../scripts/module-groups';
 
 /** The repo root, two levels above this file. */
@@ -19,5 +20,13 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 describe('the requires-module headers of the e2e specs', () => {
     it('name only real modules, and every journey carries one', () => {
         expect(headerProblems(REPO_ROOT, Object.keys(MODULE_GROUPS))).toEqual([]);
+    });
+
+    // Canary: "no problems" must mean every spec was read, never that the scan found none.
+    it('reads as many files as an independent glob finds', () => {
+        const found = globSync('tests/e2e/specs/**/*.ts', { cwd: REPO_ROOT });
+
+        expect(found.length).toBeGreaterThan(0);
+        expect(scannedSpecFiles(REPO_ROOT)).toHaveLength(found.length);
     });
 });

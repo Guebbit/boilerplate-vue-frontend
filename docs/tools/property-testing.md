@@ -47,7 +47,7 @@ This is a short list, and that is the honest shape of it on a client. The functi
 
 ## Two rules, both about determinism
 
-**Seed every run.** `fast-check` defaults to a random seed. That makes a failure irreproducible and, worse, makes a test that fails one run in fifty look like flake — and flake teaches a team to press retry. Every property file here fixes a seed at the top.
+**Seed every run.** `fast-check` defaults to a random seed. That makes a failure irreproducible and, worse, makes a test that fails one run in fifty look like flake — and flake teaches a team to press retry. Every property file here fixes a seed at the top. The generated-payload helper (`tests/support/unit/contract-data.ts`) is the one random source: it takes `RANDOM_DATA_SEED`, or draws a fresh seed and prints it on first use.
 
 **Commit every counterexample.** When generation finds a failure, the property stays as the general rule and the specific input becomes an ordinary example with its seed in a comment. The property states what must be true; the example remembers what once was not.
 
@@ -77,6 +77,8 @@ That second one is worth internalising: a property that fails on your own assert
 
 `numRuns` is deliberately modest. These execute on the pre-commit path, which is already the slower of the two repos' gates, and a property that needs ten thousand cases to find its bug belongs in a nightly, not a commit hook. Raise it while hunting something specific, not as a default.
 
+The count is one knob, `TEST_PROPERTY_RUNS` (default 200, floor 10), set in `.env` or the shell (the shell wins) and read by `vitest.config.ts`, which hands it to the workers. `setup.ts` passes it to `fc.configureGlobal`, so a property file does not pin its own `numRuns`. `RANDOM_DATA_SEED` does the same for the seed of anything that pins none. The backend has the same knob by the same name (`knobs.ts` in its test support folder); this one is a fork, not kept in step.
+
 ## File map
 
 | Path                                                          | Contents                                                                     |
@@ -84,6 +86,7 @@ That second one is worth internalising: a property that fails on your own assert
 | `tests/unit/infrastructure/utils/formatters.property.spec.ts` | Every property in this repo — the formatters and the two upload predicates   |
 | `tests/unit/infrastructure/utils/formatters.spec.ts`          | The example-based half: exact rendered strings, the shipped copy             |
 | `tests/unit/infrastructure/utils/uploads.spec.ts`             | The example-based half: the exact size boundary, the non-canonical mime type |
+| `src/modules/users/tests/schemas.property.spec.ts`            | The user form against the contract's `CreateUserBody`, by generated payloads |
 
 One property file, covering two modules. It is listed as a table anyway because the split with the example files beside it is the part worth navigating, not the count.
 

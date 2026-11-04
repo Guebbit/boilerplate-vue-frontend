@@ -10,7 +10,7 @@
  * module scope — see `loadComposable`: without a fresh module a test would inherit the previous
  * test's open connection and the reconnect assertions would pass for the wrong reason.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import type { SseClientCallbacks } from '@/infrastructure/create-sse-client';
 import type { MetricsSnapshotEvent, SseEventName } from '@types';
@@ -71,10 +71,6 @@ describe('useRealtimeObservability', () => {
     beforeEach(() => {
         setActivePinia(createPinia());
         vi.clearAllMocks();
-    });
-
-    afterEach(() => {
-        vi.unstubAllEnvs();
     });
 
     describe('connect', () => {

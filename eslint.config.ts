@@ -1247,5 +1247,26 @@ export default defineConfigWithVueTs(
                 project: ['./tsconfig.cypress.json']
             }
         }
+    },
+    {
+        /**
+         * Cypress runs on Mocha, which neither `@vitest/eslint-plugin` (it skips these files) nor
+         * `eslint-plugin-cypress` covers: a committed `it.only` silently drops every other spec in
+         * the file, an `it.skip` hides one. Same intent as Vitest's `no-focused-tests` and
+         * `no-disabled-tests`, spelled as a property ban because Mocha's API is plain properties.
+         */
+        files: [...ALL_SPEC_GLOBS],
+        rules: {
+            'no-restricted-properties': [
+                'error',
+                ...['it', 'describe', 'context'].flatMap((object) =>
+                    ['only', 'skip'].map((property) => ({
+                        object,
+                        property,
+                        message: `${object}.${property} leaves a Cypress spec focused or disabled; remove it before committing.`
+                    }))
+                )
+            ]
+        }
     }
 );

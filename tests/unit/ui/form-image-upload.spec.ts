@@ -24,7 +24,7 @@
  */
 import { asStub } from '../../support/stub';
 import { nextRenderTick } from '../../support/unit/mounted-vm';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import vuetify from '@/ui/vuetify';
@@ -64,10 +64,6 @@ beforeEach(() => {
     globalThis.URL.revokeObjectURL = vi.fn((url: string) => {
         revoked.push(url);
     });
-});
-
-afterEach(() => {
-    vi.restoreAllMocks();
 });
 
 /** Builds a small image `File`. */

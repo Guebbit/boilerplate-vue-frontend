@@ -3,7 +3,7 @@
  * `safe-storage.ts` — JSON round trip through Web Storage, and "nothing saved" (never a throw)
  * for damaged text and for blocked storage.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     parseJsonSafe,
     readJson,
@@ -14,10 +14,6 @@ import {
 beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
-});
-
-afterEach(() => {
-    vi.restoreAllMocks();
 });
 
 describe('safe-storage', () => {

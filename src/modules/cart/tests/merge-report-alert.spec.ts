@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import axe from 'axe-core';
+import { axeViolations } from '../../../../tests/support/unit/axe.ts';
 import MergeReportAlert from '../components/MergeReportAlert.vue';
 import { useCartStore } from '../store';
 import type { MergeReportLine } from '../domain';
@@ -337,12 +337,6 @@ describe('for assistive technology', () => {
             aLine({ productId: 'gone', requested: 1, resulting: 0, reason: 'removed' })
         ]);
 
-        // https://github.com/dequelabs/axe-core/blob/master/doc/API.md#api-name-axerun
-        // `color-contrast` needs real layout and styles, which jsdom does not compute.
-        const results = await axe.run(document.body, {
-            rules: { 'color-contrast': { enabled: false }, region: { enabled: false } }
-        });
-
-        expect(results.violations.map(({ id, nodes }) => `${id}: ${nodes[0]?.html}`)).toEqual([]);
+        expect(await axeViolations()).toEqual([]);
     });
 });

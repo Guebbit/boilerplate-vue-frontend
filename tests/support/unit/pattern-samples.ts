@@ -1,0 +1,51 @@
+/**
+ * @module
+ * Known-good strings for `pattern`s the contract declares but a generator cannot build a value
+ * for on its own. One table for every generator that walks the contract, so a tricky pattern is
+ * registered once rather than once per generator — and a generator that finds no entry fails
+ * loudly instead of emitting a value the contract forbids.
+ *
+ * Fork of BE `tests/support/pattern-samples.ts`, not kept in step.
+ */
+
+/**
+ * Sample values, keyed on the regex SOURCE exactly as `openapi.yaml` writes it — which is also
+ * what `RegExp.source` yields on the generated zod schema, so both generators find the same entry
+ * from their own half of the contract.
+ */
+const PATTERN_SAMPLES: Record<string, string> = {
+    // Locale — BCP 47 language tag.
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$': 'it',
+    // CountryCode — ISO 3166-1 alpha-2.
+    '^[A-Z]{2}$': 'IT',
+    // CurrencyCode — ISO 4217 alphabetic; the shop's own currency, so a payload also passes the
+    // refund and checkout rules that compare it with the payment's.
+    '^[A-Z]{3}$': 'EUR',
+    // Id — the shared resource identifier. An ObjectId-shaped sample, so a payload built from the
+    // contract also names an id this backend would accept, not only one the contract does.
+    '^[0-9A-Za-z_-]+$': '65dc8a99604c307b702b5ccc',
+    // Identifier-shaped strings (a tenant id, a two-letter tag, a token-ish key). The `\w` form is
+    // how the generated zod schema spells `[A-Za-z0-9_]`.
+    '^[a-z0-9][a-z0-9-]*$': 'abc',
+    '^[a-z]{2}$': 'it',
+    '^[A-Za-z0-9_-]+$': 'abc',
+    '^[\\w-]+$': 'abc',
+    // An https-only URL.
+    '(?:^https://)': 'https://example.com/hook'
+};
+
+/**
+ * Whether a pattern uses lookaround, which `fast-check`'s `stringMatching` cannot build a string
+ * against — it throws `Assertions of kind Lookahead not implemented yet!`. Read from the source
+ * rather than caught from that message, which is one library upgrade away from changing.
+ * @param source the regex source, as the contract writes it
+ * @returns true when the pattern contains `(?=`, `(?!`, `(?<=` or `(?<!`
+ */
+export const usesLookaround = (source: string): boolean => /\(\?<?[!=]/.test(source);
+
+/**
+ * The registered sample for a pattern.
+ * @param source the regex source, as the contract writes it
+ * @returns the sample, or `undefined` when the pattern has no entry
+ */
+export const sampleForPattern = (source: string): string | undefined => PATTERN_SAMPLES[source];

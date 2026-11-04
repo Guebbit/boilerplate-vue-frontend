@@ -99,7 +99,6 @@ describe('loginTotpCode', () => {
 
 describe('loginTotpCodeFor', () => {
     afterEach(() => {
-        vi.unstubAllGlobals();
         forgetLoginCodes();
     });
 

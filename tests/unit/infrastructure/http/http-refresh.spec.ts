@@ -253,7 +253,6 @@ beforeEach(() => {
     requestLog = [];
     scenario = defaultScenario();
     clearAuthCookie();
-    vi.unstubAllEnvs();
 });
 
 describe('a 401 SESSION_IDLE', () => {

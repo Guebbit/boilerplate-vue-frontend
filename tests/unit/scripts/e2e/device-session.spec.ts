@@ -5,7 +5,7 @@
  * `fetch` is stubbed with hand-built responses: what matters is what the device DOES with the
  * answer (which cookie it keeps, when its token rotates), not the network.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
     deviceLogin,
     deviceRefresh,
@@ -50,10 +50,6 @@ const cookieDevice: Device = {
     token: '',
     cookie: '__Host-session=ses_abc'
 };
-
-afterEach(() => {
-    vi.unstubAllGlobals();
-});
 
 describe('sessionCookieFrom', () => {
     it('reads the __Host-session cookie out of several Set-Cookie headers, attributes dropped', () => {

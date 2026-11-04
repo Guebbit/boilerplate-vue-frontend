@@ -4,7 +4,7 @@
  * the account (`PATCH /account`) and never the guest cookie, and sign-out hands the banner back
  * to the cookie. Mocks only the transport; the consent, profile, auth and session stores are real.
  */
-import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { deleteCookie, getCookie } from '@guebbit/js-toolkit';
 
@@ -66,8 +66,6 @@ beforeEach(() => {
         'PATCH /account': { ...USER, analyticsConsent: false }
     };
 });
-
-afterEach(() => vi.unstubAllEnvs());
 
 describe('the account answer while signed in', () => {
     it('hides the banner when the account holds an answer and the cookie is unknown', () =>

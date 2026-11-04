@@ -50,7 +50,6 @@ const patchAccount = (data: unknown) =>
 
 beforeEach(() => {
     setActivePinia(createPinia());
-    vi.unstubAllEnvs();
     received = undefined;
     server.use(
         http.patch(`${API}/account`, ({ request }) =>
