@@ -24,6 +24,7 @@ import orders from '@/modules/orders/module';
 import payments from '@/modules/payments/module';
 import products from '@/modules/products/module';
 import returns from '@/modules/returns/module';
+import shopTasks from '@/modules/shop-tasks/module';
 import stats from '@/modules/stats/module';
 import stockAlerts from '@/modules/stock-alerts/module';
 import tasks from '@/modules/tasks/module';
@@ -48,6 +49,7 @@ export const enabledModules: AppModule[] = [
     payments,
     products,
     returns,
+    shopTasks,
     stats,
     stockAlerts,
     tasks,

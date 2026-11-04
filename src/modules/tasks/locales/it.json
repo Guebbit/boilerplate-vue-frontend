@@ -14,14 +14,7 @@
         "too-long": "Troppo lungo: massimo {max} caratteri",
         "label-category": "Di cosa si tratta? (facoltativo)",
         "label-order-number": "Numero d'ordine (facoltativo)",
-        "category-none": "Non so",
-        "category-order": "Il mio ordine",
-        "category-cancellation": "Annullare un ordine",
-        "category-return": "Un reso",
-        "category-payment": "Pagamento",
-        "category-account": "Il mio account",
-        "category-privacy": "I miei dati personali",
-        "category-other": "Altro"
+        "category-none": "Non so"
     },
     "tasks-page": {
         "page-title": "Attività",
@@ -61,15 +54,6 @@
         "filter-kind": "Tipo",
         "filter-kind-any": "Qualsiasi tipo",
         "filter-overdue": "Solo in ritardo",
-        "kind-contact": "Messaggio di contatto",
-        "kind-account_review": "Account in verifica",
-        "kind-manual_refund_owed": "Rimborso da fare a mano",
-        "kind-amount_mismatch": "Importo del pagamento non corrispondente",
-        "kind-paid_without_hold": "Ordine pagato senza scorta",
-        "kind-export_failed": "Esportazione dati non riuscita",
-        "kind-consent_due": "Consenso al ritardo da chiedere",
-        "kind-refund_refused": "Rimborso rifiutato",
-        "kind-dispute": "Contestazione di pagamento",
         "sort-due": "Scadenza più vicina",
         "label-due": "Scade {date}",
         "label-overdue": "In ritardo dal {date}",
@@ -97,13 +81,23 @@
         "success-note": "Nota aggiunta.",
         "heading-earlier": "Task precedenti sullo stesso elemento",
         "label-record": "Riguarda",
-        "link-order": "Ordine",
-        "link-user": "Account",
-        "link-payment": "Pagamento",
-        "link-refund": "Rimborso",
-        "link-fulfillment_order": "Ordine di evasione",
-        "link-export": "Esportazione dati",
         "button-give-back": "Restituisci",
         "success-give-back": "Task restituito."
+    },
+    "task-kind": {
+        "contact": "Messaggio di contatto",
+        "account_review": "Account in verifica",
+        "export_failed": "Esportazione dati non riuscita",
+        "unknown": "Task"
+    },
+    "task-category": {
+        "none": "Senza categoria",
+        "account": "Account",
+        "privacy": "Dati personali",
+        "other": "Altro"
+    },
+    "task-link": {
+        "user": "Account",
+        "export": "Esportazione dati"
     }
 }

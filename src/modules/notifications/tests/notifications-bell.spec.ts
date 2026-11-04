@@ -20,11 +20,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
-import type {
-    Notification,
-    NotificationCartLineRemoved,
-    NotificationWishlistItemRemoved
-} from '@types';
+import type { Notification } from '@types';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -53,12 +49,15 @@ vi.mock('@/infrastructure/http', () => ({
 }));
 
 /**
- * What a case may change on a row: any field of the two product-removed variants, which share a
- * shape, including which of the two it is.
+ * A parked-event row, the foundation notice that names a product nowhere: its text carries the row's
+ * own id, so each row reads differently.
  */
-type RowOverrides = Partial<Omit<NotificationCartLineRemoved, 'code'>> & {
-    code?: NotificationCartLineRemoved['code'] | NotificationWishlistItemRemoved['code'];
-};
+type OutboxDead = Extract<Notification, { code: 'notifications.staff.outbox-dead' }>;
+
+/**
+ * What a case may change on a row.
+ */
+type RowOverrides = Partial<OutboxDead>;
 
 /**
  * A server row.
@@ -69,8 +68,8 @@ type RowOverrides = Partial<Omit<NotificationCartLineRemoved, 'code'>> & {
  */
 const row = (id: string, overrides: RowOverrides = {}): Notification => ({
     id,
-    code: 'notifications.cart-line-removed',
-    params: { productId: 'p1', titles: { en: `Collar ${id}` } },
+    code: 'notifications.staff.outbox-dead',
+    params: { eventName: `event.${id}`, aggregateId: 'a1' },
     audience: 'own',
     severity: 'info',
     createdAt: '2026-10-04T10:00:00.000Z',
@@ -94,11 +93,10 @@ const signIn = () => {
 const router = createRouter({
     history: createMemoryHistory(),
     routes: [
-        { path: '/:locale/orders/:id', name: 'OrderTarget', component: { template: '<div />' } },
         {
-            path: '/:locale/users/:id',
-            name: 'UserTarget',
-            meta: { access: 'auth', can: ['read', 'User'] },
+            path: '/:locale/webhooks/subscriptions/:id',
+            name: 'WebhookTarget',
+            meta: { access: 'auth', can: ['read', 'WebhookSubscription'] },
             component: { template: '<div />' }
         }
     ]
@@ -237,8 +235,8 @@ describe('opening the panel', () => {
             (element) => element.textContent
         );
         expect(texts).toEqual([
-            'Removed from your cart because it is no longer available: Collar n2.',
-            'Removed from your cart because it is no longer available: Collar n1.'
+            'An event (event.n2) could not be delivered after every retry and was parked. Look at the record it was about.',
+            'An event (event.n1) could not be delivered after every retry and was parked. Look at the record it was about.'
         ]);
     });
 
@@ -276,7 +274,7 @@ describe('inside the panel', () => {
             .getAttribute('aria-label');
 
         expect(label).toBe(
-            'Delete notification: Removed from your cart because it is no longer available: Collar n1.'
+            'Delete notification: An event (event.n1) could not be delivered after every retry and was parked. Look at the record it was about.'
         );
     });
 
@@ -332,45 +330,14 @@ describe('the open panel, audited', () => {
     });
 });
 
-describe('a notice about an order', () => {
-    it('links to the order, where the reader can cancel', async () => {
-        signIn();
-        inboxOnServer = [
-            {
-                id: 'n1',
-                code: 'notifications.fulfillment-delayed',
-                params: {
-                    orderId: 'o7',
-                    fulfillmentOrderId: 'fo1',
-                    titles: ['Limited vinyl'],
-                    agreedAt: '2027-03-01T00:00:00.000Z',
-                    expectedAt: '2027-04-19T00:00:00.000Z'
-                },
-                audience: 'own',
-                severity: 'warning',
-                createdAt: '2026-10-04T10:00:00.000Z'
-            },
-            row('n2')
-        ];
-        await mountBell();
-        await openPanel();
-
-        const links = document.body.querySelectorAll('[data-test=notification-order-link]');
-
-        expect(links).toHaveLength(1);
-        expect(links[0]?.getAttribute('href')).toBe('/en/orders/o7');
-        expect(links[0]?.closest('[data-test=notification-n1]')).not.toBeNull();
-    });
-});
-
 /**
- * A purchase-hold work notice about the buyer `u9`.
+ * A disabled-webhook work notice about the subscription `s9`.
  */
 const holdNotice: Notification = {
     id: 'w1',
     audience: 'staff',
-    code: 'notifications.staff.purchase-hold-placed',
-    params: { userId: 'u9', until: '2026-10-30T09:00:00.000Z' },
+    code: 'notifications.staff.webhook-disabled',
+    params: { subscriptionId: 's9' },
     severity: 'warning',
     createdAt: '2026-10-04T10:00:00.000Z'
 };
@@ -388,7 +355,7 @@ describe('a work notice for staff', () => {
         signIn();
         useSessionStore().tenantAbility = createMongoAbility([
             { action: 'read', subject: 'Notification' },
-            { action: 'read', subject: 'User' }
+            { action: 'read', subject: 'WebhookSubscription' }
         ]);
         inboxOnServer = [holdNotice];
         await mountBell();
@@ -397,7 +364,7 @@ describe('a work notice for staff', () => {
 
         const link = document.body.querySelector('[data-test=notification-target-link]');
 
-        expect(link?.getAttribute('href')).toBe('/en/users/u9');
+        expect(link?.getAttribute('href')).toBe('/en/webhooks/subscriptions/s9');
     });
 
     it('offers no link where the reader would be refused', async () => {
@@ -417,8 +384,8 @@ describe('a work notice for staff', () => {
             {
                 ...holdNotice,
                 id: 'w2',
-                code: 'notifications.staff.webhook-disabled',
-                params: { subscriptionId: 's1' }
+                code: 'notifications.staff.task-assigned',
+                params: { taskId: 't1', kind: 'contact' }
             }
         ];
         await mountBell();

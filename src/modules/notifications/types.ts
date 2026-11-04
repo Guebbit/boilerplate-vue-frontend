@@ -5,7 +5,7 @@
  */
 import type { EToastType } from '@guebbit/vue-toolkit';
 import type { NotificationAudience } from '@types';
-import type { NotificationTarget } from './domain';
+import type { NoticeTarget } from '@/kernel/registry';
 
 /**
  * One row of the bell's panel.
@@ -28,14 +28,10 @@ export interface InboxItem {
      */
     createdAt: string;
     /**
-     * The order the notification is about, when it is about one: the bell links to it.
+     * The screen a notice is about, when it declares one: the bell links to it, when this build
+     * ships the route and the reader may open it.
      */
-    orderId?: string | undefined;
-    /**
-     * The admin screen a work notice is about, when it is one: the bell links to it, when this
-     * build ships the screen and the reader may open it.
-     */
-    target?: NotificationTarget | undefined;
+    target?: NoticeTarget | undefined;
     /**
      * Whether the owner has not opened the bell since it arrived.
      */

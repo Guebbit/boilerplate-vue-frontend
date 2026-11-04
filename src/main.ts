@@ -36,9 +36,11 @@ import { shouldValidateResponses } from '@/infrastructure/http/validate.ts';
 import { registerLocaleContributors } from '@/i18n';
 import {
     collectModuleLocales,
+    collectModuleNotices,
     collectModuleResponseSchemas,
     collectModuleSlots
 } from '@/kernel/registry.ts';
+import { registerNotices } from '@/kernel/inbox-notices.ts';
 import { SLOTS_KEY } from '@/kernel/slots.ts';
 import { enabledModules } from '@/modules.ts';
 
@@ -57,6 +59,8 @@ import { enabledModules } from '@/modules.ts';
  * mount below.
  */
 registerLocaleContributors(collectModuleLocales(enabledModules));
+// How each notification code reads and links: declared by the module that owns the code.
+registerNotices(collectModuleNotices(enabledModules));
 
 /**
  * Boots the Vue application: plugin registration, mount,

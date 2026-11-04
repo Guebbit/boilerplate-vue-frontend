@@ -1,0 +1,54 @@
+{
+    "shop-tasks": {
+        "staff": {
+            "purchase-hold-placed": "A buyer's checkout was paused until {until} after repeated cancellations. Review the account if you suspect abuse.",
+            "return-requested": "A buyer asked to return goods. The request is waiting for a decision.",
+            "transfers-due": "{n} bank transfers are due soon. Open the orders to chase them.",
+            "preorders-late": "{n} preorders are past their expected date with units still owed.",
+            "delivery-holds-open": "{n} orders have been held for too long. Fix the reason or release them.",
+            "withdrawals-awaiting-goods": "{n} withdrawals are waiting for their goods to come back.",
+            "returns-undecided": "{n} return requests still need a decision.",
+            "low-stock": "{n} products are low on stock.",
+            "unshipped": "{n} paid orders have not shipped yet.",
+            "awaiting-tracking": "{n} shipped parcels still have no tracking code.",
+            "undelivered": "{n} parcels were shipped and never marked arrived. Until then the buyer's withdrawal window has not started.",
+            "stale-refunds": "{n} refunds have been open too long. Check them against the provider."
+        },
+        "cart-line-removed": "Removed from your cart because it is no longer available: {name}.",
+        "wishlist-item-removed": "Removed from your wishlist because it is no longer available: {name}.",
+        "cart-merge-refused": "Some items from your guest cart are no longer available and were not added: {lines}.",
+        "cart-merge-refused-bare": "Some items from your guest cart are no longer available and were not added.",
+        "refused-line": "{name} × {requested}",
+        "unknown-product": "a product",
+        "fulfillment-delayed": "Part of your order ({titles}) is delayed: it was promised for {agreed} and is now expected on {expected}. If you are happy to wait you do not need to do anything; you can cancel it from your order.",
+        "fulfillment-delayed-undated": "Part of your order ({titles}) is delayed: it was promised for {agreed} and we are still waiting for stock. If you are happy to wait you do not need to do anything; you can cancel it from your order.",
+        "fulfillment-held-check_address": "Part of your order is on hold: please check its delivery address.",
+        "fulfillment-held-delayed": "Part of your order is held back for a moment and will leave later than planned.",
+        "fulfillment-held-message": "The shop says: {message}",
+        "shipment-lost-lost": "A parcel of your order was lost on the way. We will send it again, or refund you if you prefer.",
+        "shipment-lost-damaged": "A parcel of your order was damaged on the way. We will send it again, or refund you if you prefer.",
+        "shipment-lost-owed": "We have to restock part of it: {titles} is expected around {expected}.",
+        "shipment-lost-message": "The shop says: {message}",
+        "stock-alert": "Good news: {name} can be ordered again."
+    },
+    "task-kind": {
+        "manual_refund_owed": "Refund owed by hand",
+        "refund_refused": "Refund refused",
+        "amount_mismatch": "Payment amount mismatch",
+        "dispute": "Payment dispute",
+        "paid_without_hold": "Paid order without a stock hold",
+        "consent_due": "Buyer consent to the delay due"
+    },
+    "task-category": {
+        "order": "Order",
+        "cancellation": "Cancellation",
+        "return": "Return",
+        "payment": "Payment"
+    },
+    "task-link": {
+        "order": "Order",
+        "payment": "Payment",
+        "refund": "Refund",
+        "fulfillment_order": "Fulfillment order"
+    }
+}

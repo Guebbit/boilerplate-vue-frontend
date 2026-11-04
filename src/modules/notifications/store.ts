@@ -35,7 +35,8 @@ import { notifyErrorMessages, rethrowUnlessAbsent } from '@/infrastructure/utils
 import { createRequestTickets } from '@/infrastructure/utils/request-ticket.ts';
 import { formatDate } from '@/infrastructure/utils/formatters.ts';
 import { asPassive } from '@/infrastructure/http/passive.ts';
-import { describeNotification, notificationOrderId, notificationTarget } from './domain';
+import { noticeOf } from '@/kernel/inbox-notices.ts';
+import type { NoticeTarget } from '@/kernel/registry.ts';
 import type { InboxItem } from './types';
 
 /**
@@ -132,6 +133,35 @@ const preferredLocales = (): string[] => {
 };
 
 /**
+ * Dictionary key for a code no enabled module declares (a newer backend, or a module this build
+ * does not ship).
+ */
+const UNKNOWN_CODE_KEY = 'notifications.unknown';
+
+/**
+ * The sentence of a row: the owning module's notice entry, else the generic "unknown" one. This
+ * module words no code of its own beyond its five, which `notices.ts` declares like any other.
+ *
+ * @param notification - The server row.
+ * @returns The finished text.
+ */
+const sentenceOf = (notification: Notification): string =>
+    noticeOf(notification.code)?.describe(notification, {
+        preferred: preferredLocales(),
+        translate,
+        formatDate
+    }) ?? translate(UNKNOWN_CODE_KEY);
+
+/**
+ * The screen a row links to, from the same entry as {@link sentenceOf}.
+ *
+ * @param notification - The server row.
+ * @returns A route and params, or `undefined` for a row that points nowhere.
+ */
+const targetOf = (notification: Notification): NoticeTarget | undefined =>
+    noticeOf(notification.code)?.target?.(notification);
+
+/**
  * Deletes one notification on the server. A 404 means it is already gone (another tab, the cap),
  * which is the state the caller asked for, so it is not a failure.
  *
@@ -191,8 +221,7 @@ export const useInboxStore = defineStore('inbox', () => {
             createdAt: notification.createdAt,
             unread: notification.readAt === undefined,
             audience: notification.audience,
-            orderId: notificationOrderId(notification),
-            target: notificationTarget(notification)
+            target: targetOf(notification)
         }))
     );
 
@@ -220,7 +249,7 @@ export const useInboxStore = defineStore('inbox', () => {
         const known = messages.findMessage(notification.id) !== undefined;
         const meta: InboxMeta = { source: INBOX_SOURCE, notification };
         messages.addMessage(
-            describeNotification(notification, preferredLocales(), translate, formatDate),
+            sentenceOf(notification),
             TOAST_TYPE[notification.severity],
             announce ? TOAST_MS : NO_AUTO_HIDE,
             {

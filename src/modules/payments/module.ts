@@ -4,7 +4,6 @@
  * locale loaders the app registry needs to wire the panel in.
  */
 import { Landmark } from 'lucide-vue-next';
-import { useUnreadNoticeCount } from '@/kernel/inbox-notices';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
@@ -36,9 +35,7 @@ export default {
             order: 56,
             section: 'admin',
             group: 'navigation.group-sales',
-            icon: Landmark,
-            // Unread work notices that point at this screen.
-            badge: () => useUnreadNoticeCount(['notifications.staff.stale-refunds'])
+            icon: Landmark
         }
     ],
     responseSchemas: () => import('./response-schemas').then((m) => m.paymentsResponseSchemas),

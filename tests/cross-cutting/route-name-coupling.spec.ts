@@ -84,6 +84,27 @@ const isGuarded = (source: string, name: string): boolean => {
 };
 
 /**
+ * Whether a file declares notices, i.e. imports `AppNotice` or `NoticeTarget` from the registry.
+ *
+ * @param source - one file's full text.
+ */
+const declaresNotices = (source: string): boolean =>
+    /import\s+type\s*{[^}]*\b(?:AppNotice|NoticeTarget)\b[^}]*}\s*from\s*["']@\/kernel\/registry/.test(
+        source
+    );
+
+/**
+ * The text a route-name sweep reads. In a file that declares notices, `route: 'Name'` is not a
+ * reference to guard: a notice target is guarded by construction (`AppNotice.target`, the inbox
+ * store's `targetOf`, the bell, then `useNotificationLink` through `linkIfRouted`). Any OTHER
+ * mention of the name in that file stays visible.
+ *
+ * @param source - one file's full text.
+ */
+const sweptText = (source: string): string =>
+    declaresNotices(source) ? source.replaceAll(/\broute:\s*["']\w+["']/g, '') : source;
+
+/**
  * Every SINGLE/DOUBLE-quoted string literal in `source` naming a REAL route, deduplicated.
  *
  * Not narrowed to `name: 'X'` — {@link linkIfRouted}'s own callers pass the name as a plain
@@ -97,11 +118,20 @@ const isGuarded = (source: string, name: string): boolean => {
  */
 const routeNameReferencesIn = (source: string): string[] => [
     ...new Set(
-        [...source.matchAll(/["']([A-Za-z]\w*)["']/g)]
+        [...sweptText(source).matchAll(/["']([A-Za-z]\w*)["']/g)]
             .map(([, name]) => name)
             .filter((name) => everyRouteName.has(name))
     )
 ];
+
+/**
+ * The route names `source` references that are not `allowed` and not guarded.
+ *
+ * @param source - one file's full text.
+ * @param allowed - the route names the file's module may name freely.
+ */
+const unguardedIn = (source: string, allowed: Set<string>): string[] =>
+    routeNameReferencesIn(source).filter((name) => !allowed.has(name) && !isGuarded(source, name));
 
 describe('a module names only its own, the shell’s, or a MODULE_EDGES sibling’s route', () => {
     it('finds modules to check', () => {
@@ -130,12 +160,31 @@ describe('a module names only its own, the shell’s, or a MODULE_EDGES sibling�
 
             return listFiles(`src/modules/${appModule.name}`).flatMap((file) => {
                 const source = readFileSync(file, 'utf8');
-                return routeNameReferencesIn(source)
-                    .filter((name) => !allowed.has(name) && !isGuarded(source, name))
-                    .map((name) => `${file}: names '${name}', undeclared and unguarded`);
+                return unguardedIn(source, allowed).map(
+                    (name) => `${file}: names '${name}', undeclared and unguarded`
+                );
             });
         });
 
         expect(violations).toEqual([]);
+    });
+});
+
+describe('a notice target is guarded by construction', () => {
+    const noticeImport = "import type { NoticeTarget } from '@/kernel/registry';\n";
+    const none = new Set<string>();
+
+    it('lets a notice file name a route as its target', () => {
+        expect(unguardedIn(`${noticeImport}const t = { route: 'OrderTarget' };`, none)).toEqual([]);
+    });
+
+    it('refuses `route:` in a file that declares no notices', () => {
+        expect(unguardedIn("const t = { route: 'OrderTarget' };", none)).toEqual(['OrderTarget']);
+    });
+
+    it('still refuses an unguarded `name:` for the same route in a notice file', () => {
+        const source = `${noticeImport}const t = { route: 'OrderTarget' };\nrouter.push({ name: 'OrderTarget' });`;
+
+        expect(unguardedIn(source, none)).toEqual(['OrderTarget']);
     });
 });

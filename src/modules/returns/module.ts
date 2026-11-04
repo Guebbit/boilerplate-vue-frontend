@@ -4,7 +4,6 @@
  * the app's module registry.
  */
 import { Undo2 } from 'lucide-vue-next';
-import { useUnreadNoticeCount } from '@/kernel/inbox-notices';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
@@ -41,14 +40,7 @@ export default {
             order: 59,
             section: 'admin',
             group: 'navigation.group-sales',
-            icon: Undo2,
-            // Unread work notices that point at this screen.
-            badge: () =>
-                useUnreadNoticeCount([
-                    'notifications.staff.return-requested',
-                    'notifications.staff.withdrawals-awaiting-goods',
-                    'notifications.staff.returns-undecided'
-                ])
+            icon: Undo2
         }
     ],
     responseSchemas: () => import('./response-schemas').then((m) => m.returnsResponseSchemas),

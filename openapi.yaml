@@ -11730,7 +11730,7 @@ paths:
       tags:
         - Cart
       summary: Merge a guest cart into the cart
-      description: "Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart/items`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers."
+      description: "Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart/items`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`shop-tasks.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers."
       operationId: mergeCart
       x-error-codes:
         "409":
@@ -17936,13 +17936,13 @@ components:
     TaskCategory:
       type: string
       enum:
+        - account
+        - privacy
+        - other
         - order
         - cancellation
         - return
         - payment
-        - account
-        - privacy
-        - other
     TaskStatus:
       type: string
       enum:
@@ -18004,22 +18004,22 @@ components:
       enum:
         - contact
         - account_review
-        - manual_refund_owed
-        - amount_mismatch
-        - paid_without_hold
         - export_failed
-        - consent_due
+        - manual_refund_owed
         - refund_refused
+        - amount_mismatch
         - dispute
+        - paid_without_hold
+        - consent_due
     TaskLinkType:
       type: string
       enum:
-        - order
         - user
+        - export
+        - order
         - payment
         - refund
         - fulfillment_order
-        - export
     TaskLink:
       type: object
       additionalProperties: false
@@ -19062,390 +19062,6 @@ components:
         - own
         - staff
       description: "Whose message this is. `own`: about the caller as a person or buyer. `staff`: a work notice sent because the caller's role does that work, not because it concerns them."
-    ProductTitles:
-      type: object
-      additionalProperties:
-        type: string
-    CartLineRemovedParams:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-        - titles
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
-        titles:
-          $ref: "#/components/schemas/ProductTitles"
-    NotificationSeverity:
-      type: string
-      description: Meaning, not look — a client picks the colour. The four words most notification APIs share (Ant Design, Atlassian flags).
-      enum:
-        - info
-        - success
-        - warning
-        - error
-    NotificationCartLineRemoved:
-      type: object
-      additionalProperties: false
-      description: A product left the catalogue and left the caller's cart with it.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.cart-line-removed
-        params:
-          $ref: "#/components/schemas/CartLineRemovedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    NotificationWishlistItemRemoved:
-      type: object
-      additionalProperties: false
-      description: A product left the catalogue and left the caller's wishlist with it.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.wishlist-item-removed
-        params:
-          $ref: "#/components/schemas/CartLineRemovedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    CartMergeRefusedParams:
-      type: object
-      additionalProperties: false
-      required:
-        - lines
-      properties:
-        lines:
-          type: array
-          description: The guest-cart lines `POST /cart/merge` could not add at all.
-          items:
-            type: object
-            additionalProperties: false
-            required:
-              - productId
-              - requested
-              - titles
-            properties:
-              productId:
-                $ref: "#/components/schemas/Id"
-              requested:
-                type: integer
-                minimum: 1
-              titles:
-                $ref: "#/components/schemas/ProductTitles"
-    NotificationCartMergeRefused:
-      type: object
-      additionalProperties: false
-      description: Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.cart-merge-refused
-        params:
-          $ref: "#/components/schemas/CartMergeRefusedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    FulfillmentDelayedParams:
-      type: object
-      additionalProperties: false
-      required:
-        - orderId
-        - fulfillmentOrderId
-        - titles
-        - agreedAt
-      description: "What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised and the date now expected (absent when there is none)."
-      properties:
-        orderId:
-          $ref: "#/components/schemas/Id"
-        fulfillmentOrderId:
-          $ref: "#/components/schemas/Id"
-        titles:
-          type: array
-          description: The waiting products' titles, as the order froze them.
-          items:
-            type: string
-        agreedAt:
-          type: string
-          format: date-time
-        expectedAt:
-          type: string
-          format: date-time
-    NotificationFulfillmentDelayed:
-      type: object
-      additionalProperties: false
-      description: A preorder the caller paid for will arrive later than promised; cancelling is open and silence keeps waiting.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.fulfillment-delayed
-        params:
-          $ref: "#/components/schemas/FulfillmentDelayedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    FulfillmentHeldParams:
-      type: object
-      additionalProperties: false
-      required:
-        - orderId
-        - fulfillmentOrderId
-        - notice
-      description: "What the buyer needs to read a hold notice: which order and fulfillment order, whether the address needs a look (`check_address`) or the order is only `delayed`, and the sentence staff wrote for them, if any. Never staff's reason."
-      properties:
-        orderId:
-          $ref: "#/components/schemas/Id"
-        fulfillmentOrderId:
-          $ref: "#/components/schemas/Id"
-        notice:
-          type: string
-          enum:
-            - check_address
-            - delayed
-        message:
-          type: string
-          maxLength: 500
-    NotificationFulfillmentHeld:
-      type: object
-      additionalProperties: false
-      description: Part of an order the caller bought is held back, and they can act (check the address) or have a message from the shop.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.fulfillment-held
-        params:
-          $ref: "#/components/schemas/FulfillmentHeldParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    ShipmentLostParams:
-      type: object
-      additionalProperties: false
-      required:
-        - orderId
-        - shipmentId
-        - reason
-      description: "What the buyer needs to read a lost-parcel notice: which order and shipment, whether it was lost or damaged in transit, the sentence staff wrote for them if any, and the units the shelf could not cover again with the date they are now expected (absent when everything is being sent again from the shelf)."
-      properties:
-        orderId:
-          $ref: "#/components/schemas/Id"
-        shipmentId:
-          $ref: "#/components/schemas/Id"
-        reason:
-          type: string
-          enum:
-            - lost
-            - damaged
-        message:
-          type: string
-          maxLength: 500
-        owed:
-          type: array
-          description: The titles of the products still to be restocked, as the order froze them.
-          items:
-            type: string
-        expectedAt:
-          type: string
-          format: date-time
-    NotificationShipmentLost:
-      type: object
-      additionalProperties: false
-      description: A parcel the caller was waiting for was reported lost or damaged in transit; the shop sends it again or refunds.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.shipment-lost
-        params:
-          $ref: "#/components/schemas/ShipmentLostParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    NotificationStockAlert:
-      type: object
-      additionalProperties: false
-      description: A product the caller asked to be told about can be ordered again. Sent once, then the request is gone.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.stock-alert
-        params:
-          $ref: "#/components/schemas/CartLineRemovedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    PurchaseHoldPlacedParams:
-      type: object
-      additionalProperties: false
-      required:
-        - userId
-        - until
-      description: "The shop's rule paused a buyer's checkout. Ids and instants only: the account's own page has the rest."
-      properties:
-        userId:
-          $ref: "#/components/schemas/Id"
-        until:
-          type: string
-          format: date-time
-          description: When the pause ends by itself.
-    NotificationStaffPurchaseHoldPlaced:
-      type: object
-      additionalProperties: false
-      description: A buyer's checkout was paused by the shop's cancellation rule; staff who can ban decide whether to step in.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.staff.purchase-hold-placed
-        params:
-          $ref: "#/components/schemas/PurchaseHoldPlacedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
     WebhookDisabledParams:
       type: object
       additionalProperties: false
@@ -19455,6 +19071,14 @@ components:
       properties:
         subscriptionId:
           $ref: "#/components/schemas/Id"
+    NotificationSeverity:
+      type: string
+      description: Meaning, not look — a client picks the colour. The four words most notification APIs share (Ant Design, Atlassian flags).
+      enum:
+        - info
+        - success
+        - warning
+        - error
     NotificationStaffWebhookDisabled:
       type: object
       additionalProperties: false
@@ -19502,6 +19126,9 @@ components:
         category:
           type: string
           description: A contact task's category, when the visitor chose one.
+        work:
+          type: string
+          description: "The staff screen that does the work, when the opener named one: a path under the staff frontend's locale (`orders/<id>`), opaque to this module. A reader opens it when their role can; absent means the to-do's own page."
     NotificationStaffTaskOpened:
       type: object
       additionalProperties: false
@@ -19608,49 +19235,6 @@ components:
         createdAt:
           type: string
           format: date-time
-    ReturnRequestedParams:
-      type: object
-      additionalProperties: false
-      required:
-        - returnId
-        - orderId
-      description: A return request is waiting for a decision. Ids only, the return's page has the rest.
-      properties:
-        returnId:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-    NotificationStaffReturnRequested:
-      type: object
-      additionalProperties: false
-      description: A buyer asked to return goods; staff who decide returns take it.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.staff.return-requested
-        params:
-          $ref: "#/components/schemas/ReturnRequestedParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
     OutboxDeadParams:
       type: object
       additionalProperties: false
@@ -19696,342 +19280,22 @@ components:
         createdAt:
           type: string
           format: date-time
-    WorkCountParams:
-      type: object
-      additionalProperties: false
-      required:
-        - count
-      description: A summary row of how many items need the reader today. The screen it points at lists them.
-      properties:
-        count:
-          type: integer
-          minimum: 1
-    NotificationStaffTransfersDue:
-      type: object
-      additionalProperties: false
-      description: Bank transfers still unpaid whose pay-by date is near.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.staff.transfers-due
-        params:
-          $ref: "#/components/schemas/WorkCountParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    NotificationStaffPreordersLate:
-      type: object
-      additionalProperties: false
-      description: Preorders and backorders past their expected date with units still owed.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.staff.preorders-late
-        params:
-          $ref: "#/components/schemas/WorkCountParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    NotificationStaffDeliveryHoldsOpen:
-      type: object
-      additionalProperties: false
-      description: Fulfillment orders held for a reason other than waiting for stock, for longer than the shop allows.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.staff.delivery-holds-open
-        params:
-          $ref: "#/components/schemas/WorkCountParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    NotificationStaffWithdrawalsAwaitingGoods:
-      type: object
-      additionalProperties: false
-      description: Withdrawals after dispatch whose goods have not been received back.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.staff.withdrawals-awaiting-goods
-        params:
-          $ref: "#/components/schemas/WorkCountParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    NotificationStaffReturnsUndecided:
-      type: object
-      additionalProperties: false
-      description: Return requests still awaiting a decision after the shop reminder time.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.staff.returns-undecided
-        params:
-          $ref: "#/components/schemas/WorkCountParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    NotificationStaffLowStock:
-      type: object
-      additionalProperties: false
-      description: Products at or under the low-stock threshold.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.staff.low-stock
-        params:
-          $ref: "#/components/schemas/WorkCountParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    NotificationStaffUnshipped:
-      type: object
-      additionalProperties: false
-      description: Paid orders not handed to a carrier for longer than the shop allows.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.staff.unshipped
-        params:
-          $ref: "#/components/schemas/WorkCountParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    NotificationStaffAwaitingTracking:
-      type: object
-      additionalProperties: false
-      description: Shipped parcels on a tracked method that still have no tracking code.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.staff.awaiting-tracking
-        params:
-          $ref: "#/components/schemas/WorkCountParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    NotificationStaffUndelivered:
-      type: object
-      additionalProperties: false
-      description: Parcels shipped and never marked arrived, the buyer withdrawal window and guarantee have not started.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.staff.undelivered
-        params:
-          $ref: "#/components/schemas/WorkCountParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
-    NotificationStaffStaleRefunds:
-      type: object
-      additionalProperties: false
-      description: Provider refunds open past the attention threshold.
-      required:
-        - id
-        - audience
-        - code
-        - params
-        - severity
-        - createdAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        audience:
-          $ref: "#/components/schemas/NotificationAudience"
-        code:
-          type: string
-          enum:
-            - notifications.staff.stale-refunds
-        params:
-          $ref: "#/components/schemas/WorkCountParams"
-        severity:
-          $ref: "#/components/schemas/NotificationSeverity"
-        readAt:
-          type: string
-          format: date-time
-          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
-        createdAt:
-          type: string
-          format: date-time
     Notification:
       oneOf:
-        - $ref: "#/components/schemas/NotificationCartLineRemoved"
-        - $ref: "#/components/schemas/NotificationWishlistItemRemoved"
-        - $ref: "#/components/schemas/NotificationCartMergeRefused"
-        - $ref: "#/components/schemas/NotificationFulfillmentDelayed"
-        - $ref: "#/components/schemas/NotificationFulfillmentHeld"
-        - $ref: "#/components/schemas/NotificationShipmentLost"
-        - $ref: "#/components/schemas/NotificationStockAlert"
-        - $ref: "#/components/schemas/NotificationStaffPurchaseHoldPlaced"
         - $ref: "#/components/schemas/NotificationStaffWebhookDisabled"
         - $ref: "#/components/schemas/NotificationStaffTaskOpened"
         - $ref: "#/components/schemas/NotificationStaffTaskOverdue"
         - $ref: "#/components/schemas/NotificationStaffTaskAssigned"
-        - $ref: "#/components/schemas/NotificationStaffReturnRequested"
         - $ref: "#/components/schemas/NotificationStaffOutboxDead"
+        - $ref: "#/components/schemas/NotificationFulfillmentHeld"
+        - $ref: "#/components/schemas/NotificationShipmentLost"
+        - $ref: "#/components/schemas/NotificationStockAlert"
+        - $ref: "#/components/schemas/NotificationFulfillmentDelayed"
+        - $ref: "#/components/schemas/NotificationCartLineRemoved"
+        - $ref: "#/components/schemas/NotificationWishlistItemRemoved"
+        - $ref: "#/components/schemas/NotificationCartMergeRefused"
+        - $ref: "#/components/schemas/NotificationStaffPurchaseHoldPlaced"
+        - $ref: "#/components/schemas/NotificationStaffReturnRequested"
         - $ref: "#/components/schemas/NotificationStaffTransfersDue"
         - $ref: "#/components/schemas/NotificationStaffPreordersLate"
         - $ref: "#/components/schemas/NotificationStaffDeliveryHoldsOpen"
@@ -20045,30 +19309,30 @@ components:
       discriminator:
         propertyName: code
         mapping:
-          notifications.cart-line-removed: "#/components/schemas/NotificationCartLineRemoved"
-          notifications.wishlist-item-removed: "#/components/schemas/NotificationWishlistItemRemoved"
-          notifications.cart-merge-refused: "#/components/schemas/NotificationCartMergeRefused"
-          notifications.fulfillment-delayed: "#/components/schemas/NotificationFulfillmentDelayed"
-          notifications.fulfillment-held: "#/components/schemas/NotificationFulfillmentHeld"
-          notifications.shipment-lost: "#/components/schemas/NotificationShipmentLost"
-          notifications.stock-alert: "#/components/schemas/NotificationStockAlert"
-          notifications.staff.purchase-hold-placed: "#/components/schemas/NotificationStaffPurchaseHoldPlaced"
           notifications.staff.webhook-disabled: "#/components/schemas/NotificationStaffWebhookDisabled"
           notifications.staff.task-opened: "#/components/schemas/NotificationStaffTaskOpened"
           notifications.staff.task-overdue: "#/components/schemas/NotificationStaffTaskOverdue"
           notifications.staff.task-assigned: "#/components/schemas/NotificationStaffTaskAssigned"
-          notifications.staff.return-requested: "#/components/schemas/NotificationStaffReturnRequested"
           notifications.staff.outbox-dead: "#/components/schemas/NotificationStaffOutboxDead"
-          notifications.staff.transfers-due: "#/components/schemas/NotificationStaffTransfersDue"
-          notifications.staff.preorders-late: "#/components/schemas/NotificationStaffPreordersLate"
-          notifications.staff.delivery-holds-open: "#/components/schemas/NotificationStaffDeliveryHoldsOpen"
-          notifications.staff.withdrawals-awaiting-goods: "#/components/schemas/NotificationStaffWithdrawalsAwaitingGoods"
-          notifications.staff.returns-undecided: "#/components/schemas/NotificationStaffReturnsUndecided"
-          notifications.staff.low-stock: "#/components/schemas/NotificationStaffLowStock"
-          notifications.staff.unshipped: "#/components/schemas/NotificationStaffUnshipped"
-          notifications.staff.awaiting-tracking: "#/components/schemas/NotificationStaffAwaitingTracking"
-          notifications.staff.undelivered: "#/components/schemas/NotificationStaffUndelivered"
-          notifications.staff.stale-refunds: "#/components/schemas/NotificationStaffStaleRefunds"
+          shop-tasks.fulfillment-held: "#/components/schemas/NotificationFulfillmentHeld"
+          shop-tasks.shipment-lost: "#/components/schemas/NotificationShipmentLost"
+          shop-tasks.stock-alert: "#/components/schemas/NotificationStockAlert"
+          shop-tasks.fulfillment-delayed: "#/components/schemas/NotificationFulfillmentDelayed"
+          shop-tasks.cart-line-removed: "#/components/schemas/NotificationCartLineRemoved"
+          shop-tasks.wishlist-item-removed: "#/components/schemas/NotificationWishlistItemRemoved"
+          shop-tasks.cart-merge-refused: "#/components/schemas/NotificationCartMergeRefused"
+          shop-tasks.staff.purchase-hold-placed: "#/components/schemas/NotificationStaffPurchaseHoldPlaced"
+          shop-tasks.staff.return-requested: "#/components/schemas/NotificationStaffReturnRequested"
+          shop-tasks.staff.transfers-due: "#/components/schemas/NotificationStaffTransfersDue"
+          shop-tasks.staff.preorders-late: "#/components/schemas/NotificationStaffPreordersLate"
+          shop-tasks.staff.delivery-holds-open: "#/components/schemas/NotificationStaffDeliveryHoldsOpen"
+          shop-tasks.staff.withdrawals-awaiting-goods: "#/components/schemas/NotificationStaffWithdrawalsAwaitingGoods"
+          shop-tasks.staff.returns-undecided: "#/components/schemas/NotificationStaffReturnsUndecided"
+          shop-tasks.staff.low-stock: "#/components/schemas/NotificationStaffLowStock"
+          shop-tasks.staff.unshipped: "#/components/schemas/NotificationStaffUnshipped"
+          shop-tasks.staff.awaiting-tracking: "#/components/schemas/NotificationStaffAwaitingTracking"
+          shop-tasks.staff.undelivered: "#/components/schemas/NotificationStaffUndelivered"
+          shop-tasks.staff.stale-refunds: "#/components/schemas/NotificationStaffStaleRefunds"
     StaffNoticeExport:
       type: object
       additionalProperties: false
@@ -25610,6 +24874,745 @@ components:
       properties:
         productId:
           $ref: "#/components/schemas/Id"
+    ProductTitles:
+      type: object
+      additionalProperties:
+        type: string
+    CartLineRemovedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - titles
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        titles:
+          $ref: "#/components/schemas/ProductTitles"
+    CartMergeRefusedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - lines
+      properties:
+        lines:
+          type: array
+          description: The guest-cart lines `POST /cart/merge` could not add at all.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - productId
+              - requested
+              - titles
+            properties:
+              productId:
+                $ref: "#/components/schemas/Id"
+              requested:
+                type: integer
+                minimum: 1
+              titles:
+                $ref: "#/components/schemas/ProductTitles"
+    FulfillmentDelayedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - fulfillmentOrderId
+        - titles
+        - agreedAt
+      description: "What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised and the date now expected (absent when there is none)."
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+        titles:
+          type: array
+          description: The waiting products' titles, as the order froze them.
+          items:
+            type: string
+        agreedAt:
+          type: string
+          format: date-time
+        expectedAt:
+          type: string
+          format: date-time
+    ShipmentLostParams:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - shipmentId
+        - reason
+      description: "What the buyer needs to read a lost-parcel notice: which order and shipment, whether it was lost or damaged in transit, the sentence staff wrote for them if any, and the units the shelf could not cover again with the date they are now expected (absent when everything is being sent again from the shelf)."
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        shipmentId:
+          $ref: "#/components/schemas/Id"
+        reason:
+          type: string
+          enum:
+            - lost
+            - damaged
+        message:
+          type: string
+          maxLength: 500
+        owed:
+          type: array
+          description: The titles of the products still to be restocked, as the order froze them.
+          items:
+            type: string
+        expectedAt:
+          type: string
+          format: date-time
+    FulfillmentHeldParams:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - fulfillmentOrderId
+        - notice
+      description: "What the buyer needs to read a hold notice: which order and fulfillment order, whether the address needs a look (`check_address`) or the order is only `delayed`, and the sentence staff wrote for them, if any. Never staff's reason."
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+        notice:
+          type: string
+          enum:
+            - check_address
+            - delayed
+        message:
+          type: string
+          maxLength: 500
+    NotificationFulfillmentHeld:
+      type: object
+      additionalProperties: false
+      description: Part of an order the caller bought is held back, and they can act (check the address) or have a message from the shop.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.fulfillment-held
+        params:
+          $ref: "#/components/schemas/FulfillmentHeldParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationShipmentLost:
+      type: object
+      additionalProperties: false
+      description: A parcel the caller was waiting for was reported lost or damaged in transit; the shop sends it again or refunds.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.shipment-lost
+        params:
+          $ref: "#/components/schemas/ShipmentLostParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationStockAlert:
+      type: object
+      additionalProperties: false
+      description: A product the caller asked to be told about can be ordered again. Sent once, then the request is gone.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.stock-alert
+        params:
+          $ref: "#/components/schemas/CartLineRemovedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationFulfillmentDelayed:
+      type: object
+      additionalProperties: false
+      description: A preorder the caller paid for will arrive later than promised; cancelling is open and silence keeps waiting.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.fulfillment-delayed
+        params:
+          $ref: "#/components/schemas/FulfillmentDelayedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationCartLineRemoved:
+      type: object
+      additionalProperties: false
+      description: A product left the catalogue and left the caller's cart with it.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.cart-line-removed
+        params:
+          $ref: "#/components/schemas/CartLineRemovedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationWishlistItemRemoved:
+      type: object
+      additionalProperties: false
+      description: A product left the catalogue and left the caller's wishlist with it.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.wishlist-item-removed
+        params:
+          $ref: "#/components/schemas/CartLineRemovedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationCartMergeRefused:
+      type: object
+      additionalProperties: false
+      description: Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.cart-merge-refused
+        params:
+          $ref: "#/components/schemas/CartMergeRefusedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    PurchaseHoldPlacedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - userId
+        - until
+      description: "The shop's rule paused a buyer's checkout. Ids and instants only: the account's own page has the rest."
+      properties:
+        userId:
+          $ref: "#/components/schemas/Id"
+        until:
+          type: string
+          format: date-time
+          description: When the pause ends by itself.
+    NotificationStaffPurchaseHoldPlaced:
+      type: object
+      additionalProperties: false
+      description: A buyer's checkout was paused by the shop's cancellation rule; staff who can ban decide whether to step in.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.staff.purchase-hold-placed
+        params:
+          $ref: "#/components/schemas/PurchaseHoldPlacedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    ReturnRequestedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - returnId
+        - orderId
+      description: A return request is waiting for a decision. Ids only, the return's page has the rest.
+      properties:
+        returnId:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+    NotificationStaffReturnRequested:
+      type: object
+      additionalProperties: false
+      description: A buyer asked to return goods; staff who decide returns take it.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.staff.return-requested
+        params:
+          $ref: "#/components/schemas/ReturnRequestedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    WorkCountParams:
+      type: object
+      additionalProperties: false
+      required:
+        - count
+      description: A summary row of how many items need the reader today. The screen it points at lists them.
+      properties:
+        count:
+          type: integer
+          minimum: 1
+    NotificationStaffTransfersDue:
+      type: object
+      additionalProperties: false
+      description: Bank transfers still unpaid whose pay-by date is near.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.staff.transfers-due
+        params:
+          $ref: "#/components/schemas/WorkCountParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationStaffPreordersLate:
+      type: object
+      additionalProperties: false
+      description: Preorders and backorders past their expected date with units still owed.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.staff.preorders-late
+        params:
+          $ref: "#/components/schemas/WorkCountParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationStaffDeliveryHoldsOpen:
+      type: object
+      additionalProperties: false
+      description: Fulfillment orders held for a reason other than waiting for stock, for longer than the shop allows.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.staff.delivery-holds-open
+        params:
+          $ref: "#/components/schemas/WorkCountParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationStaffWithdrawalsAwaitingGoods:
+      type: object
+      additionalProperties: false
+      description: Withdrawals after dispatch whose goods have not been received back.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.staff.withdrawals-awaiting-goods
+        params:
+          $ref: "#/components/schemas/WorkCountParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationStaffReturnsUndecided:
+      type: object
+      additionalProperties: false
+      description: Return requests still awaiting a decision after the shop reminder time.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.staff.returns-undecided
+        params:
+          $ref: "#/components/schemas/WorkCountParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationStaffLowStock:
+      type: object
+      additionalProperties: false
+      description: Products at or under the low-stock threshold.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.staff.low-stock
+        params:
+          $ref: "#/components/schemas/WorkCountParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationStaffUnshipped:
+      type: object
+      additionalProperties: false
+      description: Paid orders not handed to a carrier for longer than the shop allows.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.staff.unshipped
+        params:
+          $ref: "#/components/schemas/WorkCountParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationStaffAwaitingTracking:
+      type: object
+      additionalProperties: false
+      description: Shipped parcels on a tracked method that still have no tracking code.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.staff.awaiting-tracking
+        params:
+          $ref: "#/components/schemas/WorkCountParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationStaffUndelivered:
+      type: object
+      additionalProperties: false
+      description: Parcels shipped and never marked arrived, the buyer withdrawal window and guarantee have not started.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.staff.undelivered
+        params:
+          $ref: "#/components/schemas/WorkCountParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationStaffStaleRefunds:
+      type: object
+      additionalProperties: false
+      description: Provider refunds open past the attention threshold.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - shop-tasks.staff.stale-refunds
+        params:
+          $ref: "#/components/schemas/WorkCountParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
 x-error-codes:
   ADDRESS_BOOK_LIMIT_REACHED:
     status: 409

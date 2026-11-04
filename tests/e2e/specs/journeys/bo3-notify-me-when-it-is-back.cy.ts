@@ -55,7 +55,7 @@ describe('BO3 · Notify me when it is back', () => {
             eventually(
                 () => cy.apiAs<InboxLike>('user', 'GET', '/notifications'),
                 (inbox) =>
-                    inbox?.items.some(({ code }) => code === 'notifications.stock-alert') ?? false
+                    inbox?.items.some(({ code }) => code === 'shop-tasks.stock-alert') ?? false
             );
             cy.visit('/en/stock-alerts');
             cy.get('[data-test=stock-alert-row]').should('not.exist');

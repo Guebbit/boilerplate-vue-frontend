@@ -8,18 +8,18 @@ the staff queue that approves and receives them, cancelling what has not shipped
 **Breaks if you change** — the order page's withdrawal control and returns form.
 :::
 
-| Fact                    | This module                                                                  |
-| ----------------------- | ---------------------------------------------------------------------------- |
-| **Subdomain**           | `supporting`                                                                 |
-| **Screens**             | 3 — `ReturnsList` · `SalesReturns` · `ReturnTarget`                          |
-| **Store**               | `returns`                                                                    |
-| **Menu entries**        | `ReturnsList` (account) · `SalesReturns` (admin, wears the staff work badge) |
-| **API calls**           | 7                                                                            |
-| **Depends on**          | _nothing_                                                                    |
-| **Depended on by**      | [`orders`](./orders.md)                                                      |
-| **Languages**           | `en` · `it`                                                                  |
-| **Publishes**           | `WithdrawalPanel`                                                            |
-| **Backend counterpart** | `returns` in `boilerplate-node-backend`                                      |
+| Fact                    | This module                                         |
+| ----------------------- | --------------------------------------------------- |
+| **Subdomain**           | `supporting`                                        |
+| **Screens**             | 3 — `ReturnsList` · `SalesReturns` · `ReturnTarget` |
+| **Store**               | `returns`                                           |
+| **Menu entries**        | `ReturnsList` (account) · `SalesReturns` (admin)    |
+| **API calls**           | 7                                                   |
+| **Depends on**          | _nothing_                                           |
+| **Depended on by**      | [`orders`](./orders.md)                             |
+| **Languages**           | `en` · `it`                                         |
+| **Publishes**           | `WithdrawalPanel`                                   |
+| **Backend counterpart** | `returns` in `boilerplate-node-backend`             |
 
 ## The map
 

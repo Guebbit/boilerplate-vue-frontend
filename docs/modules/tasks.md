@@ -1,7 +1,7 @@
 # tasks
 
 ::: tip At a glance
-**Owns** — the public contact form and the admin tasks page behind it.
+**Owns** — the public contact form and the admin tasks page behind it, and the foundation's half of the `task-kind` / `task-category` / `task-link` labels.
 **Depends on** — nothing, and nothing depends on it. A leaf in both directions.
 **Breaks if you change** — nothing outside this folder.
 :::
@@ -28,6 +28,15 @@ No module depends on this one and it depends on none. Deleting the folder and it
 `tasks` sits on no edge of the context map — nothing imports it and it imports nothing.
 
 ## The story
+
+**Labels are co-owned.** The kind, category and link-type words live in three dictionary
+namespaces, one key per value of the contract's enum: `task-kind.*`, `task-category.*` and
+`task-link.*`. This module owns the foundation's values (`contact`, `account_review`,
+`export_failed`; `account`, `privacy`, `other`, `none`; `user`, `export`; and the `unknown`
+fallback kind). [`shop-tasks`](./shop-tasks.md) owns the shop's, so a build without it lists the
+values it ships and nothing else. The cross-cutting registry spec checks that no entry has two
+owners. The contact picker's "no category" option is `contact-page.category-none`, the visitor's
+wording ("Not sure"), distinct from the staff label `task-category.none`.
 
 A task references no other domain's records, and both screens talk only to this module's own
 endpoints — so it depends on nothing and nothing depends on it.

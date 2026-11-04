@@ -7,6 +7,7 @@
 import { defineAsyncComponent } from 'vue';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
+import { foundationNotices } from './notices';
 
 /**
  * The signed-in visitor's inbox: messages the server keeps until the owner deletes them, filled
@@ -25,6 +26,7 @@ import type { AppModule } from '@/kernel/registry';
 export default {
     name: 'notifications',
     routes: [],
+    notices: foundationNotices,
     responseSchemas: () => import('./response-schemas').then((m) => m.notificationsResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),

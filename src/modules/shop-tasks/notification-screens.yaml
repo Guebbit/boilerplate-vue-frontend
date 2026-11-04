@@ -1,0 +1,15 @@
+# The admin list each staff summary notice counts, by notification code.
+# A summary row carries a count and no id, so it points at a list, never at a record.
+# The backend's `staffPages` (contracts/frontend-links.yaml) are page ids, not notice codes; this
+# map is the frontend's own choice of which list a notice opens.
+summaryScreens:
+    shop-tasks.staff.transfers-due: sales-orders
+    shop-tasks.staff.preorders-late: preorders
+    shop-tasks.staff.delivery-holds-open: sales-orders
+    shop-tasks.staff.withdrawals-awaiting-goods: returns
+    shop-tasks.staff.returns-undecided: returns
+    shop-tasks.staff.low-stock: inventory
+    shop-tasks.staff.unshipped: sales-orders
+    shop-tasks.staff.awaiting-tracking: sales-orders
+    shop-tasks.staff.undelivered: sales-orders
+    shop-tasks.staff.stale-refunds: payments

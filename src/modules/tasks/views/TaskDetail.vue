@@ -123,7 +123,7 @@ const handleNote = () =>
                 <div>
                     <h1 class="text-xl font-semibold">{{ task.subject }}</h1>
                     <p class="text-sm opacity-muted">
-                        {{ t(`tasks-page.kind-${task.kind}`) }} ·
+                        {{ t(`task-kind.${task.kind}`) }} ·
                         {{ formatDateTime(task.createdAt) }}
                     </p>
                 </div>
@@ -157,10 +157,10 @@ const handleNote = () =>
             <p v-if="task.link" class="mt-3 text-sm" data-test="task-link">
                 {{ t('task-detail-page.label-record') }}:
                 <router-link v-if="recordLink" :to="recordLink">
-                    {{ t(`task-detail-page.link-${task.link.type}`) }} {{ task.link.id }}
+                    {{ t(`task-link.${task.link.type}`) }} {{ task.link.id }}
                 </router-link>
                 <template v-else>
-                    {{ t(`task-detail-page.link-${task.link.type}`) }} {{ task.link.id }}
+                    {{ t(`task-link.${task.link.type}`) }} {{ task.link.id }}
                 </template>
             </p>
 

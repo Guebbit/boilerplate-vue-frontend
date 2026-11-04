@@ -6,7 +6,7 @@
             "type": "object",
             "propertyNames": {
                 "type": "string",
-                "pattern": "^notifications\\.staff\\.[a-z-]+$"
+                "pattern": "^shop-tasks\\.staff\\.[a-z-]+$"
             },
             "additionalProperties": {
                 "type": "string",

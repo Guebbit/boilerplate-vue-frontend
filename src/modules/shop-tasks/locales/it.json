@@ -1,0 +1,54 @@
+{
+    "shop-tasks": {
+        "staff": {
+            "purchase-hold-placed": "Il checkout di un acquirente è sospeso fino al {until} dopo ripetuti annullamenti. Controlla l'account se sospetti un abuso.",
+            "return-requested": "Un acquirente ha chiesto di restituire della merce. La richiesta attende una decisione.",
+            "transfers-due": "{n} bonifici sono in scadenza. Apri gli ordini per sollecitarli.",
+            "preorders-late": "{n} preordini hanno superato la data prevista con unità ancora dovute.",
+            "delivery-holds-open": "{n} ordini sono trattenuti da troppo tempo. Risolvi il motivo o sbloccali.",
+            "withdrawals-awaiting-goods": "{n} recessi attendono il ritorno della merce.",
+            "returns-undecided": "{n} richieste di reso attendono ancora una decisione.",
+            "low-stock": "{n} prodotti hanno scorte basse.",
+            "unshipped": "{n} ordini pagati non sono ancora stati spediti.",
+            "awaiting-tracking": "{n} pacchi spediti non hanno ancora il codice di tracking.",
+            "undelivered": "{n} pacchi sono stati spediti e mai segnati come arrivati. Finché non lo sono, il termine di recesso dell'acquirente non è iniziato.",
+            "stale-refunds": "{n} rimborsi sono aperti da troppo tempo. Controllali con il provider."
+        },
+        "cart-line-removed": "Rimosso dal carrello perché non più disponibile: {name}.",
+        "wishlist-item-removed": "Rimosso dalla lista dei desideri perché non più disponibile: {name}.",
+        "cart-merge-refused": "Alcuni articoli del carrello da ospite non sono più disponibili e non sono stati aggiunti: {lines}.",
+        "cart-merge-refused-bare": "Alcuni articoli del carrello da ospite non sono più disponibili e non sono stati aggiunti.",
+        "refused-line": "{name} × {requested}",
+        "unknown-product": "un prodotto",
+        "fulfillment-delayed": "Una parte del tuo ordine ({titles}) è in ritardo: era promessa per il {agreed} ed è ora attesa per il {expected}. Se ti va bene aspettare non devi fare nulla; puoi annullarla dal tuo ordine.",
+        "fulfillment-delayed-undated": "Una parte del tuo ordine ({titles}) è in ritardo: era promessa per il {agreed} e stiamo ancora aspettando la merce. Se ti va bene aspettare non devi fare nulla; puoi annullarla dal tuo ordine.",
+        "fulfillment-held-check_address": "Una parte del tuo ordine è in sospeso: controlla l'indirizzo di consegna.",
+        "fulfillment-held-delayed": "Una parte del tuo ordine è trattenuta per un momento e partirà più tardi del previsto.",
+        "fulfillment-held-message": "Il negozio scrive: {message}",
+        "shipment-lost-lost": "Un pacco del tuo ordine è andato smarrito durante il viaggio. Lo spediremo di nuovo, oppure ti rimborseremo se preferisci.",
+        "shipment-lost-damaged": "Un pacco del tuo ordine è stato danneggiato durante il viaggio. Lo spediremo di nuovo, oppure ti rimborseremo se preferisci.",
+        "shipment-lost-owed": "Dobbiamo rifornire una parte: {titles} è atteso intorno al {expected}.",
+        "shipment-lost-message": "Il negozio scrive: {message}",
+        "stock-alert": "Buone notizie: {name} si può ordinare di nuovo."
+    },
+    "task-kind": {
+        "manual_refund_owed": "Rimborso da fare a mano",
+        "refund_refused": "Rimborso rifiutato",
+        "amount_mismatch": "Importo del pagamento non corrispondente",
+        "dispute": "Contestazione di pagamento",
+        "paid_without_hold": "Ordine pagato senza riserva di stock",
+        "consent_due": "Consenso dell'acquirente al ritardo da ottenere"
+    },
+    "task-category": {
+        "order": "Ordine",
+        "cancellation": "Annullamento",
+        "return": "Reso",
+        "payment": "Pagamento"
+    },
+    "task-link": {
+        "order": "Ordine",
+        "payment": "Pagamento",
+        "refund": "Rimborso",
+        "fulfillment_order": "Ordine di evasione"
+    }
+}

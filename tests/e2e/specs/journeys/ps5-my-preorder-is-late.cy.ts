@@ -102,7 +102,7 @@ describe('PS5 · My preorder is late', () => {
                     cy.visit('/en');
                     cy.get('[data-test=notifications-bell]').click();
                     cy.get('[data-test=notifications-panel]')
-                        .find('[data-test=notification-order-link]')
+                        .find('[data-test=notification-target-link]')
                         .should('have.length.at.least', 2);
                     for (const orderId of [first, second]) {
                         cy.visit(`/en/orders/${orderId}`);

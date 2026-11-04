@@ -27,12 +27,12 @@ flowchart LR
 
 ## Today
 
-| YAML                                     | Generated file                                                       | Read by                                |
-| ---------------------------------------- | -------------------------------------------------------------------- | -------------------------------------- |
-| `shared/rules/browser-storage.yaml`      | `src/infrastructure/browser-storage.generated.ts`                    | `browser-storage.ts` (names and items) |
-| `shared/rules/static-pages.yaml`         | `src/app/utils/static-pages.generated.ts`                            | `static-pages.ts`                      |
-| `shared/rules/tours.yaml`                | `src/app/tours/tours.generated.ts`                                   | `app/tours/catalogue.ts`               |
-| `shared/rules/notification-screens.yaml` | `src/modules/notifications/domain/notification-screens.generated.ts` | `notifications/domain/describe.ts`     |
+| YAML                                               | Generated file                                             | Read by                                |
+| -------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------- |
+| `shared/rules/browser-storage.yaml`                | `src/infrastructure/browser-storage.generated.ts`          | `browser-storage.ts` (names and items) |
+| `shared/rules/static-pages.yaml`                   | `src/app/utils/static-pages.generated.ts`                  | `static-pages.ts`                      |
+| `shared/rules/tours.yaml`                          | `src/app/tours/tours.generated.ts`                         | `app/tours/catalogue.ts`               |
+| `src/modules/shop-tasks/notification-screens.yaml` | `src/modules/shop-tasks/notification-screens.generated.ts` | `shop-tasks/notices.ts`                |
 
 Not data on purpose: the route table (73 routes; the router would have to be rebuilt from data plus
 a component map) and the theme palette. Both wait for a second frontend that needs them.

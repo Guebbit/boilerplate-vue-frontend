@@ -4,7 +4,6 @@
  * locale loaders into the app's module registry.
  */
 import { ClipboardList, ReceiptText } from 'lucide-vue-next';
-import { useUnreadNoticeCount } from '@/kernel/inbox-notices';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
@@ -40,16 +39,7 @@ export default {
             order: 55,
             section: 'admin',
             group: 'navigation.group-sales',
-            icon: ClipboardList,
-            // Unread work notices that point at this screen.
-            badge: () =>
-                useUnreadNoticeCount([
-                    'notifications.staff.transfers-due',
-                    'notifications.staff.delivery-holds-open',
-                    'notifications.staff.unshipped',
-                    'notifications.staff.awaiting-tracking',
-                    'notifications.staff.undelivered'
-                ])
+            icon: ClipboardList
         }
     ],
     tours: [

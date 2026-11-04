@@ -91,12 +91,12 @@ export const toursSchema = z.strictObject({
         .refine((tours) => Object.keys(tours).length > 0, { message: 'no tour is listed' })
 });
 
-/** Shape of `shared/rules/notification-screens.yaml`. */
+/** Shape of `src/modules/shop-tasks/notification-screens.yaml`. */
 export const notificationScreensSchema = z.strictObject({
     /** Each staff summary notice code and the list it counts. */
     summaryScreens: z
         .record(
-            z.string().regex(/^notifications\.staff\.[a-z-]+$/),
+            z.string().regex(/^shop-tasks\.staff\.[a-z-]+$/),
             z.enum(['sales-orders', 'payments', 'returns', 'preorders', 'inventory'])
         )
         .refine((screens) => Object.keys(screens).length > 0, { message: 'no notice is listed' })
@@ -185,11 +185,11 @@ export const SHARED_RULES = {
         }
     },
     'notification-screens': {
-        source: 'shared/rules/notification-screens.yaml',
-        inputs: ['shared/rules/notification-screens.yaml'],
+        source: 'src/modules/shop-tasks/notification-screens.yaml',
+        inputs: ['src/modules/shop-tasks/notification-screens.yaml'],
         schema: notificationScreensSchema,
         generate: {
-            out: 'src/modules/notifications/domain/notification-screens.generated.ts',
+            out: 'src/modules/shop-tasks/notification-screens.generated.ts',
             exports: [
                 {
                     exportName: 'SUMMARY_SCREEN_DATA',

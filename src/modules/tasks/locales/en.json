@@ -14,14 +14,7 @@
         "too-long": "Too long: {max} characters at most",
         "label-category": "What is it about? (optional)",
         "label-order-number": "Order number (optional)",
-        "category-none": "Not sure",
-        "category-order": "My order",
-        "category-cancellation": "Cancelling an order",
-        "category-return": "A return",
-        "category-payment": "Payment",
-        "category-account": "My account",
-        "category-privacy": "My personal data",
-        "category-other": "Something else"
+        "category-none": "Not sure"
     },
     "tasks-page": {
         "page-title": "Tasks",
@@ -61,15 +54,6 @@
         "filter-kind": "Kind",
         "filter-kind-any": "Any kind",
         "filter-overdue": "Overdue only",
-        "kind-contact": "Contact message",
-        "kind-account_review": "Account under review",
-        "kind-manual_refund_owed": "Refund owed by hand",
-        "kind-amount_mismatch": "Payment amount mismatch",
-        "kind-paid_without_hold": "Paid order without stock",
-        "kind-export_failed": "Data export failed",
-        "kind-consent_due": "Delay consent due",
-        "kind-refund_refused": "Refund refused",
-        "kind-dispute": "Payment dispute",
         "sort-due": "Due soonest",
         "label-due": "Due {date}",
         "label-overdue": "Overdue since {date}",
@@ -97,13 +81,23 @@
         "success-note": "Note added.",
         "heading-earlier": "Earlier tasks about the same record",
         "label-record": "About",
-        "link-order": "Order",
-        "link-user": "Account",
-        "link-payment": "Payment",
-        "link-refund": "Refund",
-        "link-fulfillment_order": "Fulfillment order",
-        "link-export": "Data export",
         "button-give-back": "Give back",
         "success-give-back": "Task given back."
+    },
+    "task-kind": {
+        "contact": "Contact message",
+        "account_review": "Account under review",
+        "export_failed": "Data export failed",
+        "unknown": "Task"
+    },
+    "task-category": {
+        "none": "Uncategorised",
+        "account": "Account",
+        "privacy": "Personal data",
+        "other": "Other"
+    },
+    "task-link": {
+        "user": "Account",
+        "export": "Data export"
     }
 }

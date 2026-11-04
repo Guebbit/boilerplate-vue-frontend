@@ -88,7 +88,7 @@ const categoryOptions = computed(() => [
     { value: undefined, title: t('contact-page.category-none') },
     ...Object.values(TaskCategory).map((category) => ({
         value: category,
-        title: t(`contact-page.category-${category}`)
+        title: t(`task-category.${category}`)
     }))
 ]);
 

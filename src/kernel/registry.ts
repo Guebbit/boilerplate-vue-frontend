@@ -17,7 +17,8 @@
  */
 
 import type { Component, Ref } from 'vue';
-import type { RouteRecordRaw } from 'vue-router';
+import type { RouteParamsRawGeneric, RouteRecordRaw } from 'vue-router';
+import type { Notification } from '@types';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 import type { TranslationDictionaries } from '@/i18n';
 import type { SlotName, Slots } from '@/kernel/slots';
@@ -177,6 +178,67 @@ export interface AppTourStep {
 }
 
 /**
+ * What a notice's wording needs from the reader, handed in by whoever renders it.
+ */
+export interface NoticeContext {
+    /**
+     * Languages to try for a product name, best first: the reader's, then the shop's main one.
+     */
+    preferred: readonly string[];
+    /**
+     * The translate function; a notice's code is usually its own dictionary key.
+     */
+    translate: (key: string, named?: Record<string, unknown>) => string;
+    /**
+     * How a date reads in the sentence.
+     */
+    formatDate: (iso: string) => string;
+}
+
+/**
+ * Where a notice links, as one of two shapes. The reader resolves either only when this build
+ * ships the screen and the reader may open it.
+ */
+export type NoticeTarget =
+    | {
+          /**
+           * The route name a sibling or this module owns.
+           */
+          route: string;
+          /**
+           * The route's own path params, e.g. `{ id }`.
+           */
+          params?: RouteParamsRawGeneric;
+      }
+    | {
+          /**
+           * An app path the server named (`tasks/t1?tab=open`), query included, kept as a string:
+           * a `{ path }` location object drops the query on resolve.
+           */
+          path: string;
+      };
+
+/**
+ * How one notification code is worded and where it links. Declared with method syntax on purpose:
+ * an entry narrows `notice` to its own code's variant, which method bivariance allows.
+ */
+export interface AppNotice {
+    /**
+     * The sentence the reader sees.
+     *
+     * @param notice - The stored row, of this entry's code.
+     * @param context - Language, translate function and date spelling.
+     */
+    describe(notice: Notification, context: NoticeContext): string;
+    /**
+     * The screen the notice is about. Omitted for a notice that points nowhere.
+     *
+     * @param notice - The stored row, of this entry's code.
+     */
+    target?(notice: Notification): NoticeTarget | undefined;
+}
+
+/**
  * Everything a module declares about itself.
  *
  * Keep this interface small. A field that only one module ever fills does not belong here — that
@@ -202,6 +264,12 @@ export interface AppModule {
      * (`account` contributes only Profile, `cart` only Cart) simply omits it.
      */
     navigation?: AppNavigationEntry[];
+
+    /**
+     * The notification codes this domain owns, by code: how each reads and where it links. A code
+     * no module declares reads as a generic notification and links nowhere.
+     */
+    notices?: Record<string, AppNotice>;
 
     /**
      * Guided-tour steps this domain contributes, for screens it owns. Optional: most modules have
@@ -355,6 +423,23 @@ export const collectModuleNavigation = (appModules: AppModule[]): AppNavigationE
  */
 export const collectModuleTours = (appModules: AppModule[]): AppTourStep[] =>
     appModules.flatMap((appModule) => appModule.tours ?? []);
+
+/**
+ * Merge every enabled module's notices, by code.
+ *
+ * @param appModules - the enabled module list
+ * @throws {Error} when two modules declare the same code: one would silently shadow the other.
+ */
+export const collectModuleNotices = (appModules: AppModule[]): Record<string, AppNotice> => {
+    const merged: Record<string, AppNotice> = {};
+    for (const appModule of appModules)
+        for (const [code, notice] of Object.entries(appModule.notices ?? {})) {
+            if (code in merged)
+                throw new Error(`Notice code "${code}" is declared by more than one module.`);
+            merged[code] = notice;
+        }
+    return merged;
+};
 
 /**
  * Sort navigation entries by `order`, entries without one going last.

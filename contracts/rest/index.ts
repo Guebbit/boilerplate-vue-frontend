@@ -1754,13 +1754,13 @@ export interface ExportSignInMethods {
 export type TaskCategory = (typeof TaskCategory)[keyof typeof TaskCategory];
 
 export const TaskCategory = {
+    account: 'account',
+    privacy: 'privacy',
+    other: 'other',
     order: 'order',
     cancellation: 'cancellation',
     return: 'return',
-    payment: 'payment',
-    account: 'account',
-    privacy: 'privacy',
-    other: 'other'
+    payment: 'payment'
 } as const;
 
 export type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus];
@@ -1796,24 +1796,24 @@ export type TaskKind = (typeof TaskKind)[keyof typeof TaskKind];
 export const TaskKind = {
     contact: 'contact',
     account_review: 'account_review',
-    manual_refund_owed: 'manual_refund_owed',
-    amount_mismatch: 'amount_mismatch',
-    paid_without_hold: 'paid_without_hold',
     export_failed: 'export_failed',
-    consent_due: 'consent_due',
+    manual_refund_owed: 'manual_refund_owed',
     refund_refused: 'refund_refused',
-    dispute: 'dispute'
+    amount_mismatch: 'amount_mismatch',
+    dispute: 'dispute',
+    paid_without_hold: 'paid_without_hold',
+    consent_due: 'consent_due'
 } as const;
 
 export type TaskLinkType = (typeof TaskLinkType)[keyof typeof TaskLinkType];
 
 export const TaskLinkType = {
-    order: 'order',
     user: 'user',
+    export: 'export',
+    order: 'order',
     payment: 'payment',
     refund: 'refund',
-    fulfillment_order: 'fulfillment_order',
-    export: 'export'
+    fulfillment_order: 'fulfillment_order'
 } as const;
 
 /**
@@ -2580,13 +2580,11 @@ export const NotificationAudience = {
     staff: 'staff'
 } as const;
 
-export interface ProductTitles {
-    [key: string]: string;
-}
-
-export interface CartLineRemovedParams {
-    productId: Id;
-    titles: ProductTitles;
+/**
+ * A webhook subscription was switched off after repeated delivery failures.
+ */
+export interface WebhookDisabledParams {
+    subscriptionId: Id;
 }
 
 /**
@@ -2600,255 +2598,6 @@ export const NotificationSeverity = {
     warning: 'warning',
     error: 'error'
 } as const;
-
-export type NotificationCartLineRemovedCode =
-    (typeof NotificationCartLineRemovedCode)[keyof typeof NotificationCartLineRemovedCode];
-
-export const NotificationCartLineRemovedCode = {
-    'notificationscart-line-removed': 'notifications.cart-line-removed'
-} as const;
-
-/**
- * A product left the catalogue and left the caller's cart with it.
- */
-export interface NotificationCartLineRemoved {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationCartLineRemovedCode;
-    params: CartLineRemovedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-export type NotificationWishlistItemRemovedCode =
-    (typeof NotificationWishlistItemRemovedCode)[keyof typeof NotificationWishlistItemRemovedCode];
-
-export const NotificationWishlistItemRemovedCode = {
-    'notificationswishlist-item-removed': 'notifications.wishlist-item-removed'
-} as const;
-
-/**
- * A product left the catalogue and left the caller's wishlist with it.
- */
-export interface NotificationWishlistItemRemoved {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationWishlistItemRemovedCode;
-    params: CartLineRemovedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-export type CartMergeRefusedParamsLinesItem = {
-    productId: Id;
-    /** @minimum 1 */
-    requested: number;
-    titles: ProductTitles;
-};
-
-export interface CartMergeRefusedParams {
-    /** The guest-cart lines `POST /cart/merge` could not add at all. */
-    lines: CartMergeRefusedParamsLinesItem[];
-}
-
-export type NotificationCartMergeRefusedCode =
-    (typeof NotificationCartMergeRefusedCode)[keyof typeof NotificationCartMergeRefusedCode];
-
-export const NotificationCartMergeRefusedCode = {
-    'notificationscart-merge-refused': 'notifications.cart-merge-refused'
-} as const;
-
-/**
- * Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available.
- */
-export interface NotificationCartMergeRefused {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationCartMergeRefusedCode;
-    params: CartMergeRefusedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-/**
- * What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised and the date now expected (absent when there is none).
- */
-export interface FulfillmentDelayedParams {
-    orderId: Id;
-    fulfillmentOrderId: Id;
-    /** The waiting products' titles, as the order froze them. */
-    titles: string[];
-    agreedAt: string;
-    expectedAt?: string;
-}
-
-export type NotificationFulfillmentDelayedCode =
-    (typeof NotificationFulfillmentDelayedCode)[keyof typeof NotificationFulfillmentDelayedCode];
-
-export const NotificationFulfillmentDelayedCode = {
-    'notificationsfulfillment-delayed': 'notifications.fulfillment-delayed'
-} as const;
-
-/**
- * A preorder the caller paid for will arrive later than promised; cancelling is open and silence keeps waiting.
- */
-export interface NotificationFulfillmentDelayed {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationFulfillmentDelayedCode;
-    params: FulfillmentDelayedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-export type FulfillmentHeldParamsNotice =
-    (typeof FulfillmentHeldParamsNotice)[keyof typeof FulfillmentHeldParamsNotice];
-
-export const FulfillmentHeldParamsNotice = {
-    check_address: 'check_address',
-    delayed: 'delayed'
-} as const;
-
-/**
- * What the buyer needs to read a hold notice: which order and fulfillment order, whether the address needs a look (`check_address`) or the order is only `delayed`, and the sentence staff wrote for them, if any. Never staff's reason.
- */
-export interface FulfillmentHeldParams {
-    orderId: Id;
-    fulfillmentOrderId: Id;
-    notice: FulfillmentHeldParamsNotice;
-    /** @maxLength 500 */
-    message?: string;
-}
-
-export type NotificationFulfillmentHeldCode =
-    (typeof NotificationFulfillmentHeldCode)[keyof typeof NotificationFulfillmentHeldCode];
-
-export const NotificationFulfillmentHeldCode = {
-    'notificationsfulfillment-held': 'notifications.fulfillment-held'
-} as const;
-
-/**
- * Part of an order the caller bought is held back, and they can act (check the address) or have a message from the shop.
- */
-export interface NotificationFulfillmentHeld {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationFulfillmentHeldCode;
-    params: FulfillmentHeldParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-export type ShipmentLostParamsReason =
-    (typeof ShipmentLostParamsReason)[keyof typeof ShipmentLostParamsReason];
-
-export const ShipmentLostParamsReason = {
-    lost: 'lost',
-    damaged: 'damaged'
-} as const;
-
-/**
- * What the buyer needs to read a lost-parcel notice: which order and shipment, whether it was lost or damaged in transit, the sentence staff wrote for them if any, and the units the shelf could not cover again with the date they are now expected (absent when everything is being sent again from the shelf).
- */
-export interface ShipmentLostParams {
-    orderId: Id;
-    shipmentId: Id;
-    reason: ShipmentLostParamsReason;
-    /** @maxLength 500 */
-    message?: string;
-    /** The titles of the products still to be restocked, as the order froze them. */
-    owed?: string[];
-    expectedAt?: string;
-}
-
-export type NotificationShipmentLostCode =
-    (typeof NotificationShipmentLostCode)[keyof typeof NotificationShipmentLostCode];
-
-export const NotificationShipmentLostCode = {
-    'notificationsshipment-lost': 'notifications.shipment-lost'
-} as const;
-
-/**
- * A parcel the caller was waiting for was reported lost or damaged in transit; the shop sends it again or refunds.
- */
-export interface NotificationShipmentLost {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationShipmentLostCode;
-    params: ShipmentLostParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-export type NotificationStockAlertCode =
-    (typeof NotificationStockAlertCode)[keyof typeof NotificationStockAlertCode];
-
-export const NotificationStockAlertCode = {
-    'notificationsstock-alert': 'notifications.stock-alert'
-} as const;
-
-/**
- * A product the caller asked to be told about can be ordered again. Sent once, then the request is gone.
- */
-export interface NotificationStockAlert {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStockAlertCode;
-    params: CartLineRemovedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-/**
- * The shop's rule paused a buyer's checkout. Ids and instants only: the account's own page has the rest.
- */
-export interface PurchaseHoldPlacedParams {
-    userId: Id;
-    /** When the pause ends by itself. */
-    until: string;
-}
-
-export type NotificationStaffPurchaseHoldPlacedCode =
-    (typeof NotificationStaffPurchaseHoldPlacedCode)[keyof typeof NotificationStaffPurchaseHoldPlacedCode];
-
-export const NotificationStaffPurchaseHoldPlacedCode = {
-    'notificationsstaffpurchase-hold-placed': 'notifications.staff.purchase-hold-placed'
-} as const;
-
-/**
- * A buyer's checkout was paused by the shop's cancellation rule; staff who can ban decide whether to step in.
- */
-export interface NotificationStaffPurchaseHoldPlaced {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffPurchaseHoldPlacedCode;
-    params: PurchaseHoldPlacedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-/**
- * A webhook subscription was switched off after repeated delivery failures.
- */
-export interface WebhookDisabledParams {
-    subscriptionId: Id;
-}
 
 export type NotificationStaffWebhookDisabledCode =
     (typeof NotificationStaffWebhookDisabledCode)[keyof typeof NotificationStaffWebhookDisabledCode];
@@ -2880,6 +2629,8 @@ export interface TaskOpenedParams {
     kind: string;
     /** A contact task's category, when the visitor chose one. */
     category?: string;
+    /** The staff screen that does the work, when the opener named one: a path under the staff frontend's locale (`orders/<id>`), opaque to this module. A reader opens it when their role can; absent means the to-do's own page. */
+    work?: string;
 }
 
 export type NotificationStaffTaskOpenedCode =
@@ -2955,35 +2706,6 @@ export interface NotificationStaffTaskAssigned {
 }
 
 /**
- * A return request is waiting for a decision. Ids only, the return's page has the rest.
- */
-export interface ReturnRequestedParams {
-    returnId: Id;
-    orderId: Id;
-}
-
-export type NotificationStaffReturnRequestedCode =
-    (typeof NotificationStaffReturnRequestedCode)[keyof typeof NotificationStaffReturnRequestedCode];
-
-export const NotificationStaffReturnRequestedCode = {
-    'notificationsstaffreturn-requested': 'notifications.staff.return-requested'
-} as const;
-
-/**
- * A buyer asked to return goods; staff who decide returns take it.
- */
-export interface NotificationStaffReturnRequested {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffReturnRequestedCode;
-    params: ReturnRequestedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-/**
  * A domain event parked as dead. The name and the record it was about, the payload stays in the outbox.
  */
 export interface OutboxDeadParams {
@@ -3014,6 +2736,293 @@ export interface NotificationStaffOutboxDead {
     createdAt: string;
 }
 
+export type NotificationFulfillmentHeldCode =
+    (typeof NotificationFulfillmentHeldCode)[keyof typeof NotificationFulfillmentHeldCode];
+
+export const NotificationFulfillmentHeldCode = {
+    'shop-tasksfulfillment-held': 'shop-tasks.fulfillment-held'
+} as const;
+
+export type FulfillmentHeldParamsNotice =
+    (typeof FulfillmentHeldParamsNotice)[keyof typeof FulfillmentHeldParamsNotice];
+
+export const FulfillmentHeldParamsNotice = {
+    check_address: 'check_address',
+    delayed: 'delayed'
+} as const;
+
+/**
+ * What the buyer needs to read a hold notice: which order and fulfillment order, whether the address needs a look (`check_address`) or the order is only `delayed`, and the sentence staff wrote for them, if any. Never staff's reason.
+ */
+export interface FulfillmentHeldParams {
+    orderId: Id;
+    fulfillmentOrderId: Id;
+    notice: FulfillmentHeldParamsNotice;
+    /** @maxLength 500 */
+    message?: string;
+}
+
+/**
+ * Part of an order the caller bought is held back, and they can act (check the address) or have a message from the shop.
+ */
+export interface NotificationFulfillmentHeld {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationFulfillmentHeldCode;
+    params: FulfillmentHeldParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationShipmentLostCode =
+    (typeof NotificationShipmentLostCode)[keyof typeof NotificationShipmentLostCode];
+
+export const NotificationShipmentLostCode = {
+    'shop-tasksshipment-lost': 'shop-tasks.shipment-lost'
+} as const;
+
+export type ShipmentLostParamsReason =
+    (typeof ShipmentLostParamsReason)[keyof typeof ShipmentLostParamsReason];
+
+export const ShipmentLostParamsReason = {
+    lost: 'lost',
+    damaged: 'damaged'
+} as const;
+
+/**
+ * What the buyer needs to read a lost-parcel notice: which order and shipment, whether it was lost or damaged in transit, the sentence staff wrote for them if any, and the units the shelf could not cover again with the date they are now expected (absent when everything is being sent again from the shelf).
+ */
+export interface ShipmentLostParams {
+    orderId: Id;
+    shipmentId: Id;
+    reason: ShipmentLostParamsReason;
+    /** @maxLength 500 */
+    message?: string;
+    /** The titles of the products still to be restocked, as the order froze them. */
+    owed?: string[];
+    expectedAt?: string;
+}
+
+/**
+ * A parcel the caller was waiting for was reported lost or damaged in transit; the shop sends it again or refunds.
+ */
+export interface NotificationShipmentLost {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationShipmentLostCode;
+    params: ShipmentLostParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationStockAlertCode =
+    (typeof NotificationStockAlertCode)[keyof typeof NotificationStockAlertCode];
+
+export const NotificationStockAlertCode = {
+    'shop-tasksstock-alert': 'shop-tasks.stock-alert'
+} as const;
+
+export interface ProductTitles {
+    [key: string]: string;
+}
+
+export interface CartLineRemovedParams {
+    productId: Id;
+    titles: ProductTitles;
+}
+
+/**
+ * A product the caller asked to be told about can be ordered again. Sent once, then the request is gone.
+ */
+export interface NotificationStockAlert {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStockAlertCode;
+    params: CartLineRemovedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationFulfillmentDelayedCode =
+    (typeof NotificationFulfillmentDelayedCode)[keyof typeof NotificationFulfillmentDelayedCode];
+
+export const NotificationFulfillmentDelayedCode = {
+    'shop-tasksfulfillment-delayed': 'shop-tasks.fulfillment-delayed'
+} as const;
+
+/**
+ * What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised and the date now expected (absent when there is none).
+ */
+export interface FulfillmentDelayedParams {
+    orderId: Id;
+    fulfillmentOrderId: Id;
+    /** The waiting products' titles, as the order froze them. */
+    titles: string[];
+    agreedAt: string;
+    expectedAt?: string;
+}
+
+/**
+ * A preorder the caller paid for will arrive later than promised; cancelling is open and silence keeps waiting.
+ */
+export interface NotificationFulfillmentDelayed {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationFulfillmentDelayedCode;
+    params: FulfillmentDelayedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationCartLineRemovedCode =
+    (typeof NotificationCartLineRemovedCode)[keyof typeof NotificationCartLineRemovedCode];
+
+export const NotificationCartLineRemovedCode = {
+    'shop-taskscart-line-removed': 'shop-tasks.cart-line-removed'
+} as const;
+
+/**
+ * A product left the catalogue and left the caller's cart with it.
+ */
+export interface NotificationCartLineRemoved {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationCartLineRemovedCode;
+    params: CartLineRemovedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationWishlistItemRemovedCode =
+    (typeof NotificationWishlistItemRemovedCode)[keyof typeof NotificationWishlistItemRemovedCode];
+
+export const NotificationWishlistItemRemovedCode = {
+    'shop-taskswishlist-item-removed': 'shop-tasks.wishlist-item-removed'
+} as const;
+
+/**
+ * A product left the catalogue and left the caller's wishlist with it.
+ */
+export interface NotificationWishlistItemRemoved {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationWishlistItemRemovedCode;
+    params: CartLineRemovedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationCartMergeRefusedCode =
+    (typeof NotificationCartMergeRefusedCode)[keyof typeof NotificationCartMergeRefusedCode];
+
+export const NotificationCartMergeRefusedCode = {
+    'shop-taskscart-merge-refused': 'shop-tasks.cart-merge-refused'
+} as const;
+
+export type CartMergeRefusedParamsLinesItem = {
+    productId: Id;
+    /** @minimum 1 */
+    requested: number;
+    titles: ProductTitles;
+};
+
+export interface CartMergeRefusedParams {
+    /** The guest-cart lines `POST /cart/merge` could not add at all. */
+    lines: CartMergeRefusedParamsLinesItem[];
+}
+
+/**
+ * Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available.
+ */
+export interface NotificationCartMergeRefused {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationCartMergeRefusedCode;
+    params: CartMergeRefusedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationStaffPurchaseHoldPlacedCode =
+    (typeof NotificationStaffPurchaseHoldPlacedCode)[keyof typeof NotificationStaffPurchaseHoldPlacedCode];
+
+export const NotificationStaffPurchaseHoldPlacedCode = {
+    'shop-tasksstaffpurchase-hold-placed': 'shop-tasks.staff.purchase-hold-placed'
+} as const;
+
+/**
+ * The shop's rule paused a buyer's checkout. Ids and instants only: the account's own page has the rest.
+ */
+export interface PurchaseHoldPlacedParams {
+    userId: Id;
+    /** When the pause ends by itself. */
+    until: string;
+}
+
+/**
+ * A buyer's checkout was paused by the shop's cancellation rule; staff who can ban decide whether to step in.
+ */
+export interface NotificationStaffPurchaseHoldPlaced {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffPurchaseHoldPlacedCode;
+    params: PurchaseHoldPlacedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationStaffReturnRequestedCode =
+    (typeof NotificationStaffReturnRequestedCode)[keyof typeof NotificationStaffReturnRequestedCode];
+
+export const NotificationStaffReturnRequestedCode = {
+    'shop-tasksstaffreturn-requested': 'shop-tasks.staff.return-requested'
+} as const;
+
+/**
+ * A return request is waiting for a decision. Ids only, the return's page has the rest.
+ */
+export interface ReturnRequestedParams {
+    returnId: Id;
+    orderId: Id;
+}
+
+/**
+ * A buyer asked to return goods; staff who decide returns take it.
+ */
+export interface NotificationStaffReturnRequested {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffReturnRequestedCode;
+    params: ReturnRequestedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationStaffTransfersDueCode =
+    (typeof NotificationStaffTransfersDueCode)[keyof typeof NotificationStaffTransfersDueCode];
+
+export const NotificationStaffTransfersDueCode = {
+    'shop-tasksstafftransfers-due': 'shop-tasks.staff.transfers-due'
+} as const;
+
 /**
  * A summary row of how many items need the reader today. The screen it points at lists them.
  */
@@ -3021,13 +3030,6 @@ export interface WorkCountParams {
     /** @minimum 1 */
     count: number;
 }
-
-export type NotificationStaffTransfersDueCode =
-    (typeof NotificationStaffTransfersDueCode)[keyof typeof NotificationStaffTransfersDueCode];
-
-export const NotificationStaffTransfersDueCode = {
-    'notificationsstafftransfers-due': 'notifications.staff.transfers-due'
-} as const;
 
 /**
  * Bank transfers still unpaid whose pay-by date is near.
@@ -3047,7 +3049,7 @@ export type NotificationStaffPreordersLateCode =
     (typeof NotificationStaffPreordersLateCode)[keyof typeof NotificationStaffPreordersLateCode];
 
 export const NotificationStaffPreordersLateCode = {
-    'notificationsstaffpreorders-late': 'notifications.staff.preorders-late'
+    'shop-tasksstaffpreorders-late': 'shop-tasks.staff.preorders-late'
 } as const;
 
 /**
@@ -3068,7 +3070,7 @@ export type NotificationStaffDeliveryHoldsOpenCode =
     (typeof NotificationStaffDeliveryHoldsOpenCode)[keyof typeof NotificationStaffDeliveryHoldsOpenCode];
 
 export const NotificationStaffDeliveryHoldsOpenCode = {
-    'notificationsstaffdelivery-holds-open': 'notifications.staff.delivery-holds-open'
+    'shop-tasksstaffdelivery-holds-open': 'shop-tasks.staff.delivery-holds-open'
 } as const;
 
 /**
@@ -3089,7 +3091,7 @@ export type NotificationStaffWithdrawalsAwaitingGoodsCode =
     (typeof NotificationStaffWithdrawalsAwaitingGoodsCode)[keyof typeof NotificationStaffWithdrawalsAwaitingGoodsCode];
 
 export const NotificationStaffWithdrawalsAwaitingGoodsCode = {
-    'notificationsstaffwithdrawals-awaiting-goods': 'notifications.staff.withdrawals-awaiting-goods'
+    'shop-tasksstaffwithdrawals-awaiting-goods': 'shop-tasks.staff.withdrawals-awaiting-goods'
 } as const;
 
 /**
@@ -3110,7 +3112,7 @@ export type NotificationStaffReturnsUndecidedCode =
     (typeof NotificationStaffReturnsUndecidedCode)[keyof typeof NotificationStaffReturnsUndecidedCode];
 
 export const NotificationStaffReturnsUndecidedCode = {
-    'notificationsstaffreturns-undecided': 'notifications.staff.returns-undecided'
+    'shop-tasksstaffreturns-undecided': 'shop-tasks.staff.returns-undecided'
 } as const;
 
 /**
@@ -3131,7 +3133,7 @@ export type NotificationStaffLowStockCode =
     (typeof NotificationStaffLowStockCode)[keyof typeof NotificationStaffLowStockCode];
 
 export const NotificationStaffLowStockCode = {
-    'notificationsstafflow-stock': 'notifications.staff.low-stock'
+    'shop-tasksstafflow-stock': 'shop-tasks.staff.low-stock'
 } as const;
 
 /**
@@ -3152,7 +3154,7 @@ export type NotificationStaffUnshippedCode =
     (typeof NotificationStaffUnshippedCode)[keyof typeof NotificationStaffUnshippedCode];
 
 export const NotificationStaffUnshippedCode = {
-    notificationsstaffunshipped: 'notifications.staff.unshipped'
+    'shop-tasksstaffunshipped': 'shop-tasks.staff.unshipped'
 } as const;
 
 /**
@@ -3173,7 +3175,7 @@ export type NotificationStaffAwaitingTrackingCode =
     (typeof NotificationStaffAwaitingTrackingCode)[keyof typeof NotificationStaffAwaitingTrackingCode];
 
 export const NotificationStaffAwaitingTrackingCode = {
-    'notificationsstaffawaiting-tracking': 'notifications.staff.awaiting-tracking'
+    'shop-tasksstaffawaiting-tracking': 'shop-tasks.staff.awaiting-tracking'
 } as const;
 
 /**
@@ -3194,7 +3196,7 @@ export type NotificationStaffUndeliveredCode =
     (typeof NotificationStaffUndeliveredCode)[keyof typeof NotificationStaffUndeliveredCode];
 
 export const NotificationStaffUndeliveredCode = {
-    notificationsstaffundelivered: 'notifications.staff.undelivered'
+    'shop-tasksstaffundelivered': 'shop-tasks.staff.undelivered'
 } as const;
 
 /**
@@ -3215,7 +3217,7 @@ export type NotificationStaffStaleRefundsCode =
     (typeof NotificationStaffStaleRefundsCode)[keyof typeof NotificationStaffStaleRefundsCode];
 
 export const NotificationStaffStaleRefundsCode = {
-    'notificationsstaffstale-refunds': 'notifications.staff.stale-refunds'
+    'shop-tasksstaffstale-refunds': 'shop-tasks.staff.stale-refunds'
 } as const;
 
 /**
@@ -3233,20 +3235,20 @@ export interface NotificationStaffStaleRefunds {
 }
 
 export type Notification =
-    | NotificationCartLineRemoved
-    | NotificationWishlistItemRemoved
-    | NotificationCartMergeRefused
-    | NotificationFulfillmentDelayed
-    | NotificationFulfillmentHeld
-    | NotificationShipmentLost
-    | NotificationStockAlert
-    | NotificationStaffPurchaseHoldPlaced
     | NotificationStaffWebhookDisabled
     | NotificationStaffTaskOpened
     | NotificationStaffTaskOverdue
     | NotificationStaffTaskAssigned
-    | NotificationStaffReturnRequested
     | NotificationStaffOutboxDead
+    | NotificationFulfillmentHeld
+    | NotificationShipmentLost
+    | NotificationStockAlert
+    | NotificationFulfillmentDelayed
+    | NotificationCartLineRemoved
+    | NotificationWishlistItemRemoved
+    | NotificationCartMergeRefused
+    | NotificationStaffPurchaseHoldPlaced
+    | NotificationStaffReturnRequested
     | NotificationStaffTransfersDue
     | NotificationStaffPreordersLate
     | NotificationStaffDeliveryHoldsOpen
@@ -11878,7 +11880,7 @@ export const deactivateUserById = (
 };
 
 /**
- * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart/items`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
+ * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart/items`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`shop-tasks.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
  * @summary Merge a guest cart into the cart
  */
 export const mergeCart = (

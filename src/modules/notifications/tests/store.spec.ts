@@ -15,11 +15,11 @@ import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useInboxStore } from '../store';
 import { orvalMutator } from '@/infrastructure/http';
 import { i18n, loadLocale } from '@/i18n';
-import type {
-    Notification,
-    NotificationCartLineRemoved,
-    NotificationWishlistItemRemoved
-} from '@types';
+import { registerNotices } from '@/kernel/inbox-notices';
+import { collectModuleNotices } from '@/kernel/registry';
+import type { AppNotice } from '@/kernel/registry';
+import { enabledModules } from '@/modules';
+import type { Notification } from '@types';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -42,12 +42,15 @@ vi.mock('@/infrastructure/http', () => ({
 }));
 
 /**
- * What a case may change on a row: any field of the two product-removed variants, which share a
- * shape, including which of the two it is.
+ * A parked-event row, the foundation notice that names a product nowhere: its text carries the row's
+ * own id, so each row reads differently.
  */
-type RowOverrides = Partial<Omit<NotificationCartLineRemoved, 'code'>> & {
-    code?: NotificationCartLineRemoved['code'] | NotificationWishlistItemRemoved['code'];
-};
+type OutboxDead = Extract<Notification, { code: 'notifications.staff.outbox-dead' }>;
+
+/**
+ * What a case may change on a row.
+ */
+type RowOverrides = Partial<OutboxDead>;
 
 /**
  * A server row, with whatever the case needs overridden.
@@ -58,8 +61,8 @@ type RowOverrides = Partial<Omit<NotificationCartLineRemoved, 'code'>> & {
  */
 const row = (id: string, overrides: RowOverrides = {}): Notification => ({
     id,
-    code: 'notifications.cart-line-removed',
-    params: { productId: 'p1', titles: { en: 'Collar', it: 'Collare' } },
+    code: 'notifications.staff.outbox-dead',
+    params: { eventName: `event.${id}`, aggregateId: 'a1' },
     audience: 'own',
     severity: 'info',
     createdAt: '2026-10-04T10:00:00.000Z',
@@ -97,7 +100,19 @@ const requests = () =>
  */
 const toolkit = () => useNotificationsStore();
 
+/**
+ * A code no real module declares; the stand-in notice below echoes the languages it was handed.
+ */
+// Cast to `never` where used: the contract's union does not list this code, on purpose.
+const ECHO_CODE = 'test.echo-preferred';
+
+/**
+ * A notice whose text is the language list the store passed, so a case sees the plumbing.
+ */
+const echoPreferred: AppNotice = { describe: (_notice, { preferred }) => preferred.join(',') };
+
 beforeEach(() => {
+    registerNotices(collectModuleNotices(enabledModules));
     setActivePinia(createPinia());
     vi.clearAllMocks();
     answers = {
@@ -130,20 +145,21 @@ describe('sync', () => {
     it("adds every row as a persistent message, newest first, in the reader's language", () => {
         serverHolds([
             row('n1', { createdAt: '2026-10-04T09:00:00.000Z' }),
-            row('n2', {
-                createdAt: '2026-10-04T11:00:00.000Z',
-                code: 'notifications.wishlist-item-removed'
-            })
+            {
+                ...row('n2', { createdAt: '2026-10-04T11:00:00.000Z' }),
+                code: 'notifications.staff.webhook-disabled',
+                params: { subscriptionId: 's1' }
+            }
         ]);
         const inbox = useInboxStore();
 
         return inbox.sync().then(() => {
             expect(inbox.items.map(({ id }) => id)).toEqual(['n2', 'n1']);
             expect(inbox.items[1]?.text).toBe(
-                'Removed from your cart because it is no longer available: Collar.'
+                'An event (event.n1) could not be delivered after every retry and was parked. Look at the record it was about.'
             );
             expect(inbox.items[0]?.text).toBe(
-                'Removed from your wishlist because it is no longer available: Collar.'
+                'A webhook subscription was switched off after repeated delivery failures. Fix the endpoint, then re-enable it.'
             );
         });
     });
@@ -267,34 +283,6 @@ describe('sync', () => {
         await newer;
 
         expect(inbox.items.map(({ id }) => id)).toEqual(['n9']);
-    });
-
-    it('words a refused merge from the lines it lists, whether it was read or pushed', () => {
-        const refused: Notification = {
-            id: 'm1',
-            code: 'notifications.cart-merge-refused',
-            params: {
-                lines: [
-                    { productId: 'p1', requested: 2, titles: { en: 'Collar', it: 'Collare' } },
-                    { productId: 'p2', requested: 1, titles: { en: 'Leash' } }
-                ]
-            },
-            audience: 'own',
-            severity: 'warning',
-            createdAt: '2026-10-04T10:00:00.000Z'
-        };
-        const sentence =
-            'Some items from your guest cart are no longer available and were not added: Collar × 2; Leash × 1.';
-        const inbox = useInboxStore();
-        serverHolds([refused]);
-
-        return inbox.sync().then(() => {
-            expect(inbox.items[0]?.text).toBe(sentence);
-            inbox.reset();
-            inbox.receiveCreated({ notification: refused });
-
-            expect(inbox.items[0]?.text).toBe(sentence);
-        });
     });
 
     it('reports a failed read as a toast, leaving what it had', () => {
@@ -616,8 +604,8 @@ describe('dismissAll', () => {
             {
                 id: 'w1',
                 audience: 'staff',
-                code: 'notifications.staff.purchase-hold-placed',
-                params: { userId: 'u9', until: '2026-10-30T09:00:00.000Z' },
+                code: 'notifications.staff.webhook-disabled',
+                params: { subscriptionId: 's9' },
                 severity: 'warning',
                 createdAt: '2026-10-04T10:00:00.000Z'
             }
@@ -694,18 +682,17 @@ describe('retranslate', () => {
                 inbox.retranslate();
 
                 expect(inbox.items[0]?.text).toBe(
-                    'Rimosso dal carrello perché non più disponibile: Collare.'
+                    'Un evento (event.n1) non è stato consegnato dopo tutti i tentativi ed è stato messo da parte. Controlla il record a cui si riferiva.'
                 );
                 expect(toolkit().messages).toHaveLength(0);
             })
             .finally(() => loadLocale('en'));
     });
 
-    it("prefers the main language name over just any name when the reader's has none", () => {
+    it("tries the reader's language, then the shop's main one", () => {
         const inbox = useInboxStore();
-        serverHolds([
-            row('n1', { params: { productId: 'p1', titles: { de: 'Halsband', en: 'Collar' } } })
-        ]);
+        registerNotices({ [ECHO_CODE]: echoPreferred });
+        serverHolds([{ ...row('n1'), code: ECHO_CODE as never }]);
 
         return inbox
             .sync()
@@ -713,18 +700,16 @@ describe('retranslate', () => {
             .then(() => {
                 inbox.retranslate();
 
-                expect(inbox.items[0]?.text).toContain('Collar');
-                expect(inbox.items[0]?.text).not.toContain('Halsband');
+                expect(inbox.items[0]?.text).toBe('it,en');
             })
             .finally(() => loadLocale('en'));
     });
 
-    it('takes any name there is when the shop has no single main language', () => {
+    it('tries only the reader’s language when the shop has no single main language', () => {
         const inbox = useInboxStore();
         const configured = i18n.global.fallbackLocale.value;
-        serverHolds([
-            row('n1', { params: { productId: 'p1', titles: { de: 'Halsband', en: 'Collar' } } })
-        ]);
+        registerNotices({ [ECHO_CODE]: echoPreferred });
+        serverHolds([{ ...row('n1'), code: ECHO_CODE as never }]);
 
         return inbox
             .sync()
@@ -734,26 +719,11 @@ describe('retranslate', () => {
                 i18n.global.fallbackLocale.value = false;
                 inbox.retranslate();
 
-                expect(inbox.items[0]?.text).toContain('Halsband');
+                expect(inbox.items[0]?.text).toBe('it');
             })
             .finally(() => {
                 i18n.global.fallbackLocale.value = configured;
                 return loadLocale('en');
             });
-    });
-
-    it("shows the main language name when the reader's language has none", () => {
-        const inbox = useInboxStore();
-        serverHolds([row('n1', { params: { productId: 'p1', titles: { en: 'Collar' } } })]);
-
-        return inbox
-            .sync()
-            .then(() => loadLocale('it'))
-            .then(() => {
-                inbox.retranslate();
-
-                expect(inbox.items[0]?.text).toContain('Collar');
-            })
-            .finally(() => loadLocale('en'));
     });
 });

@@ -114,7 +114,7 @@ const filterCategoryOptions = computed(() => [
     { value: null, title: t('tasks-page.filter-category-any') },
     ...Object.values(TaskCategory).map((category) => ({
         value: category,
-        title: t(`contact-page.category-${category}`)
+        title: t(`task-category.${category}`)
     }))
 ]);
 
@@ -175,7 +175,7 @@ const filterKindOptions = computed(() => [
     { value: null, title: t('tasks-page.filter-kind-any') },
     ...Object.values(TaskKind).map((kind) => ({
         value: kind,
-        title: t(`tasks-page.kind-${kind}`)
+        title: t(`task-kind.${kind}`)
     }))
 ]);
 
@@ -420,7 +420,7 @@ const handleDelete = (requestId: string, subject: string) =>
                         <h2 class="text-lg font-semibold">{{ request.subject }}</h2>
                         <p class="text-sm opacity-muted">
                             {{ request.name || t('tasks-page.anonymous') }} —
-                            {{ request.email ?? t(`tasks-page.kind-${request.kind}`) }} ·
+                            {{ request.email ?? t(`task-kind.${request.kind}`) }} ·
                             {{ formatDateTime(request.createdAt) }}
                         </p>
                         <p
@@ -429,7 +429,7 @@ const handleDelete = (requestId: string, subject: string) =>
                             data-test="task-category"
                         >
                             <v-chip v-if="request.category" size="x-small" variant="tonal" label>
-                                {{ t(`contact-page.category-${request.category}`) }}
+                                {{ t(`task-category.${request.category}`) }}
                             </v-chip>
                             <span v-if="request.orderNumber" class="ml-2">
                                 <router-link

@@ -1,15 +1,16 @@
 /**
  * @module
- * The link a work notice carries into the admin. A sibling's screen is reached by route name, only
- * when this build ships it, and only when the reader may open it: a row must never link where the
- * reader would be refused (a role lost since the notice arrived).
+ * The link a notice carries, and the ONE place a notice target is resolved: a named target goes
+ * through `linkIfRouted`, a path target through `resolve` plus the catch-all check. Either is
+ * bound only when this build ships the screen and the reader may open it: a row must never link
+ * where the reader would be refused (a role lost since the notice arrived).
  */
 import { useRouter } from 'vue-router';
 import type { RouteLocationRaw } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import type { NotificationTarget } from '../domain';
+import type { NoticeTarget } from '@/kernel/registry';
 
 /**
  * Builds the link-maker for one component. Call it from `setup`.
@@ -29,52 +30,29 @@ export const useNotificationLink = () => {
     const session = useSessionStore();
 
     /**
-     * The target's route if this build ships it. The names are written out here, beside the
-     * `hasRoute` guard, so the coupling is visible where it is made.
+     * The target as a locale-prefixed location, or `undefined` when this build cannot show it.
+     * A named target goes through `linkIfRouted` (the `hasRoute` guard); a path goes through
+     * `resolve`, refused when nothing matches or only a catch-all does (an unshipped screen).
      *
-     * @param target - The screen and id.
-     * @returns A named location, or `undefined` when the route does not exist.
+     * @param target - The notice's target.
      */
-    const routed = (target: NotificationTarget) => {
-        switch (target.screen) {
-            case 'account': {
-                return linkIfRouted(router, 'UserTarget', { id: target.id });
-            }
-            case 'task': {
-                return linkIfRouted(router, 'TaskDetail', { id: target.id });
-            }
-            case 'webhook-subscription': {
-                return linkIfRouted(router, 'WebhookTarget', { id: target.id });
-            }
-            case 'return': {
-                return linkIfRouted(router, 'ReturnTarget', { id: target.id });
-            }
-            case 'order': {
-                return linkIfRouted(router, 'OrderTarget', { id: target.id });
-            }
-            case 'sales-orders': {
-                return linkIfRouted(router, 'SalesOrders');
-            }
-            case 'payments': {
-                return linkIfRouted(router, 'PaymentsList');
-            }
-            case 'returns': {
-                return linkIfRouted(router, 'SalesReturns');
-            }
-            case 'preorders': {
-                return linkIfRouted(router, 'PreordersBoard');
-            }
-            case 'inventory': {
-                return linkIfRouted(router, 'InventoryLedger');
-            }
+    const located = (target: NoticeTarget): RouteLocationRaw | undefined => {
+        if ('path' in target) {
+            // The STRING form is resolved: a `{ path }` object would drop the query.
+            const link = routerLinkI18n(target.path);
+            const { matched } = router.resolve(link);
+            return matched.length > 0 && !matched.some((record) => record.path.includes('catchAll'))
+                ? link
+                : undefined;
         }
+        const named = linkIfRouted(router, target.route, target.params);
+        return named ? routerLinkI18n(named) : undefined;
     };
 
-    return (target?: NotificationTarget): RouteLocationRaw | undefined => {
-        const located = target ? routed(target) : undefined;
-        if (!located) return undefined;
+    return (target?: NoticeTarget): RouteLocationRaw | undefined => {
+        const link = target ? located(target) : undefined;
+        if (!link) return undefined;
 
-        const link = routerLinkI18n(located);
         const required = router.resolve(link).meta.can;
         return required && !session.can(required[0], required[1]) ? undefined : link;
     };

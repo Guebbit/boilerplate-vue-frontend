@@ -1,21 +1,18 @@
 /**
  * @module
- * The bell's notices, read by a sibling that must not import the notifications module.
+ * The bell's notices, read by a sibling that must not import the notifications module, and the
+ * registry of how each code is worded and linked.
  *
  * The notifications module keeps each server row in a persistent toolkit message's `meta`, stamped
  * `source: 'inbox'`. This reads that stamp and the row's `code` and `readAt`, nothing more, so a
- * nav badge or a counter can follow the inbox with no dependency on the module that fills it.
+ * counter can follow the inbox with no dependency on the module that fills it. The modules'
+ * `notices` are installed here once at boot, the way locale loaders are installed in `@/i18n`.
  */
 import { computed } from 'vue';
 import type { ComputedRef } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import type { Notification } from '@types';
-
-/**
- * Every code a notification can carry, as the contract names them.
- */
-export type NotificationCode = Notification['code'];
+import type { AppNotice } from '@/kernel/registry';
 
 /**
  * What a reader of the bell needs from one row.
@@ -48,18 +45,26 @@ export const useInboxNotices = (): ComputedRef<InboxNotice[]> => {
 };
 
 /**
- * How many unread notices carry one of the given codes: the number a nav entry wears.
- *
- * @param codes - The codes the entry is about.
- * @returns A reactive count; `0` renders no badge.
+ * Every enabled module's notices, by code. Installed by the composition root because the kernel
+ * may not import `@/modules`.
  */
-export const useUnreadNoticeCount = (codes: readonly NotificationCode[]): ComputedRef<number> => {
-    const notices = useInboxNotices();
-    const wanted = new Set<string>(codes);
+let registeredNotices: Record<string, AppNotice> = {};
 
-    return computed(
-        () =>
-            notices.value.filter(({ code, readAt }) => readAt === undefined && wanted.has(code))
-                .length
-    );
+/**
+ * Install the enabled modules' notices. Replaces rather than appends. Must run before the first
+ * notice is described; skip it and every notice reads as a generic one linking nowhere.
+ *
+ * @param notices - code to entry, from `collectModuleNotices`
+ */
+export const registerNotices = (notices: Record<string, AppNotice>): void => {
+    registeredNotices = notices;
 };
+
+/**
+ * The entry a module declared for a code.
+ *
+ * @param code - The notification's code.
+ * @returns The entry, or `undefined` for a code no enabled module declares (a newer backend).
+ */
+export const noticeOf = (code: string): AppNotice | undefined =>
+    Object.hasOwn(registeredNotices, code) ? registeredNotices[code] : undefined;

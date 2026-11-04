@@ -79,11 +79,13 @@ describe.each(moduleCases)('module %s', (_name, appModule) => {
  * the same top-level key, the later one's entries win and the earlier one's copy vanishes. Nothing
  * throws. The page renders raw keys, and only a human reading the screen in that language notices.
  *
- * `navigation` is the deliberate exception — every module contributes its own `label-*` slice of
- * it, which is exactly why the merge has to be deep. So it is checked one level lower instead:
- * co-owning the namespace is fine, claiming the same entry inside it is not.
+ * The co-owned namespaces are the deliberate exception. `navigation` takes a `label-*` slice from
+ * every module; `task-kind`, `task-category` and `task-link` take one key per value of a contract
+ * enum, from whichever module owns that value (the foundation, or the shop). That is exactly why
+ * the merge has to be deep. They are checked one level lower instead: co-owning the namespace is
+ * fine, claiming the same entry inside it is not.
  */
-const CO_OWNED_NAMESPACE = 'navigation';
+const CO_OWNED_NAMESPACES = ['navigation', 'task-kind', 'task-category', 'task-link'] as const;
 
 /** Locale codes any enabled module ships, deduplicated. */
 const localeCodes = [
@@ -125,7 +127,9 @@ describe.each(localeCodes)('locale dictionaries — %s', (locale) => {
             const clashes = clashesIn(
                 loaded.map(({ owner, dictionary }) => ({
                     owner,
-                    keys: Object.keys(dictionary).filter((key) => key !== CO_OWNED_NAMESPACE)
+                    keys: Object.keys(dictionary).filter(
+                        (key) => !(CO_OWNED_NAMESPACES as readonly string[]).includes(key)
+                    )
                 }))
             );
 
@@ -134,20 +138,22 @@ describe.each(localeCodes)('locale dictionaries — %s', (locale) => {
             expect(clashes).toEqual({});
         }));
 
-    it(`gives every ${CO_OWNED_NAMESPACE} entry exactly one owner, though the namespace is shared`, () =>
-        dictionariesFor(locale).then((loaded) => {
-            const clashes = clashesIn(
-                loaded.map(({ owner, dictionary }) => ({
-                    owner,
-                    keys: Object.keys(
-                        (dictionary[CO_OWNED_NAMESPACE] as TranslationDictionaries | undefined) ??
-                            {}
-                    )
-                }))
-            );
+    it.each(CO_OWNED_NAMESPACES)(
+        'gives every %s entry exactly one owner, though the namespace is shared',
+        (namespace) =>
+            dictionariesFor(locale).then((loaded) => {
+                const clashes = clashesIn(
+                    loaded.map(({ owner, dictionary }) => ({
+                        owner,
+                        keys: Object.keys(
+                            (dictionary[namespace] as TranslationDictionaries | undefined) ?? {}
+                        )
+                    }))
+                );
 
-            expect(clashes).toEqual({});
-        }));
+                expect(clashes).toEqual({});
+            })
+    );
 
     it('is shipped by every module, so no domain is untranslated in this language', () => {
         const missing = enabledModules

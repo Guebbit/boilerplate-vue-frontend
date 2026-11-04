@@ -4,6 +4,7 @@ import {
     assertUniqueRoutes,
     collectModuleLoadingKeys,
     collectModuleNavigation,
+    collectModuleNotices,
     collectModuleRoutes,
     collectModuleTours,
     groupNavigation,
@@ -228,5 +229,32 @@ describe('collectModuleTours', () => {
 
     it('returns nothing for a build with no modules', () => {
         expect(collectModuleTours([])).toEqual([]);
+    });
+});
+
+describe('collectModuleNotices', () => {
+    const entry = { describe: () => 'text' };
+
+    it('merges the notices of every module that declares some, by code', () => {
+        const notices = collectModuleNotices([
+            { ...makeModule('tasks'), notices: { 'notifications.a': entry } },
+            makeModule('orders'),
+            { ...makeModule('webhooks'), notices: { 'notifications.b': entry } }
+        ]);
+
+        expect(Object.keys(notices)).toEqual(['notifications.a', 'notifications.b']);
+    });
+
+    it('refuses a code two modules both declare, naming it', () => {
+        expect(() =>
+            collectModuleNotices([
+                { ...makeModule('tasks'), notices: { 'notifications.a': entry } },
+                { ...makeModule('orders'), notices: { 'notifications.a': entry } }
+            ])
+        ).toThrow('Notice code "notifications.a" is declared by more than one module.');
+    });
+
+    it('returns nothing for a build with no modules', () => {
+        expect(collectModuleNotices([])).toEqual({});
     });
 });

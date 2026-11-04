@@ -1,9 +1,9 @@
 # notifications
 
 ::: tip At a glance
-**Owns** — the signed-in visitor's inbox: the bell in the app bar, its panel, and the live stream that keeps it current.
-**Depends on** — nothing. The server writes the notifications; this module only reads and renders them.
-**Breaks if you change** — the `code` values and the `params` shape per code. The contract types them as a union on `code`, and a code this client does not know reads as a generic message.
+**Owns** — the signed-in visitor's inbox: the bell in the app bar, its panel, the live stream that keeps it current, and the wording of its five foundation codes.
+**Depends on** — nothing. The server writes the notifications; this module only reads and renders them. Every other code is worded and linked by the module that owns it, through `AppModule.notices`.
+**Breaks if you change** — the shape of `AppNotice` / `NoticeTarget` (`src/kernel/registry.ts`) and the five foundation codes. A code no enabled module declares reads as a generic message.
 :::
 
 | Fact                    | This module                                                                    |
@@ -21,11 +21,11 @@
 
 ## The story
 
-A notification is a message the server keeps for one person until they delete it. Today the
-backend writes one in three cases: a product left the catalogue and so left their **cart**, left
-their **wishlist**, or a guest cart merged at login had lines whose product is no longer available.
-(A merge line whose _quantity_ changed is not a notification: the [cart page](./cart.md#the-merge-alert)
-tells it once, in an alert.)
+A notification is a message the server keeps for one person until they delete it. The foundation
+writes five kinds (a task opened, overdue or assigned; a webhook switched off; an event parked
+after every retry). Everything else, the shop's buyer notices and its staff summaries included, is
+written by a project's own module under its own prefix (here `shop-tasks.*`, see
+[`shop-tasks`](./shop-tasks.md)).
 
 The server stores a `code` and the facts that sentence needs, never text. This module turns them
 into the reader's language from its own locale files, like every other API code.
@@ -85,47 +85,46 @@ after 1, 2, 4 ... seconds (capped at 30), and every open is followed by a fresh 
 
 ### The text
 
-`Notification` is a union on `code`, and each variant carries its own typed `params`
-(`@types`), so the sentence builder narrows them with a plain `switch` and parses nothing:
+`Notification` is a union on `code`, and each variant carries its own typed `params` (`@types`).
+The foundation never names a project's code. Each module declares the codes it owns in
+`AppModule.notices`: a map from code to `{ describe, target? }`, collected like `navigation` and
+installed once at boot (`registerNotices`). The inbox store asks the registry for the sentence and
+the link of every row (`noticeOf`), so a build without a module simply words its codes as a generic
+notification.
 
-| Code                                       | `params`                                                           |
-| ------------------------------------------ | ------------------------------------------------------------------ |
-| `notifications.cart-line-removed`          | `{ productId, titles }`                                            |
-| `notifications.wishlist-item-removed`      | `{ productId, titles }`                                            |
-| `notifications.cart-merge-refused`         | `{ lines: [{ productId, requested, titles }] }`                    |
-| `notifications.fulfillment-delayed`        | `{ orderId, fulfillmentOrderId, titles[], agreedAt, expectedAt? }` |
-| `notifications.staff.purchase-hold-placed` | `{ userId, until }`                                                |
-| `notifications.staff.webhook-disabled`     | `{ subscriptionId }`                                               |
+| Code                                   | `params`                             | Links to                                |
+| -------------------------------------- | ------------------------------------ | --------------------------------------- |
+| `notifications.staff.task-opened`      | `{ taskId, kind, category?, work? }` | the `work` path, else `TaskDetail`      |
+| `notifications.staff.task-overdue`     | `{ taskId, kind, work? }`            | the `work` path, else `TaskDetail`      |
+| `notifications.staff.task-assigned`    | `{ taskId, kind }`                   | `TaskDetail`                            |
+| `notifications.staff.webhook-disabled` | `{ subscriptionId }`                 | `WebhookTarget`                         |
+| `notifications.staff.outbox-dead`      | `{ eventName, aggregateId }`         | `UserTarget`, for a `user.*` event only |
 
-The refused-merge sentence lists each line as "name × quantity the guest held": every line in it
-is a product that is no longer available, so the sentence says that once and the lines carry no
-reason of their own.
-
-The late-preorder code carries names already resolved (`titles` is a list, not a map) and dates, which
-the store spells in the reader's locale (`formatDate`), with a variant for a missing date
-(`fulfillment-delayed-undated`). It also names its order, so the bell links to it by route name
-(`OrderTarget`, resolved with `linkIfRouted`, since `orders` is not a sibling this module imports):
-that is where the reader can cancel. It asks nothing.
+A task notice reads "{kind}" (a contact message adds its category). Kind and category are closed
+codes the server sends; their words are the co-owned `task-kind.*` and `task-category.*`
+dictionary namespaces, which the tasks screens read too (see [`tasks`](./tasks.md)).
 
 **Work notices.** Every row also carries `audience`: `own`, or `staff` for a work notice the backend
 sent because the reader's role does that work (the backend decides who sees what, at read time: its `notifications` page,
-"Work notices for staff"). A staff row carries
-ids only, so the sentence is short and the row links to the screen it is about by route name
-(the buyer's account, the subscription, through `useNotificationLink`). The link appears only when this
-build ships the route and the session passes the route's own `meta.can`, so a row never links where
-the reader would be refused; the text stays either way.
+"Work notices for staff"). A staff row carries ids only, so the sentence is short.
 
-The code is its own dictionary key: the code `notifications.cart-line-removed` is the entry
-`cart-line-removed` inside the `notifications` group of `locales/*.json`. A product's name comes from
-`params.titles`, a map of locale to name copied in when the notification was written, because the
-notification outlives the product:
+**Links.** A notice's `target` is one of two shapes (`NoticeTarget`):
 
-| Order | Name used                                             |
-| ----- | ----------------------------------------------------- |
-| 1     | The reader's current language                         |
-| 2     | The shop's main language (vue-i18n's fallback locale) |
-| 3     | Any name there is                                     |
-| 4     | "a product", when `titles` is empty                   |
+| Shape                | Resolved by                                                                                                             |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `{ route, params? }` | `linkIfRouted`: the link exists only if this build ships a route by that name.                                          |
+| `{ path }`           | `router.resolve` on the STRING (a `{ path }` object drops the query); refused when nothing or only a catch-all matches. |
+
+Both go through `useNotificationLink`, the one resolver, and both keep the route's own `meta.can`:
+a row never links where the reader would be refused, and an unopenable link shows the row with no
+link at all. The `path` form is how a server-named `work` screen (`payments?tab=disputes`) is
+followed without this module knowing the screen.
+
+The code is its own dictionary key: `notifications.staff.webhook-disabled` is the entry
+`staff.webhook-disabled` inside the `notifications` group of `locales/*.json`; a module's codes live
+in its own group. The store hands each entry the reader's languages (current, then the shop's main
+one) so a name stored per locale can be picked; the product-name rule is
+[`shop-tasks`](./shop-tasks.md#the-text)'s.
 
 A language switch rebuilds every message in place, so the text follows. Severity maps `info` →
 `primary`; `success`, `warning` and `error` are unchanged. A notification the server writes for a
@@ -147,41 +146,12 @@ session without `read:Notification`.
 | Badge           | The unread count: notifications with no `readAt`.                                                                                                                                                                                                                                                                                                             |
 | Accessible name | "Notifications", or "Notifications: 3 unread" — the badge alone is a bare number.                                                                                                                                                                                                                                                                             |
 | Opening         | `POST /notifications/read-all`, so the badge clears everywhere (the stream tells other tabs). Nothing is sent when nothing is unread. Rows that were new stay marked "New" while the panel is open.                                                                                                                                                           |
-| Panel           | A `dialog`, newest first: text, date, an "Open the order" link on a notice about an order, a delete button named after its message, and "Clear all".                                                                                                                                                                                                          |
+| Panel           | A `dialog`, newest first: text, date, an "Open it" link on a notice that has a target, a delete button named after its message, and "Clear all".                                                                                                                                                                                                              |
 | Tabs            | Only while the inbox holds a work notice (`audience: 'staff'`): "Mine" (`own` rows) and "Work" (`staff` rows). The panel always opens on Mine. The bell badge stays the total unread; the Work tab wears its own count (unread plus those that were new when the panel opened) and names it in its accessible label. Without a work notice there are no tabs. |
 | Clear all       | With tabs: `DELETE /notifications?audience=` (`own` or `staff`), the tab in view, one call; the server filters. Without tabs: the unfiltered bulk call.                                                                                                                                                                                                       |
 | Focus           | Moves into the panel on open; Escape closes it and returns focus to the bell.                                                                                                                                                                                                                                                                                 |
 
-## Nav badges
-
-An admin entry wears the number of unread work notices that point at its screen. The notifications
-module is not imported for it: `src/kernel/inbox-notices.ts` reads the toolkit's persistent
-messages that carry the inbox's `meta.source: 'inbox'` stamp, and each module's `badge` accessor
-names the codes it counts (typed against the contract's code union).
-
-```mermaid
-flowchart LR
-    S["inbox store<br/>(this module)"] -->|"persistent message,<br/>meta.notification"| T[(toolkit message store)]
-    T --> K["kernel/inbox-notices<br/>useUnreadNoticeCount(codes)"]
-    K --> P[payments badge]
-    K --> O[orders badge]
-    K --> M[... one per entry]
-    P & O & M --> N[app navigation]
-```
-
-| Entry             | Module    | Codes counted                                                                           |
-| ----------------- | --------- | --------------------------------------------------------------------------------------- |
-| `PaymentsList`    | payments  | `stale-refunds`                                                                         |
-| `UsersList`       | users     | `purchase-hold-placed`                                                                  |
-| `WebhooksList`    | webhooks  | `webhook-disabled`                                                                      |
-| `InventoryLedger` | inventory | `low-stock`                                                                             |
-| `PreordersBoard`  | inventory | `preorders-late`                                                                        |
-| `SalesReturns`    | returns   | `return-requested`, `withdrawals-awaiting-goods`, `returns-undecided`                   |
-| `SalesOrders`     | orders    | `transfers-due`, `delivery-holds-open`, `unshipped`, `awaiting-tracking`, `undelivered` |
-
-Codes are `notifications.staff.<name>`. Opening the bell marks every row read, so the badges clear
-with it; the next notice raises them again. The tasks entry keeps its own badge, which also reads
-`GET /tasks/summary`.
+Staff badges: see `nav-badges-open-work`.
 
 ## Screens
 
@@ -218,8 +188,8 @@ AsyncAPI schemas by `createSseClient` while validation is on.
 | `store.ts`                             | The `inbox` store: server rows to toolkit messages, and every write the bell makes. | [read](../tools/state-and-routing.md) |
 | `composables/use-inbox-lifecycle.ts`   | Starts the read and the stream for the signed-in person and ends them with them.    | [read](../theory/layers.md)           |
 | `components/NotificationsBell.vue`     | The bell, its badge and its panel.                                                  | [read](../theory/layers.md)           |
-| `composables/use-notification-link.ts` | A work notice's screen as a link, if it exists here and the reader may open it.     | [read](../theory/layers.md)           |
-| `domain/describe.ts`                   | Pure: a `code` and its typed `params` to a sentence, and the screen it is about.    | [read](../theory/domain-layer.md)     |
+| `composables/use-notification-link.ts` | A notice's target as a link, if it exists here and the reader may open it.          | [read](../theory/layers.md)           |
+| `notices.ts`                           | The five foundation codes as `AppModule.notices` entries: sentence and target.      | [read](../theory/modules.md)          |
 | `types.ts`                             | The row the panel renders.                                                          | [read](../theory/layers.md)           |
 | `response-schemas.ts`                  | One Zod schema per endpoint called.                                                 | [read](../api/openapi-workflow.md)    |
 | `locales/en.json` · `locales/it.json`  | The sentences, keyed by code, and the bell's labels.                                | [read](../tools/i18n.md)              |
@@ -242,6 +212,7 @@ npm run regenerate
 
 ## Related pages
 
-- [`cart`](./cart.md) and [`wishlist`](./wishlist.md) — the lists a removed product leaves; the server writes the notification, this module shows it
+- [`shop-tasks`](./shop-tasks.md) — the shop's notice codes, worded and linked through the registry
+- [`tasks`](./tasks.md) — the to-do inbox the task notices open
 - [Modules](../theory/modules.md) — slots, and why the shell never imports its contributors
 - [Observability](./observability.md) — the other SSE stream, and the shared `createSseClient`

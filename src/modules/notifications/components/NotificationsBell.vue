@@ -16,7 +16,6 @@ import type { ComponentPublicInstance } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { Bell, Trash2 } from 'lucide-vue-next';
-import { useOrderLink } from '@/kernel/order-link.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useInboxLifecycle } from '../composables/use-inbox-lifecycle';
 import { useNotificationLink } from '../composables/use-notification-link';
@@ -106,12 +105,7 @@ const workCount = computed(
 const clearAll = () => inbox.dismissAll(hasWork.value ? TAB_AUDIENCE[tab.value] : undefined);
 
 /**
- * The notice's order page, or nothing when it has none or this build ships no order page.
- */
-const orderLink = useOrderLink();
-
-/**
- * A work notice's screen in the admin, or nothing when this build or this reader has none.
+ * The screen a notice is about, or nothing when this build or this reader has none.
  */
 const targetLink = useNotificationLink();
 
@@ -302,15 +296,6 @@ const focusPanel = () => {
                                 {{ t('notifications.unread') }}
                             </v-chip>
                         </v-list-item-subtitle>
-                        <router-link
-                            v-if="orderLink(item.orderId)"
-                            :to="orderLink(item.orderId)!"
-                            class="text-sm underline"
-                            data-test="notification-order-link"
-                        >
-                            {{ t('notifications.link-order') }}
-                        </router-link>
-
                         <router-link
                             v-if="targetLink(item.target)"
                             :to="targetLink(item.target)!"

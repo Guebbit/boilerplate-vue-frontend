@@ -73,8 +73,8 @@ vi.mock('@/infrastructure/http', () => ({
  */
 const row = (id: string): Notification => ({
     id,
-    code: 'notifications.cart-line-removed',
-    params: { productId: 'p1', titles: { en: 'Collar', it: 'Collare' } },
+    code: 'notifications.staff.outbox-dead',
+    params: { eventName: 'event.parked', aggregateId: 'a1' },
     audience: 'own',
     severity: 'info',
     createdAt: '2026-10-04T10:00:00.000Z'
@@ -307,7 +307,7 @@ describe('a language switch', () => {
         await loadLocale('it');
         await flushPromises();
 
-        expect(useInboxStore().items[0]?.text).toContain('Collare');
+        expect(useInboxStore().items[0]?.text).toContain('Un evento (event.parked)');
         await loadLocale('en');
     });
 });

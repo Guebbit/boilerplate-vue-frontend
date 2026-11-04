@@ -26,12 +26,18 @@
 import { loadResponseSchemas } from '@/infrastructure/http/response-schema-map';
 import { shouldValidateResponses } from '@/infrastructure/http/validate';
 import { registerLocaleContributors } from '@/i18n';
-import { collectModuleLocales, collectModuleResponseSchemas } from '@/kernel/registry';
+import { registerNotices } from '@/kernel/inbox-notices';
+import {
+    collectModuleLocales,
+    collectModuleNotices,
+    collectModuleResponseSchemas
+} from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 
 /** Wires every enabled module's dictionaries (and response schemas, when validating) into the core. */
 export const wireModulesIntoCore = (): void => {
     registerLocaleContributors(collectModuleLocales(enabledModules));
+    registerNotices(collectModuleNotices(enabledModules));
     if (shouldValidateResponses()) {
         loadResponseSchemas(collectModuleResponseSchemas(enabledModules)).catch(
             (error: unknown) => {
