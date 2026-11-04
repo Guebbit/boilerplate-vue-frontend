@@ -92,13 +92,10 @@ installed once at boot (`registerNotices`). The inbox store asks the registry fo
 the link of every row (`noticeOf`), so a build without a module simply words its codes as a generic
 notification.
 
-| Code                                   | `params`                             | Links to                                |
-| -------------------------------------- | ------------------------------------ | --------------------------------------- |
-| `notifications.staff.task-opened`      | `{ taskId, kind, category?, work? }` | the `work` path, else `TaskDetail`      |
-| `notifications.staff.task-overdue`     | `{ taskId, kind, work? }`            | the `work` path, else `TaskDetail`      |
-| `notifications.staff.task-assigned`    | `{ taskId, kind }`                   | `TaskDetail`                            |
-| `notifications.staff.webhook-disabled` | `{ subscriptionId }`                 | `WebhookTarget`                         |
-| `notifications.staff.outbox-dead`      | `{ eventName, aggregateId }`         | `UserTarget`, for a `user.*` event only |
+Which codes exist, their `params`, who is told and whether they mail are the backend's table, not
+a copy here:
+[work notices for staff](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/notifications.md#work-notices-for-staff).
+Each module declares the copy and the link of its own codes in `AppModule.notices`.
 
 A task notice reads "{kind}" (a contact message adds its category). Kind and category are closed
 codes the server sends; their words are the co-owned `task-kind.*` and `task-category.*`
