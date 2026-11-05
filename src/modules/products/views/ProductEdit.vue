@@ -29,7 +29,6 @@ import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useProductsStore } from '../store';
 import { productsSchema } from '../schemas.ts';
-import { useTranslationLocales } from '../composables/use-translation-locales.ts';
 import { useTranslatedEntityForm } from '../composables/use-translated-entity-form.ts';
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -117,7 +116,9 @@ const mayViewTranslations = computed(
 /**
  * The deployment's active locales and fallback tag — what the tab bar offers to add.
  */
-const { locales, fallbackLocale, fetchTranslationLocales } = useTranslationLocales();
+const { translationLocales: locales, translationFallbackLocale: fallbackLocale } =
+    storeToRefs(useProductsStore());
+const { fetchTranslationLocales } = useProductsStore();
 // eslint-disable-next-line @typescript-eslint/no-floating-promises -- fetchTranslationLocales never rejects (it falls back to the shop languages)
 void fetchTranslationLocales();
 

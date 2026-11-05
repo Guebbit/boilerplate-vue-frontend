@@ -13,6 +13,7 @@ import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
 import { getCurrentLocale } from '@/i18n';
+import { runtimeValue } from '@/infrastructure/runtime-config';
 import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
 import {
     listProducts,
@@ -26,9 +27,13 @@ import {
     deleteProductById,
     hardDeleteProductById,
     restoreProductById,
+    getLocales,
+    LocaleDirection,
+    LocaleSource,
     ProductSortItem
 } from '@api';
 import type {
+    Language,
     Product,
     CreateProductRequest,
     UpdateProductRequest,
@@ -69,6 +74,42 @@ export type UpdateProductData = UpdateProductRequest & { imageUpload?: Blob };
  * First segment of every products query key: the store's `resourceKey`.
  */
 const PRODUCTS_RESOURCE_KEY = 'products';
+
+/**
+ * The deployment's fallback locale for a build whose `GET /locales` is gone.
+ *
+ * `GET /locales` is 404 once `locales` is uninstalled — the same fallback-locale-only resolution
+ * `@/i18n`'s own `i18n` instance falls back to, so the one tab offered names the language the UI
+ * is actually rendered in.
+ */
+const configuredFallbackLocale = (): string =>
+    runtimeValue('APP_FALLBACK_LOCALE') || import.meta.env.VITE_APP_FALLBACK_LOCALE || 'en';
+
+/**
+ * A single-tab manifest good enough for `TranslationTabs` to render a form with — everything a
+ * real manifest row carries, filled with the least assuming values: this deployment can only
+ * confirm the language exists (`@/i18n` has it bundled), not what apps or rows the (unreachable)
+ * `locales` collection would otherwise report.
+ */
+const fallbackOnlyManifest = (tag: string): Language => ({
+    tag,
+    baseLanguage: tag.slice(0, 2),
+    name: tag,
+    nativeName: tag,
+    direction: LocaleDirection.ltr,
+    active: true,
+    apps: ['frontend'],
+    source: LocaleSource.static,
+    entryCount: 0,
+    revision: 0,
+    // No manifest was readable, so no row is known to be switchable.
+    actions: { update: false, activate: false, deactivate: false, delete: false }
+});
+
+/**
+ * Cache key of the locale manifest the product forms read (`isLoading` matches on it).
+ */
+const TRANSLATION_LOCALES_KEY = ['translation-locales'];
 
 /**
  * Marks everything cached about products stale, and refetches what is on screen.
@@ -390,6 +431,51 @@ export const useProductsStore = defineStore('products', () => {
         );
 
     /**
+     * Every locale the caller was offered — live ones and, for staff, draft ones (`active: false`).
+     * What `TranslationTabs`'s `locales` prop renders. For staff holding `display:Locale` that
+     * includes the languages switched off, so an editor can start a DRAFT in one.
+     */
+    const translationLocales = ref<Language[]>([]);
+
+    /**
+     * The deployment's fallback locale — the tab that is always present and never removable.
+     */
+    const translationFallbackLocale = ref<string>();
+
+    /**
+     * Whether the locale manifest fetch is in flight.
+     */
+    const loadingTranslationLocales = computed(() => isLoading(TRANSLATION_LOCALES_KEY));
+
+    /**
+     * Loads the locale manifest the product forms offer as language tabs, from the cache while it
+     * is fresh (`staleTime`); the viewer-change reset drops it, so a staff member signing in
+     * gets the draft languages on the next call.
+     *
+     * Calls `getLocales` from `@api` itself rather than reaching `useLocalesStore`: the `locales`
+     * module is optional and publishes no barrel, mirroring the paired backend's rule that
+     * `products` never imports `locales`. `@api` is infrastructure, not a sibling module.
+     *
+     * A failed fetch (`locales` uninstalled, or unreachable) still leaves a WORKING form: one tab
+     * for the configured fallback language, rather than an empty manifest that leaves the
+     * caller's skeleton up forever. The fallback is not cached, so the next call asks again.
+     *
+     * @returns A promise resolving once `translationLocales`/`translationFallbackLocale` are populated. Never rejects.
+     */
+    const fetchTranslationLocales = () =>
+        fetchAny(() => getLocales(), { key: TRANSLATION_LOCALES_KEY })
+            .then((response) => {
+                if (!response) return;
+                translationLocales.value = response.locales;
+                translationFallbackLocale.value = response.fallback;
+            })
+            .catch(() => {
+                const fallback = configuredFallbackLocale();
+                translationLocales.value = [fallbackOnlyManifest(fallback)];
+                translationFallbackLocale.value = fallback;
+            });
+
+    /**
      * The catalogue's filter chips: every public category and tag with its count. Fetched once
      * per visit to the listing — the API caches it under the products tag, so the counts follow
      * catalogue writes without this store having to know when they happen.
@@ -436,6 +522,10 @@ export const useProductsStore = defineStore('products', () => {
         watchProduct,
         fetchProductForEdit,
         loadingProductForEdit,
+        translationLocales,
+        translationFallbackLocale,
+        loadingTranslationLocales,
+        fetchTranslationLocales,
         createProduct,
         updateProduct,
         deleteProduct,
