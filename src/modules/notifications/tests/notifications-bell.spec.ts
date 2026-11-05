@@ -77,13 +77,12 @@ const row = (id: string, overrides: RowOverrides = {}): Notification => ({
 });
 
 /**
- * Signs in a person holding the notifications key.
+ * Signs a person in.
  */
 const signIn = () => {
     const session = useSessionStore();
     session.accessToken = 'test-token';
     session.viewer = { id: 'u1', email: 'shopper@example.com', role: 'customer' };
-    session.tenantAbility = createMongoAbility([{ action: 'read', subject: 'Notification' }]);
 };
 
 /**
@@ -354,7 +353,6 @@ describe('a work notice for staff', () => {
     it('links to the screen it is about when the reader may open it', async () => {
         signIn();
         useSessionStore().tenantAbility = createMongoAbility([
-            { action: 'read', subject: 'Notification' },
             { action: 'read', subject: 'WebhookSubscription' }
         ]);
         inboxOnServer = [holdNotice];

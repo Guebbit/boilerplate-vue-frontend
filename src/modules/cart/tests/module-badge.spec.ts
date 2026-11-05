@@ -29,7 +29,6 @@ const signIn = () => {
     const session = useSessionStore();
     session.viewer = asStub<SessionViewer>({ id: 'u1', email: 'u1@example.com' });
     session.accessToken = 'tok';
-    session.setAbilities({ tenant: [['update', 'Cart']], platform: [] });
 };
 
 beforeEach(() => {
@@ -64,25 +63,14 @@ describe('the cart badge watching the session', () => {
     });
 });
 
-describe('the cart badge seeding itself for a session that may shop', () => {
-    it('seeds for a session that may shop', () => {
+describe('the cart badge seeding itself for a signed-in session', () => {
+    it('seeds for a signed-in session', () => {
         const seed = vi.spyOn(useCartStore(), 'seedAfterSignIn').mockResolvedValue(undefined);
         signIn();
         wireBadge();
 
         return nextTick().then(() => {
             expect(seed).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    it('never seeds for a session that holds no cart key: every read it makes would only be refused', () => {
-        const seed = vi.spyOn(useCartStore(), 'seedAfterSignIn').mockResolvedValue(undefined);
-        signIn();
-        useSessionStore().setAbilities({ tenant: [], platform: [] });
-        wireBadge();
-
-        return nextTick().then(() => {
-            expect(seed).not.toHaveBeenCalled();
         });
     });
 });

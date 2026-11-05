@@ -24,7 +24,6 @@ describe('another account taking the tab over', () => {
         const session = useSessionStore();
         session.viewer = asStub<SessionViewer>({ id: 'a', email: 'a@example.com' });
         session.accessToken = 'tok-a';
-        session.setAbilities({ tenant: [['update', 'Cart']], platform: [] });
         effectScope().run(() => cartModule.navigation?.[0]?.badge?.());
         await nextTick();
         expect(seed).toHaveBeenCalledTimes(1);

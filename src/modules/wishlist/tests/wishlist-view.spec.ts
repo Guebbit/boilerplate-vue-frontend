@@ -87,12 +87,11 @@ const mountWishlist = (
     });
 };
 
-/** Signs in a shopper: the only role that holds the key a cart needs. */
+/** Signs in a shopper: any signed-in account may shop. */
 const signInAsShopper = () => {
     const session = useSessionStore();
     session.accessToken = 'test-token';
     session.viewer = { id: 'u1', email: 'shopper@example.com', role: 'customer' };
-    session.setAbilities({ tenant: [['update', 'Cart']], platform: [] });
 };
 
 beforeEach(() => {
@@ -155,16 +154,6 @@ describe('the item list', () => {
 
         expect(wrapper.findAll('[data-test=wishlist-item]')).toHaveLength(0);
         expect(wrapper.find('.v-empty-state').exists()).toBe(true);
-    });
-});
-
-describe('the move-to-cart button and the cart key', () => {
-    it('is not offered to a role that holds no shopping key', () => {
-        useSessionStore().setAbilities({ tenant: [], platform: [] });
-        const wrapper = mountWishlist([PRODUCT_ID]);
-
-        expect(wrapper.find('[data-test=wishlist-move-to-cart]').exists()).toBe(false);
-        expect(wrapper.find('[data-test=wishlist-item]').exists()).toBe(true);
     });
 });
 

@@ -665,7 +665,7 @@ watchOrder(() => id, { onError: onMissingRecord });
 
             <template #actions>
                 <v-btn
-                    v-if="currentOrder && session.can('update', 'Cart')"
+                    v-if="currentOrder"
                     color="primary"
                     variant="tonal"
                     data-test="order-reorder"

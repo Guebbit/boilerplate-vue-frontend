@@ -10,7 +10,6 @@ import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { effectScope } from 'vue';
 import type { EffectScope } from 'vue';
-import { createMongoAbility } from '@casl/ability';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useInboxLifecycle } from '../composables/use-inbox-lifecycle';
 import { useInboxStore } from '../store';
@@ -81,15 +80,6 @@ const row = (id: string): Notification => ({
 });
 
 /**
- * Lets the session hold the key every signed-in account has.
- */
-const grantNotificationKeys = () => {
-    useSessionStore().tenantAbility = createMongoAbility([
-        { action: 'read', subject: 'Notification' }
-    ]);
-};
-
-/**
  * Signs a person in.
  *
  * @param id - Their user id.
@@ -147,18 +137,8 @@ describe('a guest', () => {
 });
 
 describe('a signed-in person', () => {
-    it('without the key gets nothing either', async () => {
+    it('gets the inbox read and the notifications stream opened', async () => {
         signIn();
-        start();
-        await flushPromises();
-
-        expect(createSseClient).not.toHaveBeenCalled();
-        expect(readCount()).toBe(0);
-    });
-
-    it('with the key gets the inbox read and the notifications stream opened', async () => {
-        signIn();
-        grantNotificationKeys();
         inboxOnServer = [row('n1')];
         const mayRead = start();
         await flushPromises();
@@ -176,7 +156,6 @@ describe('a signed-in person', () => {
 
     it('is read for again every time the stream opens, since a missed frame is never replayed', async () => {
         signIn();
-        grantNotificationKeys();
         start();
         await flushPromises();
         const before = readCount();
@@ -187,22 +166,9 @@ describe('a signed-in person', () => {
         expect(readCount()).toBe(before + 1);
     });
 
-    it('finds out about a late-arriving key and starts then', async () => {
-        signIn();
-        start();
-        await flushPromises();
-        expect(createSseClient).not.toHaveBeenCalled();
-
-        grantNotificationKeys();
-        await flushPromises();
-
-        expect(createSseClient).toHaveBeenCalledTimes(1);
-    });
-
     it('toasts a failed read instead of failing silently', async () => {
         readFailure = { status: 500, errors: [{ message: 'boom' }] };
         signIn();
-        grantNotificationKeys();
         start();
         await flushPromises();
 
@@ -219,7 +185,6 @@ describe('a signed-in person', () => {
  */
 const open = async () => {
     signIn();
-    grantNotificationKeys();
     start();
     await flushPromises();
     return lastCallbacks();
@@ -256,7 +221,6 @@ describe("the stream's frames", () => {
 describe('the end of a session', () => {
     it('closes the stream and takes the notifications with it', async () => {
         signIn();
-        grantNotificationKeys();
         inboxOnServer = [row('n1')];
         start();
         await flushPromises();
@@ -270,7 +234,6 @@ describe('the end of a session', () => {
 
     it('swaps the inbox for the next person on the same tab', async () => {
         signIn('u1');
-        grantNotificationKeys();
         inboxOnServer = [row('n1')];
         start();
         await flushPromises();
@@ -286,7 +249,6 @@ describe('the end of a session', () => {
 
     it('closes the stream when the component that started it goes', async () => {
         signIn();
-        grantNotificationKeys();
         start();
         await flushPromises();
 
@@ -299,7 +261,6 @@ describe('the end of a session', () => {
 describe('a language switch', () => {
     it('rewrites the notifications in the new language', async () => {
         signIn();
-        grantNotificationKeys();
         inboxOnServer = [row('n1')];
         start();
         await flushPromises();

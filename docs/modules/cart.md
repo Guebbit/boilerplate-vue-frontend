@@ -120,12 +120,12 @@ sequenceDiagram
 | `components/GuestCart.vue`          | The guest's page: priced lines, steppers, "Sign in to check out". No shipping, address or payment: checkout needs an account.                                                             |
 | `views/CartEntry.vue`               | The route's screen: `GuestCart` for a guest, `Cart` for a signed-in visitor.                                                                                                              |
 
-The route is `access: 'open'`: a guest passes, and `meta.can` (`update Cart`) is asked of signed-in
-visitors only, so staff, who hold no basket, are still turned away.
+The route is `access: 'open'` and asks no permission: a guest passes, and so does every signed-in
+account, staff included, since every account shops.
 
 ### The merge
 
-When a session that may shop appears, the shell's badge accessor calls `seedAfterSignIn`. With a
+When a signed-in session appears, the shell's badge accessor calls `seedAfterSignIn`. With a
 guest cart it sends every line in one `POST /cart/merge`, which adds each by the rule of
 `POST /cart/items`: a product already in the cart **grows** by the line's quantity. The answer is the
 merged cart and **one result per submitted line**:
@@ -389,9 +389,9 @@ Store `cart`, from `store.ts`. Only what the setup function returns is listed �
 
 ## Screens
 
-| Path   | Route name | Access | Permission    | View                  |
-| ------ | ---------- | ------ | ------------- | --------------------- |
-| `cart` | `Cart`     | `open` | `update Cart` | `views/CartEntry.vue` |
+| Path   | Route name | Access | Permission | View                  |
+| ------ | ---------- | ------ | ---------- | --------------------- |
+| `cart` | `Cart`     | `open` | —          | `views/CartEntry.vue` |
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 

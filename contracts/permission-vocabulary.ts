@@ -46,7 +46,6 @@ export const PERMISSION_SUBJECTS = [
     "ApiKey",
     "ObservabilitySnapshot",
     "Example",
-    "Notification",
     "Stats"
 ] as const;
 
@@ -60,7 +59,6 @@ export const PERMISSION_RULE_IDS = [
     "create:Product",
     "update:Product",
     "delete:Product",
-    "update:Cart",
     "checkout:Cart",
     "read:Order",
     "display:Order",
@@ -113,8 +111,6 @@ export const PERMISSION_RULE_IDS = [
     "delete:Example",
     "display:Example",
     "admin:Example",
-    "read:Notification",
-    "delete:Notification",
     "read:Stats"
 ] as const;
 
@@ -126,7 +122,6 @@ export const PERMISSION_SET_NAMES = [
     "ProductStorefront",
     "ProductDisplay",
     "ProductManagement",
-    "CartShopping",
     "CartCheckout",
     "OrderOwn",
     "OrderDisplay",
@@ -169,7 +164,6 @@ export const PERMISSION_SET_NAMES = [
     "ExampleAuthoring",
     "ExampleDisplay",
     "ExampleManagement",
-    "NotificationOwn",
     "StatsDisplay"
 ] as const;
 
@@ -197,7 +191,7 @@ export type StepUpTier = (typeof STEP_UP_TIERS)[number];
 /** Per subject, the actions a declared rule carries on it: the only valid pairs. */
 export const PERMISSION_PAIRS = {
     "Product": ["read", "display", "create", "update", "delete"],
-    "Cart": ["update", "checkout"],
+    "Cart": ["checkout"],
     "Order": ["read", "display", "create", "update", "delete", "override", "export"],
     "Payment": ["read", "display", "create"],
     "Refund": ["create"],
@@ -215,7 +209,6 @@ export const PERMISSION_PAIRS = {
     "ApiKey": ["read", "create", "delete"],
     "ObservabilitySnapshot": ["read"],
     "Example": ["read", "create", "update", "delete", "display", "admin"],
-    "Notification": ["read", "delete"],
     "Stats": ["read"]
 } as const;
 

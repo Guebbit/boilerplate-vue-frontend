@@ -178,7 +178,7 @@ describe('enforceRouteAccess', () => {
     });
 
     it('lets a guest into an open route, with no redirect and no toast', () => {
-        const result = enforceRouteAccess(route('open', ['update', 'Cart']), routerWithLogin);
+        const result = enforceRouteAccess(route('open', ['checkout', 'Cart']), routerWithLogin);
 
         expect(result).toBeUndefined();
         expect(addMessageMock).not.toHaveBeenCalled();
@@ -187,7 +187,7 @@ describe('enforceRouteAccess', () => {
     it('sends a signed-in visitor without the rule home from an open route', () => {
         visitorStanding.isAuth.value = true;
 
-        const result = enforceRouteAccess(route('open', ['update', 'Cart']), routerWithLogin);
+        const result = enforceRouteAccess(route('open', ['checkout', 'Cart']), routerWithLogin);
 
         expect(addMessageMock).toHaveBeenCalledWith('navigation.error-forbidden');
         expect(result).toEqual({ name: 'Home', params: { locale: 'en' } });

@@ -47,13 +47,6 @@ const session = useSessionStore();
 const { isAuth } = storeToRefs(session);
 
 /**
- * Whether the session's keys let it shop at all. Staff and administrators hold none, so for
- * them the button is not offered rather than offered and refused. A guest is not asked: they
- * shop into the cart in their browser.
- */
-const mayShop = computed(() => !isAuth.value || session.can('update', 'Cart'));
-
-/**
  * The cart store, and its in-flight flag: the button's own double-click guard. Read off
  * `storeToRefs`, not destructured off the store, so it stays reactive.
  */
@@ -127,7 +120,7 @@ const handleAddToCart = () => {
 </script>
 
 <template>
-    <div v-if="mayShop" class="flex flex-col gap-2">
+    <div class="flex flex-col gap-2">
         <v-btn
             color="primary"
             data-test="add-to-cart"

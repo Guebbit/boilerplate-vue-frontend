@@ -29,10 +29,9 @@ describe('cart route access', () => {
         expect(byName(name)?.meta?.access).toBe(access);
     });
 
-    // Staff and administrators hold no shopping key: the route is theirs to be refused at. Being
-    // `open`, the key is asked of signed-in visitors only, so a guest is not refused for lacking it.
-    it('needs the key that lets a role shop', () => {
-        expect(byName('Cart')?.meta?.can).toEqual(['update', 'Cart']);
+    // Every signed-in account shops, so the route asks no permission of anyone.
+    it('asks no permission', () => {
+        expect(byName('Cart')?.meta?.can).toBeUndefined();
     });
 
     it('declares no route this file does not know about', () => {

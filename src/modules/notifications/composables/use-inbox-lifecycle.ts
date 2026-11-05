@@ -56,10 +56,10 @@ export const useInboxLifecycle = (): ComputedRef<boolean> => {
     const inbox = useInboxStore();
 
     /**
-     * Whether this session may read notifications. Staff and administrators are signed in too and
-     * hold the key as any account does; a guest never does.
+     * Whether this session has an inbox: every signed-in account does, staff included, and a guest
+     * never does. No permission is asked.
      */
-    const mayRead = computed(() => session.isAuth && session.can('read', 'Notification'));
+    const mayRead = computed(() => session.isAuth);
 
     /**
      * The open stream, or `undefined` when none is.

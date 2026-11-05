@@ -82,7 +82,6 @@ const signIn = () => {
     const session = useSessionStore();
     session.accessToken = 'test-token';
     session.viewer = { id: 'u1', email: 'shopper@example.com', role: 'customer' };
-    session.setAbilities({ tenant: [['update', 'Cart']], platform: [] });
 };
 
 /**
@@ -185,13 +184,6 @@ describe('the shelf', () => {
         expect(
             mountButton(IN_STOCK).get('[data-test=add-to-cart]').attributes('disabled')
         ).toBeUndefined();
-    });
-
-    it('is not offered to a signed-in role that holds no shopping key', () => {
-        signIn();
-        useSessionStore().setAbilities({ tenant: [], platform: [] });
-
-        expect(mountButton(IN_STOCK).find('[data-test=add-to-cart]').exists()).toBe(false);
     });
 
     it('is enabled for a guest too, whose cart is a list in their own browser', () => {
