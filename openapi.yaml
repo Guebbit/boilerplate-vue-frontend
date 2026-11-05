@@ -2885,7 +2885,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AddressInput"
+              $ref: "#/components/schemas/CreateAddressRequest"
       responses:
         "201":
           description: The created address
@@ -4828,48 +4828,6 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
-    delete:
-      tags:
-        - Users
-      summary: Delete user
-      description: Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`.
-      operationId: deleteUser
-      x-alias-of: deleteUserById
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/HardDeleteParam"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DeleteUserRequest"
-      responses:
-        "204":
-          $ref: "#/components/responses/NoContent"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "413":
-          $ref: "#/components/responses/PayloadTooLarge"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: users
   /users/{id}:
     x-versioned:
       - get
@@ -6119,49 +6077,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
-        "413":
-          $ref: "#/components/responses/PayloadTooLarge"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: products
-    delete:
-      tags:
-        - Products
-      summary: Delete product
-      description: Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /products/{id}/restore`.
-      operationId: deleteProduct
-      x-alias-of: deleteProductById
-      security:
-        - bearerAuth: []
-        - apiKeyAuth: []
-        - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/HardDeleteParam"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DeleteProductRequest"
-      responses:
-        "204":
-          $ref: "#/components/responses/NoContent"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -7527,55 +7442,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
-        "413":
-          $ref: "#/components/responses/PayloadTooLarge"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: orders
-    delete:
-      tags:
-        - Orders
-      summary: Delete order
-      description: Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record, which is only allowed for an order that is canceled and was never paid (409 `ORDER_NOT_CANCELED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel); a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete hides a canceled order from its buyer (409 `ORDER_NOT_CANCELED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`.
-      operationId: deleteOrder
-      x-error-codes:
-        "409":
-          - ORDER_HAS_MONEY_HISTORY
-          - ORDER_INVOICED
-          - ORDER_NOT_CANCELED
-      x-alias-of: deleteOrderById
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/HardDeleteParam"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DeleteOrderRequest"
-      responses:
-        "204":
-          $ref: "#/components/responses/NoContent"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -15008,7 +14874,8 @@ components:
       required: false
       schema:
         type: boolean
-      description: Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
+        default: false
+      description: Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path, a `true` from either wins.
     IdPathParam:
       name: id
       in: path
@@ -17525,7 +17392,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Address"
-    AddressInput:
+    CreateAddressRequest:
       type: object
       additionalProperties: false
       required:
@@ -19836,17 +19703,6 @@ components:
           description: Optional user profile image
         locale:
           $ref: "#/components/schemas/Locale"
-    DeleteUserRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        hardDelete:
-          type: boolean
-          default: false
     ReplaceUserByIdRequest:
       type: object
       additionalProperties: false
@@ -20610,17 +20466,6 @@ components:
             type: string
             maxLength: 50
             minLength: 1
-    DeleteProductRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        hardDelete:
-          type: boolean
-          default: false
     FacetCount:
       type: object
       additionalProperties: false
@@ -21576,17 +21421,6 @@ components:
           items:
             $ref: "#/components/schemas/OrderLineInput"
       description: Create a new order.
-    DeleteOrderRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        hardDelete:
-          type: boolean
-          default: false
     SearchOrdersRequest:
       type: object
       additionalProperties: false

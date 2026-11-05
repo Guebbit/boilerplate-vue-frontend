@@ -1501,7 +1501,7 @@ export interface AddressesResponse {
     addresses: Address[];
 }
 
-export interface AddressInput {
+export interface CreateAddressRequest {
     /**
      * @minLength 1
      * @maxLength 50
@@ -3558,11 +3558,6 @@ export interface CreateUserRequestMultipart {
     locale?: Locale;
 }
 
-export interface DeleteUserRequest {
-    id: Id;
-    hardDelete?: boolean;
-}
-
 export interface ReplaceUserByIdRequest {
     /**
      * @minLength 3
@@ -4072,11 +4067,6 @@ export interface CreateProductRequestMultipart {
      * @items.maxLength 50
      */
     tags?: string[];
-}
-
-export interface DeleteProductRequest {
-    id: Id;
-    hardDelete?: boolean;
 }
 
 export interface FacetCount {
@@ -4674,11 +4664,6 @@ export interface CreateOrderRequest {
      * @maxItems 1000
      */
     items: OrderLineInput[];
-}
-
-export interface DeleteOrderRequest {
-    id: Id;
-    hardDelete?: boolean;
 }
 
 export interface SearchOrdersRequest {
@@ -6969,7 +6954,7 @@ export type IfMatchHeaderParameter = string;
 export type IdParamParameter = Id[];
 
 /**
- * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
+ * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path, a `true` from either wins.
  */
 export type HardDeleteParamParameter = boolean;
 
@@ -7236,16 +7221,9 @@ export type ListUsersParams = {
     purchaseHoldReview?: true;
 };
 
-export type DeleteUserParams = {
-    /**
-     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
-     */
-    hardDelete?: HardDeleteParamParameter;
-};
-
 export type DeleteUserByIdParams = {
     /**
-     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
+     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path, a `true` from either wins.
      */
     hardDelete?: HardDeleteParamParameter;
 };
@@ -7341,16 +7319,9 @@ export type ListProductsParams = {
     deleted?: boolean;
 };
 
-export type DeleteProductParams = {
-    /**
-     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
-     */
-    hardDelete?: HardDeleteParamParameter;
-};
-
 export type DeleteProductByIdParams = {
     /**
-     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
+     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path, a `true` from either wins.
      */
     hardDelete?: HardDeleteParamParameter;
 };
@@ -7418,16 +7389,9 @@ export type ListOrdersParams = {
     returnStatus?: OrderReturnStatus;
 };
 
-export type DeleteOrderParams = {
-    /**
-     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
-     */
-    hardDelete?: HardDeleteParamParameter;
-};
-
 export type DeleteOrderByIdParams = {
     /**
-     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
+     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path, a `true` from either wins.
      */
     hardDelete?: HardDeleteParamParameter;
 };
@@ -8999,7 +8963,7 @@ export const listAddresses = (
  * @summary Add an address
  */
 export const addAddress = (
-    addressInput: AddressInput,
+    createAddressRequest: CreateAddressRequest,
     options?: SecondParameter<typeof orvalMutator<Address>>
 ) => {
     return orvalMutator<Address>(
@@ -9007,7 +8971,7 @@ export const addAddress = (
             url: `/account/addresses`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: addressInput
+            data: createAddressRequest
         },
         options
     );
@@ -9638,27 +9602,6 @@ export const createUserWithMultipart = (
 };
 
 /**
- * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`.
- * @summary Delete user
- */
-export const deleteUser = (
-    deleteUserRequest: DeleteUserRequest,
-    params?: DeleteUserParams,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        {
-            url: `/users`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: deleteUserRequest,
-            params
-        },
-        options
-    );
-};
-
-/**
  * Returns the full profile of the user identified by `{id}`. Functionally equivalent to `GET /users?id={id}`.
  * @summary User details
  */
@@ -10101,27 +10044,6 @@ export const createProductWithMultipart = (
             method: 'POST',
             headers: { 'Content-Type': 'multipart/form-data' },
             data: formData
-        },
-        options
-    );
-};
-
-/**
- * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /products/{id}/restore`.
- * @summary Delete product
- */
-export const deleteProduct = (
-    deleteProductRequest: DeleteProductRequest,
-    params?: DeleteProductParams,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        {
-            url: `/products`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: deleteProductRequest,
-            params
         },
         options
     );
@@ -10697,27 +10619,6 @@ export const createOrder = (
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: createOrderRequest
-        },
-        options
-    );
-};
-
-/**
- * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record, which is only allowed for an order that is canceled and was never paid (409 `ORDER_NOT_CANCELED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel); a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete hides a canceled order from its buyer (409 `ORDER_NOT_CANCELED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`.
- * @summary Delete order
- */
-export const deleteOrder = (
-    deleteOrderRequest: DeleteOrderRequest,
-    params?: DeleteOrderParams,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        {
-            url: `/orders`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: deleteOrderRequest,
-            params
         },
         options
     );
@@ -12954,7 +12855,6 @@ export type CreateUserResult = NonNullable<Awaited<ReturnType<typeof createUser>
 export type CreateUserWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof createUserWithMultipart>>
 >;
-export type DeleteUserResult = NonNullable<Awaited<ReturnType<typeof deleteUser>>>;
 export type GetUserByIdResult = NonNullable<Awaited<ReturnType<typeof getUserById>>>;
 export type ReplaceUserByIdResult = NonNullable<Awaited<ReturnType<typeof replaceUserById>>>;
 export type ReplaceUserByIdWithMultipartResult = NonNullable<
@@ -12988,7 +12888,6 @@ export type CreateProductResult = NonNullable<Awaited<ReturnType<typeof createPr
 export type CreateProductWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof createProductWithMultipart>>
 >;
-export type DeleteProductResult = NonNullable<Awaited<ReturnType<typeof deleteProduct>>>;
 export type GetCatalogFacetsResult = NonNullable<Awaited<ReturnType<typeof getCatalogFacets>>>;
 export type GetProductByIdResult = NonNullable<Awaited<ReturnType<typeof getProductById>>>;
 export type ReplaceProductByIdResult = NonNullable<Awaited<ReturnType<typeof replaceProductById>>>;
@@ -13030,7 +12929,6 @@ export type MoveWishlistItemToCartResult = NonNullable<
 >;
 export type ListOrdersResult = NonNullable<Awaited<ReturnType<typeof listOrders>>>;
 export type CreateOrderResult = NonNullable<Awaited<ReturnType<typeof createOrder>>>;
-export type DeleteOrderResult = NonNullable<Awaited<ReturnType<typeof deleteOrder>>>;
 export type SearchOrdersResult = NonNullable<Awaited<ReturnType<typeof searchOrders>>>;
 export type GetOrderByIdResult = NonNullable<Awaited<ReturnType<typeof getOrderById>>>;
 export type ReplaceOrderByIdResult = NonNullable<Awaited<ReturnType<typeof replaceOrderById>>>;

@@ -81,7 +81,7 @@ const offerSetAsDefault = computed(() => !editing && addresses.value.length > 0)
 const setAsDefaultOnAdd = ref(false);
 
 /**
- * The dialog's fields: every `AddressInput` string, optional ones as empty strings.
+ * The dialog's fields: every `CreateAddressRequest` string, optional ones as empty strings.
  */
 interface AddressForm {
     label: string;

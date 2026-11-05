@@ -13,7 +13,7 @@ import {
 } from '@api/schemas';
 
 /**
- * Maximum length of each address field, as the API enforces it (`AddressInput.maxLength`).
+ * Maximum length of each address field, as the API enforces it (`CreateAddressRequest.maxLength`).
  */
 export const ADDRESS_MAX = {
     label: addAddressBodyLabelMax,

@@ -16,7 +16,12 @@ import {
     setDefaultAddress as apiSetDefaultAddress,
     removeAddress as apiRemoveAddress
 } from '@api';
-import type { Address, AddressesResponse, AddressInput, UpdateAddressRequest } from '@types';
+import type {
+    Address,
+    AddressesResponse,
+    CreateAddressRequest,
+    UpdateAddressRequest
+} from '@types';
 
 /**
  * The visitor's address book. Scoped to `ProfileAddresses.vue`, the only component that renders
@@ -75,7 +80,7 @@ export const useAddressesStore = defineStore('accountAddresses', () => {
      * @param address - The entry's fields; `default: true` claims the default slot.
      * @returns A promise resolving with the updated book.
      */
-    const addAddress = (address: AddressInput) =>
+    const addAddress = (address: CreateAddressRequest) =>
         fetchAny(() => apiAddAddress(address).then(() => reloadBook()));
 
     /**

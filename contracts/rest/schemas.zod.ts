@@ -5462,21 +5462,6 @@ export const CreateUserResponse = zod.strictObject({
     purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`.
- * @summary Delete user
- */
-export const DeleteUserQueryParams = zod.strictObject({
-    hardDelete: zod.boolean().optional()
-});
-export const deleteUserBodyIdMax = 64;
-export const deleteUserBodyIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const deleteUserBodyHardDeleteDefault = false;
-export const DeleteUserBody = zod.strictObject({
-    id: zod.string().min(1).max(deleteUserBodyIdMax).regex(deleteUserBodyIdRegExp),
-    hardDelete: zod.boolean().default(deleteUserBodyHardDeleteDefault)
-});
-export const DeleteUserResponse = zod.void();
-/**
  * Returns the full profile of the user identified by `{id}`. Functionally equivalent to `GET /users?id={id}`.
  * @summary User details
  */
@@ -5733,8 +5718,9 @@ export const deleteUserByIdPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const DeleteUserByIdParams = zod.strictObject({
     id: zod.string().min(1).max(deleteUserByIdPathIdMax).regex(deleteUserByIdPathIdRegExp)
 });
+export const deleteUserByIdQueryHardDeleteDefault = false;
 export const DeleteUserByIdQueryParams = zod.strictObject({
-    hardDelete: zod.boolean().optional()
+    hardDelete: zod.boolean().default(deleteUserByIdQueryHardDeleteDefault)
 });
 export const deleteUserByIdHeaderIfMatchMax = 200;
 export const DeleteUserByIdHeader = zod.strictObject({
@@ -7554,21 +7540,6 @@ export const CreateProductResponse = zod.strictObject({
         .optional()
 });
 /**
- * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /products/{id}/restore`.
- * @summary Delete product
- */
-export const DeleteProductQueryParams = zod.strictObject({
-    hardDelete: zod.boolean().optional()
-});
-export const deleteProductBodyIdMax = 64;
-export const deleteProductBodyIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const deleteProductBodyHardDeleteDefault = false;
-export const DeleteProductBody = zod.strictObject({
-    id: zod.string().min(1).max(deleteProductBodyIdMax).regex(deleteProductBodyIdRegExp),
-    hardDelete: zod.boolean().default(deleteProductBodyHardDeleteDefault)
-});
-export const DeleteProductResponse = zod.void();
-/**
  * Every category and tag the PUBLIC catalogue carries, each with how many visible products hold it — what a storefront renders as filter chips. Sorted by count descending, then name. Counts follow the same visibility rule the listing does, so one chip alone never leads to an empty page. Counts are catalogue-wide: they do not follow the filters already chosen.
  * @summary Catalogue facets
  */
@@ -7934,8 +7905,9 @@ export const deleteProductByIdPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const DeleteProductByIdParams = zod.strictObject({
     id: zod.string().min(1).max(deleteProductByIdPathIdMax).regex(deleteProductByIdPathIdRegExp)
 });
+export const deleteProductByIdQueryHardDeleteDefault = false;
 export const DeleteProductByIdQueryParams = zod.strictObject({
-    hardDelete: zod.boolean().optional()
+    hardDelete: zod.boolean().default(deleteProductByIdQueryHardDeleteDefault)
 });
 export const deleteProductByIdHeaderIfMatchMax = 200;
 export const DeleteProductByIdHeader = zod.strictObject({
@@ -9757,21 +9729,6 @@ export const CreateOrderResponse = zod.strictObject({
     deletedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record, which is only allowed for an order that is canceled and was never paid (409 `ORDER_NOT_CANCELED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel); a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete hides a canceled order from its buyer (409 `ORDER_NOT_CANCELED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`.
- * @summary Delete order
- */
-export const DeleteOrderQueryParams = zod.strictObject({
-    hardDelete: zod.boolean().optional()
-});
-export const deleteOrderBodyIdMax = 64;
-export const deleteOrderBodyIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const deleteOrderBodyHardDeleteDefault = false;
-export const DeleteOrderBody = zod.strictObject({
-    id: zod.string().min(1).max(deleteOrderBodyIdMax).regex(deleteOrderBodyIdRegExp),
-    hardDelete: zod.boolean().default(deleteOrderBodyHardDeleteDefault)
-});
-export const DeleteOrderResponse = zod.void();
-/**
  * Searches and filters orders via a JSON request body. Functionally equivalent to `GET /orders`.
  * A caller holding `read:Order` alone sees their own orders, and the `userId` filter is ignored for them; `display:Order` reads every order and may narrow by `userId`.
  * @summary Search orders (DTO-friendly)
@@ -10786,8 +10743,9 @@ export const deleteOrderByIdPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const DeleteOrderByIdParams = zod.strictObject({
     id: zod.string().min(1).max(deleteOrderByIdPathIdMax).regex(deleteOrderByIdPathIdRegExp)
 });
+export const deleteOrderByIdQueryHardDeleteDefault = false;
 export const DeleteOrderByIdQueryParams = zod.strictObject({
-    hardDelete: zod.boolean().optional()
+    hardDelete: zod.boolean().default(deleteOrderByIdQueryHardDeleteDefault)
 });
 export const deleteOrderByIdHeaderIfMatchMax = 200;
 export const DeleteOrderByIdHeader = zod.strictObject({

@@ -39,7 +39,7 @@ const requiredAddressText = (max: number, requiredKey: string) =>
     addressText(max).min(1, { error: () => translate(requiredKey) });
 
 /**
- * The address-book entry form (`AddressInput`): five required strings plus an optional label and
+ * The address-book entry form (`CreateAddressRequest`): five required strings plus an optional label and
  * phone. Add and replace share the contract's bounds, so the add operation's constants stand for
  * both.
  */
