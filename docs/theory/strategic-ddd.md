@@ -61,7 +61,7 @@ and the kinds differ enormously in what they cost when the upstream moves:
 
 [Modules](../modules/index.md#the-whole-map) draws the map once, and that is the only place a kind
 is drawn. Each module's page, under "The map", links there and keeps one bullet per edge saying why.
-`tests/cross-cutting/module-map.spec.ts` holds the overview to `MODULE_EDGES`. A
+`tests/cross-cutting/module-map.spec.ts` holds the overview to `dependsOn`. A
 `module.ts` docblock points at its page and states no kind. `cart` reaches four siblings, and its
 page says how it depends on each: three `published-language` vocabularies (`delivery`, `payments`,
 `account`) and one `customer-supplier` call (`products`, whose cached catalogue it drops after each
@@ -80,8 +80,8 @@ field someone is tempted to add:
   developer's annotations agree with each other — the actual proof still needs a spec scanning every
   `.ts` and `.vue` file for `@/modules/` strings.
 - **The enforcement that matters is structural.** `eslint.config.ts` generates one
-  `eslint-plugin-boundaries` policy per module from a hand-maintained `MODULE_EDGES` map: a module
-  may reach only the siblings that map names for it — and only through their `index.ts` barrel,
+  `eslint-plugin-boundaries` policy per module from the `dependsOn` in each module's `module.yaml`: a module
+  may reach only the siblings that list names for it — and only through their `index.ts` barrel,
   never an internal file — checked at the resolved import on every `npm run lint`, dynamic
   `import()` included. A new coupling fails immediately, at the line that adds it, rather than on a
   separate spec run.

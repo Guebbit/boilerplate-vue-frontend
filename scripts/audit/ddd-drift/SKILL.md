@@ -59,7 +59,7 @@ grep -v '^\s*\*' src/modules/*/index.ts
 rg -n "from '@/modules/[a-z-]+'" src/modules -g '!**/tests/**'
 ```
 
-Also read `src/modules.ts` and `scripts/module-edges.ts`. A count, a list, "only", "none", "both" in a frozen
+Also read `src/modules.ts` and `src/modules/*/module.yaml`. A count, a list, "only", "none", "both" in a frozen
 claim is checked against these.
 
 ### 2 — F2: the client deciding a server rule
@@ -136,7 +136,7 @@ Then print only the DRIFT and ROUTE rows, F2 first, and one totals line.
 
 Already guarded elsewhere — do not report these:
 
-- Lint: `index.ts`-only reach and `MODULE_EDGES`, foundation → shop, the tier ladder, `domain/` purity, a
+- Lint: `index.ts`-only reach and `dependsOn`, foundation → shop, the tier ladder, `domain/` purity, a
   module importing its own barrel, a `.vue` calling `@api` or runtime `@types`.
 - Specs: `published-language`, `module-coupling`, `route-name-coupling`,
   `module-file-shapes`, `module-groups`, `registry`, `module-map`, and the sitemap block.

@@ -2,7 +2,7 @@
 /**
  * The frontend twin of the backend's `measure:demo-strip`: how far "the demo
  * shop is removable" actually is, measured rather than assumed. Copies the checkout to a SCRATCH
- * directory, deletes every module `scripts/module-groups.ts` puts in `shop` or `example`, and runs `type-check-only`, `lint`,
+ * directory, deletes every module a `module.yaml` puts in `shop` or `example`, and runs `type-check-only`, `lint`,
  * `build-only` and the cross-cutting specs against what's left.
  *
  * NOT `demo:remove` — that script edits THIS checkout for real; this one applies the same edits
@@ -22,13 +22,8 @@ import { spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { demoModuleNames } from '../module-groups';
-import {
-    pruneModuleEdges,
-    pruneModuleGroups,
-    removeModuleFolders,
-    stripModuleRegistry
-} from './demo-remove-registry';
+import { demoModuleNames } from '../module-manifest';
+import { removeModuleFolders, stripModuleRegistry } from './demo-remove-registry';
 import { removeResidueSpecs } from './demo-remove-tests';
 
 /** The repo root. `import.meta.url` rather than `__dirname`: this script runs as ESM. */
@@ -73,15 +68,13 @@ const assembleScratchCopy = (): void => {
 };
 
 /**
- * Apply `demo:remove`'s own edits to the scratch copy: the module folders, the registry, the
- * coupling graph, the group map and the cross-module specs. The checks below then ask whether what
+ * Apply `demo:remove`'s own edits to the scratch copy: the module folders (which carry their
+ * `module.yaml`), the registry and the cross-module specs. The checks below then ask whether what
  * is left stands up, which is the question `demo:remove` has to answer for a real checkout.
  */
 const stripDemoModules = (names: readonly string[]): void => {
     removeModuleFolders(SCRATCH, names);
     stripModuleRegistry(SCRATCH, names);
-    pruneModuleEdges(SCRATCH, names);
-    pruneModuleGroups(SCRATCH, names);
     removeResidueSpecs(SCRATCH, names);
 };
 

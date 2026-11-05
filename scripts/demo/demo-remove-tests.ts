@@ -107,7 +107,7 @@ export const scannedSpecFiles = (repoRoot: string): string[] =>
  * exist would never match one and leave its spec behind the same way.
  *
  * @param repoRoot - the checkout root
- * @param knownModules - every module name that exists (`scripts/module-groups.ts`'s keys)
+ * @param knownModules - every module name that exists (the `module.yaml` folders)
  * @returns the problems; empty when every header is sound
  */
 export const headerProblems = (repoRoot: string, knownModules: readonly string[]): string[] =>

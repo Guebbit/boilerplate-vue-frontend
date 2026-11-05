@@ -1,0 +1,4 @@
+group: shop
+dependsOn:
+    - products
+    - delivery

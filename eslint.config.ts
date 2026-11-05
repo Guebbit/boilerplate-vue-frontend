@@ -15,11 +15,13 @@ import pluginJsdoc from 'eslint-plugin-jsdoc';
 import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import boundaries from 'eslint-plugin-boundaries';
 import tseslint from 'typescript-eslint';
-import { readdirSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { ALL_SPEC_GLOBS } from './scripts/e2e/cypress-spec-globs';
-import { assertAcyclicModuleEdges, MODULE_EDGES } from './scripts/module-edges';
-import { MODULE_GROUPS } from './scripts/module-groups';
+import {
+    assertAcyclicModuleEdges,
+    moduleDependsOn,
+    moduleFolderNames,
+    moduleGroups
+} from './scripts/module-manifest';
 import localRules from './scripts/eslint/index';
 import { DESIGN_POLICY } from './scripts/design-policy';
 import { designLintConfig } from './scripts/eslint/design-config';
@@ -31,58 +33,36 @@ import { designLintConfig } from './scripts/eslint/design-config';
 const localPlugin = { rules: localRules };
 
 /**
- * Every module `MODULE_GROUPS` labels `shop` — the removable pet-supply domain. Computed once
+ * Every module `module.yaml` labels `shop` — the removable pet-supply domain. Computed once
  * rather than per module below, since the list is the same for every `foundation` caller.
  */
-const shopModuleNames = Object.entries(MODULE_GROUPS)
+const shopModuleNames = Object.entries(moduleGroups)
     .filter(([, group]) => group === 'shop')
     .map(([name]) => name);
 
-/**
- * Module boundaries, one config block per module.
- *
- * A module owns everything about its domain and exposes one surface: `index.ts`. A sibling may
- * import `@/modules/<name>`; reaching `@/modules/<name>/store` or any other internal is what the
- * first pattern below stops, because the moment one happens the module stops being deletable. The
- * second pattern is coupling, not internals: a module may only reach the siblings `MODULE_EDGES`
- * names for it, so a new cross-module import fails at lint time until someone decides it belongs.
- * The third locks in the `foundation | shop` direction `MODULE_GROUPS` labels: a `foundation`
- * module ships with every deployment, so it may not import a `shop` module — the removable demo
- * domain — even one `MODULE_EDGES` would otherwise allow.
- *
- * The list is read from the filesystem rather than written out, so adding a domain never edits
- * this file — which is the same reason `src/modules.ts` is the only place that names one. Each
- * block negates the module's own path, because a module reaches its own files by the same absolute
- * `@/` spelling used everywhere else in this codebase.
- */
-const moduleFolderNames = readdirSync(fileURLToPath(new URL('src/modules', import.meta.url)), {
-    withFileTypes: true
-})
-    .filter((entry) => entry.isDirectory())
-    .map(({ name }) => name);
-
-// A cycle, or a key naming a module already deleted, must fail every `npm run lint`.
-// `moduleDependencyPolicies` below only ever checks a module against its OWN `MODULE_EDGES`
-// entry, so this is the one place the graph is walked as a whole.
-assertAcyclicModuleEdges(MODULE_EDGES, moduleFolderNames);
+// A cycle must fail every `npm run lint`. `moduleDependencyPolicies` below only ever checks a
+// module against its OWN `dependsOn`, so this is the one place the graph is walked as a whole.
+assertAcyclicModuleEdges(moduleDependsOn);
 
 /**
- * The "one door" and `MODULE_EDGES` coupling, as `eslint-plugin-boundaries` policies — one array
- * per module, generated the same way the old `no-restricted-imports` blocks were.
+ * Module boundaries, as `eslint-plugin-boundaries` policies — one array per module folder, read
+ * from `src/modules` so adding a domain never edits this file.
  *
- * Two things per module: it may reach a listed sibling's `index.ts` and nothing else of it
+ * Two things per module: it may reach a `dependsOn` sibling's `index.ts` and nothing else of it
  * (reaching `@/modules/<name>/store` directly is what makes a module stop being deletable), and if
- * it is `foundation` (`MODULE_GROUPS`) it may not reach a `shop` module even one `MODULE_EDGES`
+ * it is `foundation` (`group` in `module.yaml`) it may not reach a `shop` module even one `dependsOn`
  * would otherwise allow — `shop` is the removable demo domain, so `foundation` cannot depend on it.
  *
- * `MODULE_EDGES`' values are BACKEND module names (see that file's own docblock): a value with no
+ * `dependsOn` values are BACKEND module names (see `scripts/module-manifest.ts`): a value with no
  * matching FE folder — `addresses`, `audit-logs`, `invoicing` — never resolves to an import
  * `boundaries/dependencies` could see, so it is filtered out here rather than left to name an
  * element pattern nothing under `src/modules` will ever match.
  */
 const moduleDependencyPolicies = moduleFolderNames.flatMap((name) => {
-    const reaches = (MODULE_EDGES[name] ?? []).filter((reach) => moduleFolderNames.includes(reach));
-    const isFoundation = MODULE_GROUPS[name] === 'foundation';
+    const reaches = (moduleDependsOn[name] ?? []).filter((reach) =>
+        moduleFolderNames.includes(reach)
+    );
+    const isFoundation = moduleGroups[name] === 'foundation';
     return [
         ...(reaches.length > 0
             ? [
@@ -125,7 +105,7 @@ const moduleDependencyPolicies = moduleFolderNames.flatMap((name) => {
                       disallow: {
                           to: { element: { type: 'module', captured: { module: shopModuleNames } } }
                       },
-                      message: `${name} is foundation (MODULE_GROUPS in scripts/module-groups.ts): it may not import a shop module. Foundation ships with every deployment and must not depend on the removable shop domain.`
+                      message: `${name} is foundation (group in its module.yaml): it may not import a shop module. Foundation ships with every deployment and must not depend on the removable shop domain.`
                   }
               ]
             : [])

@@ -195,8 +195,8 @@ module owns (`src/kernel/slots.ts`) — the product page's cart and wishlist but
 bar's notifications bell — so the owner never imports its contributors.
 
 Which siblings a module may reach at all is enforced separately, by a generated ESLint rule rather
-than a manifest field: `eslint.config.ts`'s `MODULE_EDGES` map names, per module, which siblings it
-may import, and a reach outside that list fails `npm run lint` at the offending line.
+than a manifest field: each module's `module.yaml` `dependsOn` names which siblings it
+may import (`eslint.config.ts` reads it), and a reach outside that list fails `npm run lint` at the offending line.
 
 ### Why three fields are lazy
 

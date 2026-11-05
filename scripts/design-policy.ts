@@ -6,8 +6,7 @@
  * rules, and by the design specs under `tests/`. Pure data: it imports the theme's colour maps
  * and nothing else, so a spec can load it without a browser.
  *
- * Sibling of `module-edges.ts` and `module-groups.ts`, which `eslint.config.ts` imports the same
- * way. What each knob means, and how to change one: `docs/tools/design-lint.md`.
+ * Sibling of `module-manifest.ts`, which `eslint.config.ts` imports the same way. What each knob means, and how to change one: `docs/tools/design-lint.md`.
  */
 import {
     VARIATION_FAMILIES,

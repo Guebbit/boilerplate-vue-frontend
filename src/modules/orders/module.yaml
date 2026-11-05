@@ -1,0 +1,7 @@
+group: shop
+dependsOn:
+    - cart
+    - delivery
+    - payments
+    - invoicing
+    - returns

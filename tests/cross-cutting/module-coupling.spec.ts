@@ -1,7 +1,7 @@
 /**
- * A module's `@api` calls stay inside its declared coupling (`MODULE_EDGES`).
+ * A module's `@api` calls stay inside its declared coupling (`dependsOn`).
  *
- * `MODULE_EDGES` already stops a module reaching a sibling's SOURCE (`@/modules/<x>`) —
+ * `dependsOn` already stops a module reaching a sibling's SOURCE (`@/modules/<x>`) —
  * `eslint.config.ts`'s boundary rules. It said nothing about a module calling another module's
  * BACKEND operation directly through `@api`, because nothing in the contract said which backend
  * module an operation belonged to. `contracts/rest/operation-modules.ts` (generated from
@@ -18,7 +18,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { OPERATION_MODULES } from '../../contracts/rest/operation-modules';
-import { MODULE_EDGES } from '../../scripts/module-edges';
+import { moduleDependsOn } from '../../scripts/module-manifest';
 
 /** The `src` folder, two levels above this file. */
 const SOURCE_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../src');
@@ -76,7 +76,7 @@ describe('a module calls only the backend modules its coupling declares', () => 
         expect(moduleNames().length).toBeGreaterThan(0);
     });
 
-    it('actually finds cross-module calls to check against MODULE_EDGES', () => {
+    it('actually finds cross-module calls to check against dependsOn', () => {
         // A second canary: this test could otherwise pass vacuously forever if the `@api` import
         // regex, the `contracts/rest/operation-modules` path, or the module-name matching ever
         // broke — no violations found is meaningless unless calls were found at all.
@@ -90,12 +90,12 @@ describe('a module calls only the backend modules its coupling declares', () => 
 
     it('flags a call to an undeclared backend module', () => {
         const violations = moduleNames().flatMap((moduleName) => {
-            const allowed = new Set(MODULE_EDGES[moduleName]);
+            const allowed = new Set(moduleDependsOn[moduleName]);
             return [...backendModulesCalledBy(moduleName)]
                 .filter((owner) => !allowed.has(owner))
                 .map(
                     (owner) =>
-                        `${moduleName} calls ${owner}'s contract operations, undeclared in MODULE_EDGES`
+                        `${moduleName} calls ${owner}'s contract operations, undeclared in dependsOn`
                 );
         });
 

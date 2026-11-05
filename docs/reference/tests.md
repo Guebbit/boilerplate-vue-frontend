@@ -40,7 +40,7 @@ One file per architectural rule, asserted over every module at once. A new modul
 covered the day it is added.
 
 Module coupling is not among them: which module may import which is a generated ESLint rule
-(`MODULE_EDGES` in `eslint.config.ts`), enforced at the import on every `npm run lint` rather than
+(`dependsOn` in each `module.yaml`, read by `eslint.config.ts`), enforced at the import on every `npm run lint` rather than
 reconciled against a manifest field here. See
 [Strategic DDD](../theory/strategic-ddd.md) §2 and §4.
 
@@ -54,9 +54,9 @@ reconciled against a manifest field here. See
 | `tests/cross-cutting/viewport-matrix.spec.ts`         | Device sizes are typed in one module (`scripts/e2e/viewports.ts`) and set through one seam; `index.html`'s meta viewport never blocks zoom.                                    | [Accessibility Testing](../tools/accessibility-testing.md) |
 | `tests/cross-cutting/mutate-scope.spec.ts`            | The Stryker `mutate` scope still matches the code that exists, so it never silently stops measuring a directory.                                                               | [Mutation Testing](../tools/mutation-testing.md)           |
 | `tests/cross-cutting/mutation-safe-imports.spec.ts`   | No import pattern that would break under Stryker's instrumentation.                                                                                                            | [Mutation Testing](../tools/mutation-testing.md)           |
-| `tests/cross-cutting/module-coupling.spec.ts`         | A module's `@api` calls stay inside its declared `MODULE_EDGES` coupling — the contract-level twin of the import boundary.                                                     | [Strategic DDD](../theory/strategic-ddd.md)                |
+| `tests/cross-cutting/module-coupling.spec.ts`         | A module's `@api` calls stay inside its declared `dependsOn` coupling — the contract-level twin of the import boundary.                                                        | [Strategic DDD](../theory/strategic-ddd.md)                |
 | `tests/cross-cutting/module-file-shapes.spec.ts`      | A form schema writes no size bound as a number: a generated contract constant says it.                                                                                         | [Modules](../theory/modules.md)                            |
-| `tests/cross-cutting/module-groups.spec.ts`           | Every enabled module sits on the `foundation` / `shop` axis.                                                                                                                   | [Modules](../theory/modules.md)                            |
+| `tests/cross-cutting/module-groups.spec.ts`           | Every enabled module has a `module.yaml` with a `foundation` / `shop` group.                                                                                                   | [Modules](../theory/modules.md)                            |
 | `tests/cross-cutting/journey-headers.spec.ts`         | Every journey names the modules it needs on a `// requires-module:` line, and only real ones — so `demo:remove` can delete it.                                                 | [Journeys](#journeys--stories-that-cross-modules)          |
 | `tests/cross-cutting/route-name-coupling.spec.ts`     | A module naming a sibling's route is either a declared edge or guarded by `router.hasRoute`.                                                                                   | [Modules](../theory/modules.md)                            |
 | `tests/cross-cutting/sitemap-document.spec.ts`        | The route table on the sitemap page is exactly what the enabled modules contribute; also regenerates it.                                                                       | [Sitemap & Access Control](../theory/sitemap.md)           |

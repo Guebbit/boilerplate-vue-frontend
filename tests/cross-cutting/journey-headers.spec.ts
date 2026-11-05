@@ -12,14 +12,14 @@ import { globSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { headerProblems, scannedSpecFiles } from '../../scripts/demo/demo-remove-tests';
-import { MODULE_GROUPS } from '../../scripts/module-groups';
+import { moduleGroups } from '../../scripts/module-manifest';
 
 /** The repo root, two levels above this file. */
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 describe('the requires-module headers of the e2e specs', () => {
     it('name only real modules, and every journey carries one', () => {
-        expect(headerProblems(REPO_ROOT, Object.keys(MODULE_GROUPS))).toEqual([]);
+        expect(headerProblems(REPO_ROOT, Object.keys(moduleGroups))).toEqual([]);
     });
 
     // Canary: "no problems" must mean every spec was read, never that the scan found none.

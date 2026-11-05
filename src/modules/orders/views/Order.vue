@@ -126,7 +126,7 @@ const router = useRouter();
 /**
  * The audit-log link the history button offers, for the order currently shown — `undefined`,
  * hiding the button entirely, on a build with no `admin` module: `admin` is not a coupling this
- * module's `MODULE_EDGES` entry declares, so it is guarded rather than assumed. The
+ * module's `dependsOn` declares, so it is guarded rather than assumed. The
  * button's own `session.can('read', 'AuditLog')` check stays alongside it — one answers "does
  * this build even have an audit log", the other "may THIS visitor see it".
  */

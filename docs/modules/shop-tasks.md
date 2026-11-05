@@ -24,7 +24,7 @@
 `shop-tasks` imports no sibling. Its links name sibling routes (`OrderTarget`, `UserTarget`,
 `ReturnTarget`, `SalesOrders`, `PaymentsList`, `SalesReturns`, `PreordersBoard`,
 `InventoryLedger`); the bell binds a link only when this build ships that route, so removing a
-sibling removes the link and nothing else. No `MODULE_EDGES` entry is needed: there is no import
+sibling removes the link and nothing else. No `dependsOn` entry is needed: there is no import
 to permit.
 
 ## The story

@@ -139,7 +139,7 @@ has one, the staff page; paying itself is a component too.
 `shop` is the removable pet-supply demo domain (`npm run demo:remove`), and `example` is the one
 module that exists only to be copied when a new domain starts: it has no page of its own, its
 story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a-domain), and
-`demo:remove` deletes it with the shop (copy it first). It mirrors the paired backend's own per-module `group` field. `scripts/module-groups.ts` holds the same map in code, and
+`demo:remove` deletes it with the shop (copy it first). Every module declares its `group` (and `dependsOn`) in its own `module.yaml`, the same field names the paired backend uses; `scripts/module-manifest.ts` reads them, and
 `eslint.config.ts` refuses a `foundation` module importing a `shop` one.
 
 `example` is unclassified: it is the template a new domain is copied from, not a subdomain.

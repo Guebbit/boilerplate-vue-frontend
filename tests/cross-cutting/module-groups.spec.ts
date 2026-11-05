@@ -1,47 +1,50 @@
 /**
- * Every enabled module sits on the `foundation | shop` axis — `MODULE_GROUPS` in
- * `scripts/module-groups.ts`, the FE mirror of the backend's own `module.yaml#group` field.
+ * Every enabled module sits on the `foundation | shop` axis — the `group` in its own
+ * `src/modules/<name>/module.yaml`, the FE mirror of the backend's `module.yaml#group` field,
+ * read by `scripts/module-manifest.ts`.
  *
- * The map is hand-maintained on purpose (a label, no folder move): a module with no entry fails
- * here rather than defaulting silently, which is what makes adding one a deliberate choice
- * instead of an omission nobody notices. `eslint.config.ts`'s `foundation-may-not-import-shop`
- * rule reads the same map to lock the direction in at import time; this spec is the
- * completeness half of that guarantee.
+ * A module with no `module.yaml`, or an invalid `group`, fails here rather than defaulting
+ * silently, which is what makes adding one a deliberate choice instead of an omission nobody
+ * notices. `eslint.config.ts`'s `foundation-may-not-import-shop` rule reads the same groups to
+ * lock the direction in at import time; this spec is the completeness half of that guarantee.
  */
 
 import { describe, expect, it } from 'vitest';
 import { enabledModules } from '@/modules';
-import { demoModuleNames, MODULE_GROUPS } from '../../scripts/module-groups';
+import {
+    demoModuleNames,
+    moduleFolderNames,
+    moduleGroups,
+    moduleManifestProblems
+} from '../../scripts/module-manifest';
 
 describe('every module sits on the foundation | shop axis', () => {
+    it('gives every module folder a valid module.yaml group', () => {
+        expect(moduleManifestProblems).toEqual([]);
+    });
+
     it('gives every enabled module a group', () => {
         const missing = enabledModules
-            .filter(({ name }) => !MODULE_GROUPS[name])
-            .map(
-                ({ name }) =>
-                    `Module "${name}" has no entry in MODULE_GROUPS. Add "foundation" or "shop" to scripts/module-groups.ts.`
-            );
+            .filter(({ name }) => !moduleGroups[name])
+            .map(({ name }) => `Module "${name}" has no group in src/modules/${name}/module.yaml.`);
 
         expect(missing).toEqual([]);
     });
 
-    it('names no group entry for a module that is not enabled', () => {
-        const names = new Set(enabledModules.map(({ name }) => name));
-        const stale = Object.keys(MODULE_GROUPS)
-            .filter((name) => !names.has(name))
-            .map((name) => `MODULE_GROUPS names "${name}", which is not an enabled module.`);
+    it('has a module folder for every enabled module and the other way round', () => {
+        const names = enabledModules.map(({ name }) => name).toSorted();
 
-        expect(stale).toEqual([]);
+        expect(names).toEqual([...moduleFolderNames].toSorted());
     });
 
     /**
-     * The guard on the guard: an empty registry, or an emptied `MODULE_GROUPS`, would satisfy
-     * both checks above by checking nothing. A floor of 1 rather than this demo's module count —
+     * The guard on the guard: an empty registry, or no module.yaml read at all, would satisfy
+     * the checks above by checking nothing. A floor of 1 rather than this demo's module count —
      * deleting a domain must not also delete the canary.
      */
     it('is checking a non-empty set of modules and groups', () => {
         expect(enabledModules.length).toBeGreaterThanOrEqual(1);
-        expect(Object.keys(MODULE_GROUPS).length).toBeGreaterThanOrEqual(1);
+        expect(Object.keys(moduleGroups).length).toBeGreaterThanOrEqual(1);
     });
 
     /** `demo:remove` deletes exactly the `shop` and `example` groups, never `foundation`. */
@@ -49,6 +52,6 @@ describe('every module sits on the foundation | shop axis', () => {
         const names = demoModuleNames();
 
         expect(names.length).toBeGreaterThan(0);
-        expect(names.map((name) => MODULE_GROUPS[name])).not.toContain('foundation');
+        expect(names.map((name) => moduleGroups[name])).not.toContain('foundation');
     });
 });

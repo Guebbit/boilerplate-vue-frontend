@@ -151,9 +151,9 @@ Two more things need care that are not fields at all:
   write the subdomain in the docblock above the manifest, the way the `widgets` example above does,
   and each edge's kind in the overview's "The whole map" (`docs/modules/index.md`). Nothing reads either at runtime,
   so neither is a typed field — see [Strategic DDD](./strategic-ddd.md) §2 and §4 for why.
-- **which siblings the module may import at all** — add the module to `MODULE_EDGES` in
-  `eslint.config.ts` the moment it reaches a sibling, naming which one(s). This is the part that
-  stays enforced, on `MODULE_EDGES` rather than the manifest: an import to a sibling not in that list fails
+- **which siblings the module may import at all** — list the sibling(s) under `dependsOn` in the module's
+  `module.yaml` the moment it reaches one, next to its `group`. This is the part that
+  stays enforced, on `module.yaml` rather than the manifest: an import to a sibling not in that list fails
   `npm run lint` at the offending line.
 
 The temptation is to fill the docblock in later. Do not — the questions are easiest to answer while
@@ -255,8 +255,8 @@ Then drop its row from the pairing table in `docs/modules/index.md`, and its sid
 
 Deleting a module a sibling still imports fails `npm run build` at the unresolved `@/modules/<name>`
 specifier, with the importing file and line named — not a blank page on whichever navigation first
-crosses the gap. Drop the deleted name from `MODULE_EDGES` in `eslint.config.ts` too, so the coupling
-rule stops naming a sibling that no longer exists.
+crosses the gap. Drop the deleted name from the other modules' `dependsOn` too, so the coupling
+rule stops naming a sibling that no longer exists. The deleted module's own `module.yaml` goes with its folder.
 
 ### Read the failures — they are not all equal
 
@@ -382,8 +382,7 @@ for the invariants — every navigation entry points at a route that module decl
 ships the same set of locales — without ever naming a domain. Two DAG-shaped checks run alongside
 it rather than inside it, both at every `npm run lint`, not only in a test run: `collectModuleRoutes`
 (`kernel/registry.ts`) refuses two routes sharing a name or a normalised path, at any depth; a
-top-level check in `eslint.config.ts` refuses a cycle in `MODULE_EDGES` itself, or a key naming a
-module already deleted. That is not a substitute for actually deleting a folder.
+top-level check in `eslint.config.ts` refuses a cycle in the `dependsOn` graph itself. That is not a substitute for actually deleting a folder.
 
 ## Related pages
 

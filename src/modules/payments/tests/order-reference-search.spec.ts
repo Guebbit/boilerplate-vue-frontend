@@ -2,7 +2,7 @@
  * @module
  * Mounts the real search component and spies on the store's own read, the same pattern
  * `record-offline-payment-form.spec.ts` uses: the field state and this component's job stop at
- * EMITTING the found order's id — `payments` declares no `MODULE_EDGES` reach into `orders`, so
+ * EMITTING the found order's id — `payments` declares no `dependsOn` reach into `orders`, so
  * navigating to `OrderEdit` is the host's job, proven separately in `orders-list-view.spec.ts`.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';

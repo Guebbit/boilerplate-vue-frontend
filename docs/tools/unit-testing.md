@@ -138,7 +138,7 @@ shape it claims to be_ — and they fail on a **file that was never written**, w
 test can do, because a spec that does not exist runs no assertions and reports nothing.
 
 Module coupling is **not** in this list, deliberately. Which module may import which is a generated
-ESLint rule — `MODULE_EDGES` in `eslint.config.ts` — enforced structurally at the import on every
+ESLint rule — `dependsOn` in each `module.yaml`, read by `eslint.config.ts` — enforced structurally at the import on every
 `npm run lint`, rather than reconciled against a manifest field on a separate run. A rule that
 reads the real imports cannot disagree with them. See
 [Strategic DDD](../theory/strategic-ddd.md) §2 and §4.

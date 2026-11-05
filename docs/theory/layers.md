@@ -38,8 +38,8 @@ internals. Inside a module the opposite holds: its own files are reached by RELA
 `boundaries/dependencies` policy, so adding a domain does not edit the lint config either.
 
 Two modules that each need the other are not a dependency pair: either they are one module, or one
-of them is holding state that belongs to the other. A cycle anywhere in `MODULE_EDGES` fails every
-`npm run lint` — a top-level check in `eslint.config.ts`, `scripts/module-edges.ts`'s
+of them is holding state that belongs to the other. A cycle anywhere in the `dependsOn` graph fails every
+`npm run lint` — a top-level check in `eslint.config.ts`, `scripts/module-manifest.ts`'s
 `assertAcyclicModuleEdges` — so this is a rule for review at the moment a new edge is proposed, not
 only after the fact. `cart` and `products` once needed each other; the product page's buttons
 now reach it as contributions to a slot (`src/kernel/slots.ts`) instead of imports, so every edge

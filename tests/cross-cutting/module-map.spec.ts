@@ -2,9 +2,9 @@
  * The context map's one home: "The whole map" in `docs/modules/index.md`.
  *
  * This spec parses that Mermaid block, whose edge lines are structured, and refuses an edge that
- * `MODULE_EDGES` does not allow. A module page links to the map instead of redrawing it.
+ * `dependsOn` does not allow. A module page links to the map instead of redrawing it.
  *
- * It does not compare the map to real imports: `MODULE_EDGES` plus lint already gate those, and a
+ * It does not compare the map to real imports: `dependsOn` plus lint already gate those, and a
  * self-reported scan is what the strategic-DDD page rejects. Arrow legend, from `index.md`:
  * `-->` conformist, `==>` customer-supplier, `-.->` published-language.
  */
@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { MODULE_EDGES } from '../../scripts/module-edges';
+import { moduleDependsOn } from '../../scripts/module-manifest';
 
 /** One edge of the map: `from` depends on `to`, in the way `kind` names. */
 interface Edge {
@@ -87,9 +87,9 @@ describe('the context map in the overview', () => {
         expect(overviewEdges().length).toBeGreaterThan(5);
     });
 
-    it('draws only edges MODULE_EDGES allows', () => {
+    it('draws only edges dependsOn allows', () => {
         const refused = overviewEdges()
-            .filter(({ from, to }) => !(MODULE_EDGES[from] ?? []).includes(to))
+            .filter(({ from, to }) => !(moduleDependsOn[from] ?? []).includes(to))
             .map((edge) => key(edge));
         expect(refused).toEqual([]);
     });

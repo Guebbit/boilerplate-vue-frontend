@@ -109,7 +109,7 @@ describe('the "History" link', () => {
     });
 
     it('stays absent on a build with no observability module, even for a visitor who holds the ability', () => {
-        // `observability` is not one of `users`' declared MODULE_EDGES reaches, so `AuditLog` is
+        // `observability` is not one of `users`' declared `dependsOn` reaches, so `AuditLog` is
         // guarded by `router.hasRoute` rather than assumed — a build missing the module must not
         // throw.
         const noAdminRouter = createRouter({

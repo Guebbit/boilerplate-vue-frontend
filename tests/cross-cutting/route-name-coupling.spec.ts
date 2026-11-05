@@ -1,10 +1,10 @@
 /**
- * A route name is a dependency channel `MODULE_EDGES` cannot see.
+ * A route name is a dependency channel `dependsOn` cannot see.
  *
  * `eslint.config.ts`'s boundary rules stop a module `import`-ing a sibling it has no coupling
  * for — but `router.push({ name: 'OrderTarget' })` is a plain string, invisible to that check.
  * `vue-router` throws on an unresolved name, so a module naming a sibling's route without either
- * a declared `MODULE_EDGES` coupling or a `router.hasRoute` guard is one deleted module away from
+ * a declared `dependsOn` coupling or a `router.hasRoute` guard is one deleted module away from
  * throwing at runtime — `cart`'s empty state or `wishlist`'s own page, for a `products` this
  * build no longer ships.
  *
@@ -19,7 +19,7 @@ import { globSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { RouteRecordRaw } from 'vue-router';
 import { enabledModules } from '@/modules';
-import { MODULE_EDGES } from '../../scripts/module-edges';
+import { moduleDependsOn } from '../../scripts/module-manifest';
 import { STATIC_PAGES, staticPageRouteName } from '@/app/utils/static-pages.ts';
 
 /** Every route name a record tree declares, at any depth — mirrors `registry.spec.ts`'s own. */
@@ -50,13 +50,13 @@ const everyRouteName = new Set([
 
 /**
  * The route names one module may reference without a `hasRoute` guard: its own, the shell's, and
- * whatever `MODULE_EDGES` declares it may reach — a coupling already reviewed and visible, so a
+ * whatever `dependsOn` declares it may reach — a coupling already reviewed and visible, so a
  * missing route there is a deployment choice made with the risk understood.
  *
  * @param moduleName - the reaching module.
  */
 const allowedRouteNamesOf = (moduleName: string): Set<string> => {
-    const reaches = MODULE_EDGES[moduleName] ?? [];
+    const reaches = moduleDependsOn[moduleName] ?? [];
     return new Set([
         ...(ownRouteNames.get(moduleName) ?? []),
         ...SHELL_ROUTE_NAMES,
@@ -133,7 +133,7 @@ const routeNameReferencesIn = (source: string): string[] => [
 const unguardedIn = (source: string, allowed: Set<string>): string[] =>
     routeNameReferencesIn(source).filter((name) => !allowed.has(name) && !isGuarded(source, name));
 
-describe('a module names only its own, the shell’s, or a MODULE_EDGES sibling’s route', () => {
+describe('a module names only its own, the shell’s, or a dependsOn sibling’s route', () => {
     it('finds modules to check', () => {
         // A canary: an empty sweep must mean "no modules exist", not "the sweep broke".
         expect(enabledModules.length).toBeGreaterThan(0);

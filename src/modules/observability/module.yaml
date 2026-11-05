@@ -1,0 +1,4 @@
+group: foundation
+dependsOn:
+    - account
+    - audit-logs

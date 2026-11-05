@@ -9,8 +9,6 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import os from 'node:os';
 import path from 'node:path';
 import {
-    pruneModuleEdges,
-    pruneModuleGroups,
     removeModuleFolders,
     stripModuleRegistry
 } from '../../../../scripts/demo/demo-remove-registry';
@@ -99,83 +97,6 @@ describe('stripModuleRegistry', () => {
                 'export const enabledModules = [',
                 '    account,',
                 '];'
-            ].join('\n')
-        );
-    });
-});
-
-describe('pruneModuleEdges', () => {
-    const EDGES = [
-        'export const MODULE_EDGES: Record<string, string[]> = {',
-        "    account: ['users', 'addresses'],",
-        "    cart: ['delivery', 'account'],",
-        "    wishlist: ['cart', 'products']",
-        '};'
-    ].join('\n');
-
-    it('drops the entry keyed by a removed module and keeps a value that names one', () => {
-        write('scripts/module-edges.ts', EDGES);
-
-        pruneModuleEdges(root, ['cart', 'wishlist']);
-
-        expect(read('scripts/module-edges.ts')).toBe(
-            [
-                'export const MODULE_EDGES: Record<string, string[]> = {',
-                "    account: ['users', 'addresses'],",
-                '};'
-            ].join('\n')
-        );
-    });
-
-    it('drops a quoted key, as a hyphenated module is written', () => {
-        write(
-            'scripts/module-edges.ts',
-            [
-                'export const MODULE_EDGES = {',
-                "    'stock-alerts': ['products'],",
-                "    wishlist: ['cart']",
-                '};'
-            ].join('\n')
-        );
-
-        pruneModuleEdges(root, ['stock-alerts']);
-
-        expect(read('scripts/module-edges.ts')).toBe(
-            ['export const MODULE_EDGES = {', "    wishlist: ['cart']", '};'].join('\n')
-        );
-    });
-
-    it('keeps another module’s list even when it names the removed module', () => {
-        write('scripts/module-edges.ts', EDGES);
-
-        pruneModuleEdges(root, ['wishlist']);
-
-        expect(read('scripts/module-edges.ts')).toContain("cart: ['delivery', 'account'],");
-    });
-});
-
-describe('pruneModuleGroups', () => {
-    const GROUPS = [
-        'export const MODULE_GROUPS: Record<string, ModuleGroup> = {',
-        "    account: 'foundation',",
-        "    cart: 'shop',",
-        "    example: 'example',",
-        "    'stock-alerts': 'shop',",
-        "    users: 'foundation'",
-        '};'
-    ].join('\n');
-
-    it('drops the entry of each removed module, bare or quoted, and keeps the rest', () => {
-        write('scripts/module-groups.ts', GROUPS);
-
-        pruneModuleGroups(root, ['cart', 'example', 'stock-alerts']);
-
-        expect(read('scripts/module-groups.ts')).toBe(
-            [
-                'export const MODULE_GROUPS: Record<string, ModuleGroup> = {',
-                "    account: 'foundation',",
-                "    users: 'foundation'",
-                '};'
             ].join('\n')
         );
     });

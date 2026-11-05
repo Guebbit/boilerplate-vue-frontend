@@ -1,0 +1,6 @@
+group: shop
+dependsOn:
+    - delivery
+    - payments
+    - account
+    - products

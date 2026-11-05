@@ -1,8 +1,8 @@
 #!/usr/bin/env tsx
 /**
  * `npm run demo:remove` — deletes every module
- * `scripts/module-groups.ts` puts in the `shop` or `example` group, `src/modules.ts`, and their entries
- * in `scripts/module-edges.ts`. Everything else that reaches a domain module — `src/app/router/index.ts`,
+ * a `module.yaml` puts in the `shop` or `example` group, and their entry in `src/modules.ts`.
+ * A module's `group` and `dependsOn` live in its own folder, so deleting the folder deletes them. Everything else that reaches a domain module — `src/app/router/index.ts`,
  * `src/infrastructure/http/response-schema-map.ts` — already reads `enabledModules` generically,
  * so a module's own folder is the only place its name is written down.
  *
@@ -23,13 +23,8 @@
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { demoModuleNames } from '../module-groups';
-import {
-    pruneModuleEdges,
-    pruneModuleGroups,
-    removeModuleFolders,
-    stripModuleRegistry
-} from './demo-remove-registry';
+import { demoModuleNames } from '../module-manifest';
+import { removeModuleFolders, stripModuleRegistry } from './demo-remove-registry';
 import { removeResidueSpecs } from './demo-remove-tests';
 
 /** The repo root. `import.meta.url` rather than `__dirname`: this script runs as ESM. */
@@ -58,7 +53,7 @@ const findResidueTests = (names: readonly string[]): string[] => {
     }
 };
 
-/** The demo modules to delete: the `shop` and `example` groups of `scripts/module-groups.ts`. */
+/** The demo modules to delete: the `shop` and `example` groups of the `module.yaml` files. */
 const demoNames = demoModuleNames();
 console.info(`[demo-remove] removing ${demoNames.length} demo module(s): ${demoNames.join(', ')}`);
 console.info('\n[demo-remove] module folders:');
@@ -69,10 +64,6 @@ for (const folder of removeModuleFolders(REPO_ROOT, demoNames))
 console.info('\n[demo-remove] the module registry:');
 stripModuleRegistry(REPO_ROOT, demoNames);
 console.info(`  src/modules.ts — removed ${demoNames.join(', ')}`);
-pruneModuleEdges(REPO_ROOT, demoNames);
-console.info('  scripts/module-edges.ts — dropped their entries');
-pruneModuleGroups(REPO_ROOT, demoNames);
-console.info('  scripts/module-groups.ts — dropped their entries');
 
 console.info('\n[demo-remove] cross-module specs:');
 // Remove the cross-module specs that walk a deleted module, and say why for each.

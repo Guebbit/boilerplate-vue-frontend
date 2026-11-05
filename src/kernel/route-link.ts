@@ -2,7 +2,7 @@
  * @module
  * A route location bound only when the module system actually resolves the name — the module-
  * system-generic guard a module uses to reach a SIBLING's route by name: that reach is a
- * dependency `MODULE_EDGES` cannot see, so `router.hasRoute` is what stands between it and
+ * dependency `dependsOn` cannot see, so `router.hasRoute` is what stands between it and
  * `vue-router`'s own throw on an unresolved name. Lives in `kernel`, not `src/app`, because it
  * knows nothing about THIS app's own routes — only the module system's `hasRoute` contract — and a
  * module may reach kernel but never `src/app` (the module-boundary rules in `eslint.config.ts`).
@@ -14,7 +14,7 @@ import type { LocationQueryRaw, RouteParamsRawGeneric } from 'vue-router';
  * decides what "nowhere to go" means for it: hide the link, or fall back to a route it knows for
  * certain exists (usually `Home`).
  *
- * A `MODULE_EDGES`-declared reach (`cart` → `products`'s `ProductsList`) does not need this: the
+ * A `dependsOn`-declared reach (`cart` → `products`'s `ProductsList`) does not need this: the
  * coupling is already reviewed and visible, so a missing route there is a deployment choice made
  * with the risk understood, not a silent landmine.
  *

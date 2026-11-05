@@ -71,7 +71,7 @@ const session = useSessionStore();
 
 /**
  * Router instance, for the `hasRoute` check below — `admin` is not a coupling this module's
- * `MODULE_EDGES` entry declares, so the history button's link is guarded rather than assumed.
+ * `dependsOn` declares, so the history button's link is guarded rather than assumed.
  */
 const router = useRouter();
 

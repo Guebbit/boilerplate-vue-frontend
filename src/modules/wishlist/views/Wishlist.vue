@@ -39,7 +39,7 @@ const { t } = useI18n();
 
 /**
  * Router instance, for the `hasRoute` checks below — `products` is not a coupling this module's
- * `MODULE_EDGES` entry declares, so both its route names are guarded rather than assumed.
+ * `dependsOn` declares, so both its route names are guarded rather than assumed.
  */
 const router = useRouter();
 

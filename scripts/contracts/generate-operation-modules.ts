@@ -6,7 +6,7 @@
  * Nothing in the contract says which module owns an operation, so a lint or test
  * that wants to flag a module reaching for another domain's endpoint has nothing to check against.
  * This is that map, kept in sync with the contract instead of hand-written — `tests/cross-cutting/
- * module-coupling.spec.ts` reads it to compare an import against `MODULE_EDGES`.
+ * module-coupling.spec.ts` reads it to compare an import against `dependsOn`.
  *
  * Compatible with orval's `mode: 'single'` output (`orval.config.ts`'s `api` block): one entry per
  * generated function name. Most operations keep their `operationId` unchanged, but the eight

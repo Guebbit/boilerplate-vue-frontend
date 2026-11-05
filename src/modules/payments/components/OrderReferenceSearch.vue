@@ -16,7 +16,7 @@ export default {
  * could act on what it finds — `create:Payment`, the same key that gates recording the
  * payment itself.
  *
- * `payments` declares no `MODULE_EDGES` reach into `orders` — this component is published
+ * `payments` declares no `dependsOn` reach into `orders` — this component is published
  * for ANY host to mount, and a host is not guaranteed to have `orders` at all — so it emits the
  * found order rather than navigating to its edit page itself; `OrdersList.vue`, which owns that
  * route directly, does the jump.

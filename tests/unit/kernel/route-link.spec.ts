@@ -1,6 +1,6 @@
 /**
  * `linkIfRouted` — `src/kernel/route-link.ts` — the general form of `signInLocation`'s own
- * guard, for route names with no `MODULE_EDGES` coupling to back them.
+ * guard, for route names with no `dependsOn` coupling to back them.
  */
 import { describe, expect, it } from 'vitest';
 import { linkIfRouted } from '@/kernel/route-link';

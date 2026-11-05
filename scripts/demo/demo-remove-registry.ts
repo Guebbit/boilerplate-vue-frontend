@@ -65,38 +65,3 @@ export const stripModuleRegistry = (root: string, names: readonly string[]): voi
         (line) => !importPattern.test(line) && !variables.has(line.replaceAll(/^\s+|,?\s*$/g, ''))
     );
 };
-
-/**
- * Edit `scripts/module-edges.ts`: drop the entry of each removed module.
- *
- * Only the KEY goes. `assertAcyclicModuleEdges` refuses a key naming a module that is no longer
- * on disk, and lint dies on it; a removed name inside another module's VALUE list is harmless,
- * since a value is a backend module name that may have no folder here at all.
- *
- * @param root - the checkout root
- * @param names - the module names to remove
- */
-export const pruneModuleEdges = (root: string, names: readonly string[]): void => {
-    // A key is bare (`cart:`) or quoted when it holds a hyphen (`'stock-alerts':`).
-    const entryPattern = new RegExp(
-        String.raw`^\s{4}['"]?(?:${names.join('|')})['"]?:\s*\[.*],?\s*$`
-    );
-
-    filterLines(path.join(root, 'scripts', 'module-edges.ts'), (line) => !entryPattern.test(line));
-};
-
-/**
- * Edit `scripts/module-groups.ts`: drop the group entry of each removed module, because the
- * module-groups spec refuses a name that is no longer an enabled module.
- *
- * @param root - the checkout root
- * @param names - the module names to remove
- */
-export const pruneModuleGroups = (root: string, names: readonly string[]): void => {
-    // A key is bare (`cart:`) or quoted when it holds a hyphen (`'stock-alerts':`).
-    const entryPattern = new RegExp(
-        String.raw`^\s{4}['"]?(?:${names.join('|')})['"]?:\s*'[a-z]+',?\s*$`
-    );
-
-    filterLines(path.join(root, 'scripts', 'module-groups.ts'), (line) => !entryPattern.test(line));
-};

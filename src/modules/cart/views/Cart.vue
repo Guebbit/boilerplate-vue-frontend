@@ -328,7 +328,7 @@ const runCheckout = () =>
             forgetAll();
             clearCheckoutDrafts();
             addMessage(t('cart-page.success-checkout'));
-            // `orders` is not one of cart's declared MODULE_EDGES reaches — a build
+            // `orders` is not one of cart's declared `dependsOn` reaches — a build
             // shipping no orders module still completes the checkout, just with nowhere to SHOW
             // the order it just placed, so it lands Home instead of throwing.
             const target = linkIfRouted(router, 'OrderTarget', { id: result.id }) ?? {
