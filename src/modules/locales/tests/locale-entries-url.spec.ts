@@ -24,7 +24,7 @@ vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     listLocaleEntries: vi.fn(() => emptyPage()),
     listAppLocaleEntries: vi.fn(() => emptyPage()),
-    getLocales: vi.fn(() => Promise.resolve({ locales: [], default: 'en', fallback: 'en' })),
+    listLocales: vi.fn(() => Promise.resolve({ locales: [], default: 'en', fallback: 'en' })),
     listLocaleApps: vi.fn(() => Promise.resolve({ apps: [] }))
 }));
 

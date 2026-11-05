@@ -180,7 +180,7 @@ const handleSave = () =>
             ? toRequestBody('UpdateAddressBody', fields, editing).then((body) =>
                   updateAddress(editing.id, body)
               )
-            : toRequestBody('AddAddressBody', {
+            : toRequestBody('CreateAddressBody', {
                   ...fields,
                   // Only ever `true`, never `false`: the backend ignores a `false` here entirely, and
                   // the only way to demote an entry is making a DIFFERENT one the default instead.

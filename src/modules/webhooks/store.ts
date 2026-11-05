@@ -28,7 +28,7 @@ import {
     enableWebhookSubscription,
     disableWebhookSubscription,
     createWebhookSubscriptionSecret,
-    removeWebhookSubscriptionSecret,
+    deleteWebhookSubscriptionSecret,
     listWebhookDeliveries,
     replayWebhookDelivery,
     listWebhookEvents
@@ -203,7 +203,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
     const removeSecret = (id: string, secretId: string) =>
         fetchAnySubscriptions(
             () =>
-                removeWebhookSubscriptionSecret(id, secretId).then((updated) => {
+                deleteWebhookSubscriptionSecret(id, secretId).then((updated) => {
                     editSubscriptionRecord(updated, id);
                     return updated;
                 }),

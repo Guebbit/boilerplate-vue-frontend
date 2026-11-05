@@ -16,8 +16,8 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
-import { listApiKeys, mintApiKey, revokeApiKey } from '@api';
-import type { ApiKey, MintApiKeyRequest } from '@types';
+import { listApiKeys, createApiKey, revokeApiKey } from '@api';
+import type { ApiKey, CreateApiKeyRequest } from '@types';
 
 /**
  * Machine-to-machine credentials: list, mint, revoke.
@@ -78,9 +78,9 @@ export const useApiKeysStore = defineStore('api-keys', () => {
      * @returns The full response, including the plaintext `secret` — the caller must not persist
      *  it anywhere beyond the reveal modal
      */
-    const mintCredential = (data: MintApiKeyRequest) =>
+    const mintCredential = (data: CreateApiKeyRequest) =>
         fetchAny(() =>
-            mintApiKey(data).then((created) => {
+            createApiKey(data).then((created) => {
                 const { secret: _secret, ...record } = created;
                 // A key just minted is live. The mint response carries neither a status nor
                 // `actions`; the next list read replaces this row with the server's own answer.

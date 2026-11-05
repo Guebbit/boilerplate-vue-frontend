@@ -13,7 +13,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { getCart, updateCartItemById, setCartShippingMethod, checkout as apiCheckout } from '@api';
+import {
+    getCart,
+    updateCartItemByProductId,
+    setCartShippingMethod,
+    checkout as apiCheckout
+} from '@api';
 import { useSessionStore, type SessionViewer } from '@/infrastructure/session.ts';
 import { loadLocale } from '@/i18n';
 import { asStub } from '../../../../tests/support/stub.ts';
@@ -33,7 +38,7 @@ wireModulesIntoCore();
 vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@api')>()),
     getCart: vi.fn(),
-    updateCartItemById: vi.fn(),
+    updateCartItemByProductId: vi.fn(),
     setCartShippingMethod: vi.fn(),
     checkout: vi.fn()
 }));
@@ -118,13 +123,13 @@ describe('a quantity step and the order that follows it', () => {
         vi.mocked(getCart).mockResolvedValue(answered(aCart([['p1', 2]])));
         const page = await mountCartPage(aCart([['p1', 2]]));
         await page.pickShipping('pickup', false);
-        const step = gate<Answer<typeof updateCartItemById>>();
-        vi.mocked(updateCartItemById).mockReturnValueOnce(step.promise);
+        const step = gate<Answer<typeof updateCartItemByProductId>>();
+        vi.mocked(updateCartItemByProductId).mockReturnValueOnce(step.promise);
         vi.mocked(apiCheckout).mockResolvedValue(answered(anOrder({ id: 'o1' })));
 
         await page.wrapper.get('[data-test=cart-increase]').trigger('click');
         await page.wrapper.get('[data-test=cart-checkout]').trigger('click');
-        await calledTimes(updateCartItemById, 1);
+        await calledTimes(updateCartItemByProductId, 1);
         // The order waits for the step's answer: nothing has been placed while it is out.
         await flushPromises();
         expect(apiCheckout).not.toHaveBeenCalled();
@@ -132,14 +137,14 @@ describe('a quantity step and the order that follows it', () => {
         step.resolve(answered(aCart([['p1', 3]])));
         await calledTimes(apiCheckout, 1);
 
-        expect(vi.mocked(updateCartItemById).mock.calls[0]).toEqual(['p1', { quantity: 3 }]);
+        expect(vi.mocked(updateCartItemByProductId).mock.calls[0]).toEqual(['p1', { quantity: 3 }]);
     });
 
     it('stops the order when the step did not reach the server, so it is not placed at the old quantity', async () => {
         vi.mocked(getCart).mockResolvedValue(answered(aCart([['p1', 2]])));
         const page = await mountCartPage(aCart([['p1', 2]]));
         await page.pickShipping('pickup', false);
-        vi.mocked(updateCartItemById).mockRejectedValueOnce({ status: 503, errors: [] });
+        vi.mocked(updateCartItemByProductId).mockRejectedValueOnce({ status: 503, errors: [] });
 
         await page.wrapper.get('[data-test=cart-increase]').trigger('click');
         await page.wrapper.get('[data-test=cart-checkout]').trigger('click');

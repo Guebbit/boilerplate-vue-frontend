@@ -6,7 +6,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { getCart, updateCartItemById, setCartShippingMethod, checkout as apiCheckout } from '@api';
+import {
+    getCart,
+    updateCartItemByProductId,
+    setCartShippingMethod,
+    checkout as apiCheckout
+} from '@api';
 import { useSessionStore, type SessionViewer } from '@/infrastructure/session.ts';
 import { loadLocale } from '@/i18n';
 import { asStub } from '../../../../tests/support/stub.ts';
@@ -21,7 +26,7 @@ wireModulesIntoCore();
 vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@api')>()),
     getCart: vi.fn(),
-    updateCartItemById: vi.fn(),
+    updateCartItemByProductId: vi.fn(),
     setCartShippingMethod: vi.fn(),
     checkout: vi.fn()
 }));
@@ -93,7 +98,7 @@ describe('while an order is being placed', () => {
         page.wrapper.unmount();
         await flushPromises();
 
-        expect(updateCartItemById).not.toHaveBeenCalled();
+        expect(updateCartItemByProductId).not.toHaveBeenCalled();
     });
 
     it('sends one checkout for two clicks made before the page could re-render', async () => {

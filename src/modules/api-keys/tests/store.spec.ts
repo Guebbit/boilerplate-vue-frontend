@@ -99,7 +99,7 @@ describe('useApiKeysStore', () => {
                 })
                 .then(() => {
                     expect(lastRequest()).toMatchObject({ url: '/api-keys', method: 'POST' });
-                    expect(lastBody(schemas.MintApiKeyBody)).toMatchObject({
+                    expect(lastBody(schemas.CreateApiKeyBody)).toMatchObject({
                         name: 'CI integration',
                         permissions: ['products.read'],
                         expiresAt: API_KEY.expiresAt

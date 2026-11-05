@@ -27,7 +27,7 @@ import {
     deleteProductById,
     hardDeleteProductById,
     restoreProductById,
-    getLocales,
+    listLocales,
     LocaleDirection,
     LocaleSource,
     ProductSortItem
@@ -452,7 +452,7 @@ export const useProductsStore = defineStore('products', () => {
      * is fresh (`staleTime`); the viewer-change reset drops it, so a staff member signing in
      * gets the draft languages on the next call.
      *
-     * Calls `getLocales` from `@api` itself rather than reaching `useLocalesStore`: the `locales`
+     * Calls `listLocales` from `@api` itself rather than reaching `useLocalesStore`: the `locales`
      * module is optional and publishes no barrel, mirroring the paired backend's rule that
      * `products` never imports `locales`. `@api` is infrastructure, not a sibling module.
      *
@@ -463,7 +463,7 @@ export const useProductsStore = defineStore('products', () => {
      * @returns A promise resolving once `translationLocales`/`translationFallbackLocale` are populated. Never rejects.
      */
     const fetchTranslationLocales = () =>
-        fetchAny(() => getLocales(), { key: TRANSLATION_LOCALES_KEY })
+        fetchAny(() => listLocales(), { key: TRANSLATION_LOCALES_KEY })
             .then((response) => {
                 if (!response) return;
                 translationLocales.value = response.locales;

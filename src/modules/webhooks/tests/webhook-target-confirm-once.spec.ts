@@ -43,7 +43,7 @@ const SUBSCRIPTION: WebhookSubscription = {
         enable: false,
         disable: true,
         createSecret: true,
-        removeSecret: true
+        deleteSecret: true
     },
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z'
@@ -159,7 +159,7 @@ describe('what the page offers, by the record’s own actions', () => {
                 enable: false,
                 disable: false,
                 createSecret: false,
-                removeSecret: false
+                deleteSecret: false
             }
         });
         await flushPromises();

@@ -141,33 +141,33 @@ export const GetSecurityTxtResponse = zod.string();
  * with every flag `false`.
  * @summary Supported languages
  */
-export const getLocalesResponseLocalesItemIdMax = 64;
-export const getLocalesResponseLocalesItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getLocalesResponseLocalesItemTagMax = 35;
-export const getLocalesResponseLocalesItemTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const getLocalesResponseLocalesItemBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
-export const getLocalesResponseLocalesItemAppsItemMax = 64;
-export const getLocalesResponseLocalesItemAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
-export const getLocalesResponseLocalesItemEntryCountMin = 0;
-export const getLocalesResponseLocalesItemRevisionMin = 0;
-export const getLocalesResponseDefaultMax = 35;
-export const getLocalesResponseDefaultRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const getLocalesResponseFallbackMax = 35;
-export const getLocalesResponseFallbackRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const GetLocalesResponse = zod.strictObject({
+export const listLocalesResponseLocalesItemIdMax = 64;
+export const listLocalesResponseLocalesItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listLocalesResponseLocalesItemTagMax = 35;
+export const listLocalesResponseLocalesItemTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const listLocalesResponseLocalesItemBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const listLocalesResponseLocalesItemAppsItemMax = 64;
+export const listLocalesResponseLocalesItemAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const listLocalesResponseLocalesItemEntryCountMin = 0;
+export const listLocalesResponseLocalesItemRevisionMin = 0;
+export const listLocalesResponseDefaultMax = 35;
+export const listLocalesResponseDefaultRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const listLocalesResponseFallbackMax = 35;
+export const listLocalesResponseFallbackRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const ListLocalesResponse = zod.strictObject({
     locales: zod.array(
         zod.strictObject({
             id: zod
                 .string()
                 .min(1)
-                .max(getLocalesResponseLocalesItemIdMax)
-                .regex(getLocalesResponseLocalesItemIdRegExp)
+                .max(listLocalesResponseLocalesItemIdMax)
+                .regex(listLocalesResponseLocalesItemIdRegExp)
                 .optional(),
             tag: zod
                 .string()
-                .max(getLocalesResponseLocalesItemTagMax)
-                .regex(getLocalesResponseLocalesItemTagRegExp),
-            baseLanguage: zod.string().regex(getLocalesResponseLocalesItemBaseLanguageRegExp),
+                .max(listLocalesResponseLocalesItemTagMax)
+                .regex(listLocalesResponseLocalesItemTagRegExp),
+            baseLanguage: zod.string().regex(listLocalesResponseLocalesItemBaseLanguageRegExp),
             name: zod.string(),
             nativeName: zod.string(),
             direction: zod.enum(['ltr', 'rtl']),
@@ -177,13 +177,13 @@ export const GetLocalesResponse = zod.strictObject({
                     zod
                         .string()
                         .min(1)
-                        .max(getLocalesResponseLocalesItemAppsItemMax)
-                        .regex(getLocalesResponseLocalesItemAppsItemRegExp)
+                        .max(listLocalesResponseLocalesItemAppsItemMax)
+                        .regex(listLocalesResponseLocalesItemAppsItemRegExp)
                 )
                 .min(1),
             source: zod.enum(['static', 'dynamic', 'both']),
-            entryCount: zod.number().min(getLocalesResponseLocalesItemEntryCountMin),
-            revision: zod.number().min(getLocalesResponseLocalesItemRevisionMin),
+            entryCount: zod.number().min(listLocalesResponseLocalesItemEntryCountMin),
+            revision: zod.number().min(listLocalesResponseLocalesItemRevisionMin),
             actions: zod.strictObject({
                 update: zod.boolean(),
                 activate: zod.boolean(),
@@ -195,11 +195,14 @@ export const GetLocalesResponse = zod.strictObject({
             updatedAt: zod.iso.datetime({ offset: true }).optional()
         })
     ),
-    default: zod.string().max(getLocalesResponseDefaultMax).regex(getLocalesResponseDefaultRegExp),
+    default: zod
+        .string()
+        .max(listLocalesResponseDefaultMax)
+        .regex(listLocalesResponseDefaultRegExp),
     fallback: zod
         .string()
-        .max(getLocalesResponseFallbackMax)
-        .regex(getLocalesResponseFallbackRegExp)
+        .max(listLocalesResponseFallbackMax)
+        .regex(listLocalesResponseFallbackRegExp)
 });
 /**
  * Registers a language in the dynamic tier so entries can be translated into it.
@@ -2329,42 +2332,45 @@ export const ListAddressesResponse = zod.strictObject({
  * Adds an entry to the authenticated user's address book and answers the entry it created, with its `Location`. The first entry becomes the default automatically; a later entry claims the default slot only by sending `default true`, which demotes the previous holder — a different row, so a client showing the book refetches it.
  * @summary Add an address
  */
-export const addAddressBodyLabelMax = 50;
-export const addAddressBodyFullNameMax = 100;
-export const addAddressBodyStreetMax = 200;
-export const addAddressBodyCityMax = 100;
-export const addAddressBodyZipMax = 20;
-export const addAddressBodyCountryMax = 2;
-export const addAddressBodyCountryRegExp = new RegExp('^[A-Z]{2}$');
-export const addAddressBodyPhoneMax = 32;
-export const AddAddressBody = zod.strictObject({
-    label: zod.string().min(1).max(addAddressBodyLabelMax).optional(),
-    fullName: zod.string().min(1).max(addAddressBodyFullNameMax),
-    street: zod.string().min(1).max(addAddressBodyStreetMax),
-    city: zod.string().min(1).max(addAddressBodyCityMax),
-    zip: zod.string().min(1).max(addAddressBodyZipMax),
-    country: zod.string().max(addAddressBodyCountryMax).regex(addAddressBodyCountryRegExp),
-    phone: zod.string().min(1).max(addAddressBodyPhoneMax).optional(),
+export const createAddressBodyLabelMax = 50;
+export const createAddressBodyFullNameMax = 100;
+export const createAddressBodyStreetMax = 200;
+export const createAddressBodyCityMax = 100;
+export const createAddressBodyZipMax = 20;
+export const createAddressBodyCountryMax = 2;
+export const createAddressBodyCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const createAddressBodyPhoneMax = 32;
+export const CreateAddressBody = zod.strictObject({
+    label: zod.string().min(1).max(createAddressBodyLabelMax).optional(),
+    fullName: zod.string().min(1).max(createAddressBodyFullNameMax),
+    street: zod.string().min(1).max(createAddressBodyStreetMax),
+    city: zod.string().min(1).max(createAddressBodyCityMax),
+    zip: zod.string().min(1).max(createAddressBodyZipMax),
+    country: zod.string().max(createAddressBodyCountryMax).regex(createAddressBodyCountryRegExp),
+    phone: zod.string().min(1).max(createAddressBodyPhoneMax).optional(),
     default: zod.boolean().optional()
 });
-export const addAddressResponseIdMax = 64;
-export const addAddressResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const addAddressResponseFullNameMax = 100;
-export const addAddressResponseStreetMax = 200;
-export const addAddressResponseCityMax = 100;
-export const addAddressResponseZipMax = 20;
-export const addAddressResponseCountryMax = 2;
-export const addAddressResponseCountryRegExp = new RegExp('^[A-Z]{2}$');
-export const addAddressResponsePhoneMax = 32;
-export const AddAddressResponse = zod.strictObject({
-    id: zod.string().min(1).max(addAddressResponseIdMax).regex(addAddressResponseIdRegExp),
+export const createAddressResponseIdMax = 64;
+export const createAddressResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createAddressResponseFullNameMax = 100;
+export const createAddressResponseStreetMax = 200;
+export const createAddressResponseCityMax = 100;
+export const createAddressResponseZipMax = 20;
+export const createAddressResponseCountryMax = 2;
+export const createAddressResponseCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const createAddressResponsePhoneMax = 32;
+export const CreateAddressResponse = zod.strictObject({
+    id: zod.string().min(1).max(createAddressResponseIdMax).regex(createAddressResponseIdRegExp),
     label: zod.string().optional(),
-    fullName: zod.string().min(1).max(addAddressResponseFullNameMax),
-    street: zod.string().min(1).max(addAddressResponseStreetMax),
-    city: zod.string().min(1).max(addAddressResponseCityMax),
-    zip: zod.string().min(1).max(addAddressResponseZipMax),
-    country: zod.string().max(addAddressResponseCountryMax).regex(addAddressResponseCountryRegExp),
-    phone: zod.string().min(1).max(addAddressResponsePhoneMax).optional(),
+    fullName: zod.string().min(1).max(createAddressResponseFullNameMax),
+    street: zod.string().min(1).max(createAddressResponseStreetMax),
+    city: zod.string().min(1).max(createAddressResponseCityMax),
+    zip: zod.string().min(1).max(createAddressResponseZipMax),
+    country: zod
+        .string()
+        .max(createAddressResponseCountryMax)
+        .regex(createAddressResponseCountryRegExp),
+    phone: zod.string().min(1).max(createAddressResponsePhoneMax).optional(),
     default: zod.boolean()
 });
 /**
@@ -2516,16 +2522,16 @@ export const UpdateAddressResponse = zod.strictObject({
  * Removes one entry of the caller's own book. Removing the default promotes the oldest remaining entry, so a non-empty book always has exactly one default; a client showing the book refetches it.
  * @summary Remove an address
  */
-export const removeAddressPathAddressIdMax = 64;
-export const removeAddressPathAddressIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const RemoveAddressParams = zod.strictObject({
+export const deleteAddressPathAddressIdMax = 64;
+export const deleteAddressPathAddressIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const DeleteAddressParams = zod.strictObject({
     addressId: zod
         .string()
         .min(1)
-        .max(removeAddressPathAddressIdMax)
-        .regex(removeAddressPathAddressIdRegExp)
+        .max(deleteAddressPathAddressIdMax)
+        .regex(deleteAddressPathAddressIdRegExp)
 });
-export const RemoveAddressResponse = zod.void();
+export const DeleteAddressResponse = zod.void();
 /**
  * Makes one entry of the caller's own book the default — the one checkout ships to when no `addressId` is named — and demotes the previous holder in the same write. The URI is the whole statement, so there is no body and repeating it changes nothing (RFC 9110 §9.3.4). Answers the entry, now `default true`; the demoted entry is another row, so a client showing the book refetches it. Shopify's `PUT /customers/{id}/addresses/{address_id}/default` is the same shape.
  * @summary Make an address the default
@@ -8383,44 +8389,46 @@ export const ClearCartResponse = zod.strictObject({
  * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart/items` is the door that adds. A change never creates, so a product the cart holds no line for is 404 `cart.item-not-found`, and a held line whose product the storefront no longer shows is 404 `products.not-found`. Repeating it changes nothing. Returns the updated cart.
  * @summary Set cart item quantity
  */
-export const updateCartItemByIdPathProductIdMax = 64;
-export const updateCartItemByIdPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const UpdateCartItemByIdParams = zod.strictObject({
+export const updateCartItemByProductIdPathProductIdMax = 64;
+export const updateCartItemByProductIdPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const UpdateCartItemByProductIdParams = zod.strictObject({
     productId: zod
         .string()
         .min(1)
-        .max(updateCartItemByIdPathProductIdMax)
-        .regex(updateCartItemByIdPathProductIdRegExp)
+        .max(updateCartItemByProductIdPathProductIdMax)
+        .regex(updateCartItemByProductIdPathProductIdRegExp)
 });
-export const updateCartItemByIdBodyQuantityMax = 999;
-export const UpdateCartItemByIdBody = zod.strictObject({
-    quantity: zod.number().min(1).max(updateCartItemByIdBodyQuantityMax)
+export const updateCartItemByProductIdBodyQuantityMax = 999;
+export const UpdateCartItemByProductIdBody = zod.strictObject({
+    quantity: zod.number().min(1).max(updateCartItemByProductIdBodyQuantityMax)
 });
-export const updateCartItemByIdResponseItemsItemProductIdMax = 64;
-export const updateCartItemByIdResponseItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const updateCartItemByIdResponseSummaryItemsCountMin = 0;
-export const updateCartItemByIdResponseSummaryTotalQuantityMin = 0;
-export const updateCartItemByIdResponseSummaryItemsTotalMin = 0;
-export const updateCartItemByIdResponseSummaryShippingCostMin = 0;
-export const updateCartItemByIdResponseSummaryTotalPriceMin = 0;
-export const updateCartItemByIdResponseSummaryCurrencyOneMin = 3;
-export const updateCartItemByIdResponseSummaryCurrencyOneMax = 3;
-export const updateCartItemByIdResponseSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
-export const updateCartItemByIdResponseSummaryExpectedTotalOneAmountMin = 0;
-export const updateCartItemByIdResponseSummaryExpectedTotalOneCurrencyOneMin = 3;
-export const updateCartItemByIdResponseSummaryExpectedTotalOneCurrencyOneMax = 3;
-export const updateCartItemByIdResponseSummaryExpectedTotalOneCurrencyOneRegExp = new RegExp(
+export const updateCartItemByProductIdResponseItemsItemProductIdMax = 64;
+export const updateCartItemByProductIdResponseItemsItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const updateCartItemByProductIdResponseSummaryItemsCountMin = 0;
+export const updateCartItemByProductIdResponseSummaryTotalQuantityMin = 0;
+export const updateCartItemByProductIdResponseSummaryItemsTotalMin = 0;
+export const updateCartItemByProductIdResponseSummaryShippingCostMin = 0;
+export const updateCartItemByProductIdResponseSummaryTotalPriceMin = 0;
+export const updateCartItemByProductIdResponseSummaryCurrencyOneMin = 3;
+export const updateCartItemByProductIdResponseSummaryCurrencyOneMax = 3;
+export const updateCartItemByProductIdResponseSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
+export const updateCartItemByProductIdResponseSummaryExpectedTotalOneAmountMin = 0;
+export const updateCartItemByProductIdResponseSummaryExpectedTotalOneCurrencyOneMin = 3;
+export const updateCartItemByProductIdResponseSummaryExpectedTotalOneCurrencyOneMax = 3;
+export const updateCartItemByProductIdResponseSummaryExpectedTotalOneCurrencyOneRegExp = new RegExp(
     '^[A-Z]{3}$'
 );
-export const updateCartItemByIdResponseShippingOptionsItemPriceMin = 0;
-export const UpdateCartItemByIdResponse = zod.strictObject({
+export const updateCartItemByProductIdResponseShippingOptionsItemPriceMin = 0;
+export const UpdateCartItemByProductIdResponse = zod.strictObject({
     items: zod.array(
         zod.strictObject({
             productId: zod
                 .string()
                 .min(1)
-                .max(updateCartItemByIdResponseItemsItemProductIdMax)
-                .regex(updateCartItemByIdResponseItemsItemProductIdRegExp),
+                .max(updateCartItemByProductIdResponseItemsItemProductIdMax)
+                .regex(updateCartItemByProductIdResponseItemsItemProductIdRegExp),
             quantity: zod.number().min(1),
             availability: zod.enum([
                 'in_stock',
@@ -8435,23 +8443,25 @@ export const UpdateCartItemByIdResponse = zod.strictObject({
         })
     ),
     summary: zod.strictObject({
-        itemsCount: zod.number().min(updateCartItemByIdResponseSummaryItemsCountMin),
-        totalQuantity: zod.number().min(updateCartItemByIdResponseSummaryTotalQuantityMin),
-        itemsTotal: zod.number().min(updateCartItemByIdResponseSummaryItemsTotalMin),
-        shippingCost: zod.number().min(updateCartItemByIdResponseSummaryShippingCostMin),
-        totalPrice: zod.number().min(updateCartItemByIdResponseSummaryTotalPriceMin),
+        itemsCount: zod.number().min(updateCartItemByProductIdResponseSummaryItemsCountMin),
+        totalQuantity: zod.number().min(updateCartItemByProductIdResponseSummaryTotalQuantityMin),
+        itemsTotal: zod.number().min(updateCartItemByProductIdResponseSummaryItemsTotalMin),
+        shippingCost: zod.number().min(updateCartItemByProductIdResponseSummaryShippingCostMin),
+        totalPrice: zod.number().min(updateCartItemByProductIdResponseSummaryTotalPriceMin),
         currency: zod
             .string()
-            .min(updateCartItemByIdResponseSummaryCurrencyOneMin)
-            .max(updateCartItemByIdResponseSummaryCurrencyOneMax)
-            .regex(updateCartItemByIdResponseSummaryCurrencyOneRegExp),
+            .min(updateCartItemByProductIdResponseSummaryCurrencyOneMin)
+            .max(updateCartItemByProductIdResponseSummaryCurrencyOneMax)
+            .regex(updateCartItemByProductIdResponseSummaryCurrencyOneRegExp),
         expectedTotal: zod.strictObject({
-            amount: zod.number().min(updateCartItemByIdResponseSummaryExpectedTotalOneAmountMin),
+            amount: zod
+                .number()
+                .min(updateCartItemByProductIdResponseSummaryExpectedTotalOneAmountMin),
             currency: zod
                 .string()
-                .min(updateCartItemByIdResponseSummaryExpectedTotalOneCurrencyOneMin)
-                .max(updateCartItemByIdResponseSummaryExpectedTotalOneCurrencyOneMax)
-                .regex(updateCartItemByIdResponseSummaryExpectedTotalOneCurrencyOneRegExp)
+                .min(updateCartItemByProductIdResponseSummaryExpectedTotalOneCurrencyOneMin)
+                .max(updateCartItemByProductIdResponseSummaryExpectedTotalOneCurrencyOneMax)
+                .regex(updateCartItemByProductIdResponseSummaryExpectedTotalOneCurrencyOneRegExp)
         })
     }),
     shipping: zod.strictObject({
@@ -8460,7 +8470,9 @@ export const UpdateCartItemByIdResponse = zod.strictObject({
         options: zod.array(
             zod.strictObject({
                 id: zod.string(),
-                price: zod.number().min(updateCartItemByIdResponseShippingOptionsItemPriceMin),
+                price: zod
+                    .number()
+                    .min(updateCartItemByProductIdResponseShippingOptionsItemPriceMin),
                 requiresAddress: zod.boolean(),
                 tracked: zod.boolean()
             })
@@ -8472,40 +8484,42 @@ export const UpdateCartItemByIdResponse = zod.strictObject({
  * Removes the cart line for the product identified by `{productId}` in the path from the authenticated user's cart. Returns the updated cart.
  * @summary Remove item from cart
  */
-export const removeCartItemPathProductIdMax = 64;
-export const removeCartItemPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const RemoveCartItemParams = zod.strictObject({
+export const deleteCartItemByProductIdPathProductIdMax = 64;
+export const deleteCartItemByProductIdPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const DeleteCartItemByProductIdParams = zod.strictObject({
     productId: zod
         .string()
         .min(1)
-        .max(removeCartItemPathProductIdMax)
-        .regex(removeCartItemPathProductIdRegExp)
+        .max(deleteCartItemByProductIdPathProductIdMax)
+        .regex(deleteCartItemByProductIdPathProductIdRegExp)
 });
-export const removeCartItemResponseItemsItemProductIdMax = 64;
-export const removeCartItemResponseItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const removeCartItemResponseSummaryItemsCountMin = 0;
-export const removeCartItemResponseSummaryTotalQuantityMin = 0;
-export const removeCartItemResponseSummaryItemsTotalMin = 0;
-export const removeCartItemResponseSummaryShippingCostMin = 0;
-export const removeCartItemResponseSummaryTotalPriceMin = 0;
-export const removeCartItemResponseSummaryCurrencyOneMin = 3;
-export const removeCartItemResponseSummaryCurrencyOneMax = 3;
-export const removeCartItemResponseSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
-export const removeCartItemResponseSummaryExpectedTotalOneAmountMin = 0;
-export const removeCartItemResponseSummaryExpectedTotalOneCurrencyOneMin = 3;
-export const removeCartItemResponseSummaryExpectedTotalOneCurrencyOneMax = 3;
-export const removeCartItemResponseSummaryExpectedTotalOneCurrencyOneRegExp = new RegExp(
+export const deleteCartItemByProductIdResponseItemsItemProductIdMax = 64;
+export const deleteCartItemByProductIdResponseItemsItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const deleteCartItemByProductIdResponseSummaryItemsCountMin = 0;
+export const deleteCartItemByProductIdResponseSummaryTotalQuantityMin = 0;
+export const deleteCartItemByProductIdResponseSummaryItemsTotalMin = 0;
+export const deleteCartItemByProductIdResponseSummaryShippingCostMin = 0;
+export const deleteCartItemByProductIdResponseSummaryTotalPriceMin = 0;
+export const deleteCartItemByProductIdResponseSummaryCurrencyOneMin = 3;
+export const deleteCartItemByProductIdResponseSummaryCurrencyOneMax = 3;
+export const deleteCartItemByProductIdResponseSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
+export const deleteCartItemByProductIdResponseSummaryExpectedTotalOneAmountMin = 0;
+export const deleteCartItemByProductIdResponseSummaryExpectedTotalOneCurrencyOneMin = 3;
+export const deleteCartItemByProductIdResponseSummaryExpectedTotalOneCurrencyOneMax = 3;
+export const deleteCartItemByProductIdResponseSummaryExpectedTotalOneCurrencyOneRegExp = new RegExp(
     '^[A-Z]{3}$'
 );
-export const removeCartItemResponseShippingOptionsItemPriceMin = 0;
-export const RemoveCartItemResponse = zod.strictObject({
+export const deleteCartItemByProductIdResponseShippingOptionsItemPriceMin = 0;
+export const DeleteCartItemByProductIdResponse = zod.strictObject({
     items: zod.array(
         zod.strictObject({
             productId: zod
                 .string()
                 .min(1)
-                .max(removeCartItemResponseItemsItemProductIdMax)
-                .regex(removeCartItemResponseItemsItemProductIdRegExp),
+                .max(deleteCartItemByProductIdResponseItemsItemProductIdMax)
+                .regex(deleteCartItemByProductIdResponseItemsItemProductIdRegExp),
             quantity: zod.number().min(1),
             availability: zod.enum([
                 'in_stock',
@@ -8520,23 +8534,25 @@ export const RemoveCartItemResponse = zod.strictObject({
         })
     ),
     summary: zod.strictObject({
-        itemsCount: zod.number().min(removeCartItemResponseSummaryItemsCountMin),
-        totalQuantity: zod.number().min(removeCartItemResponseSummaryTotalQuantityMin),
-        itemsTotal: zod.number().min(removeCartItemResponseSummaryItemsTotalMin),
-        shippingCost: zod.number().min(removeCartItemResponseSummaryShippingCostMin),
-        totalPrice: zod.number().min(removeCartItemResponseSummaryTotalPriceMin),
+        itemsCount: zod.number().min(deleteCartItemByProductIdResponseSummaryItemsCountMin),
+        totalQuantity: zod.number().min(deleteCartItemByProductIdResponseSummaryTotalQuantityMin),
+        itemsTotal: zod.number().min(deleteCartItemByProductIdResponseSummaryItemsTotalMin),
+        shippingCost: zod.number().min(deleteCartItemByProductIdResponseSummaryShippingCostMin),
+        totalPrice: zod.number().min(deleteCartItemByProductIdResponseSummaryTotalPriceMin),
         currency: zod
             .string()
-            .min(removeCartItemResponseSummaryCurrencyOneMin)
-            .max(removeCartItemResponseSummaryCurrencyOneMax)
-            .regex(removeCartItemResponseSummaryCurrencyOneRegExp),
+            .min(deleteCartItemByProductIdResponseSummaryCurrencyOneMin)
+            .max(deleteCartItemByProductIdResponseSummaryCurrencyOneMax)
+            .regex(deleteCartItemByProductIdResponseSummaryCurrencyOneRegExp),
         expectedTotal: zod.strictObject({
-            amount: zod.number().min(removeCartItemResponseSummaryExpectedTotalOneAmountMin),
+            amount: zod
+                .number()
+                .min(deleteCartItemByProductIdResponseSummaryExpectedTotalOneAmountMin),
             currency: zod
                 .string()
-                .min(removeCartItemResponseSummaryExpectedTotalOneCurrencyOneMin)
-                .max(removeCartItemResponseSummaryExpectedTotalOneCurrencyOneMax)
-                .regex(removeCartItemResponseSummaryExpectedTotalOneCurrencyOneRegExp)
+                .min(deleteCartItemByProductIdResponseSummaryExpectedTotalOneCurrencyOneMin)
+                .max(deleteCartItemByProductIdResponseSummaryExpectedTotalOneCurrencyOneMax)
+                .regex(deleteCartItemByProductIdResponseSummaryExpectedTotalOneCurrencyOneRegExp)
         })
     }),
     shipping: zod.strictObject({
@@ -8545,7 +8561,9 @@ export const RemoveCartItemResponse = zod.strictObject({
         options: zod.array(
             zod.strictObject({
                 id: zod.string(),
-                price: zod.number().min(removeCartItemResponseShippingOptionsItemPriceMin),
+                price: zod
+                    .number()
+                    .min(deleteCartItemByProductIdResponseShippingOptionsItemPriceMin),
                 requiresAddress: zod.boolean(),
                 tracked: zod.boolean()
             })
@@ -15361,7 +15379,7 @@ export const ListWebhookSubscriptionsResponse = zod.strictObject({
                 enable: zod.boolean(),
                 disable: zod.boolean(),
                 createSecret: zod.boolean(),
-                removeSecret: zod.boolean()
+                deleteSecret: zod.boolean()
             }),
             createdAt: zod.iso.datetime({ offset: true }),
             updatedAt: zod.iso.datetime({ offset: true })
@@ -15486,7 +15504,7 @@ export const CreateWebhookSubscriptionResponse = zod.strictObject({
         enable: zod.boolean(),
         disable: zod.boolean(),
         createSecret: zod.boolean(),
-        removeSecret: zod.boolean()
+        deleteSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }),
@@ -15563,7 +15581,7 @@ export const GetWebhookSubscriptionResponse = zod.strictObject({
         enable: zod.boolean(),
         disable: zod.boolean(),
         createSecret: zod.boolean(),
-        removeSecret: zod.boolean()
+        deleteSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true })
@@ -15676,7 +15694,7 @@ export const ReplaceWebhookSubscriptionResponse = zod.strictObject({
         enable: zod.boolean(),
         disable: zod.boolean(),
         createSecret: zod.boolean(),
-        removeSecret: zod.boolean()
+        deleteSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true })
@@ -15791,7 +15809,7 @@ export const UpdateWebhookSubscriptionResponse = zod.strictObject({
         enable: zod.boolean(),
         disable: zod.boolean(),
         createSecret: zod.boolean(),
-        removeSecret: zod.boolean()
+        deleteSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true })
@@ -15816,28 +15834,28 @@ export const DeleteWebhookSubscriptionResponse = zod.void();
  * of `POST .../secrets`.
  * @summary Drop one secret from a subscription's ring
  */
-export const removeWebhookSubscriptionSecretPathIdMax = 64;
-export const removeWebhookSubscriptionSecretPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const removeWebhookSubscriptionSecretPathSecretIdMax = 64;
-export const RemoveWebhookSubscriptionSecretParams = zod.strictObject({
+export const deleteWebhookSubscriptionSecretPathIdMax = 64;
+export const deleteWebhookSubscriptionSecretPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const deleteWebhookSubscriptionSecretPathSecretIdMax = 64;
+export const DeleteWebhookSubscriptionSecretParams = zod.strictObject({
     id: zod
         .string()
         .min(1)
-        .max(removeWebhookSubscriptionSecretPathIdMax)
-        .regex(removeWebhookSubscriptionSecretPathIdRegExp),
-    secretId: zod.string().max(removeWebhookSubscriptionSecretPathSecretIdMax)
+        .max(deleteWebhookSubscriptionSecretPathIdMax)
+        .regex(deleteWebhookSubscriptionSecretPathIdRegExp),
+    secretId: zod.string().max(deleteWebhookSubscriptionSecretPathSecretIdMax)
 });
-export const removeWebhookSubscriptionSecretResponseIdMax = 64;
-export const removeWebhookSubscriptionSecretResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const removeWebhookSubscriptionSecretResponseUrlRegExp = new RegExp('(?:^https://)');
-export const removeWebhookSubscriptionSecretResponseConsecutiveFailuresMin = 0;
-export const RemoveWebhookSubscriptionSecretResponse = zod.strictObject({
+export const deleteWebhookSubscriptionSecretResponseIdMax = 64;
+export const deleteWebhookSubscriptionSecretResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const deleteWebhookSubscriptionSecretResponseUrlRegExp = new RegExp('(?:^https://)');
+export const deleteWebhookSubscriptionSecretResponseConsecutiveFailuresMin = 0;
+export const DeleteWebhookSubscriptionSecretResponse = zod.strictObject({
     id: zod
         .string()
         .min(1)
-        .max(removeWebhookSubscriptionSecretResponseIdMax)
-        .regex(removeWebhookSubscriptionSecretResponseIdRegExp),
-    url: zod.url().regex(removeWebhookSubscriptionSecretResponseUrlRegExp),
+        .max(deleteWebhookSubscriptionSecretResponseIdMax)
+        .regex(deleteWebhookSubscriptionSecretResponseIdRegExp),
+    url: zod.url().regex(deleteWebhookSubscriptionSecretResponseUrlRegExp),
     description: zod.string().optional(),
     eventTypes: zod
         .array(
@@ -15869,7 +15887,7 @@ export const RemoveWebhookSubscriptionSecretResponse = zod.strictObject({
     enabled: zod.boolean(),
     consecutiveFailures: zod
         .number()
-        .min(removeWebhookSubscriptionSecretResponseConsecutiveFailuresMin),
+        .min(deleteWebhookSubscriptionSecretResponseConsecutiveFailuresMin),
     disabledAt: zod.iso.datetime({ offset: true }).optional(),
     autoDisabledAt: zod.iso.datetime({ offset: true }).optional(),
     secretIds: zod.array(zod.string()),
@@ -15885,7 +15903,7 @@ export const RemoveWebhookSubscriptionSecretResponse = zod.strictObject({
         enable: zod.boolean(),
         disable: zod.boolean(),
         createSecret: zod.boolean(),
-        removeSecret: zod.boolean()
+        deleteSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true })
@@ -16224,17 +16242,17 @@ export const ListApiKeysResponse = zod.strictObject({
  * everywhere, reset their password or report an email change as not theirs.
  * @summary Mint a machine-to-machine credential
  */
-export const mintApiKeyBodyNameMax = 200;
-export const mintApiKeyBodyPermissionsItemMax = 100;
-export const MintApiKeyBody = zod.strictObject({
-    name: zod.string().min(1).max(mintApiKeyBodyNameMax),
-    permissions: zod.array(zod.string().max(mintApiKeyBodyPermissionsItemMax)).min(1),
+export const createApiKeyBodyNameMax = 200;
+export const createApiKeyBodyPermissionsItemMax = 100;
+export const CreateApiKeyBody = zod.strictObject({
+    name: zod.string().min(1).max(createApiKeyBodyNameMax),
+    permissions: zod.array(zod.string().max(createApiKeyBodyPermissionsItemMax)).min(1),
     expiresAt: zod.iso.datetime({ offset: true })
 });
-export const mintApiKeyResponseIdMax = 64;
-export const mintApiKeyResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const MintApiKeyResponse = zod.strictObject({
-    id: zod.string().min(1).max(mintApiKeyResponseIdMax).regex(mintApiKeyResponseIdRegExp),
+export const createApiKeyResponseIdMax = 64;
+export const createApiKeyResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const CreateApiKeyResponse = zod.strictObject({
+    id: zod.string().min(1).max(createApiKeyResponseIdMax).regex(createApiKeyResponseIdRegExp),
     name: zod.string(),
     publicPrefix: zod.string(),
     permissions: zod.array(zod.string()).min(1),
@@ -19418,7 +19436,7 @@ export const EnableWebhookSubscriptionResponse = zod.strictObject({
         enable: zod.boolean(),
         disable: zod.boolean(),
         createSecret: zod.boolean(),
-        removeSecret: zod.boolean()
+        deleteSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true })
@@ -19495,7 +19513,7 @@ export const DisableWebhookSubscriptionResponse = zod.strictObject({
         enable: zod.boolean(),
         disable: zod.boolean(),
         createSecret: zod.boolean(),
-        removeSecret: zod.boolean()
+        deleteSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true })
@@ -19579,7 +19597,7 @@ export const CreateWebhookSubscriptionSecretResponse = zod.strictObject({
         enable: zod.boolean(),
         disable: zod.boolean(),
         createSecret: zod.boolean(),
-        removeSecret: zod.boolean()
+        deleteSecret: zod.boolean()
     }),
     createdAt: zod.iso.datetime({ offset: true }),
     updatedAt: zod.iso.datetime({ offset: true }),

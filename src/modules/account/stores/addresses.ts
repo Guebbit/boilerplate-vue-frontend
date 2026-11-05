@@ -11,10 +11,10 @@ import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import {
     listAddresses as apiListAddresses,
-    addAddress as apiAddAddress,
+    createAddress as apiCreateAddress,
     updateAddress as apiUpdateAddress,
     setDefaultAddress as apiSetDefaultAddress,
-    removeAddress as apiRemoveAddress
+    deleteAddress as apiDeleteAddress
 } from '@api';
 import type {
     Address,
@@ -81,7 +81,7 @@ export const useAddressesStore = defineStore('accountAddresses', () => {
      * @returns A promise resolving with the updated book.
      */
     const addAddress = (address: CreateAddressRequest) =>
-        fetchAny(() => apiAddAddress(address).then(() => reloadBook()));
+        fetchAny(() => apiCreateAddress(address).then(() => reloadBook()));
 
     /**
      * Updates one entry through PATCH, then reloads the book. The default is
@@ -112,7 +112,7 @@ export const useAddressesStore = defineStore('accountAddresses', () => {
      * @returns A promise resolving with the updated book.
      */
     const removeAddress = (addressId: string) =>
-        fetchAny(() => apiRemoveAddress(addressId).then(() => reloadBook()));
+        fetchAny(() => apiDeleteAddress(addressId).then(() => reloadBook()));
 
     return {
         addresses,

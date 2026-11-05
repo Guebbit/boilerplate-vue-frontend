@@ -7,12 +7,12 @@
 import { z } from 'zod';
 import { translate } from '@/i18n';
 import {
-    addAddressBodyLabelMax,
-    addAddressBodyFullNameMax,
-    addAddressBodyStreetMax,
-    addAddressBodyCityMax,
-    addAddressBodyZipMax,
-    addAddressBodyPhoneMax,
+    createAddressBodyLabelMax,
+    createAddressBodyFullNameMax,
+    createAddressBodyStreetMax,
+    createAddressBodyCityMax,
+    createAddressBodyZipMax,
+    createAddressBodyPhoneMax,
     loginBodyPasswordMin,
     loginBodyPasswordMax,
     signupBodyPasswordConfirmMin,
@@ -44,19 +44,22 @@ const requiredAddressText = (max: number, requiredKey: string) =>
  * both.
  */
 export const addressSchema = z.object({
-    label: addressText(addAddressBodyLabelMax),
+    label: addressText(createAddressBodyLabelMax),
     fullName: requiredAddressText(
-        addAddressBodyFullNameMax,
+        createAddressBodyFullNameMax,
         'profile-page.addresses-required-full-name'
     ),
-    street: requiredAddressText(addAddressBodyStreetMax, 'profile-page.addresses-required-street'),
-    city: requiredAddressText(addAddressBodyCityMax, 'profile-page.addresses-required-city'),
-    zip: requiredAddressText(addAddressBodyZipMax, 'profile-page.addresses-required-zip'),
+    street: requiredAddressText(
+        createAddressBodyStreetMax,
+        'profile-page.addresses-required-street'
+    ),
+    city: requiredAddressText(createAddressBodyCityMax, 'profile-page.addresses-required-city'),
+    zip: requiredAddressText(createAddressBodyZipMax, 'profile-page.addresses-required-zip'),
     // Picked from an ISO 3166-1 select, so presence is the only rule a visitor can break.
     country: z
         .string()
         .min(1, { error: () => translate('profile-page.addresses-required-country') }),
-    phone: addressText(addAddressBodyPhoneMax)
+    phone: addressText(createAddressBodyPhoneMax)
 });
 
 /**

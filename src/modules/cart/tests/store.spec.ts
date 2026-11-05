@@ -26,8 +26,8 @@ import {
     getCart,
     getCartSummary,
     addCartItem,
-    updateCartItemById,
-    removeCartItem,
+    updateCartItemByProductId,
+    deleteCartItemByProductId,
     clearCart,
     setCartShippingMethod,
     checkout as apiCheckout,
@@ -124,8 +124,8 @@ const RESPONSES = {
     cart: contractBody<Answer<typeof getCart>>(schemas.GetCartResponse, CART),
     summary: contractResponse(schemas.GetCartSummaryResponse, CART.summary),
     added: contractResponse(schemas.AddCartItemResponse, CART),
-    updated: contractResponse(schemas.UpdateCartItemByIdResponse, CART),
-    removed: contractResponse(schemas.RemoveCartItemResponse, EMPTY_CART),
+    updated: contractResponse(schemas.UpdateCartItemByProductIdResponse, CART),
+    removed: contractResponse(schemas.DeleteCartItemByProductIdResponse, EMPTY_CART),
     cleared: contractResponse(schemas.ClearCartResponse, EMPTY_CART),
     checkedOut: contractResponse(schemas.CheckoutResponse, ORDER),
     reordered: contractResponse(schemas.ReorderResponse, {
@@ -169,8 +169,8 @@ vi.mock('@api', () => ({
     getCart: vi.fn(() => Promise.resolve(RESPONSES.cart)),
     getCartSummary: vi.fn(() => Promise.resolve(RESPONSES.summary)),
     addCartItem: vi.fn(() => Promise.resolve(RESPONSES.added)),
-    updateCartItemById: vi.fn(() => Promise.resolve(RESPONSES.updated)),
-    removeCartItem: vi.fn(() => Promise.resolve(RESPONSES.removed)),
+    updateCartItemByProductId: vi.fn(() => Promise.resolve(RESPONSES.updated)),
+    deleteCartItemByProductId: vi.fn(() => Promise.resolve(RESPONSES.removed)),
     clearCart: vi.fn(() => Promise.resolve(RESPONSES.cleared)),
     setCartShippingMethod: vi.fn(() => Promise.resolve(RESPONSES.shippingSet)),
     checkout: vi.fn(() => Promise.resolve(RESPONSES.checkedOut)),
@@ -271,7 +271,7 @@ describe('useCartStore', () => {
             useCartStore()
                 .updateCartItem('p1', 5)
                 .then(() => {
-                    expect(updateCartItemById).toHaveBeenCalledWith('p1', { quantity: 5 });
+                    expect(updateCartItemByProductId).toHaveBeenCalledWith('p1', { quantity: 5 });
                 }));
 
         /**
@@ -298,7 +298,7 @@ describe('useCartStore', () => {
                 .fetchCart()
                 .then(() => store.removeCartItem('p1'))
                 .then(() => {
-                    expect(removeCartItem).toHaveBeenCalledWith('p1');
+                    expect(deleteCartItemByProductId).toHaveBeenCalledWith('p1');
                     expect(store.cartItems).toEqual([]);
                 });
         });

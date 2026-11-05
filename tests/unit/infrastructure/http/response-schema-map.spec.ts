@@ -276,7 +276,7 @@ describe('operations this app actually imports', () => {
  */
 const widgetRows: ResponseSchemaRoute[] = [
     { method: 'GET', pattern: /^\/widgets$/, schema: schemas.GetHealthResponse },
-    { method: 'POST', pattern: /^\/widgets$/, schema: schemas.GetLocalesResponse },
+    { method: 'POST', pattern: /^\/widgets$/, schema: schemas.ListLocalesResponse },
     { method: 'PUT', pattern: /^\/widgets$/, schema: schemas.ListTasksResponse },
     { method: 'DELETE', pattern: /^\/widgets$/, schema: schemas.CreateContactTaskResponse },
     {
@@ -306,7 +306,7 @@ describe('resolveResponseSchema', () => {
         // Four operations share `/widgets`; picking the wrong one would validate a creation
         // response against the list schema.
         expect(resolveResponseSchema('GET', '/widgets')).toBe(schemas.GetHealthResponse);
-        expect(resolveResponseSchema('POST', '/widgets')).toBe(schemas.GetLocalesResponse);
+        expect(resolveResponseSchema('POST', '/widgets')).toBe(schemas.ListLocalesResponse);
         expect(resolveResponseSchema('PUT', '/widgets')).toBe(schemas.ListTasksResponse);
         expect(resolveResponseSchema('DELETE', '/widgets')).toBe(schemas.CreateContactTaskResponse);
     });
@@ -343,7 +343,7 @@ describe('resolveResponseSchema', () => {
     it('does not let the root pattern match every path', () => {
         // `^\/$` — if the `$` were dropped, `/` would match everything and every response in the
         // app would be validated against the health schema.
-        expect(resolveResponseSchema('GET', '/widgets')).not.toBe(schemas.GetLocalesResponse);
+        expect(resolveResponseSchema('GET', '/widgets')).not.toBe(schemas.ListLocalesResponse);
     });
 
     it('returns undefined for a route absent from the table', () => {
@@ -370,6 +370,6 @@ describe('resolveResponseSchema', () => {
         // `loadResponseSchemas` always resolves the real core rows alongside whatever module
         // loaders it is given. `/locales` is core's, so it must still resolve even though only
         // `/widgets` was just registered above.
-        expect(resolveResponseSchema('GET', '/locales')).toBe(schemas.GetLocalesResponse);
+        expect(resolveResponseSchema('GET', '/locales')).toBe(schemas.ListLocalesResponse);
     });
 });

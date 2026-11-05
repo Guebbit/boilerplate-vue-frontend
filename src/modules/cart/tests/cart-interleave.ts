@@ -13,8 +13,8 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import {
     getCart,
     addCartItem,
-    updateCartItemById,
-    removeCartItem,
+    updateCartItemByProductId,
+    deleteCartItemByProductId,
     clearCart,
     setCartShippingMethod
 } from '@api';
@@ -59,12 +59,18 @@ export interface Action {
  */
 export const ACTIONS = {
     add: { api: vi.mocked(addCartItem), run: (store) => store.addCartItem('p1', 1) },
-    update: { api: vi.mocked(updateCartItemById), run: (store) => store.updateCartItem('p1', 5) },
+    update: {
+        api: vi.mocked(updateCartItemByProductId),
+        run: (store) => store.updateCartItem('p1', 5)
+    },
     updateOther: {
-        api: vi.mocked(updateCartItemById),
+        api: vi.mocked(updateCartItemByProductId),
         run: (store) => store.updateCartItem('p2', 7)
     },
-    remove: { api: vi.mocked(removeCartItem), run: (store) => store.removeCartItem('p1') },
+    remove: {
+        api: vi.mocked(deleteCartItemByProductId),
+        run: (store) => store.removeCartItem('p1')
+    },
     clear: { api: vi.mocked(clearCart), run: (store) => store.clearCart() },
     shipping: {
         api: vi.mocked(setCartShippingMethod),

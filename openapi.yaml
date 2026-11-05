@@ -359,7 +359,7 @@ paths:
         caller who holds `display:Locale` is answered outside the shared cache, so only
         such a caller gets a flag set to `true`; everyone else's answer is the cached one,
         with every flag `false`.
-      operationId: getLocales
+      operationId: listLocales
       security:
         - {}
         - bearerAuth: []
@@ -2873,7 +2873,7 @@ paths:
         - Account
       summary: Add an address
       description: Adds an entry to the authenticated user's address book and answers the entry it created, with its `Location`. The first entry becomes the default automatically; a later entry claims the default slot only by sending `default true`, which demotes the previous holder — a different row, so a client showing the book refetches it.
-      operationId: addAddress
+      operationId: createAddress
       x-error-codes:
         "409":
           - ADDRESS_BOOK_LIMIT_REACHED
@@ -3119,7 +3119,7 @@ paths:
         - Account
       summary: Remove an address
       description: Removes one entry of the caller's own book. Removing the default promotes the oldest remaining entry, so a non-empty book always has exactly one default; a client showing the book refetches it.
-      operationId: removeAddress
+      operationId: deleteAddress
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -6705,7 +6705,7 @@ paths:
         - Cart
       summary: Set cart item quantity
       description: Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart/items` is the door that adds. A change never creates, so a product the cart holds no line for is 404 `cart.item-not-found`, and a held line whose product the storefront no longer shows is 404 `products.not-found`. Repeating it changes nothing. Returns the updated cart.
-      operationId: updateCartItemById
+      operationId: updateCartItemByProductId
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -6716,10 +6716,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateCartItemByIdRequest"
+              $ref: "#/components/schemas/UpdateCartItemByProductIdRequest"
           application/merge-patch+json:
             schema:
-              $ref: "#/components/schemas/UpdateCartItemByIdRequest"
+              $ref: "#/components/schemas/UpdateCartItemByProductIdRequest"
       responses:
         "200":
           description: Updated cart
@@ -6768,7 +6768,7 @@ paths:
         - Cart
       summary: Remove item from cart
       description: Removes the cart line for the product identified by `{productId}` in the path from the authenticated user's cart. Returns the updated cart.
-      operationId: removeCartItem
+      operationId: deleteCartItemByProductId
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -10701,7 +10701,7 @@ paths:
         The other half of a rotation, once every consumer has switched. Refuses to empty
         the ring — a subscription with no secret can never sign a delivery. The remove twin
         of `POST .../secrets`.
-      operationId: removeWebhookSubscriptionSecret
+      operationId: deleteWebhookSubscriptionSecret
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -10999,7 +10999,7 @@ paths:
         request is refused with 422. The minter is mailed that a key was created, and every
         key a person minted is revoked (and listed to them by mail) when they log out
         everywhere, reset their password or report an email change as not theirs.
-      operationId: mintApiKey
+      operationId: createApiKey
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
@@ -11011,7 +11011,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MintApiKeyRequest"
+              $ref: "#/components/schemas/CreateApiKeyRequest"
       responses:
         "201":
           description: The minted credential, with its one-time secret
@@ -21024,7 +21024,7 @@ components:
           $ref: "#/components/schemas/Id"
         quantity:
           $ref: "#/components/schemas/CartQuantity"
-    UpdateCartItemByIdRequest:
+    UpdateCartItemByProductIdRequest:
       type: object
       additionalProperties: false
       required:
@@ -23116,7 +23116,7 @@ components:
         - enable
         - disable
         - createSecret
-        - removeSecret
+        - deleteSecret
       properties:
         update:
           type: boolean
@@ -23133,7 +23133,7 @@ components:
         createSecret:
           type: boolean
           description: Whether `POST /webhooks/subscriptions/{id}/secrets` would be accepted.
-        removeSecret:
+        deleteSecret:
           type: boolean
           description: Whether `DELETE /webhooks/subscriptions/{id}/secrets/{secretId}` would be accepted — false while the ring holds a single secret.
     WebhookSubscription:
@@ -23548,7 +23548,7 @@ components:
           type: string
           format: date-time
           description: The latest `expiresAt` a mint accepts right now (one calendar year from this response). A later one is refused with 422, so a form can bound its date picker without copying the rule.
-    MintApiKeyRequest:
+    CreateApiKeyRequest:
       type: object
       additionalProperties: false
       required:

@@ -21,7 +21,7 @@ wireModulesIntoCore();
 vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@api')>()),
     getCart: vi.fn(),
-    updateCartItemById: vi.fn(),
+    updateCartItemByProductId: vi.fn(),
     setCartShippingMethod: vi.fn(),
     checkout: vi.fn()
 }));

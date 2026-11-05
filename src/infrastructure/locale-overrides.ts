@@ -10,7 +10,7 @@
  */
 
 import { reactive } from 'vue';
-import { getLocales, getLocaleMessages } from '@api';
+import { listLocales, getLocaleMessages } from '@api';
 import { runtimeValue } from '@/infrastructure/runtime-config';
 import {
     loadBundledDictionary,
@@ -118,7 +118,7 @@ const isSwitchedOffForThisCaller = (language: { active: boolean; source: string 
  * Never rejects: an unreachable or older API is an empty answer, and the folder stands alone.
  */
 const readRemoteLocales = (): Promise<RemoteLocales> =>
-    getLocales({ timeout: BOOT_READ_TIMEOUT_MS })
+    listLocales({ timeout: BOOT_READ_TIMEOUT_MS })
         .then((response): RemoteLocales => {
             const offered: string[] = [];
             const switchedOff: string[] = [];

@@ -58,7 +58,11 @@ vi.mock('@/i18n', async (importOriginal) => ({
  */
 const getLocalesMock = vi.fn(() =>
     Promise.resolve(
-        contractResponse(schemas.GetLocalesResponse, { locales: [], default: 'en', fallback: 'en' })
+        contractResponse(schemas.ListLocalesResponse, {
+            locales: [],
+            default: 'en',
+            fallback: 'en'
+        })
     )
 );
 
@@ -75,7 +79,7 @@ const getLocaleMessagesMock = vi.fn((_locale: string) =>
 
 vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
-    getLocales: () => getLocalesMock(),
+    listLocales: () => getLocalesMock(),
     getLocaleMessages: (locale: string) => getLocaleMessagesMock(locale)
 }));
 

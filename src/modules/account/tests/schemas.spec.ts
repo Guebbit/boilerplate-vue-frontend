@@ -7,11 +7,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-    addAddressBodyFullNameMax,
-    addAddressBodyLabelMax,
-    addAddressBodyPhoneMax,
-    addAddressBodyStreetMax,
-    addAddressBodyZipMax,
+    createAddressBodyFullNameMax,
+    createAddressBodyLabelMax,
+    createAddressBodyPhoneMax,
+    createAddressBodyStreetMax,
+    createAddressBodyZipMax,
     loginBodyPasswordMax,
     loginBodyPasswordMin
 } from '@api/schemas';
@@ -34,11 +34,11 @@ describe('addressSchema', () => {
     });
 
     it.each([
-        ['label', addAddressBodyLabelMax],
-        ['fullName', addAddressBodyFullNameMax],
-        ['street', addAddressBodyStreetMax],
-        ['zip', addAddressBodyZipMax],
-        ['phone', addAddressBodyPhoneMax]
+        ['label', createAddressBodyLabelMax],
+        ['fullName', createAddressBodyFullNameMax],
+        ['street', createAddressBodyStreetMax],
+        ['zip', createAddressBodyZipMax],
+        ['phone', createAddressBodyPhoneMax]
     ])('caps %s at the contract maximum', (field, max) => {
         expect(addressSchema.safeParse({ ...validAddress, [field]: 'a'.repeat(max) }).success).toBe(
             true

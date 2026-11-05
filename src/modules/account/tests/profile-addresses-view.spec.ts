@@ -128,7 +128,10 @@ describe('ProfileAddresses save payload', () => {
             .then(flushPromises)
             .then(() => {
                 expect(addAddress).toHaveBeenCalledTimes(1);
-                const body = contractRequest(schemas.AddAddressBody, addAddress.mock.calls[0][0]);
+                const body = contractRequest(
+                    schemas.CreateAddressBody,
+                    addAddress.mock.calls[0][0]
+                );
                 expect(body).not.toHaveProperty('label');
                 expect(body).not.toHaveProperty('phone');
             });

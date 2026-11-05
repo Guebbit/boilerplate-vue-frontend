@@ -4420,7 +4420,7 @@ export interface AddCartItemRequest {
     quantity: CartQuantity;
 }
 
-export interface UpdateCartItemByIdRequest {
+export interface UpdateCartItemByProductIdRequest {
     quantity: CartQuantity;
 }
 
@@ -5873,7 +5873,7 @@ export interface WebhookSubscriptionActions {
     /** Whether `POST /webhooks/subscriptions/{id}/secrets` would be accepted. */
     createSecret: boolean;
     /** Whether `DELETE /webhooks/subscriptions/{id}/secrets/{secretId}` would be accepted — false while the ring holds a single secret. */
-    removeSecret: boolean;
+    deleteSecret: boolean;
 }
 
 export interface WebhookSubscription {
@@ -6120,7 +6120,7 @@ export interface ApiKeysResponse {
     maxExpiresAt: string;
 }
 
-export interface MintApiKeyRequest {
+export interface CreateApiKeyRequest {
     /**
      * A caller-chosen label — what this credential is for, shown back in the list.
      * @minLength 1
@@ -7943,7 +7943,7 @@ export const getSecurityTxt = (options?: SecondParameter<typeof orvalMutator<str
  * with every flag `false`.
  * @summary Supported languages
  */
-export const getLocales = (options?: SecondParameter<typeof orvalMutator<LocaleCapabilities>>) => {
+export const listLocales = (options?: SecondParameter<typeof orvalMutator<LocaleCapabilities>>) => {
     return orvalMutator<LocaleCapabilities>({ url: `/locales`, method: 'GET' }, options);
 };
 
@@ -8962,7 +8962,7 @@ export const listAddresses = (
  * Adds an entry to the authenticated user's address book and answers the entry it created, with its `Location`. The first entry becomes the default automatically; a later entry claims the default slot only by sending `default true`, which demotes the previous holder — a different row, so a client showing the book refetches it.
  * @summary Add an address
  */
-export const addAddress = (
+export const createAddress = (
     createAddressRequest: CreateAddressRequest,
     options?: SecondParameter<typeof orvalMutator<Address>>
 ) => {
@@ -9055,7 +9055,7 @@ export const updateAddressWithMergePatchJson = (
  * Removes one entry of the caller's own book. Removing the default promotes the oldest remaining entry, so a non-empty book always has exactly one default; a client showing the book refetches it.
  * @summary Remove an address
  */
-export const removeAddress = (
+export const deleteAddress = (
     addressId: Id,
     options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
@@ -10419,9 +10419,9 @@ export const clearCart = (options?: SecondParameter<typeof orvalMutator<CartResp
  * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart/items` is the door that adds. A change never creates, so a product the cart holds no line for is 404 `cart.item-not-found`, and a held line whose product the storefront no longer shows is 404 `products.not-found`. Repeating it changes nothing. Returns the updated cart.
  * @summary Set cart item quantity
  */
-export const updateCartItemById = (
+export const updateCartItemByProductId = (
     productId: string,
-    updateCartItemByIdRequest: UpdateCartItemByIdRequest,
+    updateCartItemByProductIdRequest: UpdateCartItemByProductIdRequest,
     options?: SecondParameter<typeof orvalMutator<CartResponse>>
 ) => {
     return orvalMutator<CartResponse>(
@@ -10429,7 +10429,7 @@ export const updateCartItemById = (
             url: `/cart/items/${productId}`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            data: updateCartItemByIdRequest
+            data: updateCartItemByProductIdRequest
         },
         options
     );
@@ -10439,9 +10439,9 @@ export const updateCartItemById = (
  * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart/items` is the door that adds. A change never creates, so a product the cart holds no line for is 404 `cart.item-not-found`, and a held line whose product the storefront no longer shows is 404 `products.not-found`. Repeating it changes nothing. Returns the updated cart.
  * @summary Set cart item quantity
  */
-export const updateCartItemByIdWithMergePatchJson = (
+export const updateCartItemByProductIdWithMergePatchJson = (
     productId: string,
-    updateCartItemByIdRequest: UpdateCartItemByIdRequest,
+    updateCartItemByProductIdRequest: UpdateCartItemByProductIdRequest,
     options?: SecondParameter<typeof orvalMutator<CartResponse>>
 ) => {
     return orvalMutator<CartResponse>(
@@ -10449,7 +10449,7 @@ export const updateCartItemByIdWithMergePatchJson = (
             url: `/cart/items/${productId}`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: updateCartItemByIdRequest
+            data: updateCartItemByProductIdRequest
         },
         options
     );
@@ -10459,7 +10459,7 @@ export const updateCartItemByIdWithMergePatchJson = (
  * Removes the cart line for the product identified by `{productId}` in the path from the authenticated user's cart. Returns the updated cart.
  * @summary Remove item from cart
  */
-export const removeCartItem = (
+export const deleteCartItemByProductId = (
     productId: string,
     options?: SecondParameter<typeof orvalMutator<CartResponse>>
 ) => {
@@ -11562,7 +11562,7 @@ export const deleteWebhookSubscription = (
  * of `POST .../secrets`.
  * @summary Drop one secret from a subscription's ring
  */
-export const removeWebhookSubscriptionSecret = (
+export const deleteWebhookSubscriptionSecret = (
     id: string,
     secretId: string,
     options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>
@@ -11652,8 +11652,8 @@ export const listApiKeys = (
  * everywhere, reset their password or report an email change as not theirs.
  * @summary Mint a machine-to-machine credential
  */
-export const mintApiKey = (
-    mintApiKeyRequest: MintApiKeyRequest,
+export const createApiKey = (
+    createApiKeyRequest: CreateApiKeyRequest,
     options?: SecondParameter<typeof orvalMutator<ApiKeyCreated>>
 ) => {
     return orvalMutator<ApiKeyCreated>(
@@ -11661,7 +11661,7 @@ export const mintApiKey = (
             url: `/api-keys`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: mintApiKeyRequest
+            data: createApiKeyRequest
         },
         options
     );
@@ -12693,7 +12693,7 @@ export type GetConfigResult = NonNullable<Awaited<ReturnType<typeof getConfig>>>
 export type GetLivezResult = NonNullable<Awaited<ReturnType<typeof getLivez>>>;
 export type GetReadyzResult = NonNullable<Awaited<ReturnType<typeof getReadyz>>>;
 export type GetSecurityTxtResult = NonNullable<Awaited<ReturnType<typeof getSecurityTxt>>>;
-export type GetLocalesResult = NonNullable<Awaited<ReturnType<typeof getLocales>>>;
+export type ListLocalesResult = NonNullable<Awaited<ReturnType<typeof listLocales>>>;
 export type CreateLocaleResult = NonNullable<Awaited<ReturnType<typeof createLocale>>>;
 export type ListLocaleAppsResult = NonNullable<Awaited<ReturnType<typeof listLocaleApps>>>;
 export type GetLocaleResult = NonNullable<Awaited<ReturnType<typeof getLocale>>>;
@@ -12789,14 +12789,14 @@ export type LogoutAllResult = NonNullable<Awaited<ReturnType<typeof logoutAll>>>
 export type GetSessionResult = NonNullable<Awaited<ReturnType<typeof getSession>>>;
 export type RevokeSessionResult = NonNullable<Awaited<ReturnType<typeof revokeSession>>>;
 export type ListAddressesResult = NonNullable<Awaited<ReturnType<typeof listAddresses>>>;
-export type AddAddressResult = NonNullable<Awaited<ReturnType<typeof addAddress>>>;
+export type CreateAddressResult = NonNullable<Awaited<ReturnType<typeof createAddress>>>;
 export type GetAddressResult = NonNullable<Awaited<ReturnType<typeof getAddress>>>;
 export type ReplaceAddressResult = NonNullable<Awaited<ReturnType<typeof replaceAddress>>>;
 export type UpdateAddressResult = NonNullable<Awaited<ReturnType<typeof updateAddress>>>;
 export type UpdateAddressWithMergePatchJsonResult = NonNullable<
     Awaited<ReturnType<typeof updateAddressWithMergePatchJson>>
 >;
-export type RemoveAddressResult = NonNullable<Awaited<ReturnType<typeof removeAddress>>>;
+export type DeleteAddressResult = NonNullable<Awaited<ReturnType<typeof deleteAddress>>>;
 export type SetDefaultAddressResult = NonNullable<Awaited<ReturnType<typeof setDefaultAddress>>>;
 export type RequestEmailVerificationResult = NonNullable<
     Awaited<ReturnType<typeof requestEmailVerification>>
@@ -12910,11 +12910,15 @@ export type SearchProductsResult = NonNullable<Awaited<ReturnType<typeof searchP
 export type GetCartResult = NonNullable<Awaited<ReturnType<typeof getCart>>>;
 export type AddCartItemResult = NonNullable<Awaited<ReturnType<typeof addCartItem>>>;
 export type ClearCartResult = NonNullable<Awaited<ReturnType<typeof clearCart>>>;
-export type UpdateCartItemByIdResult = NonNullable<Awaited<ReturnType<typeof updateCartItemById>>>;
-export type UpdateCartItemByIdWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof updateCartItemByIdWithMergePatchJson>>
+export type UpdateCartItemByProductIdResult = NonNullable<
+    Awaited<ReturnType<typeof updateCartItemByProductId>>
 >;
-export type RemoveCartItemResult = NonNullable<Awaited<ReturnType<typeof removeCartItem>>>;
+export type UpdateCartItemByProductIdWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateCartItemByProductIdWithMergePatchJson>>
+>;
+export type DeleteCartItemByProductIdResult = NonNullable<
+    Awaited<ReturnType<typeof deleteCartItemByProductId>>
+>;
 export type SetCartShippingMethodResult = NonNullable<
     Awaited<ReturnType<typeof setCartShippingMethod>>
 >;
@@ -13029,8 +13033,8 @@ export type UpdateWebhookSubscriptionWithMergePatchJsonResult = NonNullable<
 export type DeleteWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof deleteWebhookSubscription>>
 >;
-export type RemoveWebhookSubscriptionSecretResult = NonNullable<
-    Awaited<ReturnType<typeof removeWebhookSubscriptionSecret>>
+export type DeleteWebhookSubscriptionSecretResult = NonNullable<
+    Awaited<ReturnType<typeof deleteWebhookSubscriptionSecret>>
 >;
 export type ListWebhookDeliveriesResult = NonNullable<
     Awaited<ReturnType<typeof listWebhookDeliveries>>
@@ -13040,7 +13044,7 @@ export type ReplayWebhookDeliveryResult = NonNullable<
 >;
 export type ListWebhookEventsResult = NonNullable<Awaited<ReturnType<typeof listWebhookEvents>>>;
 export type ListApiKeysResult = NonNullable<Awaited<ReturnType<typeof listApiKeys>>>;
-export type MintApiKeyResult = NonNullable<Awaited<ReturnType<typeof mintApiKey>>>;
+export type CreateApiKeyResult = NonNullable<Awaited<ReturnType<typeof createApiKey>>>;
 export type GetApiKeyResult = NonNullable<Awaited<ReturnType<typeof getApiKey>>>;
 export type RevokeApiKeyResult = NonNullable<Awaited<ReturnType<typeof revokeApiKey>>>;
 export type ActivateLocaleResult = NonNullable<Awaited<ReturnType<typeof activateLocale>>>;

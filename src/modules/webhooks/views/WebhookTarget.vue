@@ -455,7 +455,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                                 </td>
                                 <td>
                                     <v-btn
-                                        v-if="currentSubscription.actions.removeSecret"
+                                        v-if="currentSubscription.actions.deleteSecret"
                                         size="small"
                                         variant="tonal"
                                         color="error"

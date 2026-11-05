@@ -14,8 +14,8 @@ import {
     getCart,
     getCartSummary,
     addCartItem,
-    updateCartItemById,
-    removeCartItem,
+    updateCartItemByProductId,
+    deleteCartItemByProductId,
     clearCart,
     mergeCart,
     setCartShippingMethod,
@@ -375,7 +375,7 @@ export const useCartStore = defineStore('cart', () => {
      * @returns A promise resolving with the updated cart response.
      */
     const updateCartItem = (productId: string, quantity: number) =>
-        replaceCart(() => updateCartItemById(productId, { quantity }));
+        replaceCart(() => updateCartItemByProductId(productId, { quantity }));
 
     /**
      * Chooses, or clears (`null`), the shipping method the cart plans to ship by ahead of
@@ -396,7 +396,7 @@ export const useCartStore = defineStore('cart', () => {
      * @returns A promise resolving with the updated cart response.
      */
     const removeCartItemAction = (productId: string) =>
-        replaceCart(() => removeCartItem(productId));
+        replaceCart(() => deleteCartItemByProductId(productId));
 
     /**
      * Empties the cart entirely. `DELETE /cart/items` — the line collection's own URL, apart from

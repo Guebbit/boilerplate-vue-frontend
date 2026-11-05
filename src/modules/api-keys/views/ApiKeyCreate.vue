@@ -31,7 +31,7 @@ import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { getFirstApiError } from '@/infrastructure/http/envelope.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import type { MintApiKeyRequest } from '@types';
+import type { CreateApiKeyRequest } from '@types';
 
 /**
  * Generics
@@ -144,7 +144,7 @@ const {
 const submitForm = () => {
     clearSubmitError();
     return handleSubmit(() => {
-        const data: MintApiKeyRequest = {
+        const data: CreateApiKeyRequest = {
             name: form.value.name!,
             permissions: form.value.permissions!,
             // `datetime-local` has no timezone of its own; the contract wants a real ISO instant.

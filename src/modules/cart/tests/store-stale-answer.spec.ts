@@ -11,8 +11,8 @@ import { createPinia, setActivePinia } from 'pinia';
 import {
     addCartItem,
     getCart,
-    removeCartItem,
-    updateCartItemById,
+    deleteCartItemByProductId,
+    updateCartItemByProductId,
     checkout as apiCheckout
 } from '@api';
 import { aCart } from './cart-fixtures.ts';
@@ -28,8 +28,8 @@ vi.mock('@api', () => ({
     getCart: vi.fn(),
     getCartSummary: vi.fn(),
     addCartItem: vi.fn(),
-    updateCartItemById: vi.fn(),
-    removeCartItem: vi.fn(),
+    updateCartItemByProductId: vi.fn(),
+    deleteCartItemByProductId: vi.fn(),
     clearCart: vi.fn(),
     mergeCart: vi.fn(),
     setCartShippingMethod: vi.fn(),
@@ -103,8 +103,12 @@ describe('answers that arrive in the wrong order', () => {
                 const delivered = (cart: (typeof answers)[number]) =>
                     scheduler.schedule(Promise.resolve(answered(cart))) as never;
                 vi.mocked(addCartItem).mockImplementation(() => delivered(answers[0]));
-                vi.mocked(updateCartItemById).mockImplementation(() => delivered(answers[1]));
-                vi.mocked(removeCartItem).mockImplementation(() => delivered(answers[2]));
+                vi.mocked(updateCartItemByProductId).mockImplementation(() =>
+                    delivered(answers[1])
+                );
+                vi.mocked(deleteCartItemByProductId).mockImplementation(() =>
+                    delivered(answers[2])
+                );
                 const store = freshStore();
 
                 const writes = [

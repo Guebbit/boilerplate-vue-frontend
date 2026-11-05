@@ -28,7 +28,7 @@ vi.mock('@api', async (importOriginal) => ({
     // against them, so the real ones have to survive the mock.
     ...(await importOriginal<Record<string, unknown>>()),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
-    getLocales: (options?: { timeout?: number }) => getLocalesMock(options),
+    listLocales: (options?: { timeout?: number }) => getLocalesMock(options),
     getLocaleMessages: (locale: string, parameters?: { app?: string }) =>
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
         getLocaleMessagesMock(locale, parameters)
@@ -86,7 +86,7 @@ const capability = (
  * @returns the manifest response
  */
 const manifest = (withDraft: boolean) =>
-    contractResponse(schemas.GetLocalesResponse, {
+    contractResponse(schemas.ListLocalesResponse, {
         locales: [capability('en'), ...(withDraft ? [capability('es')] : [])],
         default: 'en',
         fallback: 'en'
@@ -96,7 +96,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     snapshot = [...supportedLanguages];
     getLocalesMock.mockResolvedValue(
-        contractResponse(schemas.GetLocalesResponse, {
+        contractResponse(schemas.ListLocalesResponse, {
             locales: [capability('en'), capability('it')],
             default: 'en',
             fallback: 'en'
@@ -132,7 +132,7 @@ describe('fetchRemoteLocales', () => {
         ['both', ['demo-be', 'demo-fe']]
     ])('keeps a language that is %s', (_label, apps) => {
         getLocalesMock.mockResolvedValue(
-            contractResponse(schemas.GetLocalesResponse, {
+            contractResponse(schemas.ListLocalesResponse, {
                 locales: [capability('es', apps)],
                 default: 'en',
                 fallback: 'en'
@@ -145,7 +145,7 @@ describe('fetchRemoteLocales', () => {
     // A visitor gets the deployed file alone (`static`); there is nothing of theirs to preview.
     it('leaves out a deployed language the shop has switched off', () => {
         getLocalesMock.mockResolvedValue(
-            contractResponse(schemas.GetLocalesResponse, {
+            contractResponse(schemas.ListLocalesResponse, {
                 locales: [
                     capability('en'),
                     capability('it', ['demo-be'], { active: false, source: 'static' })
@@ -160,7 +160,7 @@ describe('fetchRemoteLocales', () => {
     // Staff who may read drafts get the language's own row too (`both`): a draft to preview.
     it('keeps a switched-off language a staff member can preview', () => {
         getLocalesMock.mockResolvedValue(
-            contractResponse(schemas.GetLocalesResponse, {
+            contractResponse(schemas.ListLocalesResponse, {
                 locales: [
                     capability('en'),
                     capability('it', ['demo-be', 'demo-fe'], { active: false, source: 'both' })
@@ -242,7 +242,7 @@ describe('fetchLocaleOverrides', () => {
 describe('mergeRemoteLocales', () => {
     it('adds a language the API offers and this build does not bundle', () => {
         getLocalesMock.mockResolvedValue(
-            contractResponse(schemas.GetLocalesResponse, {
+            contractResponse(schemas.ListLocalesResponse, {
                 locales: [capability('en'), capability('es')],
                 default: 'en',
                 fallback: 'en'
@@ -257,7 +257,7 @@ describe('mergeRemoteLocales', () => {
 
     it('adds nothing twice, however often it runs', () => {
         getLocalesMock.mockResolvedValue(
-            contractResponse(schemas.GetLocalesResponse, {
+            contractResponse(schemas.ListLocalesResponse, {
                 locales: [capability('es')],
                 default: 'en',
                 fallback: 'en'
@@ -276,7 +276,7 @@ describe('mergeRemoteLocales', () => {
     // an `/it/…` address to the default language.
     it('takes a bundled language away once the shop has switched it off', () => {
         getLocalesMock.mockResolvedValue(
-            contractResponse(schemas.GetLocalesResponse, {
+            contractResponse(schemas.ListLocalesResponse, {
                 locales: [
                     capability('en'),
                     capability('it', ['demo-be'], { active: false, source: 'static' })
@@ -313,7 +313,7 @@ describe('mergeRemoteLocales', () => {
     // is the opt-in to preview its product text.
     it('marks a staff-visible switched-off language as a draft, and a live one not', () => {
         getLocalesMock.mockResolvedValue(
-            contractResponse(schemas.GetLocalesResponse, {
+            contractResponse(schemas.ListLocalesResponse, {
                 locales: [
                     capability('en'),
                     capability('es', ['demo-be', 'demo-fe'], { active: false, source: 'both' })
@@ -331,7 +331,7 @@ describe('mergeRemoteLocales', () => {
 
     it("does not mark a visitor's language: the switched-off row never reaches the list", () => {
         getLocalesMock.mockResolvedValue(
-            contractResponse(schemas.GetLocalesResponse, {
+            contractResponse(schemas.ListLocalesResponse, {
                 locales: [
                     capability('en'),
                     capability('it', ['demo-be'], { active: false, source: 'static' })
@@ -348,7 +348,7 @@ describe('mergeRemoteLocales', () => {
 
     it('forgets the drafts on a re-read, so sign-out empties them', () => {
         getLocalesMock.mockResolvedValue(
-            contractResponse(schemas.GetLocalesResponse, {
+            contractResponse(schemas.ListLocalesResponse, {
                 locales: [
                     capability('en'),
                     capability('es', ['demo-be', 'demo-fe'], { active: false, source: 'both' })
@@ -371,7 +371,7 @@ describe('mergeRemoteLocales', () => {
 
     it('keeps a bundled language a staff member can still preview', () => {
         getLocalesMock.mockResolvedValue(
-            contractResponse(schemas.GetLocalesResponse, {
+            contractResponse(schemas.ListLocalesResponse, {
                 locales: [
                     capability('en'),
                     capability('it', ['demo-be', 'demo-fe'], { active: false, source: 'both' })
@@ -393,7 +393,7 @@ describe('mergeRemoteLocales', () => {
         ['fallback', 'en', 'it']
     ])("never takes away the deployment's %s language", (_label, defaultTag, fallbackTag) => {
         getLocalesMock.mockResolvedValue(
-            contractResponse(schemas.GetLocalesResponse, {
+            contractResponse(schemas.ListLocalesResponse, {
                 locales: [
                     capability('en', ['demo-be'], { active: false, source: 'static' }),
                     capability('it', ['demo-be'], { active: false, source: 'static' })

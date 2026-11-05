@@ -163,7 +163,9 @@ describe('a book that already holds an address', () => {
             .then(() => wrapper.get('[data-test=address-dialog] form').trigger('submit'))
             .then(flushPromises)
             .then(() => {
-                expect(contractRequest(schemas.AddAddressBody, lastAddCall()?.data)).toMatchObject({
+                expect(
+                    contractRequest(schemas.CreateAddressBody, lastAddCall()?.data)
+                ).toMatchObject({
                     default: true
                 });
             });

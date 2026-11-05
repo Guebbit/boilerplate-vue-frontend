@@ -18,8 +18,8 @@ import {
     getCart,
     getCartSummary,
     addCartItem,
-    updateCartItemById,
-    removeCartItem,
+    updateCartItemByProductId,
+    deleteCartItemByProductId,
     clearCart,
     mergeCart,
     setCartShippingMethod,
@@ -39,8 +39,8 @@ vi.mock('@api', () => ({
     getCart: vi.fn(),
     getCartSummary: vi.fn(),
     addCartItem: vi.fn(),
-    updateCartItemById: vi.fn(),
-    removeCartItem: vi.fn(),
+    updateCartItemByProductId: vi.fn(),
+    deleteCartItemByProductId: vi.fn(),
     clearCart: vi.fn(),
     mergeCart: vi.fn(),
     setCartShippingMethod: vi.fn(),
@@ -66,8 +66,8 @@ beforeEach(() => {
     vi.mocked(getCart).mockResolvedValue(answer);
     vi.mocked(getCartSummary).mockResolvedValue(answered(SERVER_CART.summary));
     vi.mocked(addCartItem).mockResolvedValue(answer);
-    vi.mocked(updateCartItemById).mockResolvedValue(answer);
-    vi.mocked(removeCartItem).mockResolvedValue(answer);
+    vi.mocked(updateCartItemByProductId).mockResolvedValue(answer);
+    vi.mocked(deleteCartItemByProductId).mockResolvedValue(answer);
     vi.mocked(clearCart).mockResolvedValue(answer);
     vi.mocked(setCartShippingMethod).mockResolvedValue(answer);
     vi.mocked(reorder).mockResolvedValue(answered({ cart: SERVER_CART, lines: [] }));

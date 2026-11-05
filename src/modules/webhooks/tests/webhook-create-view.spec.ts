@@ -62,7 +62,7 @@ const CREATED: WebhookSubscriptionCreated = {
         enable: false,
         disable: true,
         createSecret: true,
-        removeSecret: false
+        deleteSecret: false
     },
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',

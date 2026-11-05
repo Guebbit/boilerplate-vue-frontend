@@ -5,7 +5,7 @@
  */
 import { z } from 'zod';
 import { translate } from '@/i18n';
-import { mintApiKeyBodyNameMax } from '@api/schemas';
+import { createApiKeyBodyNameMax } from '@api/schemas';
 
 /**
  * Validation schema for the credential's name: required, and bounded by the contract's own
@@ -15,7 +15,7 @@ import { mintApiKeyBodyNameMax } from '@api/schemas';
 const apiKeyNameSchema = z
     .string()
     .min(1, { error: () => translate('api-keys-form.name-required') })
-    .max(mintApiKeyBodyNameMax, { error: () => translate('api-keys-form.name-too-long') });
+    .max(createApiKeyBodyNameMax, { error: () => translate('api-keys-form.name-too-long') });
 
 /**
  * Validation schema for the permissions combobox: at least one key, matching the contract's own

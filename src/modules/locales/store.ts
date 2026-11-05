@@ -9,7 +9,7 @@ import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import {
-    getLocales,
+    listLocales,
     getLocale,
     getLocaleDictionary,
     listLocaleApps,
@@ -253,7 +253,7 @@ export const useLocalesStore = defineStore('locales', () => {
      */
     const fetchLanguages = () =>
         fetchAny(() =>
-            getLocales().then((response) => {
+            listLocales().then((response) => {
                 capabilities.value = response.locales;
                 defaultLocale.value = response.default;
                 fallbackLocale.value = response.fallback;

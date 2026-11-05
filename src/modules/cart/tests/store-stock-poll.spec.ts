@@ -7,7 +7,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { getCart, updateCartItemById, removeCartItem } from '@api';
+import { getCart, updateCartItemByProductId, deleteCartItemByProductId } from '@api';
 import { aCart } from './cart-fixtures.ts';
 import { gate, answered, type Answer } from '../../../../tests/support/unit/async-answers.ts';
 import { ACTIONS, issue, signInAs } from './cart-interleave.ts';
@@ -21,8 +21,8 @@ vi.mock('@api', () => ({
     getCart: vi.fn(),
     getCartSummary: vi.fn(),
     addCartItem: vi.fn(),
-    updateCartItemById: vi.fn(),
-    removeCartItem: vi.fn(),
+    updateCartItemByProductId: vi.fn(),
+    deleteCartItemByProductId: vi.fn(),
     clearCart: vi.fn(),
     mergeCart: vi.fn(),
     setCartShippingMethod: vi.fn(),
@@ -176,7 +176,7 @@ describe('a poll yields to anything fresher', () => {
         vi.mocked(getCart).mockReturnValue(pollAnswer.promise);
         const polling = store.pollCart();
         const written = aCart([['p1', 5]]);
-        vi.mocked(updateCartItemById).mockResolvedValue(answered(written));
+        vi.mocked(updateCartItemByProductId).mockResolvedValue(answered(written));
         await store.updateCartItem('p1', 5);
 
         pollAnswer.resolve(answered(aCart([['p1', 2]])));
@@ -191,7 +191,7 @@ describe('a poll yields to anything fresher', () => {
         vi.mocked(getCart).mockReturnValue(pollAnswer.promise);
         const polling = store.pollCart();
         const removed = aCart([]);
-        vi.mocked(removeCartItem).mockResolvedValue(answered(removed));
+        vi.mocked(deleteCartItemByProductId).mockResolvedValue(answered(removed));
         await store.removeCartItem('p1');
 
         pollAnswer.resolve(answered(aCart([['p1', 2]])));
