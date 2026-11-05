@@ -206,13 +206,23 @@ describe('a buyer notice', () => {
         );
     });
 
-    it('links no merge, cart or wishlist notice anywhere', () => {
-        const notice = {
-            code: 'shop-tasks.cart-line-removed',
-            params: { productId: 'p1', titles: {} }
-        } as const;
+    it.each([
+        ['shop-tasks.cart-line-removed', { productId: 'p1', titles: {} }, { route: 'Cart' }],
+        [
+            'shop-tasks.wishlist-item-removed',
+            { productId: 'p1', titles: {} },
+            { route: 'Wishlist' }
+        ],
+        ['shop-tasks.cart-merge-refused', { lines: [] }, { route: 'Cart' }],
+        [
+            'shop-tasks.stock-alert',
+            { productId: 'p1', titles: {} },
+            { route: 'ProductTarget', params: { id: 'p1' } }
+        ]
+    ])('links %s to the page the buyer acts on next', (code, parameters, expected) => {
+        const facts = { code, params: parameters };
 
-        expect(entryOf(notice).target).toBeUndefined();
+        expect(entryOf(facts).target?.(full(facts))).toEqual(expected);
     });
 
     describe('a late preorder', () => {

@@ -48,12 +48,14 @@ flowchart LR
 
 Three shapes of notice:
 
-| Shape           | Codes                                                                                                     | Links to                             |
-| --------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| Buyer           | `cart-line-removed`, `wishlist-item-removed`, `stock-alert`, `cart-merge-refused`                         | nothing                              |
-| Buyer, an order | `fulfillment-delayed`, `fulfillment-held`, `shipment-lost`                                                | `OrderTarget`, where they can cancel |
-| Staff record    | `staff.purchase-hold-placed`, `staff.return-requested`                                                    | `UserTarget`, `ReturnTarget`         |
-| Staff summary   | ten `staff.*` codes (`transfers-due`, `preorders-late`, `low-stock`, `unshipped`, ...) carrying a `count` | the list they count                  |
+| Shape           | Codes                                                                                                     | Links to                               |
+| --------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Buyer           | `cart-line-removed`, `cart-merge-refused`                                                                 | `Cart`                                 |
+| Buyer           | `wishlist-item-removed`                                                                                   | `Wishlist`                             |
+| Buyer           | `stock-alert`                                                                                             | `ProductTarget`, buyable when it fires |
+| Buyer, an order | `fulfillment-delayed`, `fulfillment-held`, `shipment-lost`                                                | `OrderTarget`, where they can cancel   |
+| Staff record    | `staff.purchase-hold-placed`, `staff.return-requested`                                                    | `UserTarget`, `ReturnTarget`           |
+| Staff summary   | ten `staff.*` codes (`transfers-due`, `preorders-late`, `low-stock`, `unshipped`, ...) carrying a `count` | the list they count                    |
 
 A summary row carries a count and no id, so it points at a list. Which list is a choice, written
 once in `notification-screens.yaml` next to the module and generated into

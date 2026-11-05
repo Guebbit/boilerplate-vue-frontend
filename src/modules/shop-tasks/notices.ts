@@ -70,10 +70,28 @@ const summaryNotices = Object.fromEntries(
  * The shop's notice codes, by code.
  */
 export const shopNotices: Record<string, AppNotice> = {
-    'shop-tasks.cart-line-removed': { describe: describeProduct },
-    'shop-tasks.wishlist-item-removed': { describe: describeProduct },
-    'shop-tasks.stock-alert': { describe: describeProduct },
-    'shop-tasks.cart-merge-refused': { describe: describeMergeRefused },
+    // The product is gone, so a product link would 404: the cart is where the buyer acts next.
+    'shop-tasks.cart-line-removed': {
+        describe: describeProduct,
+        target: () => ({ route: 'Cart' })
+    },
+    'shop-tasks.wishlist-item-removed': {
+        describe: describeProduct,
+        target: () => ({ route: 'Wishlist' })
+    },
+    // The product is buyable when the alert fires, so its page is the one to open.
+    'shop-tasks.stock-alert': {
+        describe: describeProduct,
+        target: (notice: ShopNotice<'shop-tasks.stock-alert'>) => ({
+            route: 'ProductTarget',
+            params: { id: notice.params.productId }
+        })
+    },
+    // The merge rewrote the cart; the buyer checks what survived.
+    'shop-tasks.cart-merge-refused': {
+        describe: describeMergeRefused,
+        target: () => ({ route: 'Cart' })
+    },
     'shop-tasks.fulfillment-delayed': { describe: describePreorder, target: orderTarget },
     'shop-tasks.fulfillment-held': { describe: describeHeld, target: orderTarget },
     'shop-tasks.shipment-lost': { describe: describeLost, target: orderTarget },
