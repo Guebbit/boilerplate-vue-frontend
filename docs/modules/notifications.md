@@ -85,7 +85,7 @@ after 1, 2, 4 ... seconds (capped at 30), and every open is followed by a fresh 
 
 ### The text
 
-`Notification` is a union on `code`, and each variant carries its own typed `params` (`@types`).
+`Notification` is a union on `code`, and each variant carries its own typed `params`.
 The foundation never names a project's code. Each module declares the codes it owns in
 `AppModule.notices`: a map from code to `{ describe, target? }`, collected like `navigation` and
 installed once at boot (`registerNotices`). The inbox store asks the registry for the sentence and
