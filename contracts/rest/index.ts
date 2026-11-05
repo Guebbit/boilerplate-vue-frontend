@@ -80,12 +80,14 @@ export type CurrencyCode = string;
 
 /**
  * A money amount as a plain decimal string at the places of the currency it is priced in (`"19.90"` for EUR, `"1000"` for JPY, `"1.500"` for KWD). May be negative where the field says it is a signed figure.
+ * @maxLength 32
  * @pattern ^-?\d+(\.\d+)?$
  */
 export type DecimalAmount = string;
 
 /**
  * A non-negative money amount as a plain decimal string at the places of the currency it is priced in (`"19.90"` for EUR, `"1000"` for JPY, `"1.500"` for KWD).
+ * @maxLength 32
  * @pattern ^\d+(\.\d+)?$
  */
 export type NonNegativeDecimalAmount = string;

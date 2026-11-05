@@ -15410,6 +15410,7 @@ components:
       type: string
       format: decimal
       pattern: ^-?\d+(\.\d+)?$
+      maxLength: 32
       examples:
         - "19.90"
       description: A money amount as a plain decimal string at the places of the currency it is priced in (`"19.90"` for EUR, `"1000"` for JPY, `"1.500"` for KWD). May be negative where the field says it is a signed figure.
@@ -15417,6 +15418,7 @@ components:
       type: string
       format: decimal
       pattern: ^\d+(\.\d+)?$
+      maxLength: 32
       examples:
         - "19.90"
       description: A non-negative money amount as a plain decimal string at the places of the currency it is priced in (`"19.90"` for EUR, `"1000"` for JPY, `"1.500"` for KWD).
