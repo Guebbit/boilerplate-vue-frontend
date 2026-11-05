@@ -49,7 +49,7 @@ describe('WebhookDeliveriesFilters rows', () => {
     it('offers Replay on an in-flight row too: the server answers a busy lease with a 409', async () => {
         const wrapper = mount(WebhookDeliveriesFilters, {
             props: {
-                deliveries: [{ ...delivery('d1', 'order.created'), status: 'in-flight' }],
+                deliveries: [{ ...delivery('d1', 'order.created'), status: 'in_flight' }],
                 total: 1,
                 pages: 1,
                 loading: false,

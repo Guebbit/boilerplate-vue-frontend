@@ -1884,7 +1884,7 @@ export type RateType = (typeof RateType)[keyof typeof RateType];
 
 export const RateType = {
     standard: 'standard',
-    'zero-rated': 'zero-rated',
+    zero_rated: 'zero_rated',
     exempt: 'exempt'
 } as const;
 
@@ -6010,7 +6010,7 @@ export type WebhookDeliveryStatus =
 
 export const WebhookDeliveryStatus = {
     pending: 'pending',
-    'in-flight': 'in-flight',
+    in_flight: 'in_flight',
     succeeded: 'succeeded',
     exhausted: 'exhausted'
 } as const;

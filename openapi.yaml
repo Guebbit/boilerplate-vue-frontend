@@ -18124,7 +18124,7 @@ components:
       type: string
       enum:
         - standard
-        - zero-rated
+        - zero_rated
         - exempt
       description: "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
     OrderLineProduct:
@@ -23511,7 +23511,7 @@ components:
       type: string
       enum:
         - pending
-        - in-flight
+        - in_flight
         - succeeded
         - exhausted
     WebhookEventName:

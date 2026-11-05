@@ -3654,7 +3654,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                             .number()
                             .min(downloadAccountExportResponseOrdersItemItemsItemProductTaxRateMin)
                             .max(downloadAccountExportResponseOrdersItemItemsItemProductTaxRateMax),
-                        rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
+                        rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional()
                     }),
                     quantity: zod.number().min(1),
                     locale: zod
@@ -7392,7 +7392,7 @@ export const ListProductsResponse = zod.strictObject({
                 .max(listProductsResponseItemsItemCurrencyOneMax)
                 .regex(listProductsResponseItemsItemCurrencyOneRegExp),
             taxClass: zod.enum(['reduced', 'zero']).optional(),
-            rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
+            rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional(),
             sku: zod.string().min(1).max(listProductsResponseItemsItemSkuMax).optional(),
             inStock: zod.boolean(),
             lowStock: zod.boolean(),
@@ -7480,7 +7480,7 @@ export const CreateProductBody = zod.strictObject({
     ),
     price: zod.number().min(createProductBodyPriceMin),
     taxClass: zod.enum(['reduced', 'zero']).optional(),
-    rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
+    rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional(),
     sku: zod.string().min(1).max(createProductBodySkuMax).optional(),
     active: zod.boolean().default(createProductBodyActiveDefault),
     purchasable: zod.boolean().default(createProductBodyPurchasableDefault),
@@ -7517,7 +7517,7 @@ export const CreateProductResponse = zod.strictObject({
         .max(createProductResponseCurrencyOneMax)
         .regex(createProductResponseCurrencyOneRegExp),
     taxClass: zod.enum(['reduced', 'zero']).optional(),
-    rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
+    rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional(),
     sku: zod.string().min(1).max(createProductResponseSkuMax).optional(),
     inStock: zod.boolean(),
     lowStock: zod.boolean(),
@@ -7619,7 +7619,7 @@ export const GetProductByIdResponse = zod.strictObject({
         .max(getProductByIdResponseCurrencyOneMax)
         .regex(getProductByIdResponseCurrencyOneRegExp),
     taxClass: zod.enum(['reduced', 'zero']).optional(),
-    rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
+    rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional(),
     sku: zod.string().min(1).max(getProductByIdResponseSkuMax).optional(),
     inStock: zod.boolean(),
     lowStock: zod.boolean(),
@@ -7703,7 +7703,7 @@ export const ReplaceProductByIdBody = zod.strictObject({
     ),
     price: zod.number().min(replaceProductByIdBodyPriceMin),
     taxClass: zod.union([zod.enum(['reduced', 'zero']), zod.null()]).optional(),
-    rateType: zod.union([zod.enum(['standard', 'zero-rated', 'exempt']), zod.null()]).optional(),
+    rateType: zod.union([zod.enum(['standard', 'zero_rated', 'exempt']), zod.null()]).optional(),
     sku: zod
         .union([zod.string().min(1).max(replaceProductByIdBodySkuOneMax), zod.null()])
         .optional(),
@@ -7747,7 +7747,7 @@ export const ReplaceProductByIdResponse = zod.strictObject({
         .max(replaceProductByIdResponseCurrencyOneMax)
         .regex(replaceProductByIdResponseCurrencyOneRegExp),
     taxClass: zod.enum(['reduced', 'zero']).optional(),
-    rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
+    rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional(),
     sku: zod.string().min(1).max(replaceProductByIdResponseSkuMax).optional(),
     inStock: zod.boolean(),
     lowStock: zod.boolean(),
@@ -7843,7 +7843,7 @@ export const UpdateProductByIdBody = zod.strictObject({
         .optional(),
     price: zod.number().min(updateProductByIdBodyPriceMin).optional(),
     taxClass: zod.union([zod.enum(['reduced', 'zero']), zod.null()]).optional(),
-    rateType: zod.union([zod.enum(['standard', 'zero-rated', 'exempt']), zod.null()]).optional(),
+    rateType: zod.union([zod.enum(['standard', 'zero_rated', 'exempt']), zod.null()]).optional(),
     sku: zod
         .union([zod.string().min(1).max(updateProductByIdBodySkuOneMax), zod.null()])
         .optional(),
@@ -7889,7 +7889,7 @@ export const UpdateProductByIdResponse = zod.strictObject({
         .max(updateProductByIdResponseCurrencyOneMax)
         .regex(updateProductByIdResponseCurrencyOneRegExp),
     taxClass: zod.enum(['reduced', 'zero']).optional(),
-    rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
+    rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional(),
     sku: zod.string().min(1).max(updateProductByIdResponseSkuMax).optional(),
     inStock: zod.boolean(),
     lowStock: zod.boolean(),
@@ -7979,7 +7979,7 @@ export const RestoreProductByIdResponse = zod.strictObject({
         .max(restoreProductByIdResponseCurrencyOneMax)
         .regex(restoreProductByIdResponseCurrencyOneRegExp),
     taxClass: zod.enum(['reduced', 'zero']).optional(),
-    rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
+    rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional(),
     sku: zod.string().min(1).max(restoreProductByIdResponseSkuMax).optional(),
     inStock: zod.boolean(),
     lowStock: zod.boolean(),
@@ -8120,7 +8120,7 @@ export const SearchProductsResponse = zod.strictObject({
                 .max(searchProductsResponseItemsItemCurrencyOneMax)
                 .regex(searchProductsResponseItemsItemCurrencyOneRegExp),
             taxClass: zod.enum(['reduced', 'zero']).optional(),
-            rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
+            rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional(),
             sku: zod.string().min(1).max(searchProductsResponseItemsItemSkuMax).optional(),
             inStock: zod.boolean(),
             lowStock: zod.boolean(),
@@ -8832,7 +8832,7 @@ export const CheckoutResponse = zod.strictObject({
                     .number()
                     .min(checkoutResponseItemsItemProductTaxRateMin)
                     .max(checkoutResponseItemsItemProductTaxRateMax),
-                rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
+                rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional()
             }),
             quantity: zod.number().min(1),
             locale: zod
@@ -9370,7 +9370,7 @@ export const ListOrdersResponse = zod.strictObject({
                             .number()
                             .min(listOrdersResponseItemsItemItemsItemProductTaxRateMin)
                             .max(listOrdersResponseItemsItemItemsItemProductTaxRateMax),
-                        rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
+                        rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional()
                     }),
                     quantity: zod.number().min(1),
                     locale: zod
@@ -9651,7 +9651,7 @@ export const CreateOrderResponse = zod.strictObject({
                     .number()
                     .min(createOrderResponseItemsItemProductTaxRateMin)
                     .max(createOrderResponseItemsItemProductTaxRateMax),
-                rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
+                rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional()
             }),
             quantity: zod.number().min(1),
             locale: zod
@@ -9968,7 +9968,7 @@ export const SearchOrdersResponse = zod.strictObject({
                             .number()
                             .min(searchOrdersResponseItemsItemItemsItemProductTaxRateMin)
                             .max(searchOrdersResponseItemsItemItemsItemProductTaxRateMax),
-                        rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
+                        rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional()
                     }),
                     quantity: zod.number().min(1),
                     locale: zod
@@ -10224,7 +10224,7 @@ export const GetOrderByIdResponse = zod.strictObject({
                     .number()
                     .min(getOrderByIdResponseItemsItemProductTaxRateMin)
                     .max(getOrderByIdResponseItemsItemProductTaxRateMax),
-                rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
+                rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional()
             }),
             quantity: zod.number().min(1),
             locale: zod
@@ -10442,7 +10442,7 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                     .number()
                     .min(replaceOrderByIdResponseItemsItemProductTaxRateMin)
                     .max(replaceOrderByIdResponseItemsItemProductTaxRateMax),
-                rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
+                rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional()
             }),
             quantity: zod.number().min(1),
             locale: zod
@@ -10668,7 +10668,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                     .number()
                     .min(updateOrderByIdResponseItemsItemProductTaxRateMin)
                     .max(updateOrderByIdResponseItemsItemProductTaxRateMax),
-                rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
+                rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional()
             }),
             quantity: zod.number().min(1),
             locale: zod
@@ -10899,7 +10899,7 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                     .number()
                     .min(restoreOrderByIdResponseItemsItemProductTaxRateMin)
                     .max(restoreOrderByIdResponseItemsItemProductTaxRateMax),
-                rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
+                rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional()
             }),
             quantity: zod.number().min(1),
             locale: zod
@@ -11136,7 +11136,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
                     .number()
                     .min(cancelOrderByIdResponseItemsItemProductTaxRateMin)
                     .max(cancelOrderByIdResponseItemsItemProductTaxRateMax),
-                rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
+                rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional()
             }),
             quantity: zod.number().min(1),
             locale: zod
@@ -11355,7 +11355,7 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                     .number()
                     .min(overrideOrderStatusResponseItemsItemProductTaxRateMin)
                     .max(overrideOrderStatusResponseItemsItemProductTaxRateMax),
-                rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
+                rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional()
             }),
             quantity: zod.number().min(1),
             locale: zod
@@ -12100,7 +12100,7 @@ export const ProcessOrderResponse = zod.strictObject({
                     .number()
                     .min(processOrderResponseItemsItemProductTaxRateMin)
                     .max(processOrderResponseItemsItemProductTaxRateMax),
-                rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
+                rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional()
             }),
             quantity: zod.number().min(1),
             locale: zod
@@ -15959,7 +15959,7 @@ export const ListWebhookDeliveriesQueryParams = zod.strictObject({
         .max(listWebhookDeliveriesQuerySubscriptionIdMax)
         .regex(listWebhookDeliveriesQuerySubscriptionIdRegExp)
         .optional(),
-    status: zod.enum(['pending', 'in-flight', 'succeeded', 'exhausted']).optional()
+    status: zod.enum(['pending', 'in_flight', 'succeeded', 'exhausted']).optional()
 });
 export const listWebhookDeliveriesResponseItemsItemIdMax = 64;
 export const listWebhookDeliveriesResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -16019,7 +16019,7 @@ export const ListWebhookDeliveriesResponse = zod.strictObject({
                 'user.updated'
             ]),
             attempt: zod.number().min(1),
-            status: zod.enum(['pending', 'in-flight', 'succeeded', 'exhausted']),
+            status: zod.enum(['pending', 'in_flight', 'succeeded', 'exhausted']),
             responseCode: zod
                 .number()
                 .min(listWebhookDeliveriesResponseItemsItemResponseCodeMin)
@@ -16119,7 +16119,7 @@ export const ReplayWebhookDeliveryResponse = zod.strictObject({
         'user.updated'
     ]),
     attempt: zod.number().min(1),
-    status: zod.enum(['pending', 'in-flight', 'succeeded', 'exhausted']),
+    status: zod.enum(['pending', 'in_flight', 'succeeded', 'exhausted']),
     responseCode: zod
         .number()
         .min(replayWebhookDeliveryResponseResponseCodeMin)
@@ -17169,7 +17169,7 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
                     .number()
                     .min(correctOrderShippingAddressResponseItemsItemProductTaxRateMin)
                     .max(correctOrderShippingAddressResponseItemsItemProductTaxRateMax),
-                rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
+                rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional()
             }),
             quantity: zod.number().min(1),
             locale: zod
@@ -19685,7 +19685,7 @@ export const GetWebhookDeliveryResponse = zod.strictObject({
         'user.updated'
     ]),
     attempt: zod.number().min(1),
-    status: zod.enum(['pending', 'in-flight', 'succeeded', 'exhausted']),
+    status: zod.enum(['pending', 'in_flight', 'succeeded', 'exhausted']),
     responseCode: zod
         .number()
         .min(getWebhookDeliveryResponseResponseCodeMin)

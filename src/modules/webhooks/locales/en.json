@@ -108,7 +108,7 @@
         "filter-status": "Status",
         "filter-status-all": "All statuses",
         "status-pending": "Pending",
-        "status-in-flight": "In flight",
+        "status-in_flight": "In flight",
         "status-succeeded": "Succeeded",
         "status-exhausted": "Exhausted",
         "column-created-at": "Created at",
