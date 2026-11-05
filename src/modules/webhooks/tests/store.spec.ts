@@ -455,11 +455,11 @@ describe('useWebhooksStore', () => {
                 });
         });
 
-        it('eventCatalogue is empty before the first successful load', () => {
-            expect(useWebhooksStore().eventCatalogue).toEqual([]);
+        it('eventCatalog is empty before the first successful load', () => {
+            expect(useWebhooksStore().eventCatalog).toEqual([]);
         });
 
-        it('fetchEventCatalogue requests the event catalogue', () => {
+        it('fetchEventCatalog requests the event catalogue', () => {
             vi.mocked(orvalMutator).mockImplementation(
                 (config: { url?: string; method?: string }) =>
                     Promise.resolve(
@@ -470,10 +470,10 @@ describe('useWebhooksStore', () => {
             );
 
             return useWebhooksStore()
-                .fetchEventCatalogue()
+                .fetchEventCatalog()
                 .then(() => {
                     expect(lastRequest()).toMatchObject({ url: '/webhooks/events', method: 'GET' });
-                    expect(useWebhooksStore().eventCatalogue).toEqual([{ name: 'order.created' }]);
+                    expect(useWebhooksStore().eventCatalog).toEqual([{ name: 'order.created' }]);
                 });
         });
     });

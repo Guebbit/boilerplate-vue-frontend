@@ -81,7 +81,7 @@ const ROWS: readonly PressRow[] = [
         operation: '**/orders/*/cancel',
         confirms: true,
         effect: (orderId) => statusOf('user', orderId),
-        done: 'cancelled'
+        done: 'canceled'
     },
     {
         name: 'the operator’s cancel and refund cancels once',
@@ -92,7 +92,7 @@ const ROWS: readonly PressRow[] = [
         operation: '**/orders/*/cancel',
         confirms: false,
         effect: (orderId) => statusOf('admin', orderId),
-        done: 'cancelled'
+        done: 'canceled'
     },
     {
         name: 'the operator’s refund refunds once',
@@ -144,7 +144,7 @@ const ROWS: readonly PressRow[] = [
         operation: '**/returns',
         confirms: true,
         effect: (orderId) => statusOf('user', orderId),
-        done: 'cancelled'
+        done: 'canceled'
     }
 ];
 

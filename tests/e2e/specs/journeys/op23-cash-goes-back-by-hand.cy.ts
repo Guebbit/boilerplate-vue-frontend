@@ -43,7 +43,7 @@ describe('OP23 · Cash goes back by hand', () => {
                 expect(response?.headers['content-type']).to.contain('application/pdf');
             });
 
-            cy.step('cancel and refund: the order is cancelled and the cash is owed back');
+            cy.step('cancel and refund: the order is canceled and the cash is owed back');
             cy.visit(`/en/orders/${orderId}/edit`);
             cy.get('[data-test=button-cancel-and-refund]').should('not.be.disabled').click();
             cy.get('[data-test=button-cancel-and-refund]').should('be.disabled');

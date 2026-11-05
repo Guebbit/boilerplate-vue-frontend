@@ -115,7 +115,7 @@ const entryDialog = ref<{
  */
 const { message: addError, report: reportAddError, clear: clearAddError } = useBlockingError();
 
-// A stale failure from a cancelled attempt must not greet the next open.
+// A stale failure from a canceled attempt must not greet the next open.
 watch(entryFormOpen, (open) => {
     if (open) clearAddError();
 });
@@ -135,7 +135,7 @@ const {
     clear: clearImportError
 } = useBlockingError();
 
-// A stale failure from a cancelled attempt must not greet the next open.
+// A stale failure from a canceled attempt must not greet the next open.
 watch(importOpen, (open) => {
     if (open) clearImportError();
 });

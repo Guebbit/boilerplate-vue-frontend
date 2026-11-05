@@ -19,7 +19,7 @@
         "status-in_progress": "Spedito in parte",
         "status-on_hold": "In sospeso",
         "status-closed": "Evaso",
-        "status-cancelled": "Annullato",
+        "status-canceled": "Annullato",
         "kind-digital": "Digitale",
         "hold-reason-awaiting_stock": "In attesa di scorte",
         "hold-reason-incorrect_address": "Indirizzo errato",
@@ -34,7 +34,7 @@
         "expected": "Spedizione prevista {date}",
         "no-date-yet": "Ancora nessuna data",
         "line-progress": "{shipped} di {quantity} spediti",
-        "line-cancelled": "{cancelled} annullati",
+        "line-canceled": "{canceled} annullati",
         "button-ship": "Spedisci articoli",
         "button-fulfill": "Segna come evaso",
         "button-hold": "Sospendi",
@@ -117,7 +117,7 @@
         "state-waiting": "In attesa di merce",
         "state-allocated": "Assegnato",
         "state-shipped": "Spedito",
-        "state-cancelled": "Annullato"
+        "state-canceled": "Annullato"
     },
     "report-lost-dialog": {
         "title": "Segnala la spedizione #{number} smarrita o danneggiata",

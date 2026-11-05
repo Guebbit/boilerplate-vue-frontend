@@ -25,7 +25,7 @@ interface OrderLike {
     status: string;
 }
 
-/** The slice of a return this story reads: that the remainder was cancelled. */
+/** The slice of a return this story reads: that the remainder was canceled. */
 interface CancellationLike {
     kind: string;
     status: string;
@@ -77,7 +77,7 @@ describe('OP33 · The money doors ask a fresh session', () => {
             answerAs('manager');
             eventually(
                 () => cy.apiAs<OrderLike>('manager', 'GET', `/orders/${orderId}`),
-                (order) => order?.status === 'cancelled'
+                (order) => order?.status === 'canceled'
             );
         });
 
@@ -91,7 +91,7 @@ describe('OP33 · The money doors ask a fresh session', () => {
             cy.get('[data-test=reauth-dialog]').should('not.exist');
             eventually(
                 () => cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`),
-                (order) => order?.status === 'cancelled'
+                (order) => order?.status === 'canceled'
             );
         });
 
@@ -157,7 +157,7 @@ describe('OP33 · The money doors ask a fresh session', () => {
                         answerAs('manager');
                         eventually(
                             () => cy.apiAs<OrderLike>('manager', 'GET', `/orders/${orderId}`),
-                            (own) => own?.status === 'cancelled'
+                            (own) => own?.status === 'canceled'
                         );
                     }
                 );

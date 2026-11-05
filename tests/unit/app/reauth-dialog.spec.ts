@@ -176,13 +176,13 @@ describe('ReauthDialog', () => {
         });
     });
 
-    it('rejects the pending step-up when cancelled, instead of leaving it hanging', () => {
+    it('rejects the pending step-up when canceled, instead of leaving it hanging', () => {
         const wrapper = mountDialog();
         const stepUp = useReauthPromptStore().requestStepUp();
 
         return nextRenderTick(wrapper)
             .then(() => wrapper.get('[data-test="reauth-dialog-cancel"]').trigger('click'))
-            .then(() => expect(stepUp).rejects.toThrow('REAUTH_CANCELLED'));
+            .then(() => expect(stepUp).rejects.toThrow('REAUTH_CANCELED'));
     });
 });
 

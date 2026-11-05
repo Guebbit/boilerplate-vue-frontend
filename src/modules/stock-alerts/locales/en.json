@@ -7,7 +7,7 @@
         "page-title": "Back-in-stock alerts",
         "empty": "You are not waiting for any product.",
         "button-cancel": "Cancel",
-        "success-cancelled": "Request cancelled."
+        "success-canceled": "Request cancelled."
     },
     "navigation": {
         "label-stock-alerts": "Back-in-stock alerts"

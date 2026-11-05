@@ -524,7 +524,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * in — holding the mailbox is not a login — so the visitor lands on the login page after it.
      *
      * @param token - Restore token received by email.
-     * @returns A promise resolving once the deletion is cancelled.
+     * @returns A promise resolving once the deletion is canceled.
      */
     const restoreAccount = (token: string) => fetchAny(() => apiRestoreAccount({ token }));
 
@@ -544,7 +544,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
     const savingProfile = computed(() => isLoading(['save']));
 
     /**
-     * Whether a pending email change is being resent or cancelled.
+     * Whether a pending email change is being resent or canceled.
      */
     const changingPendingEmail = computed(() => isLoading(['pending-email']));
 

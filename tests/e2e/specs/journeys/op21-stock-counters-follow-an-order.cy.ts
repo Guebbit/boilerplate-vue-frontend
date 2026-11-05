@@ -3,7 +3,7 @@
  * @module
  * OP21 · The stock counters follow an order. One product with five units on the shelf: a customer
  * checks out two (they are held: reserved, not yet gone), the order is paid (still on the shelf,
- * still reserved: the units leave at shipment), a second order is placed and cancelled (held,
+ * still reserved: the units leave at shipment), a second order is placed and canceled (held,
  * then released), and the administrator writes the unsold units off. At each step the board's
  * on-hand, reserved and available counts say what the order did, the ledger names the movement
  * and links it to the order, and a guest who looked at the product before sees "out of stock" the
@@ -125,7 +125,7 @@ describe('OP21 · The stock counters follow an order', () => {
             });
             boardShows(title, [SHELF, FIRST_ORDER, SHELF - FIRST_ORDER]);
 
-            cy.step('a second order is placed and then cancelled: held, then released');
+            cy.step('a second order is placed and then canceled: held, then released');
             placeOrder(product.id, SECOND_ORDER).as('second');
             boardShows(title, [
                 SHELF,

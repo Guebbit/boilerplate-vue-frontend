@@ -4,7 +4,7 @@
  * PS5 · My preorder is late. A customer pays for two preorders of the same product. The shop moves
  * the release date a fortnight later: the buyer is told. When the new date has passed too, the
  * sweep tells each buyer once more. Nobody is asked anything: one buyer cancels from the order
- * page, the other does nothing, and a month later the sweep has cancelled nothing, so the second is
+ * page, the other does nothing, and a month later the sweep has canceled nothing, so the second is
  * still waiting.
  *
  * The story is the buyer's side of a delay: what the order page shows at each stage, and that
@@ -61,7 +61,7 @@ describe('PS5 · My preorder is late', () => {
         cy.visit('/en');
     });
 
-    it('a slip and a lateness are only told, and nobody is cancelled for staying silent', () => {
+    it('a slip and a lateness are only told, and nobody is canceled for staying silent', () => {
         const title = `PS5 preorder ${String(Date.now())}`;
         preorderOnSale({ releaseInDays: 10, limit: 5, title }).then((productId) => {
             cy.step('the customer pays for two preorders: each waits for stock, with a date');
@@ -118,15 +118,15 @@ describe('PS5 · My preorder is late', () => {
                     cy.get('[data-test=app-dialog-confirm]').click();
                     eventually(
                         () => cy.apiAs<OrderLike>('user', 'GET', `/orders/${first}`),
-                        (order) => order?.status === 'cancelled'
-                    ).should((order) => expect(order?.status).to.equal('cancelled'));
+                        (order) => order?.status === 'canceled'
+                    ).should((order) => expect(order?.status).to.equal('canceled'));
 
                     cy.step('a month of silence from the second: the sweep cancels nothing');
                     cy.travel(31 * DAY_MS);
                     cy.runJob('sweep-preorders');
                     cy.loginAs('user');
                     cy.apiAs<OrderLike>('user', 'GET', `/orders/${second}`).should((order) =>
-                        expect(order?.status, 'not cancelled').to.not.equal('cancelled')
+                        expect(order?.status, 'not canceled').to.not.equal('canceled')
                     );
                     cy.visit(`/en/orders/${second}`);
                     cy.get('[data-test=fulfillment-order-awaiting-stock]').should('exist');

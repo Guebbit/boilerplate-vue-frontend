@@ -49,7 +49,7 @@ describe('what a card shows', () => {
         ['in_progress', 'Partly shipped'],
         ['on_hold', 'On hold'],
         ['closed', 'Fulfilled'],
-        ['cancelled', 'Cancelled']
+        ['canceled', 'Cancelled']
     ] as const)('labels a %s fulfillment order in words', (status, text) => {
         // `holdReason` is staff's: a record that carries it is read as staff read it ("On hold").
         const { wrapper } = mountCard(
@@ -164,7 +164,7 @@ describe('what a card shows', () => {
         expect(wrapper.find('[data-test=fulfillment-order-no-date]').exists()).toBe(false);
     });
 
-    it('shows each line as shipped of quantity, with the cancelled count when there is one', () => {
+    it('shows each line as shipped of quantity, with the canceled count when there is one', () => {
         const { wrapper } = mountCard(
             aFulfillmentOrder({
                 lines: [
@@ -173,7 +173,7 @@ describe('what a card shows', () => {
                         title: 'Shirt',
                         quantity: 3,
                         shippedQuantity: 1,
-                        cancelledQuantity: 1,
+                        canceledQuantity: 1,
                         remaining: 1
                     }
                 ]
@@ -236,7 +236,7 @@ describe('the buttons come from `actions`', () => {
             expect(mountCard(order).wrapper.find('[data-test=open-ship]').exists()).toBe(false);
     });
 
-    it('fulfils a digital group and tells the page', () => {
+    it('fulfills a digital group and tells the page', () => {
         const { wrapper, store } = mountCard(
             aFulfillmentOrder({
                 kind: 'digital',
@@ -333,10 +333,10 @@ describe('a late preorder', () => {
             expect(wrapper.find(`[data-test=${hook}]`).exists()).toBe(false);
     });
 
-    it('says who cancelled what was left, and when the buyer was last told', () => {
+    it('says who canceled what was left, and when the buyer was last told', () => {
         const { wrapper } = mountCard(
             aFulfillmentOrder({
-                status: 'cancelled',
+                status: 'canceled',
                 cancelReason: 'order',
                 lastNoticeAt: '2027-03-02T10:00:00.000Z'
             })

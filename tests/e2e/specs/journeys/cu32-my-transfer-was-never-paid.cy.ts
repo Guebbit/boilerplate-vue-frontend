@@ -3,10 +3,10 @@
  * @module
  * CU32 · My transfer was never paid. The customer checks out by bank transfer and is told how long
  * the shop holds the stock. The admin sees the order on the awaiting-transfer list. The hold runs
- * out with no money: the order is cancelled, the customer's page offers nothing to pay or cancel,
+ * out with no money: the order is canceled, the customer's page offers nothing to pay or cancel,
  * and the order leaves the awaiting list.
  *
- * Then the money turns up late. The admin finds the cancelled order by the reference the customer
+ * Then the money turns up late. The admin finds the canceled order by the reference the customer
  * was given, records the transfer, and the payment lists it as money to hand back.
  *
  * Demo only: the hold is a clock jump and the sweep is pulled with the job lever. The mail, the
@@ -33,7 +33,7 @@ describe('CU32 · My transfer was never paid', () => {
         cy.visit('/en');
     });
 
-    it('the hold runs out with no money, and the order is cancelled and leaves the awaiting list', () => {
+    it('the hold runs out with no money, and the order is canceled and leaves the awaiting list', () => {
         cy.step('the customer checks out by bank transfer and reads how long the stock is held');
         cy.loginAs('user');
         addToCartFromStorefront('product.rich');
@@ -64,9 +64,9 @@ describe('CU32 · My transfer was never paid', () => {
             cy.runJob('sweep-reservations');
             cy.apiAs<OrderLike>('admin', 'GET', `/orders/${orderId}`)
                 .its('status')
-                .should('equal', 'cancelled');
+                .should('equal', 'canceled');
 
-            cy.step('the customer’s page is cancelled, with nothing to pay or cancel');
+            cy.step('the customer’s page is canceled, with nothing to pay or cancel');
             cy.loginAs('user');
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=transfer-instructions-panel]').should('not.exist');
@@ -81,7 +81,7 @@ describe('CU32 · My transfer was never paid', () => {
             cy.settleNetwork();
             cy.get(`[data-test=row-view][href$="/orders/${orderId}"]`).should('not.exist');
 
-            cy.step('the money arrives late: the reference still finds the cancelled order');
+            cy.step('the money arrives late: the reference still finds the canceled order');
             cy.get<string>('@reference').then((reference) => {
                 cy.visit('/en/sales/orders');
                 cy.get('[data-test=order-reference-search-input] input').type(reference);
@@ -101,7 +101,7 @@ describe('CU32 · My transfer was never paid', () => {
             cy.contains('Money to hand back outside the system').should('exist');
             cy.apiAs<OrderLike>('admin', 'GET', `/orders/${orderId}`)
                 .its('status')
-                .should('equal', 'cancelled');
+                .should('equal', 'canceled');
         });
     });
 });

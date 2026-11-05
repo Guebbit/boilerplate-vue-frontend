@@ -510,7 +510,7 @@ describe('the reorder outcome', () => {
 });
 
 describe('the three statuses beside the order status', () => {
-    it('shows the payment and fulfilment state, and no return chip while none is open', () => {
+    it('shows the payment and fulfillment state, and no return chip while none is open', () => {
         const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
 
         expect(wrapper.get('[data-test=order-payment-status]').text()).toBe('Unpaid');

@@ -35,15 +35,15 @@ describe('Orders', () => {
                 });
         });
 
-        it('shows View and Edit per row for admin users, and Delete only on a cancelled order', () => {
+        it('shows View and Edit per row for admin users, and Delete only on a canceled order', () => {
             cy.get('[data-test=list-row]')
                 .eq(0)
                 .within(() => {
                     cy.get('[data-test=row-view]').should('exist');
                     cy.get('[data-test=row-edit]').should('exist');
                 });
-            cy.subjectId('order.cancelled').then((cancelledId) => {
-                cy.visit(`/en/sales/orders?id=${cancelledId}`);
+            cy.subjectId('order.canceled').then((canceledId) => {
+                cy.visit(`/en/sales/orders?id=${canceledId}`);
                 cy.get('[data-test=list-row]').within(() => {
                     cy.get('[data-test=row-delete]').should('exist');
                 });
@@ -56,9 +56,9 @@ describe('Orders', () => {
             });
         });
 
-        it('offers Hard delete on a cancelled unpaid order only', () => {
-            cy.subjectId('order.cancelled').then((cancelledId) => {
-                cy.visit(`/en/sales/orders?id=${cancelledId}`);
+        it('offers Hard delete on a canceled unpaid order only', () => {
+            cy.subjectId('order.canceled').then((canceledId) => {
+                cy.visit(`/en/sales/orders?id=${canceledId}`);
                 cy.get('[data-test=list-row]')
                     .should('have.length', 1)
                     .within(() => {

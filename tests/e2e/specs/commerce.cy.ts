@@ -78,7 +78,7 @@ describe('Commerce', () => {
         cy.contains('Payment received').should('exist');
         cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
 
-        // ── Paid is still cancellable — the refund path exists now ──────────────────
+        // ── Paid is still cancelable — the refund path exists now ──────────────────
         cy.get('[data-test=order-cancel]').should('exist');
         cy.get('[data-test=order-cancel]').click();
         // The app's own confirmation, not the browser's: Cypress auto-accepts only the latter.
@@ -90,7 +90,7 @@ describe('Commerce', () => {
     it('the admin ships via the shipment panel, marks it delivered, and the ledger remembers why', () => {
         /*
          * Ship an order that has EARNED shipping. The state machine allows a pending order only
-         * one move — cancelled — because shipping an unpaid order would be giving stock away;
+         * one move — canceled — because shipping an unpaid order would be giving stock away;
          * `paid` is reached exclusively through the payment flow. So the customer buys and pays
          * first, for real — a spec that shipped a pending order directly would be asserting a
          * transition the API refuses.

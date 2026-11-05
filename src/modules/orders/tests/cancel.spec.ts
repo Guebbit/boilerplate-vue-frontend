@@ -3,7 +3,7 @@
  * Vitest spec mocking `orvalMutator` directly, so the assertions can inspect the raw request body
  * sent for `cancelOrder` — the orders store's one customer write.
  *
- * Transport-mocked like the other store flow specs; what is pinned is that the cancelled record
+ * Transport-mocked like the other store flow specs; what is pinned is that the canceled record
  * REPLACES the cached one (the fact worth rendering is the new status). A payload-less 200 cannot
  * reach this store: `orvalMutator` validates every response against its contract schema in every
  * mode but vitest — see http-validate-responses.spec.ts, which owns that behaviour.
@@ -24,7 +24,7 @@ wireModulesIntoCore();
 /**
  * Fixture order returned by the mocked cancel endpoint.
  */
-const ORDER = anOrder({ status: 'cancelled' });
+const ORDER = anOrder({ status: 'canceled' });
 
 /**
  * Canned response bodies keyed by `METHOD url`, read by the `orvalMutator` mock.
@@ -54,10 +54,10 @@ beforeEach(() => {
 });
 
 describe('cancelOrder', () => {
-    it('replaces the cached record with the cancelled one', () => {
+    it('replaces the cached record with the canceled one', () => {
         const store = useOrdersStore();
         return store.cancelOrder('o1').then(() => {
-            expect(store.orders.o1?.status).toBe('cancelled');
+            expect(store.orders.o1?.status).toBe('canceled');
         });
     });
 });

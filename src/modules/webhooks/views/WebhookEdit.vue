@@ -60,14 +60,14 @@ const { id } = defineProps<{
 /**
  * Webhooks store actions and event catalogue for the `eventTypes` multiselect.
  */
-const { watchSubscription, updateSubscription, fetchEventCatalogue } = useWebhooksStore();
+const { watchSubscription, updateSubscription, fetchEventCatalog } = useWebhooksStore();
 
 /** Reactive current subscription, event catalogue and the two loading flags. */
-const { currentSubscription, eventCatalogue, loadingEventCatalogue, loadingSubscriptions } =
+const { currentSubscription, eventCatalog, loadingEventCatalog, loadingSubscriptions } =
     storeToRefs(useWebhooksStore());
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises -- the read resolves into the composable's error state instead of rejecting
-onMounted(() => void fetchEventCatalogue());
+onMounted(() => void fetchEventCatalog());
 
 /**
  * Edit form data model.
@@ -243,10 +243,10 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             data-test="webhook-event-types"
                             multiple
                             chips
-                            :items="eventCatalogue"
+                            :items="eventCatalog"
                             item-title="name"
                             item-value="name"
-                            :loading="loadingEventCatalogue"
+                            :loading="loadingEventCatalog"
                             :label="t('webhook-edit-page.label-event-types')"
                             v-bind="fieldErrorProps(showFormErrors ? formErrors.eventTypes : [])"
                         />

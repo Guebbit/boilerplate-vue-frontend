@@ -23,7 +23,7 @@ interface OrdersPage {
 }
 
 /**
- * How many unpaid orders the customer has open: placed and neither paid nor cancelled.
+ * How many unpaid orders the customer has open: placed and neither paid nor canceled.
  *
  * @returns a chain yielding the count
  */

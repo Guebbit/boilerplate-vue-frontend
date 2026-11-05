@@ -58,7 +58,7 @@ const exportStatus = ref<AccountExport>();
 const onAmbientError = useAmbientError();
 
 /**
- * The pending status read, kept so it can be cancelled on unmount.
+ * The pending status read, kept so it can be canceled on unmount.
  */
 let poller: ReturnType<typeof setTimeout> | undefined;
 

@@ -53,7 +53,7 @@
         "status-processing": "In elaborazione",
         "status-shipped": "Spedito",
         "status-delivered": "Consegnato",
-        "status-cancelled": "Annullato"
+        "status-canceled": "Annullato"
     },
     "order-target-page": {
         "page-title": "Dettagli ordine",
@@ -164,7 +164,7 @@
         "type-processing": "Ordine in preparazione",
         "type-shipped": "Ordine spedito",
         "type-delivered": "Ordine consegnato",
-        "type-cancelled": "Ordine annullato",
+        "type-canceled": "Ordine annullato",
         "type-status_overridden": "Stato corretto a mano",
         "type-payment_declined": "Pagamento rifiutato",
         "type-refund_issued": "Rimborso avviato",
@@ -179,7 +179,7 @@
         "type-shipment_lost": "Pacco smarrito in viaggio",
         "type-fulfillment_held": "Spedizione messa in attesa",
         "type-fulfillment_released": "Spedizione sbloccata",
-        "type-remainder_cancelled": "Resto dell'ordine annullato",
+        "type-remainder_canceled": "Resto dell'ordine annullato",
         "type-return_requested": "Reso richiesto",
         "type-return_approved": "Reso approvato",
         "type-return_declined": "Reso rifiutato",
@@ -207,7 +207,7 @@
         "by-admin": "lo staff",
         "by-system": "il sistema",
         "by-withdrawal": "un recesso",
-        "by-fulfilment": "l'evasione",
+        "by-fulfillment": "l'evasione",
         "cause-lost": "Smarrito in transito, rimborsato",
         "refund-reason-cancellation": "Annullamento",
         "refund-reason-goodwill": "Gesto commerciale",

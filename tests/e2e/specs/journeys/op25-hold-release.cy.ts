@@ -4,7 +4,7 @@
  * OP25 · Hold a group back, then let it go. The seeded order sits on a staff hold ("High risk"):
  * its card says so, offers no ship button and a release one. Releasing makes it shippable again;
  * holding it once more asks for a reason, an optional note and an optional message for the buyer,
- * and the card and the order's fulfilment status follow. The buyer reads a notice, never the
+ * and the card and the order's fulfillment status follow. The buyer reads a notice, never the
  * staff reason, and is mailed when they can act on it.
  *
  * The staff reasons are three (`awaiting_stock` belongs to the stock itself and is never offered),
@@ -20,8 +20,8 @@ interface OrderLike {
     fulfillmentStatus: string;
 }
 
-/** The slice of an order's fulfilment this story reads. */
-interface FulfilmentLike {
+/** The slice of an order's fulfillment this story reads. */
+interface FulfillmentLike {
     items: { id: string }[];
 }
 
@@ -110,12 +110,12 @@ describe('OP25 · Hold a group back, then let it go', () => {
 
             cy.step('a stale dialog: someone else held it first, and the refusal shows in place');
             cy.get('[data-test=open-hold]').click();
-            cy.apiAs<FulfilmentLike>('admin', 'GET', `/orders/${orderId}/fulfillment-orders`).then(
-                (fulfilment) => {
+            cy.apiAs<FulfillmentLike>('admin', 'GET', `/orders/${orderId}/fulfillment-orders`).then(
+                (fulfillment) => {
                     cy.apiAs(
                         'admin',
                         'POST',
-                        `/delivery/fulfillment-orders/${fulfilment?.items[0]?.id ?? ''}/hold`,
+                        `/delivery/fulfillment-orders/${fulfillment?.items[0]?.id ?? ''}/hold`,
                         { reason: 'other' }
                     );
                 }

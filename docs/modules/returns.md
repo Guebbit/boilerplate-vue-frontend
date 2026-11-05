@@ -69,7 +69,7 @@ time. A withdrawal takes no reason and covers the whole order. The panel also li
 already opened on that order, so a customer sees what became of a withdrawal.
 
 **What can still be done comes from `GET /returns/options`.** The panel reads it once per order and
-counts nothing itself: `returnable` is what has shipped and not yet come back, `cancellable` is each
+counts nothing itself: `returnable` is what has shipped and not yet come back, `cancelable` is each
 fulfillment order that still has a remainder, with the refund cancelling it would owe (the delivery
 included when it takes the last unit). Both doors below are fed by it, and it is re-read after
 each move.
@@ -77,10 +77,10 @@ each move.
 ```mermaid
 flowchart TD
     options["GET /returns/options"] --> returnable["returnable: what arrived"]
-    options --> cancellable["cancellable: a remainder per fulfillment order"]
+    options --> cancelable["cancelable: a remainder per fulfillment order"]
     returnable --> form["ReturnRequestForm"]
-    cancellable --> buyer["buyer: their withdrawal"]
-    cancellable --> staff["staff: the refund key"]
+    cancelable --> buyer["buyer: their withdrawal"]
+    cancelable --> staff["staff: the refund key"]
     buyer --> dialog["CancelRemainderDialog<br/>server's refund · confirm"]
     staff --> dialog
     dialog -->|"POST /returns kind: cancellation"| api[("backend returns")]

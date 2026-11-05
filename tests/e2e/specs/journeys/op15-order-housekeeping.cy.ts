@@ -1,10 +1,10 @@
 // requires-module: account, inventory, orders, products
 /**
  * @module
- * OP15 · Order housekeeping. A shop manager soft-deletes a cancelled order (an open one offers no
- * delete: it is cancelled first): it stays on the staff list, marked deleted, and vanishes from its
+ * OP15 · Order housekeeping. A shop manager soft-deletes a canceled order (an open one offers no
+ * delete: it is canceled first): it stays on the staff list, marked deleted, and vanishes from its
  * customer. Restoring brings it back. A hard delete is
- * offered only on a cancelled, never-paid order: an open order must be cancelled first (which
+ * offered only on a canceled, never-paid order: an open order must be canceled first (which
  * returns its held units to the shelf), and a PAID order never shows the action, because an
  * invoice was frozen from its payment (BE `orders/services/remove.ts`).
  *
@@ -51,10 +51,10 @@ describe('OP15 · Order housekeeping', () => {
         cy.visit('/en');
     });
 
-    it('soft delete hides a cancelled order from its owner, restore returns it, hard delete destroys a cancelled unpaid one only', () => {
+    it('soft delete hides a canceled order from its owner, restore returns it, hard delete destroys a canceled unpaid one only', () => {
         cy.subjectId('order.paid').then((paidId) => {
             cy.subjectId('order.awaitingTransfer').then((unpaidId) => {
-                cy.subjectId('order.cancelled').then((cancelledId) => {
+                cy.subjectId('order.canceled').then((canceledId) => {
                     cy.subjectId('product.rich').then((productId) => {
                         const shelf = { before: 0 };
                         cy.loginAs('manager');
@@ -65,39 +65,39 @@ describe('OP15 · Order housekeeping', () => {
                         );
 
                         cy.step(
-                            'only a cancelled order can be hidden: an open one offers no delete'
+                            'only a canceled order can be hidden: an open one offers no delete'
                         );
                         rowOf(paidId).within(() => {
                             cy.get('[data-test=row-delete]').should('not.exist');
                         });
 
-                        cy.step('the customer sees the cancelled order before anything happens');
-                        customerListing(cancelledId).should('deep.equal', [cancelledId]);
+                        cy.step('the customer sees the canceled order before anything happens');
+                        customerListing(canceledId).should('deep.equal', [canceledId]);
 
                         cy.step('soft delete, after a confirmation: the row stays, marked deleted');
-                        rowOf(cancelledId).within(() => {
+                        rowOf(canceledId).within(() => {
                             cy.get('[data-test=row-deleted]').should('not.exist');
                             cy.get('[data-test=row-delete]').click();
                         });
                         cy.get('[data-test=app-dialog-confirm]').click();
-                        rowOf(cancelledId).within(() => {
+                        rowOf(canceledId).within(() => {
                             cy.get('[data-test=row-deleted]').should('exist');
                             cy.get('[data-test=row-restore]').should('exist');
                             cy.get('[data-test=row-delete]').should('not.exist');
                         });
 
                         cy.step('the customer no longer has it');
-                        customerListing(cancelledId).should('deep.equal', []);
+                        customerListing(canceledId).should('deep.equal', []);
 
                         cy.step('restore needs no confirmation and brings it back');
-                        rowOf(cancelledId).within(() => {
+                        rowOf(canceledId).within(() => {
                             cy.get('[data-test=row-restore]').click();
                         });
-                        rowOf(cancelledId).within(() => {
+                        rowOf(canceledId).within(() => {
                             cy.get('[data-test=row-deleted]').should('not.exist');
                             cy.get('[data-test=row-delete]').should('exist');
                         });
-                        customerListing(cancelledId).should('deep.equal', [cancelledId]);
+                        customerListing(canceledId).should('deep.equal', [canceledId]);
 
                         cy.step(
                             'a paid order is never offered a hard delete: its invoice must survive'
@@ -106,14 +106,14 @@ describe('OP15 · Order housekeeping', () => {
                             cy.get('[data-test=row-hard-delete]').should('not.exist');
                         });
 
-                        cy.step('an open order is not offered one either, until it is cancelled');
+                        cy.step('an open order is not offered one either, until it is canceled');
                         rowOf(unpaidId).within(() => {
                             cy.get('[data-test=row-hard-delete]').should('not.exist');
                         });
                         cy.apiAs('admin', 'POST', `/orders/${unpaidId}/cancel`, {});
 
                         cy.step(
-                            'hard delete of the cancelled unpaid order is permanent; the cancel freed its units'
+                            'hard delete of the canceled unpaid order is permanent; the cancel freed its units'
                         );
                         rowOf(unpaidId).within(() => {
                             cy.get('[data-test=row-hard-delete]').click();

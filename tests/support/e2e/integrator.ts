@@ -103,11 +103,11 @@ export const setEnabledOnTheDetailPage = (
  * method).
  *
  * Done BEFORE the order a spec cares about, never after: a cancellation announces itself too, and
- * its delivery row must be older than the `order.created` one the spec waits for. Cancelled as the
+ * its delivery row must be older than the `order.created` one the spec waits for. Canceled as the
  * administrator: the customer's OWN cancels count towards the purchase hold, and a spec that places
  * several orders would otherwise be refused at its third.
  *
- * @returns a chain that settles once the open orders are cancelled
+ * @returns a chain that settles once the open orders are canceled
  */
 const freeTheOpenOrderSlots = (): Cypress.Chainable =>
     cy

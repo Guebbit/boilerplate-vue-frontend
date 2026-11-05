@@ -11,7 +11,7 @@ export default {
 /**
  * @module
  * The shopper's open "notify me" requests, in the account: each names its product and can be
- * cancelled. A request is used once, so an answered one is simply gone from the list.
+ * canceled. A request is used once, so an answered one is simply gone from the list.
  */
 import { onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
@@ -66,7 +66,7 @@ const {
 const handleCancel = (productId: string) => {
     clearActionError();
     cancel(productId)
-        .then(() => addMessage(t('stock-alerts-page.success-cancelled')))
+        .then(() => addMessage(t('stock-alerts-page.success-canceled')))
         .catch((error) => reportActionError(error));
 };
 

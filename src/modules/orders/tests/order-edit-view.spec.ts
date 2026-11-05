@@ -361,7 +361,7 @@ describe('marking a hand-paid refund as returned', () => {
 });
 
 describe('cancelling', () => {
-    it('re-reads the payment once the order is cancelled', () => {
+    it('re-reads the payment once the order is canceled', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.pending,
@@ -370,7 +370,7 @@ describe('cancelling', () => {
         // Spied BEFORE mounting, same reasoning as the override test above.
         const cancelOrder = vi
             .spyOn(useOrdersStore(), 'cancelOrder')
-            .mockResolvedValue({ ...detail, status: OrderStatus.cancelled });
+            .mockResolvedValue({ ...detail, status: OrderStatus.canceled });
         const { wrapper } = mountFromListCache(detail);
 
         return nextTick()
@@ -569,7 +569,7 @@ describe('recording a payment by hand', () => {
     });
 
     it('withdraws the form once the order can no longer reach paid', () => {
-        // A paid, shipped or cancelled order has nothing left to record.
+        // A paid, shipped or canceled order has nothing left to record.
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.paid,

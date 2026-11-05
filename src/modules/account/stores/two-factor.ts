@@ -90,7 +90,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
 
     /**
      * Wall-clock time {@link delivery}'s `resendAfter` counts down to, in epoch ms. `undefined`
-     * when nothing has been sent yet, or once the cooldown has been cancelled.
+     * when nothing has been sent yet, or once the cooldown has been canceled.
      */
     const resendAvailableAt = ref<number>();
 

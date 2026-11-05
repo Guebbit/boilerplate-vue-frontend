@@ -53,7 +53,7 @@ const { message: error, report: reportError, clear: clearError } = useBlockingEr
 const offered = () => !product.buyable;
 
 /**
- * Toggles the request: asked becomes cancelled, anything else is asked.
+ * Toggles the request: asked becomes canceled, anything else is asked.
  *
  * @returns Nothing; a failure blocks the button in place ({@link error}).
  */

@@ -179,7 +179,7 @@ watch(
 const isOpen = computed({
     get: () => reauthDialog.isOpen,
     set: (open) => {
-        if (!open) reauthDialog.rejectStepUp(new Error('REAUTH_CANCELLED'));
+        if (!open) reauthDialog.rejectStepUp(new Error('REAUTH_CANCELED'));
     }
 });
 

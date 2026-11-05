@@ -107,7 +107,7 @@ describe('AC7 · Delete my account while an order is still open', () => {
         });
 
         cy.step(
-            'the unpaid order was cancelled by the erasure: its reservation went back on the shelf'
+            'the unpaid order was canceled by the erasure: its reservation went back on the shelf'
         );
         cy.get<OrderLike>('@unpaidBefore').then(({ items }) => {
             cy.get<number>('@freeBefore').then((freeBefore) => {

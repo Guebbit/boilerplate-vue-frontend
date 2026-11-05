@@ -9,7 +9,7 @@ describe('byTemplate', () => {
         const matches = byTemplate('orders.order-confirm');
 
         expect(matches({ to: 'a@b.c', subject: 's', template: 'orders.order-confirm' })).toBe(true);
-        expect(matches({ to: 'a@b.c', subject: 's', template: 'orders.order-cancelled' })).toBe(
+        expect(matches({ to: 'a@b.c', subject: 's', template: 'orders.order-canceled' })).toBe(
             false
         );
     });
@@ -40,18 +40,18 @@ describe('inLocale', () => {
 });
 
 describe('mailAbout', () => {
-    const matches = mailAbout('order was cancelled', 'ORD-17');
+    const matches = mailAbout('order was canceled', 'ORD-17');
 
     it('wants the subject fragment and the order number together', () => {
         expect(
-            matches({ to: 'a@b.c', subject: 'Your order was cancelled', lines: ['number: ORD-17'] })
+            matches({ to: 'a@b.c', subject: 'Your order was canceled', lines: ['number: ORD-17'] })
         ).toBe(true);
-        expect(matches({ to: 'a@b.c', subject: 'Your order was cancelled ORD-17' })).toBe(true);
+        expect(matches({ to: 'a@b.c', subject: 'Your order was canceled ORD-17' })).toBe(true);
     });
 
     it('refuses the right subject about another order, and the right order under another subject', () => {
         expect(
-            matches({ to: 'a@b.c', subject: 'Your order was cancelled', lines: ['number: ORD-18'] })
+            matches({ to: 'a@b.c', subject: 'Your order was canceled', lines: ['number: ORD-18'] })
         ).toBe(false);
         expect(matches({ to: 'a@b.c', subject: 'Your refund ORD-17' })).toBe(false);
     });

@@ -10,7 +10,7 @@
  * - The money lands while the order waits: Finish reads the provider, and the order is paid.
  * - The customer cancels while it is still processing: the shop never keeps the money. The cancel
  *   itself settles the payment and refunds it, so the payment ends `refunded`, the order stays
- *   cancelled, and there is nothing left to Finish.
+ *   canceled, and there is nothing left to Finish.
  *
  * Each spends one card confirm, as `user`. The Finish button is the server's `actions.sync`, which
  * the confirm's own answer already carries: the page never has to re-read to find it.
@@ -104,10 +104,10 @@ describe('CU4 · A card that is slow to settle', () => {
             cy.get('[data-test=app-dialog-confirm]').click();
             cy.get('[data-test=order-cancel]').should('not.exist');
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
-                expect(order?.status).to.equal('cancelled');
+                expect(order?.status).to.equal('canceled');
             });
 
-            cy.step('the cancel itself refunds the payment, and the order stays cancelled');
+            cy.step('the cancel itself refunds the payment, and the order stays canceled');
             eventually(
                 () => paymentOfOrder<PaymentLike>('user', orderId),
                 (payment) => payment?.displayStatus === 'refunded'
@@ -116,7 +116,7 @@ describe('CU4 · A card that is slow to settle', () => {
                 expect(payment?.amountRefunded).to.equal(payment?.amount);
             });
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
-                expect(order?.status, 'the refund did not revive the order').to.equal('cancelled');
+                expect(order?.status, 'the refund did not revive the order').to.equal('canceled');
             });
             cy.reload();
             cy.get('[data-test=payment-finish]').should('not.exist');

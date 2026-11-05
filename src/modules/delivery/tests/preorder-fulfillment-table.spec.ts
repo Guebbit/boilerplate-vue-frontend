@@ -2,7 +2,7 @@
  * @module
  * `PreorderFulfillmentTable.vue` — the board's second tab. The store's read is spied; covered is
  * what it asks the server for (the Late and Due-soon filters are the server's rules, passed through,
- * never recomputed) and what each row says: state, late flag, slip, deadline, who cancelled.
+ * never recomputed) and what each row says: state, late flag, slip, deadline, who canceled.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
@@ -197,8 +197,8 @@ describe('what a row says', () => {
             expect(wrapper.find('[data-test=preorder-answer-by]').exists()).toBe(false);
         }));
 
-    it('says who cancelled a cancelled one', () =>
-        mountTable([aPreorderFulfillmentOrder({ state: 'cancelled', cancelReason: 'order' })]).then(
+    it('says who canceled a canceled one', () =>
+        mountTable([aPreorderFulfillmentOrder({ state: 'canceled', cancelReason: 'order' })]).then(
             ({ wrapper }) => {
                 expect(wrapper.get('[data-test=preorder-cancel-reason]').text()).toBe(
                     'Cancelled with the order'

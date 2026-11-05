@@ -44,7 +44,7 @@ const COLORS = {
     partially_refunded: 'secondary',
     refunded: 'secondary',
     failed: 'error',
-    cancelled: undefined
+    canceled: undefined
 } satisfies Record<PaymentDisplayStatus, ThemeColor | undefined>;
 </script>
 

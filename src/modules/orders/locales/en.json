@@ -53,7 +53,7 @@
         "status-processing": "Processing",
         "status-shipped": "Shipped",
         "status-delivered": "Delivered",
-        "status-cancelled": "Cancelled"
+        "status-canceled": "Cancelled"
     },
     "order-target-page": {
         "page-title": "Order details",
@@ -164,7 +164,7 @@
         "type-processing": "Order being prepared",
         "type-shipped": "Order shipped",
         "type-delivered": "Order delivered",
-        "type-cancelled": "Order cancelled",
+        "type-canceled": "Order cancelled",
         "type-status_overridden": "Status corrected by hand",
         "type-payment_declined": "Payment declined",
         "type-refund_issued": "Refund started",
@@ -179,7 +179,7 @@
         "type-shipment_lost": "Parcel lost in transit",
         "type-fulfillment_held": "Shipping put on hold",
         "type-fulfillment_released": "Shipping hold released",
-        "type-remainder_cancelled": "Rest of the order cancelled",
+        "type-remainder_canceled": "Rest of the order cancelled",
         "type-return_requested": "Return requested",
         "type-return_approved": "Return approved",
         "type-return_declined": "Return declined",
@@ -207,7 +207,7 @@
         "by-admin": "staff",
         "by-system": "the system",
         "by-withdrawal": "a withdrawal",
-        "by-fulfilment": "fulfilment",
+        "by-fulfillment": "fulfilment",
         "cause-lost": "Lost in transit, refunded",
         "refund-reason-cancellation": "Cancellation",
         "refund-reason-goodwill": "Goodwill",

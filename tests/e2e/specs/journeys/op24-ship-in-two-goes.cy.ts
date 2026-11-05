@@ -29,7 +29,7 @@ interface OrderLike {
  *
  * @param orderId - the order
  * @param status - the order status expected
- * @param fulfillmentStatus - the fulfilment status expected
+ * @param fulfillmentStatus - the fulfillment status expected
  */
 const customerSees = (orderId: string, status: string, fulfillmentStatus: string): void => {
     cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {

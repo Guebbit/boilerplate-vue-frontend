@@ -226,7 +226,7 @@ describe('ProfileTwoFactor: replacing an armed method', () => {
         });
     });
 
-    it('a cancelled replace re-reads the status, so the panel stops listing the disarmed method', () => {
+    it('a canceled replace re-reads the status, so the panel stops listing the disarmed method', () => {
         const wrapper = mountPanel({
             enabled: true,
             methods: [ARMED_TOTP],

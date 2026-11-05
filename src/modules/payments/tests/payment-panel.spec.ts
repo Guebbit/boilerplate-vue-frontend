@@ -199,7 +199,7 @@ describe('PaymentPanel', () => {
             });
         });
 
-        it('says nothing about a refund when the order was cancelled but no refund is open', () => {
+        it('says nothing about a refund when the order was canceled but no refund is open', () => {
             const { store, wrapper } = mountPanel();
             store.payment = { ...handPaidSucceededPayment };
 
@@ -254,8 +254,8 @@ describe('PaymentPanel', () => {
                     store.payment = {
                         ...handPaidSucceededPayment,
                         method: 'cash',
-                        status: 'cancelled',
-                        displayStatus: 'cancelled'
+                        status: 'canceled',
+                        displayStatus: 'canceled'
                     };
                     return nextRenderTick(wrapper);
                 })
@@ -354,7 +354,7 @@ describe('the status chip', () => {
     it.each([
         ['succeeded', 'Succeeded'],
         ['refunded', 'Refunded'],
-        ['cancelled', 'Cancelled']
+        ['canceled', 'Cancelled']
     ] as const)('reads displayStatus %s as %s, never the stored status', (displayStatus, text) => {
         const { store, wrapper } = mountPanel();
         store.payment = { ...handPaidSucceededPayment, displayStatus };

@@ -158,9 +158,9 @@ const timelineRefreshKey = computed(() =>
  * separately deployed codebase, and the first edge that changed would leave this button offering
  * something the API refuses.
  *
- * @returns `true` while this order can still be cancelled by whoever is looking at it.
+ * @returns `true` while this order can still be canceled by whoever is looking at it.
  */
-const cancellable = computed(() => currentOrder.value?.actions.cancel === true);
+const cancelable = computed(() => currentOrder.value?.actions.cancel === true);
 
 /**
  * The order's own frozen currency — every price on this page is `currentOrder`'s own money,
@@ -253,7 +253,7 @@ const { heroTitle, heroDescription, orderStatus } = useOrderHero(
 );
 
 /**
- * The frozen shipping address, one line — whoever fulfils the order needs to see it without
+ * The frozen shipping address, one line — whoever fulfills the order needs to see it without
  * opening the address book, which may since have changed or lost the entry this order was placed
  * against. Absent on an order with nothing to ship to an address (digital-only, or a pickup).
  */
@@ -681,7 +681,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                     data-test="order-reorder-error"
                 />
                 <v-btn
-                    v-if="cancellable"
+                    v-if="cancelable"
                     color="error"
                     variant="tonal"
                     data-test="order-cancel"

@@ -3,9 +3,9 @@
  * @module
  * One card per fulfillment order — the group of lines that leave together — in Shopify's admin
  * layout: status, hold reason, what is promised and when, each line with how much shipped,
- * was cancelled and remains, then the shipments cut from it. Every button comes from the
+ * was canceled and remains, then the shipments cut from it. Every button comes from the
  * record's own `actions` (the server refuses what does not apply). A late preorder also
- * shows the promised date, the last notice sent, and who cancelled it. The shop only tells the
+ * shows the promised date, the last notice sent, and who canceled it. The shop only tells the
  * buyer: there is no question to answer.
  */
 import { computed, ref } from 'vue';
@@ -73,7 +73,7 @@ const shipOpen = ref(false);
 const holdOpen = ref(false);
 
 /**
- * This card's own blocked state for the buttons that need no dialog (fulfil, release).
+ * This card's own blocked state for the buttons that need no dialog (fulfill, release).
  */
 const { message: cardError, report: reportCardError, clear: clearCardError } = useBlockingError();
 
@@ -131,7 +131,7 @@ const run = (move: () => Promise<unknown>, success: string) => {
 };
 
 /**
- * Fulfils a digital fulfillment order.
+ * Fulfills a digital fulfillment order.
  *
  * @returns A promise settling once the call finished.
  */
@@ -262,11 +262,11 @@ const release = () =>
                         quantity: line.quantity
                     })
                 }}
-                <template v-if="line.cancelledQuantity > 0">
+                <template v-if="line.canceledQuantity > 0">
                     ·
                     {{
-                        t('fulfillment-order-card.line-cancelled', {
-                            cancelled: line.cancelledQuantity
+                        t('fulfillment-order-card.line-canceled', {
+                            canceled: line.canceledQuantity
                         })
                     }}
                 </template>

@@ -89,7 +89,7 @@
         "count-waiting": "{count} waiting",
         "count-allocated": "{count} allocated",
         "count-shipped": "{count} shipped",
-        "count-cancelled": "{count} cancelled",
+        "count-canceled": "{count} cancelled",
         "count-late": "{count} late",
         "button-show-orders": "Fulfillment orders",
         "button-show-orders-named": "Fulfillment orders of {name}",

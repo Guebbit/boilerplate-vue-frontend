@@ -27,7 +27,7 @@
         "pending-email-resend-wait": "Resend in {seconds}s",
         "pending-email-cancel": "Cancel",
         "pending-email-resent": "Confirmation email resent.",
-        "pending-email-cancelled": "Email change cancelled.",
+        "pending-email-canceled": "Email change cancelled.",
         "label-phone": "Phone Number",
         "label-website": "Website",
         "label-language": "Language",

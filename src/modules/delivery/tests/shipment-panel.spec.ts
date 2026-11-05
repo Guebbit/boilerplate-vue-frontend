@@ -4,7 +4,7 @@
  * cards under it) with the delivery store's own fetches stubbed.
  *
  * Scoped to the panel's own logic: which cards render for THIS order, the "arrives in N
- * shipments" line, the order-level "start fulfilment" door and the re-fetch on a new `orderId`.
+ * shipments" line, the order-level "start fulfillment" door and the re-fetch on a new `orderId`.
  * The cards' own buttons are `fulfillment-order-card.spec.ts`'s; the store calls are
  * `store.spec.ts`'s; the server's own eligibility rules behind every `actions` flag are the
  * backend's.
@@ -108,7 +108,7 @@ describe('"arrives in N shipments"', () => {
     });
 });
 
-describe('the start-fulfilment door', () => {
+describe('the start-fulfillment door', () => {
     it('offers "Mark in progress" only when `actions.process` says so', () => {
         expect(
             mountPanel({ orderId: 'o1', canStart: true })
@@ -122,7 +122,7 @@ describe('the start-fulfilment door', () => {
         ).toBe(false);
     });
 
-    it('starts, re-reads the fulfilment (every `actions` flag depends on the order) and emits `moved`', () => {
+    it('starts, re-reads the fulfillment (every `actions` flag depends on the order) and emits `moved`', () => {
         const { wrapper, store } = mountPanel({ orderId: 'o1', canStart: true });
         const start = vi.spyOn(store, 'process').mockResolvedValue(undefined);
 

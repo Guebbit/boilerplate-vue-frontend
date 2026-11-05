@@ -137,7 +137,7 @@ describe('AC21 · It was not me', () => {
                                 cy.get('[data-test=user-menu]').should('not.exist');
                                 refreshDevice(device).its('status').should('equal', 401);
 
-                                cy.step('the cancelled change cannot be confirmed any more');
+                                cy.step('the canceled change cannot be confirmed any more');
                                 spendConfirm(secondConfirm);
                                 cy.get('[data-test=email-change-confirm-error]').should(
                                     'not.be.empty'

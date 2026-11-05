@@ -13,7 +13,7 @@ export default {
  * @module
  * The preorder board's first tab: one row per product sold as a preorder, from two reads joined by
  * product — its allowance (limit, outstanding, left; `inventory`) and where its units stand (waiting,
- * awaiting an answer, allocated, shipped, cancelled, late; `delivery`). "Outstanding" is units still
+ * awaiting an answer, allocated, shipped, canceled, late; `delivery`). "Outstanding" is units still
  * owed, not units sold: it falls when stock is allocated. The release date can only be moved on the
  * product's own edit form, so a row links there for a holder of the product write; there is no
  * preview of what a later date would do to the buyers who already paid.
@@ -151,7 +151,7 @@ const STATE_COUNTS = [
     ['waiting', 'preorders-page.count-waiting'],
     ['allocated', 'preorders-page.count-allocated'],
     ['shipped', 'preorders-page.count-shipped'],
-    ['cancelled', 'preorders-page.count-cancelled'],
+    ['canceled', 'preorders-page.count-canceled'],
     ['late', 'preorders-page.count-late']
 ] as const;
 

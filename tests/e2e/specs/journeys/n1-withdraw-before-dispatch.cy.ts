@@ -73,12 +73,12 @@ describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
                 expect(order?.status, 'nothing happens on the first click').to.equal('paid');
             });
 
-            cy.step('confirms, and the order is cancelled and refunded in full');
+            cy.step('confirms, and the order is canceled and refunded in full');
             cy.get('[data-test=app-dialog-confirm]').click();
             cy.get('[data-test=order-cancel]').should('not.exist');
             cy.get('[data-test=withdraw-button]').should('not.exist');
             cy.apiAs<{ status: string }>('user', 'GET', `/orders/${orderId}`).should((order) => {
-                expect(order?.status).to.equal('cancelled');
+                expect(order?.status).to.equal('canceled');
             });
             // The refund is the payments module answering the cancel, so it may land a beat later.
             eventually(
@@ -153,7 +153,7 @@ describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
         cy.get('[data-test=app-dialog-confirm]').click();
         idFromLocation().then((orderId) => {
             cy.apiAs<{ status: string }>('user', 'GET', `/orders/${orderId}`).should((order) => {
-                expect(order?.status).to.equal('cancelled');
+                expect(order?.status).to.equal('canceled');
             });
         });
         cy.get('[data-test=withdraw-button]').should('not.exist');

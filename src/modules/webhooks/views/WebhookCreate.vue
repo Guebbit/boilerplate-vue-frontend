@@ -51,13 +51,13 @@ const router = useRouter();
 /**
  * Webhooks store actions and event catalogue for the `eventTypes` multiselect.
  */
-const { createSubscription, fetchEventCatalogue } = useWebhooksStore();
+const { createSubscription, fetchEventCatalog } = useWebhooksStore();
 
 /** Reactive event catalogue and its loading flag. */
-const { eventCatalogue, loadingEventCatalogue } = storeToRefs(useWebhooksStore());
+const { eventCatalog, loadingEventCatalog } = storeToRefs(useWebhooksStore());
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises -- the read resolves into the composable's error state instead of rejecting
-onMounted(() => void fetchEventCatalogue());
+onMounted(() => void fetchEventCatalog());
 
 /**
  * Reference to the mounted `FormCard`, read for its `<form>` element.
@@ -202,10 +202,10 @@ const handleSecretDone = () => {
                 data-test="webhook-event-types"
                 multiple
                 chips
-                :items="eventCatalogue"
+                :items="eventCatalog"
                 item-title="name"
                 item-value="name"
-                :loading="loadingEventCatalogue"
+                :loading="loadingEventCatalog"
                 :label="t('webhook-create-page.label-event-types')"
                 v-bind="fieldErrorProps(showErrors ? formErrors.eventTypes : [])"
             />

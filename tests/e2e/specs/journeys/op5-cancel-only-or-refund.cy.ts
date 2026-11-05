@@ -5,7 +5,7 @@
  * paid order: "this is off" and "give the money back". They are three buttons because they are
  * not the same act.
  *
- * - Cancel only: the order is cancelled and the units return to the shelf, but the money stays
+ * - Cancel only: the order is canceled and the units return to the shelf, but the money stays
  *   captured. Refund only is still open afterwards, and later settles the payment.
  * - Cancel and refund: both happen in one press, and a credit note is issued for the money.
  *
@@ -66,13 +66,13 @@ describe('OP5 · Cancel only versus cancel and refund', () => {
                         shelf.units += unitsIn(order);
                     });
 
-                    cy.step('cancel only: the order is cancelled, the payment is still captured');
+                    cy.step('cancel only: the order is canceled, the payment is still captured');
                     cy.visit(`/en/orders/${keptId}/edit`);
                     cy.get('[data-test=button-cancel-only]').should('not.be.disabled').click();
                     cy.get('[data-test=button-cancel-only]').should('be.disabled');
                     cy.get('[data-test=order-edit-actions-error]').should('not.exist');
                     cy.apiAs<OrderLike>('admin', 'GET', `/orders/${keptId}`).should((order) => {
-                        expect(order?.status).to.equal('cancelled');
+                        expect(order?.status).to.equal('canceled');
                     });
                     paymentOfOrder<PaymentLike>('admin', keptId).should((payment) => {
                         expect(payment?.status, 'the money was not touched').to.equal('succeeded');
@@ -96,7 +96,7 @@ describe('OP5 · Cancel only versus cancel and refund', () => {
                     cy.get('[data-test=button-cancel-and-refund]').should('be.disabled');
                     cy.get('[data-test=order-edit-actions-error]').should('not.exist');
                     cy.apiAs<OrderLike>('admin', 'GET', `/orders/${refundedId}`).should((order) => {
-                        expect(order?.status).to.equal('cancelled');
+                        expect(order?.status).to.equal('canceled');
                     });
                     eventually(
                         () => paymentOfOrder<PaymentLike>('admin', refundedId),

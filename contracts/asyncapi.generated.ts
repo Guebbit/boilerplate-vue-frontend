@@ -42,13 +42,13 @@ export interface OrderPaidEnvelope {
   'data': OrderIdPayload;
 }
 export type OrderPaidEventType = "order.paid";
-export interface OrderCancelledEnvelope {
-  'type': OrderCancelledEventType;
+export interface OrderCanceledEnvelope {
+  'type': OrderCanceledEventType;
   'timestamp': string;
-  'data': OrderCancelledPayload;
+  'data': OrderCanceledPayload;
 }
-export type OrderCancelledEventType = "order.cancelled";
-export interface OrderCancelledPayload {
+export type OrderCanceledEventType = "order.canceled";
+export interface OrderCanceledPayload {
   'orderId': string;
   'cause': OrderCancelCause;
 }
@@ -627,7 +627,7 @@ export type MetricsUpdatedEvent = ObservabilityMetricsPayload;
 export type HeartbeatEvent = ObservabilityMetricsPayload;
 export type OrderCreatedEvent = OrderCreatedEnvelope;
 export type OrderPaidEvent = OrderPaidEnvelope;
-export type OrderCancelledEvent = OrderCancelledEnvelope;
+export type OrderCanceledEvent = OrderCanceledEnvelope;
 export type OrderRedactedEvent = OrderRedactedEnvelope;
 export type ShipmentLostEvent = ShipmentLostEnvelope;
 export type ShipmentShippedEvent = ShipmentShippedEnvelope;
@@ -665,7 +665,7 @@ export type ObservabilityChannel = (typeof OBSERVABILITY_CHANNELS)[keyof typeof 
 export const ORDER_CHANNELS = {
     CREATED: 'order.created',
     PAID: 'order.paid',
-    CANCELLED: 'order.cancelled',
+    CANCELED: 'order.canceled',
     REDACTED: 'order.redacted',
 } as const;
 

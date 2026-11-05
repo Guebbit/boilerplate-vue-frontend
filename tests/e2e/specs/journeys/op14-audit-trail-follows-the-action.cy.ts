@@ -90,7 +90,7 @@ describe('OP14 · The audit trail follows the action', () => {
                     auditHas(editedId, 'order.updated');
                     cy.get('[data-test=button-cancel-only]').should('not.be.disabled').click();
                     cy.get('[data-test=button-cancel-only]').should('be.disabled');
-                    auditHas(editedId, 'order.cancelled');
+                    auditHas(editedId, 'order.canceled');
 
                     cy.step('"history" opens the audit page narrowed to that order');
                     cy.visit(`/en/orders/${editedId}`);
@@ -100,18 +100,18 @@ describe('OP14 · The audit trail follows the action', () => {
                     auditRowsFor(editedId).then((rows) => {
                         const actions = rows.map((row) => row.action);
                         expect(actions).to.include('order.updated');
-                        expect(actions).to.include('order.cancelled');
+                        expect(actions).to.include('order.canceled');
                         // One row on the page per row the API holds for this order, no more.
                         cy.get('[data-test=list-row]').should('have.length', rows.length);
                         // The order's own creation row is the customer's; the two edits are the admin's.
                         for (const row of rows.filter((found) =>
-                            ['order.updated', 'order.cancelled'].includes(found.action)
+                            ['order.updated', 'order.canceled'].includes(found.action)
                         )) {
                             expect(row.actorRole).to.equal('admin');
                             expect(row.outcome).to.equal('success');
                         }
                     });
-                    cy.get('[data-test=list-row]').should('contain.text', 'order.cancelled');
+                    cy.get('[data-test=list-row]').should('contain.text', 'order.canceled');
                     cy.get('[data-test=list-row]').should('contain.text', 'order.updated');
 
                     cy.step('a paid order is started and shipped the ordinary way, with no force');
@@ -206,7 +206,7 @@ describe('OP14 · The audit trail follows the action', () => {
                             // The order's rows are not this user's.
                             cy.get('[data-test=list-row]').should(
                                 'not.contain.text',
-                                'order.cancelled'
+                                'order.canceled'
                             );
                         });
                     });

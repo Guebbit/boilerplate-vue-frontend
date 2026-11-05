@@ -1,7 +1,7 @@
 // requires-module: account, delivery, inventory, orders, payments
 /**
  * @module
- * OP1 · Fulfil a paid order the ordinary way. The admin takes the customer's paid express order
+ * OP1 · Fulfill a paid order the ordinary way. The admin takes the customer's paid express order
  * from "paid" to "delivered" through the shipment panel and nothing else — no status override —
  * and the customer sees where it stands and is mailed the tracking code.
  *
@@ -36,7 +36,7 @@ const customerSees = (orderId: string, status: string): void => {
     });
 };
 
-describe('OP1 · Fulfil a paid order the ordinary way', { tags: '@smoke' }, () => {
+describe('OP1 · Fulfill a paid order the ordinary way', { tags: '@smoke' }, () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();

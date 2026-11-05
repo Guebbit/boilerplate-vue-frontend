@@ -89,7 +89,7 @@
         "count-waiting": "{count} in attesa",
         "count-allocated": "{count} assegnati",
         "count-shipped": "{count} spediti",
-        "count-cancelled": "{count} annullati",
+        "count-canceled": "{count} annullati",
         "count-late": "{count} in ritardo",
         "button-show-orders": "Gruppi di spedizione",
         "button-show-orders-named": "Gruppi di spedizione di {name}",

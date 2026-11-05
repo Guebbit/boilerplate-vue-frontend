@@ -62,7 +62,7 @@
         "method-cash": "Cash",
         "method-other": "Other",
         "card-cancellation": "Cancellation rate",
-        "cancellation-detail": "{cancelled} of {placed} orders placed in the period",
+        "cancellation-detail": "{canceled} of {placed} orders placed in the period",
         "card-returns": "Return rate",
         "returns-detail": "{returned} of {ordered} units",
         "card-refund-rate": "Refund rate ({currency})",

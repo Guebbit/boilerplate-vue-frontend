@@ -350,7 +350,7 @@ flowchart TD
     SF --> D["ReauthDialog.vue<br/>one prompt, N parked requests"]
     D -->|password or mailed code proven| RA["session store reauth()<br/>adopts the re-minted session"]
     RA --> RP["replay the request once<br/>(_dontRetry)"]
-    D -->|cancelled| REJ["normalized rejection"]
+    D -->|canceled| REJ["normalized rejection"]
 
     classDef gate fill:#fef3c7,stroke:#d97706,color:#111827;
     classDef ok fill:#ccfbf1,stroke:#0f766e,color:#111827;

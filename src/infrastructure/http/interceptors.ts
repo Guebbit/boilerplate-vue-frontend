@@ -55,7 +55,7 @@ const getFallbackErrorCode = (status: number) => {
  * axios's own classification of a request that never got an answer — offline, a timeout, a
  * CORS refusal (which surfaces to the caller as a network error, not the browser-console-only
  * CORS message), or a caller-initiated cancel. Distinct codes rather than one, because a caller
- * choosing to retry cares whether it was cancelled on purpose.
+ * choosing to retry cares whether it was canceled on purpose.
  *
  * @param error - Axios error carrying no `response`.
  * @returns The matching code, `NETWORK_ERROR` for anything axios did not classify further.
@@ -179,7 +179,7 @@ const rejectionOf = (
         });
     }
 
-    // no `response` at all — offline, a timeout, CORS, or a cancelled request — is not the
+    // no `response` at all — offline, a timeout, CORS, or a canceled request — is not the
     // same failure as a 500, and must not be reported as one. `status: 0` is what
     // `isTransportFailure` (`utils/errors.ts`) keys on.
     if (!error.response) {

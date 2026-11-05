@@ -58,7 +58,7 @@ export const ERROR_CODES = {
     CONTENT_TOO_LARGE: 'CONTENT_TOO_LARGE',
     /** 422 — A shipment line names a product that is not on the fulfillment order, asks for more than remains of it, or names the same product twice. */
     DELIVERY_LINES_INVALID: 'DELIVERY_LINES_INVALID',
-    /** 409 — A `lost` shipment cannot be recorded as arrived because its units were already shipped again or cancelled: taking them back would count the goods twice. */
+    /** 409 — A `lost` shipment cannot be recorded as arrived because its units were already shipped again or canceled: taking them back would count the goods twice. */
     DELIVERY_LOST_SUPERSEDED: 'DELIVERY_LOST_SUPERSEDED',
     /** 409 — The shipment has already been delivered, or its order is no longer in a state this can run from. */
     DELIVERY_NOT_DELIVERABLE: 'DELIVERY_NOT_DELIVERABLE',
@@ -66,15 +66,15 @@ export const ERROR_CODES = {
     DELIVERY_NOT_DIGITAL: 'DELIVERY_NOT_DIGITAL',
     /** 409 — Only an open or in-progress fulfillment order can be put on hold. */
     DELIVERY_NOT_HOLDABLE: 'DELIVERY_NOT_HOLDABLE',
-    /** 409 — Only a `shipped` parcel can be reported lost or damaged, and only while its order is `processing` or `shipped`. A parcel already `delivered` or `lost`, a digital fulfilment and a cancelled order are refused. */
+    /** 409 — Only a `shipped` parcel can be reported lost or damaged, and only while its order is `processing` or `shipped`. A parcel already `delivered` or `lost`, a digital fulfillment and a canceled order are refused. */
     DELIVERY_NOT_LOSABLE: 'DELIVERY_NOT_LOSABLE',
-    /** 409 — A digital fulfillment order has nothing to ship (fulfil it instead), and a digital shipment has no tracking code to set. */
+    /** 409 — A digital fulfillment order has nothing to ship (fulfill it instead), and a digital shipment has no tracking code to set. */
     DELIVERY_NOT_PHYSICAL: 'DELIVERY_NOT_PHYSICAL',
     /** 409 — The fulfillment order is not on hold, or waits for stock and is released only by the stock arriving. */
     DELIVERY_NOT_RELEASABLE: 'DELIVERY_NOT_RELEASABLE',
-    /** 409 — The units of a replacement under the guarantee cannot be sent again: the order shipped fewer physical units than come back, or is cancelled or unpaid. */
+    /** 409 — The units of a replacement under the guarantee cannot be sent again: the order shipped fewer physical units than come back, or is canceled or unpaid. */
     DELIVERY_NOT_REOPENABLE: 'DELIVERY_NOT_REOPENABLE',
-    /** 409 — The fulfillment order cannot ship now: it is on hold, closed or cancelled, or the order is cancelled, or still `pending` (never paid: start or pay it first). */
+    /** 409 — The fulfillment order cannot ship now: it is on hold, closed or canceled, or the order is canceled, or still `pending` (never paid: start or pay it first). */
     DELIVERY_NOT_SHIPPABLE: 'DELIVERY_NOT_SHIPPABLE',
     /** 409 — Another account already holds this email address — on signup, or on a profile email change. */
     EMAIL_ALREADY_USED: 'EMAIL_ALREADY_USED',
@@ -148,13 +148,13 @@ export const ERROR_CODES = {
     MISSING_FIELD_NAME: 'MISSING_FIELD_NAME',
     /** 404 — The addressed resource does not exist, or the caller may not be told that it does. */
     NOT_FOUND: 'NOT_FOUND',
-    /** 409 — The order cannot be redirected: nothing is left to send (every unit has shipped or been cancelled), it is over, or it has no shipping address (a pickup, a digital order). */
+    /** 409 — The order cannot be redirected: nothing is left to send (every unit has shipped or been canceled), it is over, or it has no shipping address (a pickup, a digital order). */
     ORDER_ADDRESS_LOCKED: 'ORDER_ADDRESS_LOCKED',
     /** 404 — The order exists but has no such credit note. */
     ORDER_CREDIT_NOTE_NOT_ISSUED: 'ORDER_CREDIT_NOTE_NOT_ISSUED',
     /** 422 — The export would carry more orders than `NODE_ORDER_EXPORT_MAX_ROWS` allows. The message names the cap; narrow the filters and ask again. */
     ORDER_EXPORT_TOO_LARGE: 'ORDER_EXPORT_TOO_LARGE',
-    /** 409 — A hard delete is refused: money was recorded on the order after it was cancelled (a late payment and its refund still point at it). Soft delete it instead. */
+    /** 409 — A hard delete is refused: money was recorded on the order after it was canceled (a late payment and its refund still point at it). Soft delete it instead. */
     ORDER_HAS_MONEY_HISTORY: 'ORDER_HAS_MONEY_HISTORY',
     /** 409 — An admin-created order references a quantity beyond the product's available stock. `errors[].details.lines` names each short line with its `productId`, `title` and `requested` quantity; `available` is added only for a caller who reads stock (`read:StockLevel`). */
     ORDER_INSUFFICIENT_STOCK: 'ORDER_INSUFFICIENT_STOCK',
@@ -164,10 +164,10 @@ export const ERROR_CODES = {
     ORDER_INVOICE_NOT_ISSUED: 'ORDER_INVOICE_NOT_ISSUED',
     /** 422 — An admin-created order has more lines, or a larger quantity on one line, than this deployment allows (`NODE_ADMIN_ORDER_MAX_LINES`, `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`). The message names the limit. */
     ORDER_LINE_LIMIT_EXCEEDED: 'ORDER_LINE_LIMIT_EXCEEDED',
-    /** 409 — The order is not in a state that can still be cancelled. */
-    ORDER_NOT_CANCELLABLE: 'ORDER_NOT_CANCELLABLE',
-    /** 409 — A delete, soft or hard, needs a cancelled order: this one is still open. Cancel it first (`POST /orders/{id}/cancel`), which refunds a paid one. */
-    ORDER_NOT_CANCELLED: 'ORDER_NOT_CANCELLED',
+    /** 409 — The order is not in a state that can still be canceled. */
+    ORDER_NOT_CANCELABLE: 'ORDER_NOT_CANCELABLE',
+    /** 409 — A delete, soft or hard, needs a canceled order: this one is still open. Cancel it first (`POST /orders/{id}/cancel`), which refunds a paid one. */
+    ORDER_NOT_CANCELED: 'ORDER_NOT_CANCELED',
     /** 409 — A restore is refused: the order is not soft-deleted. */
     ORDER_NOT_DELETED: 'ORDER_NOT_DELETED',
     /** 409 — The order must be paid before this delivery action. */
@@ -228,7 +228,7 @@ export const ERROR_CODES = {
     RETURN_NOT_DECIDABLE: 'RETURN_NOT_DECIDABLE',
     /** 409 — The return is not an approved one awaiting its goods. */
     RETURN_NOT_RECEIVABLE: 'RETURN_NOT_RECEIVABLE',
-    /** 409 — The order is not in a state a return can be opened on — cancelled, or (for a reason other than withdrawal) still in the shop's hands. */
+    /** 409 — The order is not in a state a return can be opened on — canceled, or (for a reason other than withdrawal) still in the shop's hands. */
     RETURN_ORDER_NOT_RETURNABLE: 'RETURN_ORDER_NOT_RETURNABLE',
     /** 422 — A remedy other than a refund is named for a reason that has no guarantee behind it (only a `defective` or `wrong_item` return can be repaired or replaced), or a preferred remedy is named for such a reason. */
     RETURN_REMEDY_INVALID: 'RETURN_REMEDY_INVALID',

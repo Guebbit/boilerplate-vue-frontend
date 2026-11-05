@@ -2,7 +2,7 @@
 /**
  * @module
  * FR12 · A keyboard-only purchase. The shopper never touches the mouse: from the bar's Products
- * link to a cancelled, refunded order, every control is reached with Tab (or Shift+Tab, when the
+ * link to a canceled, refunded order, every control is reached with Tab (or Shift+Tab, when the
  * control sits earlier in the page) and worked with Enter, Space, the arrow keys and Escape.
  *
  * What is proved is reachability and the two dialog contracts: a dialog takes focus in, keeps it

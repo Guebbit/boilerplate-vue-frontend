@@ -110,7 +110,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "POST", pattern: /^\/payments\/search$/, schemaName: "SearchPaymentsResponse", bodySchemaName: "SearchPaymentsBody", module: "payments", noRefresh: false },
     { method: "GET", pattern: /^\/payments$/, schemaName: "ListPaymentsResponse", bodySchemaName: undefined, module: "payments", noRefresh: false },
     { method: "POST", pattern: /^\/payments$/, schemaName: "CreatePaymentResponse", bodySchemaName: "CreatePaymentBody", module: "payments", noRefresh: false },
-    { method: "GET", pattern: /^\/products\/facets$/, schemaName: "GetCatalogueFacetsResponse", bodySchemaName: undefined, module: "products", noRefresh: false },
+    { method: "GET", pattern: /^\/products\/facets$/, schemaName: "GetCatalogFacetsResponse", bodySchemaName: undefined, module: "products", noRefresh: false },
     { method: "POST", pattern: /^\/products\/search$/, schemaName: "SearchProductsResponse", bodySchemaName: "SearchProductsBody", module: "products", noRefresh: false },
     { method: "DELETE", pattern: /^\/products$/, schemaName: "DeleteProductResponse", bodySchemaName: "DeleteProductBody", module: "products", noRefresh: false },
     { method: "GET", pattern: /^\/products$/, schemaName: "ListProductsResponse", bodySchemaName: undefined, module: "products", noRefresh: false },

@@ -289,7 +289,7 @@ describe('ReturnRequestForm', () => {
         expect(wrapper.find('[data-test=return-request-error]').exists()).toBe(true);
     });
 
-    it('forgets what was typed when cancelled', async () => {
+    it('forgets what was typed when canceled', async () => {
         const { wrapper } = mountForm();
         await openForm(wrapper);
         await pick(wrapper, 'p1');

@@ -244,7 +244,7 @@ describe('UserEdit', () => {
             });
     });
 
-    it('sends nothing when the confirm dialog is cancelled', () => {
+    it('sends nothing when the confirm dialog is canceled', () => {
         const wrapper = mountPage();
 
         return flushPromises()
@@ -472,7 +472,7 @@ describe('UserEdit — activating and deactivating', () => {
             });
     });
 
-    it('sends nothing when the deactivation is cancelled', () => {
+    it('sends nothing when the deactivation is canceled', () => {
         const wrapper = mountPage();
 
         return flushPromises()

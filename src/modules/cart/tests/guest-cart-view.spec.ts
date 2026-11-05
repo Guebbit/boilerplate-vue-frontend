@@ -72,7 +72,7 @@ let wrapper: VueWrapper | undefined;
  * @param catalogue - The products that exist.
  * @param gate - Holds the answer back until its promise settles; a rejection fails the read.
  */
-const catalogueAnswers = (catalogue: Product[], gate?: () => Promise<unknown>) =>
+const catalogAnswers = (catalogue: Product[], gate?: () => Promise<unknown>) =>
     vi.mocked(searchProducts).mockImplementation((body) =>
         (gate?.() ?? Promise.resolve()).then(() => {
             const items = catalogue.filter(({ id }) => (body.id ?? []).includes(id));
@@ -100,7 +100,7 @@ const mountPage = async (
 ) => {
     const cart = useCartStore();
     cart.guestLines = lines.map(([productId, quantity]) => ({ productId, quantity }));
-    catalogueAnswers(catalogue, gate);
+    catalogAnswers(catalogue, gate);
     wrapper = mount(GuestCart, {
         global: { plugins: [router, vuetify, i18n] },
         attachTo: document.body
@@ -367,7 +367,7 @@ describe('a product that is no longer there', () => {
         expect(page.find('[data-test=guest-cart-line-removed]').exists()).toBe(false);
     });
 
-    it('does not take a read the language switch cancelled for a vanished product', async () => {
+    it('does not take a read the language switch canceled for a vanished product', async () => {
         const read = Promise.withResolvers<undefined>();
         const { cart, wrapper: page } = await mountPage([['p1', 1]], [], () => read.promise);
 

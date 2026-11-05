@@ -172,7 +172,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
         );
 
     /**
-     * Reads an order's fulfilment into state, with no loading flag of its own: every write below
+     * Reads an order's fulfillment into state, with no loading flag of its own: every write below
      * ends with it, inside the write's own wrapper. Two reads, one per list, replaced together.
      *
      * @param orderId - The order in question.
@@ -191,13 +191,13 @@ export const useDeliveryStore = defineStore('delivery', () => {
      * paid — absence is an answer, never a 404.
      *
      * @param orderId - The order in question.
-     * @returns A promise resolving once state holds that order's fulfilment.
+     * @returns A promise resolving once state holds that order's fulfillment.
      */
     const fetchFulfillmentForOrder = (orderId: string) => fetchAny(() => readFulfillment(orderId));
 
     /**
-     * Reports that fulfilment has started on a paid order (admin): the order moves
-     * `paid → processing`. No result stored here — this module owns the fulfilment, not the order
+     * Reports that fulfillment has started on a paid order (admin): the order moves
+     * `paid → processing`. No result stored here — this module owns the fulfillment, not the order
      * — the caller re-reads the order.
      *
      * @param orderId - The order to start fulfilling.
@@ -208,7 +208,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
 
     /**
      * Settles a keyed shipment write that was refused: spends the key unless the retry is the same
-     * attempt, and re-reads the order's fulfilment so the next click starts from what the server
+     * attempt, and re-reads the order's fulfillment so the next click starts from what the server
      * holds. Always rethrows the original failure.
      *
      * @param keeper - The key the failed call carried.
@@ -259,7 +259,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
     };
 
     /**
-     * Fulfils a `digital` fulfillment order (admin): no parcel, the shipment is born delivered.
+     * Fulfills a `digital` fulfillment order (admin): no parcel, the shipment is born delivered.
      *
      * @param fulfillmentOrderId - The digital fulfillment order.
      * @returns A promise resolving with the shipment, after the lists are re-read.

@@ -1,7 +1,7 @@
 /**
  * @module
  * One last write from a page that is going away. The generated client rides axios, whose XHR is
- * cancelled with the page; `fetch` with `keepalive` is the one browser door a request can leave
+ * canceled with the page; `fetch` with `keepalive` is the one browser door a request can leave
  * through after `pagehide` (`sendBeacon` only POSTs and cannot carry the bearer header).
  */
 import { storeToRefs } from 'pinia';

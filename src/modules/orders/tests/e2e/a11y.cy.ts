@@ -11,7 +11,7 @@ import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
 /*
  * The order is named by ROLE, resolved inside the test off whichever backend the profile started.
- * `cancellable` is the admin's own pending one, and pending is the status that puts every action
+ * `cancelable` is the admin's own pending one, and pending is the status that puts every action
  * button on the page — which is the state worth auditing, since a disabled control and a missing
  * one fail accessibility differently.
  */

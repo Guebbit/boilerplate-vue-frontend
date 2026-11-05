@@ -183,7 +183,7 @@ const {
     clear: clearCreateLanguageError
 } = useBlockingError();
 
-// A stale failure from a cancelled attempt must not greet the next open.
+// A stale failure from a canceled attempt must not greet the next open.
 watch(languageFormOpen, (open) => {
     if (open) clearCreateLanguageError();
 });

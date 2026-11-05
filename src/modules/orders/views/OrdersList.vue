@@ -227,7 +227,7 @@ const STATUS_COLORS = {
     processing: 'info',
     shipped: 'secondary',
     delivered: 'success',
-    cancelled: 'error'
+    canceled: 'error'
 } satisfies Record<OrderStatus, ThemeColor>;
 
 /**
@@ -263,7 +263,7 @@ const statusChoice = useAnyFilterChoice(
 );
 
 /**
- * The fulfilment select's options: every `OrderFulfillmentStatus`, plus "any" (value `null`, for
+ * The fulfillment select's options: every `OrderFulfillmentStatus`, plus "any" (value `null`, for
  * the same reason as {@link statusOptions}).
  */
 const fulfillmentOptions = computed(() => [
@@ -275,7 +275,7 @@ const fulfillmentOptions = computed(() => [
 ]);
 
 /**
- * The fulfilment select's model: `null` (the "any" row) on screen, no `fulfillmentStatus` filter in
+ * The fulfillment select's model: `null` (the "any" row) on screen, no `fulfillmentStatus` filter in
  * {@link filters}.
  */
 const fulfillmentChoice = useAnyFilterChoice(

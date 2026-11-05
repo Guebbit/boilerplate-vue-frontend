@@ -65,7 +65,7 @@ describe('OP17 · A warehouse shift', () => {
         cy.visit('/en');
     });
 
-    it('receives, ships, delivers, fulfils and takes a return back, and is shown only the warehouse', () => {
+    it('receives, ships, delivers, fulfills and takes a return back, and is shown only the warehouse', () => {
         cy.step('background: a paid digital order, and a return support has approved');
         aPaidDigitalOrder().as('digitalId');
         cy.subjectId('return.requested').as('returnId');

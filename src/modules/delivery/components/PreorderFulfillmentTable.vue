@@ -240,7 +240,7 @@ const STATE_COLORS = {
     waiting: undefined,
     allocated: 'info',
     shipped: 'success',
-    cancelled: 'error'
+    canceled: 'error'
 } satisfies Record<PreorderFulfillmentState, ThemeColor | undefined>;
 </script>
 

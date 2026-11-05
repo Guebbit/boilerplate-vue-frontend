@@ -19,8 +19,8 @@ const TYPO = 'TRK-OP3O';
 /** The corrected code. */
 const FIXED = 'TRK-OP30';
 
-/** The slice of an order's fulfilment this story reads. */
-interface FulfilmentLike {
+/** The slice of an order's fulfillment this story reads. */
+interface FulfillmentLike {
     fulfillmentOrders: { id: string }[];
     shipments: { id: string; trackingCode?: string; status: string }[];
 }
@@ -31,20 +31,20 @@ interface AuditListLike {
 }
 
 /**
- * The order's fulfilment as the admin reads it.
+ * The order's fulfillment as the admin reads it.
  *
  * @param orderId - the order
  */
-const fulfilmentOf = (orderId: string): Cypress.Chainable<FulfilmentLike> =>
+const fulfillmentOf = (orderId: string): Cypress.Chainable<FulfillmentLike> =>
     cy
-        .apiAs<{ items: FulfilmentLike['fulfillmentOrders'] }>(
+        .apiAs<{ items: FulfillmentLike['fulfillmentOrders'] }>(
             'admin',
             'GET',
             `/orders/${orderId}/fulfillment-orders`
         )
         .then((plan) =>
             cy
-                .apiAs<{ items: FulfilmentLike['shipments'] }>(
+                .apiAs<{ items: FulfillmentLike['shipments'] }>(
                     'admin',
                     'GET',
                     `/orders/${orderId}/shipments`
@@ -76,7 +76,7 @@ describe('OP30 · Ship in part, correct a tracking code', () => {
             cy.get('[data-test=ship-items-dialog]').should('exist');
             cy.get('[data-test=ship-cancel]').click();
             cy.get('[data-test=ship-items-dialog]').should('not.exist');
-            fulfilmentOf(orderId).its('shipments').should('have.length', 0);
+            fulfillmentOf(orderId).its('shipments').should('have.length', 0);
             cy.apiAs<{ status: string }>('admin', 'GET', `/orders/${orderId}`)
                 .its('status')
                 .should('equal', 'processing');
@@ -120,7 +120,7 @@ describe('OP30 · Ship in part, correct a tracking code', () => {
             cy.get('[data-test=shipment-tracking-input] input').type(FIXED);
             cy.get('[data-test=shipment-tracking-save]').should('not.be.disabled').click();
             cy.get('[data-test=shipment-tracking]').should('contain.text', FIXED);
-            fulfilmentOf(orderId).its('shipments.0.trackingCode').should('equal', FIXED);
+            fulfillmentOf(orderId).its('shipments.0.trackingCode').should('equal', FIXED);
             eventually(
                 () =>
                     cy.apiAs<AuditListLike>(
@@ -145,18 +145,18 @@ describe('OP30 · Ship in part, correct a tracking code', () => {
 
             cy.step('the dialog goes stale: someone else ships the rest first');
             cy.get('[data-test=open-ship]').click();
-            fulfilmentOf(orderId).then((fulfilment) => {
+            fulfillmentOf(orderId).then((fulfillment) => {
                 cy.apiAs(
                     'admin',
                     'POST',
-                    `/delivery/fulfillment-orders/${fulfilment.fulfillmentOrders[0]?.id ?? ''}/shipments`,
+                    `/delivery/fulfillment-orders/${fulfillment.fulfillmentOrders[0]?.id ?? ''}/shipments`,
                     { trackingCode: 'TRK-OP30-B' }
                 );
             });
             cy.get('[data-test=ship-submit]').should('not.be.disabled').click();
             cy.get('[data-test=ship-items-error]').should('not.be.empty');
             cy.get('[data-test=ship-items-dialog]').should('exist');
-            fulfilmentOf(orderId).its('shipments').should('have.length', 2);
+            fulfillmentOf(orderId).its('shipments').should('have.length', 2);
             cy.get('[data-test=ship-cancel]').click();
 
             cy.step('both parcels are delivered: the tracking control is gone');
@@ -167,12 +167,12 @@ describe('OP30 · Ship in part, correct a tracking code', () => {
             cy.get('[data-test=mark-delivered]').click();
             cy.get('[data-test=mark-delivered]').should('not.exist');
             cy.get('[data-test=shipment-tracking-input]').should('not.exist');
-            fulfilmentOf(orderId).then((fulfilment) => {
+            fulfillmentOf(orderId).then((fulfillment) => {
                 loginDevice('warehouse').then((device) => {
                     refusedWith(
                         device,
                         'PATCH',
-                        `/delivery/shipments/${fulfilment.shipments[0]?.id ?? ''}`,
+                        `/delivery/shipments/${fulfillment.shipments[0]?.id ?? ''}`,
                         { trackingCode: 'TRK-LATE' },
                         409
                     );

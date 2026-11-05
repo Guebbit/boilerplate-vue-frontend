@@ -168,7 +168,7 @@ describe('AT5 · Payments and refunds filters', () => {
             listedOrders('refund-order-link').should('include', refundedId);
             cy.get('[data-test=refunds-search-reset]').click();
 
-            cy.step('reason: a cancellation refund lists the cancelled order');
+            cy.step('reason: a cancellation refund lists the canceled order');
             cy.pickOption('[data-test=refund-filter-reason]', 'Cancellation');
             cy.get('[data-test=refunds-search-submit]').click();
             listedOrders('refund-order-link').should('include', refundedId);

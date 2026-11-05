@@ -314,7 +314,7 @@ const {
 
 /**
  * Expires every stale hold. Idempotent server-side, so the confirm is about intent, not danger —
- * the orders behind the released holds get cancelled, and that is worth a deliberate click.
+ * the orders behind the released holds get canceled, and that is worth a deliberate click.
  */
 const handleSweep = singleFlight(() =>
     dialogStore

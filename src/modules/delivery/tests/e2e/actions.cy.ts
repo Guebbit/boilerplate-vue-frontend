@@ -1,6 +1,6 @@
 /**
  * @module
- * The fulfilment screen's failure rows, run through the shared `actionTable` runner: shipping or
+ * The fulfillment screen's failure rows, run through the shared `actionTable` runner: shipping or
  * holding a group answered with a server fault keeps the dialog open with what was typed, shows the
  * alert, and a retry works.
  */

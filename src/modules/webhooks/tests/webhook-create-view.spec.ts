@@ -76,7 +76,7 @@ const CREATED: WebhookSubscriptionCreated = {
  */
 const mountPage = () => {
     const store = useWebhooksStore();
-    vi.spyOn(store, 'fetchEventCatalogue').mockResolvedValue(undefined);
+    vi.spyOn(store, 'fetchEventCatalog').mockResolvedValue(undefined);
     const create = vi.spyOn(store, 'createSubscription');
 
     const wrapper = mount(WebhookCreate, {

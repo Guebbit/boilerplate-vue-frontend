@@ -17,14 +17,14 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import { aReturn } from '../../../../tests/support/unit/fixtures.ts';
-import type { CancellableFulfillmentOrder } from '@types';
+import type { CancelableFulfillmentOrder } from '@types';
 
 wireModulesIntoCore();
 
 /**
  * A remainder of one unit, refunded without delivery.
  */
-const OPTION: CancellableFulfillmentOrder = {
+const OPTION: CancelableFulfillmentOrder = {
     fulfillmentOrderId: 'fo2',
     number: 2,
     lines: [{ productId: 'p2', title: 'Mug', quantity: 1 }],
@@ -103,7 +103,7 @@ describe('what it sends', () => {
                     fulfillmentOrderId: 'fo2',
                     reason: 'withdrawal'
                 });
-                expect(wrapper.emitted('cancelled')).toHaveLength(1);
+                expect(wrapper.emitted('canceled')).toHaveLength(1);
                 expect(wrapper.emitted('update:modelValue')).toEqual([[false]]);
             });
     });
@@ -139,7 +139,7 @@ describe('what it sends', () => {
                 expect(wrapper.get('[data-test=cancel-remainder-error]').text()).toContain(
                     'RETURN_NOTHING_TO_CANCEL'
                 );
-                expect(wrapper.emitted('cancelled')).toBeUndefined();
+                expect(wrapper.emitted('canceled')).toBeUndefined();
                 expect(wrapper.emitted('update:modelValue')).toBeUndefined();
             });
     });

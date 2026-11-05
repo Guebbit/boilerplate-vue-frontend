@@ -156,7 +156,7 @@ export const useLineQuantity = (
     /**
      * Hands every outstanding step to `send` and drops it, timers included — for `pagehide`.
      *
-     * The page is going away, so a normal request would be cancelled with it and a timer would
+     * The page is going away, so a normal request would be canceled with it and a timer would
      * never fire. The caller's `send` must be one that survives the page (a keepalive request).
      *
      * @param send - delivers one line's quantity to the server

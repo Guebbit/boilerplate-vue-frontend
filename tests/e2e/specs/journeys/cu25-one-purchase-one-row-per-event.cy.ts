@@ -4,7 +4,7 @@
  * CU25 · One purchase, one analytics row per event. A customer who has agreed to analytics buys
  * something: the card is declined, the retry pays, and then the customer cancels. Umami holds
  * exactly one row for each thing that happened (`checkout_completed`, `order_created`,
- * `payment_declined`, `payment_succeeded`, `order_cancelled`), not none and not two.
+ * `payment_declined`, `payment_succeeded`, `order_canceled`), not none and not two.
  *
  * Live only: the demo profile has no Umami behind it. All five names are the backend's. This
  * frontend emits no event of its own, so a delta of one cannot come from the browser, and a
@@ -24,7 +24,7 @@ const EVENTS = [
     'checkout_completed',
     'payment_declined',
     'payment_succeeded',
-    'order_cancelled'
+    'order_canceled'
 ] as const;
 
 describe('CU25 · One purchase, one analytics row per event', () => {
@@ -36,7 +36,7 @@ describe('CU25 · One purchase, one analytics row per event', () => {
         cy.visit('/en');
     });
 
-    it('records each step of a declined, paid and cancelled purchase exactly once', () => {
+    it('records each step of a declined, paid and canceled purchase exactly once', () => {
         const since = Date.now() - 60 * 1000;
 
         cy.step('the customer has agreed to analytics, and Umami is read before the purchase');

@@ -4,7 +4,7 @@
  * AT5 · Orders list filters. Each staff filter narrows the list to rows that really match, and
  * "reset" brings the full list back. Status and deleted are read off the rows themselves; id,
  * email and awaiting-transfer are held to a seeded order that must, or must not, be among them.
- * The payment, fulfilment and return statuses, the created and paid windows, and the product are
+ * The payment, fulfillment and return statuses, the created and paid windows, and the product are
  * held the same way: a subject that matches is in, a subject that does not is out.
  */
 import { dayShifted, listedIds, resetSearch, submitSearch } from '../../../support/e2e/steps';
@@ -92,7 +92,7 @@ describe('AT5 · Orders list filters', () => {
         });
     });
 
-    it('payment, fulfilment and return status, the created and paid windows and the product each narrow the list', () => {
+    it('payment, fulfillment and return status, the created and paid windows and the product each narrow the list', () => {
         cy.subjectId('order.paid').then((paidId) => {
             cy.subjectId('payment.refunded').then((refundedId) => {
                 cy.subjectId('order.partiallyFulfilled').then((partialId) => {
@@ -110,7 +110,7 @@ describe('AT5 · Orders list filters', () => {
                                     [paidId]
                                 );
 
-                                cy.step('fulfilment status: partly shipped, then on hold');
+                                cy.step('fulfillment status: partly shipped, then on hold');
                                 narrowedTo(
                                     () =>
                                         cy.pickOption(

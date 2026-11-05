@@ -234,7 +234,7 @@ describe('OperationsSection', () => {
     const OPERATIONS: OperationsStats = {
         period: PERIOD,
         limits: LIMITS,
-        cancellation: { placed: 4, cancelled: 1, rate: 0.25 },
+        cancellation: { placed: 4, canceled: 1, rate: 0.25 },
         returns: { unitsOrdered: 3, unitsReturned: 1, rate: 0.33 },
         refunds: [{ currency: 'EUR', invoiced: 90, credited: 12, rate: 0.13 }]
     };

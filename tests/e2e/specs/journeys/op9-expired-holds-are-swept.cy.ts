@@ -4,7 +4,7 @@
  * OP9 · Expired holds are swept. A customer checks out by card and never pays; the thirty-minute
  * hold runs out; the admin presses the sweep button on the stock page.
  *
- * - The order is cancelled, its units return to the shelf, and the ledger says `expire`.
+ * - The order is canceled, its units return to the shelf, and the ledger says `expire`.
  * - The customer is mailed why, and the pay form is gone from the order.
  *
  * Demo only: time passes by moving the backend's clock, and no job runs by itself, so the
@@ -34,7 +34,7 @@ describe('OP9 · Expired holds are swept', () => {
         cy.visit('/en');
     });
 
-    it('the admin sweeps an unpaid card order: cancelled, units back, customer told', () => {
+    it('the admin sweeps an unpaid card order: canceled, units back, customer told', () => {
         // Its own product: the sweep releases EVERY expired hold, so a seeded product's shelf would
         // also gain the units the seed's unpaid orders hold.
         cy.createProduct({ title: `E2E OP9 ${Date.now()}`, onHand: 5 }).then(
@@ -75,9 +75,9 @@ describe('OP9 · Expired holds are swept', () => {
                     cy.wait('@sweep').its('response.statusCode').should('equal', 200);
                     cy.get('[data-test=sweep-error]').should('not.exist');
 
-                    cy.step('the order is cancelled and the units are back');
+                    cy.step('the order is canceled and the units are back');
                     cy.apiAs<OrderLike>('admin', 'GET', `/orders/${orderId}`).should((order) => {
-                        expect(order?.status).to.equal('cancelled');
+                        expect(order?.status).to.equal('canceled');
                     });
                     cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).should(
                         (product) => {

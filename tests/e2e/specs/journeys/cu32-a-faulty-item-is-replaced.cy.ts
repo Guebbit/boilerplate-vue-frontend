@@ -3,7 +3,7 @@
  * @module
  * CU32 · A faulty item is replaced. The customer's delivered order has a broken bowl. They open a
  * return for the defect and say they would like a replacement; support approves; the warehouse
- * receives it with the buyer's wish preselected. No money moves, the order is open for fulfilment
+ * receives it with the buyer's wish preselected. No money moves, the order is open for fulfillment
  * again on the SAME order, and the replacement ships through the ordinary door and arrives.
  *
  * Money and status are read off the API, never summed on the page.

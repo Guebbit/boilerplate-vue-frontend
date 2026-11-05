@@ -83,7 +83,7 @@ as inclusive instants (`src/infrastructure/utils/day-range.ts`), in the browser'
 
 The list offers **Delete**, **Hard delete** and **Restore** from `actions.delete`, `actions.hardDelete`
 and `actions.restore` (list rows carry them); the server decides, from the caller's `delete:Order` key
-and the order's state. A refused one would answer `409 ORDER_NOT_CANCELLED` for an open order,
+and the order's state. A refused one would answer `409 ORDER_NOT_CANCELED` for an open order,
 `409 ORDER_INVOICED` for a paid one, `409 ORDER_HAS_MONEY_HISTORY` for one handed money after its cancel. Cancelling is what releases the stock
 and cancels the open payment intent, so the delete is pure cleanup. A refusal that slips through
 (the order changed under the viewer) shows the API's own sentence in the row-action alert; the
@@ -91,8 +91,8 @@ copy is the API's, in the viewer's language, so this app holds none for it.
 
 ```mermaid
 flowchart LR
-    open[pending order] -- Cancel --> cancelled[cancelled, unpaid]
-    cancelled -- Hard delete --> gone[removed]
+    open[pending order] -- Cancel --> canceled[canceled, unpaid]
+    canceled -- Hard delete --> gone[removed]
     open -. no action offered .-> gone
     paid[paid or refunded] -. no action offered .-> gone
 ```

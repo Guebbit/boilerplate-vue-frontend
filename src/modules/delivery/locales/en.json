@@ -19,7 +19,7 @@
         "status-in_progress": "Partly shipped",
         "status-on_hold": "On hold",
         "status-closed": "Fulfilled",
-        "status-cancelled": "Cancelled",
+        "status-canceled": "Cancelled",
         "kind-digital": "Digital",
         "hold-reason-awaiting_stock": "Awaiting stock",
         "hold-reason-incorrect_address": "Incorrect address",
@@ -34,7 +34,7 @@
         "expected": "Expected to ship {date}",
         "no-date-yet": "No date yet",
         "line-progress": "{shipped} of {quantity} shipped",
-        "line-cancelled": "{cancelled} cancelled",
+        "line-canceled": "{canceled} cancelled",
         "button-ship": "Ship items",
         "button-fulfill": "Mark fulfilled",
         "button-hold": "Hold",
@@ -117,7 +117,7 @@
         "state-waiting": "Waiting for stock",
         "state-allocated": "Allocated",
         "state-shipped": "Shipped",
-        "state-cancelled": "Cancelled"
+        "state-canceled": "Cancelled"
     },
     "report-lost-dialog": {
         "title": "Report shipment #{number} lost or damaged",

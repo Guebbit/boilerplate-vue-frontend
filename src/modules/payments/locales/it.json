@@ -94,7 +94,7 @@
         "display-status-partially_refunded": "Rimborsato in parte",
         "display-status-refunded": "Rimborsato",
         "display-status-failed": "Fallito",
-        "display-status-cancelled": "Annullato",
+        "display-status-canceled": "Annullato",
         "method-card": "Carta",
         "method-bank_transfer": "Bonifico",
         "method-cash": "Contanti",

@@ -194,7 +194,7 @@ describe('OrdersList — a soft-deleted row', () => {
                     items: [
                         {
                             ...order('live'),
-                            status: 'cancelled',
+                            status: 'canceled',
                             actions: deleteFlags(true, false)
                         },
                         {
@@ -217,7 +217,7 @@ describe('OrdersList — a soft-deleted row', () => {
         await flushPromises();
 
         expect(wrapper.findAll('[data-test="row-restore"]')).toHaveLength(1);
-        // Delete only on the cancelled live row: the open one is cancelled first.
+        // Delete only on the canceled live row: the open one is canceled first.
         expect(wrapper.findAll('[data-test="row-delete"]')).toHaveLength(1);
 
         await wrapper.get('[data-test="row-restore"]').trigger('click');
@@ -228,11 +228,11 @@ describe('OrdersList — a soft-deleted row', () => {
 
 /**
  * The delete controls follow the server's flags: the permanent delete where the API will accept it
- * (a cancelled order never paid), the soft Delete on a cancelled order, paid or not, and neither on
+ * (a canceled order never paid), the soft Delete on a canceled order, paid or not, and neither on
  * an open one.
  */
 describe('OrdersList — the permanent-delete action', () => {
-    it('shows it on a cancelled unpaid row and on no other', async () => {
+    it('shows it on a canceled unpaid row and on no other', async () => {
         signInAsOrderDeleter();
         vi.mocked(searchOrders).mockResolvedValue(
             asStub<Awaited<ReturnType<typeof searchOrders>>>(
@@ -246,13 +246,13 @@ describe('OrdersList — the permanent-delete action', () => {
                         },
                         {
                             ...order('void'),
-                            status: 'cancelled',
+                            status: 'canceled',
                             paymentStatus: 'unpaid',
                             actions: deleteFlags(true, true)
                         },
                         {
                             ...order('billed'),
-                            status: 'cancelled',
+                            status: 'canceled',
                             paymentStatus: 'refunded',
                             actions: deleteFlags(true, false)
                         }
@@ -414,8 +414,8 @@ describe('OrdersList — the order column', () => {
  * The list says where the goods stand beside the status, and narrows by it — including the two
  * values a single-parcel shop never had, `on_hold` and `partially_fulfilled`.
  */
-describe('OrdersList — the fulfilment chip and filter', () => {
-    it('shows each row’s fulfilment in words, next to its status', async () => {
+describe('OrdersList — the fulfillment chip and filter', () => {
+    it('shows each row’s fulfillment in words, next to its status', async () => {
         vi.mocked(searchOrders).mockResolvedValue(
             asStub<Awaited<ReturnType<typeof searchOrders>>>(
                 contractResponse(schemas.SearchOrdersResponse, {
@@ -430,7 +430,7 @@ describe('OrdersList — the fulfilment chip and filter', () => {
         expect(wrapper.get('[data-test="row-fulfillment-status"]').text()).toBe('Partly shipped');
     });
 
-    it('sends the chosen fulfilment to the API as a filter', async () => {
+    it('sends the chosen fulfillment to the API as a filter', async () => {
         vi.mocked(searchOrders).mockResolvedValue(
             asStub<Awaited<ReturnType<typeof searchOrders>>>(
                 contractResponse(schemas.SearchOrdersResponse, {

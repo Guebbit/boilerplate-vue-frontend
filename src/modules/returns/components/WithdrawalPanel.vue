@@ -37,7 +37,7 @@ import CancelRemainderDialog from './CancelRemainderDialog.vue';
 import RecordWithdrawalDialog from './RecordWithdrawalDialog.vue';
 import ReturnRequestForm from './ReturnRequestForm.vue';
 import type {
-    CancellableFulfillmentOrder,
+    CancelableFulfillmentOrder,
     Return,
     ReturnOptions,
     WithdrawBlockedReason
@@ -98,7 +98,7 @@ const { loading } = storeToRefs(useReturnsStore());
 const opened = ref<Return[]>([]);
 
 /**
- * What the server says can still be returned and cancelled; `undefined` until read, or when the
+ * What the server says can still be returned and canceled; `undefined` until read, or when the
  * caller may not read it.
  */
 const options = ref<ReturnOptions>();
@@ -154,8 +154,8 @@ const recordOpen = ref(false);
  * The remainders on offer: none for a caller with no door, and only those the server says THIS
  * caller may cancel (`cancel`) — a closed window, excluded goods or a missing key never reach a button.
  */
-const cancellable = computed(() =>
-    cancelMode.value ? (options.value?.cancellable ?? []).filter(({ cancel }) => cancel) : []
+const cancelable = computed(() =>
+    cancelMode.value ? (options.value?.cancelable ?? []).filter(({ cancel }) => cancel) : []
 );
 
 /**
@@ -174,7 +174,7 @@ const formReasons = computed(() =>
 /**
  * The remainder whose cancel dialog is open, if any.
  */
-const cancelling = ref<CancellableFulfillmentOrder>();
+const cancelling = ref<CancelableFulfillmentOrder>();
 
 /**
  * Two-way flag for the cancel dialog, derived from {@link cancelling}.
@@ -249,7 +249,7 @@ const handleReturnOpened = () => {
 
 /**
  * A withdrawal was recorded for the buyer: re-read the lists and tell the page, whose order may
- * have been cancelled or now awaits goods.
+ * have been canceled or now awaits goods.
  *
  * @returns A promise settling once the lists are reloaded.
  */
@@ -259,12 +259,12 @@ const handleRecorded = () => {
 };
 
 /**
- * A remainder was cancelled: re-read the lists (its refund shrank what is on offer) and tell the
+ * A remainder was canceled: re-read the lists (its refund shrank what is on offer) and tell the
  * page, whose order status may have moved.
  *
  * @returns A promise settling once the lists are reloaded.
  */
-const handleCancelled = () => {
+const handleCanceled = () => {
     emit('opened');
     return loadOpened();
 };
@@ -280,7 +280,7 @@ onMounted(loadOpened);
             canRecordWithdrawal ||
             opened.length > 0 ||
             returnLines.length > 0 ||
-            cancellable.length > 0
+            cancelable.length > 0
         "
         class="flex flex-col gap-3"
         data-test="withdrawal-panel"
@@ -354,15 +354,15 @@ onMounted(loadOpened);
         </template>
 
         <ul
-            v-if="cancellable.length > 0"
+            v-if="cancelable.length > 0"
             class="m-0 flex list-none flex-col gap-2 p-0"
-            data-test="cancellable-list"
+            data-test="cancelable-list"
         >
             <li
-                v-for="option in cancellable"
-                :key="'cancellable-' + option.fulfillmentOrderId"
+                v-for="option in cancelable"
+                :key="'cancelable-' + option.fulfillmentOrderId"
                 class="flex flex-wrap items-center justify-between gap-3"
-                data-test="cancellable-item"
+                data-test="cancelable-item"
             >
                 <span class="text-sm">
                     {{ t('withdrawal-panel.cancel-line', { number: option.number }) }}
@@ -382,7 +382,7 @@ onMounted(loadOpened);
             </li>
         </ul>
         <p
-            v-if="cancellable.length > 0 && cancelMode === 'buyer'"
+            v-if="cancelable.length > 0 && cancelMode === 'buyer'"
             class="m-0 text-sm opacity-75"
             data-test="cancel-hint"
         >
@@ -430,7 +430,7 @@ onMounted(loadOpened);
             :currency="options?.currency ?? ''"
             :option="cancelling"
             :mode="cancelMode"
-            @cancelled="handleCancelled"
+            @canceled="handleCanceled"
         />
     </section>
 </template>

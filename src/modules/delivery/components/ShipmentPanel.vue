@@ -33,12 +33,12 @@ import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
  */
 const { orderId, canStart, shippingAddress } = defineProps<{
     /**
-     * The order whose fulfilment this shows.
+     * The order whose fulfillment this shows.
      */
     orderId: string;
     /**
      * The order's own `actions.process` — whether `POST /orders/{id}/process` would be
-     * accepted right now. Who may start fulfilment (`start:Shipment`) is a different key
+     * accepted right now. Who may start fulfillment (`start:Shipment`) is a different key
      * than who may write a shipment, so it stays the order's flag.
      */
     canStart?: boolean;
@@ -51,7 +51,7 @@ const { orderId, canStart, shippingAddress } = defineProps<{
  */
 const emit = defineEmits<
     /**
-     * The order's fulfilment moved — the parent should re-read the order.
+     * The order's fulfillment moved — the parent should re-read the order.
      */
     (event: 'moved') => void
 >();
@@ -104,7 +104,7 @@ const arrivesInCount = computed(() => {
 });
 
 /**
- * This panel's own blocked state — a refusal of "start fulfilment" shown in place rather than
+ * This panel's own blocked state — a refusal of "start fulfillment" shown in place rather than
  * joining a toast queue the operator may have looked away from.
  */
 const {
@@ -123,7 +123,7 @@ const shipmentsOf = (fulfillmentOrderId: string) =>
     shipments.value.filter((record) => record.fulfillmentOrderId === fulfillmentOrderId);
 
 /**
- * Reports that fulfilment has started, re-reads the fulfilment (every card's `actions` depend on
+ * Reports that fulfillment has started, re-reads the fulfillment (every card's `actions` depend on
  * the order's status) and tells the page. Cards re-read through the store on their own moves.
  *
  * @returns A promise resolving once the panel has refreshed.
@@ -146,7 +146,7 @@ const markStarted = () => {
 const onAmbientError = useAmbientError();
 
 /**
- * Fetches the fulfilment on mount AND whenever `orderId` changes — `immediate: true` covers the
+ * Fetches the fulfillment on mount AND whenever `orderId` changes — `immediate: true` covers the
  * mount case, the watch covers navigating to a different order without a remount.
  */
 watch(

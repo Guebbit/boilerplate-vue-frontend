@@ -238,7 +238,7 @@ describe('fetchReturnOptions', () => {
             currency: 'EUR',
             reasons: ['withdrawal', 'defective'],
             returnable: [{ productId: 'p1', title: 'Shirt', quantity: 1, withdrawable: true }],
-            cancellable: []
+            cancelable: []
         };
         responses['GET /returns/options'] = options;
 

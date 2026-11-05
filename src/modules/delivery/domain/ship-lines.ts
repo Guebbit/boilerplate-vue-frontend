@@ -69,7 +69,7 @@ export const readShipLines = (
  *
  * @param fulfillmentOrders - The order's fulfillment orders.
  * @param shipments - The order's shipments.
- * @returns The count; digital and cancelled fulfillment orders carry no parcel and are left out.
+ * @returns The count; digital and canceled fulfillment orders carry no parcel and are left out.
  */
 export const shipmentCount = (
     fulfillmentOrders: readonly FulfillmentOrder[],
@@ -79,6 +79,6 @@ export const shipmentCount = (
     const parcelIds = new Set(physical.map(({ id }) => id));
     return Math.max(
         shipments.filter(({ fulfillmentOrderId }) => parcelIds.has(fulfillmentOrderId)).length,
-        physical.filter(({ status }) => status !== 'cancelled').length
+        physical.filter(({ status }) => status !== 'canceled').length
     );
 };

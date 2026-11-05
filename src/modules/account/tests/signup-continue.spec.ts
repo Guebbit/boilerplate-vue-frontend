@@ -4,7 +4,7 @@
  * reading when the `?continue=` says so ("Sign up" in the app bar carries the same value "Log in"
  * does), on Home when it says nothing, and never off-site — only a single same-origin relative
  * path is followed. The transport is mocked at `orvalMutator`; the breach check the password field
- * queues is cancelled by unmounting, as `signup-antibot.spec.ts` explains.
+ * queues is canceled by unmounting, as `signup-antibot.spec.ts` explains.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';

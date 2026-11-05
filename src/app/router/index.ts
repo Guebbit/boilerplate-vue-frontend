@@ -350,7 +350,7 @@ router.beforeResolve(localeChoice);
  * top, and a navigation to an anchor must leave focus alone so the anchor wins; a query-only
  * change (a list re-searching) keeps focus on the control that caused it (WCAG 2.4.3).
  *
- * A failed navigation (aborted, cancelled, or a duplicate of the current route) returns early:
+ * A failed navigation (aborted, canceled, or a duplicate of the current route) returns early:
  * `to` was never actually reached, so writing its title over the page the visitor is still on
  * would be wrong regardless of whether the two titles happen to match.
  *

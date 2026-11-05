@@ -141,7 +141,7 @@ const { canRefund, settleable, refund, cancelNotice, settle, refreshPayment, ref
 /**
  * The operator's money actions, and whether each is still open.
  *
- * Both halves are the server's answer: the order says whether it can be cancelled, the payment
+ * Both halves are the server's answer: the order says whether it can be canceled, the payment
  * whether money can come back. "Cancel and refund" is the two calls, which is why it needs both —
  * and why all three grey out on their own terms rather than on a rule spelled out here.
  */

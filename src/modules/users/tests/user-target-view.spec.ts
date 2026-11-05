@@ -203,7 +203,7 @@ describe('User (detail page)', () => {
             });
     });
 
-    it('does nothing when the access dialog is cancelled', () => {
+    it('does nothing when the access dialog is canceled', () => {
         queueGetResponses(
             aUser({
                 id: 'u1',

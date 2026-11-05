@@ -25,17 +25,17 @@ import {
     localToIso
 } from '../domain/statement.ts';
 import StatedAtFields from './StatedAtFields.vue';
-import type { CancellableFulfillmentOrder } from '@types';
+import type { CancelableFulfillmentOrder } from '@types';
 
 /**
- * The order, the cancellable remainder, and who is asking.
+ * The order, the cancelable remainder, and who is asking.
  */
 const props = defineProps<{
     orderId: string;
     /** ISO-4217 code the amounts are in (`ReturnOptions.currency`). */
     currency: string;
     /** The fulfillment order's remainder and the refund cancelling it would owe. */
-    option: CancellableFulfillmentOrder;
+    option: CancelableFulfillmentOrder;
     /** `buyer` exercises their withdrawal; `staff` cancels on the refund key and gives a note. */
     mode: 'buyer' | 'staff';
 }>();
@@ -45,9 +45,9 @@ const props = defineProps<{
  */
 const emit = defineEmits<
     /**
-     * The remainder was cancelled and its refund started.
+     * The remainder was canceled and its refund started.
      */
-    (event: 'cancelled') => void
+    (event: 'canceled') => void
 >();
 
 /**
@@ -166,7 +166,7 @@ const submit = () => {
         .then(() => {
             addMessage(t('cancel-remainder-dialog.success'));
             isOpen.value = false;
-            emit('cancelled');
+            emit('canceled');
         })
         .catch((error: unknown) => reportCancelError(error));
 };

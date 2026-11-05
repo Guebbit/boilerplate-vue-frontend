@@ -63,7 +63,7 @@ describe('LP1 · A parcel is lost', () => {
         });
     });
 
-    it('settles the order as cancelled, not delivered, when the buyer takes the refund', () => {
+    it('settles the order as canceled, not delivered, when the buyer takes the refund', () => {
         cy.subjectId('order.shipped').then((orderId) => {
             cy.step('the warehouse reports the only parcel lost');
             cy.loginAs('warehouse');
@@ -82,18 +82,18 @@ describe('LP1 · A parcel is lost', () => {
             cy.get('[data-test=cancel-remainder-dialog]').should('not.exist');
 
             cy.step(
-                'nothing ever arrived: the order is cancelled, with no clock and no delivered row'
+                'nothing ever arrived: the order is canceled, with no clock and no delivered row'
             );
             cy.apiAs<OrderLike & { withdrawUntil?: string }>(
                 'user',
                 'GET',
                 `/orders/${orderId}`
             ).should((order) => {
-                expect(order?.status).to.equal('cancelled');
+                expect(order?.status).to.equal('canceled');
                 expect(order?.withdrawUntil).to.equal(undefined);
             });
             cy.visit(`/en/orders/${orderId}`);
-            cy.get('[data-test=order-timeline-entry][data-type=cancelled]').should(
+            cy.get('[data-test=order-timeline-entry][data-type=canceled]').should(
                 'contain.text',
                 'Lost in transit, refunded'
             );

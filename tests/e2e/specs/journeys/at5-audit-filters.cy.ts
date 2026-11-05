@@ -51,11 +51,11 @@ describe('AT5 · Audit page filters', () => {
                     cy.get('[data-test=list-row]').its('length').as('all');
 
                     cy.step('action: every row is that action');
-                    cy.get('[data-test=filter-action] input').type('order.cancelled');
+                    cy.get('[data-test=filter-action] input').type('order.canceled');
                     search();
                     cy.get('[data-test=list-row]').should('have.length.greaterThan', 0);
                     cy.get('[data-test=list-row]').each(($row) => {
-                        expect($row.text()).to.contain('order.cancelled');
+                        expect($row.text()).to.contain('order.canceled');
                     });
                     cy.get('[data-test=search-reset]').click();
                     cy.settleNetwork();

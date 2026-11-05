@@ -64,7 +64,7 @@ export const searchAndOpenProduct = (name: string): Cypress.Chainable<JQuery> =>
     });
 
 /**
- * On an order page whose fulfilment card offers "Ship items", ships everything that remains in
+ * On an order page whose fulfillment card offers "Ship items", ships everything that remains in
  * one shipment: opens the dialog, types the tracking code when there is one, and submits.
  *
  * The dialog starts at every line's remaining quantity, so this is the single-shipment door the
@@ -535,8 +535,8 @@ export const shipThroughTheApi = (
     cy.apiAs('admin', 'POST', `/orders/${orderId}/process`);
     return cy
         .apiAs<{ items: { id: string }[] }>('admin', 'GET', `/orders/${orderId}/fulfillment-orders`)
-        .then((fulfilment) => {
-            const group = fulfilment?.items[0];
+        .then((fulfillment) => {
+            const group = fulfillment?.items[0];
             if (!group) throw new Error(`shipThroughTheApi: order ${orderId} has no group to ship`);
             return cy.apiAs<{ id: string }>(
                 'admin',

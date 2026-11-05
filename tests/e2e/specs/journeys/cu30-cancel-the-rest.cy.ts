@@ -10,7 +10,7 @@ import { eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/st
 
 /** The slice of the options read this story compares the screen with. */
 interface OptionsLike {
-    cancellable: {
+    cancelable: {
         refundAmount: number;
         shippingRefund: number;
         lines: { quantity: number; title: string }[];
@@ -49,18 +49,18 @@ describe('CU30 · Cancel what has not shipped', () => {
             };
             cy.apiAs<OptionsLike>('user', 'GET', `/returns/options?orderId=${orderId}`).then(
                 (options) => {
-                    expect(options?.cancellable).to.have.length(1);
-                    refund.amount = Number(options?.cancellable[0].refundAmount);
-                    refund.shipping = Number(options?.cancellable[0].shippingRefund);
-                    refund.lines = options?.cancellable[0].lines ?? [];
+                    expect(options?.cancelable).to.have.length(1);
+                    refund.amount = Number(options?.cancelable[0].refundAmount);
+                    refund.shipping = Number(options?.cancelable[0].shippingRefund);
+                    refund.lines = options?.cancelable[0].lines ?? [];
                 }
             );
             cy.visit(`/en/orders/${orderId}`);
-            cy.get('[data-test=cancellable-item]').should('have.length', 1);
+            cy.get('[data-test=cancelable-item]').should('have.length', 1);
             cy.get('[data-test=cancel-hint]').should('exist');
 
             cy.step(
-                'the confirm step shows the refund the server named, and nothing is cancelled yet'
+                'the confirm step shows the refund the server named, and nothing is canceled yet'
             );
             cy.get('[data-test=cancel-remainder-open]').click();
             cy.get('[data-test=cancel-remainder-refund]').should(($line) => {
@@ -90,7 +90,7 @@ describe('CU30 · Cancel what has not shipped', () => {
             cy.step('confirms: a closed cancellation is on record and nothing is left to cancel');
             cy.get('[data-test=cancel-remainder-confirm]').click();
             cy.get('[data-test=cancel-remainder-dialog]').should('not.exist');
-            cy.get('[data-test=cancellable-item]').should('not.exist');
+            cy.get('[data-test=cancelable-item]').should('not.exist');
             cy.get('[data-test=order-return]').should('have.length', 1);
             cy.apiAs<{ items: ReturnLike[] }>('user', 'GET', `/returns?orderId=${orderId}`).should(
                 (page) => {

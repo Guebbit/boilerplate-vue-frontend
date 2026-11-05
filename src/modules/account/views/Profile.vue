@@ -344,7 +344,7 @@ const cancelPendingEmail = () => {
     if (!profile.value?.pendingEmail || changingPendingEmail.value) return;
     clearPendingEmailError();
     return cancelPendingEmailChange()
-        .then(() => addMessage(t('profile-page.pending-email-cancelled')))
+        .then(() => addMessage(t('profile-page.pending-email-canceled')))
         .catch((error) => reportPendingEmailError(error));
 };
 </script>

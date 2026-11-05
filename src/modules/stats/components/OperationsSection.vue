@@ -79,7 +79,7 @@ const mixCharts = computed(() => {
                     :value="formatPercent(operations.cancellation.rate)"
                     :subtitle="
                         t('stats-page.cancellation-detail', {
-                            cancelled: operations.cancellation.cancelled,
+                            canceled: operations.cancellation.canceled,
                             placed: operations.cancellation.placed
                         })
                     "

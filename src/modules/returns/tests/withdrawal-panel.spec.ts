@@ -42,7 +42,7 @@ const NO_OPTIONS: ReturnOptions = {
     reasons: [],
     exceptions: [],
     returnable: [],
-    cancellable: []
+    cancelable: []
 };
 
 /**
@@ -51,7 +51,7 @@ const NO_OPTIONS: ReturnOptions = {
  *
  * @param props - what the order page would pass
  * @param existing - the returns already opened on the order
- * @param options - what the server says can still be returned and cancelled
+ * @param options - what the server says can still be returned and canceled
  * @returns the wrapper and the store
  */
 const mountPanel = (
@@ -337,9 +337,9 @@ describe('WithdrawalPanel', () => {
         /**
          * One fulfillment order with a remainder, and what cancelling it would refund.
          */
-        const CANCELLABLE: ReturnOptions = {
+        const CANCELABLE: ReturnOptions = {
             ...NO_OPTIONS,
-            cancellable: [
+            cancelable: [
                 {
                     fulfillmentOrderId: 'fo2',
                     number: 2,
@@ -352,9 +352,9 @@ describe('WithdrawalPanel', () => {
         };
 
         it('lets the buyer cancel a remainder as part of their withdrawal', async () => {
-            const { wrapper, store } = mountPanel({ canWithdraw: true }, [], CANCELLABLE);
+            const { wrapper, store } = mountPanel({ canWithdraw: true }, [], CANCELABLE);
             await flushPromises();
-            expect(wrapper.get('[data-test=cancellable-item]').text()).toContain('12.50');
+            expect(wrapper.get('[data-test=cancelable-item]').text()).toContain('12.50');
             expect(wrapper.find('[data-test=cancel-hint]').exists()).toBe(true);
 
             await wrapper.get('[data-test=cancel-remainder-open]').trigger('click');
@@ -372,7 +372,7 @@ describe('WithdrawalPanel', () => {
 
         it('lets staff holding the refund key do it too, without the withdrawal button', async () => {
             signInWith([['create', 'Refund']]);
-            const { wrapper } = mountPanel({ canWithdraw: false }, [], CANCELLABLE);
+            const { wrapper } = mountPanel({ canWithdraw: false }, [], CANCELABLE);
             await flushPromises();
 
             expect(wrapper.find('[data-test=cancel-remainder-open]').exists()).toBe(true);
@@ -382,20 +382,20 @@ describe('WithdrawalPanel', () => {
 
         it('hides a remainder the server says this caller may not cancel', async () => {
             signInWith([['create', 'Refund']]);
-            const [first] = CANCELLABLE.cancellable;
+            const [first] = CANCELABLE.cancelable;
             const refused: ReturnOptions = {
-                ...CANCELLABLE,
-                cancellable: [{ ...first, cancel: false }]
+                ...CANCELABLE,
+                cancelable: [{ ...first, cancel: false }]
             };
             const { wrapper } = mountPanel({ canWithdraw: false }, [], refused);
             await flushPromises();
 
-            expect(wrapper.find('[data-test=cancellable-list]').exists()).toBe(false);
+            expect(wrapper.find('[data-test=cancelable-list]').exists()).toBe(false);
         });
 
         it('offers nothing to a caller who is neither the buyer nor holds the refund key', async () => {
             signInWith([['read', 'Order']]);
-            const { wrapper } = mountPanel({ canWithdraw: false }, [], CANCELLABLE);
+            const { wrapper } = mountPanel({ canWithdraw: false }, [], CANCELABLE);
             await flushPromises();
 
             expect(wrapper.find('[data-test=cancel-remainder-open]').exists()).toBe(false);

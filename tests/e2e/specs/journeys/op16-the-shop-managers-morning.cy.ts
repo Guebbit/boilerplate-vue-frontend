@@ -77,14 +77,14 @@ describe('OP16 · The shop manager’s morning', () => {
             cy.get('[data-test=record-offline-payment-form]').should('not.exist');
         });
 
-        cy.step('a second order is cancelled only: the manager may cancel, the money stays');
+        cy.step('a second order is canceled only: the manager may cancel, the money stays');
         cy.subjectId('order.paidExpress').then((orderId) => {
             cy.visit(`/en/orders/${orderId}/edit`);
             cy.get('[data-test=button-cancel-only]').should('not.be.disabled').click();
             cy.get('[data-test=button-cancel-only]').should('be.disabled');
             cy.apiAs<{ status: string }>('manager', 'GET', `/orders/${orderId}`)
                 .its('status')
-                .should('equal', 'cancelled');
+                .should('equal', 'canceled');
         });
 
         cy.step('a return request: the manager approves it');

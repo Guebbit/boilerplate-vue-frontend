@@ -76,7 +76,7 @@ const mountPage = () => {
     store.addSubscriptionRecord({ ...SUBSCRIPTION });
     vi.spyOn(store, 'watchSubscription').mockReturnValue(vi.fn() as never);
     store.selectedSubscriptionId = SUBSCRIPTION.id;
-    vi.spyOn(store, 'fetchEventCatalogue').mockResolvedValue(undefined);
+    vi.spyOn(store, 'fetchEventCatalog').mockResolvedValue(undefined);
     const update = vi.spyOn(store, 'updateSubscription').mockResolvedValue(SUBSCRIPTION);
 
     const wrapper = mount(WebhookEdit, {

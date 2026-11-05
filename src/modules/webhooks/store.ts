@@ -294,10 +294,10 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      * `useStructureCrudApi` instances above, same as `admin`'s dashboard reads.
      */
     const {
-        data: eventCatalogueData,
-        error: errorEventCatalogue,
-        loading: loadingEventCatalogue,
-        run: runEventCatalogue
+        data: eventCatalogData,
+        error: errorEventCatalog,
+        loading: loadingEventCatalog,
+        run: runEventCatalog
     } = useAsyncAction(() => listWebhookEvents().then(({ items }) => items), {
         fallbackErrorMessage: translate('webhooks-form.error-load-events'),
         resolveError: getErrorMessage
@@ -306,12 +306,12 @@ export const useWebhooksStore = defineStore('webhooks', () => {
     /**
      * The event catalogue, or an empty list before the first successful call.
      */
-    const eventCatalogue = computed(() => eventCatalogueData.value ?? []);
+    const eventCatalog = computed(() => eventCatalogData.value ?? []);
 
     /**
-     * Loads the event catalogue; resolves into {@link errorEventCatalogue} rather than rejecting.
+     * Loads the event catalogue; resolves into {@link errorEventCatalog} rather than rejecting.
      */
-    const fetchEventCatalogue = () => runEventCatalogue().then(() => undefined);
+    const fetchEventCatalog = () => runEventCatalog().then(() => undefined);
 
     return {
         subscriptions,
@@ -352,9 +352,9 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         watchDeliveriesSearch,
         replayDelivery,
 
-        eventCatalogue,
-        loadingEventCatalogue,
-        errorEventCatalogue,
-        fetchEventCatalogue
+        eventCatalog,
+        loadingEventCatalog,
+        errorEventCatalog,
+        fetchEventCatalog
     };
 });

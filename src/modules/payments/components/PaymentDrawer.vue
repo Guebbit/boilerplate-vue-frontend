@@ -122,7 +122,7 @@ const canRefund = computed(() => props.payment?.actions.refund === true);
 const canSettle = (refundId: string) => props.payment?.actions.settleByHand.includes(refundId);
 
 /**
- * Whether the server would take this refund as "cancelled" from this caller.
+ * Whether the server would take this refund as "canceled" from this caller.
  *
  * @param refundId - A record of the shown payment.
  * @returns `true` when `actions.cancelRefund` names it.

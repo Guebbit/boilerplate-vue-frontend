@@ -2593,7 +2593,7 @@ export const ConfirmEmailChangeBody = zod.strictObject({
 });
 export const ConfirmEmailChangeResponse = zod.void();
 /**
- * Reverts an email change from the one-time link in the notice mailed to the OLD address when the change was requested. Valid for 7 days from that request, and untouched by a password change, so a person who reads mail weekly can still use it. While the change is only pending it is cancelled; once the new address was confirmed the previous one is restored, and every session is ended (a refresh token cannot outlive the address it was issued under). Public, like `POST /account/email-change/confirm`, the token in the body is the credential. Answers 409 when the previous address was meanwhile claimed by another account.
+ * Reverts an email change from the one-time link in the notice mailed to the OLD address when the change was requested. Valid for 7 days from that request, and untouched by a password change, so a person who reads mail weekly can still use it. While the change is only pending it is canceled; once the new address was confirmed the previous one is restored, and every session is ended (a refresh token cannot outlive the address it was issued under). Public, like `POST /account/email-change/confirm`, the token in the body is the credential. Answers 409 when the previous address was meanwhile claimed by another account.
  * @summary Undo an email change
  */
 export const undoEmailChangeBodyTokenMax = 128;
@@ -3191,7 +3191,7 @@ export const downloadAccountExportResponseFulfillmentOrdersItemLinesItemProductI
 export const downloadAccountExportResponseFulfillmentOrdersItemLinesItemProductIdRegExp =
     new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseFulfillmentOrdersItemLinesItemShippedQuantityMin = 0;
-export const downloadAccountExportResponseFulfillmentOrdersItemLinesItemCancelledQuantityMin = 0;
+export const downloadAccountExportResponseFulfillmentOrdersItemLinesItemCanceledQuantityMin = 0;
 export const downloadAccountExportResponseFulfillmentOrdersItemLinesItemRemainingMin = 0;
 export const downloadAccountExportResponseFulfillmentOrdersItemHoldMessageMax = 500;
 export const downloadAccountExportResponseFulfillmentOrdersItemHoldNoteMax = 1000;
@@ -3779,14 +3779,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
             paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
             payBy: zod.iso.datetime({ offset: true }).optional(),
             orderNumber: zod.string(),
-            status: zod.enum([
-                'pending',
-                'paid',
-                'processing',
-                'shipped',
-                'delivered',
-                'cancelled'
-            ]),
+            status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
             paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
             fulfillmentStatus: zod.enum([
                 'unfulfilled',
@@ -3829,7 +3822,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 'processing',
                 'shipped',
                 'delivered',
-                'cancelled',
+                'canceled',
                 'status_overridden',
                 'payment_declined',
                 'refund_issued',
@@ -3844,7 +3837,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 'shipment_lost',
                 'fulfillment_held',
                 'fulfillment_released',
-                'remainder_cancelled',
+                'remainder_canceled',
                 'return_requested',
                 'return_approved',
                 'return_declined',
@@ -3947,7 +3940,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 'processing',
                 'succeeded',
                 'declined',
-                'cancelled'
+                'canceled'
             ]),
             provider: zod.string(),
             cardLast4: zod
@@ -4086,7 +4079,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .regex(downloadAccountExportResponseFulfillmentOrdersItemOrderIdRegExp),
             number: zod.number().min(1),
             kind: zod.enum(['physical', 'digital']),
-            status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'cancelled']),
+            status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'canceled']),
             lines: zod.array(
                 zod.strictObject({
                     productId: zod
@@ -4105,10 +4098,10 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .min(
                             downloadAccountExportResponseFulfillmentOrdersItemLinesItemShippedQuantityMin
                         ),
-                    cancelledQuantity: zod
+                    canceledQuantity: zod
                         .number()
                         .min(
-                            downloadAccountExportResponseFulfillmentOrdersItemLinesItemCancelledQuantityMin
+                            downloadAccountExportResponseFulfillmentOrdersItemLinesItemCanceledQuantityMin
                         ),
                     remaining: zod
                         .number()
@@ -7579,7 +7572,7 @@ export const DeleteProductResponse = zod.void();
  * Every category and tag the PUBLIC catalogue carries, each with how many visible products hold it — what a storefront renders as filter chips. Sorted by count descending, then name. Counts follow the same visibility rule the listing does, so one chip alone never leads to an empty page. Counts are catalogue-wide: they do not follow the filters already chosen.
  * @summary Catalogue facets
  */
-export const GetCatalogueFacetsResponse = zod.strictObject({
+export const GetCatalogFacetsResponse = zod.strictObject({
     categories: zod.array(
         zod.strictObject({
             name: zod.string(),
@@ -8911,7 +8904,7 @@ export const CheckoutResponse = zod.strictObject({
     paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
     payBy: zod.iso.datetime({ offset: true }).optional(),
     orderNumber: zod.string(),
-    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
     paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
     fulfillmentStatus: zod.enum([
         'unfulfilled',
@@ -8928,7 +8921,7 @@ export const CheckoutResponse = zod.strictObject({
         recordPayment: zod.boolean(),
         process: zod.boolean(),
         override: zod.array(
-            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
         withdraw: zod.boolean(),
@@ -9246,7 +9239,7 @@ export const ListOrdersQueryParams = zod.strictObject({
     email: zod.email().max(listOrdersQueryEmailMax).optional(),
     orderNumber: zod.string().max(listOrdersQueryOrderNumberMax).optional(),
     status: zod
-        .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+        .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         .optional(),
     fulfillmentStatus: zod
         .enum([
@@ -9478,14 +9471,7 @@ export const ListOrdersResponse = zod.strictObject({
             paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
             payBy: zod.iso.datetime({ offset: true }).optional(),
             orderNumber: zod.string(),
-            status: zod.enum([
-                'pending',
-                'paid',
-                'processing',
-                'shipped',
-                'delivered',
-                'cancelled'
-            ]),
+            status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
             paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
             fulfillmentStatus: zod.enum([
                 'unfulfilled',
@@ -9508,7 +9494,7 @@ export const ListOrdersResponse = zod.strictObject({
                 recordPayment: zod.boolean(),
                 process: zod.boolean(),
                 override: zod.array(
-                    zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+                    zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
                 ),
                 correctAddress: zod.boolean(),
                 withdraw: zod.boolean(),
@@ -9737,7 +9723,7 @@ export const CreateOrderResponse = zod.strictObject({
     paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
     payBy: zod.iso.datetime({ offset: true }).optional(),
     orderNumber: zod.string(),
-    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
     paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
     fulfillmentStatus: zod.enum([
         'unfulfilled',
@@ -9754,7 +9740,7 @@ export const CreateOrderResponse = zod.strictObject({
         recordPayment: zod.boolean(),
         process: zod.boolean(),
         override: zod.array(
-            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
         withdraw: zod.boolean(),
@@ -9771,7 +9757,7 @@ export const CreateOrderResponse = zod.strictObject({
     deletedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel); a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`.
+ * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record, which is only allowed for an order that is canceled and was never paid (409 `ORDER_NOT_CANCELED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel); a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete hides a canceled order from its buyer (409 `ORDER_NOT_CANCELED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`.
  * @summary Delete order
  */
 export const DeleteOrderQueryParams = zod.strictObject({
@@ -9851,7 +9837,7 @@ export const SearchOrdersBody = zod.strictObject({
     email: zod.email().max(searchOrdersBodyEmailMax).optional(),
     orderNumber: zod.string().max(searchOrdersBodyOrderNumberMax).optional(),
     status: zod
-        .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+        .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         .optional(),
     fulfillmentStatus: zod
         .enum([
@@ -10089,14 +10075,7 @@ export const SearchOrdersResponse = zod.strictObject({
             paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
             payBy: zod.iso.datetime({ offset: true }).optional(),
             orderNumber: zod.string(),
-            status: zod.enum([
-                'pending',
-                'paid',
-                'processing',
-                'shipped',
-                'delivered',
-                'cancelled'
-            ]),
+            status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
             paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
             fulfillmentStatus: zod.enum([
                 'unfulfilled',
@@ -10119,7 +10098,7 @@ export const SearchOrdersResponse = zod.strictObject({
                 recordPayment: zod.boolean(),
                 process: zod.boolean(),
                 override: zod.array(
-                    zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+                    zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
                 ),
                 correctAddress: zod.boolean(),
                 withdraw: zod.boolean(),
@@ -10317,7 +10296,7 @@ export const GetOrderByIdResponse = zod.strictObject({
     paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
     payBy: zod.iso.datetime({ offset: true }).optional(),
     orderNumber: zod.string(),
-    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
     paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
     fulfillmentStatus: zod.enum([
         'unfulfilled',
@@ -10334,7 +10313,7 @@ export const GetOrderByIdResponse = zod.strictObject({
         recordPayment: zod.boolean(),
         process: zod.boolean(),
         override: zod.array(
-            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
         withdraw: zod.boolean(),
@@ -10543,7 +10522,7 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
     paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
     payBy: zod.iso.datetime({ offset: true }).optional(),
     orderNumber: zod.string(),
-    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
     paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
     fulfillmentStatus: zod.enum([
         'unfulfilled',
@@ -10560,7 +10539,7 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
         recordPayment: zod.boolean(),
         process: zod.boolean(),
         override: zod.array(
-            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
         withdraw: zod.boolean(),
@@ -10765,7 +10744,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
     paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
     payBy: zod.iso.datetime({ offset: true }).optional(),
     orderNumber: zod.string(),
-    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
     paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
     fulfillmentStatus: zod.enum([
         'unfulfilled',
@@ -10782,7 +10761,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
         recordPayment: zod.boolean(),
         process: zod.boolean(),
         override: zod.array(
-            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
         withdraw: zod.boolean(),
@@ -10799,7 +10778,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
     deletedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel). A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`. Functionally equivalent to `DELETE /orders`.
+ * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record, which is only allowed for an order that is canceled and was never paid (409 `ORDER_NOT_CANCELED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel). A soft delete hides a canceled order from its buyer (409 `ORDER_NOT_CANCELED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`. Functionally equivalent to `DELETE /orders`.
  * @summary Delete order
  */
 export const deleteOrderByIdPathIdMax = 64;
@@ -11000,7 +10979,7 @@ export const RestoreOrderByIdResponse = zod.strictObject({
     paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
     payBy: zod.iso.datetime({ offset: true }).optional(),
     orderNumber: zod.string(),
-    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
     paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
     fulfillmentStatus: zod.enum([
         'unfulfilled',
@@ -11017,7 +10996,7 @@ export const RestoreOrderByIdResponse = zod.strictObject({
         recordPayment: zod.boolean(),
         process: zod.boolean(),
         override: zod.array(
-            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
         withdraw: zod.boolean(),
@@ -11034,7 +11013,7 @@ export const RestoreOrderByIdResponse = zod.strictObject({
     deletedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Permanently removes the order identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /orders/{id}?hardDelete=true`, and only for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid).
+ * Permanently removes the order identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /orders/{id}?hardDelete=true`, and only for an order that is canceled and was never paid (409 `ORDER_NOT_CANCELED` while it is open, 409 `ORDER_INVOICED` once paid).
  * @summary Permanently delete order
  */
 export const hardDeleteOrderByIdPathIdMax = 64;
@@ -11233,7 +11212,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
     paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
     payBy: zod.iso.datetime({ offset: true }).optional(),
     orderNumber: zod.string(),
-    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
     paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
     fulfillmentStatus: zod.enum([
         'unfulfilled',
@@ -11250,7 +11229,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
         recordPayment: zod.boolean(),
         process: zod.boolean(),
         override: zod.array(
-            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
         withdraw: zod.boolean(),
@@ -11267,7 +11246,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
     deletedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `override:Order`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does.
+ * Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `canceled` (`POST /orders/{id}/cancel` is that door). Requires `override:Order`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does.
  * @summary Force-correct an order's status by hand
  */
 export const overrideOrderStatusPathIdMax = 64;
@@ -11277,7 +11256,7 @@ export const OverrideOrderStatusParams = zod.strictObject({
 });
 export const overrideOrderStatusBodyReasonMax = 1000;
 export const OverrideOrderStatusBody = zod.strictObject({
-    to: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+    to: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
     reason: zod.string().min(1).max(overrideOrderStatusBodyReasonMax)
 });
 export const overrideOrderStatusResponseIdMax = 64;
@@ -11459,7 +11438,7 @@ export const OverrideOrderStatusResponse = zod.strictObject({
     paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
     payBy: zod.iso.datetime({ offset: true }).optional(),
     orderNumber: zod.string(),
-    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
     paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
     fulfillmentStatus: zod.enum([
         'unfulfilled',
@@ -11476,7 +11455,7 @@ export const OverrideOrderStatusResponse = zod.strictObject({
         recordPayment: zod.boolean(),
         process: zod.boolean(),
         override: zod.array(
-            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
         withdraw: zod.boolean(),
@@ -11695,7 +11674,7 @@ export const ListOrderPaymentsResponse = zod.strictObject({
                 'processing',
                 'succeeded',
                 'declined',
-                'cancelled'
+                'canceled'
             ]),
             displayStatus: zod.enum([
                 'incomplete',
@@ -11705,7 +11684,7 @@ export const ListOrderPaymentsResponse = zod.strictObject({
                 'partially_refunded',
                 'refunded',
                 'failed',
-                'cancelled'
+                'canceled'
             ]),
             nextAction: zod
                 .strictObject({
@@ -11801,7 +11780,7 @@ export const ListOrderPaymentsResponse = zod.strictObject({
 });
 /**
  * The payment is a child of the order: Solidus' `POST /api/orders/{number}/payments`. An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted a row that already existed: a card intent nobody paid, or the open payment of a `bank_transfer` order (the very payment being recorded).
- * A transfer that arrives after its order was cancelled is recorded too, onto the payment the cancel closed: the money is real, the order cannot be paid any more, so it answers 200 with the payment `succeeded` and a refund record left open (a hand-paid refund is returned by the operator, off-system, and then marked done).
+ * A transfer that arrives after its order was canceled is recorded too, onto the payment the cancel closed: the money is real, the order cannot be paid any more, so it answers 200 with the payment `succeeded` and a refund record left open (a hand-paid refund is returned by the operator, off-system, and then marked done).
  * Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Record a payment on an order
  */
@@ -11932,7 +11911,7 @@ export const RecordOrderPaymentResponse = zod.strictObject({
         'processing',
         'succeeded',
         'declined',
-        'cancelled'
+        'canceled'
     ]),
     displayStatus: zod.enum([
         'incomplete',
@@ -11942,7 +11921,7 @@ export const RecordOrderPaymentResponse = zod.strictObject({
         'partially_refunded',
         'refunded',
         'failed',
-        'cancelled'
+        'canceled'
     ]),
     nextAction: zod
         .strictObject({
@@ -12030,7 +12009,7 @@ export const RecordOrderPaymentResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Reports that fulfilment has started — the order moves `paid → processing`. The verb names the status it reaches, as `cancel` does; the module behind it is `delivery`'s. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
+ * Reports that fulfillment has started — the order moves `paid → processing`. The verb names the status it reaches, as `cancel` does; the module behind it is `delivery`'s. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
  * @summary Process a paid order
  */
 export const processOrderPathIdMax = 64;
@@ -12193,7 +12172,7 @@ export const ProcessOrderResponse = zod.strictObject({
     paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
     payBy: zod.iso.datetime({ offset: true }).optional(),
     orderNumber: zod.string(),
-    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
     paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
     fulfillmentStatus: zod.enum([
         'unfulfilled',
@@ -12210,7 +12189,7 @@ export const ProcessOrderResponse = zod.strictObject({
         recordPayment: zod.boolean(),
         process: zod.boolean(),
         override: zod.array(
-            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
         withdraw: zod.boolean(),
@@ -12250,7 +12229,7 @@ export const listOrderFulfillmentOrdersResponseItemsItemLinesItemProductIdRegExp
     '^[0-9A-Za-z_-]+$'
 );
 export const listOrderFulfillmentOrdersResponseItemsItemLinesItemShippedQuantityMin = 0;
-export const listOrderFulfillmentOrdersResponseItemsItemLinesItemCancelledQuantityMin = 0;
+export const listOrderFulfillmentOrdersResponseItemsItemLinesItemCanceledQuantityMin = 0;
 export const listOrderFulfillmentOrdersResponseItemsItemLinesItemRemainingMin = 0;
 export const listOrderFulfillmentOrdersResponseItemsItemHoldMessageMax = 500;
 export const listOrderFulfillmentOrdersResponseItemsItemHoldNoteMax = 1000;
@@ -12269,7 +12248,7 @@ export const ListOrderFulfillmentOrdersResponse = zod.strictObject({
                 .regex(listOrderFulfillmentOrdersResponseItemsItemOrderIdRegExp),
             number: zod.number().min(1),
             kind: zod.enum(['physical', 'digital']),
-            status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'cancelled']),
+            status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'canceled']),
             lines: zod.array(
                 zod.strictObject({
                     productId: zod
@@ -12284,10 +12263,10 @@ export const ListOrderFulfillmentOrdersResponse = zod.strictObject({
                         .min(
                             listOrderFulfillmentOrdersResponseItemsItemLinesItemShippedQuantityMin
                         ),
-                    cancelledQuantity: zod
+                    canceledQuantity: zod
                         .number()
                         .min(
-                            listOrderFulfillmentOrdersResponseItemsItemLinesItemCancelledQuantityMin
+                            listOrderFulfillmentOrdersResponseItemsItemLinesItemCanceledQuantityMin
                         ),
                     remaining: zod
                         .number()
@@ -12691,7 +12670,7 @@ export const GetPaymentResponse = zod.strictObject({
         'processing',
         'succeeded',
         'declined',
-        'cancelled'
+        'canceled'
     ]),
     displayStatus: zod.enum([
         'incomplete',
@@ -12701,7 +12680,7 @@ export const GetPaymentResponse = zod.strictObject({
         'partially_refunded',
         'refunded',
         'failed',
-        'cancelled'
+        'canceled'
     ]),
     nextAction: zod
         .strictObject({
@@ -12915,7 +12894,7 @@ export const ConfirmPaymentResponse = zod.strictObject({
         'processing',
         'succeeded',
         'declined',
-        'cancelled'
+        'canceled'
     ]),
     displayStatus: zod.enum([
         'incomplete',
@@ -12925,7 +12904,7 @@ export const ConfirmPaymentResponse = zod.strictObject({
         'partially_refunded',
         'refunded',
         'failed',
-        'cancelled'
+        'canceled'
     ]),
     nextAction: zod
         .strictObject({
@@ -13119,7 +13098,7 @@ export const SyncPaymentResponse = zod.strictObject({
         'processing',
         'succeeded',
         'declined',
-        'cancelled'
+        'canceled'
     ]),
     displayStatus: zod.enum([
         'incomplete',
@@ -13129,7 +13108,7 @@ export const SyncPaymentResponse = zod.strictObject({
         'partially_refunded',
         'refunded',
         'failed',
-        'cancelled'
+        'canceled'
     ]),
     nextAction: zod
         .strictObject({
@@ -13358,7 +13337,7 @@ export const ListPreorderFulfillmentOrdersQueryParams = zod.strictObject({
         .max(listPreorderFulfillmentOrdersQueryPageSizeMax)
         .default(listPreorderFulfillmentOrdersQueryPageSizeDefault),
     cause: zod.enum(['preorder', 'backorder', 'any']).optional(),
-    state: zod.enum(['waiting', 'allocated', 'shipped', 'cancelled']).optional(),
+    state: zod.enum(['waiting', 'allocated', 'shipped', 'canceled']).optional(),
     productId: zod
         .string()
         .min(1)
@@ -13381,7 +13360,7 @@ export const listPreorderFulfillmentOrdersResponseItemsItemLinesItemProductIdReg
     '^[0-9A-Za-z_-]+$'
 );
 export const listPreorderFulfillmentOrdersResponseItemsItemLinesItemShippedQuantityMin = 0;
-export const listPreorderFulfillmentOrdersResponseItemsItemLinesItemCancelledQuantityMin = 0;
+export const listPreorderFulfillmentOrdersResponseItemsItemLinesItemCanceledQuantityMin = 0;
 export const listPreorderFulfillmentOrdersResponseItemsItemLinesItemRemainingMin = 0;
 export const listPreorderFulfillmentOrdersResponseItemsItemBuyerUserIdMax = 64;
 export const listPreorderFulfillmentOrdersResponseItemsItemBuyerUserIdRegExp = new RegExp(
@@ -13410,8 +13389,8 @@ export const ListPreorderFulfillmentOrdersResponse = zod.strictObject({
                 .regex(listPreorderFulfillmentOrdersResponseItemsItemOrderIdRegExp),
             orderNumber: zod.string(),
             number: zod.number().min(1),
-            status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'cancelled']),
-            state: zod.enum(['waiting', 'allocated', 'shipped', 'cancelled']),
+            status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'canceled']),
+            state: zod.enum(['waiting', 'allocated', 'shipped', 'canceled']),
             lines: zod.array(
                 zod.strictObject({
                     productId: zod
@@ -13428,10 +13407,10 @@ export const ListPreorderFulfillmentOrdersResponse = zod.strictObject({
                         .min(
                             listPreorderFulfillmentOrdersResponseItemsItemLinesItemShippedQuantityMin
                         ),
-                    cancelledQuantity: zod
+                    canceledQuantity: zod
                         .number()
                         .min(
-                            listPreorderFulfillmentOrdersResponseItemsItemLinesItemCancelledQuantityMin
+                            listPreorderFulfillmentOrdersResponseItemsItemLinesItemCanceledQuantityMin
                         ),
                     remaining: zod
                         .number()
@@ -13480,7 +13459,7 @@ export const ListPreorderFulfillmentOrdersResponse = zod.strictObject({
 });
 /**
  * For each product sold as a preorder, how its units stand across every fulfillment order made from it:
- * paid, waiting for stock, allocated, shipped, cancelled, and late. Units,
+ * paid, waiting for stock, allocated, shipped, canceled, and late. Units,
  * not fulfillment orders. `firstAgreedAt` is the earliest date any buyer was promised. For the Products
  * tab of the preorder board; same audience and scope as the list.
  * @summary Preorder units by product and state
@@ -13519,7 +13498,7 @@ export const summarizePreorderFulfillmentOrdersResponseItemsItemPaidMin = 0;
 export const summarizePreorderFulfillmentOrdersResponseItemsItemWaitingMin = 0;
 export const summarizePreorderFulfillmentOrdersResponseItemsItemAllocatedMin = 0;
 export const summarizePreorderFulfillmentOrdersResponseItemsItemShippedMin = 0;
-export const summarizePreorderFulfillmentOrdersResponseItemsItemCancelledMin = 0;
+export const summarizePreorderFulfillmentOrdersResponseItemsItemCanceledMin = 0;
 export const summarizePreorderFulfillmentOrdersResponseItemsItemLateMin = 0;
 export const summarizePreorderFulfillmentOrdersResponseMetaPageDefault = 1;
 export const summarizePreorderFulfillmentOrdersResponseMetaPageMax = 10000;
@@ -13547,9 +13526,9 @@ export const SummarizePreorderFulfillmentOrdersResponse = zod.strictObject({
             shipped: zod
                 .number()
                 .min(summarizePreorderFulfillmentOrdersResponseItemsItemShippedMin),
-            cancelled: zod
+            canceled: zod
                 .number()
-                .min(summarizePreorderFulfillmentOrdersResponseItemsItemCancelledMin),
+                .min(summarizePreorderFulfillmentOrdersResponseItemsItemCanceledMin),
             late: zod.number().min(summarizePreorderFulfillmentOrdersResponseItemsItemLateMin)
         })
     ),
@@ -13569,7 +13548,7 @@ export const SummarizePreorderFulfillmentOrdersResponse = zod.strictObject({
     })
 });
 /**
- * Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is optional: a `tracked` method may get its code later, with `PATCH /delivery/shipments/{id}` (`Shipment.awaitingTracking` says who is still waiting). Refuses a fulfillment order that is on hold, closed or cancelled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is neither `processing` nor `paid` (`ORDER_NOT_PROCESSING`). From `paid` it moves the order to `processing` itself, in the same transaction, so it also needs `start:Shipment` (403 without it); `POST /orders/{id}/process` stays as an optional "mark in progress". Never ships from `on_hold`.
+ * Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is optional: a `tracked` method may get its code later, with `PATCH /delivery/shipments/{id}` (`Shipment.awaitingTracking` says who is still waiting). Refuses a fulfillment order that is on hold, closed or canceled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is neither `processing` nor `paid` (`ORDER_NOT_PROCESSING`). From `paid` it moves the order to `processing` itself, in the same transaction, so it also needs `start:Shipment` (403 without it); `POST /orders/{id}/process` stays as an optional "mark in progress". Never ships from `on_hold`.
  * There is no list at this path: an order's shipments are listed by `GET /orders/{id}/shipments`, and one by `GET /delivery/shipments/{id}`.
  *
  * Send an `Idempotency-Key`: a partial ship creates a NEW shipment, so a retry without one (a dropped connection, a double click) would cut a second parcel and take the stock twice. The same key replays the first answer; a 409 means the first request is still running, a 422 means the key was reused with another body.
@@ -13695,7 +13674,7 @@ export const ShipFulfillmentOrderResponse = zod.strictObject({
 });
 /**
  * The digital act: a shipment with no tracking, born and delivered in the same write. A `digital` fulfillment order has nothing to carry, so this is its only door. Refuses a physical one with `DELIVERY_NOT_DIGITAL` (ship it instead). When it leaves nothing remaining and nothing undelivered the order moves to `delivered`, its withdrawal clock counted from payment (digital content, Art. 9(2)(c)). Works from `paid` too: it moves the order to `processing` itself, so it also needs `start:Shipment` (403 without it). Answers like the create it is: 201 with `Location` pointing at the new shipment. Send an `Idempotency-Key`, as for shipping (a 409 is the first request still running, a 422 the key reused with another body).
- * @summary Fulfil a digital fulfillment order
+ * @summary Fulfill a digital fulfillment order
  */
 export const fulfillFulfillmentOrderPathIdMax = 64;
 export const fulfillFulfillmentOrderPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -13830,7 +13809,7 @@ export const holdFulfillmentOrderResponseOrderIdRegExp = new RegExp('^[0-9A-Za-z
 export const holdFulfillmentOrderResponseLinesItemProductIdMax = 64;
 export const holdFulfillmentOrderResponseLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const holdFulfillmentOrderResponseLinesItemShippedQuantityMin = 0;
-export const holdFulfillmentOrderResponseLinesItemCancelledQuantityMin = 0;
+export const holdFulfillmentOrderResponseLinesItemCanceledQuantityMin = 0;
 export const holdFulfillmentOrderResponseLinesItemRemainingMin = 0;
 export const holdFulfillmentOrderResponseHoldMessageMax = 500;
 export const holdFulfillmentOrderResponseHoldNoteMax = 1000;
@@ -13847,7 +13826,7 @@ export const HoldFulfillmentOrderResponse = zod.strictObject({
         .regex(holdFulfillmentOrderResponseOrderIdRegExp),
     number: zod.number().min(1),
     kind: zod.enum(['physical', 'digital']),
-    status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'cancelled']),
+    status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'canceled']),
     lines: zod.array(
         zod.strictObject({
             productId: zod
@@ -13860,9 +13839,9 @@ export const HoldFulfillmentOrderResponse = zod.strictObject({
             shippedQuantity: zod
                 .number()
                 .min(holdFulfillmentOrderResponseLinesItemShippedQuantityMin),
-            cancelledQuantity: zod
+            canceledQuantity: zod
                 .number()
-                .min(holdFulfillmentOrderResponseLinesItemCancelledQuantityMin),
+                .min(holdFulfillmentOrderResponseLinesItemCanceledQuantityMin),
             remaining: zod.number().min(holdFulfillmentOrderResponseLinesItemRemainingMin)
         })
     ),
@@ -13905,7 +13884,7 @@ export const releaseFulfillmentOrderResponseLinesItemProductIdRegExp = new RegEx
     '^[0-9A-Za-z_-]+$'
 );
 export const releaseFulfillmentOrderResponseLinesItemShippedQuantityMin = 0;
-export const releaseFulfillmentOrderResponseLinesItemCancelledQuantityMin = 0;
+export const releaseFulfillmentOrderResponseLinesItemCanceledQuantityMin = 0;
 export const releaseFulfillmentOrderResponseLinesItemRemainingMin = 0;
 export const releaseFulfillmentOrderResponseHoldMessageMax = 500;
 export const releaseFulfillmentOrderResponseHoldNoteMax = 1000;
@@ -13922,7 +13901,7 @@ export const ReleaseFulfillmentOrderResponse = zod.strictObject({
         .regex(releaseFulfillmentOrderResponseOrderIdRegExp),
     number: zod.number().min(1),
     kind: zod.enum(['physical', 'digital']),
-    status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'cancelled']),
+    status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'canceled']),
     lines: zod.array(
         zod.strictObject({
             productId: zod
@@ -13935,9 +13914,9 @@ export const ReleaseFulfillmentOrderResponse = zod.strictObject({
             shippedQuantity: zod
                 .number()
                 .min(releaseFulfillmentOrderResponseLinesItemShippedQuantityMin),
-            cancelledQuantity: zod
+            canceledQuantity: zod
                 .number()
-                .min(releaseFulfillmentOrderResponseLinesItemCancelledQuantityMin),
+                .min(releaseFulfillmentOrderResponseLinesItemCanceledQuantityMin),
             remaining: zod.number().min(releaseFulfillmentOrderResponseLinesItemRemainingMin)
         })
     ),
@@ -14040,7 +14019,7 @@ export const GetShipmentResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped`, `delivered` or `lost`; a digital fulfilment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.
+ * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped`, `delivered` or `lost`; a digital fulfillment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.
  * @summary Correct a shipment's tracking code
  */
 export const updateShipmentPathIdMax = 64;
@@ -14127,7 +14106,7 @@ export const UpdateShipmentResponse = zod.strictObject({
 /**
  * Stamps the shipment delivered. The order moves `shipped → delivered` when this was the last undelivered shipment and nothing remains to ship; its withdrawal clock then starts from the LAST delivery (CRD Art. 9(2)(b)(i)). Only a `shipped` shipment can be delivered, or a `lost` one that turns up (below): any other answers `DELIVERY_NOT_DELIVERABLE`.
  *
- * A `lost` shipment that turns up is accepted too, but only while every unit on it is still open: not shipped again and not cancelled, the owed units of a short shelf included. All or nothing, in one transaction: the shipment becomes `delivered` (its `lostAt` and `lostReason` stay as history), the units go back on the fulfillment order, the top-up of the stock hold is given back and the owed fulfillment order is closed with no refund (`cancelReason: found`). Otherwise `DELIVERY_LOST_SUPERSEDED` (409).
+ * A `lost` shipment that turns up is accepted too, but only while every unit on it is still open: not shipped again and not canceled, the owed units of a short shelf included. All or nothing, in one transaction: the shipment becomes `delivered` (its `lostAt` and `lostReason` stay as history), the units go back on the fulfillment order, the top-up of the stock hold is given back and the owed fulfillment order is closed with no refund (`cancelReason: found`). Otherwise `DELIVERY_LOST_SUPERSEDED` (409).
  * @summary Record a shipment's arrival
  */
 export const deliverShipmentPathIdMax = 64;
@@ -14374,7 +14353,7 @@ export const ListReturnsResponse = zod.strictObject({
  * Always answers a `Return` (201, with `Location`); where the goods are decides what it is. Once they have shipped, a withdrawal is born `approved` and any other reason waits for staff. Before dispatch there is nothing to send back, so a withdrawal cancels the order — refunded in full, stock released — and the `Return` is born `closed`: `reason: withdrawal`, no `lines`, `refundAmount` what the order cost (zero when nothing was paid). Either way the customer gets an acknowledgement email carrying the exact date and time, and `Return.orderId` is where the client reloads the order from. `Order.actions.withdraw` says whether the button is offered; the client never counts the days.
  * `kind: cancellation` cancels what has not shipped yet — the remainder of ONE fulfillment order (`fulfillmentOrderId`) once something has shipped from the order. It is born `closed`, its `lines` are the remainder, and the refund of those lines follows (plus the delivery when it takes the last unit of the order). The buyer uses it as part of their withdrawal, and names `reason: withdrawal`; staff may use it too (out of stock for good), name any other reason, and need `create:Refund` — the refund key, `stepUp: critical`. A staff cancellation asks a fresh session; the buyer's own withdrawal never does. `GET /returns/options` says what each door would take and refund, and whether this caller may use it (`cancel`).
  * A return answers for goods that left (`kind: return`, the default). The order's buyer opens one for any reason whose deadline is open. Staff holding `update:Return` open one on a buyer's behalf, the way a phone call or an email asks for it: it is born `approved`, opening it IS the decision, and the buyer is told where to send the goods. Staff are not stopped by the deadline or by goods Art. 16 excludes for the shop's own reasons (`defective`, `wrong_item`, `other`): what they waived is recorded on the return, in `policyExceptions`. `requestedAt` says when the buyer asked (default now, never in the future, never before the order existed); the deadline is judged on it.
- * Staff can also record a withdrawal the buyer stated outside the shop: `reason: withdrawal` with `requestedAt` (when the buyer sent it, Art. 11(2)) and `statedVia` (`phone`, `email`, `letter`, `other`), both required. The withdrawal keeps its legal window, judged on `requestedAt`, and its Art. 16 exclusion. It does everything the buyer's own withdrawal does, and the customer is told when they stated it and when the shop recorded it. Shipped goods need `update:Return`; before dispatch the order is cancelled and refunded, which needs `create:Refund` (money out) and `update:Order` (the cancel); a remainder cancel needs `create:Refund`. Any request carrying `statedVia` asks a fresh session: the record is a legal act, and the check fails closed. The buyer sends neither `requestedAt` nor `statedVia` (422): the server sets them. Sending `Idempotency-Key` makes a retry safe.
+ * Staff can also record a withdrawal the buyer stated outside the shop: `reason: withdrawal` with `requestedAt` (when the buyer sent it, Art. 11(2)) and `statedVia` (`phone`, `email`, `letter`, `other`), both required. The withdrawal keeps its legal window, judged on `requestedAt`, and its Art. 16 exclusion. It does everything the buyer's own withdrawal does, and the customer is told when they stated it and when the shop recorded it. Shipped goods need `update:Return`; before dispatch the order is canceled and refunded, which needs `create:Refund` (money out) and `update:Order` (the cancel); a remainder cancel needs `create:Refund`. Any request carrying `statedVia` asks a fresh session: the record is a legal act, and the check fails closed. The buyer sends neither `requestedAt` nor `statedVia` (422): the server sets them. Sending `Idempotency-Key` makes a retry safe.
  * @summary Open a return, or withdraw from the contract
  */
 export const createReturnHeaderIdempotencyKeyMax = 200;
@@ -14507,7 +14486,7 @@ export const CreateReturnResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned, offered while a reason in `reasons` is open: the buyer's `reasons` are the ones whose deadline is open (none past every deadline), and staff holding `update:Return` get every reason, since they may open a return or record a withdrawal on a buyer's behalf. `exceptions` lists, for staff, the reasons that are past their deadline now, so a client can label what opening one would waive. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`.
+ * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned, offered while a reason in `reasons` is open: the buyer's `reasons` are the ones whose deadline is open (none past every deadline), and staff holding `update:Return` get every reason, since they may open a return or record a withdrawal on a buyer's behalf. `exceptions` lists, for staff, the reasons that are past their deadline now, so a client can label what opening one would waive. `cancelable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancelable` is empty while nothing has shipped — the whole order is canceled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`.
  * @summary What an order can still send back or cancel
  */
 export const getReturnOptionsQueryOrderIdMax = 64;
@@ -14526,16 +14505,16 @@ export const getReturnOptionsResponseCurrencyOneMax = 3;
 export const getReturnOptionsResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getReturnOptionsResponseReturnableItemProductIdMax = 64;
 export const getReturnOptionsResponseReturnableItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getReturnOptionsResponseCancellableItemFulfillmentOrderIdMax = 64;
-export const getReturnOptionsResponseCancellableItemFulfillmentOrderIdRegExp = new RegExp(
+export const getReturnOptionsResponseCancelableItemFulfillmentOrderIdMax = 64;
+export const getReturnOptionsResponseCancelableItemFulfillmentOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const getReturnOptionsResponseCancellableItemLinesItemProductIdMax = 64;
-export const getReturnOptionsResponseCancellableItemLinesItemProductIdRegExp = new RegExp(
+export const getReturnOptionsResponseCancelableItemLinesItemProductIdMax = 64;
+export const getReturnOptionsResponseCancelableItemLinesItemProductIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const getReturnOptionsResponseCancellableItemRefundAmountMin = 0;
-export const getReturnOptionsResponseCancellableItemShippingRefundMin = 0;
+export const getReturnOptionsResponseCancelableItemRefundAmountMin = 0;
+export const getReturnOptionsResponseCancelableItemShippingRefundMin = 0;
 export const GetReturnOptionsResponse = zod.strictObject({
     orderId: zod
         .string()
@@ -14561,29 +14540,29 @@ export const GetReturnOptionsResponse = zod.strictObject({
             withdrawable: zod.boolean()
         })
     ),
-    cancellable: zod.array(
+    cancelable: zod.array(
         zod.strictObject({
             fulfillmentOrderId: zod
                 .string()
                 .min(1)
-                .max(getReturnOptionsResponseCancellableItemFulfillmentOrderIdMax)
-                .regex(getReturnOptionsResponseCancellableItemFulfillmentOrderIdRegExp),
+                .max(getReturnOptionsResponseCancelableItemFulfillmentOrderIdMax)
+                .regex(getReturnOptionsResponseCancelableItemFulfillmentOrderIdRegExp),
             number: zod.number().min(1),
             lines: zod.array(
                 zod.strictObject({
                     productId: zod
                         .string()
                         .min(1)
-                        .max(getReturnOptionsResponseCancellableItemLinesItemProductIdMax)
-                        .regex(getReturnOptionsResponseCancellableItemLinesItemProductIdRegExp),
+                        .max(getReturnOptionsResponseCancelableItemLinesItemProductIdMax)
+                        .regex(getReturnOptionsResponseCancelableItemLinesItemProductIdRegExp),
                     title: zod.string(),
                     quantity: zod.number().min(1)
                 })
             ),
-            refundAmount: zod.number().min(getReturnOptionsResponseCancellableItemRefundAmountMin),
+            refundAmount: zod.number().min(getReturnOptionsResponseCancelableItemRefundAmountMin),
             shippingRefund: zod
                 .number()
-                .min(getReturnOptionsResponseCancellableItemShippingRefundMin),
+                .min(getReturnOptionsResponseCancelableItemShippingRefundMin),
             cancel: zod.boolean()
         })
     )
@@ -15050,7 +15029,7 @@ export const ListInventoryLevelsResponse = zod.strictObject({
     })
 });
 /**
- * Every product with a preorder allowance or an outstanding preorder, for the admin's preorder board: the cap, what is outstanding against it and how that splits between orders still unpaid and orders already paid. `backordered` is OUTSTANDING units, not units ever sold: it falls when stock arrives and is allocated, and when an order is cancelled or expires. `ordered` is the lifetime count, read off the ledger.
+ * Every product with a preorder allowance or an outstanding preorder, for the admin's preorder board: the cap, what is outstanding against it and how that splits between orders still unpaid and orders already paid. `backordered` is OUTSTANDING units, not units ever sold: it falls when stock arrives and is allocated, and when an order is canceled or expires. `ordered` is the lifetime count, read off the ledger.
  *
  * The release date and the title come from the catalogue. Never public: exact counts are what a competitor wants.
  * @summary Preorder allowances
@@ -15319,7 +15298,7 @@ export const AdjustStockResponse = zod.strictObject({
     backordered: zod.number().min(adjustStockResponseBackorderedMin)
 });
 /**
- * Releases every hold whose window has closed and announces each one, so the orders behind them get cancelled.
+ * Releases every hold whose window has closed and announces each one, so the orders behind them get canceled.
  *
  * A job behind an admin endpoint rather than an internal schedule. The application ships no scheduler, so the tick is driven from outside — a cron entry, the platform's scheduled job, or an operator. Idempotent; running it twice releases nothing the first run already released.
  * @summary Expire stale reservations
@@ -15383,7 +15362,7 @@ export const ListWebhookSubscriptionsResponse = zod.strictObject({
                     zod.enum([
                         'order.created',
                         'order.paid',
-                        'order.cancelled',
+                        'order.canceled',
                         'order.redacted',
                         'shipment.shipped',
                         'shipment.delivered',
@@ -15470,7 +15449,7 @@ export const CreateWebhookSubscriptionBody = zod.strictObject({
             zod.enum([
                 'order.created',
                 'order.paid',
-                'order.cancelled',
+                'order.canceled',
                 'order.redacted',
                 'shipment.shipped',
                 'shipment.delivered',
@@ -15510,7 +15489,7 @@ export const CreateWebhookSubscriptionResponse = zod.strictObject({
             zod.enum([
                 'order.created',
                 'order.paid',
-                'order.cancelled',
+                'order.canceled',
                 'order.redacted',
                 'shipment.shipped',
                 'shipment.delivered',
@@ -15587,7 +15566,7 @@ export const GetWebhookSubscriptionResponse = zod.strictObject({
             zod.enum([
                 'order.created',
                 'order.paid',
-                'order.cancelled',
+                'order.canceled',
                 'order.redacted',
                 'shipment.shipped',
                 'shipment.delivered',
@@ -15660,7 +15639,7 @@ export const ReplaceWebhookSubscriptionBody = zod.strictObject({
             zod.enum([
                 'order.created',
                 'order.paid',
-                'order.cancelled',
+                'order.canceled',
                 'order.redacted',
                 'shipment.shipped',
                 'shipment.delivered',
@@ -15700,7 +15679,7 @@ export const ReplaceWebhookSubscriptionResponse = zod.strictObject({
             zod.enum([
                 'order.created',
                 'order.paid',
-                'order.cancelled',
+                'order.canceled',
                 'order.redacted',
                 'shipment.shipped',
                 'shipment.delivered',
@@ -15774,7 +15753,7 @@ export const UpdateWebhookSubscriptionBody = zod.strictObject({
             zod.enum([
                 'order.created',
                 'order.paid',
-                'order.cancelled',
+                'order.canceled',
                 'order.redacted',
                 'shipment.shipped',
                 'shipment.delivered',
@@ -15815,7 +15794,7 @@ export const UpdateWebhookSubscriptionResponse = zod.strictObject({
             zod.enum([
                 'order.created',
                 'order.paid',
-                'order.cancelled',
+                'order.canceled',
                 'order.redacted',
                 'shipment.shipped',
                 'shipment.delivered',
@@ -15907,7 +15886,7 @@ export const RemoveWebhookSubscriptionSecretResponse = zod.strictObject({
             zod.enum([
                 'order.created',
                 'order.paid',
-                'order.cancelled',
+                'order.canceled',
                 'order.redacted',
                 'shipment.shipped',
                 'shipment.delivered',
@@ -16020,7 +15999,7 @@ export const ListWebhookDeliveriesResponse = zod.strictObject({
             eventType: zod.enum([
                 'order.created',
                 'order.paid',
-                'order.cancelled',
+                'order.canceled',
                 'order.redacted',
                 'shipment.shipped',
                 'shipment.delivered',
@@ -16120,7 +16099,7 @@ export const ReplayWebhookDeliveryResponse = zod.strictObject({
     eventType: zod.enum([
         'order.created',
         'order.paid',
-        'order.cancelled',
+        'order.canceled',
         'order.redacted',
         'shipment.shipped',
         'shipment.delivered',
@@ -16168,7 +16147,7 @@ export const ListWebhookEventsResponse = zod.strictObject({
             name: zod.enum([
                 'order.created',
                 'order.paid',
-                'order.cancelled',
+                'order.canceled',
                 'order.redacted',
                 'shipment.shipped',
                 'shipment.delivered',
@@ -16961,7 +16940,7 @@ export const ExportOrdersQueryParams = zod.strictObject({
     email: zod.email().max(exportOrdersQueryEmailMax).optional(),
     orderNumber: zod.string().max(exportOrdersQueryOrderNumberMax).optional(),
     status: zod
-        .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+        .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         .optional(),
     fulfillmentStatus: zod
         .enum([
@@ -17013,7 +16992,7 @@ export const GetOrderTimelineResponse = zod.strictObject({
                 'processing',
                 'shipped',
                 'delivered',
-                'cancelled',
+                'canceled',
                 'status_overridden',
                 'payment_declined',
                 'refund_issued',
@@ -17028,7 +17007,7 @@ export const GetOrderTimelineResponse = zod.strictObject({
                 'shipment_lost',
                 'fulfillment_held',
                 'fulfillment_released',
-                'remainder_cancelled',
+                'remainder_canceled',
                 'return_requested',
                 'return_approved',
                 'return_declined',
@@ -17291,7 +17270,7 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
     paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
     payBy: zod.iso.datetime({ offset: true }).optional(),
     orderNumber: zod.string(),
-    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+    status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
     paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
     fulfillmentStatus: zod.enum([
         'unfulfilled',
@@ -17308,7 +17287,7 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
         recordPayment: zod.boolean(),
         process: zod.boolean(),
         override: zod.array(
-            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+            zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
         withdraw: zod.boolean(),
@@ -17361,7 +17340,7 @@ export const ListPaymentsQueryParams = zod.strictObject({
             'partially_refunded',
             'refunded',
             'failed',
-            'cancelled'
+            'canceled'
         ])
         .optional(),
     method: zod.enum(['card', 'bank_transfer', 'cash', 'other']).optional(),
@@ -17504,7 +17483,7 @@ export const ListPaymentsResponse = zod.strictObject({
                 'processing',
                 'succeeded',
                 'declined',
-                'cancelled'
+                'canceled'
             ]),
             displayStatus: zod.enum([
                 'incomplete',
@@ -17514,7 +17493,7 @@ export const ListPaymentsResponse = zod.strictObject({
                 'partially_refunded',
                 'refunded',
                 'failed',
-                'cancelled'
+                'canceled'
             ]),
             nextAction: zod
                 .strictObject({
@@ -17730,7 +17709,7 @@ export const CreatePaymentResponse = zod.strictObject({
         'processing',
         'succeeded',
         'declined',
-        'cancelled'
+        'canceled'
     ]),
     displayStatus: zod.enum([
         'incomplete',
@@ -17740,7 +17719,7 @@ export const CreatePaymentResponse = zod.strictObject({
         'partially_refunded',
         'refunded',
         'failed',
-        'cancelled'
+        'canceled'
     ]),
     nextAction: zod
         .strictObject({
@@ -17864,7 +17843,7 @@ export const SearchPaymentsBody = zod.strictObject({
             'partially_refunded',
             'refunded',
             'failed',
-            'cancelled'
+            'canceled'
         ])
         .optional(),
     method: zod.enum(['card', 'bank_transfer', 'cash', 'other']).optional(),
@@ -18007,7 +17986,7 @@ export const SearchPaymentsResponse = zod.strictObject({
                 'processing',
                 'succeeded',
                 'declined',
-                'cancelled'
+                'canceled'
             ]),
             displayStatus: zod.enum([
                 'incomplete',
@@ -18017,7 +17996,7 @@ export const SearchPaymentsResponse = zod.strictObject({
                 'partially_refunded',
                 'refunded',
                 'failed',
-                'cancelled'
+                'canceled'
             ]),
             nextAction: zod
                 .strictObject({
@@ -18238,7 +18217,7 @@ export const ListRefundsResponse = zod.strictObject({
     })
 });
 /**
- * Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`), card refunds the provider refused for good (`refused_refund`: shown at once, the money has to go back another way), and refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age). A cancelled order's refund is one of them, because its record opens before the provider is asked. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`.
+ * Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`), card refunds the provider refused for good (`refused_refund`: shown at once, the money has to go back another way), and refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age). A canceled order's refund is one of them, because its record opens before the provider is asked. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`.
  * @summary Payments that need a person (staff)
  */
 export const listPaymentAttentionResponseItemsItemOrderIdMax = 64;
@@ -18536,7 +18515,7 @@ export const getFulfillmentOrderResponseOrderIdRegExp = new RegExp('^[0-9A-Za-z_
 export const getFulfillmentOrderResponseLinesItemProductIdMax = 64;
 export const getFulfillmentOrderResponseLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getFulfillmentOrderResponseLinesItemShippedQuantityMin = 0;
-export const getFulfillmentOrderResponseLinesItemCancelledQuantityMin = 0;
+export const getFulfillmentOrderResponseLinesItemCanceledQuantityMin = 0;
 export const getFulfillmentOrderResponseLinesItemRemainingMin = 0;
 export const getFulfillmentOrderResponseHoldMessageMax = 500;
 export const getFulfillmentOrderResponseHoldNoteMax = 1000;
@@ -18553,7 +18532,7 @@ export const GetFulfillmentOrderResponse = zod.strictObject({
         .regex(getFulfillmentOrderResponseOrderIdRegExp),
     number: zod.number().min(1),
     kind: zod.enum(['physical', 'digital']),
-    status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'cancelled']),
+    status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'canceled']),
     lines: zod.array(
         zod.strictObject({
             productId: zod
@@ -18566,9 +18545,9 @@ export const GetFulfillmentOrderResponse = zod.strictObject({
             shippedQuantity: zod
                 .number()
                 .min(getFulfillmentOrderResponseLinesItemShippedQuantityMin),
-            cancelledQuantity: zod
+            canceledQuantity: zod
                 .number()
-                .min(getFulfillmentOrderResponseLinesItemCancelledQuantityMin),
+                .min(getFulfillmentOrderResponseLinesItemCanceledQuantityMin),
             remaining: zod.number().min(getFulfillmentOrderResponseLinesItemRemainingMin)
         })
     ),
@@ -19216,7 +19195,7 @@ export const GetPaymentMixStatsResponse = zod.strictObject({
     )
 });
 /**
- * Cancellation rate as a cohort (orders placed in the period that ended cancelled, including an order whose every parcel was lost and refunded), return rate (units returned ÷ units ordered, Shopify's `returned_quantity_rate`) and refund rate (credit notes ÷ invoices, VAT included). Needs `read:Stats`.
+ * Cancellation rate as a cohort (orders placed in the period that ended canceled, including an order whose every parcel was lost and refunded), return rate (units returned ÷ units ordered, Shopify's `returned_quantity_rate`) and refund rate (credit notes ÷ invoices, VAT included). Needs `read:Stats`.
  * @summary Operations rates (staff)
  */
 export const GetOperationsStatsQueryParams = zod.strictObject({
@@ -19225,7 +19204,7 @@ export const GetOperationsStatsQueryParams = zod.strictObject({
 });
 export const getOperationsStatsResponsePeriodIntervalDefault = `day`;
 export const getOperationsStatsResponseCancellationPlacedMin = 0;
-export const getOperationsStatsResponseCancellationCancelledMin = 0;
+export const getOperationsStatsResponseCancellationCanceledMin = 0;
 export const getOperationsStatsResponseCancellationRateMin = 0;
 export const getOperationsStatsResponseCancellationRateMax = 1;
 export const getOperationsStatsResponseReturnsUnitsOrderedMin = 0;
@@ -19252,7 +19231,7 @@ export const GetOperationsStatsResponse = zod.strictObject({
     }),
     cancellation: zod.strictObject({
         placed: zod.number().min(getOperationsStatsResponseCancellationPlacedMin),
-        cancelled: zod.number().min(getOperationsStatsResponseCancellationCancelledMin),
+        canceled: zod.number().min(getOperationsStatsResponseCancellationCanceledMin),
         rate: zod
             .number()
             .min(getOperationsStatsResponseCancellationRateMin)
@@ -19442,7 +19421,7 @@ export const EnableWebhookSubscriptionResponse = zod.strictObject({
             zod.enum([
                 'order.created',
                 'order.paid',
-                'order.cancelled',
+                'order.canceled',
                 'order.redacted',
                 'shipment.shipped',
                 'shipment.delivered',
@@ -19519,7 +19498,7 @@ export const DisableWebhookSubscriptionResponse = zod.strictObject({
             zod.enum([
                 'order.created',
                 'order.paid',
-                'order.cancelled',
+                'order.canceled',
                 'order.redacted',
                 'shipment.shipped',
                 'shipment.delivered',
@@ -19601,7 +19580,7 @@ export const CreateWebhookSubscriptionSecretResponse = zod.strictObject({
             zod.enum([
                 'order.created',
                 'order.paid',
-                'order.cancelled',
+                'order.canceled',
                 'order.redacted',
                 'shipment.shipped',
                 'shipment.delivered',
@@ -19686,7 +19665,7 @@ export const GetWebhookDeliveryResponse = zod.strictObject({
     eventType: zod.enum([
         'order.created',
         'order.paid',
-        'order.cancelled',
+        'order.canceled',
         'order.redacted',
         'shipment.shipped',
         'shipment.delivered',

@@ -262,7 +262,7 @@ export const aPreorderSummary = (
     waiting: 3,
     allocated: 0,
     shipped: 0,
-    cancelled: 0,
+    canceled: 0,
     late: 0,
     ...overrides
 });
@@ -288,7 +288,7 @@ export const aPreorderFulfillmentOrder = (
             title: 'Walnut desk',
             quantity: 1,
             shippedQuantity: 0,
-            cancelledQuantity: 0,
+            canceledQuantity: 0,
             remaining: 1
         }
     ],
@@ -322,7 +322,7 @@ export const aFulfillmentOrder = (overrides: Partial<FulfillmentOrder> = {}): Fu
             title: 'Shirt',
             quantity: 2,
             shippedQuantity: 0,
-            cancelledQuantity: 0,
+            canceledQuantity: 0,
             remaining: 2
         }
     ],

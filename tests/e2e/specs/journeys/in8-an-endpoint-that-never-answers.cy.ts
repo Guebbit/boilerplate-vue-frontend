@@ -62,7 +62,7 @@ const stateOf = (subscriptionId: string): Cypress.Chainable<SubscriptionState> =
 
 /**
  * Puts one order in the shop and cancels it, so the subscription is told twice (created, then
- * cancelled), and waits until both rows are in the log.
+ * canceled), and waits until both rows are in the log.
  *
  * @param subscriptionId - the subscription that must hold two more rows
  * @returns a chain yielding the two new rows' ids
@@ -123,14 +123,14 @@ describe('IN8 · An endpoint that never answers', () => {
         );
         forgetWebhooks();
 
-        cy.step('the manager subscribes an address that is down, to created and cancelled');
+        cy.step('the manager subscribes an address that is down, to created and canceled');
         let subscriptionId = '';
         let deadUrl = '';
         sinkEndpoint('/in8-dead').then((url) => {
             deadUrl = url;
             cy.apiAs<SubscriptionState>('manager', 'POST', '/webhooks/subscriptions', {
                 url,
-                eventTypes: ['order.created', 'order.cancelled']
+                eventTypes: ['order.created', 'order.canceled']
             }).then((created) => {
                 if (!created) throw new Error('the subscription was not created');
                 subscriptionId = created.id;

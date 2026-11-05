@@ -16,7 +16,7 @@ const LINES = [
         title: 'Shirt',
         quantity: 2,
         shippedQuantity: 0,
-        cancelledQuantity: 0,
+        canceledQuantity: 0,
         remaining: 2
     },
     {
@@ -24,7 +24,7 @@ const LINES = [
         title: 'Hat',
         quantity: 1,
         shippedQuantity: 1,
-        cancelledQuantity: 0,
+        canceledQuantity: 0,
         remaining: 0
     }
 ];
@@ -72,13 +72,13 @@ describe('shipmentCount', () => {
         ).toBe(2);
     });
 
-    it('leaves out digital and cancelled fulfillment orders, which carry no parcel', () => {
+    it('leaves out digital and canceled fulfillment orders, which carry no parcel', () => {
         expect(
             shipmentCount(
                 [
                     aFulfillmentOrder({ id: 'a' }),
                     aFulfillmentOrder({ id: 'b', kind: 'digital' }),
-                    aFulfillmentOrder({ id: 'c', status: 'cancelled' })
+                    aFulfillmentOrder({ id: 'c', status: 'canceled' })
                 ],
                 []
             )
@@ -97,7 +97,7 @@ describe('shipmentCount', () => {
         ).toBe(2);
     });
 
-    it('does not count a digital fulfilment as a shipment', () => {
+    it('does not count a digital fulfillment as a shipment', () => {
         expect(
             shipmentCount(
                 [aFulfillmentOrder({ id: 'a', kind: 'digital', status: 'closed' })],

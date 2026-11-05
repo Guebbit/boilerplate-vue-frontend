@@ -100,10 +100,10 @@ describe('FR19 · A double press on money', () => {
             const writes = holdAndRecordWrites();
             pressTwiceAndConfirmTwice('[data-test=order-cancel]');
 
-            cy.step('the order is cancelled once, with no error on the page');
+            cy.step('the order is canceled once, with no error on the page');
             eventually(
                 () => orderNow('user', orderId),
-                (order) => order.status === 'cancelled'
+                (order) => order.status === 'canceled'
             );
             cy.get('[data-test=order-cancel-error]').should('not.exist');
             cy.then(() => {
@@ -122,10 +122,10 @@ describe('FR19 · A double press on money', () => {
             const writes = holdAndRecordWrites();
             pressTwiceAndConfirmTwice('[data-test=withdraw-button]');
 
-            cy.step('the order is cancelled once, with no error on the page');
+            cy.step('the order is canceled once, with no error on the page');
             eventually(
                 () => orderNow('user', orderId),
-                (order) => order.status === 'cancelled'
+                (order) => order.status === 'canceled'
             );
             cy.get('[data-test=withdraw-error]').should('not.exist');
             cy.then(() => {

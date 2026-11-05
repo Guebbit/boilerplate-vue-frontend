@@ -76,7 +76,7 @@ describe('CU11 · I cancel a paid order and get my money back', () => {
                 cy.get('[data-test=app-dialog-confirm]').click();
                 cy.get('[data-test=order-cancel]').should('not.exist');
                 cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
-                    expect(order?.status).to.equal('cancelled');
+                    expect(order?.status).to.equal('canceled');
                 });
 
                 cy.step('the whole payment goes back to the card');

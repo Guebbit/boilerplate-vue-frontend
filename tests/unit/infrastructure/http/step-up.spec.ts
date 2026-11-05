@@ -160,13 +160,13 @@ describe('the REAUTH_REQUIRED step-up flow', () => {
                 });
         }));
 
-    it('rejects the parked request when the prompt is cancelled', () =>
+    it('rejects the parked request when the prompt is canceled', () =>
         loadHttp().then(({ orvalMutator }) => {
             const pending = orvalMutator({ url: '/checkout', method: 'POST', data: {} });
 
             return waitForPrompt()
                 .then(() => {
-                    useReauthPromptStore().rejectStepUp(new Error('REAUTH_CANCELLED'));
+                    useReauthPromptStore().rejectStepUp(new Error('REAUTH_CANCELED'));
                     return expect(pending).rejects.toMatchObject({
                         errors: [{ code: 'REAUTH_REQUIRED' }]
                     });

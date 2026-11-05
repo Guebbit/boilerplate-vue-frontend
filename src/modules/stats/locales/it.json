@@ -62,7 +62,7 @@
         "method-cash": "Contanti",
         "method-other": "Altro",
         "card-cancellation": "Tasso di annullamento",
-        "cancellation-detail": "{cancelled} su {placed} ordini effettuati nel periodo",
+        "cancellation-detail": "{canceled} su {placed} ordini effettuati nel periodo",
         "card-returns": "Tasso di reso",
         "returns-detail": "{returned} su {ordered} unità",
         "card-refund-rate": "Tasso di rimborso ({currency})",

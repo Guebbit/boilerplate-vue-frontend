@@ -1,8 +1,8 @@
 /**
  * @module
  * The delivery store — transport-mocked like the wishlist's spec. Worth pinning: the methods
- * list mirrors the API, the fulfilment read fills both lists (empty is an answer, not an error),
- * every write sends the body the contract accepts and ends by re-reading the order's fulfilment,
+ * list mirrors the API, the fulfillment read fills both lists (empty is an answer, not an error),
+ * every write sends the body the contract accepts and ends by re-reading the order's fulfillment,
  * and a failure still rejects.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -202,7 +202,7 @@ describe('fetchFulfillmentForOrder', () => {
 });
 
 describe('process', () => {
-    it('resolves once fulfilment starts, without touching the lists — this module owns no order data', () => {
+    it('resolves once fulfillment starts, without touching the lists — this module owns no order data', () => {
         const store = useDeliveryStore();
         return store.process('order-3').then((result) => {
             expect(result).toBeUndefined();
@@ -302,7 +302,7 @@ describe('the Idempotency-Key on a shipment write', () => {
 });
 
 describe('fulfill', () => {
-    it('fulfils a digital fulfillment order and re-reads', () => {
+    it('fulfills a digital fulfillment order and re-reads', () => {
         const store = useDeliveryStore();
         return store.fulfill('fo1').then((shipment) => {
             expect(shipment?.status).toBe('delivered');

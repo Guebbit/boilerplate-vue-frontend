@@ -252,7 +252,7 @@ export const useOrdersStore = defineStore('orders', () => {
      *
      * @param orderId - Which order.
      * @param refund - Whether the money goes back with the cancellation. Defaults to the API's.
-     * @returns A promise resolving with the cancelled order.
+     * @returns A promise resolving with the canceled order.
      */
     const cancelOrder = (orderId: string, refund?: boolean) =>
         updateTarget(

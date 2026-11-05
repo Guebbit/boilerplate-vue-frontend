@@ -3324,7 +3324,7 @@ paths:
       tags:
         - Auth
       summary: Undo an email change
-      description: Reverts an email change from the one-time link in the notice mailed to the OLD address when the change was requested. Valid for 7 days from that request, and untouched by a password change, so a person who reads mail weekly can still use it. While the change is only pending it is cancelled; once the new address was confirmed the previous one is restored, and every session is ended (a refresh token cannot outlive the address it was issued under). Public, like `POST /account/email-change/confirm`, the token in the body is the credential. Answers 409 when the previous address was meanwhile claimed by another account.
+      description: Reverts an email change from the one-time link in the notice mailed to the OLD address when the change was requested. Valid for 7 days from that request, and untouched by a password change, so a person who reads mail weekly can still use it. While the change is only pending it is canceled; once the new address was confirmed the previous one is restored, and every session is ended (a refresh token cannot outlive the address it was issued under). Public, like `POST /account/email-change/confirm`, the token in the body is the credential. Answers 409 when the previous address was meanwhile claimed by another account.
       operationId: undoEmailChange
       security: []
       requestBody:
@@ -6182,7 +6182,7 @@ paths:
         - Products
       summary: Catalogue facets
       description: "Every category and tag the PUBLIC catalogue carries, each with how many visible products hold it — what a storefront renders as filter chips. Sorted by count descending, then name. Counts follow the same visibility rule the listing does, so one chip alone never leads to an empty page. Counts are catalogue-wide: they do not follow the filters already chosen."
-      operationId: getCatalogueFacets
+      operationId: getCatalogFacets
       security: []
       responses:
         "200":
@@ -6207,7 +6207,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CatalogueFacetsResponse"
+                $ref: "#/components/schemas/CatalogFacetsResponse"
         "304":
           $ref: "#/components/responses/NotModified"
         "401":
@@ -7554,13 +7554,13 @@ paths:
       tags:
         - Orders
       summary: Delete order
-      description: Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel); a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`.
+      description: Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record, which is only allowed for an order that is canceled and was never paid (409 `ORDER_NOT_CANCELED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel); a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete hides a canceled order from its buyer (409 `ORDER_NOT_CANCELED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`.
       operationId: deleteOrder
       x-error-codes:
         "409":
           - ORDER_HAS_MONEY_HISTORY
           - ORDER_INVOICED
-          - ORDER_NOT_CANCELLED
+          - ORDER_NOT_CANCELED
       x-alias-of: deleteOrderById
       security:
         - bearerAuth: []
@@ -7847,13 +7847,13 @@ paths:
       tags:
         - Orders
       summary: Delete order
-      description: Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel). A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`. Functionally equivalent to `DELETE /orders`.
+      description: Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record, which is only allowed for an order that is canceled and was never paid (409 `ORDER_NOT_CANCELED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel). A soft delete hides a canceled order from its buyer (409 `ORDER_NOT_CANCELED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`. Functionally equivalent to `DELETE /orders`.
       operationId: deleteOrderById
       x-error-codes:
         "409":
           - ORDER_HAS_MONEY_HISTORY
           - ORDER_INVOICED
-          - ORDER_NOT_CANCELLED
+          - ORDER_NOT_CANCELED
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -7946,13 +7946,13 @@ paths:
       tags:
         - Orders
       summary: Permanently delete order
-      description: Permanently removes the order identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /orders/{id}?hardDelete=true`, and only for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid).
+      description: Permanently removes the order identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /orders/{id}?hardDelete=true`, and only for an order that is canceled and was never paid (409 `ORDER_NOT_CANCELED` while it is open, 409 `ORDER_INVOICED` once paid).
       operationId: hardDeleteOrderById
       x-error-codes:
         "409":
           - ORDER_HAS_MONEY_HISTORY
           - ORDER_INVOICED
-          - ORDER_NOT_CANCELLED
+          - ORDER_NOT_CANCELED
       x-alias-of: deleteOrderById
       security:
         - bearerAuth: []
@@ -7997,7 +7997,7 @@ paths:
         "401":
           - REAUTH_REQUIRED
         "409":
-          - ORDER_NOT_CANCELLABLE
+          - ORDER_NOT_CANCELABLE
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -8011,7 +8011,7 @@ paths:
               $ref: "#/components/schemas/CancelOrderRequest"
       responses:
         "200":
-          description: The cancelled order
+          description: The canceled order
           content:
             application/json:
               schema:
@@ -8059,7 +8059,7 @@ paths:
       tags:
         - Orders
       summary: Force-correct an order's status by hand
-      description: "Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `override:Order`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does."
+      description: "Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `canceled` (`POST /orders/{id}/cancel` is that door). Requires `override:Order`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does."
       operationId: overrideOrderStatus
       x-error-codes:
         "409":
@@ -8336,7 +8336,7 @@ paths:
       summary: Record a payment on an order
       description: |-
         The payment is a child of the order: Solidus' `POST /api/orders/{number}/payments`. An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted a row that already existed: a card intent nobody paid, or the open payment of a `bank_transfer` order (the very payment being recorded).
-        A transfer that arrives after its order was cancelled is recorded too, onto the payment the cancel closed: the money is real, the order cannot be paid any more, so it answers 200 with the payment `succeeded` and a refund record left open (a hand-paid refund is returned by the operator, off-system, and then marked done).
+        A transfer that arrives after its order was canceled is recorded too, onto the payment the cancel closed: the money is real, the order cannot be paid any more, so it answers 200 with the payment `succeeded` and a refund record left open (a hand-paid refund is returned by the operator, off-system, and then marked done).
         Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
       operationId: recordOrderPayment
       x-error-codes:
@@ -8438,7 +8438,7 @@ paths:
       tags:
         - Delivery
       summary: Process a paid order
-      description: Reports that fulfilment has started — the order moves `paid → processing`. The verb names the status it reaches, as `cancel` does; the module behind it is `delivery`'s. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
+      description: Reports that fulfillment has started — the order moves `paid → processing`. The verb names the status it reaches, as `cancel` does; the module behind it is `delivery`'s. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
       operationId: processOrder
       security:
         - bearerAuth: []
@@ -9133,7 +9133,7 @@ paths:
       summary: Preorder units by product and state
       description: |
         For each product sold as a preorder, how its units stand across every fulfillment order made from it:
-        paid, waiting for stock, allocated, shipped, cancelled, and late. Units,
+        paid, waiting for stock, allocated, shipped, canceled, and late. Units,
         not fulfillment orders. `firstAgreedAt` is the earliest date any buyer was promised. For the Products
         tab of the preorder board; same audience and scope as the list.
       operationId: summarizePreorderFulfillmentOrders
@@ -9190,7 +9190,7 @@ paths:
         - Delivery
       summary: Ship some or all of a fulfillment order
       description: |-
-        Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is optional: a `tracked` method may get its code later, with `PATCH /delivery/shipments/{id}` (`Shipment.awaitingTracking` says who is still waiting). Refuses a fulfillment order that is on hold, closed or cancelled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is neither `processing` nor `paid` (`ORDER_NOT_PROCESSING`). From `paid` it moves the order to `processing` itself, in the same transaction, so it also needs `start:Shipment` (403 without it); `POST /orders/{id}/process` stays as an optional "mark in progress". Never ships from `on_hold`.
+        Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is optional: a `tracked` method may get its code later, with `PATCH /delivery/shipments/{id}` (`Shipment.awaitingTracking` says who is still waiting). Refuses a fulfillment order that is on hold, closed or canceled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is neither `processing` nor `paid` (`ORDER_NOT_PROCESSING`). From `paid` it moves the order to `processing` itself, in the same transaction, so it also needs `start:Shipment` (403 without it); `POST /orders/{id}/process` stays as an optional "mark in progress". Never ships from `on_hold`.
         There is no list at this path: an order's shipments are listed by `GET /orders/{id}/shipments`, and one by `GET /delivery/shipments/{id}`.
 
         Send an `Idempotency-Key`: a partial ship creates a NEW shipment, so a retry without one (a dropped connection, a double click) would cut a second parcel and take the stock twice. The same key replays the first answer; a 409 means the first request is still running, a 422 means the key was reused with another body.
@@ -9269,7 +9269,7 @@ paths:
     post:
       tags:
         - Delivery
-      summary: Fulfil a digital fulfillment order
+      summary: Fulfill a digital fulfillment order
       description: "The digital act: a shipment with no tracking, born and delivered in the same write. A `digital` fulfillment order has nothing to carry, so this is its only door. Refuses a physical one with `DELIVERY_NOT_DIGITAL` (ship it instead). When it leaves nothing remaining and nothing undelivered the order moves to `delivered`, its withdrawal clock counted from payment (digital content, Art. 9(2)(c)). Works from `paid` too: it moves the order to `processing` itself, so it also needs `start:Shipment` (403 without it). Answers like the create it is: 201 with `Location` pointing at the new shipment. Send an `Idempotency-Key`, as for shipping (a 409 is the first request still running, a 422 the key reused with another body)."
       operationId: fulfillFulfillmentOrder
       x-error-codes:
@@ -9283,7 +9283,7 @@ paths:
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
-          description: The digital fulfillment order to fulfil
+          description: The digital fulfillment order to fulfill
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
       responses:
         "201":
@@ -9504,7 +9504,7 @@ paths:
       tags:
         - Delivery
       summary: Correct a shipment's tracking code
-      description: 'Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped`, `delivered` or `lost`; a digital fulfilment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.'
+      description: 'Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped`, `delivered` or `lost`; a digital fulfillment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.'
       operationId: updateShipment
       x-error-codes:
         "409":
@@ -9577,7 +9577,7 @@ paths:
       description: |-
         Stamps the shipment delivered. The order moves `shipped → delivered` when this was the last undelivered shipment and nothing remains to ship; its withdrawal clock then starts from the LAST delivery (CRD Art. 9(2)(b)(i)). Only a `shipped` shipment can be delivered, or a `lost` one that turns up (below): any other answers `DELIVERY_NOT_DELIVERABLE`.
 
-        A `lost` shipment that turns up is accepted too, but only while every unit on it is still open: not shipped again and not cancelled, the owed units of a short shelf included. All or nothing, in one transaction: the shipment becomes `delivered` (its `lostAt` and `lostReason` stay as history), the units go back on the fulfillment order, the top-up of the stock hold is given back and the owed fulfillment order is closed with no refund (`cancelReason: found`). Otherwise `DELIVERY_LOST_SUPERSEDED` (409).
+        A `lost` shipment that turns up is accepted too, but only while every unit on it is still open: not shipped again and not canceled, the owed units of a short shelf included. All or nothing, in one transaction: the shipment becomes `delivered` (its `lostAt` and `lostReason` stay as history), the units go back on the fulfillment order, the top-up of the stock hold is given back and the owed fulfillment order is closed with no refund (`cancelReason: found`). Otherwise `DELIVERY_LOST_SUPERSEDED` (409).
       operationId: deliverShipment
       x-error-codes:
         "409":
@@ -9707,7 +9707,7 @@ paths:
         Always answers a `Return` (201, with `Location`); where the goods are decides what it is. Once they have shipped, a withdrawal is born `approved` and any other reason waits for staff. Before dispatch there is nothing to send back, so a withdrawal cancels the order — refunded in full, stock released — and the `Return` is born `closed`: `reason: withdrawal`, no `lines`, `refundAmount` what the order cost (zero when nothing was paid). Either way the customer gets an acknowledgement email carrying the exact date and time, and `Return.orderId` is where the client reloads the order from. `Order.actions.withdraw` says whether the button is offered; the client never counts the days.
         `kind: cancellation` cancels what has not shipped yet — the remainder of ONE fulfillment order (`fulfillmentOrderId`) once something has shipped from the order. It is born `closed`, its `lines` are the remainder, and the refund of those lines follows (plus the delivery when it takes the last unit of the order). The buyer uses it as part of their withdrawal, and names `reason: withdrawal`; staff may use it too (out of stock for good), name any other reason, and need `create:Refund` — the refund key, `stepUp: critical`. A staff cancellation asks a fresh session; the buyer's own withdrawal never does. `GET /returns/options` says what each door would take and refund, and whether this caller may use it (`cancel`).
         A return answers for goods that left (`kind: return`, the default). The order's buyer opens one for any reason whose deadline is open. Staff holding `update:Return` open one on a buyer's behalf, the way a phone call or an email asks for it: it is born `approved`, opening it IS the decision, and the buyer is told where to send the goods. Staff are not stopped by the deadline or by goods Art. 16 excludes for the shop's own reasons (`defective`, `wrong_item`, `other`): what they waived is recorded on the return, in `policyExceptions`. `requestedAt` says when the buyer asked (default now, never in the future, never before the order existed); the deadline is judged on it.
-        Staff can also record a withdrawal the buyer stated outside the shop: `reason: withdrawal` with `requestedAt` (when the buyer sent it, Art. 11(2)) and `statedVia` (`phone`, `email`, `letter`, `other`), both required. The withdrawal keeps its legal window, judged on `requestedAt`, and its Art. 16 exclusion. It does everything the buyer's own withdrawal does, and the customer is told when they stated it and when the shop recorded it. Shipped goods need `update:Return`; before dispatch the order is cancelled and refunded, which needs `create:Refund` (money out) and `update:Order` (the cancel); a remainder cancel needs `create:Refund`. Any request carrying `statedVia` asks a fresh session: the record is a legal act, and the check fails closed. The buyer sends neither `requestedAt` nor `statedVia` (422): the server sets them. Sending `Idempotency-Key` makes a retry safe.
+        Staff can also record a withdrawal the buyer stated outside the shop: `reason: withdrawal` with `requestedAt` (when the buyer sent it, Art. 11(2)) and `statedVia` (`phone`, `email`, `letter`, `other`), both required. The withdrawal keeps its legal window, judged on `requestedAt`, and its Art. 16 exclusion. It does everything the buyer's own withdrawal does, and the customer is told when they stated it and when the shop recorded it. Shipped goods need `update:Return`; before dispatch the order is canceled and refunded, which needs `create:Refund` (money out) and `update:Order` (the cancel); a remainder cancel needs `create:Refund`. Any request carrying `statedVia` asks a fresh session: the record is a legal act, and the check fails closed. The buyer sends neither `requestedAt` nor `statedVia` (422): the server sets them. Sending `Idempotency-Key` makes a retry safe.
       operationId: createReturn
       x-error-codes:
         "401":
@@ -9735,7 +9735,7 @@ paths:
               $ref: "#/components/schemas/CreateReturnRequest"
       responses:
         "201":
-          description: The return, opened — or, for a withdrawal before dispatch, closed at birth with the order cancelled and refunded
+          description: The return, opened — or, for a withdrawal before dispatch, closed at birth with the order canceled and refunded
           headers:
             Location:
               $ref: "#/components/headers/Location"
@@ -9788,7 +9788,7 @@ paths:
       tags:
         - Returns
       summary: What an order can still send back or cancel
-      description: "The server's answer to \"what can I still return, and what can I still cancel?\" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned, offered while a reason in `reasons` is open: the buyer's `reasons` are the ones whose deadline is open (none past every deadline), and staff holding `update:Return` get every reason, since they may open a return or record a withdrawal on a buyer's behalf. `exceptions` lists, for staff, the reasons that are past their deadline now, so a client can label what opening one would waive. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`."
+      description: "The server's answer to \"what can I still return, and what can I still cancel?\" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned, offered while a reason in `reasons` is open: the buyer's `reasons` are the ones whose deadline is open (none past every deadline), and staff holding `update:Return` get every reason, since they may open a return or record a withdrawal on a buyer's behalf. `exceptions` lists, for staff, the reasons that are past their deadline now, so a client can label what opening one would waive. `cancelable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancelable` is empty while nothing has shipped — the whole order is canceled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`."
       operationId: getReturnOptions
       security:
         - bearerAuth: []
@@ -10143,7 +10143,7 @@ paths:
         - Inventory
       summary: Preorder allowances
       description: |
-        Every product with a preorder allowance or an outstanding preorder, for the admin's preorder board: the cap, what is outstanding against it and how that splits between orders still unpaid and orders already paid. `backordered` is OUTSTANDING units, not units ever sold: it falls when stock arrives and is allocated, and when an order is cancelled or expires. `ordered` is the lifetime count, read off the ledger.
+        Every product with a preorder allowance or an outstanding preorder, for the admin's preorder board: the cap, what is outstanding against it and how that splits between orders still unpaid and orders already paid. `backordered` is OUTSTANDING units, not units ever sold: it falls when stock arrives and is allocated, and when an order is canceled or expires. `ordered` is the lifetime count, read off the ledger.
 
         The release date and the title come from the catalogue. Never public: exact counts are what a competitor wants.
       operationId: listPreorderLevels
@@ -10429,7 +10429,7 @@ paths:
         - Inventory
       summary: Expire stale reservations
       description: |
-        Releases every hold whose window has closed and announces each one, so the orders behind them get cancelled.
+        Releases every hold whose window has closed and announces each one, so the orders behind them get canceled.
 
         A job behind an admin endpoint rather than an internal schedule. The application ships no scheduler, so the tick is driven from outside — a cron entry, the platform's scheduled job, or an operator. Idempotent; running it twice releases nothing the first run already released.
       operationId: sweepReservations
@@ -11030,7 +11030,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookEventCatalogueResponse"
+                $ref: "#/components/schemas/WebhookEventCatalogResponse"
           headers:
             x-request-id:
               $ref: "#/components/headers/RequestId"
@@ -12384,7 +12384,7 @@ paths:
       tags:
         - Payments
       summary: Payments that need a person (staff)
-      description: "Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`), card refunds the provider refused for good (`refused_refund`: shown at once, the money has to go back another way), and refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age). A cancelled order's refund is one of them, because its record opens before the provider is asked. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`."
+      description: "Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`), card refunds the provider refused for good (`refused_refund`: shown at once, the money has to go back another way), and refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age). A canceled order's refund is one of them, because its record opens before the provider is asked. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`."
       operationId: listPaymentAttention
       security:
         - bearerAuth: []
@@ -13253,7 +13253,7 @@ paths:
       tags:
         - Stats
       summary: Operations rates (staff)
-      description: Cancellation rate as a cohort (orders placed in the period that ended cancelled, including an order whose every parcel was lost and refunded), return rate (units returned ÷ units ordered, Shopify's `returned_quantity_rate`) and refund rate (credit notes ÷ invoices, VAT included). Needs `read:Stats`.
+      description: Cancellation rate as a cohort (orders placed in the period that ended canceled, including an order whose every parcel was lost and refunded), return rate (units returned ÷ units ordered, Shopify's `returned_quantity_rate`) and refund rate (credit notes ÷ invoices, VAT included). Needs `read:Stats`.
       operationId: getOperationsStats
       security:
         - bearerAuth: []
@@ -18301,7 +18301,7 @@ components:
         - processing
         - shipped
         - delivered
-        - cancelled
+        - canceled
       description: Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`.
     OrderPaymentStatus:
       type: string
@@ -18320,7 +18320,7 @@ components:
         - partially_fulfilled
         - shipped
         - fulfilled
-      description: "Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from the status and the fulfilment summary delivery reports. First match wins: `fulfilled` once everything arrived; `shipped` once everything has left; `partially_fulfilled` once something left and more remains; `on_hold` while every remaining unit is held back; `in_progress` while being prepared; `unfulfilled` before work starts, and for a pending or cancelled order. Read-only."
+      description: "Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from the status and the fulfillment summary delivery reports. First match wins: `fulfilled` once everything arrived; `shipped` once everything has left; `partially_fulfilled` once something left and more remains; `on_hold` while every remaining unit is held back; `in_progress` while being prepared; `unfulfilled` before work starts, and for a pending or canceled order. Read-only."
     OrderReturnStatus:
       type: string
       enum:
@@ -18470,7 +18470,7 @@ components:
         - processing
         - shipped
         - delivered
-        - cancelled
+        - canceled
         - status_overridden
         - payment_declined
         - refund_issued
@@ -18485,7 +18485,7 @@ components:
         - shipment_lost
         - fulfillment_held
         - fulfillment_released
-        - remainder_cancelled
+        - remainder_canceled
         - return_requested
         - return_approved
         - return_declined
@@ -18497,7 +18497,7 @@ components:
         - release_date_moved
         - delay_notice_sent
         - address_corrected
-      description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`, `dispute_opened`, `dispute_closed`. Shipments: `shipment_shipped`, `shipment_delivered`, `shipment_lost`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Which of these a buyer sees is the row's own `audience` (`buyer` or `staff`), set per type by the server."
+      description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `canceled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`, `dispute_opened`, `dispute_closed`. Shipments: `shipment_shipped`, `shipment_delivered`, `shipment_lost`, `fulfillment_held`, `fulfillment_released`, `remainder_canceled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Which of these a buyer sees is the row's own `audience` (`buyer` or `staff`), set per type by the server."
     OrderTimelineExportEntry:
       type: object
       additionalProperties: false
@@ -18534,7 +18534,7 @@ components:
         data:
           type: object
           additionalProperties: true
-          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
+          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `canceled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
     RefundStatus:
       type: string
       enum:
@@ -18549,7 +18549,7 @@ components:
         - return
         - late_payment
         - external
-      description: "Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to; `late_payment` — the money arrived after the order could no longer be paid (its stock reservation had expired or it was cancelled), so the sale was lost and the money went back. The buyer is mailed it like a cancellation's refund. `external` — the refund was made in the payment provider's own dashboard, not here: the application found it and recorded it so the credit note, the buyer's mail and the order's state follow; it is `succeeded` from the start and carries the provider's own amount and date."
+      description: "Why the money went back. `cancellation` — the order was canceled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to; `late_payment` — the money arrived after the order could no longer be paid (its stock reservation had expired or it was canceled), so the sale was lost and the money went back. The buyer is mailed it like a cancellation's refund. `external` — the refund was made in the payment provider's own dashboard, not here: the application found it and recorded it so the credit note, the buyer's mail and the order's state follow; it is `succeeded` from the start and carries the provider's own amount and date."
     RefundFailureReason:
       type: string
       enum:
@@ -18660,7 +18660,7 @@ components:
             - processing
             - succeeded
             - declined
-            - cancelled
+            - canceled
         provider:
           type: string
         cardLast4:
@@ -18701,7 +18701,7 @@ components:
         - shipped
         - delivered
         - lost
-      description: "The tail of the order's lifecycle, as the carrier sees it. `lost`: staff reported the parcel lost or damaged in transit, so its units are open again; it can still become `delivered` if it turns up and nothing was shipped or cancelled meanwhile."
+      description: "The tail of the order's lifecycle, as the carrier sees it. `lost`: staff reported the parcel lost or damaged in transit, so its units are open again; it can still become `delivered` if it turns up and nothing was shipped or canceled meanwhile."
     ShipmentLine:
       type: object
       additionalProperties: false
@@ -18756,7 +18756,7 @@ components:
             $ref: "#/components/schemas/ShipmentLine"
         destination:
           $ref: "#/components/schemas/OrderAddress"
-          description: Where this parcel went — the order's shipping address as it stood when the shipment was cut, so a later correction of the order's address never rewrites it. Absent for a pickup, a digital fulfilment, and once the order's own address has been scrubbed.
+          description: Where this parcel went — the order's shipping address as it stood when the shipment was cut, so a later correction of the order's address never rewrites it. Absent for a pickup, a digital fulfillment, and once the order's own address has been scrubbed.
         shippedAt:
           type: string
           format: date-time
@@ -18790,8 +18790,8 @@ components:
         - in_progress
         - on_hold
         - closed
-        - cancelled
-      description: Where a fulfillment order stands (Shopify's names). `open` until something ships; `in_progress` once part of it has shipped and lines remain; `on_hold` while staff, or the stock it awaits, holds it back; `closed` once nothing remains and something shipped from it; `cancelled` once nothing remains and nothing ever shipped from it.
+        - canceled
+      description: Where a fulfillment order stands (Shopify's names). `open` until something ships; `in_progress` once part of it has shipped and lines remain; `on_hold` while staff, or the stock it awaits, holds it back; `closed` once nothing remains and something shipped from it; `canceled` once nothing remains and nothing ever shipped from it.
     FulfillmentOrderLine:
       type: object
       additionalProperties: false
@@ -18800,9 +18800,9 @@ components:
         - title
         - quantity
         - shippedQuantity
-        - cancelledQuantity
+        - canceledQuantity
         - remaining
-      description: One product on a fulfillment order, with how much has shipped, been cancelled and still remains.
+      description: One product on a fulfillment order, with how much has shipped, been canceled and still remains.
       properties:
         productId:
           $ref: "#/components/schemas/Id"
@@ -18816,14 +18816,14 @@ components:
         shippedQuantity:
           type: integer
           minimum: 0
-        cancelledQuantity:
+        canceledQuantity:
           type: integer
           minimum: 0
-          description: Units cancelled before they shipped — a remainder cancel.
+          description: Units canceled before they shipped — a remainder cancel.
         remaining:
           type: integer
           minimum: 0
-          description: "`quantity − shippedQuantity − cancelledQuantity`, computed here so no client counts."
+          description: "`quantity − shippedQuantity − canceledQuantity`, computed here so no client counts."
     FulfillmentHoldNotice:
       type: string
       enum:
@@ -18846,7 +18846,7 @@ components:
         - staff
         - order
         - found
-      description: "Who cancelled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `order`: the whole order was cancelled. `found`: the lost parcel turned up, so the units owed for it are no longer owed (no refund)."
+      description: "Who canceled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `order`: the whole order was canceled. `found`: the lost parcel turned up, so the units owed for it are no longer owed (no refund)."
     ExportFulfillmentOrder:
       type: object
       additionalProperties: false
@@ -20633,7 +20633,7 @@ components:
         count:
           type: integer
           minimum: 1
-    CatalogueFacetsResponse:
+    CatalogFacetsResponse:
       type: object
       additionalProperties: false
       required:
@@ -21232,7 +21232,7 @@ components:
         - all_excluded
         - window_closed
         - nothing_left
-      description: "Why the buyer's withdrawal button is not offered, first reason that applies. `all_excluded`: every line is goods Art. 16 CRD takes the right of withdrawal away from (made to order, perishable), so there is nothing to withdraw from — an unpaid or paid order can still be cancelled with the ordinary cancel. `window_closed`: the withdrawal period ended. `nothing_left`: every unit is already back with the shop."
+      description: "Why the buyer's withdrawal button is not offered, first reason that applies. `all_excluded`: every line is goods Art. 16 CRD takes the right of withdrawal away from (made to order, perishable), so there is nothing to withdraw from — an unpaid or paid order can still be canceled with the ordinary cancel. `window_closed`: the withdrawal period ended. `nothing_left`: every unit is already back with the shop."
     OrderActions:
       type: object
       additionalProperties: false
@@ -21252,7 +21252,7 @@ components:
       properties:
         cancel:
           type: boolean
-          description: "Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further — and only while nothing has shipped: once any shipment left, what remains is cancelled one fulfillment order at a time (`POST /returns`, `kind: cancellation`)."
+          description: "Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further — and only while nothing has shipped: once any shipment left, what remains is canceled one fulfillment order at a time (`POST /returns`, `kind: cancellation`)."
         pay:
           type: boolean
           description: "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not a status move any request makes: a client starts the flow with `POST /payments` and the provider's yes does the rest."
@@ -21279,13 +21279,13 @@ components:
           description: "Whether the \"withdraw from contract here\" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`. A mixed order is not a reason to hide it: before dispatch the withdrawal takes the eligible goods (the whole order while it is unpaid or paid, the eligible shipment groups once it is `processing`); only an order made wholly of excluded goods is blocked."
         withdrawBlocked:
           $ref: "#/components/schemas/WithdrawBlockedReason"
-          description: Why `withdraw` is `false`, for the order's own buyer on an order that is otherwise withdrawable. Absent when `withdraw` is `true`, for anyone who is not the buyer, and for an order whose status offers no withdrawal (cancelled). A client shows the button disabled with this reason rather than hiding it.
+          description: Why `withdraw` is `false`, for the order's own buyer on an order that is otherwise withdrawable. Absent when `withdraw` is `true`, for anyone who is not the buyer, and for an order whose status offers no withdrawal (canceled). A client shows the button disabled with this reason rather than hiding it.
         delete:
           type: boolean
-          description: "Whether `DELETE /orders/{id}` would be accepted for this caller: the caller holds `delete:Order`, the order is `cancelled` and not already hidden."
+          description: "Whether `DELETE /orders/{id}` would be accepted for this caller: the caller holds `delete:Order`, the order is `canceled` and not already hidden."
         hardDelete:
           type: boolean
-          description: "Whether `DELETE /orders/{id}?hardDelete=true` would be accepted for this caller: the caller holds `delete:Order`, and the order is `cancelled`, was never paid (a paid order's invoice must survive it) and holds no money recorded after the cancel (a late payment and its refund still point at it)."
+          description: "Whether `DELETE /orders/{id}?hardDelete=true` would be accepted for this caller: the caller holds `delete:Order`, and the order is `canceled`, was never paid (a paid order's invoice must survive it) and holds no money recorded after the cancel (a late payment and its refund still point at it)."
         restore:
           type: boolean
           description: "Whether `POST /orders/{id}/restore` would be accepted for this caller: the caller holds `delete:Order` and the order is soft-deleted (`deletedAt` is set)."
@@ -21726,8 +21726,8 @@ components:
         - partially_refunded
         - refunded
         - failed
-        - cancelled
-      description: The label a payment shows, derived from the stored status and its refund records (Shopify's `displayFinancialStatus`). `incomplete` — awaiting confirmation or action; `pending` — processing; `succeeded` — paid, no refund record; `refund_pending` — any refund still pending or failed (wins over the next two); `partially_refunded` — paid with at least one settled refund; `refunded` — fully returned (every unit of `amount`, no refund still open); `failed` — declined; `cancelled` — the order was cancelled before the payment settled.
+        - canceled
+      description: The label a payment shows, derived from the stored status and its refund records (Shopify's `displayFinancialStatus`). `incomplete` — awaiting confirmation or action; `pending` — processing; `succeeded` — paid, no refund record; `refund_pending` — any refund still pending or failed (wins over the next two); `partially_refunded` — paid with at least one settled refund; `refunded` — fully returned (every unit of `amount`, no refund still open); `failed` — declined; `canceled` — the order was canceled before the payment settled.
     PaymentBankTransferAction:
       type: object
       additionalProperties: false
@@ -21756,7 +21756,7 @@ components:
         payBy:
           type: string
           format: date-time
-          description: When the order's stock hold ends. Past it, with no money received, the order is cancelled.
+          description: When the order's stock hold ends. Past it, with no money received, the order is canceled.
     PaymentNextAction:
       oneOf:
         - $ref: "#/components/schemas/PaymentBankTransferAction"
@@ -21903,7 +21903,7 @@ components:
           type: number
           format: double
           minimum: 0
-          description: The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation. If the provider reports a success for a different amount or currency, the payment reads `succeeded` with what ARRIVED here, its order is cancelled and the money is returned.
+          description: The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation. If the provider reports a success for a different amount or currency, the payment reads `succeeded` with what ARRIVED here, its order is canceled and the money is returned.
         currency:
           allOf:
             - $ref: "#/components/schemas/CurrencyCode"
@@ -21926,8 +21926,8 @@ components:
             - processing
             - succeeded
             - declined
-            - cancelled
-          description: "The provider-facing lifecycle. A refunded payment, whole or in part, stays `succeeded`: `displayStatus` and `amountRefunded` say how much went back. `cancelled` means the order was cancelled and the provider confirmed the intent closed; money that still arrives on it is settled and returned. `requires_action` means the buyer has something to do: the bank wants a challenge answered in the browser (3-D Secure), or a bank transfer is waiting to be sent (`nextAction` says how) — and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions"
+            - canceled
+          description: "The provider-facing lifecycle. A refunded payment, whole or in part, stays `succeeded`: `displayStatus` and `amountRefunded` say how much went back. `canceled` means the order was canceled and the provider confirmed the intent closed; money that still arrives on it is settled and returned. `requires_action` means the buyer has something to do: the bank wants a challenge answered in the browser (3-D Secure), or a bank transfer is waiting to be sent (`nextAction` says how) — and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions"
         displayStatus:
           $ref: "#/components/schemas/PaymentDisplayStatus"
         nextAction:
@@ -22075,7 +22075,7 @@ components:
         holdNote:
           type: string
           maxLength: 1000
-          description: Staff's free text about the hold. Left out for anyone who cannot update fulfilment.
+          description: Staff's free text about the hold. Left out for anyone who cannot update fulfillment.
         agreedAt:
           type: string
           format: date-time
@@ -22140,7 +22140,7 @@ components:
         - awaitingTracking
         - shippedAt
         - actions
-      description: What actually left, at one time, with one tracking code (Shopify's `Fulfillment`). Born `shipped`; a digital fulfilment is born `delivered`. A parcel that will not arrive becomes `lost`; one that turns up after all becomes `delivered`.
+      description: What actually left, at one time, with one tracking code (Shopify's `Fulfillment`). Born `shipped`; a digital fulfillment is born `delivered`. A parcel that will not arrive becomes `lost`; one that turns up after all becomes `delivered`.
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -22154,7 +22154,7 @@ components:
           description: 1-based position within the order, in the order shipments were cut.
         trackingCode:
           type: string
-          description: The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false), and for a digital fulfilment.
+          description: The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false), and for a digital fulfillment.
         status:
           $ref: "#/components/schemas/ShipmentStatus"
         lines:
@@ -22163,7 +22163,7 @@ components:
             $ref: "#/components/schemas/ShipmentLine"
         destination:
           $ref: "#/components/schemas/OrderAddress"
-          description: Where this parcel went — the order's shipping address as it stood when the shipment was cut, so a later correction of the order's address never rewrites it. Absent for a pickup, a digital fulfilment, and once the order's own address has been scrubbed.
+          description: Where this parcel went — the order's shipping address as it stood when the shipment was cut, so a later correction of the order's address never rewrites it. Absent for a pickup, a digital fulfillment, and once the order's own address has been scrubbed.
         forced:
           type: boolean
           description: Whether an admin status override cut this shipment.
@@ -22189,7 +22189,7 @@ components:
         lostNote:
           type: string
           maxLength: 1000
-          description: Staff's free text about the loss. Left out for anyone who cannot update fulfilment.
+          description: Staff's free text about the loss. Left out for anyone who cannot update fulfillment.
         actions:
           $ref: "#/components/schemas/ShipmentActions"
         createdAt:
@@ -22381,8 +22381,8 @@ components:
         - waiting
         - allocated
         - shipped
-        - cancelled
-      description: "Where a preorder's fulfillment order stands, as the board reads it. `waiting`: paid, held for stock. `allocated`: stock is set aside for it, not all shipped. `shipped`: nothing remains and something shipped. `cancelled`: nothing remains and nothing shipped; `cancelReason` says who."
+        - canceled
+      description: "Where a preorder's fulfillment order stands, as the board reads it. `waiting`: paid, held for stock. `allocated`: stock is set aside for it, not all shipped. `shipped`: nothing remains and something shipped. `canceled`: nothing remains and nothing shipped; `cancelReason` says who."
     PreorderBuyer:
       type: object
       additionalProperties: false
@@ -22485,9 +22485,9 @@ components:
         - waiting
         - allocated
         - shipped
-        - cancelled
+        - canceled
         - late
-      description: "One product's preorder units across every fulfillment order made from it. `paid` is every unit paid for, so `waiting + allocated + shipped + cancelled` equals it. `late` is a subset: units remaining on fulfillment orders whose expected date has passed."
+      description: "One product's preorder units across every fulfillment order made from it. `paid` is every unit paid for, so `waiting + allocated + shipped + canceled` equals it. `late` is a subset: units remaining on fulfillment orders whose expected date has passed."
       properties:
         productId:
           $ref: "#/components/schemas/Id"
@@ -22510,7 +22510,7 @@ components:
         shipped:
           type: integer
           minimum: 0
-        cancelled:
+        canceled:
           type: integer
           minimum: 0
         late:
@@ -22602,7 +22602,7 @@ components:
       enum:
         - return
         - cancellation
-      description: "What the record is: `return` — goods that left coming back; `cancellation` — the unshipped remainder of one fulfillment order, cancelled and refunded, closed when made."
+      description: "What the record is: `return` — goods that left coming back; `cancellation` — the unshipped remainder of one fulfillment order, canceled and refunded, closed when made."
     ReturnLine:
       type: object
       additionalProperties: false
@@ -22734,7 +22734,7 @@ components:
           description: What the customer wrote. Free text.
         lines:
           type: array
-          description: What is coming back — or, for a `cancellation`, the remainder that was cancelled. Empty on a withdrawal before dispatch — no goods are expected.
+          description: What is coming back — or, for a `cancellation`, the remainder that was canceled. Empty on a withdrawal before dispatch — no goods are expected.
           items:
             $ref: "#/components/schemas/ReturnLine"
         returnPostage:
@@ -22839,7 +22839,7 @@ components:
           $ref: "#/components/schemas/ReturnKind"
         fulfillmentOrderId:
           $ref: "#/components/schemas/Id"
-          description: Required exactly when `kind` is `cancellation` — the fulfillment order whose remainder is cancelled.
+          description: Required exactly when `kind` is `cancellation` — the fulfillment order whose remainder is canceled.
         requestedAt:
           type: string
           format: date-time
@@ -22900,7 +22900,7 @@ components:
         quantity:
           type: integer
           minimum: 1
-    CancellableFulfillmentOrder:
+    CancelableFulfillmentOrder:
       type: object
       additionalProperties: false
       required:
@@ -22910,7 +22910,7 @@ components:
         - refundAmount
         - shippingRefund
         - cancel
-      description: A fulfillment order with a remainder that can still be cancelled, and what cancelling it would refund.
+      description: A fulfillment order with a remainder that can still be canceled, and what cancelling it would refund.
       properties:
         fulfillmentOrderId:
           $ref: "#/components/schemas/Id"
@@ -22942,7 +22942,7 @@ components:
         - currency
         - exceptions
         - returnable
-        - cancellable
+        - cancelable
       properties:
         orderId:
           $ref: "#/components/schemas/Id"
@@ -22965,10 +22965,10 @@ components:
           items:
             $ref: "#/components/schemas/ReturnOptionLine"
           description: "Per product, what has shipped and not yet been returned. Empty unless `reasons` is not. Goods excluded from withdrawal (Art. 16) are listed to the buyer only while a `defective` or `wrong_item` reason is open, and to staff always; they carry `withdrawable: false`."
-        cancellable:
+        cancelable:
           type: array
           items:
-            $ref: "#/components/schemas/CancellableFulfillmentOrder"
+            $ref: "#/components/schemas/CancelableFulfillmentOrder"
     DeclineReturnRequest:
       type: object
       additionalProperties: false
@@ -23125,7 +23125,7 @@ components:
       description: |
         * `reserve` — an order claimed units. `reserved` up, `onHand` unchanged.
         * `ship` — the parcel left (or a digital order was fulfilled). Both down: the units are off the shelf.
-        * `release` — the hold was given up (the order was cancelled, paid or not). `reserved` down.
+        * `release` — the hold was given up (the order was canceled, paid or not). `reserved` down.
         * `expire` — the hold timed out unpaid. Same counters as `release`, different story.
         * `receive` — a supplier delivery. `onHand` up.
         * `adjust` — a stocktake correction, signed. `onHand` moves either way.
@@ -23240,7 +23240,7 @@ components:
       enum:
         - order.created
         - order.paid
-        - order.cancelled
+        - order.canceled
         - order.redacted
         - shipment.shipped
         - shipment.delivered
@@ -23520,7 +23520,7 @@ components:
       enum:
         - order.created
         - order.paid
-        - order.cancelled
+        - order.canceled
         - order.redacted
         - shipment.shipped
         - shipment.delivered
@@ -23607,7 +23607,7 @@ components:
             $ref: "#/components/schemas/WebhookDelivery"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    WebhookEventCatalogueEntry:
+    WebhookEventCatalogEntry:
       type: object
       additionalProperties: false
       required:
@@ -23617,7 +23617,7 @@ components:
           $ref: "#/components/schemas/WebhookEventName"
         description:
           type: string
-    WebhookEventCatalogueResponse:
+    WebhookEventCatalogResponse:
       type: object
       additionalProperties: false
       required:
@@ -23626,7 +23626,7 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/WebhookEventCatalogueEntry"
+            $ref: "#/components/schemas/WebhookEventCatalogEntry"
     ApiKeySort:
       type: array
       minItems: 1
@@ -23855,7 +23855,7 @@ components:
         data:
           type: object
           additionalProperties: true
-          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
+          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `canceled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
     OrderTimelineResponse:
       type: object
       additionalProperties: false
@@ -24501,14 +24501,14 @@ components:
           additionalProperties: false
           required:
             - placed
-            - cancelled
+            - canceled
             - rate
-          description: A cohort, meaning orders placed in the period that ended cancelled (a lost-and-refunded order among them), not cancellations dated by when they happened.
+          description: A cohort, meaning orders placed in the period that ended canceled (a lost-and-refunded order among them), not cancellations dated by when they happened.
           properties:
             placed:
               type: integer
               minimum: 0
-            cancelled:
+            canceled:
               type: integer
               minimum: 0
             rate:
@@ -25734,7 +25734,7 @@ x-error-codes:
     description: A shipment line names a product that is not on the fulfillment order, asks for more than remains of it, or names the same product twice.
   DELIVERY_LOST_SUPERSEDED:
     status: 409
-    description: "A `lost` shipment cannot be recorded as arrived because its units were already shipped again or cancelled: taking them back would count the goods twice."
+    description: "A `lost` shipment cannot be recorded as arrived because its units were already shipped again or canceled: taking them back would count the goods twice."
   DELIVERY_NOT_DELIVERABLE:
     status: 409
     description: The shipment has already been delivered, or its order is no longer in a state this can run from.
@@ -25746,19 +25746,19 @@ x-error-codes:
     description: Only an open or in-progress fulfillment order can be put on hold.
   DELIVERY_NOT_LOSABLE:
     status: 409
-    description: Only a `shipped` parcel can be reported lost or damaged, and only while its order is `processing` or `shipped`. A parcel already `delivered` or `lost`, a digital fulfilment and a cancelled order are refused.
+    description: Only a `shipped` parcel can be reported lost or damaged, and only while its order is `processing` or `shipped`. A parcel already `delivered` or `lost`, a digital fulfillment and a canceled order are refused.
   DELIVERY_NOT_PHYSICAL:
     status: 409
-    description: A digital fulfillment order has nothing to ship (fulfil it instead), and a digital shipment has no tracking code to set.
+    description: A digital fulfillment order has nothing to ship (fulfill it instead), and a digital shipment has no tracking code to set.
   DELIVERY_NOT_RELEASABLE:
     status: 409
     description: The fulfillment order is not on hold, or waits for stock and is released only by the stock arriving.
   DELIVERY_NOT_REOPENABLE:
     status: 409
-    description: "The units of a replacement under the guarantee cannot be sent again: the order shipped fewer physical units than come back, or is cancelled or unpaid."
+    description: "The units of a replacement under the guarantee cannot be sent again: the order shipped fewer physical units than come back, or is canceled or unpaid."
   DELIVERY_NOT_SHIPPABLE:
     status: 409
-    description: "The fulfillment order cannot ship now: it is on hold, closed or cancelled, or the order is cancelled, or still `pending` (never paid: start or pay it first)."
+    description: "The fulfillment order cannot ship now: it is on hold, closed or canceled, or the order is canceled, or still `pending` (never paid: start or pay it first)."
   EMAIL_ALREADY_USED:
     status: 409
     description: Another account already holds this email address — on signup, or on a profile email change.
@@ -25869,7 +25869,7 @@ x-error-codes:
     description: The addressed resource does not exist, or the caller may not be told that it does.
   ORDER_ADDRESS_LOCKED:
     status: 409
-    description: "The order cannot be redirected: nothing is left to send (every unit has shipped or been cancelled), it is over, or it has no shipping address (a pickup, a digital order)."
+    description: "The order cannot be redirected: nothing is left to send (every unit has shipped or been canceled), it is over, or it has no shipping address (a pickup, a digital order)."
   ORDER_CREDIT_NOTE_NOT_ISSUED:
     status: 404
     description: The order exists but has no such credit note.
@@ -25878,7 +25878,7 @@ x-error-codes:
     description: The export would carry more orders than `NODE_ORDER_EXPORT_MAX_ROWS` allows. The message names the cap; narrow the filters and ask again.
   ORDER_HAS_MONEY_HISTORY:
     status: 409
-    description: "A hard delete is refused: money was recorded on the order after it was cancelled (a late payment and its refund still point at it). Soft delete it instead."
+    description: "A hard delete is refused: money was recorded on the order after it was canceled (a late payment and its refund still point at it). Soft delete it instead."
   ORDER_INSUFFICIENT_STOCK:
     status: 409
     description: An admin-created order references a quantity beyond the product's available stock. `errors[].details.lines` names each short line with its `productId`, `title` and `requested` quantity; `available` is added only for a caller who reads stock (`read:StockLevel`).
@@ -25891,12 +25891,12 @@ x-error-codes:
   ORDER_LINE_LIMIT_EXCEEDED:
     status: 422
     description: An admin-created order has more lines, or a larger quantity on one line, than this deployment allows (`NODE_ADMIN_ORDER_MAX_LINES`, `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`). The message names the limit.
-  ORDER_NOT_CANCELLABLE:
+  ORDER_NOT_CANCELABLE:
     status: 409
-    description: The order is not in a state that can still be cancelled.
-  ORDER_NOT_CANCELLED:
+    description: The order is not in a state that can still be canceled.
+  ORDER_NOT_CANCELED:
     status: 409
-    description: "A delete, soft or hard, needs a cancelled order: this one is still open. Cancel it first (`POST /orders/{id}/cancel`), which refunds a paid one."
+    description: "A delete, soft or hard, needs a canceled order: this one is still open. Cancel it first (`POST /orders/{id}/cancel`), which refunds a paid one."
   ORDER_NOT_DELETED:
     status: 409
     description: "A restore is refused: the order is not soft-deleted."
@@ -25989,7 +25989,7 @@ x-error-codes:
     description: The return is not an approved one awaiting its goods.
   RETURN_ORDER_NOT_RETURNABLE:
     status: 409
-    description: The order is not in a state a return can be opened on — cancelled, or (for a reason other than withdrawal) still in the shop's hands.
+    description: The order is not in a state a return can be opened on — canceled, or (for a reason other than withdrawal) still in the shop's hands.
   RETURN_REMEDY_INVALID:
     status: 422
     description: A remedy other than a refund is named for a reason that has no guarantee behind it (only a `defective` or `wrong_item` return can be repaired or replaced), or a preferred remedy is named for such a reason.

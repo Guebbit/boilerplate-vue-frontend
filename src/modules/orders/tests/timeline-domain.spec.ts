@@ -37,13 +37,13 @@ describe('describeTimelineEntry', () => {
     it('says a lost parcel refunded in full, and stays silent about causes it has no wording for', () => {
         expect(
             describeTimelineEntry(
-                { type: 'cancelled', data: { by: 'system', cause: 'lost', refund: false } },
+                { type: 'canceled', data: { by: 'system', cause: 'lost', refund: false } },
                 tools
             ).detail
         ).toBe('order-timeline.detail-by(order-timeline.by-system) · order-timeline.cause-lost');
         expect(
             describeTimelineEntry(
-                { type: 'cancelled', data: { by: 'system', cause: 'unknown_cause' } },
+                { type: 'canceled', data: { by: 'system', cause: 'unknown_cause' } },
                 tools
             ).detail
         ).toBe('order-timeline.detail-by(order-timeline.by-system)');
@@ -84,7 +84,7 @@ describe('describeTimelineEntry', () => {
         expect(line.detail).toContain('order-timeline.failure-reason-declined');
     });
 
-    it('shows the amount and reason of a refund staff cancelled', () => {
+    it('shows the amount and reason of a refund staff canceled', () => {
         const line = describeTimelineEntry(
             { type: 'refund_canceled', data: { amount: 5, currency: 'EUR', reason: 'goodwill' } },
             tools

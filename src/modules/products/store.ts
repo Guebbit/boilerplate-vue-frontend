@@ -18,7 +18,7 @@ import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
 import {
     listProducts,
     searchProducts,
-    getCatalogueFacets,
+    getCatalogFacets,
     getProductById,
     createProduct as apiCreateProduct,
     createProductWithMultipart,
@@ -492,7 +492,7 @@ export const useProductsStore = defineStore('products', () => {
      */
     const fetchFacets = () =>
         fetchAny(() =>
-            getCatalogueFacets().then((response) => {
+            getCatalogFacets().then((response) => {
                 facets.value = response;
                 return response;
             })

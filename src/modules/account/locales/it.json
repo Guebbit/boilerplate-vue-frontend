@@ -27,7 +27,7 @@
         "pending-email-resend-wait": "Reinvia tra {seconds}s",
         "pending-email-cancel": "Annulla",
         "pending-email-resent": "Email di conferma inviata di nuovo.",
-        "pending-email-cancelled": "Cambio email annullato.",
+        "pending-email-canceled": "Cambio email annullato.",
         "label-phone": "Numero di telefono",
         "label-website": "Website",
         "label-language": "Lingua",

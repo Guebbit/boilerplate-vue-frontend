@@ -5,7 +5,7 @@
  * the release date ten days later from the board's own link and confirms what the form says it
  * will do. The board shows the slip and the buyer is mailed. Once the new date has passed the
  * sweep tells the buyer once more (the Late view lists the row). A month of silence later nothing
- * has been cancelled: the shop tells and a person decides, so the order is still waiting.
+ * has been canceled: the shop tells and a person decides, so the order is still waiting.
  *
  * Demo only: the dates are clock jumps and the sweeps are pulled with the job lever.
  */
@@ -70,7 +70,7 @@ describe('PS4 · The preorder board through a delay', () => {
                 cy.get(`[data-test=preorder-order-link][href*="${orderId}"]`).should('not.exist');
                 cy.get('[data-test=preorder-filter-due-soon] input').uncheck({ force: true });
 
-                cy.step('a month of silence later nothing was cancelled: a person decides');
+                cy.step('a month of silence later nothing was canceled: a person decides');
                 cy.travel(31 * DAY_MS);
                 cy.runJob('sweep-preorders');
                 cy.loginAs('admin');
@@ -81,7 +81,7 @@ describe('PS4 · The preorder board through a delay', () => {
                     .should('not.exist');
                 cy.apiAs<{ status: string }>('admin', 'GET', `/orders/${orderId}`)
                     .its('status')
-                    .should('not.equal', 'cancelled');
+                    .should('not.equal', 'canceled');
             });
         });
     });

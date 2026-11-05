@@ -118,7 +118,7 @@ const plain = (
 
 /**
  * The cancel's cause as a sentence of its own, only for a cause the dictionary words: the ordinary
- * causes are already told by who cancelled (`by`), so showing their raw codes would only add noise.
+ * causes are already told by who canceled (`by`), so showing their raw codes would only add noise.
  *
  * @param tools - The injected helpers.
  * @param data - The row's `data`.
@@ -262,7 +262,7 @@ const DETAILS: Readonly<Partial<Record<OrderTimelineType, DetailBuilder>>> = {
                 : undefined
         ];
     },
-    cancelled: (tools, data) => [
+    canceled: (tools, data) => [
         coded(tools, data, 'by', 'order-timeline.detail-by', 'order-timeline.by-'),
         causeNote(tools, data)
     ],

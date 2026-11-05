@@ -29,7 +29,7 @@ import CartLineCard from './CartLineCard.vue';
 
 /**
  * Translation function, and the language on screen: a product read that a language switch
- * cancelled answers empty, which must not be mistaken for "the product is gone".
+ * canceled answers empty, which must not be mistaken for "the product is gone".
  */
 const { t, locale } = useI18n();
 
@@ -60,7 +60,7 @@ const { loadProducts, productOf, titleOf, availabilityLabel, isRemoved } = usePr
 
 /**
  * Whether the last product read answered in full, in the language still on screen. Only then does
- * a missing product mean "gone": a failed or cancelled read is no evidence of it.
+ * a missing product mean "gone": a failed or canceled read is no evidence of it.
  */
 const readAnswered = ref(false);
 

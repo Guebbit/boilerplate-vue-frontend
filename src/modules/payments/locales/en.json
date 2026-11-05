@@ -94,7 +94,7 @@
         "display-status-partially_refunded": "Partially refunded",
         "display-status-refunded": "Refunded",
         "display-status-failed": "Failed",
-        "display-status-cancelled": "Cancelled",
+        "display-status-canceled": "Cancelled",
         "method-card": "Card",
         "method-bank_transfer": "Bank transfer",
         "method-cash": "Cash",

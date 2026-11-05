@@ -1014,7 +1014,7 @@ export default defineConfigWithVueTs(
      * `no-restricted-syntax` does not merge across blocks, so this one spreads every ban the
      * `src/**` block above carries.
      *
-     * Blind to string comparisons (`=== 'cancelled'`): the audit checklist covers those
+     * Blind to string comparisons (`=== 'canceled'`): the audit checklist covers those
      * (`scripts/audit/ddd-drift/SKILL.md`, class F2).
      */
     {

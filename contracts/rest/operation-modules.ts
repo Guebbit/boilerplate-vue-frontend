@@ -80,7 +80,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     getApiKey: 'api-keys',
     getCart: 'cart',
     getCartSummary: 'cart',
-    getCatalogueFacets: 'products',
+    getCatalogFacets: 'products',
     getCategoryStats: 'stats',
     getCustomerStats: 'stats',
     getEntityTranslations: 'locales',

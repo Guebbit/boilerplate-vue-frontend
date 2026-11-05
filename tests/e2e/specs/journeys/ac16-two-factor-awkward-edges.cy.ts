@@ -98,7 +98,7 @@ describe('AC16 · Two-factor, the awkward edges', () => {
         cy.visit('/en');
     });
 
-    it('an unverified account is told why, a cancelled replace shows the truth, and the challenge has its limits', () => {
+    it('an unverified account is told why, a canceled replace shows the truth, and the challenge has its limits', () => {
         cy.skipUnlessMailbox();
 
         cy.step('a new customer opens the 2FA panel before proving the address');
