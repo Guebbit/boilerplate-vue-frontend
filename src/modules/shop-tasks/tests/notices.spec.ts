@@ -332,20 +332,22 @@ describe('a work notice for staff', () => {
 
 describe('a digest summary for staff', () => {
     it.each([
-        ['shop-tasks.staff.transfers-due', 'SalesOrders'],
-        ['shop-tasks.staff.preorders-late', 'PreordersBoard'],
-        ['shop-tasks.staff.delivery-holds-open', 'SalesOrders'],
-        ['shop-tasks.staff.withdrawals-awaiting-goods', 'SalesReturns'],
-        ['shop-tasks.staff.returns-undecided', 'SalesReturns'],
-        ['shop-tasks.staff.low-stock', 'InventoryLedger'],
-        ['shop-tasks.staff.unshipped', 'SalesOrders'],
-        ['shop-tasks.staff.awaiting-tracking', 'SalesOrders'],
-        ['shop-tasks.staff.undelivered', 'SalesOrders'],
-        ['shop-tasks.staff.stale-refunds', 'PaymentsList']
-    ] as const)('says how many for %s and opens the list it counts', (code, route) => {
-        const notice = { code, params: { count: 4 } };
+        'shop-tasks.staff.transfers-due',
+        'shop-tasks.staff.preorders-late',
+        'shop-tasks.staff.delivery-holds-open',
+        'shop-tasks.staff.withdrawals-awaiting-goods',
+        'shop-tasks.staff.returns-undecided',
+        'shop-tasks.staff.low-stock',
+        'shop-tasks.staff.unshipped',
+        'shop-tasks.staff.awaiting-tracking',
+        'shop-tasks.staff.undelivered',
+        'shop-tasks.staff.stale-refunds'
+    ] as const)('says how many for %s and opens the filtered list the server named', (code) => {
+        const notice = { code, params: { count: 4, work: 'sales/orders?status=paid' } };
 
         expect(describeOf(notice)).toBe(`${code}|n=4`);
-        expect(entryOf(notice).target?.(full(notice))).toEqual({ route });
+        expect(entryOf(notice).target?.(full(notice))).toEqual({
+            path: 'sales/orders?status=paid'
+        });
     });
 });

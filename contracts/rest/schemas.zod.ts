@@ -4611,7 +4611,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.transfers-due']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -4626,7 +4627,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.preorders-late']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -4641,7 +4643,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.delivery-holds-open']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -4656,7 +4659,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.withdrawals-awaiting-goods']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -4671,7 +4675,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.returns-undecided']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -4686,7 +4691,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.low-stock']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -4701,7 +4707,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.unshipped']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -4716,7 +4723,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.awaiting-tracking']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -4731,7 +4739,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.undelivered']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -4746,7 +4755,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.stale-refunds']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -20835,7 +20845,8 @@ export const ListNotificationsResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.transfers-due']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -20850,7 +20861,8 @@ export const ListNotificationsResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.preorders-late']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -20865,7 +20877,8 @@ export const ListNotificationsResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.delivery-holds-open']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -20880,7 +20893,8 @@ export const ListNotificationsResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.withdrawals-awaiting-goods']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -20895,7 +20909,8 @@ export const ListNotificationsResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.returns-undecided']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -20910,7 +20925,8 @@ export const ListNotificationsResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.low-stock']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -20925,7 +20941,8 @@ export const ListNotificationsResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.unshipped']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -20940,7 +20957,8 @@ export const ListNotificationsResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.awaiting-tracking']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -20955,7 +20973,8 @@ export const ListNotificationsResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.undelivered']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -20970,7 +20989,8 @@ export const ListNotificationsResponse = zod.strictObject({
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.stale-refunds']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    count: zod.number().min(1),
+                    work: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21451,7 +21471,8 @@ export const GetNotificationByIdResponse = zod.union([
         audience: zod.enum(['own', 'staff']),
         code: zod.enum(['shop-tasks.staff.transfers-due']),
         params: zod.strictObject({
-            count: zod.number().min(1)
+            count: zod.number().min(1),
+            work: zod.string()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21466,7 +21487,8 @@ export const GetNotificationByIdResponse = zod.union([
         audience: zod.enum(['own', 'staff']),
         code: zod.enum(['shop-tasks.staff.preorders-late']),
         params: zod.strictObject({
-            count: zod.number().min(1)
+            count: zod.number().min(1),
+            work: zod.string()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21481,7 +21503,8 @@ export const GetNotificationByIdResponse = zod.union([
         audience: zod.enum(['own', 'staff']),
         code: zod.enum(['shop-tasks.staff.delivery-holds-open']),
         params: zod.strictObject({
-            count: zod.number().min(1)
+            count: zod.number().min(1),
+            work: zod.string()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21496,7 +21519,8 @@ export const GetNotificationByIdResponse = zod.union([
         audience: zod.enum(['own', 'staff']),
         code: zod.enum(['shop-tasks.staff.withdrawals-awaiting-goods']),
         params: zod.strictObject({
-            count: zod.number().min(1)
+            count: zod.number().min(1),
+            work: zod.string()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21511,7 +21535,8 @@ export const GetNotificationByIdResponse = zod.union([
         audience: zod.enum(['own', 'staff']),
         code: zod.enum(['shop-tasks.staff.returns-undecided']),
         params: zod.strictObject({
-            count: zod.number().min(1)
+            count: zod.number().min(1),
+            work: zod.string()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21526,7 +21551,8 @@ export const GetNotificationByIdResponse = zod.union([
         audience: zod.enum(['own', 'staff']),
         code: zod.enum(['shop-tasks.staff.low-stock']),
         params: zod.strictObject({
-            count: zod.number().min(1)
+            count: zod.number().min(1),
+            work: zod.string()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21541,7 +21567,8 @@ export const GetNotificationByIdResponse = zod.union([
         audience: zod.enum(['own', 'staff']),
         code: zod.enum(['shop-tasks.staff.unshipped']),
         params: zod.strictObject({
-            count: zod.number().min(1)
+            count: zod.number().min(1),
+            work: zod.string()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21556,7 +21583,8 @@ export const GetNotificationByIdResponse = zod.union([
         audience: zod.enum(['own', 'staff']),
         code: zod.enum(['shop-tasks.staff.awaiting-tracking']),
         params: zod.strictObject({
-            count: zod.number().min(1)
+            count: zod.number().min(1),
+            work: zod.string()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21571,7 +21599,8 @@ export const GetNotificationByIdResponse = zod.union([
         audience: zod.enum(['own', 'staff']),
         code: zod.enum(['shop-tasks.staff.undelivered']),
         params: zod.strictObject({
-            count: zod.number().min(1)
+            count: zod.number().min(1),
+            work: zod.string()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21586,7 +21615,8 @@ export const GetNotificationByIdResponse = zod.union([
         audience: zod.enum(['own', 'staff']),
         code: zod.enum(['shop-tasks.staff.stale-refunds']),
         params: zod.strictObject({
-            count: zod.number().min(1)
+            count: zod.number().min(1),
+            work: zod.string()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),

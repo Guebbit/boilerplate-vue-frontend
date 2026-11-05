@@ -106,6 +106,7 @@
         "column-buyer": "Buyer",
         "column-products": "Products",
         "column-paid-at": "Paid",
+        "hint-paid-at": "Rows are ordered by expected date; arriving stock goes to the earliest payment first.",
         "column-agreed": "Promised",
         "column-expected": "Expected",
         "column-state": "State",

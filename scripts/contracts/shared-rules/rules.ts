@@ -91,17 +91,6 @@ export const toursSchema = z.strictObject({
         .refine((tours) => Object.keys(tours).length > 0, { message: 'no tour is listed' })
 });
 
-/** Shape of `src/modules/shop-tasks/notification-screens.yaml`. */
-export const notificationScreensSchema = z.strictObject({
-    /** Each staff summary notice code and the list it counts. */
-    summaryScreens: z
-        .record(
-            z.string().regex(/^shop-tasks\.staff\.[a-z-]+$/),
-            z.enum(['sales-orders', 'payments', 'returns', 'preorders', 'inventory'])
-        )
-        .refine((screens) => Object.keys(screens).length > 0, { message: 'no notice is listed' })
-});
-
 /** Reads and validates one YAML file by repo-relative path. */
 export type LoadRules = <T extends z.ZodType>(relative: string, schema: T) => z.infer<T>;
 
@@ -180,22 +169,6 @@ export const SHARED_RULES = {
                     shape: 'verbatim',
                     field: 'tours',
                     description: 'Every tour this build can run, by id, with its version.'
-                }
-            ]
-        }
-    },
-    'notification-screens': {
-        source: 'src/modules/shop-tasks/notification-screens.yaml',
-        inputs: ['src/modules/shop-tasks/notification-screens.yaml'],
-        schema: notificationScreensSchema,
-        generate: {
-            out: 'src/modules/shop-tasks/notification-screens.generated.ts',
-            exports: [
-                {
-                    exportName: 'SUMMARY_SCREEN_DATA',
-                    shape: 'verbatim',
-                    field: 'summaryScreens',
-                    description: 'The admin list each staff summary notice counts, by notice code.'
                 }
             ]
         }

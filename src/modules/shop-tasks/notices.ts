@@ -5,11 +5,10 @@
  * knows none of these codes; it asks the registry.
  *
  * Three shapes: buyer notices (some link to the order), two staff notices that point at a record,
- * and the staff summary rows, which count a list and so link to that list. The summary screens
- * come from `notification-screens.yaml`, the one place that choice is written.
+ * and the staff summary rows, which count a list and so link to that list. The backend names the
+ * filtered list in each row's `params.work`, the one copy of that choice (the digest mail uses it too).
  */
 import type { AppNotice, NoticeContext, NoticeTarget } from '@/kernel/registry';
-import { SUMMARY_SCREEN_DATA } from './notification-screens.generated';
 import {
     describeHeld,
     describeLost,
@@ -22,18 +21,23 @@ import type { ShopNotice } from './describe';
 /**
  * The code of every staff summary row: a count and no id.
  */
-type SummaryCode = keyof typeof SUMMARY_SCREEN_DATA;
+const SUMMARY_CODES = [
+    'shop-tasks.staff.transfers-due',
+    'shop-tasks.staff.preorders-late',
+    'shop-tasks.staff.delivery-holds-open',
+    'shop-tasks.staff.withdrawals-awaiting-goods',
+    'shop-tasks.staff.returns-undecided',
+    'shop-tasks.staff.low-stock',
+    'shop-tasks.staff.unshipped',
+    'shop-tasks.staff.awaiting-tracking',
+    'shop-tasks.staff.undelivered',
+    'shop-tasks.staff.stale-refunds'
+] as const;
 
 /**
- * The target of each summary row's list screen, by the screen kind the generated map names.
+ * One of the staff summary codes.
  */
-const SUMMARY_TARGETS = {
-    'sales-orders': { route: 'SalesOrders' },
-    payments: { route: 'PaymentsList' },
-    returns: { route: 'SalesReturns' },
-    preorders: { route: 'PreordersBoard' },
-    inventory: { route: 'InventoryLedger' }
-} as const satisfies Record<(typeof SUMMARY_SCREEN_DATA)[SummaryCode], NoticeTarget>;
+type SummaryCode = (typeof SUMMARY_CODES)[number];
 
 /**
  * Where a buyer notice about an order links: the order's page.
@@ -49,22 +53,18 @@ const orderTarget = (
 ): NoticeTarget => ({ route: 'OrderTarget', params: { id: notice.params.orderId } });
 
 /**
- * The entry of a summary row: "{n} things need you", linking to the list the YAML names.
- *
- * @param code - The summary code.
+ * The entry of a summary row: "{n} things need you", linking to the filtered list the server named.
  */
-const summaryNotice = (code: SummaryCode): AppNotice => ({
+const summaryNotice: AppNotice = {
     describe: (notice: ShopNotice<SummaryCode>, { translate }: NoticeContext) =>
         translate(notice.code, { n: notice.params.count }),
-    target: () => SUMMARY_TARGETS[SUMMARY_SCREEN_DATA[code]]
-});
+    target: (notice: ShopNotice<SummaryCode>) => ({ path: notice.params.work })
+};
 
 /**
- * The summary rows' entries, one per code the YAML lists.
+ * The summary rows' entries, one per summary code.
  */
-const summaryNotices = Object.fromEntries(
-    (Object.keys(SUMMARY_SCREEN_DATA) as SummaryCode[]).map((code) => [code, summaryNotice(code)])
-);
+const summaryNotices = Object.fromEntries(SUMMARY_CODES.map((code) => [code, summaryNotice]));
 
 /**
  * The shop's notice codes, by code.

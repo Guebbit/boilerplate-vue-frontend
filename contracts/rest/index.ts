@@ -3052,6 +3052,8 @@ export const NotificationStaffTransfersDueCode = {
 export interface WorkCountParams {
     /** @minimum 1 */
     count: number;
+    /** The staff list that shows what the count is of, filtered to it: a path under the staff frontend's locale, query included (`sales/orders?status=paid`). */
+    work: string;
 }
 
 /**
