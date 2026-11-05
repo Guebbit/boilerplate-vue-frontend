@@ -1000,7 +1000,7 @@ export default defineConfigWithVueTs(
                             group: ['@api', '@api/*'],
                             allowTypeImports: true,
                             message:
-                                'A component wires, it does not call the API. Put the call in the module’s store or composables/, or in src/infrastructure if no domain owns it, and call that from here. Importing a TYPE from @api is fine.'
+                                'A component wires, it does not call the API. Put the call in the module’s store or composables/, or in src/infrastructure if no domain owns it, and call that from here. The test: an answer that needs a cache key (another screen reads it, it survives navigation, a write invalidates it) goes in the store; per-instance state goes in a composable. Importing a TYPE from @api is fine.'
                         },
                         {
                             group: ['@types', '@types/*'],
