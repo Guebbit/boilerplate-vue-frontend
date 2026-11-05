@@ -254,7 +254,7 @@ export const ERROR_CODES = {
     TASK_ALREADY_RESOLVED: 'TASK_ALREADY_RESOLVED',
     /** 409 — The task is already marked as spam. */
     TASK_ALREADY_SPAM: 'TASK_ALREADY_SPAM',
-    /** 422 — The person does not exist, or does not hold the permission set that works this task. */
+    /** 422 — The person does not exist, or does not hold both the permission set that works this task and `update:Task`. */
     TASK_ASSIGNEE_INVALID: 'TASK_ASSIGNEE_INVALID',
     /** 409 — The task is closed; reopen it before assigning it. */
     TASK_NOT_OPEN: 'TASK_NOT_OPEN',

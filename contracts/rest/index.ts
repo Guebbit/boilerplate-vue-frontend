@@ -9931,7 +9931,7 @@ export const reopenTask = (id: string, options?: SecondParameter<typeof orvalMut
 };
 
 /**
- * Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`.
+ * Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task and `update:Task`, so they can open, note and close it. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`.
  * @summary Assign a task
  */
 export const assignTask = (
