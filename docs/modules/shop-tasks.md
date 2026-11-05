@@ -57,6 +57,9 @@ Three shapes of notice:
 | Staff record    | `staff.purchase-hold-placed`, `staff.return-requested`                                                    | `UserTarget`, `ReturnTarget`           |
 | Staff summary   | ten `staff.*` codes (`transfers-due`, `preorders-late`, `low-stock`, `unshipped`, ...) carrying a `count` | the list they count                    |
 
+The shop's codes, and who is told of each, are on the backend's
+[shop-tasks page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/shop-tasks.md#the-notices).
+
 A summary row carries a count and no id, so it points at a list. Which list is a choice, written
 once in `notification-screens.yaml` next to the module and generated into
 `notification-screens.generated.ts`; `notices.ts` builds the ten entries from that map.

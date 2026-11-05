@@ -42,8 +42,11 @@ export interface RoleSweepCase {
     name: string;
     /** The path, locale prefix included, or a function yielding one once the backend can be asked. */
     route: string | (() => Cypress.Chainable<string>);
-    /** `[action, subject]` the page requires: allowed personas open it, the rest are turned back. */
-    can: readonly [action: string, subject: string];
+    /**
+     * `[action, subject]` the page requires: allowed personas open it, the rest are turned back.
+     * Absent means the page asks no rule: every persona must load it with no 401/403.
+     */
+    can?: readonly [action: string, subject: string];
     /** The administration-menu link that must be present iff allowed. */
     menuHref?: string;
     /** A selector that exists once the page has rendered. */
@@ -191,7 +194,8 @@ const walkCases = (
                 ? cy.wrap(sweepCase.route, { log: false })
                 : sweepCase.route();
         resolved.then((path) => {
-            if (evaluator.can(sweepCase.can)) expectAllowed(sweepCase, path, evaluator, refusals);
+            if (sweepCase.can === undefined || evaluator.can(sweepCase.can))
+                expectAllowed(sweepCase, path, evaluator, refusals);
             else expectRefused(sweepCase, path);
         });
     }

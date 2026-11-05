@@ -77,6 +77,8 @@ Both lists live in `LayoutDefault.vue`. **A key in neither list renders nothing*
 point of listing them: a background call can exist without announcing itself, which a blanket OR
 over the dictionary could never express.
 
+A composable that calls `@api` for one mounted caller (see [Layers](./layers.md#store-or-composable-the-test)) keeps its own flag with the toolkit's `useAsyncAction`; it is not a key in this dictionary, because nothing else reads it.
+
 ## Adding a store
 
 1. Pass `loadingKey: '<pinia id>'` where the toolkit composable is created.

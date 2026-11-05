@@ -92,9 +92,10 @@ installed once at boot (`registerNotices`). The inbox store asks the registry fo
 the link of every row (`noticeOf`), so a build without a module simply words its codes as a generic
 notification.
 
-Which codes exist, their `params`, who is told and whether they mail are the backend's table, not
-a copy here:
+The backend's table holds the foundation's codes and how they are routed (who is told, whether they
+mail), not a copy here:
 [work notices for staff](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/notifications.md#work-notices-for-staff).
+The `params` of a code are in the contract (`contracts/rest/schemas.zod.ts`).
 Each module declares the copy and the link of its own codes in `AppModule.notices`.
 
 A task notice reads "{kind}" (a contact message adds its category). Kind and category are closed
