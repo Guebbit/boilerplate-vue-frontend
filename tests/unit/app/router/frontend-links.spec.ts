@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { parse } from 'yaml';
+import { OrderFulfillmentStatus, OrderStatus, ReturnReason, ReturnStatus } from '@/types/enums.ts';
 
 // The router's guards are not under test: `resolve` never runs them, but importing the router
 // pulls the modules in, so the two it imports at load are stubbed as `router.spec.ts` stubs them.
@@ -68,4 +69,91 @@ describe('backend links resolve on the router', () => {
         for (const page of rules.staticPages)
             expect([page, await resolvesToAPage(page)]).toEqual([page, true]);
     });
+});
+
+/**
+ * The text of one source file of the app.
+ *
+ * @param file - path under `src/modules/`
+ */
+const sourceOf = (file: string): string =>
+    readFileSync(path.join(process.cwd(), 'src', 'modules', file), 'utf8');
+
+/**
+ * Where each filtered staff summary path is read: the list's view, the text that declares each
+ * query key it opens on, and the values the filter accepts.
+ */
+const SUMMARY_READERS: Record<string, { file: string; declares: string[]; accepts: string[] }> = {
+    transfersDue: {
+        file: 'payments/views/PaymentsList.vue',
+        declares: ['route.query.tab', "'awaiting'"],
+        accepts: []
+    },
+    preordersLate: {
+        file: 'inventory/views/PreordersBoard.vue',
+        declares: ['route.query.tab', "'orders'"],
+        accepts: []
+    },
+    deliveryHoldsOpen: {
+        file: 'orders/views/OrdersList.vue',
+        declares: ['fulfillmentStatus:'],
+        accepts: [OrderFulfillmentStatus.on_hold]
+    },
+    withdrawalsAwaitingGoods: {
+        file: 'returns/views/ReturnsList.vue',
+        declares: ['status:', 'reason:'],
+        accepts: [ReturnStatus.approved, ReturnReason.withdrawal]
+    },
+    returnsUndecided: {
+        file: 'returns/views/ReturnsList.vue',
+        declares: ['status:'],
+        accepts: [ReturnStatus.requested]
+    },
+    lowStock: {
+        file: 'inventory/components/StockBoard.vue',
+        declares: ["lowOnly: 'boolean'", "prefix: 'levels'"],
+        accepts: []
+    },
+    unshipped: {
+        file: 'orders/views/OrdersList.vue',
+        declares: ['status:'],
+        accepts: [OrderStatus.paid]
+    },
+    awaitingTracking: {
+        file: 'orders/views/OrdersList.vue',
+        declares: ['status:'],
+        accepts: [OrderStatus.shipped]
+    },
+    undelivered: {
+        file: 'orders/views/OrdersList.vue',
+        declares: ['status:'],
+        accepts: [OrderStatus.shipped]
+    },
+    staleRefunds: {
+        file: 'payments/views/PaymentsList.vue',
+        declares: ['route.query.tab', "'attention'"],
+        accepts: []
+    }
+};
+
+describe('the staff summary paths open the filtered list', () => {
+    it('lists a reader for every summary path, so a new row cannot skip this check', () => {
+        const summaryKeys = Object.keys(rules.staffPages).filter((key) =>
+            rules.staffPages[key].includes('?')
+        );
+        expect(summaryKeys.toSorted()).toEqual(Object.keys(SUMMARY_READERS).toSorted());
+    });
+
+    it.each(Object.entries(SUMMARY_READERS))(
+        '%s: the list reads the query keys and values the path sets',
+        (key, reader) => {
+            const source = sourceOf(reader.file);
+            const query = new URLSearchParams(rules.staffPages[key].split('?')[1]);
+
+            expect(query.size).toBeGreaterThan(0);
+            for (const text of reader.declares) expect(source).toContain(text);
+            // A value the path sets that the enum no longer has would open an unfiltered list.
+            for (const value of reader.accepts) expect([...query.values()]).toContain(value);
+        }
+    );
 });

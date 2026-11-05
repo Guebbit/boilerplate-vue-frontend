@@ -40,8 +40,7 @@ flowchart LR
     R --> N["shop-tasks/notices.ts"]
     N -->|"describe"| T["sentence"]
     N -->|"target"| L["useNotificationLink<br/>route or path"]
-    Y["notification-screens.yaml"] -->|"npm run regenerate"| G["notification-screens.generated.ts"]
-    G --> N
+    S -->|"summary rows: params.work"| N
 ```
 
 ### The text
@@ -60,9 +59,10 @@ Three shapes of notice:
 The shop's codes, and who is told of each, are on the backend's
 [shop-tasks page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/shop-tasks.md#the-notices).
 
-A summary row carries a count and no id, so it points at a list. Which list is a choice, written
-once in `notification-screens.yaml` next to the module and generated into
-`notification-screens.generated.ts`; `notices.ts` builds the ten entries from that map.
+A summary row carries a count and no id, so it points at a list. Which filtered list is the
+backend's choice, written once in `staffPages:` of `contracts/frontend-links.yaml` and sent in the
+row's `params.work`; the bell opens it as a path, and the digest mail links the same one. `tests/unit/app/router/frontend-links.spec.ts` checks
+that each list still reads the query keys those paths set.
 
 A product's name comes from `params.titles`, a map of locale to name copied in when the
 notification was written, because the notification outlives the product:
@@ -88,14 +88,12 @@ The foundation's are in [`tasks`](./tasks.md).
 
 ## Files
 
-| File                                  | What it is                                                                    | Explained in                      |
-| ------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------- |
-| `module.ts`                           | The manifest. No routes; `notices` and locales.                               | [read](../theory/modules.md)      |
-| `notices.ts`                          | The 19 codes as `AppModule.notices` entries, summary rows built from the map. | [read](../theory/modules.md)      |
-| `describe.ts`                         | Pure: the shop's sentences from a code's typed `params`, and `productName`.   | [read](../theory/domain-layer.md) |
-| `notification-screens.yaml`           | The list each summary code counts. Edit this, then regenerate.                | [read](../tools/shared-rules.md)  |
-| `notification-screens.generated.ts`   | Generated from the YAML. Never edited by hand.                                | [read](../tools/shared-rules.md)  |
-| `locales/en.json` · `locales/it.json` | The `shop-tasks` sentences and the shop's task labels.                        | [read](../tools/i18n.md)          |
+| File                                  | What it is                                                                          | Explained in                      |
+| ------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------- |
+| `module.ts`                           | The manifest. No routes; `notices` and locales.                                     | [read](../theory/modules.md)      |
+| `notices.ts`                          | The 19 codes as `AppModule.notices` entries; a summary row opens its `params.work`. | [read](../theory/modules.md)      |
+| `describe.ts`                         | Pure: the shop's sentences from a code's typed `params`, and `productName`.         | [read](../theory/domain-layer.md) |
+| `locales/en.json` · `locales/it.json` | The `shop-tasks` sentences and the shop's task labels.                              | [read](../tools/i18n.md)          |
 
 ## Libraries
 

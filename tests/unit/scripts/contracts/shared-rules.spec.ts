@@ -22,10 +22,9 @@ describe('the registry', () => {
         expect(() => load(rule.source, rule.schema)).not.toThrow();
     });
 
-    it('lists the four rules, so an emptied registry cannot pass', () => {
+    it('lists the three rules, so an emptied registry cannot pass', () => {
         expect(Object.keys(SHARED_RULES).toSorted()).toEqual([
             'browser-storage',
-            'notification-screens',
             'static-pages',
             'tours'
         ]);
