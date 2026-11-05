@@ -3545,6 +3545,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 'amount_mismatch',
                 'dispute',
                 'dispute_awaiting_bank',
+                'refund_reversed',
                 'paid_without_hold',
                 'consent_due'
             ]),
@@ -6003,6 +6004,7 @@ export const CreateContactTaskResponse = zod.strictObject({
         'amount_mismatch',
         'dispute',
         'dispute_awaiting_bank',
+        'refund_reversed',
         'paid_without_hold',
         'consent_due'
     ]),
@@ -6072,6 +6074,7 @@ export const CreateContactTaskResponse = zod.strictObject({
                         'amount_mismatch',
                         'dispute',
                         'dispute_awaiting_bank',
+                        'refund_reversed',
                         'paid_without_hold',
                         'consent_due'
                     ])
@@ -6146,6 +6149,7 @@ export const ListTasksQueryParams = zod.strictObject({
             'amount_mismatch',
             'dispute',
             'dispute_awaiting_bank',
+            'refund_reversed',
             'paid_without_hold',
             'consent_due'
         ])
@@ -6188,6 +6192,7 @@ export const ListTasksResponse = zod.strictObject({
                 'amount_mismatch',
                 'dispute',
                 'dispute_awaiting_bank',
+                'refund_reversed',
                 'paid_without_hold',
                 'consent_due'
             ]),
@@ -6264,6 +6269,7 @@ export const ListTasksResponse = zod.strictObject({
                                 'amount_mismatch',
                                 'dispute',
                                 'dispute_awaiting_bank',
+                                'refund_reversed',
                                 'paid_without_hold',
                                 'consent_due'
                             ])
@@ -6353,6 +6359,7 @@ export const SearchTasksBody = zod.strictObject({
             'amount_mismatch',
             'dispute',
             'dispute_awaiting_bank',
+            'refund_reversed',
             'paid_without_hold',
             'consent_due'
         ])
@@ -6400,6 +6407,7 @@ export const SearchTasksResponse = zod.strictObject({
                 'amount_mismatch',
                 'dispute',
                 'dispute_awaiting_bank',
+                'refund_reversed',
                 'paid_without_hold',
                 'consent_due'
             ]),
@@ -6476,6 +6484,7 @@ export const SearchTasksResponse = zod.strictObject({
                                 'amount_mismatch',
                                 'dispute',
                                 'dispute_awaiting_bank',
+                                'refund_reversed',
                                 'paid_without_hold',
                                 'consent_due'
                             ])
@@ -6559,6 +6568,7 @@ export const GetTaskResponse = zod.strictObject({
         'amount_mismatch',
         'dispute',
         'dispute_awaiting_bank',
+        'refund_reversed',
         'paid_without_hold',
         'consent_due'
     ]),
@@ -6628,6 +6638,7 @@ export const GetTaskResponse = zod.strictObject({
                         'amount_mismatch',
                         'dispute',
                         'dispute_awaiting_bank',
+                        'refund_reversed',
                         'paid_without_hold',
                         'consent_due'
                     ])
@@ -6691,6 +6702,7 @@ export const ResolveTaskResponse = zod.strictObject({
         'amount_mismatch',
         'dispute',
         'dispute_awaiting_bank',
+        'refund_reversed',
         'paid_without_hold',
         'consent_due'
     ]),
@@ -6760,6 +6772,7 @@ export const ResolveTaskResponse = zod.strictObject({
                         'amount_mismatch',
                         'dispute',
                         'dispute_awaiting_bank',
+                        'refund_reversed',
                         'paid_without_hold',
                         'consent_due'
                     ])
@@ -6813,6 +6826,7 @@ export const MarkTaskSpamResponse = zod.strictObject({
         'amount_mismatch',
         'dispute',
         'dispute_awaiting_bank',
+        'refund_reversed',
         'paid_without_hold',
         'consent_due'
     ]),
@@ -6882,6 +6896,7 @@ export const MarkTaskSpamResponse = zod.strictObject({
                         'amount_mismatch',
                         'dispute',
                         'dispute_awaiting_bank',
+                        'refund_reversed',
                         'paid_without_hold',
                         'consent_due'
                     ])
@@ -6935,6 +6950,7 @@ export const ReopenTaskResponse = zod.strictObject({
         'amount_mismatch',
         'dispute',
         'dispute_awaiting_bank',
+        'refund_reversed',
         'paid_without_hold',
         'consent_due'
     ]),
@@ -7004,6 +7020,7 @@ export const ReopenTaskResponse = zod.strictObject({
                         'amount_mismatch',
                         'dispute',
                         'dispute_awaiting_bank',
+                        'refund_reversed',
                         'paid_without_hold',
                         'consent_due'
                     ])
@@ -7062,6 +7079,7 @@ export const AssignTaskResponse = zod.strictObject({
         'amount_mismatch',
         'dispute',
         'dispute_awaiting_bank',
+        'refund_reversed',
         'paid_without_hold',
         'consent_due'
     ]),
@@ -7131,6 +7149,7 @@ export const AssignTaskResponse = zod.strictObject({
                         'amount_mismatch',
                         'dispute',
                         'dispute_awaiting_bank',
+                        'refund_reversed',
                         'paid_without_hold',
                         'consent_due'
                     ])
@@ -7184,6 +7203,7 @@ export const UnassignTaskResponse = zod.strictObject({
         'amount_mismatch',
         'dispute',
         'dispute_awaiting_bank',
+        'refund_reversed',
         'paid_without_hold',
         'consent_due'
     ]),
@@ -7253,6 +7273,7 @@ export const UnassignTaskResponse = zod.strictObject({
                         'amount_mismatch',
                         'dispute',
                         'dispute_awaiting_bank',
+                        'refund_reversed',
                         'paid_without_hold',
                         'consent_due'
                     ])
@@ -7310,6 +7331,7 @@ export const CreateTaskNoteResponse = zod.strictObject({
         'amount_mismatch',
         'dispute',
         'dispute_awaiting_bank',
+        'refund_reversed',
         'paid_without_hold',
         'consent_due'
     ]),
@@ -7379,6 +7401,7 @@ export const CreateTaskNoteResponse = zod.strictObject({
                         'amount_mismatch',
                         'dispute',
                         'dispute_awaiting_bank',
+                        'refund_reversed',
                         'paid_without_hold',
                         'consent_due'
                     ])
