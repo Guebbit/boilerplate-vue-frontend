@@ -11,10 +11,7 @@ import { byTemplate, inLocale } from '../../../../scripts/e2e/mail-filters';
 /** The tracking code the express parcel needs. */
 const TRACKING_CODE = 'OP40-TRACK-001';
 
-/** The price the editor types and then carries through the language switches. */
-const TYPED_PRICE_EN = '41.50';
-
-/** The same price as the Italian form writes it. */
+/** The price the editor types in Italian and carries through the switches: the field keeps the typed text. */
 const TYPED_PRICE_IT = '41,50';
 
 /**
@@ -68,12 +65,12 @@ describe('OP40 · The shop in two languages', () => {
             cy.get('[data-test=product-price-field] input').clear();
             cy.get('[data-test=product-price-field] input').type(TYPED_PRICE_IT);
             switchTo('en');
-            cy.get('[data-test=product-price-field] input').should('have.value', TYPED_PRICE_EN);
+            cy.get('[data-test=product-price-field] input').should('have.value', TYPED_PRICE_IT);
             switchTo('it');
             cy.get('[data-test=product-price-field] input').should('have.value', TYPED_PRICE_IT);
 
             cy.step('a stale save is refused with an Italian sentence');
-            cy.apiAs('admin', 'PATCH', `/products/${productId}`, { price: 123.45 });
+            cy.apiAs('admin', 'PATCH', `/products/${productId}`, { price: '123.45' });
             cy.get('form').first().submit();
             cy.get('[data-test=product-edit-submit-error]')
                 .should('be.visible')

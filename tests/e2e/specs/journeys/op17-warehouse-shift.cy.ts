@@ -39,7 +39,7 @@ interface ReturnLike {
 
 /** The slice of a payment this story reads. */
 interface PaymentLike {
-    amount: number;
+    amount: string;
 }
 
 /**

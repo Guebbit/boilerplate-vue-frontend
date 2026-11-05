@@ -34,11 +34,10 @@ const MERGED_CART = {
     summary: {
         itemsCount: 1,
         totalQuantity: 3,
-        itemsTotal: 30,
-        shippingCost: 0,
-        totalPrice: 30,
-        currency: 'EUR',
-        expectedTotal: { amount: 3000, currency: 'EUR' }
+        itemsTotal: '30.00',
+        shippingCost: '0.00',
+        totalPrice: '30.00',
+        currency: 'EUR'
     },
     shipping: { required: false, options: [] },
     checkoutable: true

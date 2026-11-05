@@ -60,12 +60,8 @@ describe('AT5 · Products list filters', () => {
                                 expect(other.price, 'a witness priced differently').to.not.equal(
                                     rich.price
                                 );
-                                cy.get('[data-test=filter-min-price] input').type(
-                                    String(rich.price)
-                                );
-                                cy.get('[data-test=filter-max-price] input').type(
-                                    String(rich.price)
-                                );
+                                cy.get('[data-test=filter-min-price] input').type(rich.price);
+                                cy.get('[data-test=filter-max-price] input').type(rich.price);
                                 submitSearch();
                                 listedIds().should('include', richId);
                                 cy.subjectId('product.inStock').then((otherId) => {

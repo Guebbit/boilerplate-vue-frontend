@@ -15,7 +15,7 @@ interface PaymentLike {
     provider?: string;
     method?: string;
     reference?: string;
-    amount: number;
+    amount: string;
     createdAt: string;
     receivedAt?: string;
 }
@@ -109,12 +109,8 @@ describe('AT5 · Payments and refunds filters', () => {
                         cy.step('amount: a range around the card payment');
                         narrowedTo(
                             () => {
-                                cy.get('[data-test=filter-amount-min] input').type(
-                                    String(card.amount)
-                                );
-                                cy.get('[data-test=filter-amount-max] input').type(
-                                    String(card.amount)
-                                );
+                                cy.get('[data-test=filter-amount-min] input').type(card.amount);
+                                cy.get('[data-test=filter-amount-max] input').type(card.amount);
                             },
                             [cardId],
                             card.amount === cash.amount ? [] : [cashId]

@@ -21,7 +21,7 @@ interface TimelineRowLike {
 /** The slice of an order's payment the story reads, as staff are sent it. */
 interface PaymentLike {
     providerRef?: string;
-    amount: number;
+    amount: string;
     currency: string;
 }
 

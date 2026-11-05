@@ -33,17 +33,17 @@ interface ReturnLike {
     id: string;
     orderId: string;
     status: string;
-    lines: { title: string; quantity: number; unitPrice: number }[];
+    lines: { title: string; quantity: number; unitPrice: string }[];
 }
 
 /** The slice of an order this story reads: its lines, for the return to agree with. */
 interface OrderLike {
-    items: { quantity: number; product: { title: string; price: number } }[];
+    items: { quantity: number; product: { title: string; price: string } }[];
 }
 
 /** The slice of a payment this story reads: what was taken. */
 interface PaymentLike {
-    amount: number;
+    amount: string;
 }
 
 /**
@@ -129,7 +129,7 @@ describe('CU22 · My returns page tells me where each one stands', () => {
                     });
                     cy.then(() =>
                         cy.apiAs('warehouse', 'POST', `/returns/${opened.id}/receive`, {
-                            handlingDeduction: DEDUCTION
+                            handlingDeduction: DEDUCTION.toFixed(2)
                         })
                     );
 

@@ -53,29 +53,37 @@ describe('VI5 · A guest cart shrinks', () => {
                             .find('[data-test=guest-cart-line-price]')
                             .should(($line) => {
                                 expect(priceOf($line.text()).unit).to.equal(
-                                    Math.round(product.price * 100)
+                                    Math.round(Number(product.price) * 100)
                                 );
                             });
                     cy.get('[data-test=guest-cart-total]').should(($total) => {
                         expect(cents($total.text())).to.equal(
-                            Math.round((stocked.price + bare.price + rich.price) * 100)
+                            Math.round(
+                                (Number(stocked.price) + Number(bare.price) + Number(rich.price)) *
+                                    100
+                            )
                         );
                     });
 
                     cy.step(
                         'the editor reprices one: a reload shows the new price, not the old one'
                     );
-                    const repriced = Math.round((bare.price + 1) * 100) / 100;
+                    const repriced = (Math.round((Number(bare.price) + 1) * 100) / 100).toFixed(2);
                     cy.apiAs('editor', 'PATCH', `/products/${bare.id}`, { price: repriced });
                     cy.reload();
                     cy.contains('[data-test=guest-cart-item]', bare.title)
                         .find('[data-test=guest-cart-line-price]')
                         .should(($line) => {
-                            expect(priceOf($line.text()).unit).to.equal(Math.round(repriced * 100));
+                            expect(priceOf($line.text()).unit).to.equal(
+                                Math.round(Number(repriced) * 100)
+                            );
                         });
                     cy.get('[data-test=guest-cart-total]').should(($total) => {
                         expect(cents($total.text())).to.equal(
-                            Math.round((stocked.price + repriced + rich.price) * 100)
+                            Math.round(
+                                (Number(stocked.price) + Number(repriced) + Number(rich.price)) *
+                                    100
+                            )
                         );
                     });
 

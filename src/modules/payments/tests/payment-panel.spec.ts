@@ -44,7 +44,7 @@ const mountPanel = (
 const handPaidSucceededPayment: Payment = aPayment({
     id: 'payment-1',
     orderId: 'order-1',
-    amount: 100,
+    amount: '100.00',
     provider: 'manual',
     method: 'bank_transfer'
 });
@@ -52,7 +52,7 @@ const handPaidSucceededPayment: Payment = aPayment({
 /** A pending refund record on `handPaidSucceededPayment`, owed by hand. */
 const pendingRefund: Payment['refunds'][number] = {
     id: 'refund-1',
-    amount: 100,
+    amount: '100.00',
     currency: 'EUR',
     status: 'pending',
     reason: 'cancellation',
@@ -63,7 +63,7 @@ const pendingRefund: Payment['refunds'][number] = {
 const waitingRefund = () => ({
     ...handPaidSucceededPayment,
     displayStatus: 'refund_pending' as const,
-    amountRefunded: 100,
+    amountRefunded: '100.00',
     refunds: [pendingRefund]
 });
 
@@ -189,7 +189,7 @@ describe('PaymentPanel', () => {
             store.payment = {
                 ...handPaidSucceededPayment,
                 displayStatus: 'partially_refunded',
-                amountRefunded: 30,
+                amountRefunded: '30.00',
                 refunds: [{ ...pendingRefund, status: 'succeeded', settledByHand: true }]
             };
 
@@ -307,7 +307,7 @@ describe('a partially refunded payment', () => {
         store.payment = {
             ...handPaidSucceededPayment,
             displayStatus: 'partially_refunded',
-            amountRefunded: 25
+            amountRefunded: '25.00'
         };
 
         return nextRenderTick(wrapper).then(() => {
@@ -321,7 +321,7 @@ describe('a partially refunded payment', () => {
         store.payment = {
             ...handPaidSucceededPayment,
             displayStatus: 'refund_pending',
-            amountRefunded: 100,
+            amountRefunded: '100.00',
             refunds: [pendingRefund]
         };
 
@@ -340,7 +340,7 @@ describe('a partially refunded payment', () => {
                 store.payment = {
                     ...handPaidSucceededPayment,
                     displayStatus: 'refunded',
-                    amountRefunded: 100
+                    amountRefunded: '100.00'
                 };
                 return nextRenderTick(wrapper);
             })

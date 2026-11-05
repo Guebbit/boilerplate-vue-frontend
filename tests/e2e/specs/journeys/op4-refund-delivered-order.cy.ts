@@ -15,8 +15,8 @@ import { creditNotesOf, orderMailTo, paymentOfOrder } from '../../../support/e2e
 interface PaymentLike {
     displayStatus?: string;
     status: string;
-    amount: number;
-    amountRefunded: number;
+    amount: string;
+    amountRefunded: string;
 }
 
 /** The slice of an order this story reads. */
@@ -41,7 +41,7 @@ describe('OP4 · A return: refund a delivered order', () => {
             cy.get('[data-test=button-cancel-and-refund]').should('be.disabled');
             paymentOfOrder<PaymentLike>('moderator', orderId).should((payment) => {
                 expect(payment?.status).to.equal('succeeded');
-                expect(payment?.amountRefunded).to.equal(0);
+                expect(Number(payment?.amountRefunded)).to.equal(0);
             });
 
             cy.step('refund only: the money goes back');

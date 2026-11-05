@@ -13,7 +13,7 @@ import { idFromLocation, paymentOfOrder } from '../../../support/e2e/steps';
 /** The slice of a payment this story reads: where the money stands. */
 interface PaymentLike {
     status: string;
-    amount: number;
+    amount: string;
 }
 
 describe('FR2 · The Back button after paying', () => {

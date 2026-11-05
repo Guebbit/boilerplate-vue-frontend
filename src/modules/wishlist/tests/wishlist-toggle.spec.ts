@@ -22,7 +22,7 @@ wireModulesIntoCore();
 const PRODUCT: Product = {
     id: 'p1',
     title: 'Widget',
-    price: 1,
+    price: '1.00',
     currency: 'EUR',
     inStock: true,
     lowStock: false,

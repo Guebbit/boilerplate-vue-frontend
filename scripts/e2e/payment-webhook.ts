@@ -27,8 +27,8 @@ export interface PaymentWebhookDispute {
     status: 'needs_response' | 'under_review' | 'won' | 'lost' | 'accepted' | 'closed';
     /** One of the contract's closed reasons (`fraudulent`, `product_not_received`, …). */
     reason: string;
-    /** A decimal in `currency`. */
-    amount: number;
+    /** A decimal string at `currency`'s own places (`"19.90"`, JPY `"1000"`). */
+    amount: string;
     /** ISO-4217, upper case: the payment's own. */
     currency: string;
     fundsWithdrawn: boolean;

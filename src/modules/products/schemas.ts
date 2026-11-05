@@ -1,7 +1,7 @@
 /**
  * @module
  * Zod schemas for the product create/edit forms, built from the API contract's own constraints
- * (e.g. the price minimum) so the form cannot validate more loosely than the server.
+ * (e.g. the price pattern) so the form cannot validate more loosely than the server.
  *
  * `title`/`description` live in the write body's `translations` map, one slot per locale.
  * `productTranslationsSchema` validates that map with `z.record`, so a failing title's Zod issue
@@ -11,9 +11,10 @@
  * which language tab owes an error badge.
  */
 import { z } from 'zod';
-import { translate } from '@/i18n';
+import { getCurrentLocale, translate } from '@/i18n';
+import { normalizeAmount } from '@/infrastructure/utils/money.ts';
 import {
-    createProductBodyPriceMin,
+    createProductBodyPriceRegExp,
     createProductBodyTranslationsDescriptionMax,
     createProductBodyTranslationsTitleMax
 } from '@api/schemas';
@@ -34,11 +35,18 @@ const productsTitleSchema = z
     });
 
 /**
- * Validation schema for a product price, enforcing the minimum declared by the API contract.
+ * Validation schema for a product price: a non-negative decimal string, by the contract's own
+ * pattern. The places the currency allows are the server's to check.
  */
 const productsPriceSchema = z
-    .number()
-    .min(createProductBodyPriceMin, { error: () => translate('products-form.price-min') });
+    .string()
+    // The field holds what was typed, in the viewer's number format (`41,50` in Italian).
+    .transform((typed) => normalizeAmount(typed, getCurrentLocale()))
+    .pipe(
+        z.string().regex(createProductBodyPriceRegExp, {
+            error: () => translate('products-form.price-min')
+        })
+    );
 
 /**
  * One locale's product copy: a non-empty title and an optional description — the same shape

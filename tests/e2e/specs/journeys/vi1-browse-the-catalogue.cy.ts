@@ -21,7 +21,7 @@ const LARGE_PAGE_SIZE = 25;
 /** The slice of a product this story reads off the public list. */
 interface Listed {
     title: string;
-    price: number;
+    price: string;
     tags?: string[];
 }
 
@@ -94,13 +94,13 @@ describe('VI1 · Browse the catalogue like a person', () => {
         cy.publicProducts().then((products) => {
             const { tag, carrying } = pickTag(products);
             const prices = carrying
-                .map((product) => Math.round(product.price * 100))
+                .map((product) => Math.round(Number(product.price) * 100))
                 .toSorted((a, b) => a - b);
             // A band that drops the cheapest and the dearest, so both edges are proven.
             const low = prices[1];
             const high = prices.at(-2) ?? low;
             const inBand = carrying.filter((product) => {
-                const inCents = Math.round(product.price * 100);
+                const inCents = Math.round(Number(product.price) * 100);
                 return inCents >= low && inCents <= high;
             });
 

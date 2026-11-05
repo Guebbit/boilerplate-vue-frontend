@@ -71,7 +71,11 @@ describe('openReturn', () => {
     });
 
     it('reports a withdrawal before dispatch as the return it is: closed at birth, no lines', () => {
-        responses['POST /returns'] = aReturn({ status: 'closed', lines: [], refundAmount: 40 });
+        responses['POST /returns'] = aReturn({
+            status: 'closed',
+            lines: [],
+            refundAmount: '40.00'
+        });
         const store = useReturnsStore();
 
         return store.openReturn({ orderId: 'o1', reason: 'withdrawal' }).then((created) => {
@@ -152,13 +156,16 @@ describe('the staff moves', () => {
     });
 
     it('receive sends the handling deduction, and an Idempotency-Key', () => {
-        responses['POST /returns/r1/receive'] = aReturn({ status: 'closed', refundAmount: 25 });
+        responses['POST /returns/r1/receive'] = aReturn({
+            status: 'closed',
+            refundAmount: '25.00'
+        });
         const store = useReturnsStore();
 
-        return store.receive('r1', { handlingDeduction: 5 }).then(() => {
+        return store.receive('r1', { handlingDeduction: '5.00' }).then(() => {
             expect(store.returns.r1?.status).toBe('closed');
             expect(contractRequest(schemas.ReceiveReturnBody, sent[0].data)).toEqual({
-                handlingDeduction: 5
+                handlingDeduction: '5.00'
             });
             expect(sent[0].headers?.['Idempotency-Key']).toEqual(expect.any(String));
         });

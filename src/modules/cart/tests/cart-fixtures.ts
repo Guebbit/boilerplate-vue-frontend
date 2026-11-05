@@ -6,11 +6,12 @@
  * answered" compares whole carts, never a hand-copied number.
  */
 import type { CartResponse } from '@types';
+import { multiplyDecimal, sumDecimals } from '@/infrastructure/utils/money.ts';
 
 /**
- * The price every fixture line carries, so a total is `units * UNIT_PRICE`.
+ * The price every fixture line carries, so a total is `units × UNIT_PRICE`.
  */
-export const UNIT_PRICE = 10;
+export const UNIT_PRICE = '10.00';
 
 /**
  * The per-line ceiling a fixture cart is built against, as the server's default sets it.
@@ -21,8 +22,8 @@ const LINE_MAX = 10;
  * The shipping a priced cart offers: two methods, one needing an address.
  */
 const SHIPPING_OPTIONS: CartResponse['shipping']['options'] = [
-    { id: 'standard', price: 5, requiresAddress: true, tracked: false },
-    { id: 'pickup', price: 0, requiresAddress: false, tracked: false }
+    { id: 'standard', price: '5.00', requiresAddress: true, tracked: false },
+    { id: 'pickup', price: '0.00', requiresAddress: false, tracked: false }
 ];
 
 /**
@@ -39,7 +40,8 @@ export const aCart = (
     short: readonly string[] = []
 ): CartResponse => {
     const totalQuantity = lines.reduce((sum, [, quantity]) => sum + quantity, 0);
-    const shippingCost = selected === 'standard' ? 5 : 0;
+    const shippingCost = selected === 'standard' ? '5.00' : '0.00';
+    const itemsTotal = multiplyDecimal(UNIT_PRICE, totalQuantity);
     return {
         items: lines.map(([productId, quantity]) => ({
             productId,
@@ -50,14 +52,10 @@ export const aCart = (
         summary: {
             itemsCount: lines.length,
             totalQuantity,
-            itemsTotal: totalQuantity * UNIT_PRICE,
+            itemsTotal,
             shippingCost,
-            totalPrice: totalQuantity * UNIT_PRICE + shippingCost,
-            currency: 'EUR',
-            expectedTotal: {
-                amount: (totalQuantity * UNIT_PRICE + shippingCost) * 100,
-                currency: 'EUR'
-            }
+            totalPrice: sumDecimals([itemsTotal, shippingCost]),
+            currency: 'EUR'
         },
         shipping: {
             required: lines.length > 0,

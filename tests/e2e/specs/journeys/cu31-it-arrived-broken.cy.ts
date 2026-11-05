@@ -20,13 +20,13 @@ import {
 
 /** The slice of an order this story reads. */
 interface OrderLike {
-    items: { product: { id: string; price: number }; quantity: number }[];
+    items: { product: { id: string; price: string }; quantity: number }[];
 }
 
 /** The slice of a payment this story reads. */
 interface PaymentLike {
-    amount: number;
-    amountRefunded: number;
+    amount: string;
+    amountRefunded: string;
     displayStatus: string;
 }
 
@@ -48,7 +48,7 @@ interface OptionsLike {
  *
  * @param amount - a decimal amount
  */
-const inCents = (amount: number): number => Math.round(amount * 100);
+const inCents = (amount: string | number): number => Math.round(Number(amount) * 100);
 
 describe('CU31 · It arrived broken', () => {
     beforeEach(() => {
@@ -185,9 +185,9 @@ describe('CU31 · It arrived broken', () => {
                     cy.step('the money, the credit note and the mail follow');
                     eventually(
                         () => paymentOfOrder<PaymentLike>('admin', orderId),
-                        (payment) => inCents(Number(payment?.amountRefunded)) > 0
+                        (payment) => inCents(payment?.amountRefunded ?? '0') > 0
                     ).should((payment) => {
-                        expect(inCents(Number(payment?.amountRefunded))).to.equal(a.cents);
+                        expect(inCents(payment?.amountRefunded ?? '0')).to.equal(a.cents);
                         expect(payment?.displayStatus).to.equal('partially_refunded');
                     });
                     creditNotesOf('user', orderId).should((notes) =>
@@ -223,13 +223,13 @@ describe('CU31 · It arrived broken', () => {
                         cy.apiAs('warehouse', 'POST', `/returns/${second?.id}/receive`, {});
                     });
                     paymentOfOrder<PaymentLike>('admin', orderId).then((before) => {
-                        const paid = inCents(Number(before?.amount));
+                        const paid = inCents(before?.amount ?? '0');
                         eventually(
                             () => paymentOfOrder<PaymentLike>('admin', orderId),
-                            (payment) => inCents(Number(payment?.amountRefunded)) > a.cents
+                            (payment) => inCents(payment?.amountRefunded ?? '0') > a.cents
                         ).should((payment) => {
                             expect(
-                                inCents(Number(payment?.amountRefunded)),
+                                inCents(payment?.amountRefunded ?? '0'),
                                 'everything paid comes back, shipping included'
                             ).to.equal(paid);
                         });

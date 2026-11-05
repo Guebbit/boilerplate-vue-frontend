@@ -59,7 +59,7 @@ describe('OP27 · The shop in numbers', () => {
     it('moves the product’s row with a sale and leads from it to the order', () => {
         const title = `OP27 stats ${String(Date.now())}`;
         // Priced high enough to sit in the dashboard's top ten whatever else the seed sold.
-        cy.createProduct({ title, onHand: 10, price: 5000 }).then((product) => {
+        cy.createProduct({ title, onHand: 10, price: '5000.00' }).then((product) => {
             cy.step('a product nobody bought says it sold nothing');
             cy.loginAs('manager');
             cy.visit(`/en/sales/stats/products/${product.id}`);
@@ -121,7 +121,7 @@ describe('OP27 · The shop in numbers', () => {
 
                 cy.step('a shopper buys, the cash is recorded and the admin refunds all of it');
                 const title = `OP27 refund ${String(Date.now())}`;
-                cy.createProduct({ title, onHand: 10, price: 5000 }).then((product) => {
+                cy.createProduct({ title, onHand: 10, price: '5000.00' }).then((product) => {
                     cy.apiAs('user', 'POST', '/cart/items', { productId: product.id, quantity: 2 });
                     cy.apiAs('user', 'PUT', '/cart/shipping-method', {
                         shippingMethodId: 'pickup'
@@ -131,7 +131,7 @@ describe('OP27 · The shop in numbers', () => {
                         cy.apiAs('admin', 'POST', `/orders/${orderId}/payments`, {
                             method: 'cash'
                         });
-                        cy.apiAs<{ items: { amount: number }[] }>(
+                        cy.apiAs<{ items: { amount: string }[] }>(
                             'admin',
                             'GET',
                             `/orders/${orderId}/payments`

@@ -17,8 +17,10 @@ export default {
  */
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { getCurrentLocale } from '@/i18n';
 import { storeToRefs } from 'pinia';
 import { formatCurrency, formatDateTime, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
+import { boundOf, compareDecimals } from '@/infrastructure/utils/money.ts';
 import { endOfDayInstant, startOfDayInstant } from '@/infrastructure/utils/day-range.ts';
 import { sortFieldsOf, sortTokensOf } from '@/infrastructure/utils/sort.ts';
 import { PaymentDisplayStatus, PaymentMethodKind, PaymentSortItem } from '@/types/enums.ts';
@@ -97,18 +99,6 @@ const filters = ref<PaymentFilters>({});
 const sortableKeys = sortFieldsOf(PaymentSortItem);
 
 /**
- * A bound the visitor typed, as a number — nothing for a blank or non-numeric box.
- *
- * @param text - The raw field.
- * @returns The number, or `undefined`.
- */
-const amountOf = (text: string | undefined): number | undefined => {
-    if (text === undefined || text.trim() === '') return undefined;
-    const parsed = Number(text);
-    return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
-};
-
-/**
  * The page shown, the page count and the read of the page the current filters name; it runs on
  * mount and on every page change.
  */
@@ -124,8 +114,8 @@ const { page, pageTotal, load } = usePagedTable(paymentsTotal, (pageNumber, page
         createdTo: endOfDayInstant(filters.value.createdTo),
         receivedFrom: startOfDayInstant(filters.value.receivedFrom),
         receivedTo: endOfDayInstant(filters.value.receivedTo),
-        amountMin: amountOf(filters.value.amountMin),
-        amountMax: amountOf(filters.value.amountMax),
+        amountMin: boundOf(filters.value.amountMin, getCurrentLocale()),
+        amountMax: boundOf(filters.value.amountMax, getCurrentLocale()),
         orderId: filters.value.orderId?.trim() || undefined,
         reference: filters.value.reference?.trim() || undefined,
         disputed: filters.value.disputed ? true : undefined
@@ -386,7 +376,7 @@ const orderLink = useOrderLink();
             </template>
             <template v-slot:[`item.amountRefunded`]="{ item }">
                 {{
-                    item.amountRefunded > 0
+                    compareDecimals(item.amountRefunded, '0') > 0
                         ? formatCurrency(item.amountRefunded, item.currency)
                         : EMPTY_VALUE
                 }}

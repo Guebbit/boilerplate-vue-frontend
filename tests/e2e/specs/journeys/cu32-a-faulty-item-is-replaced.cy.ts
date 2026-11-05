@@ -18,7 +18,7 @@ interface OrderLike {
 
 /** The slice of a payment this story reads. */
 interface PaymentLike {
-    amountRefunded: number;
+    amountRefunded: string;
 }
 
 /** The slice of a return this story reads. */
@@ -27,7 +27,7 @@ interface ReturnLike {
     status: string;
     preferredRemedy?: string;
     remedy?: string;
-    refundAmount?: number;
+    refundAmount?: string;
 }
 
 describe('CU32 · A faulty item is replaced', () => {
@@ -89,7 +89,7 @@ describe('CU32 · A faulty item is replaced', () => {
                         (closed) => {
                             expect(closed?.status).to.equal('closed');
                             expect(closed?.remedy).to.equal('replace');
-                            expect(closed?.refundAmount).to.equal(0);
+                            expect(Number(closed?.refundAmount)).to.equal(0);
                         }
                     );
                     paymentOfOrder<PaymentLike>('admin', orderId).then((payment) =>

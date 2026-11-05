@@ -84,7 +84,7 @@ describe('the shelf', () => {
         const wrapper = mountProduct({
             id: 'p-out-of-stock',
             title: 'Sold out widget',
-            price: 9.99,
+            price: '9.99',
             currency: 'EUR',
             inStock: false,
             lowStock: false,
@@ -101,7 +101,7 @@ describe('the shelf', () => {
         const wrapper = mountProduct({
             id: 'p-bespoke',
             title: 'Engraved bowl',
-            price: 19.99,
+            price: '19.99',
             currency: 'EUR',
             inStock: true,
             lowStock: false,
@@ -118,7 +118,7 @@ describe('the shelf', () => {
         const wrapper = mountProduct({
             id: 'p-plain',
             title: 'Plain bowl',
-            price: 9.99,
+            price: '9.99',
             currency: 'EUR',
             inStock: true,
             lowStock: false,
@@ -132,7 +132,7 @@ describe('the shelf', () => {
         const wrapper = mountProduct({
             id: 'p-in-stock',
             title: 'Available widget',
-            price: 9.99,
+            price: '9.99',
             currency: 'EUR',
             inStock: true,
             lowStock: false,
@@ -151,7 +151,7 @@ describe('the shelf', () => {
         const wrapper = mountProduct({
             id: 'p-flags-only',
             title: 'Widget',
-            price: 9.99,
+            price: '9.99',
             currency: 'EUR',
             inStock: true,
             lowStock: false,
@@ -165,7 +165,7 @@ describe('the shelf', () => {
         const wrapper = mountProduct({
             id: 'p-low',
             title: 'Widget',
-            price: 9.99,
+            price: '9.99',
             currency: 'EUR',
             inStock: true,
             lowStock: true,
@@ -182,7 +182,7 @@ describe('the product-actions slot', () => {
             {
                 id: 'p-slot',
                 title: 'Slotted widget',
-                price: 1,
+                price: '1.00',
                 currency: 'EUR',
                 inStock: true,
                 lowStock: false,
@@ -198,7 +198,7 @@ describe('the product-actions slot', () => {
         const wrapper = mountProduct({
             id: 'p-bare',
             title: 'Bare widget',
-            price: 1,
+            price: '1.00',
             currency: 'EUR',
             inStock: true,
             lowStock: false,
@@ -220,7 +220,7 @@ describe('a barebones product', () => {
         const wrapper = mountProduct({
             id: 'p-minimal',
             title: 'Bare widget',
-            price: 1,
+            price: '1.00',
             currency: 'EUR',
             inStock: true,
             lowStock: false,
@@ -234,7 +234,7 @@ describe('a barebones product', () => {
         const wrapper = mountProduct({
             id: 'p-rich',
             title: 'Full widget',
-            price: 1,
+            price: '1.00',
             currency: 'EUR',
             inStock: true,
             lowStock: false,
@@ -259,7 +259,7 @@ describe('the edit button', () => {
     const widget: ProductType = {
         id: 'p-edit',
         title: 'Widget',
-        price: 1,
+        price: '1.00',
         currency: 'EUR',
         inStock: true,
         lowStock: false,
@@ -290,7 +290,7 @@ describe('the page view', () => {
         mountProduct({
             id: 'p-viewed',
             title: 'Viewed widget',
-            price: 9.99,
+            price: '9.99',
             currency: 'EUR',
             inStock: true,
             lowStock: false,

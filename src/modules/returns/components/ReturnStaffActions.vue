@@ -20,9 +20,16 @@ export default {
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { getCurrentLocale } from '@/i18n';
 import { storeToRefs } from 'pinia';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import {
+    NON_NEGATIVE_DECIMAL,
+    decimalScale,
+    normalizeAmount,
+    padDecimal
+} from '@/infrastructure/utils/money.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -197,9 +204,16 @@ const startingRestock = (): Record<string, string> =>
  * amount in the return's currency. The restock counts are one string per returned line.
  */
 const receiveSchema = z.object({
-    handlingDeduction: z.string().refine((value) => value === '' || Number(value) >= 0, {
-        error: () => t('return-staff-actions.error-deduction-invalid')
-    }),
+    handlingDeduction: z
+        .string()
+        .refine(
+            (value) =>
+                value === '' ||
+                NON_NEGATIVE_DECIMAL.test(normalizeAmount(value, getCurrentLocale())),
+            {
+                error: () => t('return-staff-actions.error-deduction-invalid')
+            }
+        ),
     remedy: z.string(),
     restock: z
         .record(z.string(), z.string())
@@ -383,7 +397,12 @@ const submitReceive = () =>
             // A deduction is not offered under the guarantee, so none is ever sent for it.
             ...(handlingDeduction === '' || underGuarantee.value
                 ? {}
-                : { handlingDeduction: Number(handlingDeduction) }),
+                : {
+                      handlingDeduction: padDecimal(
+                          normalizeAmount(handlingDeduction, getCurrentLocale()),
+                          decimalScale(props.item.lines[0]?.unitPrice ?? '')
+                      )
+                  }),
             ...(underGuarantee.value && chosen ? { remedy: chosen } : {}),
             ...(lowered.length > 0 ? { lines: lowered } : {})
         };
@@ -545,9 +564,7 @@ const submitCancel = () =>
             <v-text-field
                 v-if="!underGuarantee"
                 v-model="receiveForm.handlingDeduction"
-                type="number"
-                min="0"
-                step="0.01"
+                inputmode="decimal"
                 :label="t('return-staff-actions.label-deduction', { currency: item.currency })"
                 v-bind="
                     fieldErrorProps(

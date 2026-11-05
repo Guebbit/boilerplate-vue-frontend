@@ -12,7 +12,7 @@ import { byTemplate } from '../../../../scripts/e2e/mail-filters';
 
 /** The slice of a payment this story reads. */
 interface PaymentLike {
-    amountRefunded: number;
+    amountRefunded: string;
 }
 
 describe('OP36 · The payments page’s two doors', () => {

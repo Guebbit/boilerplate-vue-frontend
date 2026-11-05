@@ -26,8 +26,8 @@ import { mailMentions } from '../../../../scripts/e2e/mail-message';
 interface PaymentLike {
     displayStatus?: string;
     status: string;
-    amount: number;
-    amountRefunded: number;
+    amount: string;
+    amountRefunded: string;
 }
 
 describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
@@ -87,7 +87,7 @@ describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
             ).should((payment) => {
                 expect(payment?.displayStatus).to.equal('refunded');
                 expect(
-                    cents(String(payment?.amountRefunded.toFixed(2))),
+                    cents(payment?.amountRefunded ?? '0'),
                     'the refund is the whole charge, delivery included'
                 ).to.equal(paid.cents);
             });

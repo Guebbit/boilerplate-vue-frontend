@@ -77,7 +77,7 @@ describe('Products', () => {
             cy.publicProducts().then((products) => {
                 for (const product of products.slice(0, PAGE_ONE_SIZE))
                     cy.contains('[data-test=product-card]', product.title).within(() => {
-                        cy.contains(String(product.price)).should('exist');
+                        cy.contains(product.price).should('exist');
                     });
             });
         });
@@ -198,7 +198,7 @@ describe('Products', () => {
          * API served, so the page is checked against the answer rather than against a catalogue
          * somebody remembered.
          */
-        let subject: { id: string; title: string; price: number; description?: string };
+        let subject: { id: string; title: string; price: string; description?: string };
 
         beforeEach(() => {
             cy.subjectProduct('product.rich').then((product) => {
@@ -218,7 +218,7 @@ describe('Products', () => {
         });
 
         it('displays the product price', () => {
-            cy.contains(String(subject.price)).should('exist');
+            cy.contains(subject.price).should('exist');
         });
 
         it('displays the product description', () => {

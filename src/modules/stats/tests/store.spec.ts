@@ -24,15 +24,15 @@ const figures = (totalSales: number) => ({
     unitsOrdered: 3,
     unitsReversed: 1,
     netUnits: 2,
-    grossSales: 80,
-    discounts: 0,
-    reversals: 10,
-    netSales: 70,
-    shipping: 5,
-    taxes: 15.4,
+    grossSales: '80.00',
+    discounts: '0.00',
+    reversals: '10.00',
+    netSales: '70.00',
+    shipping: '5.00',
+    taxes: '15.40',
     totalSales,
-    refunds: 12,
-    averageOrderValue: 40
+    refunds: '12.00',
+    averageOrderValue: '40.00'
 });
 
 /** Canned answers per `METHOD /url`; a missing key rejects like an unknown route. */
@@ -90,26 +90,28 @@ beforeEach(() => {
                     unitsOrdered: 3,
                     unitsReversed: 1,
                     netUnits: 2,
-                    netSales: 40
+                    netSales: '40.00'
                 }
             ]
         },
         'GET /stats/categories': {
             period: PERIOD,
             limits: LIMITS,
-            categories: [{ category: 'Food', currency: 'EUR', unitsOrdered: 3, netSales: 40 }]
+            categories: [{ category: 'Food', currency: 'EUR', unitsOrdered: 3, netSales: '40.00' }]
         },
         'GET /stats/payments': {
             period: PERIOD,
             limits: LIMITS,
-            rows: [{ method: 'card', provider: 'fake', currency: 'EUR', payments: 2, amount: 90 }]
+            rows: [
+                { method: 'card', provider: 'fake', currency: 'EUR', payments: 2, amount: '90.00' }
+            ]
         },
         'GET /stats/operations': {
             period: PERIOD,
             limits: LIMITS,
             cancellation: { placed: 4, canceled: 1, rate: 0.25 },
             returns: { unitsOrdered: 3, unitsReturned: 1, rate: 0.33 },
-            refunds: [{ currency: 'EUR', invoiced: 90, credited: 12, rate: 0.13 }]
+            refunds: [{ currency: 'EUR', invoiced: '90.00', credited: '12.00', rate: 0.13 }]
         },
         'GET /stats/customers': {
             period: PERIOD,
@@ -120,7 +122,7 @@ beforeEach(() => {
             returningRate: 0.5
         },
         'GET /stats/pipeline': {
-            awaitingTransfers: [{ currency: 'EUR', count: 2, amount: 50 }],
+            awaitingTransfers: [{ currency: 'EUR', count: 2, amount: '50.00' }],
             paidNotShipped: 3
         },
         'GET /stats/products/p1': {

@@ -37,7 +37,7 @@ import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
 /**
  * Fixture order returned by the mocked `@api` client.
  */
-const ORDER = anOrder({ totalItems: 1, totalQuantity: 2, totalPrice: 19.98, netTotal: 19.98 });
+const ORDER = anOrder({ totalItems: 1, totalQuantity: 2, totalPrice: '19.98', netTotal: '19.98' });
 
 /**
  * Fixture PDF blob returned by the mocked invoice endpoint.
@@ -58,7 +58,7 @@ const CREDIT_NOTES = [
         number: 'CN-2026-0001',
         issuedAt: '2026-09-30T10:00:00.000Z',
         currency: 'EUR',
-        grandTotal: 9.99,
+        grandTotal: '9.99',
         refundId: 'r1'
     }
 ];

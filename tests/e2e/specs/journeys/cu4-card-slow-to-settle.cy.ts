@@ -31,8 +31,8 @@ interface OrderLike {
 interface PaymentLike {
     displayStatus?: string;
     status: string;
-    amount: number;
-    amountRefunded: number;
+    amount: string;
+    amountRefunded: string;
     actions: { pay: boolean; sync: boolean };
 }
 

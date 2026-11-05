@@ -39,7 +39,7 @@ describe('BO2 · An expired hold serves the buyer who waits', () => {
     it('hands the freed unit to the buyer who paid, oldest payment first', () => {
         cy.step('a product with one unit, backorder on, room for one more');
         cy.apiAs<{ id: string }>('editor', 'POST', '/products', {
-            price: 19.9,
+            price: '19.90',
             allowBackorder: true,
             translations: { en: { title: `BO2 last unit ${unique()}` } }
         }).then((product) => {

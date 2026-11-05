@@ -17,8 +17,9 @@ export default {
  * failure reaches the right tab's badge.
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { getCurrentLocale } from '@/i18n';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -39,8 +40,13 @@ import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progre
 import { fromDateTimeLocal } from '../domain';
 import { toCreateTranslations } from '../composables/translations-body.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
-import { currencyDigits } from '@/infrastructure/utils/formatters.ts';
-import { backorderPromiseDays, loadShop, shopCurrency } from '@/infrastructure/shop.ts';
+import { normalizeAmount, padDecimal } from '@/infrastructure/utils/money.ts';
+import {
+    backorderPromiseDays,
+    loadShop,
+    shopCurrency,
+    shopMinorUnits
+} from '@/infrastructure/shop.ts';
 import type { ProductTranslationsWrite } from '@types';
 import type { TaxClass } from '@api';
 
@@ -99,7 +105,7 @@ void fetchTranslationLocales();
  * and what the store sends.
  */
 interface ProductCreateForm {
-    price?: number;
+    price?: string;
     active?: boolean;
     purchasable?: boolean;
     // The `datetime-local` input's own string (`''` = no date), converted on submit.
@@ -162,7 +168,7 @@ const {
     handleSubmitFailure
 } = useTranslatedEntityForm<ProductCreateForm>({
     initial: {
-        price: 0,
+        price: '0',
         active: true,
         purchasable: true,
         requiresShipping: true,
@@ -190,21 +196,11 @@ const session = useSessionStore();
 const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
 
 /**
- * The shop's currency decides how many decimals the price input takes: a JPY shop has no cents to
- * type, a KWD shop has three. Asked here as well as at boot, so a failed boot read is retried.
+ * The shop's currency decides how many decimals the price is sent with: a JPY shop has no cents,
+ * a KWD shop has three (`shopMinorUnits`). Asked here as well as at boot, so a failed boot read is retried.
  */
 // eslint-disable-next-line @typescript-eslint/no-floating-promises -- loadShop never rejects (it logs and leaves the shop empty)
 void loadShop();
-
-/**
- * Decimal places the price field accepts — the shop currency's own minor unit.
- */
-const pricePrecision = computed(() => currencyDigits(shopCurrency.value));
-
-/**
- * Smallest increment the price input's stepper buttons move by, matching {@link pricePrecision}.
- */
-const priceStep = computed(() => 10 ** -pricePrecision.value);
 
 /**
  * Image upload progress, shown by `FormImageUpload` while the multipart create is in flight.
@@ -229,6 +225,12 @@ const submitForm = () => {
         // blank description is dropped from each locale (`toCreateTranslations`).
         return toRequestBody('CreateProductBody', {
             ...form.value,
+            // Sent at the shop currency's places ("12.5" becomes "12.50"); `shopMinorUnits` is
+            // known by now, the boot read or the `loadShop` above has answered.
+            price: padDecimal(
+                normalizeAmount(price, getCurrentLocale()),
+                shopMinorUnits.value ?? 0
+            ),
             releaseDate: fromDateTimeLocal(releaseDate),
             restockDate: fromDateTimeLocal(restockDate),
             translations: toCreateTranslations(translations),
@@ -323,13 +325,10 @@ const submitForm = () => {
                 </v-tabs-window-item>
             </v-tabs-window>
 
-            <v-number-input
+            <v-text-field
                 v-model="form.price"
                 :label="t('product-create-page.label-price')"
-                :min="0"
-                :step="priceStep"
-                :precision="pricePrecision"
-                control-variant="stacked"
+                inputmode="decimal"
                 :suffix="shopCurrency"
                 v-bind="fieldErrorProps(showErrors ? formErrors.price : [])"
                 data-test="product-price-field"

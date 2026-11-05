@@ -26,8 +26,8 @@ interface OrderLike {
 
 /** The slice of a payment this story reads. */
 interface PaymentLike {
-    amount: number;
-    amountRefunded: number;
+    amount: string;
+    amountRefunded: string;
 }
 
 /** The slice of a return this story reads. */
@@ -101,7 +101,7 @@ describe('OP20 · Staff prove it’s still them', () => {
             cy.get('[data-test=button-refund-only]').should('not.be.disabled').click();
             wrongThenCancel();
             paymentOfOrder<PaymentLike>('admin', orderId).should((payment) => {
-                expect(payment?.amountRefunded, 'cancel refunded nothing').to.equal(0);
+                expect(Number(payment?.amountRefunded), 'cancel refunded nothing').to.equal(0);
             });
             cy.get('[data-test=button-refund-only]').click();
             cy.get('[data-test=reauth-dialog]').should('be.visible');

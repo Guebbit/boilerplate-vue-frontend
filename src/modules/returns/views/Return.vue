@@ -25,6 +25,7 @@ import { useOrderLink } from '@/kernel/order-link.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useReturnsStore } from '../store.ts';
 import { formatCurrency, formatDateTime, formatText } from '@/infrastructure/utils/formatters.ts';
+import { compareDecimals, multiplyDecimal } from '@/infrastructure/utils/money.ts';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
@@ -190,7 +191,7 @@ onMounted(refresh);
                         data-test="return-refund"
                     />
                     <ItemDetailField
-                        v-if="currentReturn.handlingDeduction"
+                        v-if="compareDecimals(currentReturn.handlingDeduction ?? '0', '0') > 0"
                         :label="t('return-target-page.label-deduction')"
                         :value="
                             formatCurrency(currentReturn.handlingDeduction, currentReturn.currency)
@@ -236,7 +237,7 @@ onMounted(refresh);
                         <strong>
                             {{
                                 formatCurrency(
-                                    line.unitPrice * line.quantity,
+                                    multiplyDecimal(line.unitPrice, line.quantity),
                                     currentReturn.currency
                                 )
                             }}

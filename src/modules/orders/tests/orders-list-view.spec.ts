@@ -153,8 +153,8 @@ const order = (id: string, deletedAt?: string) =>
         id,
         totalItems: 1,
         totalQuantity: 1,
-        totalPrice: 10,
-        netTotal: 10,
+        totalPrice: '10.00',
+        netTotal: '10.00',
         createdAt: '2026-01-01T00:00:00Z',
         ...(deletedAt && { deletedAt })
     });

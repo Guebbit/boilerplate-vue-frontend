@@ -25,16 +25,16 @@ describe('classifyCheckoutError', () => {
                         code: 'CART_TOTAL_CHANGED',
                         message: 'x',
                         details: {
-                            expected: { amount: 1998, currency: 'EUR' },
-                            actual: { amount: 2450, currency: 'EUR' }
+                            expected: { amount: '19.98', currency: 'EUR' },
+                            actual: { amount: '24.50', currency: 'EUR' }
                         }
                     }
                 ]
             })
         ).toEqual({
             kind: 'total-changed',
-            expected: { amount: 1998, currency: 'EUR' },
-            actual: { amount: 2450, currency: 'EUR' }
+            expected: { amount: '19.98', currency: 'EUR' },
+            actual: { amount: '24.50', currency: 'EUR' }
         });
     });
 
@@ -49,7 +49,11 @@ describe('classifyCheckoutError', () => {
                 errors: [
                     {
                         code: 'CART_TOTAL_CHANGED',
-                        details: { expected: { amount: '19.98', currency: 'EUR' }, actual: 5 }
+                        details: {
+                            // A number amount is the old minor-units shape, no longer money.
+                            expected: { amount: 1998, currency: 'EUR' },
+                            actual: 5
+                        }
                     }
                 ]
             })

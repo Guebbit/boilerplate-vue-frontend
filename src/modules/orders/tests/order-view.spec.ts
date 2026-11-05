@@ -95,12 +95,12 @@ const mountOrder = (order: OrderType) => {
 
 /** One line, everything but `current` fixed — only what each case asserts on changes. */
 const lineWith = (current?: OrderType['items'][number]['current']): OrderType['items'][number] => ({
-    product: { id: 'p1', title: 'Gadget', price: 9.99, taxRate: 0 },
+    product: { id: 'p1', title: 'Gadget', price: '9.99', taxRate: 0 },
     quantity: 1,
     locale: 'en',
     ...(current ? { current } : {}),
-    taxAmount: 0,
-    netAmount: 9.99
+    taxAmount: '0.00',
+    netAmount: '9.99'
 });
 
 /** An order with no lines; each test adds the lines it needs. */
@@ -110,11 +110,11 @@ const BASE_ORDER: Omit<OrderType, 'items'> = {
     status: 'pending',
     totalItems: 1,
     totalQuantity: 1,
-    totalPrice: 9.99,
-    netTotal: 9.99,
-    taxTotal: 0,
-    shippingNetAmount: 0,
-    shippingTaxAmount: 0,
+    totalPrice: '9.99',
+    netTotal: '9.99',
+    taxTotal: '0.00',
+    shippingNetAmount: '0.00',
+    shippingTaxAmount: '0.00',
     taxSummary: [],
     paymentStatus: 'unpaid',
     fulfillmentStatus: 'unfulfilled',
@@ -205,7 +205,7 @@ describe('the credit notes', () => {
         number: 'CN-2026-0001',
         issuedAt: '2026-09-30T10:00:00.000Z',
         currency: 'EUR',
-        grandTotal: 9.99,
+        grandTotal: '9.99',
         refundId: 'r1'
     };
 
@@ -331,9 +331,9 @@ describe('the VAT summary', () => {
     it('shows one row per rate, and the net/tax totals, once taxSummary is present', () => {
         const wrapper = mountOrder({
             ...BASE_ORDER,
-            netTotal: 8.18,
-            taxTotal: 1.81,
-            taxSummary: [{ rate: 0.22, netAmount: 8.18, taxAmount: 1.81, grossAmount: 9.99 }],
+            netTotal: '8.18',
+            taxTotal: '1.81',
+            taxSummary: [{ rate: 0.22, netAmount: '8.18', taxAmount: '1.81', grossAmount: '9.99' }],
             items: [lineWith()]
         });
 
@@ -384,7 +384,7 @@ describe('an order line’s price', () => {
             ...BASE_ORDER,
             currency: 'GBP',
             // The server froze the line's total: net plus tax, which the page shows as it is.
-            items: [{ ...lineWith(), quantity: 3, netAmount: 24.57, taxAmount: 5.4 }]
+            items: [{ ...lineWith(), quantity: 3, netAmount: '24.57', taxAmount: '5.40' }]
         });
 
         expect(wrapper.get('[data-test=order-item-unit-price]').text()).toContain('£9.99');
@@ -569,7 +569,7 @@ describe('goods with no right of withdrawal', () => {
                     product: {
                         id: 'p1',
                         title: 'Engraved mug',
-                        price: 9.99,
+                        price: '9.99',
                         taxRate: 0,
                         noWithdrawal: true
                     }
@@ -603,7 +603,7 @@ describe('a preorder line', () => {
                     product: {
                         id: 'p1',
                         title: 'Limited vinyl',
-                        price: 29,
+                        price: '29.00',
                         taxRate: 0,
                         preorder: true,
                         releaseDate: '2027-03-15T12:00:00.000Z'
@@ -662,7 +662,7 @@ describe('the shipping method', () => {
             ...BASE_ORDER,
             items: [lineWith()],
             shippingMethod: 'express',
-            shippingCost: 5
+            shippingCost: '5.00'
         });
 
         const shipping = wrapper.get('[data-test=order-shipping]').text();
@@ -677,7 +677,7 @@ describe('the shipping method', () => {
             ...BASE_ORDER,
             items: [lineWith()],
             shippingMethod: 'drone',
-            shippingCost: 5
+            shippingCost: '5.00'
         });
 
         expect(wrapper.get('[data-test=order-shipping]').text()).toContain('drone');

@@ -43,7 +43,7 @@ interface CypressWithRunnableState {
 interface ProductLike {
     id: string;
     title: string;
-    price: number;
+    price: string;
     categories?: string[];
     tags?: string[];
 }
@@ -307,7 +307,7 @@ Cypress.Commands.add('createProduct', (overrides: Record<string, unknown> = {}) 
     // received right after, through the inventory door, as a real shop does it.
     const { title, translations, onHand, ...rest } = overrides;
     return adminApi<ProductLike>('/products', 'POST', {
-        price: 10,
+        price: '10.00',
         ...rest,
         translations: translations ?? {
             [FALLBACK_LOCALE]: {

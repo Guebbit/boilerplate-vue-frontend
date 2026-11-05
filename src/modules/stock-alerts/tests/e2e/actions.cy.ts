@@ -15,7 +15,7 @@ import { ListStockAlertsResponse } from '../../../../../contracts/rest/schemas.z
 const soldOutProduct = (): Cypress.Chainable<string> =>
     cy
         .apiAs<{ id: string }>('editor', 'POST', '/products', {
-            price: 19.9,
+            price: '19.90',
             translations: { en: { title: `Sold out ${String(Date.now())}` } }
         })
         .then((product) => String(product?.id));

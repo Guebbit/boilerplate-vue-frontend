@@ -49,11 +49,10 @@ const EMPTY_CART: CartResponse = {
     summary: {
         itemsCount: 0,
         totalQuantity: 0,
-        itemsTotal: 0,
-        shippingCost: 0,
-        totalPrice: 0,
-        currency: 'EUR',
-        expectedTotal: { amount: 0, currency: 'EUR' }
+        itemsTotal: '0.00',
+        shippingCost: '0.00',
+        totalPrice: '0.00',
+        currency: 'EUR'
     },
     shipping: { required: false, options: [] },
     checkoutable: false
@@ -65,7 +64,7 @@ const EMPTY_CART: CartResponse = {
 const IN_STOCK: Product = {
     id: 'p-in-stock',
     title: 'Available widget',
-    price: 9.99,
+    price: '9.99',
     currency: 'EUR',
     inStock: true,
     lowStock: false,

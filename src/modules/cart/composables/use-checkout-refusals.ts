@@ -13,10 +13,10 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
-import { currencyDigits, formatCurrency } from '@/infrastructure/utils/formatters.ts';
+import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useCartStore } from '../store';
-import { classifyCheckoutError, fromMinorUnits } from '../domain';
+import { classifyCheckoutError } from '../domain';
 import type {
     CheckoutErrorVerdict,
     CheckoutShortfallLine,
@@ -27,11 +27,10 @@ import type {
 /**
  * A wire money amount, written the way the rest of the page writes prices.
  *
- * @param money - Minor units plus currency, from `CART_TOTAL_CHANGED`'s details.
+ * @param money - Decimal text plus currency, from `CART_TOTAL_CHANGED`'s details.
  * @returns The amount in the visitor's locale formatting.
  */
-const formatMinor = (money: ExpectedTotal) =>
-    formatCurrency(fromMinorUnits(money.amount, currencyDigits(money.currency)), money.currency);
+const formatAmount = (money: ExpectedTotal) => formatCurrency(money.amount, money.currency);
 
 /**
  * Hooks the page supplies: the reactions that touch state the page itself owns.
@@ -119,8 +118,8 @@ export const useCheckoutRefusals = (hooks: CheckoutRefusalHooks) => {
     const totalChangedMessage = (expected?: ExpectedTotal, actual?: ExpectedTotal) =>
         expected && actual
             ? t('cart-page.error-total-changed', {
-                  from: formatMinor(expected),
-                  to: formatMinor(actual)
+                  from: formatAmount(expected),
+                  to: formatAmount(actual)
               })
             : t('cart-page.error-total-changed-generic');
 

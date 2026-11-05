@@ -15,7 +15,6 @@ import {
     formatUtcDate,
     formatBucketStart,
     formatCurrency,
-    currencyDigits,
     formatPercent,
     formatFlag,
     formatMegabytes,
@@ -158,93 +157,66 @@ describe('formatBucketStart', () => {
 });
 
 describe('formatCurrency', () => {
-    it('formats a number with two decimals and a currency symbol', () => {
-        const formatted = formatCurrency(1234.5, 'EUR');
+    it('formats an amount with its own two decimals and a currency symbol', () => {
+        const formatted = formatCurrency('1234.50', 'EUR');
 
         expect(formatted).toMatch(/1.234[,.]50/);
         expect(formatted).toMatch(/€|EUR/);
     });
 
     it('honours an explicit currency code', () => {
-        expect(formatCurrency(10, 'USD')).toMatch(/\$|USD/);
+        expect(formatCurrency('10.00', 'USD')).toMatch(/\$|USD/);
     });
 
     it('honours explicit Intl options', () => {
-        expect(formatCurrency(10, 'EUR', { minimumFractionDigits: 0 })).not.toContain('.00');
+        expect(formatCurrency('10.00', 'EUR', { minimumFractionDigits: 0 })).not.toContain('.00');
     });
 
     it('degrades to a plain number format for an invalid currency code', () => {
-        const formatted = formatCurrency(10, 'NOT-A-CURRENCY');
+        const formatted = formatCurrency('10.00', 'NOT-A-CURRENCY');
 
         expect(formatted).not.toBe(EMPTY_VALUE);
         expect(formatted).toContain('10');
     });
 
-    it('falls back for anything that is not a number', () => {
+    it('degrades to a plain number format for an empty currency code', () => {
+        expect(formatCurrency('10.00', '')).toContain('10');
+    });
+
+    it('falls back for anything that is not a string', () => {
         expect(formatCurrency(undefined, 'EUR')).toBe(EMPTY_VALUE);
         expect(formatCurrency(null, 'EUR')).toBe(EMPTY_VALUE);
     });
 
     it('formats zero rather than treating it as missing', () => {
-        expect(formatCurrency(0, 'EUR')).not.toBe(EMPTY_VALUE);
+        expect(formatCurrency('0.00', 'EUR')).not.toBe(EMPTY_VALUE);
     });
 
-    it('drops decimals entirely for a zero-exponent currency (JPY)', () => {
-        const formatted = formatCurrency(1234, 'JPY');
+    it('shows no decimals for a zero-exponent amount (JPY "1000")', () => {
+        const formatted = formatCurrency('1234', 'JPY');
 
-        // `,` is the thousands separator here, not a decimal mark — only `.` would be one.
+        // `,` is the thousands separator here, not a decimal mark: only `.` would be one.
         expect(formatted).not.toMatch(/\.\d/);
         expect(formatted).toMatch(/¥|JPY/);
     });
 
-    it('prints three decimals for a three-exponent currency (KWD)', () => {
-        const formatted = formatCurrency(1234.5, 'KWD');
-
-        expect(formatted).toMatch(/1.234[,.]500/);
-    });
-});
-
-describe('currencyDigits', () => {
-    it('reads the common two-decimal case', () => {
-        expect(currencyDigits('EUR')).toBe(2);
-        expect(currencyDigits('USD')).toBe(2);
-    });
-
-    it('reads a zero-decimal currency', () => {
-        expect(currencyDigits('JPY')).toBe(0);
-    });
-
-    it('reads a three-decimal currency', () => {
-        expect(currencyDigits('KWD')).toBe(3);
-        expect(currencyDigits('BHD')).toBe(3);
-    });
-
-    it('falls back to 2 for an unrecognised code', () => {
-        expect(currencyDigits('NOT-A-CURRENCY')).toBe(2);
+    it('shows three decimals for a three-exponent amount (KWD "1234.500")', () => {
+        expect(formatCurrency('1234.500', 'KWD')).toMatch(/1.234[,.]500/);
     });
 
     /**
-     * The pinned ISO 4217 table, not `Intl`'s: CLDR answers 0 for these six, where the standard
-     * (and the backend's table) says 2, 2, 2, 2, 2 and 3.
+     * The places come from the text, not from `Intl`'s own table, which rounds these to none.
      */
     it.each([
-        ['HUF', 2],
-        ['IDR', 2],
-        ['COP', 2],
-        ['PKR', 2],
-        ['LBP', 2],
-        ['IQD', 3]
-    ])('agrees with ISO 4217 for %s, where Intl would say 0', (code, digits) => {
-        expect(currencyDigits(code)).toBe(digits);
+        ['HUF', '1234.50', /1.234[,.]50/],
+        ['IDR', '1234.50', /1.234[,.]50/],
+        ['IQD', '1234.500', /1.234[,.]500/]
+    ])('keeps the places of a %s amount where Intl would drop them', (code, amount, shown) => {
+        expect(formatCurrency(amount, code)).toMatch(shown);
     });
 
-    it('is case-insensitive about the code', () => {
-        expect(currencyDigits('jpy')).toBe(0);
-    });
-
-    it('shows an amount with the places the server stores', () => {
-        expect(formatCurrency(1234.5, 'HUF')).toMatch(/1.234[,.]50/);
-        expect(formatCurrency(1234, 'IQD')).toMatch(/1.234[,.]000/);
+    it('does not round an amount a float could not hold', () => {
+        expect(formatCurrency('9007199254740993.01', 'EUR')).toMatch(/9.007.199.254.740.993[,.]01/);
     });
 });
 

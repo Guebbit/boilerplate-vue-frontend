@@ -80,7 +80,7 @@ const deferred = <T>() => {
 const echo = (body: Record<string, unknown>) => ({
     id: 'p1',
     title: 'Widget',
-    price: 9.99,
+    price: '9.99',
     currency: 'EUR',
     translations: { en: { title: 'Widget', description: 'A widget' } },
     ...body

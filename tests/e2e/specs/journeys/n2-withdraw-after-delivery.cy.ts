@@ -30,8 +30,8 @@ const DEDUCTION_CENTS = 300;
 interface PaymentLike {
     displayStatus?: string;
     status: string;
-    amount: number;
-    amountRefunded: number;
+    amount: string;
+    amountRefunded: string;
 }
 
 /** The slice of a return this story reads. */

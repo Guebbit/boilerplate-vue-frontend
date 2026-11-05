@@ -27,16 +27,16 @@ const payment = (refund: boolean, owed: string[] = []) => ({
     id: 'p1',
     orderId: 'o1',
     userId: 'u1',
-    amount: 50,
+    amount: '50.00',
     currency: 'EUR',
     status: 'succeeded',
     displayStatus: refund ? 'succeeded' : 'refunded',
     provider: 'fake',
     method: 'card',
-    amountRefunded: refund ? 0 : 50,
+    amountRefunded: refund ? '0.00' : '50.00',
     refunds: owed.map((id) => ({
         id,
-        amount: 12,
+        amount: '12.00',
         currency: 'EUR',
         status: 'pending',
         reason: 'goodwill',
@@ -69,7 +69,7 @@ beforeEach(() => {
         'GET /orders/o1/payments': { items: [payment(true)] },
         'POST /payments/p1/refunds': {
             id: 'r1',
-            amount: 10,
+            amount: '10.00',
             currency: 'EUR',
             status: 'succeeded',
             reason: 'goodwill',
@@ -121,10 +121,27 @@ describe('useOrderRefund', () => {
             });
     });
 
+    it.each([
+        ['12.5', '12.50'],
+        ['7', '7.00'],
+        ['12.50', '12.50']
+    ])('sends the typed %s at the payment places, as %s', (typed, sent) => {
+        const { refund } = useOrderRefund(ref('o1'));
+
+        return settled()
+            .then(() => refund(typed))
+            .then(() => {
+                const call = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.findLast(([config]) => config.url === '/payments/p1/refunds');
+                expect((call?.[0] as { data: unknown }).data).toEqual({ amount: sent });
+            });
+    });
+
     it('answers a refusal as a warning that names the next step, not as an error', () => {
         responses['POST /payments/p1/refunds'] = {
             id: 'r9',
-            amount: 10,
+            amount: '10.00',
             currency: 'EUR',
             status: 'failed',
             failureReason: 'lost_or_stolen_card',
@@ -148,7 +165,7 @@ describe('useOrderRefund', () => {
         // The settle answers the refund it settled; the payment is a read of its own.
         responses['POST /payments/p1/refunds/r1/settle'] = {
             id: 'r1',
-            amount: 12,
+            amount: '12.00',
             currency: 'EUR',
             status: 'succeeded',
             reason: 'goodwill',

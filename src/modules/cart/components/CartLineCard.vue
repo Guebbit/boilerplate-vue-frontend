@@ -9,8 +9,8 @@
  */
 import { useI18n } from 'vue-i18n';
 import { Minus, Plus } from 'lucide-vue-next';
-import { currencyDigits, formatCurrency } from '@/infrastructure/utils/formatters.ts';
-import { lineTotal } from '../domain';
+import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
+import { multiplyDecimal } from '@/infrastructure/utils/money.ts';
 
 /**
  * Component props — see each field's own doc comment below.
@@ -27,7 +27,7 @@ const { title, quantity, unitPrice, currency, testPrefix } = defineProps<{
     /**
      * The product's unit price; absent until the product read answered, so no price is guessed.
      */
-    unitPrice?: number;
+    unitPrice?: string;
     /**
      * The currency of {@link unitPrice}.
      */
@@ -100,7 +100,7 @@ const { t } = useI18n();
             :data-test="`${testPrefix}-line-price`"
         >
             {{ formatCurrency(unitPrice, currency) }} × {{ quantity }} =
-            {{ formatCurrency(lineTotal(unitPrice, quantity, currencyDigits(currency)), currency) }}
+            {{ formatCurrency(multiplyDecimal(unitPrice, quantity), currency) }}
         </p>
         <div class="mt-3 flex flex-wrap items-center gap-2">
             <v-btn

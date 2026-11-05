@@ -19,8 +19,8 @@ import vuetify from '@/ui/vuetify';
  * Two fitting, already-priced options — the shape the cart's `shipping.options` carries.
  */
 const OPTIONS = [
-    { id: 'standard', price: 5, requiresAddress: true, tracked: false },
-    { id: 'pickup', price: 0, requiresAddress: false, tracked: false }
+    { id: 'standard', price: '5.00', requiresAddress: true, tracked: false },
+    { id: 'pickup', price: '0.00', requiresAddress: false, tracked: false }
 ];
 
 /**
@@ -62,7 +62,13 @@ describe('ShippingSelector', () => {
     it('fetches on mount even when the shared methods list is already populated', () => {
         const store = useDeliveryStore();
         store.methods = [
-            { id: 'standard', price: 500, currency: 'EUR', tracked: false, requiresAddress: true }
+            {
+                id: 'standard',
+                price: '500.00',
+                currency: 'EUR',
+                tracked: false,
+                requiresAddress: true
+            }
         ];
         vi.spyOn(store, 'fetchMethods').mockResolvedValue([]);
 
@@ -78,10 +84,10 @@ describe('ShippingSelector', () => {
         const { wrapper } = mountSelector();
 
         expect(wrapper.get('[data-test=shipping-method-standard]').text()).toContain(
-            formatCurrency(5, 'EUR')
+            formatCurrency('5.00', 'EUR')
         );
         expect(wrapper.get('[data-test=shipping-method-pickup]').text()).toContain(
-            formatCurrency(0, 'EUR')
+            formatCurrency('0.00', 'EUR')
         );
     });
 
@@ -102,20 +108,20 @@ describe('ShippingSelector', () => {
         store.methods = [
             {
                 id: 'standard',
-                price: 5,
+                price: '5.00',
                 currency: 'EUR',
-                freeAbove: 100,
+                freeAbove: '100.00',
                 tracked: false,
                 requiresAddress: true
             },
-            { id: 'pickup', price: 0, currency: 'EUR', tracked: false, requiresAddress: false }
+            { id: 'pickup', price: '0.00', currency: 'EUR', tracked: false, requiresAddress: false }
         ];
 
         const wrapper = mount(ShippingSelector, {
             props: {
                 options: [
-                    { id: 'standard', price: 0, requiresAddress: true, tracked: false },
-                    { id: 'pickup', price: 0, requiresAddress: false, tracked: false }
+                    { id: 'standard', price: '0.00', requiresAddress: true, tracked: false },
+                    { id: 'pickup', price: '0.00', requiresAddress: false, tracked: false }
                 ],
                 currency: 'EUR'
             },

@@ -61,6 +61,16 @@ const CARD_FIELDS = [
 }[];
 
 /**
+ * A figure as a number, for the percent-change card only: a ratio of two amounts needs no exact
+ * text.
+ *
+ * @param figure - A money amount (text) or a count (number).
+ * @returns The nearest number.
+ */
+const figureNumber = (figure: string | number): number =>
+    typeof figure === 'number' ? figure : Number(figure);
+
+/**
  * Every currency group, ready to render.
  */
 const groups = computed(() =>
@@ -72,7 +82,9 @@ const groups = computed(() =>
             value: money
                 ? formatCurrency(group.totals[key], group.currency)
                 : String(group.totals[key]),
-            subtitle: changeText(percentChange(group.totals[key], group.previous[key]))
+            subtitle: changeText(
+                percentChange(figureNumber(group.totals[key]), figureNumber(group.previous[key]))
+            )
         })),
         charts: chartsOf(group)
     }))
@@ -114,7 +126,8 @@ function chartsOf(group: SalesCurrency): { sales: ChartModel; orders: ChartModel
                 {
                     name: t('stats-page.series-total-sales'),
                     kind: 'bar',
-                    values: group.buckets.map(({ figures }) => figures.totalSales)
+                    // A chart plots floats: `Number` at this boundary only, nothing is summed after it.
+                    values: group.buckets.map(({ figures }) => Number(figures.totalSales))
                 }
             ]
         },

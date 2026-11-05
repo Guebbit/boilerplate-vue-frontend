@@ -92,7 +92,7 @@ describe('AwaitingTransfersTable', () => {
             aPayment({
                 method: 'bank_transfer',
                 status: 'requires_action',
-                amount: 40,
+                amount: '40.00',
                 nextAction: {
                     type: 'bank_transfer',
                     beneficiary: 'Shop Ltd',
@@ -136,7 +136,7 @@ describe('PaymentsTable', () => {
     it('shows date, amount, status, method, provider, order, customer and refunded', async () => {
         answerPaymentsWith([
             aPayment({
-                amountRefunded: 20,
+                amountRefunded: '20.00',
                 displayStatus: 'partially_refunded'
             })
         ]);
@@ -172,7 +172,7 @@ describe('PaymentsTable', () => {
         );
     });
 
-    it('sends every filter, the days as instants and the amounts as numbers', async () => {
+    it('sends every filter, the days as instants and the amounts as typed', async () => {
         const read = answerPaymentsWith([]);
         const wrapper = mount(PaymentsTable, { global: GLOBAL });
         await flushPromises();
@@ -193,8 +193,8 @@ describe('PaymentsTable', () => {
             provider: 'fake',
             orderId: 'o9',
             reference: 'TRX-1',
-            amountMin: 10,
-            amountMax: 99.5
+            amountMin: '10',
+            amountMax: '99.5'
         });
         expect(new Date(query?.createdFrom ?? '').getTime()).toBe(new Date(2026, 2, 1).getTime());
         expect(new Date(query?.createdTo ?? '').getTime()).toBe(
@@ -308,7 +308,7 @@ describe('RefundsTable', () => {
         id: 'r1',
         paymentId: 'pay-1',
         orderId: 'o1',
-        amount: 12.5,
+        amount: '12.50',
         currency: 'EUR',
         status: 'failed',
         reason: 'goodwill',
@@ -405,7 +405,7 @@ describe('AttentionList', () => {
             orderId: 'o1',
             paymentId: 'pay-1',
             refundId: 'r1',
-            amount: 5,
+            amount: '5.00',
             currency: 'EUR',
             failureReason: 'provider_unavailable',
             since: '2026-03-04T10:00:00Z'
@@ -415,7 +415,7 @@ describe('AttentionList', () => {
             orderId: 'o3',
             paymentId: 'pay-3',
             refundId: 'r3',
-            amount: 7,
+            amount: '7.00',
             currency: 'EUR',
             failureReason: 'lost_or_stolen_card',
             since: '2026-03-04T10:00:00Z'
@@ -425,7 +425,7 @@ describe('AttentionList', () => {
             orderId: 'o1',
             paymentId: 'pay-1',
             refundId: 'r2',
-            amount: 12,
+            amount: '12.00',
             currency: 'EUR',
             since: '2026-03-04T10:00:00Z'
         }
@@ -438,9 +438,9 @@ describe('AttentionList', () => {
                 orderId: 'o5',
                 paymentId: 'pay-5',
                 refundId: 'r5',
-                amount: 50,
+                amount: '50.00',
                 currency: 'EUR',
-                exceedsBy: 30,
+                exceedsBy: '30.00',
                 since: '2026-03-09T10:00:00Z'
             }
         ]);
@@ -460,11 +460,11 @@ describe('AttentionList', () => {
                 orderId: 'o6',
                 paymentId: 'pay-6',
                 disputeId: 'dp_1',
-                amount: 70,
+                amount: '70.00',
                 currency: 'EUR',
                 since: '2026-03-09T10:00:00Z',
                 dueBy: inFiveDays,
-                alreadyRefunded: 30
+                alreadyRefunded: '30.00'
             }
         ]);
         const wrapper = mount(AttentionList, { global: GLOBAL });
@@ -491,7 +491,7 @@ describe('AttentionList', () => {
                 orderId: 'o6',
                 paymentId: 'pay-6',
                 disputeId: 'dp_1',
-                amount: 70,
+                amount: '70.00',
                 currency: 'EUR',
                 since: '2026-03-09T10:00:00Z',
                 dueBy: threeDaysAgo
@@ -513,7 +513,7 @@ describe('AttentionList', () => {
                 orderId: 'o4',
                 paymentId: 'pay-4',
                 refundId: 'r4',
-                amount: 9,
+                amount: '9.00',
                 currency: 'EUR',
                 failureReason: 'disputed',
                 since: '2026-03-09T10:00:00Z'

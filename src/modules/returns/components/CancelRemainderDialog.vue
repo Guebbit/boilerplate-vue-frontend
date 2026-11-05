@@ -16,6 +16,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
+import { compareDecimals } from '@/infrastructure/utils/money.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
 import {
@@ -195,7 +196,7 @@ const submit = () => {
                 {{ t('cancel-remainder-dialog.refund', { amount: refundText }) }}
             </p>
             <p
-                v-if="option.shippingRefund > 0"
+                v-if="compareDecimals(option.shippingRefund, '0') > 0"
                 class="m-0 text-sm opacity-75"
                 data-test="cancel-remainder-shipping"
             >

@@ -69,15 +69,15 @@ const figures = (over: Partial<SalesFigures> = {}): SalesFigures => ({
     unitsOrdered: 3,
     unitsReversed: 1,
     netUnits: 2,
-    grossSales: 80,
-    discounts: 0,
-    reversals: 10,
-    netSales: 70,
-    shipping: 5,
-    taxes: 15.4,
-    totalSales: 100,
-    refunds: 12,
-    averageOrderValue: 40,
+    grossSales: '80.00',
+    discounts: '0.00',
+    reversals: '10.00',
+    netSales: '70.00',
+    shipping: '5.00',
+    taxes: '15.40',
+    totalSales: '100.00',
+    refunds: '12.00',
+    averageOrderValue: '40.00',
     ...over
 });
 
@@ -91,16 +91,16 @@ describe('SalesSection', () => {
         currencies: [
             {
                 currency: 'EUR',
-                totals: figures({ totalSales: 150 }),
-                previous: figures({ totalSales: 100, orders: 0 }),
+                totals: figures({ totalSales: '150.00' }),
+                previous: figures({ totalSales: '100.00', orders: 0 }),
                 buckets: [
                     {
                         start: '2026-09-30T22:00:00.000Z',
-                        figures: figures({ totalSales: 100, orders: 1 })
+                        figures: figures({ totalSales: '100.00', orders: 1 })
                     },
                     {
                         start: '2026-10-01T22:00:00.000Z',
-                        figures: figures({ totalSales: 50, orders: 1 })
+                        figures: figures({ totalSales: '50.00', orders: 1 })
                     }
                 ]
             }
@@ -143,7 +143,7 @@ describe('SalesSection', () => {
                 expect(csv.split('\r\n')[0]).toBe(
                     'Period,Orders,Gross,Reversals,Net,Taxes,Shipping,Total'
                 );
-                expect(csv.split('\r\n')[1]).toBe('Oct 1,1,80,10,70,15.4,5,100');
+                expect(csv.split('\r\n')[1]).toBe('Oct 1,1,80.00,10.00,70.00,15.40,5.00,100.00');
             });
     });
 
@@ -179,14 +179,14 @@ describe('ProductsSection', () => {
                 unitsOrdered: 3,
                 unitsReversed: 1,
                 netUnits: 2,
-                netSales: 40
+                netSales: '40.00'
             }
         ]
     };
     const CATEGORIES: CategoryStats = {
         period: PERIOD,
         limits: LIMITS,
-        categories: [{ category: 'Food', currency: 'EUR', unitsOrdered: 3, netSales: 40 }]
+        categories: [{ category: 'Food', currency: 'EUR', unitsOrdered: 3, netSales: '40.00' }]
     };
 
     it('links a product to its own page, carrying the period', () => {
@@ -236,7 +236,7 @@ describe('OperationsSection', () => {
         limits: LIMITS,
         cancellation: { placed: 4, canceled: 1, rate: 0.25 },
         returns: { unitsOrdered: 3, unitsReturned: 1, rate: 0.33 },
-        refunds: [{ currency: 'EUR', invoiced: 90, credited: 12, rate: 0.13 }]
+        refunds: [{ currency: 'EUR', invoiced: '90.00', credited: '12.00', rate: 0.13 }]
     };
     const CUSTOMERS: CustomerStats = {
         period: PERIOD,
@@ -248,7 +248,7 @@ describe('OperationsSection', () => {
     };
     const PIPELINE: PipelineStats = {
         awaitingTransfers: [
-            { currency: 'EUR', count: 2, amount: 50, nearestPayBy: '2026-10-20T10:00:00.000Z' }
+            { currency: 'EUR', count: 2, amount: '50.00', nearestPayBy: '2026-10-20T10:00:00.000Z' }
         ],
         paidNotShipped: 3
     };
@@ -256,13 +256,13 @@ describe('OperationsSection', () => {
         period: PERIOD,
         limits: LIMITS,
         rows: [
-            { method: 'card', provider: 'fake', currency: 'EUR', payments: 3, amount: 90 },
+            { method: 'card', provider: 'fake', currency: 'EUR', payments: 3, amount: '90.00' },
             {
                 method: 'bank_transfer',
                 provider: 'manual',
                 currency: 'EUR',
                 payments: 1,
-                amount: 30
+                amount: '30.00'
             }
         ]
     };
@@ -303,7 +303,7 @@ describe('OperationsSection', () => {
         const wrapper = mount(OperationsSection, {
             props: {
                 pipeline: {
-                    awaitingTransfers: [{ currency: 'EUR', count: 1, amount: 9 }],
+                    awaitingTransfers: [{ currency: 'EUR', count: 1, amount: '9.00' }],
                     paidNotShipped: 0
                 }
             },

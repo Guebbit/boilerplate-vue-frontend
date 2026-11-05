@@ -3,17 +3,16 @@
  * `src/modules/products/schemas.ts` — the product form's price rule and its per-locale
  * `translations` rule.
  *
- * The price minimum is read from `@api/schemas` rather than retyped, so the form cannot drift
- * looser than the contract it was built from; the boundary is asserted on both sides of that
- * number. Messages belong to `schemas-i18n.spec.ts` — these are the rules.
+ * The price is a non-negative decimal string, by the pattern `@api/schemas` declares, so the form
+ * cannot drift looser than the contract it was built from. Messages belong to `schemas-i18n.spec.ts` — these are the rules.
  */
 import { describe, expect, it } from 'vitest';
-import { createProductBodyPriceMin, createProductBodyTranslationsTitleMax } from '@api/schemas';
+import { createProductBodyTranslationsTitleMax } from '@api/schemas';
 import { productsSchema } from '../schemas';
 
 /** A form payload that passes, for tests that vary one field away from valid. */
 const validProduct = {
-    price: createProductBodyPriceMin + 1,
+    price: '1.00',
     translations: { en: { title: 'A lamp' } }
 };
 
@@ -39,26 +38,17 @@ describe('productsSchema', () => {
         expect(productsSchema.safeParse({ ...validProduct, translations: {} }).success).toBe(true);
     });
 
-    /**
-     * The bound comes from the contract, so this is a boundary test rather than a magic number.
-     */
-    it('accepts exactly the contract minimum price and rejects just under it', () => {
-        expect(
-            productsSchema.safeParse({ ...validProduct, price: createProductBodyPriceMin }).success
-        ).toBe(true);
-        expect(
-            productsSchema.safeParse({ ...validProduct, price: createProductBodyPriceMin - 0.01 })
-                .success
-        ).toBe(false);
+    it.each(['0', '0.00', '19.90', '1000', '1.500', ' 5 '])('accepts the amount %s', (price) => {
+        expect(productsSchema.safeParse({ ...validProduct, price }).success).toBe(true);
     });
 
-    it('rejects a negative price', () => {
-        expect(productsSchema.safeParse({ ...validProduct, price: -1 }).success).toBe(false);
+    it.each(['-1', '-0.01', '1e3', '1.5.5', '', 'abc'])('rejects the price %j', (price) => {
+        expect(productsSchema.safeParse({ ...validProduct, price }).success).toBe(false);
     });
 
-    it('requires the price to be a number, not a numeric string', () => {
-        // The form binds a numeric input; a string here means the coercion upstream was dropped.
-        expect(productsSchema.safeParse({ ...validProduct, price: '10' }).success).toBe(false);
+    it('requires the price to be text, not a number', () => {
+        // The form binds a text field; a number here means the wire value was never made text.
+        expect(productsSchema.safeParse({ ...validProduct, price: 10 }).success).toBe(false);
     });
 
     it('requires a price at all', () => {

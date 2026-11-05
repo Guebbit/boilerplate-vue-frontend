@@ -24,7 +24,7 @@ const aDispute = (overrides: Partial<Dispute> = {}): Dispute => ({
     kind: 'chargeback',
     status: 'needs_response',
     reason: 'product_not_received',
-    amount: 40,
+    amount: '40.00',
     currency: 'EUR',
     fundsWithdrawn: true,
     openedAt: '2026-03-05T10:00:00Z',

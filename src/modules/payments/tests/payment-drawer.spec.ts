@@ -33,7 +33,7 @@ const router = createRouter({
 /** A record of the refund the request wrote, for the specs that stub the store's answer. */
 const SETTLED_REFUND: Refund = {
     id: 'r-new',
-    amount: 100,
+    amount: '100.00',
     currency: 'EUR',
     status: 'succeeded',
     reason: 'goodwill',
@@ -43,13 +43,13 @@ const SETTLED_REFUND: Refund = {
 const FULL: Payment = aPayment({
     providerRef: 'pi_abc123',
     cardLast4: '4242',
-    amountRefunded: 10,
+    amountRefunded: '10.00',
     displayStatus: 'refund_pending',
     actions: { pay: false, sync: false, refund: true, settleByHand: [], cancelRefund: [] },
     refunds: [
         {
             id: 'r1',
-            amount: 10,
+            amount: '10.00',
             currency: 'EUR',
             status: 'failed',
             reason: 'goodwill',
@@ -122,7 +122,7 @@ describe('PaymentDrawer', () => {
                     kind: 'chargeback',
                     status: 'needs_response',
                     reason: 'fraudulent',
-                    amount: 50,
+                    amount: '50.00',
                     currency: 'EUR',
                     fundsWithdrawn: true,
                     openedAt: '2026-03-05T10:00:00Z',
@@ -269,7 +269,7 @@ describe('PaymentDrawer', () => {
             provider: 'manual',
             method: 'cash',
             displayStatus: 'refund_pending',
-            amountRefunded: 50,
+            amountRefunded: '50.00',
             actions: {
                 pay: false,
                 sync: false,
@@ -280,7 +280,7 @@ describe('PaymentDrawer', () => {
             refunds: [
                 {
                     id: 'r-owed',
-                    amount: 50,
+                    amount: '50.00',
                     currency: 'EUR',
                     status: 'pending',
                     reason: 'return',
@@ -288,7 +288,7 @@ describe('PaymentDrawer', () => {
                 },
                 {
                     id: 'r-other',
-                    amount: 5,
+                    amount: '5.00',
                     currency: 'EUR',
                     status: 'pending',
                     reason: 'goodwill',
@@ -354,7 +354,7 @@ describe('PaymentDrawer', () => {
             provider: 'manual',
             method: 'cash',
             displayStatus: 'refund_pending',
-            amountRefunded: 50,
+            amountRefunded: '50.00',
             actions: {
                 pay: false,
                 sync: false,
@@ -365,7 +365,7 @@ describe('PaymentDrawer', () => {
             refunds: [
                 {
                     id: 'r-owed',
-                    amount: 50,
+                    amount: '50.00',
                     currency: 'EUR',
                     status: 'pending',
                     reason: 'goodwill',
@@ -373,7 +373,7 @@ describe('PaymentDrawer', () => {
                 },
                 {
                     id: 'r-other',
-                    amount: 5,
+                    amount: '5.00',
                     currency: 'EUR',
                     status: 'succeeded',
                     reason: 'goodwill',

@@ -25,7 +25,7 @@ const aProduct = (overrides: Partial<Product> = {}): Product => {
     const product = {
         id: 'p1',
         title: 'Widget',
-        price: 1,
+        price: '1.00',
         currency: 'EUR',
         inStock: false,
         lowStock: false,

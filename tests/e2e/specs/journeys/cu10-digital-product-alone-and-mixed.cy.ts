@@ -26,7 +26,7 @@ import {
 
 /** The slice of an order this story reads: what it was charged for, and how it was to be sent. */
 interface OrderLike {
-    shippingCost?: number | null;
+    shippingCost?: string | null;
     shippingMethod?: string | null;
     shippingAddress?: { street: string } | null;
     billingAddress?: { street: string } | null;
@@ -73,7 +73,7 @@ describe('CU10 · A digital product, alone and mixed', () => {
         idFromLocation().then((orderId) => {
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
                 expect(order?.shippingMethod ?? null, 'nothing to ship by').to.equal(null);
-                expect(order?.shippingCost ?? 0, 'nothing to charge for').to.equal(0);
+                expect(Number(order?.shippingCost ?? 0), 'nothing to charge for').to.equal(0);
                 expect(order?.shippingAddress ?? null, 'nowhere was sent to').to.equal(null);
                 expect(order?.billingAddress?.street, 'but the invoice has an address').to.be.a(
                     'string'

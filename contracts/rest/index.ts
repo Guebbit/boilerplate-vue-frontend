@@ -79,6 +79,18 @@ export type Text = string;
 export type CurrencyCode = string;
 
 /**
+ * A money amount as a plain decimal string at the places of the currency it is priced in (`"19.90"` for EUR, `"1000"` for JPY, `"1.500"` for KWD). May be negative where the field says it is a signed figure.
+ * @pattern ^-?\d+(\.\d+)?$
+ */
+export type DecimalAmount = string;
+
+/**
+ * A non-negative money amount as a plain decimal string at the places of the currency it is priced in (`"19.90"` for EUR, `"1000"` for JPY, `"1.500"` for KWD).
+ * @pattern ^\d+(\.\d+)?$
+ */
+export type NonNegativeDecimalAmount = string;
+
+/**
  * @maxLength 254
  */
 export type Email = string;
@@ -1891,11 +1903,8 @@ export const RateType = {
 export interface OrderLineProduct {
     id: Id;
     title: string;
-    /**
-     * Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.
-     * @minimum 0
-     */
-    price: number;
+    /** Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`. */
+    price: NonNegativeDecimalAmount;
     description?: string;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
@@ -1940,16 +1949,10 @@ export interface OrderItem {
     promiseDated?: boolean;
     /** The product's picture, resolved live — absent when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`. */
     current?: OrderLineCurrent;
-    /**
-     * VAT included in this line's total, at its own frozen `taxRate`.
-     * @minimum 0
-     */
-    readonly taxAmount: number;
-    /**
-     * This line's total excluding VAT — `price × quantity` minus `taxAmount`.
-     * @minimum 0
-     */
-    readonly netAmount: number;
+    /** VAT included in this line's total, at its own frozen `taxRate`. */
+    readonly taxAmount: NonNegativeDecimalAmount;
+    /** This line's total excluding VAT — `price × quantity` minus `taxAmount`. */
+    readonly netAmount: NonNegativeDecimalAmount;
 }
 
 export interface OrderTaxSummaryRow {
@@ -1958,15 +1961,10 @@ export interface OrderTaxSummaryRow {
      * @minimum 0
      */
     rate: number;
-    /** @minimum 0 */
-    netAmount: number;
-    /** @minimum 0 */
-    taxAmount: number;
-    /**
-     * `netAmount + taxAmount`, not re-derived from a price.
-     * @minimum 0
-     */
-    grossAmount: number;
+    netAmount: NonNegativeDecimalAmount;
+    taxAmount: NonNegativeDecimalAmount;
+    /** `netAmount + taxAmount`, not re-derived from a price. */
+    grossAmount: NonNegativeDecimalAmount;
 }
 
 export interface OrderAddress {
@@ -2057,44 +2055,26 @@ export interface ExportOrder {
      * @minimum 0
      */
     totalQuantity: number;
-    /**
-     * Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
-     * @minimum 0
-     */
-    totalPrice: number;
+    /** Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method. */
+    totalPrice: NonNegativeDecimalAmount;
     /** ISO-4217 currency code this order was priced in (e.g. EUR). */
     readonly currency: CurrencyCode;
-    /**
-     * Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
-     * @minimum 0
-     */
-    readonly netTotal: number;
-    /**
-     * Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers.
-     * @minimum 0
-     */
-    readonly taxTotal: number;
-    /**
-     * Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
-     * @minimum 0
-     */
-    readonly shippingNetAmount: number;
-    /**
-     * Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
-     * @minimum 0
-     */
-    readonly shippingTaxAmount: number;
+    /** Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. */
+    readonly netTotal: NonNegativeDecimalAmount;
+    /** Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. */
+    readonly taxTotal: NonNegativeDecimalAmount;
+    /** Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping. */
+    readonly shippingNetAmount: NonNegativeDecimalAmount;
+    /** Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping. */
+    readonly shippingTaxAmount: NonNegativeDecimalAmount;
     /** One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines. */
     readonly taxSummary: readonly OrderTaxSummaryRow[];
     /** Optional order notes */
     notes?: string;
     /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
     shippingMethod?: string;
-    /**
-     * What that method cost at checkout time — a later rate change cannot re-price history.
-     * @minimum 0
-     */
-    shippingCost?: number;
+    /** What that method cost at checkout time — a later rate change cannot re-price history. */
+    shippingCost?: NonNegativeDecimalAmount;
     shippingAddress?: OrderAddress;
     billingAddress?: OrderAddress;
     paymentMethod?: PaymentMethodId;
@@ -2229,11 +2209,8 @@ export const RefundFailureReason = {
  */
 export interface Refund {
     id: Id;
-    /**
-     * The amount returned, in the payment's own `currency`.
-     * @minimum 0
-     */
-    amount: number;
+    /** The amount returned, in the payment's own `currency`. */
+    amount: NonNegativeDecimalAmount;
     /** ISO-4217 currency code, copied from the payment. */
     currency: CurrencyCode;
     /** `pending` while the provider is being asked (or, on a hand-paid payment, until an operator reports the money back); `failed` when it refused — the sweep retries it with the same idempotency key unless the refusal is final, and an operator may report it returned by hand when the money provably did not move (see `RefundFailureReason`); `succeeded` once the money is confirmed back, or reported back by the operator. A `failed` refund with `failureReason: canceled` was voided by staff and is closed for good. */
@@ -2269,11 +2246,9 @@ export const ExportPaymentStatus = {
 export interface ExportPayment {
     id: Id;
     orderId: Id;
-    /** @minimum 0 */
-    amount: number;
+    amount: NonNegativeDecimalAmount;
     currency: CurrencyCode;
-    /** @minimum 0 */
-    amountRefunded: number;
+    amountRefunded: NonNegativeDecimalAmount;
     refunds: Refund[];
     status: ExportPaymentStatus;
     provider: string;
@@ -2288,8 +2263,7 @@ export interface ExportInvoiceDocument {
     number: string;
     issuedAt: string;
     currency: CurrencyCode;
-    /** @minimum 0 */
-    grandTotal: number;
+    grandTotal: NonNegativeDecimalAmount;
 }
 
 /**
@@ -3914,11 +3888,8 @@ export type ProductTranslations = { [key: string]: ProductTranslationFields };
 export interface Product {
     id: Id;
     title: string;
-    /**
-     * Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.
-     * @minimum 0
-     */
-    price: number;
+    /** Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around. */
+    price: NonNegativeDecimalAmount;
     /** ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting. */
     readonly currency: CurrencyCode;
     taxClass?: TaxClass;
@@ -3997,11 +3968,8 @@ export interface ProductTranslationsCreate {
 
 export interface CreateProductRequest {
     translations: ProductTranslationsCreate;
-    /**
-     * Gross — VAT included. Same convention as `Product.price`.
-     * @minimum 0
-     */
-    price: number;
+    /** Gross — VAT included. Same convention as `Product.price`. */
+    price: NonNegativeDecimalAmount;
     taxClass?: TaxClass;
     rateType?: RateType;
     sku?: Sku;
@@ -4035,11 +4003,8 @@ export interface CreateProductRequestMultipart {
      * @maxLength 100000
      */
     translations: string;
-    /**
-     * Gross — VAT included. Same convention as `Product.price`.
-     * @minimum 0
-     */
-    price: number;
+    /** Gross — VAT included. Same convention as `Product.price`. */
+    price: NonNegativeDecimalAmount;
     taxClass?: TaxClass;
     rateType?: RateType;
     sku?: Sku;
@@ -4089,11 +4054,8 @@ export interface ProductTranslationsWrite {
 
 export interface ReplaceProductRequest {
     translations: ProductTranslationsWrite;
-    /**
-     * Gross — VAT included. Same convention as `Product.price`.
-     * @minimum 0
-     */
-    price: number;
+    /** Gross — VAT included. Same convention as `Product.price`. */
+    price: NonNegativeDecimalAmount;
     taxClass?: TaxClass | null;
     rateType?: RateType | null;
     sku?: Sku | null;
@@ -4129,11 +4091,8 @@ export interface ReplaceProductRequestMultipart {
      * @maxLength 100000
      */
     translations: string;
-    /**
-     * Gross — VAT included. Same convention as `Product.price`.
-     * @minimum 0
-     */
-    price: number;
+    /** Gross — VAT included. Same convention as `Product.price`. */
+    price: NonNegativeDecimalAmount;
     taxClass?: string;
     rateType?: string;
     sku?: string;
@@ -4188,11 +4147,8 @@ export interface ProductTranslationsPatch {
 
 export interface UpdateProductRequest {
     translations?: ProductTranslationsPatch;
-    /**
-     * Gross — VAT included. Same convention as `Product.price`.
-     * @minimum 0
-     */
-    price?: number;
+    /** Gross — VAT included. Same convention as `Product.price`. */
+    price?: NonNegativeDecimalAmount;
     taxClass?: TaxClass | null;
     rateType?: RateType | null;
     sku?: Sku | null;
@@ -4228,11 +4184,8 @@ export interface UpdateProductRequestMultipart {
      * @maxLength 100000
      */
     translations?: string;
-    /**
-     * Gross — VAT included. Same convention as `Product.price`.
-     * @minimum 0
-     */
-    price?: number;
+    /** Gross — VAT included. Same convention as `Product.price`. */
+    price?: NonNegativeDecimalAmount;
     taxClass?: string;
     rateType?: string;
     sku?: string;
@@ -4272,10 +4225,8 @@ export interface SearchProductsRequest {
      * @maxItems 100
      */
     id?: Id[];
-    /** @minimum 0 */
-    priceMin?: number;
-    /** @minimum 0 */
-    priceMax?: number;
+    priceMin?: NonNegativeDecimalAmount;
+    priceMax?: NonNegativeDecimalAmount;
     /** @maxLength 200 */
     category?: string;
     /** @maxLength 200 */
@@ -4326,19 +4277,6 @@ export interface CartResponseItem {
     canIncrease: boolean;
 }
 
-/**
- * An order total as the buyer saw it, or as the checkout would charge it. The amount is in minor units (cents), so two totals compare as integers and never as floats.
- */
-export interface ExpectedTotal {
-    /**
-     * The total in minor units of `currency` (EUR 71.00 is 7100).
-     * @minimum 0
-     */
-    amount: number;
-    /** The ISO-4217 code the total is priced in. */
-    currency: CurrencyCode;
-}
-
 export interface CartSummaryResponse {
     /**
      * Number of distinct cart lines/items
@@ -4350,25 +4288,14 @@ export interface CartSummaryResponse {
      * @minimum 0
      */
     totalQuantity: number;
-    /**
-     * Sum of item prices * quantity. Gross — VAT included, same as each product's own `price` — before shipping. There are no discounts to net out.
-     * @minimum 0
-     */
-    itemsTotal: number;
-    /**
-     * What the cart's chosen shipping method (`PUT /cart/shipping-method`) costs against `itemsTotal` right now (free-above thresholds included). `0` with no method chosen, a digital-only basket, or a method that no longer fits the basket's weight — the same real-time pricing `POST /cart/checkout` freezes onto the order, priced early so a shopper sees the true total before paying.
-     * @minimum 0
-     */
-    shippingCost: number;
-    /**
-     * itemsTotal + shippingCost
-     * @minimum 0
-     */
-    totalPrice: number;
+    /** Sum of item prices * quantity. Gross — VAT included, same as each product's own `price` — before shipping. There are no discounts to net out. */
+    itemsTotal: NonNegativeDecimalAmount;
+    /** What the cart's chosen shipping method (`PUT /cart/shipping-method`) costs against `itemsTotal` right now (free-above thresholds included). `0` with no method chosen, a digital-only basket, or a method that no longer fits the basket's weight — the same real-time pricing `POST /cart/checkout` freezes onto the order, priced early so a shopper sees the true total before paying. */
+    shippingCost: NonNegativeDecimalAmount;
+    /** itemsTotal + shippingCost */
+    totalPrice: NonNegativeDecimalAmount;
     /** ISO-4217 currency code (e.g. USD) */
     currency: CurrencyCode;
-    /** `totalPrice` in minor units, exactly as `POST /cart/checkout` compares it: send it back unchanged as the checkout's `expectedTotal`. A client never converts the decimal itself, so it needs no table of currency exponents. */
-    expectedTotal: ExpectedTotal;
 }
 
 /**
@@ -4377,11 +4304,8 @@ export interface CartSummaryResponse {
 export interface CartShippingOption {
     /** Matches a `ShippingMethod.id` from `GET /delivery/methods`. */
     id: string;
-    /**
-     * What this method costs against `summary.itemsTotal` right now (free-above thresholds included) — the same figure `PUT /cart/shipping-method` would freeze into `summary.shippingCost` if chosen.
-     * @minimum 0
-     */
-    price: number;
+    /** What this method costs against `summary.itemsTotal` right now (free-above thresholds included) — the same figure `PUT /cart/shipping-method` would freeze into `summary.shippingCost` if chosen. */
+    price: NonNegativeDecimalAmount;
     /** Whether choosing this method requires a shipping address. */
     requiresAddress: boolean;
     /** Whether a parcel sent by this method carries a tracking code. */
@@ -4432,6 +4356,16 @@ export interface SetCartShippingMethodRequest {
      * @nullable
      */
     shippingMethodId: string | null;
+}
+
+/**
+ * An order total as the buyer saw it, or as the checkout would charge it. Checkout compares by minor units, so `"71"` and `"71.00"` are the same total.
+ */
+export interface ExpectedTotal {
+    /** The total at the places of `currency` (EUR 71.00 is `"71.00"`). */
+    amount: NonNegativeDecimalAmount;
+    /** The ISO-4217 code the total is priced in. */
+    currency: CurrencyCode;
 }
 
 export interface CheckoutRequest {
@@ -4507,44 +4441,26 @@ export interface Order {
      * @minimum 0
      */
     totalQuantity: number;
-    /**
-     * Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
-     * @minimum 0
-     */
-    totalPrice: number;
+    /** Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method. */
+    totalPrice: NonNegativeDecimalAmount;
     /** ISO-4217 currency code this order was priced in (e.g. EUR). */
     readonly currency: CurrencyCode;
-    /**
-     * Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
-     * @minimum 0
-     */
-    readonly netTotal: number;
-    /**
-     * Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers.
-     * @minimum 0
-     */
-    readonly taxTotal: number;
-    /**
-     * Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
-     * @minimum 0
-     */
-    readonly shippingNetAmount: number;
-    /**
-     * Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
-     * @minimum 0
-     */
-    readonly shippingTaxAmount: number;
+    /** Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. */
+    readonly netTotal: NonNegativeDecimalAmount;
+    /** Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. */
+    readonly taxTotal: NonNegativeDecimalAmount;
+    /** Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping. */
+    readonly shippingNetAmount: NonNegativeDecimalAmount;
+    /** Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping. */
+    readonly shippingTaxAmount: NonNegativeDecimalAmount;
     /** One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines. */
     readonly taxSummary: readonly OrderTaxSummaryRow[];
     /** Optional order notes */
     notes?: string;
     /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
     shippingMethod?: string;
-    /**
-     * What that method cost at checkout time — a later rate change cannot re-price history.
-     * @minimum 0
-     */
-    shippingCost?: number;
+    /** What that method cost at checkout time — a later rate change cannot re-price history. */
+    shippingCost?: NonNegativeDecimalAmount;
     shippingAddress?: OrderAddress;
     billingAddress?: OrderAddress;
     paymentMethod?: PaymentMethodId;
@@ -4729,11 +4645,8 @@ export interface CreditNoteSummary {
     issuedAt: string;
     /** ISO-4217 currency code (e.g. EUR) */
     currency: CurrencyCode;
-    /**
-     * The gross amount this credit note reverses.
-     * @minimum 0
-     */
-    grandTotal: number;
+    /** The gross amount this credit note reverses. */
+    grandTotal: NonNegativeDecimalAmount;
     refundId: Id;
 }
 
@@ -4834,8 +4747,7 @@ export interface Dispute {
     kind: DisputeKind;
     status: DisputeStatus;
     reason: DisputeReason;
-    /** @minimum 0 */
-    amount: number;
+    amount: NonNegativeDecimalAmount;
     currency: CurrencyCode;
     evidenceDueBy?: string;
     fundsWithdrawn: boolean;
@@ -4894,18 +4806,12 @@ export interface Payment {
     id: Id;
     orderId: Id;
     userId?: Id;
-    /**
-     * The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation. If the provider reports a success for a different amount or currency, the payment reads `succeeded` with what ARRIVED here, its order is canceled and the money is returned.
-     * @minimum 0
-     */
-    amount: number;
+    /** The order's total as the intent froze it. Always at the currency's own places, rounded half-up at the point of calculation. If the provider reports a success for a different amount or currency, the payment reads `succeeded` with what ARRIVED here, its order is canceled and the money is returned. */
+    amount: NonNegativeDecimalAmount;
     /** ISO-4217 currency code (e.g. EUR) */
     currency: CurrencyCode;
-    /**
-     * How much of `amount` has been asked back, pending and succeeded together — the same reading as Stripe's `amount_refunded`. Counted when a refund is opened, so two racing partial refunds cannot return more than was paid.
-     * @minimum 0
-     */
-    amountRefunded: number;
+    /** How much of `amount` has been asked back, pending and succeeded together — the same reading as Stripe's `amount_refunded`. Counted when a refund is opened, so two racing partial refunds cannot return more than was paid. */
+    amountRefunded: NonNegativeDecimalAmount;
     /** One record per refund attempt, oldest first. */
     refunds: Refund[];
     /** The provider-facing lifecycle. A refunded payment, whole or in part, stays `succeeded`: `displayStatus` and `amountRefunded` say how much went back. `canceled` means the order was canceled and the provider confirmed the intent closed; money that still arrives on it is settled and returned. `requires_action` means the buyer has something to do: the bank wants a challenge answered in the browser (3-D Secure), or a bank transfer is waiting to be sent (`nextAction` says how) — and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions */
@@ -5100,11 +5006,8 @@ export interface PaymentMethodsResponse {
 }
 
 export interface RefundPaymentRequest {
-    /**
-     * How much to return, a decimal in the payment's own currency. Absent means everything still refundable.
-     * @exclusiveMinimum 0
-     */
-    amount?: number;
+    /** How much to return, a decimal in the payment's own currency. Absent means everything still refundable. */
+    amount?: DecimalAmount;
     /** ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one. */
     currency?: CurrencyCode;
 }
@@ -5131,11 +5034,8 @@ export interface DisputeReport {
     kind: DisputeKind;
     status: DisputeStatus;
     reason: DisputeReason;
-    /**
-     * The disputed amount, in `currency`.
-     * @minimum 0
-     */
-    amount: number;
+    /** The disputed amount, in `currency`. */
+    amount: NonNegativeDecimalAmount;
     /** ISO-4217 code, upper case. */
     currency: CurrencyCode;
     /** When the provider stops accepting evidence. Absent when it gave no deadline. */
@@ -5176,18 +5076,12 @@ export interface PaymentWebhookEvent {
 export interface ShippingMethod {
     /** Stable id, frozen onto orders at checkout (standard, express, pickup). */
     id: string;
-    /**
-     * Flat rate, in `currency`.
-     * @minimum 0
-     */
-    price: number;
+    /** Flat rate, in `currency`. */
+    price: NonNegativeDecimalAmount;
     /** ISO-4217 currency code (e.g. EUR) — this deployment's `NODE_DEFAULT_CURRENCY`. */
     currency: CurrencyCode;
-    /**
-     * Items total at which this method becomes free. Absent — it never does.
-     * @minimum 0
-     */
-    freeAbove?: number;
+    /** Items total at which this method becomes free. Absent — it never does. */
+    freeAbove?: NonNegativeDecimalAmount;
     /** Whether the carrier gives a code the buyer can follow for a parcel sent by this method. Looked up live by the order's shippingMethod id — not frozen at checkout. The code may be added at ship time or later. */
     tracked: boolean;
     /** Whether this method needs a shipping address to deliver to (a courier does; a counter pickup does not). Checkout enforces it — a basket needing shipping refuses with `CART_ADDRESS_REQUIRED` when the chosen method requires one and none is on file. */
@@ -5386,11 +5280,8 @@ export interface ReturnLine {
     quantity: number;
     /** The product's title as the order froze it. */
     title: string;
-    /**
-     * The gross unit price the order froze.
-     * @minimum 0
-     */
-    unitPrice: number;
+    /** The gross unit price the order froze. */
+    unitPrice: NonNegativeDecimalAmount;
     /**
      * How many of the `quantity` went back on sale when the goods were received. Set at receipt, never more than `quantity`; absent before then.
      * @minimum 0
@@ -5510,16 +5401,10 @@ export interface Return {
     receivedAt?: string;
     /** What staff gave when the goods arrived. Absent until then, and on a return born closed. `replace` and `repair` close the return with no money moving and hand its units back to the buyer, so they are returnable again. */
     remedy?: ReturnRemedy;
-    /**
-     * An amount kept back from the refund for handling damage (Art. 14(2)), entered when the goods were received. Absent when nothing was kept.
-     * @minimum 0
-     */
-    handlingDeduction?: number;
-    /**
-     * What the customer is owed for this return, fixed when the goods were received.
-     * @minimum 0
-     */
-    refundAmount?: number;
+    /** An amount kept back from the refund for handling damage (Art. 14(2)), entered when the goods were received. Absent when nothing was kept. */
+    handlingDeduction?: NonNegativeDecimalAmount;
+    /** What the customer is owed for this return, fixed when the goods were received. */
+    refundAmount?: NonNegativeDecimalAmount;
     /** When the money went back and the return finished. */
     closedAt?: string;
     /** When staff canceled the return. Present only on a `canceled` return. */
@@ -5603,16 +5488,10 @@ export interface CancelableFulfillmentOrder {
     /** @minimum 1 */
     number: number;
     lines: CancelOptionLine[];
-    /**
-     * What the cancel would refund, in `ReturnOptions.currency` — the lines plus `shippingRefund`.
-     * @minimum 0
-     */
-    refundAmount: number;
-    /**
-     * The delivery inside `refundAmount` — non-zero only when this cancel takes the last unit of the order.
-     * @minimum 0
-     */
-    shippingRefund: number;
+    /** What the cancel would refund, in `ReturnOptions.currency` — the lines plus `shippingRefund`. */
+    refundAmount: NonNegativeDecimalAmount;
+    /** The delivery inside `refundAmount` — non-zero only when this cancel takes the last unit of the order. */
+    shippingRefund: NonNegativeDecimalAmount;
     /** Whether THIS caller may cancel this remainder, so a client offers only a door that opens. The order's buyer: within the withdrawal window, and only when the remainder holds no goods excluded from withdrawal (Art. 16). Anyone else: holding `create:Refund`. */
     cancel: boolean;
 }
@@ -5649,11 +5528,8 @@ export type ReceiveReturnRequestLinesItem = {
 export interface ReceiveReturnRequest {
     /** What the buyer is given. Absent means `refund`. `replace` and `repair` are for a `defective` or `wrong_item` return only (422 `RETURN_REMEDY_INVALID` otherwise). */
     remedy?: ReturnRemedy;
-    /**
-     * Handling damage to keep back from the refund (Art. 14(2)), a decimal in the return's currency. Absent means none. More than the refund is worth is refused, and so is any amount on a `defective` or `wrong_item` return (a guarantee remedy is free of charge).
-     * @minimum 0
-     */
-    handlingDeduction?: number;
+    /** Handling damage to keep back from the refund (Art. 14(2)), a decimal in the return's currency. Absent means none. More than the refund is worth is refused, and so is any amount on a `defective` or `wrong_item` return (a guarantee remedy is free of charge). */
+    handlingDeduction?: NonNegativeDecimalAmount;
     /** How many units of each returned product go back on sale. A product not listed goes back in full, and absent `lines` puts everything back. A unit that is broken is set to 0. An unknown or repeated product, or a count over the line's quantity, is refused. */
     lines?: ReceiveReturnRequestLinesItem[];
 }
@@ -6265,10 +6141,8 @@ export interface SearchPaymentsRequest {
     createdTo?: string;
     receivedFrom?: string;
     receivedTo?: string;
-    /** @minimum 0 */
-    amountMin?: number;
-    /** @minimum 0 */
-    amountMax?: number;
+    amountMin?: NonNegativeDecimalAmount;
+    amountMax?: NonNegativeDecimalAmount;
     orderId?: Id;
     /** `true` keeps only payments with a dispute still open. `false` or absent is no filter. */
     disputed?: boolean;
@@ -6285,8 +6159,7 @@ export interface RefundListItem {
     id: Id;
     paymentId: Id;
     orderId: Id;
-    /** @minimum 0 */
-    amount: number;
+    amount: NonNegativeDecimalAmount;
     currency: CurrencyCode;
     status: RefundStatus;
     reason: RefundReason;
@@ -6330,23 +6203,16 @@ export interface PaymentAttentionItem {
     disputeId?: string;
     /** On a `dispute_needs_response` row, when the provider's evidence window closes. Absent when the provider gave none. A past date means the window has gone. */
     dueBy?: string;
-    /**
-     * On a `dispute_needs_response` row, how much of the payment was already refunded successfully, in its currency. Above zero it is a refund-then-chargeback: send the refund as evidence. Absent when nothing was refunded.
-     * @minimum 0
-     */
-    alreadyRefunded?: number;
-    /** @minimum 0 */
-    amount: number;
+    /** On a `dispute_needs_response` row, how much of the payment was already refunded successfully, in its currency. Above zero it is a refund-then-chargeback: send the refund as evidence. Absent when nothing was refunded. */
+    alreadyRefunded?: NonNegativeDecimalAmount;
+    amount: NonNegativeDecimalAmount;
     currency: CurrencyCode;
     /** Staff only (`display:Payment`). */
     failureReason?: RefundFailureReason;
     /** When the problem was recorded, so the page can sort by age. */
     since: string;
-    /**
-     * On a `refund_exceeds_remaining` row, by how much this open refund overshoots what the provider can still give back, in the payment's currency.
-     * @minimum 0
-     */
-    exceedsBy?: number;
+    /** On a `refund_exceeds_remaining` row, by how much this open refund overshoots what the provider can still give back, in the payment's currency. */
+    exceedsBy?: NonNegativeDecimalAmount;
     /** The legal deadline to give the money back, on a `refused_refund` that pays for a withdrawal or a return: the refund's creation plus 14 days (Consumer Rights Directive Art. 13). Absent for any other refund, which shows its age only. The client shows the days left; a past date means the deadline has gone. */
     refundDueBy?: string;
 }
@@ -6459,39 +6325,24 @@ export interface SalesFigures {
     unitsReversed: number;
     /** `unitsOrdered` minus `unitsReversed`. */
     netUnits: number;
-    /**
-     * Goods net of VAT on invoices issued in the period, before shipping, discounts and reversals.
-     * @minimum 0
-     */
-    grossSales: number;
-    /**
-     * Always 0 until a discount exists.
-     * @minimum 0
-     */
-    discounts: number;
-    /**
-     * The goods part (net of VAT) of credit notes issued in the period.
-     * @minimum 0
-     */
-    reversals: number;
+    /** Goods net of VAT on invoices issued in the period, before shipping, discounts and reversals. */
+    grossSales: NonNegativeDecimalAmount;
+    /** Always 0 until a discount exists. */
+    discounts: NonNegativeDecimalAmount;
+    /** The goods part (net of VAT) of credit notes issued in the period. */
+    reversals: NonNegativeDecimalAmount;
     /** `grossSales` minus `discounts` minus `reversals`. */
-    netSales: number;
+    netSales: DecimalAmount;
     /** Shipping net of VAT charged minus refunded. Exact for full refunds only, since a partial credit note folds its shipping into goods. */
-    shipping: number;
+    shipping: DecimalAmount;
     /** VAT charged minus VAT refunded. */
-    taxes: number;
+    taxes: DecimalAmount;
     /** `netSales` plus `shipping` plus `taxes`. */
-    totalSales: number;
-    /**
-     * Credit notes issued in the period, VAT included.
-     * @minimum 0
-     */
-    refunds: number;
-    /**
-     * (`grossSales` minus `discounts`) divided by `orders`; 0 with no orders.
-     * @minimum 0
-     */
-    averageOrderValue: number;
+    totalSales: DecimalAmount;
+    /** Credit notes issued in the period, VAT included. */
+    refunds: NonNegativeDecimalAmount;
+    /** (`grossSales` minus `discounts`) divided by `orders`; 0 with no orders. */
+    averageOrderValue: NonNegativeDecimalAmount;
 }
 
 export interface SalesBucket {
@@ -6525,7 +6376,7 @@ export interface ProductSalesRow {
     unitsReversed: number;
     netUnits: number;
     /** Net of VAT, from the frozen line price and rate. */
-    netSales: number;
+    netSales: DecimalAmount;
 }
 
 export interface ProductStats {
@@ -6556,7 +6407,7 @@ export interface CategorySalesRow {
     currency: CurrencyCode;
     /** @minimum 0 */
     unitsOrdered: number;
-    netSales: number;
+    netSales: DecimalAmount;
 }
 
 export interface CategoryStats {
@@ -6580,8 +6431,7 @@ export interface PaymentMixRow {
     currency: CurrencyCode;
     /** @minimum 0 */
     payments: number;
-    /** @minimum 0 */
-    amount: number;
+    amount: NonNegativeDecimalAmount;
 }
 
 export interface PaymentMix {
@@ -6616,16 +6466,10 @@ export type OperationsStatsReturns = {
 
 export type OperationsStatsRefundsItem = {
     currency: CurrencyCode;
-    /**
-     * Invoices issued in the period, VAT included.
-     * @minimum 0
-     */
-    invoiced: number;
-    /**
-     * Credit notes issued in the period, VAT included.
-     * @minimum 0
-     */
-    credited: number;
+    /** Invoices issued in the period, VAT included. */
+    invoiced: NonNegativeDecimalAmount;
+    /** Credit notes issued in the period, VAT included. */
+    credited: NonNegativeDecimalAmount;
     /** @minimum 0 */
     rate: number;
 };
@@ -6665,8 +6509,7 @@ export type PipelineStatsAwaitingTransfersItem = {
     currency: CurrencyCode;
     /** @minimum 0 */
     count: number;
-    /** @minimum 0 */
-    amount: number;
+    amount: NonNegativeDecimalAmount;
     nearestPayBy?: string;
 };
 
@@ -6829,6 +6672,12 @@ export interface Shop {
     phone: string;
     /** ISO-4217 currency code (e.g. EUR) — the shop's one currency, the same one `Product.currency` reports. */
     currency: CurrencyCode;
+    /**
+     * How many decimal places `currency` has (ISO 4217's "minor unit": EUR 2, JPY 0, KWD 3). A client building a price input reads it here; an amount it receives already carries its own places.
+     * @minimum 0
+     * @maximum 4
+     */
+    minorUnits: number;
     /** Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`) — checkout refuses a method that `requiresAddress` once the resolved address falls outside it. */
     shipToCountries: CountryCode[];
     returnAddress: ShopAddress;
@@ -7296,14 +7145,8 @@ export type ListProductsParams = {
      * @maxLength 200
      */
     tag?: string;
-    /**
-     * @minimum 0
-     */
-    priceMin?: number;
-    /**
-     * @minimum 0
-     */
-    priceMax?: number;
+    priceMin?: NonNegativeDecimalAmount;
+    priceMax?: NonNegativeDecimalAmount;
     /**
      * @maxLength 200
      */
@@ -7661,14 +7504,8 @@ export type ListPaymentsParams = {
      */
     receivedFrom?: string;
     receivedTo?: string;
-    /**
-     * @minimum 0
-     */
-    amountMin?: number;
-    /**
-     * @minimum 0
-     */
-    amountMax?: number;
+    amountMin?: NonNegativeDecimalAmount;
+    amountMax?: NonNegativeDecimalAmount;
     orderId?: Id;
     /**
      * `true` keeps only payments with a dispute still open (an inquiry or a chargeback the shop has not answered or the bank has not decided). `false` or absent is no filter.
@@ -9989,7 +9826,7 @@ export const createProductWithMultipart = (
 ) => {
     const formData = new FormData();
     formData.append(`translations`, createProductRequestMultipart.translations);
-    formData.append(`price`, createProductRequestMultipart.price.toString());
+    formData.append(`price`, createProductRequestMultipart.price);
     if (createProductRequestMultipart.taxClass !== undefined) {
         formData.append(`taxClass`, createProductRequestMultipart.taxClass);
     }
@@ -10115,7 +9952,7 @@ export const replaceProductByIdWithMultipart = (
 ) => {
     const formData = new FormData();
     formData.append(`translations`, replaceProductRequestMultipart.translations);
-    formData.append(`price`, replaceProductRequestMultipart.price.toString());
+    formData.append(`price`, replaceProductRequestMultipart.price);
     if (replaceProductRequestMultipart.taxClass !== undefined) {
         formData.append(`taxClass`, replaceProductRequestMultipart.taxClass);
     }
@@ -10260,7 +10097,7 @@ export const updateProductByIdWithMultipart = (
         formData.append(`translations`, updateProductRequestMultipart.translations);
     }
     if (updateProductRequestMultipart.price !== undefined) {
-        formData.append(`price`, updateProductRequestMultipart.price.toString());
+        formData.append(`price`, updateProductRequestMultipart.price);
     }
     if (updateProductRequestMultipart.taxClass !== undefined) {
         formData.append(`taxClass`, updateProductRequestMultipart.taxClass);

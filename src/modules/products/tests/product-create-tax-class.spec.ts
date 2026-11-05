@@ -69,7 +69,7 @@ beforeEach(() => {
                 parseOrvalFixture('POST', '/products', {
                     id: 'p2',
                     title: 'New',
-                    price: 1,
+                    price: '1.00',
                     inStock: true,
                     lowStock: false
                 })

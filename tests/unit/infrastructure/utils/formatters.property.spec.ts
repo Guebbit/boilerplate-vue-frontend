@@ -35,6 +35,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fc from 'fast-check';
+import { fromMinor, isDecimal } from '@/infrastructure/utils/money';
 import {
     EMPTY_VALUE,
     formatCurrency,
@@ -119,19 +120,33 @@ describe('formatText', () => {
         ));
 });
 
+/**
+ * An amount as the API writes it: a signed decimal at 0 to 4 places.
+ */
+const amountText = () =>
+    fc
+        .tuple(
+            fc.integer({ min: -1_000_000_000_000, max: 1_000_000_000_000 }),
+            fc.integer({ min: 0, max: 4 })
+        )
+        .map(([minor, scale]) => fromMinor(BigInt(minor), scale));
+
 describe('formatCurrency', () => {
-    it('returns the fallback for every non-number, and never for a number', () =>
+    it('returns the fallback for everything that is not a decimal string, and never for one', () =>
         fc.assert(
             fc.property(
                 fc.oneof(
+                    amountText(),
                     fc.double({ noNaN: true, noDefaultInfinity: true }),
                     nullish(),
                     fc.string(),
                     fc.boolean()
                 ),
                 (value) => {
-                    const result = formatCurrency(value as number | null | undefined, 'EUR');
-                    expect(result === EMPTY_VALUE).toBe(typeof value !== 'number');
+                    const result = formatCurrency(value as string | null | undefined, 'EUR');
+                    expect(result === EMPTY_VALUE).toBe(
+                        typeof value !== 'string' || !isDecimal(value)
+                    );
                 }
             ),
             RUN
@@ -139,23 +154,18 @@ describe('formatCurrency', () => {
 
     it('never throws, for any amount and any currency code', () =>
         fc.assert(
-            fc.property(
-                fc.double({ noNaN: true, noDefaultInfinity: true }),
-                fc.string(),
-                (value, currency) => {
-                    // The `catch` in formatCurrency exists for exactly this: an unknown or
-                    // malformed ISO 4217 code makes Intl throw a RangeError, and a product page
-                    // must not 500 over a currency string. Generation is what reaches the codes
-                    // nobody would think to write down.
-                    expect(() => formatCurrency(value, currency)).not.toThrow();
-                }
-            ),
+            fc.property(amountText(), fc.string(), (value, currency) => {
+                // A malformed ISO 4217 code makes Intl throw a RangeError, and a product page
+                // must not 500 over a currency string. Generation is what reaches the codes
+                // nobody would think to write down.
+                expect(() => formatCurrency(value, currency)).not.toThrow();
+            }),
             RUN
         ));
 
     it('degrades to a plain number rather than the fallback on a bad currency', () =>
         fc.assert(
-            fc.property(fc.double({ noNaN: true, noDefaultInfinity: true }), (value) => {
+            fc.property(amountText(), (value) => {
                 // The failure path must still show the AMOUNT. Returning EMPTY_VALUE here would
                 // hide a real price behind an em dash because of a config typo.
                 expect(formatCurrency(value, 'not-a-currency')).not.toBe(EMPTY_VALUE);
@@ -163,11 +173,23 @@ describe('formatCurrency', () => {
             RUN
         ));
 
-    it('renders every finite amount with at least one digit', () =>
+    it('shows exactly the places the text carries', () =>
         fc.assert(
-            fc.property(fc.double({ noNaN: true, noDefaultInfinity: true }), (value) => {
-                expect(formatCurrency(value, 'EUR')).toMatch(/\d/);
-            }),
+            // Under 1000, so a `,` before digits can only be a decimal mark, never a thousands one.
+            fc.property(
+                fc.integer({ min: 0, max: 999 }),
+                fc.integer({ min: 0, max: 4 }),
+                fc.integer({ min: 0, max: 9999 }),
+                (whole, places, fraction) => {
+                    const value = fromMinor(
+                        BigInt(whole * 10 ** places + (fraction % 10 ** places)),
+                        places
+                    );
+                    const shown = /[,.](\d+)\D*$/.exec(formatCurrency(value, 'EUR'))?.[1] ?? '';
+
+                    expect(shown.length).toBe(places);
+                }
+            ),
             RUN
         ));
 });

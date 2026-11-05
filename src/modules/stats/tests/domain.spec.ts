@@ -149,12 +149,17 @@ describe('isFlat', () => {
 });
 
 describe('escapeCsvCell', () => {
-    it.each(['=SUM(A1)', '+1', '-1', '@cmd', '\tx', '\rx'])(
+    it.each(['=SUM(A1)', '+1', '-1+2', '@cmd', '\tx', '\rx'])(
         'neutralises the formula start %j',
         (cell) => {
             expect(escapeCsvCell(cell)).toMatch(/^"?'/);
         }
     );
+
+    it("leaves an amount's text alone, even a negative one", () => {
+        expect(escapeCsvCell('-12.50')).toBe('-12.50');
+        expect(escapeCsvCell('1000')).toBe('1000');
+    });
 
     it('leaves a number alone, even a negative one', () => {
         expect(escapeCsvCell(-12.5)).toBe('-12.5');

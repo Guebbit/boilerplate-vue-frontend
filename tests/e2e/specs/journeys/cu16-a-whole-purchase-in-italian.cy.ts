@@ -75,7 +75,9 @@ describe('CU16 · A whole purchase in Italian', () => {
                 cy.get('[data-test=cart-item]').should('have.length', 2);
                 for (let click = 1; click < UNITS; click += 1)
                     cy.get('[data-test=cart-increase]').first().click();
-                basketCents = UNITS * (Math.round(food.price * 100) + Math.round(bed.price * 100));
+                basketCents =
+                    UNITS *
+                    (Math.round(Number(food.price) * 100) + Math.round(Number(bed.price) * 100));
             });
             cy.get('[data-test=shipping-method-standard]').click();
             cy.get('[data-test=shipping-method-standard]')

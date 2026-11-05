@@ -68,7 +68,7 @@ const LOCALES_RESPONSE = {
 const ADMIN_RESPONSE = {
     id: 'p1',
     title: 'Widget',
-    price: 9.99,
+    price: '9.99',
     currency: 'EUR',
     translations: { en: { title: 'Widget', description: 'A widget' } }
 };

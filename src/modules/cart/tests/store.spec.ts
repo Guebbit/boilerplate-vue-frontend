@@ -49,32 +49,30 @@ const CART = {
     summary: {
         itemsCount: 1,
         totalQuantity: 2,
-        itemsTotal: 19.98,
-        shippingCost: 0,
-        totalPrice: 19.98,
-        currency: 'EUR',
-        expectedTotal: { amount: 1998, currency: 'EUR' }
+        itemsTotal: '19.98',
+        shippingCost: '0.00',
+        totalPrice: '19.98',
+        currency: 'EUR'
     },
     checkoutable: true,
     shipping: {
         required: true,
-        options: [{ id: 'standard', price: 5, requiresAddress: true, tracked: false }]
+        options: [{ id: 'standard', price: '5.00', requiresAddress: true, tracked: false }]
     }
 };
 
 /**
  * What `GET /cart` answers once the total is `totalPrice` (shipping already inside it).
  *
- * @param totalPrice - the decimal total
+ * @param totalPrice - the decimal total, as text
  * @returns the cart answer
  */
-const cartTotalling = (totalPrice: number) =>
+const cartTotalling = (totalPrice: string) =>
     contractBody<Answer<typeof getCart>>(schemas.GetCartResponse, {
         ...CART,
         summary: {
             ...CART.summary,
-            totalPrice,
-            expectedTotal: { amount: Math.round(totalPrice * 100), currency: 'EUR' }
+            totalPrice
         }
     });
 
@@ -86,11 +84,10 @@ const EMPTY_CART = {
     summary: {
         itemsCount: 0,
         totalQuantity: 0,
-        itemsTotal: 0,
-        shippingCost: 0,
-        totalPrice: 0,
-        currency: 'EUR',
-        expectedTotal: { amount: 0, currency: 'EUR' }
+        itemsTotal: '0.00',
+        shippingCost: '0.00',
+        totalPrice: '0.00',
+        currency: 'EUR'
     },
     shipping: { required: false, options: [] },
     checkoutable: false
@@ -99,7 +96,7 @@ const EMPTY_CART = {
 /**
  * The order checkout creates from {@link CART}.
  */
-const ORDER = anOrder({ totalItems: 1, totalQuantity: 2, totalPrice: 19.98, netTotal: 19.98 });
+const ORDER = anOrder({ totalItems: 1, totalQuantity: 2, totalPrice: '19.98', netTotal: '19.98' });
 
 /**
  * A catalogue product as `GET /products/{id}` answers it.
@@ -111,7 +108,7 @@ const ORDER = anOrder({ totalItems: 1, totalQuantity: 2, totalPrice: 19.98, netT
 const aProduct = (id: string, requiresShipping = true) => ({
     id,
     title: `Product ${id}`,
-    price: 9.99,
+    price: '9.99',
     currency: 'EUR',
     requiresShipping
 });
@@ -208,7 +205,7 @@ describe('useCartStore', () => {
             return store.fetchSummary().then(() => {
                 // Units, not lines: one line of two is a badge saying 2.
                 expect(store.badgeQuantity).toBe(2);
-                expect(store.badgeMoney).toEqual({ total: 19.98, currency: 'EUR' });
+                expect(store.badgeMoney).toEqual({ total: '19.98', currency: 'EUR' });
             });
         });
 
@@ -346,7 +343,7 @@ describe('useCartStore', () => {
                 .checkout()
                 .then(() => {
                     expect(apiCheckout).toHaveBeenCalledWith(
-                        { expectedTotal: { amount: 1998, currency: 'EUR' } },
+                        { expectedTotal: { amount: '19.98', currency: 'EUR' } },
                         expect.anything()
                     );
                 }));
@@ -358,7 +355,7 @@ describe('useCartStore', () => {
                     expect(apiCheckout).toHaveBeenCalledWith(
                         {
                             notes: 'leave at door',
-                            expectedTotal: { amount: 1998, currency: 'EUR' }
+                            expectedTotal: { amount: '19.98', currency: 'EUR' }
                         },
                         expect.anything()
                     );
@@ -381,12 +378,11 @@ describe('useCartStore', () => {
                     expect(store.cartSummary).toEqual({
                         itemsCount: 0,
                         totalQuantity: 0,
-                        itemsTotal: 0,
-                        shippingCost: 0,
-                        totalPrice: 0,
+                        itemsTotal: '0.00',
+                        shippingCost: '0.00',
+                        totalPrice: '0.00',
                         // Carried over from the basket just checked out, not hardcoded.
-                        currency: 'EUR',
-                        expectedTotal: { amount: 0, currency: 'EUR' }
+                        currency: 'EUR'
                     });
                     expect(store.badgeQuantity).toBe(0);
                 });
@@ -446,11 +442,10 @@ describe('useCartStore', () => {
                     expect(store.cartSummary).toEqual({
                         itemsCount: 0,
                         totalQuantity: 0,
-                        itemsTotal: 0,
-                        shippingCost: 0,
-                        totalPrice: 0,
-                        currency: 'EUR',
-                        expectedTotal: { amount: 0, currency: 'EUR' }
+                        itemsTotal: '0.00',
+                        shippingCost: '0.00',
+                        totalPrice: '0.00',
+                        currency: 'EUR'
                     });
                 });
         });
@@ -460,25 +455,22 @@ describe('useCartStore', () => {
          * refused by the server (409 `CART_TOTAL_CHANGED`) rather than charged.
          */
         describe('the total the buyer was shown', () => {
-            it.each([
-                [0.56, 56],
-                [1.06, 106],
-                [1.13, 113],
-                [19.98, 1998],
-                [0, 0]
-            ])('sends %s as %s minor units, with no float drift', (shown, minor) => {
-                vi.mocked(getCart).mockResolvedValueOnce(cartTotalling(shown));
-                const store = useCartStore();
+            it.each(['0.56', '1.06', '1.13', '19.98', '0.00'])(
+                'echoes the shown total %s exactly as the cart wrote it',
+                (shown) => {
+                    vi.mocked(getCart).mockResolvedValueOnce(cartTotalling(shown));
+                    const store = useCartStore();
 
-                return store
-                    .fetchCart()
-                    .then(() => store.checkout())
-                    .then(() => {
-                        expect(vi.mocked(apiCheckout).mock.calls.at(-1)?.[0]).toEqual({
-                            expectedTotal: { amount: minor, currency: 'EUR' }
+                    return store
+                        .fetchCart()
+                        .then(() => store.checkout())
+                        .then(() => {
+                            expect(vi.mocked(apiCheckout).mock.calls.at(-1)?.[0]).toEqual({
+                                expectedTotal: { amount: shown, currency: 'EUR' }
+                            });
                         });
-                    });
-            });
+                }
+            );
 
             it('sends a new key when the shown total is not the one the last attempt carried', () => {
                 const store = useCartStore();
@@ -490,7 +482,7 @@ describe('useCartStore', () => {
                     .then(() => {
                         const firstKey = lastIdempotencyKey();
                         // Same lines, a price moved: only the shown total differs.
-                        vi.mocked(getCart).mockResolvedValueOnce(cartTotalling(24.5));
+                        vi.mocked(getCart).mockResolvedValueOnce(cartTotalling('24.50'));
                         return store
                             .fetchCart()
                             .then(() => store.checkout())
@@ -509,15 +501,15 @@ describe('useCartStore', () => {
                             code: 'CART_TOTAL_CHANGED',
                             message: 'moved',
                             details: {
-                                expected: { amount: 1998, currency: 'EUR' },
-                                actual: { amount: 2450, currency: 'EUR' }
+                                expected: { amount: '19.98', currency: 'EUR' },
+                                actual: { amount: '24.50', currency: 'EUR' }
                             }
                         }
                     ]
                 };
                 vi.mocked(apiCheckout).mockRejectedValueOnce(refusal);
                 vi.mocked(getCart).mockClear();
-                vi.mocked(getCart).mockResolvedValueOnce(cartTotalling(24.5));
+                vi.mocked(getCart).mockResolvedValueOnce(cartTotalling('24.50'));
 
                 return store.checkout().then(
                     () => {
@@ -527,7 +519,7 @@ describe('useCartStore', () => {
                         expect(error).toBe(refusal);
                         expect(getCart).toHaveBeenCalledTimes(1);
                         // The page now shows the new total, so the next press confirms it.
-                        expect(store.cartSummary?.totalPrice).toBe(24.5);
+                        expect(store.cartSummary?.totalPrice).toBe('24.50');
                     }
                 );
             });

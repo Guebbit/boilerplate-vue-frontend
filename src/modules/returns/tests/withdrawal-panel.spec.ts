@@ -344,8 +344,8 @@ describe('WithdrawalPanel', () => {
                     fulfillmentOrderId: 'fo2',
                     number: 2,
                     lines: [{ productId: 'p2', title: 'Mug', quantity: 1 }],
-                    refundAmount: 12.5,
-                    shippingRefund: 0,
+                    refundAmount: '12.50',
+                    shippingRefund: '0.00',
                     cancel: true
                 }
             ]

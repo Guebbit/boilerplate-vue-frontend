@@ -8,7 +8,7 @@ import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { EToastType, useNotificationsStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
-import { shopCurrency } from '@/infrastructure/shop.ts';
+import { decimalScale, zeroDecimal } from '@/infrastructure/utils/money.ts';
 import { translate } from '@/i18n';
 import {
     getCart,
@@ -451,7 +451,8 @@ export const useCartStore = defineStore('cart', () => {
      * a lost answer reuses it, any other order gets a fresh one, and a verdict ends the attempt
      * ({@link settleFailedCheckout}).
      *
-     * Always names the total the cart on screen shows (`expectedTotal`, in minor units): the server
+     * Always names the total the cart on screen shows (`expectedTotal`: the summary's `totalPrice`
+     * and `currency`, echoed as the server wrote them): the server
      * refuses with 409 `CART_TOTAL_CHANGED` when it would charge anything else, and the total is
      * part of the attempt's fingerprint, so a different shown total is a different call with a new
      * key. A refusal for that reason reads the cart again before it rejects.
@@ -469,7 +470,7 @@ export const useCartStore = defineStore('cart', () => {
                 );
             const body: CheckoutRequest = {
                 ...checkoutData,
-                expectedTotal: shown.expectedTotal
+                expectedTotal: { amount: shown.totalPrice, currency: shown.currency }
             };
             const key = checkoutKeyFor(body, cart.value, useSessionStore().viewer?.id ?? '');
             return sendCheckout(body, key)
@@ -477,10 +478,14 @@ export const useCartStore = defineStore('cart', () => {
                     // The server empties the cart on success: setting it to the known-empty
                     // shape, rather than dropping it to `undefined`, is what keeps the header badge
                     // from falling back to `summarySeed`'s stale count from before checkout ran.
-                    // The currency itself survives the empty — the order was just frozen from the
-                    // same basket this cart is still showing, so its own is the same one; the shop's
-                    // only reads for a cart the caller never `fetchCart`/`fetchSummary`'d.
-                    store(emptyCart(liveSummary.value?.currency ?? shopCurrency.value));
+                    // The currency survives the empty: the order was just frozen from this basket.
+                    store(
+                        emptyCart(
+                            shown.currency,
+                            // Zero at the places the server just wrote, so the badge shows "0.00".
+                            zeroDecimal(decimalScale(shown.totalPrice))
+                        )
+                    );
                     endCheckoutAttempt();
                     // The order reserved stock: every cached `available` is out of date.
                     invalidateProductsCache();

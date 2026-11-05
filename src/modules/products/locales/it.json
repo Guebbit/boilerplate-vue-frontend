@@ -70,7 +70,7 @@
     },
     "products-form": {
         "title-required": "Il titolo è obbligatorio",
-        "price-min": "Il prezzo deve essere maggiore o uguale a 0",
+        "price-min": "Il prezzo deve essere un importo pari o superiore a 0, ad esempio 19.90",
         "title-too-long": "Il titolo è troppo lungo",
         "description-too-long": "La descrizione è troppo lunga"
     },

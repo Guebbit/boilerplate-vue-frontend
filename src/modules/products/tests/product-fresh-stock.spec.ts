@@ -48,7 +48,7 @@ const serverHolds = (available: number) =>
         asStub<Awaited<ReturnType<typeof getProductById>>>({
             id: 'p1',
             title: 'Widget',
-            price: 9.99,
+            price: '9.99',
             currency: 'EUR',
             inStock: available > 0,
             lowStock: false,

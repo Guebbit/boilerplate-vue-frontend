@@ -18,8 +18,8 @@ import { creditNotesOf, eventually, orderMailTo, paymentOfOrder } from '../../..
 interface PaymentLike {
     displayStatus?: string;
     status: string;
-    amount: number;
-    amountRefunded: number;
+    amount: string;
+    amountRefunded: string;
 }
 
 /** The slice of an order this story reads: where it stands, and what it holds. */
@@ -76,7 +76,7 @@ describe('OP5 · Cancel only versus cancel and refund', () => {
                     });
                     paymentOfOrder<PaymentLike>('admin', keptId).should((payment) => {
                         expect(payment?.status, 'the money was not touched').to.equal('succeeded');
-                        expect(payment?.amountRefunded).to.equal(0);
+                        expect(Number(payment?.amountRefunded)).to.equal(0);
                     });
                     cy.get('[data-test=button-cancel-and-refund]').should('be.disabled');
 

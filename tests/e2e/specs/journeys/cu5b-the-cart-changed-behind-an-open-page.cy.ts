@@ -20,12 +20,12 @@ import {
 
 /** The slice of a product this story reads. */
 interface ProductLike {
-    price: number;
+    price: string;
 }
 
 /** The slice of an order this story reads. */
 interface OrderLike {
-    totalPrice: number;
+    totalPrice: string;
 }
 
 /** What the editor adds to the price behind the open page, in cents. */
@@ -69,7 +69,7 @@ describe('CU5b · The cart changed behind an open page', () => {
     it('refuses an order placed at a total the page no longer has, shows the new one, and places it on the second press', () => {
         cy.subjectId('product.rich').then((productId) => {
             cy.subjectProduct('product.rich').then(({ price }) => {
-                const shown = Math.round(price * 100);
+                const shown = Math.round(Number(price) * 100);
                 const raised = shown + RAISE_CENTS;
 
                 cy.loginAs('user');
@@ -82,7 +82,7 @@ describe('CU5b · The cart changed behind an open page', () => {
 
                 cy.step('the editor raises the price while the page stays open');
                 cy.apiAs<ProductLike>('editor', 'PATCH', `/products/${productId}`, {
-                    price: raised / 100
+                    price: (raised / 100).toFixed(2)
                 });
 
                 cy.step('the customer presses "Place order": refused, and the page says why');
@@ -107,7 +107,7 @@ describe('CU5b · The cart changed behind an open page', () => {
                 cy.get('#order-target').should('exist');
                 idFromLocation().then((orderId) => {
                     cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
-                        expect(Math.round((order?.totalPrice ?? 0) * 100)).to.equal(raised);
+                        expect(Math.round(Number(order?.totalPrice ?? 0) * 100)).to.equal(raised);
                     });
                 });
             });

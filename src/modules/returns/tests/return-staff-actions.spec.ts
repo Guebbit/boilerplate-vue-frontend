@@ -174,7 +174,7 @@ describe('ReturnStaffActions', () => {
         await wrapper.get('[data-test=return-receive-form]').trigger('submit');
         await flushPromises();
 
-        expect(store.receive).toHaveBeenCalledWith('r1', { handlingDeduction: 4.5 });
+        expect(store.receive).toHaveBeenCalledWith('r1', { handlingDeduction: '4.50' });
     });
 
     describe('the remedy for a faulty or wrong item', () => {
@@ -524,8 +524,8 @@ describe('ReturnStaffActions', () => {
         const { wrapper, store } = mountActions(
             aReturn({
                 lines: [
-                    { productId: 'p1', quantity: 3, title: 'Shirt', unitPrice: 30 },
-                    { productId: 'p2', quantity: 1, title: 'Mug', unitPrice: 10 }
+                    { productId: 'p1', quantity: 3, title: 'Shirt', unitPrice: '30.00' },
+                    { productId: 'p2', quantity: 1, title: 'Mug', unitPrice: '10.00' }
                 ],
                 actions: {
                     approve: false,
@@ -547,7 +547,7 @@ describe('ReturnStaffActions', () => {
         await flushPromises();
 
         expect(store.receive).toHaveBeenCalledWith('r1', {
-            handlingDeduction: 4.5,
+            handlingDeduction: '4.50',
             lines: [{ productId: 'p1', restock: 2 }]
         });
     });
@@ -578,7 +578,9 @@ describe('ReturnStaffActions', () => {
     it('shows staff how many units went back on sale, and shows the buyer nothing', () => {
         const received = aReturn({
             status: 'closed',
-            lines: [{ productId: 'p1', quantity: 2, title: 'Shirt', unitPrice: 30, restocked: 1 }]
+            lines: [
+                { productId: 'p1', quantity: 2, title: 'Shirt', unitPrice: '30.00', restocked: 1 }
+            ]
         });
         const buyerView = mountActions(received);
         expect(buyerView.wrapper.find('[data-test=return-restocked]').exists()).toBe(false);

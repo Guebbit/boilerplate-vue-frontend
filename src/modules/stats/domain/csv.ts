@@ -17,15 +17,21 @@ export type CsvCell = string | number | undefined;
 const FORMULA_START = /^[\t\r+=@-]/;
 
 /**
+ * A plain decimal as the API writes an amount (`"-5.00"`): a number in text form, not a formula.
+ */
+const AMOUNT = /^-?\d+(\.\d+)?$/;
+
+/**
  * Escapes one cell for a CSV file.
  *
  * @param cell - The value.
- * @returns A number as itself; text prefixed with `'` when it would read as a formula, and quoted
+ * @returns A number, or an amount's decimal text, as itself; text prefixed with `'` when it would read as a formula, and quoted
  *  when it holds a comma, quote or line break.
  */
 export const escapeCsvCell = (cell: CsvCell): string => {
     if (cell === undefined) return '';
     if (typeof cell === 'number') return Number.isFinite(cell) ? String(cell) : '';
+    if (AMOUNT.test(cell)) return cell;
     const safe = FORMULA_START.test(cell) ? `'${cell}` : cell;
     return /[\n\r",]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
 };

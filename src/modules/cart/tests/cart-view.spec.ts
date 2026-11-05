@@ -60,18 +60,17 @@ const A_CART: CartResponse = {
     summary: {
         itemsCount: 1,
         totalQuantity: 2,
-        itemsTotal: 20,
-        shippingCost: 0,
-        totalPrice: 20,
-        currency: 'EUR',
-        expectedTotal: { amount: 2000, currency: 'EUR' }
+        itemsTotal: '20.00',
+        shippingCost: '0.00',
+        totalPrice: '20.00',
+        currency: 'EUR'
     },
     checkoutable: true,
     shipping: {
         required: true,
         options: [
-            { id: 'standard', price: 5, requiresAddress: true, tracked: false },
-            { id: 'pickup', price: 0, requiresAddress: false, tracked: false }
+            { id: 'standard', price: '5.00', requiresAddress: true, tracked: false },
+            { id: 'pickup', price: '0.00', requiresAddress: false, tracked: false }
         ]
     }
 };
@@ -257,8 +256,8 @@ describe('the checkout refusals', () => {
         mountCart().then(({ wrapper, checkoutSpy }) => {
             checkoutSpy.mockRejectedValueOnce(
                 checkoutRejection(409, 'CART_TOTAL_CHANGED', {
-                    expected: { amount: 2000, currency: 'EUR' },
-                    actual: { amount: 2450, currency: 'EUR' }
+                    expected: { amount: '20.00', currency: 'EUR' },
+                    actual: { amount: '24.50', currency: 'EUR' }
                 })
             );
 
@@ -271,7 +270,7 @@ describe('the checkout refusals', () => {
                         message.includes('The total changed')
                     );
                     expect(toast?.message).toBe(
-                        `The total changed from ${formatCurrency(20, 'EUR')} to ${formatCurrency(24.5, 'EUR')}. Check it and place the order again.`
+                        `The total changed from ${formatCurrency('20.00', 'EUR')} to ${formatCurrency('24.50', 'EUR')}. Check it and place the order again.`
                     );
                     // Not CART_CHANGED's sentence, and no generic error under the button.
                     expect(wrapper.find('[data-test=cart-checkout-error]').exists()).toBe(false);
@@ -1288,7 +1287,7 @@ describe('the stock poll on the page', () => {
 const product = (id: string, noWithdrawal: boolean) => ({
     id,
     title: `Product ${id}`,
-    price: 10,
+    price: '10.00',
     currency: 'EUR',
     inStock: true,
     lowStock: false,

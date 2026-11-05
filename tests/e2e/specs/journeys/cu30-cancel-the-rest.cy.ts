@@ -11,7 +11,7 @@ import { eventually, orderMailTo, paymentOfOrder } from '../../../support/e2e/st
 /** The slice of the options read this story compares the screen with. */
 interface OptionsLike {
     cancelable: {
-        refundAmount: number;
+        refundAmount: string;
         shippingRefund: number;
         lines: { quantity: number; title: string }[];
     }[];

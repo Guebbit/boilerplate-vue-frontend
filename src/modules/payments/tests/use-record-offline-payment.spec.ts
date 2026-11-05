@@ -23,7 +23,7 @@ const PAYMENT = {
     id: 'p1',
     orderId: 'o1',
     userId: 'u1',
-    amount: 50,
+    amount: '50.00',
     currency: 'EUR',
     status: 'succeeded',
     provider: 'manual',

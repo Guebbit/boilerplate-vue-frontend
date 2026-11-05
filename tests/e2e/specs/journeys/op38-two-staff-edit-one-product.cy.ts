@@ -11,10 +11,10 @@
  */
 
 /** The price the admin sets while the editor's form is open. */
-const ADMIN_PRICE = 123.45;
+const ADMIN_PRICE = '123.45';
 
 /** The price the editor tries to save. */
-const EDITOR_PRICE = 77.7;
+const EDITOR_PRICE = '77.70';
 
 /**
  * The product's price as any shopper would read it.
@@ -22,13 +22,13 @@ const EDITOR_PRICE = 77.7;
  * @param id - the product
  * @returns a chain yielding the price
  */
-const publicPrice = (id: string): Cypress.Chainable<number> =>
+const publicPrice = (id: string): Cypress.Chainable<string> =>
     cy
         .env(['apiUrl'])
         .then(({ apiUrl }) =>
             cy
                 .request(`${String(apiUrl)}/products/${id}`)
-                .then((response) => (response.body as { price: number }).price)
+                .then((response) => (response.body as { price: string }).price)
         );
 
 describe('OP38 · Two staff edit one product', () => {
@@ -52,7 +52,7 @@ describe('OP38 · Two staff edit one product', () => {
 
             cy.step('the editor saves a different price and is refused');
             cy.get('[data-test=product-price-field] input').clear();
-            cy.get('[data-test=product-price-field] input').type(String(EDITOR_PRICE));
+            cy.get('[data-test=product-price-field] input').type(EDITOR_PRICE);
             cy.intercept('PATCH', `**/products/${productId}`).as('editorSave');
             cy.get('form').first().submit();
             cy.wait('@editorSave').its('response.statusCode').should('equal', 412);
@@ -63,15 +63,12 @@ describe('OP38 · Two staff edit one product', () => {
 
             cy.step('reloads the latest version: the admin’s price is in the form');
             cy.get('[data-test=product-edit-reload-latest]').click();
-            cy.get('[data-test=product-price-field] input').should(
-                'have.value',
-                String(ADMIN_PRICE)
-            );
+            cy.get('[data-test=product-price-field] input').should('have.value', ADMIN_PRICE);
             cy.get('[data-test=product-edit-reload-latest]').should('not.exist');
 
             cy.step('saves on top of it');
             cy.get('[data-test=product-price-field] input').clear();
-            cy.get('[data-test=product-price-field] input').type(String(EDITOR_PRICE));
+            cy.get('[data-test=product-price-field] input').type(EDITOR_PRICE);
             cy.get('form').first().submit();
             cy.wait('@editorSave').its('response.statusCode').should('equal', 200);
             cy.contains('Product updated successfully').should('exist');

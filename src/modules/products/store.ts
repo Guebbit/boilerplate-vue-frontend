@@ -14,6 +14,7 @@ import { queryClient } from '@/infrastructure/query-client.ts';
 import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
 import { getCurrentLocale } from '@/i18n';
 import { runtimeValue } from '@/infrastructure/runtime-config';
+import { boundOf } from '@/infrastructure/utils/money.ts';
 import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
 import {
     listProducts,
@@ -201,8 +202,8 @@ export const useProductsStore = defineStore('products', () => {
                     // reads a batch of ids; the filter box searches for one, so it's wrapped here.
                     id: filters.id ? [filters.id] : undefined,
                     sort: sortTokensOf(filters.sort, ProductSortItem),
-                    priceMin: filters.priceMin,
-                    priceMax: filters.priceMax,
+                    priceMin: boundOf(filters.priceMin, getCurrentLocale()),
+                    priceMax: boundOf(filters.priceMax, getCurrentLocale()),
                     category: filters.category,
                     tag: filters.tag,
                     // Admin-only: the public storefront's own search always

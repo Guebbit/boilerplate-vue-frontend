@@ -21,6 +21,7 @@ import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
+import { getCurrentLocale } from '@/i18n';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -45,16 +46,16 @@ import {
     formatText,
     formatDateTime,
     formatCurrency,
-    formatFlag,
-    currencyDigits
+    formatFlag
 } from '@/infrastructure/utils/formatters.ts';
+import { decimalScale, normalizeAmount, padDecimal } from '@/infrastructure/utils/money.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
-import { backorderPromiseDays, shopCurrency } from '@/infrastructure/shop.ts';
+import { backorderPromiseDays } from '@/infrastructure/shop.ts';
 import { toPatchTranslations } from '../composables/translations-body.ts';
 import { fromDateTimeLocal, toDateTimeLocal } from '../domain';
 import { useReleaseDateConfirm } from '../composables/use-release-date-confirm.ts';
@@ -139,26 +140,12 @@ const loadAdminProduct = (productId: string) =>
     });
 
 /**
- * Decimal places this product's own price field should accept — a KWD product can't round-trip
- * its third decimal through a 2-decimal input, and a JPY product would accept cents `toMinorUnits`
- * then silently rounds away server-side.
- */
-const pricePrecision = computed(() =>
-    currencyDigits(adminProduct.value?.currency ?? shopCurrency.value)
-);
-
-/**
- * Smallest increment the price input's stepper buttons move by, matching {@link pricePrecision}.
- */
-const priceStep = computed(() => 10 ** -pricePrecision.value);
-
-/**
  * Form definition. `translations` mirrors the write body's own shape
  * (`ProductTranslationsWrite`): an object upserts a locale, `null` deletes it, an absent key
  * leaves it untouched.
  */
 interface ProductEditForm {
-    price?: number;
+    price?: string;
     active?: boolean;
     purchasable?: boolean;
     // The `datetime-local` input's own string (`''` = no date), converted on submit.
@@ -430,7 +417,11 @@ const submitForm = () => {
             .then((confirmed) => {
                 if (!confirmed) return;
                 return toRequestBody('UpdateProductByIdBody', {
-                    price,
+                    // Sent at the places the product's own price is written with.
+                    price: padDecimal(
+                        normalizeAmount(price, getCurrentLocale()),
+                        decimalScale(adminProduct.value?.price ?? '')
+                    ),
                     active,
                     purchasable,
                     releaseDate: releaseDateChange(releaseDate),
@@ -575,13 +566,10 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             </v-tabs-window-item>
                         </v-tabs-window>
 
-                        <v-number-input
+                        <v-text-field
                             v-model="form.price"
                             :label="t('product-edit-page.label-price')"
-                            :min="0"
-                            :step="priceStep"
-                            :precision="pricePrecision"
-                            control-variant="stacked"
+                            inputmode="decimal"
                             v-bind="fieldErrorProps(showFormErrors ? formErrors.price : [])"
                             data-test="product-price-field"
                         />

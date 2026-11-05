@@ -28,7 +28,7 @@ describe('BO3 · Notify me when it is back', () => {
     it('is told once, by mail and in the inbox, when the product is restocked', () => {
         cy.step('a product with no stock');
         cy.apiAs<{ id: string }>('editor', 'POST', '/products', {
-            price: 19.9,
+            price: '19.90',
             translations: { en: { title: `BO3 sold out ${unique()}` } }
         }).then((product) => {
             const id = String(product?.id);

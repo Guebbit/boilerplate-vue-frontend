@@ -34,6 +34,12 @@ export const shopRecord = readonly(shop);
 export const shopCurrency = computed(() => shop.value?.currency ?? '');
 
 /**
+ * How many decimal places the shop's currency has (EUR 2, JPY 0, KWD 3), or `undefined` while
+ * unknown. Only a price input needs it: an amount the API sends already carries its own places.
+ */
+export const shopMinorUnits = computed(() => shop.value?.minorUnits);
+
+/**
  * The countries the shop ships a physical order to; empty while unknown, which the address form
  * reads as "unrestricted".
  */

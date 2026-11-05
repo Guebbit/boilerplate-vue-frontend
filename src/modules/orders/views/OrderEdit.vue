@@ -19,6 +19,7 @@ export default {
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { computed, ref } from 'vue';
+import { getCurrentLocale } from '@/i18n';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -41,6 +42,11 @@ import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import { EMPTY_VALUE, formatDateTime, formatCurrency } from '@/infrastructure/utils/formatters.ts';
+import {
+    NON_NEGATIVE_DECIMAL,
+    compareDecimals,
+    normalizeAmount
+} from '@/infrastructure/utils/money.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
@@ -253,26 +259,31 @@ const cancelOnce = (withRefund: boolean) => {
 };
 
 /**
- * The partial-refund field's raw text. Empty means "everything still refundable"; a number is a
+ * The partial-refund field's raw text. Empty means "everything still refundable"; a decimal is a
  * goodwill amount in the payment's own currency.
  */
 const refundAmountText = ref('');
 
 /**
- * The partial amount typed, or `undefined` for a full refund; `NaN` marks text that is not a
- * positive number so the field can say so instead of sending it.
+ * The partial amount typed, read in the viewer's number format as plain decimal text, or
+ * `undefined` for a full refund. The server refuses more places than the currency has.
  */
-const refundAmount = computed(() => {
-    const text = refundAmountText.value.trim();
-    if (text === '') return undefined;
-    const amount = Number(text);
-    return amount > 0 ? amount : Number.NaN;
-});
+const refundAmount = computed(
+    () => normalizeAmount(refundAmountText.value, getCurrentLocale()) || undefined
+);
 
 /**
- * Whether the typed amount is unusable — blocks the refund button and shows the field's error.
+ * Whether the typed amount is unusable (not a positive decimal) — blocks the refund button and
+ * shows the field's error.
  */
-const refundAmountInvalid = computed(() => Number.isNaN(refundAmount.value));
+const refundAmountInvalid = computed(
+    () =>
+        refundAmount.value !== undefined &&
+        !(
+            NON_NEGATIVE_DECIMAL.test(refundAmount.value) &&
+            compareDecimals(refundAmount.value, '0') > 0
+        )
+);
 
 /**
  * Returns the money without touching the order's status — all of it, or the typed part. On a
@@ -553,9 +564,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
 
                     <v-text-field
                         v-model="refundAmountText"
-                        type="number"
-                        min="0"
-                        step="0.01"
+                        inputmode="decimal"
                         :label="t('order-edit-page.label-refund-amount')"
                         :hint="t('order-edit-page.hint-refund-amount')"
                         v-bind="

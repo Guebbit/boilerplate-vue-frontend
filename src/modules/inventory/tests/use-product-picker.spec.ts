@@ -39,7 +39,7 @@ const respondWith = (items: Product[]) =>
 const WIDGET: Product = {
     id: 'p1',
     title: 'Widget',
-    price: 9.99,
+    price: '9.99',
     currency: 'EUR',
     inStock: true,
     lowStock: false,
@@ -50,7 +50,7 @@ const WIDGET: Product = {
 const GADGET: Product = {
     id: 'p2',
     title: 'Gadget',
-    price: 4.5,
+    price: '4.50',
     currency: 'EUR',
     inStock: true,
     lowStock: false,

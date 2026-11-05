@@ -54,8 +54,8 @@ const statusOf = (
 
 /** The slice of a payment the refund row reads. */
 interface PaymentAmounts {
-    amount: number;
-    amountRefunded: number;
+    amount: string;
+    amountRefunded: string;
 }
 
 /**

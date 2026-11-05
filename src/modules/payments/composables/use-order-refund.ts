@@ -9,6 +9,7 @@ import { translate as t } from '@/i18n';
 import type { EToastType } from '@guebbit/vue-toolkit';
 import { usePaymentsStore } from '../store';
 import { refundNotice } from './refund-notice';
+import { decimalScale, padDecimal } from '@/infrastructure/utils/money.ts';
 import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**
@@ -79,15 +80,21 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
         /**
          * Returns the money without touching the order's status.
          *
-         * @param amount - A partial refund; absent returns everything still refundable.
+         * @param amount - A partial refund as typed; absent returns everything still refundable.
+         *  Sent at the payment's own places (`"12.5"` becomes `"12.50"`).
          * @returns A promise resolving once the refreshed payment has replaced the cached one,
          *  which is what withdraws `canRefund`, with what the operator should be told: the money
          *  is back, on file, or the provider refused it (and what to do then).
          */
-        refund: (amount?: number): Promise<{ text: string; type: EToastType } | undefined> =>
+        refund: (amount?: string): Promise<{ text: string; type: EToastType } | undefined> =>
             payment.value
                 ? paymentsStore
-                      .refundPayment(payment.value, amount)
+                      .refundPayment(
+                          payment.value,
+                          amount === undefined
+                              ? undefined
+                              : padDecimal(amount, decimalScale(payment.value.amount))
+                      )
                       .then((done) =>
                           done
                               ? refundNotice(

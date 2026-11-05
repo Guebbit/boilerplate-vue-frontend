@@ -18,7 +18,7 @@ export interface TimelineTools {
     /** Whether a message key exists, for a code the shop may have added (a payment method). */
     has: (key: string) => boolean;
     /** Formats an amount in a currency. */
-    money: (amount: number, currency: string) => string;
+    money: (amount: string, currency: string) => string;
     /** Formats an ISO date, no time, in the reader's zone. */
     date: (iso: string) => string;
     /** Formats an ISO date, no time, as the UTC day it names: the withdrawal deadline. */
@@ -94,7 +94,7 @@ const coded = (
 const amountOf = (tools: TimelineTools, data: Readonly<Record<string, unknown>>) => {
     const { amount } = data;
     const currency = textOf(data, 'currency');
-    return typeof amount === 'number' && currency ? tools.money(amount, currency) : undefined;
+    return typeof amount === 'string' && currency ? tools.money(amount, currency) : undefined;
 };
 
 /**

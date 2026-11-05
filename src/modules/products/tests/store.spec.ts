@@ -44,7 +44,7 @@ vi.mock('@/infrastructure/http', () => ({
                 config.url,
                 config.method?.toUpperCase() === 'DELETE'
                     ? undefined
-                    : { id: 'p1', title: 'T', price: 1, currency: 'EUR' }
+                    : { id: 'p1', title: 'T', price: '1.00', currency: 'EUR' }
             )
         )
     )
@@ -74,7 +74,7 @@ const lastFormData = () => {
 const PRODUCT: Product = {
     id: 'p1',
     title: 'Gadget',
-    price: 49.99,
+    price: '49.99',
     currency: 'EUR',
     inStock: true,
     lowStock: false,
@@ -155,31 +155,36 @@ describe('useProductsStore', () => {
     describe('createProduct', () => {
         it('posts JSON when no image is attached', () =>
             useProductsStore()
-                .createProduct({ price: 49.99, translations: TRANSLATIONS })
+                .createProduct({ price: '49.99', translations: TRANSLATIONS })
                 .then(() => {
                     const request = lastRequest();
                     expect(request).toMatchObject({ url: '/products', method: 'POST' });
                     expect(request.data).not.toBeInstanceOf(FormData);
                     expect(contractRequest(schemas.CreateProductBody, request.data)).toMatchObject({
-                        price: 49.99,
+                        price: '49.99',
                         translations: TRANSLATIONS
                     });
                 }));
 
         it('resolves with the created product, not with the envelope', () =>
             useProductsStore()
-                .createProduct({ price: 49.99, translations: TRANSLATIONS })
+                .createProduct({ price: '49.99', translations: TRANSLATIONS })
                 .then((created) => {
                     // `ProductCreate.vue` routes to `/products/${created.id}` on success, so a
                     // wrapper that forgot to unwrap `response.data` would navigate to
                     // `/products/undefined` rather than fail visibly here.
-                    expect(created).toEqual({ id: 'p1', title: 'T', price: 1, currency: 'EUR' });
+                    expect(created).toEqual({
+                        id: 'p1',
+                        title: 'T',
+                        price: '1.00',
+                        currency: 'EUR'
+                    });
                 }));
 
         it('posts multipart to /products when an image is attached', () =>
             useProductsStore()
                 .createProduct({
-                    price: 49.99,
+                    price: '49.99',
                     translations: TRANSLATIONS,
                     imageUpload: new Blob(['x'])
                 })
@@ -191,7 +196,7 @@ describe('useProductsStore', () => {
         it('JSON-encodes translations into the one multipart field that carries it', () =>
             useProductsStore()
                 .createProduct({
-                    price: 49.99,
+                    price: '49.99',
                     translations: TRANSLATIONS,
                     imageUpload: new Blob(['x'])
                 })
@@ -206,7 +211,7 @@ describe('useProductsStore', () => {
             // is not a File (axios' `toFormData` among them) drop a plain Blob silently.
             useProductsStore()
                 .createProduct({
-                    price: 49.99,
+                    price: '49.99',
                     translations: TRANSLATIONS,
                     imageUpload: new Blob(['x'])
                 })
@@ -217,7 +222,7 @@ describe('useProductsStore', () => {
         it('sends categories and tags as repeated fields, not indexed keys', () =>
             useProductsStore()
                 .createProduct({
-                    price: 49.99,
+                    price: '49.99',
                     translations: TRANSLATIONS,
                     categories: ['tools', 'home'],
                     tags: ['new'],
@@ -233,7 +238,7 @@ describe('useProductsStore', () => {
         it('omits unset optional fields instead of sending the string "undefined"', () =>
             useProductsStore()
                 .createProduct({
-                    price: 49.99,
+                    price: '49.99',
                     translations: TRANSLATIONS,
                     active: undefined,
                     imageUpload: new Blob(['x'])
@@ -253,7 +258,7 @@ describe('useProductsStore', () => {
 
             return useProductsStore()
                 .createProduct(
-                    { price: 49.99, translations: TRANSLATIONS, imageUpload: new Blob(['x']) },
+                    { price: '49.99', translations: TRANSLATIONS, imageUpload: new Blob(['x']) },
                     { requestOptions: { onUploadProgress } }
                 )
                 .then(() => {
@@ -268,7 +273,7 @@ describe('useProductsStore', () => {
     describe('updateProduct', () => {
         it('PATCHes JSON when no new image is attached', () =>
             useProductsStore()
-                .updateProduct('p1', { price: 9.99, translations: TRANSLATIONS })
+                .updateProduct('p1', { price: '9.99', translations: TRANSLATIONS })
                 .then(() => {
                     const request = lastRequest();
                     // PATCH, not PUT: the edit endpoint MERGES rather than replaces.
@@ -277,7 +282,7 @@ describe('useProductsStore', () => {
                     expect(
                         contractRequest(schemas.UpdateProductByIdBody, request.data)
                     ).toMatchObject({
-                        price: 9.99,
+                        price: '9.99',
                         translations: TRANSLATIONS
                     });
                 }));
@@ -285,7 +290,7 @@ describe('useProductsStore', () => {
         it('PATCHes multipart when an image is attached', () =>
             useProductsStore()
                 .updateProduct('p1', {
-                    price: 9.99,
+                    price: '9.99',
                     translations: TRANSLATIONS,
                     imageUpload: new Blob(['x'])
                 })
@@ -300,7 +305,11 @@ describe('useProductsStore', () => {
          */
         it('sends taxClass -> standard (null) alongside an upload as a second, JSON PATCH', () =>
             useProductsStore()
-                .updateProduct('p1', { price: 9.99, taxClass: null, imageUpload: new Blob(['x']) })
+                .updateProduct('p1', {
+                    price: '9.99',
+                    taxClass: null,
+                    imageUpload: new Blob(['x'])
+                })
                 .then(() => {
                     const [upload, clear] = vi
                         .mocked(orvalMutator)
@@ -316,7 +325,7 @@ describe('useProductsStore', () => {
 
         it('omits the translations field entirely when the call carries none, rather than an empty map', () =>
             useProductsStore()
-                .updateProduct('p1', { price: 9.99 })
+                .updateProduct('p1', { price: '9.99' })
                 .then(() => {
                     // Omission is the merge's own "leave every locale alone" signal — an empty
                     // object on the wire would be a different, wrong statement.
@@ -325,7 +334,7 @@ describe('useProductsStore', () => {
 
         it('omits the translations field on a multipart PATCH that carries none', () =>
             useProductsStore()
-                .updateProduct('p1', { price: 9.99, imageUpload: new Blob(['x']) })
+                .updateProduct('p1', { price: '9.99', imageUpload: new Blob(['x']) })
                 .then(() => {
                     expect(lastFormData().has('translations')).toBe(false);
                 }));
@@ -333,7 +342,7 @@ describe('useProductsStore', () => {
         it('sends a locale marked for removal as null, JSON-encoded like the rest of the map', () =>
             useProductsStore()
                 .updateProduct('p1', {
-                    price: 9.99,
+                    price: '9.99',
                     translations: { it: null },
                     imageUpload: new Blob(['x'])
                 })
@@ -368,7 +377,7 @@ describe('useProductsStore', () => {
             );
 
             const pending = store.updateProduct('p1', {
-                price: 12.5,
+                price: '12.50',
                 translations: TRANSLATIONS,
                 imageUpload: new Blob(['x'])
             });
@@ -380,16 +389,16 @@ describe('useProductsStore', () => {
             // this can only pass if the store was patched ahead of the response.
             return vi
                 .waitFor(() => {
-                    expect(store.products.p1.price).toBe(12.5);
+                    expect(store.products.p1.price).toBe('12.50');
                 })
                 .then(() => {
                     expect(store.products.p1).not.toHaveProperty('imageUpload');
                     expect(store.products.p1).not.toHaveProperty('translations');
-                    release({ ...PRODUCT, price: 12.5 });
+                    release({ ...PRODUCT, price: '12.50' });
                     return pending;
                 })
                 .then(() => {
-                    expect(store.products.p1.price).toBe(12.5);
+                    expect(store.products.p1.price).toBe('12.50');
                 });
         });
 
@@ -399,7 +408,7 @@ describe('useProductsStore', () => {
 
             return store
                 .updateProduct('p1', {
-                    price: 9.99,
+                    price: '9.99',
                     translations: TRANSLATIONS,
                     imageUpload: new Blob(['x'])
                 })
@@ -418,7 +427,7 @@ describe('useProductsStore', () => {
             return useProductsStore()
                 .updateProduct(
                     'p1',
-                    { price: 9.99, translations: TRANSLATIONS, imageUpload: new Blob(['x']) },
+                    { price: '9.99', translations: TRANSLATIONS, imageUpload: new Blob(['x']) },
                     { requestOptions: { onUploadProgress } }
                 )
                 .then(() => {
@@ -610,8 +619,8 @@ describe('useProductsStore', () => {
                 store.filters = {
                     text: 'gad',
                     id: 'p1',
-                    priceMin: 5,
-                    priceMax: 50,
+                    priceMin: '5.00',
+                    priceMax: '50.00',
                     active: false,
                     deleted: true
                 };
@@ -632,8 +641,8 @@ describe('useProductsStore', () => {
                             // `id`, the name the API actually reads; `productId` filters nothing.
                             // The filter box searches for one id; the API reads a batch.
                             id: ['p1'],
-                            priceMin: 5,
-                            priceMax: 50,
+                            priceMin: '5.00',
+                            priceMax: '50.00',
                             // The admin-only "Active" filter must reach the request.
                             active: false,
                             deleted: true

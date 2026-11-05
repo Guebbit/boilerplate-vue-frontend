@@ -70,7 +70,7 @@ beforeEach(() => {
 
 describe('ProductCard — what a shopper reads', () => {
     it('shows the price in the product’s own currency', () => {
-        const wrapper = mountCard(aProduct({ price: 120, currency: 'EUR' }));
+        const wrapper = mountCard(aProduct({ price: '120.00', currency: 'EUR' }));
 
         expect(wrapper.get('[data-test=product-card-price]').text()).toMatch(/120/);
         expect(wrapper.get('[data-test=product-card-price]').text()).toMatch(/€|EUR/);

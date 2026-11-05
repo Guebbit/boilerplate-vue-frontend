@@ -46,7 +46,7 @@ const answerWithVisibleIds = () =>
                     items: ids.map((id) => ({
                         id,
                         title: `Title of ${id}`,
-                        price: 1,
+                        price: '1.00',
                         currency: 'EUR',
                         inStock: true,
                         lowStock: false,
@@ -141,7 +141,7 @@ describe('useProductLines', () => {
 
         return lines.loadProducts(['p1']).then(() => {
             expect(lines.titleOf('p1')).toBe('Title of p1');
-            expect(lines.productOf('p1')?.price).toBe(1);
+            expect(lines.productOf('p1')?.price).toBe('1.00');
         });
     });
 

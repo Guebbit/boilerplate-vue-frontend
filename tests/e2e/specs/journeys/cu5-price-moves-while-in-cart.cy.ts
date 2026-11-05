@@ -18,7 +18,7 @@ import {
 
 /** The slice of a product this story reads. */
 interface ProductLike {
-    price: number;
+    price: string;
 }
 
 /**
@@ -40,7 +40,7 @@ describe('CU5 · The price moves while it sits in the cart', () => {
         cy.loginAs('user');
         cy.subjectId('product.rich').then((productId) => {
             cy.subjectProduct('product.rich').then(({ price }) => {
-                const before = cents(price.toFixed(2));
+                const before = cents(price);
                 const raised = before + 1200;
                 const lowered = before - 800;
 
@@ -54,7 +54,7 @@ describe('CU5 · The price moves while it sits in the cart', () => {
 
                 cy.step('the editor raises the price; the customer reloads and the cart follows');
                 cy.apiAs<ProductLike>('editor', 'PATCH', `/products/${productId}`, {
-                    price: raised / 100
+                    price: (raised / 100).toFixed(2)
                 });
                 cy.reload();
                 cy.get('[data-test=cart-line-price]')
@@ -73,18 +73,18 @@ describe('CU5 · The price moves while it sits in the cart', () => {
 
                 cy.step('the editor reprices again; the order still says what was agreed');
                 cy.apiAs<ProductLike>('editor', 'PATCH', `/products/${productId}`, {
-                    price: lowered / 100
+                    price: (lowered / 100).toFixed(2)
                 });
                 cy.reload();
                 cy.get('#order-target').should('exist');
                 centsOf('[data-test=order-item-unit-price]').should('equal', raised);
                 idFromLocation().then((orderId) => {
-                    cy.apiAs<{ items: { product: { price: number } }[] }>(
+                    cy.apiAs<{ items: { product: { price: string } }[] }>(
                         'user',
                         'GET',
                         `/orders/${orderId}`
                     ).should((order) => {
-                        expect(order?.items[0]?.product.price).to.equal(raised / 100);
+                        expect(order?.items[0]?.product.price).to.equal((raised / 100).toFixed(2));
                     });
                 });
             });

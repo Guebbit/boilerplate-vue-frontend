@@ -50,7 +50,7 @@ const router = createRouter({
  * @param price - Its unit price.
  * @returns The product as the batch read answers it.
  */
-const aProduct = (id: string, price: number): Product => ({
+const aProduct = (id: string, price: string): Product => ({
     id,
     title: `Product ${id}`,
     price,
@@ -95,7 +95,7 @@ const catalogAnswers = (catalogue: Product[], gate?: () => Promise<unknown>) =>
  */
 const mountPage = async (
     lines: [string, number][],
-    catalogue: Product[] = lines.map(([id]) => aProduct(id, 10)),
+    catalogue: Product[] = lines.map(([id]) => aProduct(id, '10.00')),
     gate?: () => Promise<unknown>
 ) => {
     const cart = useCartStore();
@@ -139,7 +139,7 @@ describe('a guest cart with lines', () => {
                 ['p1', 2],
                 ['p2', 1]
             ],
-            [aProduct('p1', 10), aProduct('p2', 4.5)]
+            [aProduct('p1', '10.00'), aProduct('p2', '4.50')]
         );
 
         expect(searchProducts).toHaveBeenCalledTimes(1);
@@ -155,7 +155,7 @@ describe('a guest cart with lines', () => {
                 ['p1', 2],
                 ['p2', 1]
             ],
-            [aProduct('p1', 10), aProduct('p2', 4.5)]
+            [aProduct('p1', '10.00'), aProduct('p2', '4.50')]
         );
 
         expect(page.get('[data-test=guest-cart-total]').text()).toContain('€24.50');
@@ -292,7 +292,7 @@ describe('a product that is no longer there', () => {
                 ['gone', 2],
                 ['kept', 1]
             ],
-            [aProduct('kept', 10)]
+            [aProduct('kept', '10.00')]
         );
 
         expect(cart.guestLines).toEqual([
@@ -313,7 +313,7 @@ describe('a product that is no longer there', () => {
                 ['off', 1],
                 ['on', 1]
             ],
-            [{ ...aProduct('off', 10), purchasable: false }, aProduct('on', 10)]
+            [{ ...aProduct('off', '10.00'), purchasable: false }, aProduct('on', '10.00')]
         );
 
         const [offLine, onLine] = page.findAll('[data-test=guest-cart-item]');
@@ -337,7 +337,7 @@ describe('a product that is no longer there', () => {
                 ['gone2', 1],
                 ['kept', 1]
             ],
-            [aProduct('kept', 10)]
+            [aProduct('kept', '10.00')]
         );
 
         expect(page.findAll('[data-test=guest-cart-line-removed]')).toHaveLength(2);

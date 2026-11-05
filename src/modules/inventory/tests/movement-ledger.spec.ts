@@ -93,7 +93,7 @@ beforeEach(() => {
             asStub<Awaited<ReturnType<typeof searchProducts>>>({
                 items: (body.id ?? [])
                     .filter((id) => id !== 'gone')
-                    .map((id) => ({ id, title: `Title of ${id}`, price: 1, currency: 'EUR' })),
+                    .map((id) => ({ id, title: `Title of ${id}`, price: '1.00', currency: 'EUR' })),
                 meta: { totalItems: 0, totalPages: 1 }
             })
         )
@@ -141,7 +141,7 @@ describe('MovementLedger product titles', () => {
         seedProducts({
             id: 'p1',
             title: 'Known',
-            price: 1,
+            price: '1.00',
             currency: 'EUR',
             inStock: true,
             lowStock: false,
@@ -159,7 +159,7 @@ describe('MovementLedger product titles', () => {
         seedProducts({
             id: 'p1',
             title: 'Known',
-            price: 1,
+            price: '1.00',
             currency: 'EUR',
             inStock: true,
             lowStock: false,

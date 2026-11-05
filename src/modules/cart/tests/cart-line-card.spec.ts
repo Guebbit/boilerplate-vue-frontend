@@ -17,7 +17,7 @@ const mountCard = (props: Record<string, unknown> = {}, badges = '') =>
         props: {
             title: 'Shirt',
             quantity: 2,
-            unitPrice: 10,
+            unitPrice: '10.00',
             currency: 'EUR',
             canDecrease: true,
             canIncrease: true,
@@ -62,6 +62,22 @@ describe('CartLineCard', () => {
         expect(
             mountCard({ unitPrice: undefined }).find('[data-test=cart-line-price]').exists()
         ).toBe(false);
+    });
+
+    /**
+     * The line total is the unit price × quantity at the price text's own places.
+     */
+    it.each([
+        ['EUR', '19.99', 3, '59.97'],
+        ['JPY', '500', 3, '1,500'],
+        ['KWD', '1.234', 2, '2.468']
+    ])('prices a %s line of %s × %i as %s', (currency, unitPrice, quantity, total) => {
+        const text = mountCard({ currency, unitPrice, quantity })
+            .get('[data-test=cart-line-price]')
+            .text();
+
+        // The English locale is loaded: `,` groups thousands and `.` is the decimal mark.
+        expect(text.split('=')[1]).toContain(total);
     });
 
     it('renders the badges slot beside the quantity', () => {

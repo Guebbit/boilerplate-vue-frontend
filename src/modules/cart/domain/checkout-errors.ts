@@ -120,7 +120,7 @@ const asUnavailableLine = (value: unknown): UnavailableCartLine | undefined => {
 };
 
 /**
- * Narrows an unknown value to a money amount (minor units plus currency).
+ * Narrows an unknown value to a money amount (decimal text plus currency).
  *
  * @param value - One side of `CART_TOTAL_CHANGED`'s `details`, still unknown.
  * @returns The amount, or `undefined` when the shape does not match.
@@ -128,7 +128,7 @@ const asUnavailableLine = (value: unknown): UnavailableCartLine | undefined => {
 const asMoney = (value: unknown): ExpectedTotal | undefined => {
     if (typeof value !== 'object' || value === null) return undefined;
     const { amount, currency } = value as Record<string, unknown>;
-    if (typeof amount !== 'number' || typeof currency !== 'string') return undefined;
+    if (typeof amount !== 'string' || typeof currency !== 'string') return undefined;
     return { amount, currency };
 };
 

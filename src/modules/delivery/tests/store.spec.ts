@@ -33,13 +33,13 @@ wireModulesIntoCore();
 const METHODS = [
     {
         id: 'standard',
-        price: 5,
+        price: '5.00',
         currency: 'EUR',
-        freeAbove: 100,
+        freeAbove: '100.00',
         tracked: false,
         requiresAddress: true
     },
-    { id: 'express', price: 15, currency: 'EUR', tracked: true, requiresAddress: true }
+    { id: 'express', price: '15.00', currency: 'EUR', tracked: true, requiresAddress: true }
 ];
 
 /**
@@ -95,11 +95,11 @@ beforeEach(() => {
             items: [],
             totalItems: 0,
             totalQuantity: 0,
-            totalPrice: 0,
-            netTotal: 0,
-            taxTotal: 0,
-            shippingNetAmount: 0,
-            shippingTaxAmount: 0,
+            totalPrice: '0.00',
+            netTotal: '0.00',
+            taxTotal: '0.00',
+            shippingNetAmount: '0.00',
+            shippingTaxAmount: '0.00',
             taxSummary: [],
             status: 'processing'
         }

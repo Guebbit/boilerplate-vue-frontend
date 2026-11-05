@@ -48,7 +48,7 @@ export const ERROR_CODES = {
     CART_SHIPPING_NOT_APPLICABLE: 'CART_SHIPPING_NOT_APPLICABLE',
     /** 422 — The address's country is outside this deployment's configured ship-to list. */
     CART_SHIP_TO_COUNTRY_NOT_SUPPORTED: 'CART_SHIP_TO_COUNTRY_NOT_SUPPORTED',
-    /** 409 — The total the buyer was shown is not the total this checkout would charge — a price, a shipping cost or the cart itself changed. `errors[].details` carries `expected` (what the request named) and `actual` (what the order would cost now), each `{ amount, currency }` in minor units; show the new total and let the buyer confirm. */
+    /** 409 — The total the buyer was shown is not the total this checkout would charge — a price, a shipping cost or the cart itself changed. `errors[].details` carries `expected` (what the request named) and `actual` (what the order would cost now), each `{ amount, currency }` with the amount as a decimal string; show the new total and let the buyer confirm. */
     CART_TOTAL_CHANGED: 'CART_TOTAL_CHANGED',
     /** 400 — A 4xx whose status has no code of its own in this catalogue (the derived name is not listed here), so no wording is invented for it. Never a 5xx. */
     CLIENT_ERROR: 'CLIENT_ERROR',

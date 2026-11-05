@@ -284,7 +284,7 @@ describe('own money', () => {
             contractBody<Awaited<ReturnType<typeof listAuditEntries>>>(
                 schemas.ListAuditEntriesResponse,
                 {
-                    items: [refundRow({ ownOrder: true }), refundRow({ amount: 5 })],
+                    items: [refundRow({ ownOrder: true }), refundRow({ amount: '5.00' })],
                     meta: { page: 1, pageSize: 50, totalItems: 2, totalPages: 1 }
                 }
             )

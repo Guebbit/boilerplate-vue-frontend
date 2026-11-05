@@ -28,8 +28,8 @@ const OPTION: CancelableFulfillmentOrder = {
     fulfillmentOrderId: 'fo2',
     number: 2,
     lines: [{ productId: 'p2', title: 'Mug', quantity: 1 }],
-    refundAmount: 12.5,
-    shippingRefund: 0,
+    refundAmount: '12.50',
+    shippingRefund: '0.00',
     cancel: true
 };
 
@@ -71,8 +71,8 @@ describe('what the dialog shows', () => {
     it('says the delivery is inside the refund only when the server counted it', () => {
         const { wrapper } = mountDialog('buyer', {
             ...OPTION,
-            refundAmount: 17.5,
-            shippingRefund: 5
+            refundAmount: '17.50',
+            shippingRefund: '5.00'
         });
 
         expect(wrapper.get('[data-test=cancel-remainder-shipping]').text()).toContain('5.00');

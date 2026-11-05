@@ -358,9 +358,10 @@ flowchart TD
 ### The total the buyer was shown
 
 `POST /cart/checkout` requires `expectedTotal`: the total on screen right before "Place order"
-(`summary.totalPrice`, shipping included, with its currency), in integer minor units. The cart
-already carries it as `summary.expectedTotal`; the store echoes that from the cart it holds, never
-the page, converts nothing, and refuses to run before a cart was read.
+(`summary.totalPrice`, shipping included, with its currency), as the decimal text the server wrote
+(`{ amount: "71.00", currency: "EUR" }`). The store echoes the summary's own `totalPrice` and
+`currency` from the cart it holds, never from the page, converts nothing, and refuses to run before
+a cart was read. The server compares by minor units, so `"71"` and `"71.00"` are the same total.
 
 If the server would charge anything else (a price moved, shipping changed, the basket changed) it
 answers 409 `CART_TOTAL_CHANGED` with `details.expected` and `details.actual`, and writes nothing.
@@ -368,6 +369,23 @@ The store ends the attempt and reads the cart again, so the page shows the new t
 "The total changed from X to Y" in the visitor's locale, stays on the cart and keeps the button
 live: the next press names the new total, and places the order at it. The total is part of the
 fingerprint, so that press is a new call under a new key.
+
+### Money on the wire
+
+Every amount is a decimal string at its currency's own places: `"19.90"` in EUR, `"1000"` in JPY,
+`"1.500"` in KWD. The text carries its scale, so this client keeps no table of currencies.
+
+- **Showing:** `formatCurrency` gives `Intl.NumberFormat` the text and the places it carries. The
+  places never come from `Intl`'s own table (it rounds a HUF `"19.90"` to `"20"`) and never from
+  the shop's currency (a frozen order may be in an older one).
+- **Adding:** a line total and the guest cart's items total are summed in whole minor units
+  (`BigInt`) and written back at the same scale (`infrastructure/utils/money.ts`). A float never
+  touches an amount, so `0.1 × 3` is `"0.30"`.
+- **Typing:** a money input is a text field; the typed text is padded to the currency's places on
+  the way out (`"12.5"` becomes `"12.50"`). The shop's places come from `GET /shop` `minorUnits`;
+  an existing product's from its own price text. More places than the currency has is the
+  server's 422.
+- **Charts:** `Number()` at the chart boundary only; nothing is summed after it.
 
 ### A product that is gone
 
@@ -439,7 +457,7 @@ in Faro. See [Observability](../tools/observability.md#event-taxonomy).
 | `domain/checkout-errors.ts`                 | Pure rules over plain data — no store, no component, no axios. Classifies a checkout rejection into one of its verdicts.                                                            | [read](../theory/domain-layer.md)     |
 | `domain/guest-cart.ts`                      | Pure rules over plain data — no store, no component, no axios. The guest cart's lines, caps and read-back.                                                                          | [read](../theory/domain-layer.md)     |
 | `domain/merge-report.ts`                    | Pure rules over plain data — no store, no component, no axios. Which lines of a merge answer are worth telling the shopper about.                                                   |
-| `domain/expected-total.ts`                  | Pure rules over plain data. The shown total as minor units and its currency, the shape `POST /cart/checkout` requires.                                                              | [read](../theory/domain-layer.md)     |
+| `domain/expected-total.ts`                  | Pure rules over plain data. The shown total as decimal text and its currency, the shape `POST /cart/checkout` requires.                                                             | [read](../theory/domain-layer.md)     |
 | `domain/checkout-attempt.ts`                | Pure rules over plain data — no store, no component, no axios. The fingerprint that decides whether a checkout is the same call as the last one.                                    | [read](../theory/domain-layer.md)     |
 | `domain/empty-cart.ts`                      | Pure rules over plain data — no store, no component, no axios. The known-empty cart a successful checkout leaves.                                                                   | [read](../theory/domain-layer.md)     |
 | `domain/stock-poll.ts`                      | Pure rules over plain data — no store, no component, no axios. What the configured poll interval means: a positive whole number of seconds, else off.                               | [read](../theory/domain-layer.md)     |

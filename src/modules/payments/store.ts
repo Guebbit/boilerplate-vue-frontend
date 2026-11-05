@@ -245,11 +245,11 @@ export const usePaymentsStore = defineStore('payments', () => {
      * @param target - The payment being returned and the order it belongs to.
      * @param target.id - The payment.
      * @param target.orderId - Its order, for the re-read after a fault.
-     * @param amount - A partial refund, a decimal in the payment's own currency. Absent returns
+     * @param amount - A partial refund, a decimal string in the payment's own currency. Absent returns
      *  everything still refundable.
      * @returns A promise resolving with the refreshed payment and the record this request wrote.
      */
-    const refundPayment = (target: { id: string; orderId: string }, amount?: number) => {
+    const refundPayment = (target: { id: string; orderId: string }, amount?: string) => {
         const keeper = refundIdempotencyKeys.forSubject(target.id);
         return fetchAny(() =>
             createRefund(target.id, amount === undefined ? undefined : { amount }, keeper.withKey())

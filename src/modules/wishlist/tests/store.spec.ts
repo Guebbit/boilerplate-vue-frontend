@@ -60,9 +60,9 @@ beforeEach(() => {
             summary: {
                 itemsCount: 0,
                 totalQuantity: 0,
-                itemsTotal: 0,
-                shippingCost: 0,
-                totalPrice: 0,
+                itemsTotal: '0.00',
+                shippingCost: '0.00',
+                totalPrice: '0.00',
                 currency: 'EUR'
             },
             shipping: { required: false, selected: null, options: [] }

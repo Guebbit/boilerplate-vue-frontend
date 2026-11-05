@@ -50,8 +50,8 @@ describe('CU17 · The cart does the maths', () => {
         cy.loginAs('user');
         cy.subjectProduct('product.barebones').then((bottle) => {
             cy.subjectProduct('product.rich').then((food) => {
-                const bottleCents = Math.round(bottle.price * 100);
-                const foodCents = Math.round(food.price * 100);
+                const bottleCents = Math.round(Number(bottle.price) * 100);
+                const foodCents = Math.round(Number(food.price) * 100);
 
                 cy.navigateTo('/en/products');
                 cy.get('[data-test=filter-text] input').type(`${bottle.title}{enter}`);

@@ -11,18 +11,18 @@ import type { CartResponse } from '@types';
  * basket emptied.
  *
  * @param currency - ISO-4217 code the emptied cart's zeroed summary should still carry.
+ * @param zero - Zero written at the currency's places (`"0.00"` EUR, `"0"` JPY), as the API would.
  * @returns The known-empty cart shape.
  */
-export const emptyCart = (currency: string): CartResponse => ({
+export const emptyCart = (currency: string, zero: string): CartResponse => ({
     items: [],
     summary: {
         itemsCount: 0,
         totalQuantity: 0,
-        itemsTotal: 0,
-        shippingCost: 0,
-        totalPrice: 0,
-        currency,
-        expectedTotal: { amount: 0, currency }
+        itemsTotal: zero,
+        shippingCost: zero,
+        totalPrice: zero,
+        currency
     },
     shipping: { required: false, options: [] },
     checkoutable: false

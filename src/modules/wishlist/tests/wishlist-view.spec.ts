@@ -69,7 +69,7 @@ const mountWishlist = (
     seedProducts({
         id: PRODUCT_ID,
         title: PRODUCT_TITLE,
-        price: 1,
+        price: '1.00',
         currency: 'EUR',
         inStock: true,
         lowStock: false,

@@ -121,13 +121,13 @@ const anOrder = (overrides: Partial<Order> = {}): Order => ({
     items: [],
     totalItems: 0,
     totalQuantity: 0,
-    totalPrice: 0,
+    totalPrice: '0.00',
     currency: 'EUR',
     orderNumber: '2026-000001',
-    netTotal: 0,
-    taxTotal: 0,
-    shippingNetAmount: 0,
-    shippingTaxAmount: 0,
+    netTotal: '0.00',
+    taxTotal: '0.00',
+    shippingNetAmount: '0.00',
+    shippingTaxAmount: '0.00',
     taxSummary: [],
     status: OrderStatus.pending,
     paymentStatus: 'unpaid',
@@ -288,7 +288,7 @@ describe('a partial refund', () => {
                 .then(() => wrapper.get('[data-test=button-refund-only]').trigger('click'))
                 .then(() => nextTick())
                 .then(() => {
-                    expect(refund).toHaveBeenCalledWith(12.5);
+                    expect(refund).toHaveBeenCalledWith('12.5');
                 })
         ));
 
@@ -310,7 +310,7 @@ describe('marking a hand-paid refund as returned', () => {
     /** An owed refund of 40 euro, as the payment names it. */
     const owed: Refund = {
         id: 'r-owed',
-        amount: 40,
+        amount: '40.00',
         currency: 'EUR',
         status: 'pending',
         reason: 'goodwill',

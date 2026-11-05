@@ -260,7 +260,7 @@ describe('The journey harness', () => {
 
                 cy.step('a product in a new category lands, and a browser read caches the chips');
                 cy.apiAs('admin', 'POST', '/products', {
-                    price: 1,
+                    price: '1.00',
                     categories: [category],
                     translations: { en: { title: category } }
                 });

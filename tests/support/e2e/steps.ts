@@ -232,7 +232,7 @@ export const addToCartFromStorefront = (name: string): void => {
 
 /** The slice of `GET /cart` a checkout names its total from. */
 interface CartTotalLike {
-    summary: { totalPrice: number; currency: string };
+    summary: { totalPrice: string; currency: string };
 }
 
 /**
@@ -251,12 +251,9 @@ export const checkoutAs = <T = { id: string }>(
     cy.apiAs<CartTotalLike>(role, 'GET', '/cart').then((cart) => {
         if (!cart) throw new Error('checkoutAs: the cart answered nothing');
         const { totalPrice, currency } = cart.summary;
-        const digits =
-            new Intl.NumberFormat('en', { style: 'currency', currency }).resolvedOptions()
-                .maximumFractionDigits ?? 2;
         return cy.apiAs<T>(role, 'POST', '/cart/checkout', {
             ...body,
-            expectedTotal: { amount: Math.round(totalPrice * 10 ** digits), currency }
+            expectedTotal: { amount: totalPrice, currency }
         });
     });
 
@@ -502,7 +499,7 @@ export const preorderOnSale = (options: {
 }): Cypress.Chainable<string> =>
     cy
         .apiAs<{ id: string }>('editor', 'POST', '/products', {
-            price: 19.9,
+            price: '19.90',
             releaseDate: new Date(Date.now() + options.releaseInDays * 86_400_000).toISOString(),
             translations: {
                 en: {

@@ -28,12 +28,12 @@ const PAYMENT = {
     id: 'payment-1',
     orderId: 'order-1',
     userId: 'user-1',
-    amount: 50,
+    amount: '50.00',
     currency: 'EUR',
     status: 'requires_confirmation',
     provider: 'fake',
     method: 'card',
-    amountRefunded: 0,
+    amountRefunded: '0.00',
     refunds: [],
     actions: { pay: false, sync: false, refund: false, settleByHand: [], cancelRefund: [] }
 };
@@ -387,7 +387,7 @@ const refundCall = () =>
 /** The refund record `POST /payments/{id}/refunds` answers with. */
 const REFUND = {
     id: 'refund-1',
-    amount: 50,
+    amount: '50.00',
     currency: 'EUR',
     status: 'succeeded',
     reason: 'goodwill',
@@ -403,7 +403,7 @@ const TARGET_2 = { id: 'payment-2', orderId: 'order-2' };
 describe('refundPayment', () => {
     it('sends no body for a full refund, so everything still refundable goes back', () => {
         responses['POST /payments/payment-1/refunds'] = REFUND;
-        responses['GET /payments/payment-1'] = { ...PAYMENT, amountRefunded: 50 };
+        responses['GET /payments/payment-1'] = { ...PAYMENT, amountRefunded: '50.00' };
 
         return usePaymentsStore()
             .refundPayment(TARGET_1)
@@ -413,19 +413,19 @@ describe('refundPayment', () => {
     });
 
     it('sends the amount for a partial refund, and keeps the running total', () => {
-        responses['POST /payments/payment-1/refunds'] = { ...REFUND, amount: 12.5 };
+        responses['POST /payments/payment-1/refunds'] = { ...REFUND, amount: '12.50' };
         responses['GET /payments/payment-1'] = {
             ...PAYMENT,
             status: 'succeeded',
-            amountRefunded: 12.5
+            amountRefunded: '12.50'
         };
         const store = usePaymentsStore();
 
-        return store.refundPayment(TARGET_1, 12.5).then(() => {
+        return store.refundPayment(TARGET_1, '12.50').then(() => {
             expect(contractRequest(schemas.CreateRefundBody, refundCall()?.data)).toEqual({
-                amount: 12.5
+                amount: '12.50'
             });
-            expect(store.payment?.amountRefunded).toBe(12.5);
+            expect(store.payment?.amountRefunded).toBe('12.50');
         });
     });
 
@@ -444,7 +444,7 @@ describe('refundPayment', () => {
         };
         const store = usePaymentsStore();
 
-        return store.refundPayment(TARGET_1, 50).then((done) => {
+        return store.refundPayment(TARGET_1, '50.00').then((done) => {
             expect(done?.refund).toMatchObject({ status: 'failed', failureReason: 'declined' });
             expect(done?.payment.actions.settleByHand).toEqual(['refund-1']);
             expect(store.payment?.actions.settleByHand).toEqual(['refund-1']);
@@ -452,16 +452,16 @@ describe('refundPayment', () => {
     });
 
     it('reads the payment again after the 201, and keeps the actions that read carries', () => {
-        responses['POST /payments/payment-1/refunds'] = { ...REFUND, amount: 5 };
+        responses['POST /payments/payment-1/refunds'] = { ...REFUND, amount: '5.00' };
         responses['GET /payments/payment-1'] = {
             ...PAYMENT,
             status: 'succeeded',
-            amountRefunded: 5,
+            amountRefunded: '5.00',
             actions: { pay: false, sync: false, refund: true, settleByHand: [], cancelRefund: [] }
         };
         const store = usePaymentsStore();
 
-        return store.refundPayment(TARGET_1, 5).then(() => {
+        return store.refundPayment(TARGET_1, '5.00').then(() => {
             expect(store.payment?.actions.refund, 'money is still left to refund').toBe(true);
             expect(requestedUrls()).toEqual(['/payments/payment-1/refunds', '/payments/payment-1']);
         });
@@ -729,7 +729,7 @@ describe('the staff lists', () => {
         id: 'refund-1',
         paymentId: 'payment-1',
         orderId: 'order-1',
-        amount: 10,
+        amount: '10.00',
         currency: 'EUR',
         status: 'failed',
         reason: 'goodwill',
@@ -810,7 +810,7 @@ describe('the staff lists', () => {
                     orderId: 'order-1',
                     paymentId: 'payment-1',
                     refundId: 'refund-1',
-                    amount: 5,
+                    amount: '5.00',
                     currency: 'EUR',
                     since: '2026-03-04T10:00:00Z'
                 }

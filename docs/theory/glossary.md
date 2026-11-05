@@ -107,6 +107,12 @@ than rendering an answer. See [Security](../tools/security.md#route-guards).
 | **Status**  | Where an order is in its lifecycle. A closed set the server enforces; this module maps each value to a label and a colour.                     |
 | **Reorder** | Refilling the cart from a past order. The one write this module makes into another module’s state.                                             |
 
+## Money (every module)
+
+| Term       | What it means here                                                                                                                        |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Amount** | A decimal string at its currency's own places (`"19.90"`, JPY `"1000"`). The text carries its scale; this client holds no currency table. |
+
 ## `payments`
 
 | Term         | What it means here                                                                               |

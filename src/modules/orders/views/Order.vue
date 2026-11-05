@@ -64,6 +64,7 @@ import {
     formatCurrency,
     formatPercent
 } from '@/infrastructure/utils/formatters.ts';
+import { sumDecimals } from '@/infrastructure/utils/money.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { PaymentPanel } from '@/modules/payments';
@@ -460,7 +461,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                     >
                         <ShippingMethodName :id="currentOrder.shippingMethod" />
                         —
-                        {{ formatCurrency(currentOrder.shippingCost ?? 0, orderCurrency) }}
+                        {{ formatCurrency(currentOrder.shippingCost, orderCurrency) }}
                     </ItemDetailField>
                     <ItemDetailField
                         v-if="shippingAddressText"
@@ -595,7 +596,10 @@ watchOrder(() => id, { onError: onMissingRecord });
                                             <strong>
                                                 {{
                                                     formatCurrency(
-                                                        item.netAmount + item.taxAmount,
+                                                        sumDecimals([
+                                                            item.netAmount,
+                                                            item.taxAmount
+                                                        ]),
                                                         orderCurrency
                                                     )
                                                 }}

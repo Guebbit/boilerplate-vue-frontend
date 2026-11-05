@@ -69,7 +69,8 @@ const categoryCharts = computed(() => {
                 {
                     name: t('stats-page.column-net-sales'),
                     kind: 'bar',
-                    values: own.map(({ netSales }) => netSales)
+                    // A chart plots floats: `Number` at this boundary only, nothing is summed after it.
+                    values: own.map(({ netSales }) => Number(netSales))
                 }
             ]
         };

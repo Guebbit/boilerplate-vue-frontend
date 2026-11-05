@@ -39,7 +39,7 @@ describe('products schema messages', () => {
     afterEach(() => setLocale('en'));
 
     it('resolves in English, then in Italian, from the same schema object', () => {
-        const invalid = { price: -1, translations: { en: { title: '' } } };
+        const invalid = { price: '-1.00', translations: { en: { title: '' } } };
 
         expect(messagesOf(productsSchema, invalid)).toEqual(
             expect.arrayContaining([enMessages['products-form']['title-required']])

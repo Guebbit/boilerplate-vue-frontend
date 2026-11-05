@@ -18,7 +18,7 @@ interface PaymentLike {
     displayStatus?: string;
     method: string;
     status: string;
-    amountRefunded: number;
+    amountRefunded: string;
     refunds: { settledByHand?: boolean }[];
     actions: { refund: boolean; settleByHand: string[] };
 }

@@ -5983,16 +5983,12 @@ paths:
           in: query
           required: false
           schema:
-            type: number
-            format: double
-            minimum: 0
+            $ref: "#/components/schemas/NonNegativeDecimalAmount"
         - name: priceMax
           in: query
           required: false
           schema:
-            type: number
-            format: double
-            minimum: 0
+            $ref: "#/components/schemas/NonNegativeDecimalAmount"
         - name: title
           in: query
           schema:
@@ -11985,15 +11981,11 @@ paths:
         - name: amountMin
           in: query
           schema:
-            type: number
-            format: double
-            minimum: 0
+            $ref: "#/components/schemas/NonNegativeDecimalAmount"
         - name: amountMax
           in: query
           schema:
-            type: number
-            format: double
-            minimum: 0
+            $ref: "#/components/schemas/NonNegativeDecimalAmount"
         - name: orderId
           in: query
           schema:
@@ -15414,6 +15406,20 @@ components:
       maxLength: 3
       pattern: ^[A-Z]{3}$
       description: ISO 4217 alphabetic currency code, upper case (e.g. `EUR`)
+    DecimalAmount:
+      type: string
+      format: decimal
+      pattern: ^-?\d+(\.\d+)?$
+      examples:
+        - "19.90"
+      description: A money amount as a plain decimal string at the places of the currency it is priced in (`"19.90"` for EUR, `"1000"` for JPY, `"1.500"` for KWD). May be negative where the field says it is a signed figure.
+    NonNegativeDecimalAmount:
+      type: string
+      format: decimal
+      pattern: ^\d+(\.\d+)?$
+      examples:
+        - "19.90"
+      description: A non-negative money amount as a plain decimal string at the places of the currency it is priced in (`"19.90"` for EUR, `"1000"` for JPY, `"1.500"` for KWD).
     Email:
       type: string
       maxLength: 254
@@ -18034,9 +18040,7 @@ components:
         title:
           type: string
         price:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.
         description:
           type: string
@@ -18120,15 +18124,11 @@ components:
           $ref: "#/components/schemas/OrderLineCurrent"
           description: The product's picture, resolved live — absent when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`.
         taxAmount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           readOnly: true
           description: VAT included in this line's total, at its own frozen `taxRate`.
         netAmount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           readOnly: true
           description: This line's total excluding VAT — `price × quantity` minus `taxAmount`.
     OrderTaxSummaryRow:
@@ -18146,17 +18146,11 @@ components:
           minimum: 0
           description: The decimal rate this row is for (`0.22` for 22%) — never repeated across rows.
         netAmount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
         taxAmount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
         grossAmount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: "`netAmount + taxAmount`, not re-derived from a price."
     OrderAddress:
       type: object
@@ -18266,38 +18260,27 @@ components:
           description: Sum of `quantity` across every line item.
           example: 5
         totalPrice:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
-          example: 149.97
         currency:
           allOf:
             - $ref: "#/components/schemas/CurrencyCode"
           readOnly: true
           description: ISO-4217 currency code this order was priced in (e.g. EUR).
         netTotal:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           readOnly: true
           description: Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
         taxTotal:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           readOnly: true
           description: "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
         shippingNetAmount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           readOnly: true
           description: Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
         shippingTaxAmount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           readOnly: true
           description: Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
         taxSummary:
@@ -18313,9 +18296,7 @@ components:
           type: string
           description: The shipping method's id as the checkout froze it (e.g. standard, express, pickup).
         shippingCost:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: What that method cost at checkout time — a later rate change cannot re-price history.
         shippingAddress:
           $ref: "#/components/schemas/OrderAddress"
@@ -18475,9 +18456,7 @@ components:
         id:
           $ref: "#/components/schemas/Id"
         amount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: The amount returned, in the payment's own `currency`.
         currency:
           allOf:
@@ -18532,15 +18511,11 @@ components:
         orderId:
           $ref: "#/components/schemas/Id"
         amount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
         currency:
           $ref: "#/components/schemas/CurrencyCode"
         amountRefunded:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
         refunds:
           type: array
           items:
@@ -18585,9 +18560,7 @@ components:
         currency:
           $ref: "#/components/schemas/CurrencyCode"
         grandTotal:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
     ShipmentStatus:
       type: string
       enum:
@@ -20235,9 +20208,7 @@ components:
         title:
           type: string
         price:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: "Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around."
         currency:
           allOf:
@@ -20382,9 +20353,7 @@ components:
         translations:
           $ref: "#/components/schemas/ProductTranslationsCreate"
         price:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
           $ref: "#/components/schemas/TaxClass"
@@ -20439,9 +20408,7 @@ components:
           maxLength: 100000
           description: JSON-encoded `ProductTranslationsWrite`.
         price:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
           $ref: "#/components/schemas/TaxClass"
@@ -20550,9 +20517,7 @@ components:
         translations:
           $ref: "#/components/schemas/ProductTranslationsWrite"
         price:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
           oneOf:
@@ -20623,9 +20588,7 @@ components:
           maxLength: 100000
           description: JSON-encoded `ProductTranslationsWrite`.
         price:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
           type: string
@@ -20710,9 +20673,7 @@ components:
         translations:
           $ref: "#/components/schemas/ProductTranslationsPatch"
         price:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
           oneOf:
@@ -20773,9 +20734,7 @@ components:
           maxLength: 100000
           description: JSON-encoded `ProductTranslationsPatch`.
         price:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: Gross — VAT included. Same convention as `Product.price`.
         taxClass:
           type: string
@@ -20846,13 +20805,9 @@ components:
           items:
             $ref: "#/components/schemas/Id"
         priceMin:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
         priceMax:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
         category:
           type: string
           maxLength: 200
@@ -20912,22 +20867,6 @@ components:
         canIncrease:
           type: boolean
           description: "Whether the line can hold one more unit: `quantity` is below the shop's per-line ceiling (`NODE_CART_LINE_MAX`). Stock plays no part, as for `POST /cart/items`. A client disables its \"+\" on `false` instead of copying the ceiling."
-    ExpectedTotal:
-      type: object
-      additionalProperties: false
-      required:
-        - amount
-        - currency
-      description: An order total as the buyer saw it, or as the checkout would charge it. The amount is in minor units (cents), so two totals compare as integers and never as floats.
-      properties:
-        amount:
-          type: integer
-          minimum: 0
-          description: The total in minor units of `currency` (EUR 71.00 is 7100).
-        currency:
-          allOf:
-            - $ref: "#/components/schemas/CurrencyCode"
-          description: The ISO-4217 code the total is priced in.
     CartSummaryResponse:
       type: object
       additionalProperties: false
@@ -20938,7 +20877,6 @@ components:
         - shippingCost
         - totalPrice
         - currency
-        - expectedTotal
       properties:
         itemsCount:
           type: integer
@@ -20949,28 +20887,18 @@ components:
           minimum: 0
           description: Sum of quantities across all items
         itemsTotal:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: Sum of item prices * quantity. Gross — VAT included, same as each product's own `price` — before shipping. There are no discounts to net out.
         shippingCost:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: What the cart's chosen shipping method (`PUT /cart/shipping-method`) costs against `itemsTotal` right now (free-above thresholds included). `0` with no method chosen, a digital-only basket, or a method that no longer fits the basket's weight — the same real-time pricing `POST /cart/checkout` freezes onto the order, priced early so a shopper sees the true total before paying.
         totalPrice:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: itemsTotal + shippingCost
         currency:
           allOf:
             - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code (e.g. USD)
-        expectedTotal:
-          allOf:
-            - $ref: "#/components/schemas/ExpectedTotal"
-          description: "`totalPrice` in minor units, exactly as `POST /cart/checkout` compares it: send it back unchanged as the checkout's `expectedTotal`. A client never converts the decimal itself, so it needs no table of currency exponents."
     CartShippingOption:
       type: object
       additionalProperties: false
@@ -20985,9 +20913,7 @@ components:
           type: string
           description: Matches a `ShippingMethod.id` from `GET /delivery/methods`.
         price:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: What this method costs against `summary.itemsTotal` right now (free-above thresholds included) — the same figure `PUT /cart/shipping-method` would freeze into `summary.shippingCost` if chosen.
         requiresAddress:
           type: boolean
@@ -21071,6 +20997,21 @@ components:
           maxLength: 64
           minLength: 1
           description: Which shipping method (see `GET /delivery/methods`) the cart plans to ship by. `null` clears the choice. An id that matches no method refuses with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`; one that does not apply to the basket refuses with 409 (`CART_SHIPPING_NOT_APPLICABLE`, `CART_SHIPPING_METHOD_WEIGHT`).
+    ExpectedTotal:
+      type: object
+      additionalProperties: false
+      required:
+        - amount
+        - currency
+      description: An order total as the buyer saw it, or as the checkout would charge it. Checkout compares by minor units, so `"71"` and `"71.00"` are the same total.
+      properties:
+        amount:
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
+          description: The total at the places of `currency` (EUR 71.00 is `"71.00"`).
+        currency:
+          allOf:
+            - $ref: "#/components/schemas/CurrencyCode"
+          description: The ISO-4217 code the total is priced in.
     CheckoutRequest:
       type: object
       additionalProperties: false
@@ -21207,38 +21148,27 @@ components:
           description: Sum of `quantity` across every line item.
           example: 5
         totalPrice:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
-          example: 149.97
         currency:
           allOf:
             - $ref: "#/components/schemas/CurrencyCode"
           readOnly: true
           description: ISO-4217 currency code this order was priced in (e.g. EUR).
         netTotal:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           readOnly: true
           description: Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
         taxTotal:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           readOnly: true
           description: "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
         shippingNetAmount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           readOnly: true
           description: Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
         shippingTaxAmount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           readOnly: true
           description: Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
         taxSummary:
@@ -21254,9 +21184,7 @@ components:
           type: string
           description: The shipping method's id as the checkout froze it (e.g. standard, express, pickup).
         shippingCost:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: What that method cost at checkout time — a later rate change cannot re-price history.
         shippingAddress:
           $ref: "#/components/schemas/OrderAddress"
@@ -21560,9 +21488,7 @@ components:
             - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code (e.g. EUR)
         grandTotal:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: The gross amount this credit note reverses.
         refundId:
           $ref: "#/components/schemas/Id"
@@ -21683,9 +21609,7 @@ components:
         reason:
           $ref: "#/components/schemas/DisputeReason"
         amount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
         currency:
           $ref: "#/components/schemas/CurrencyCode"
         evidenceDueBy:
@@ -21760,18 +21684,14 @@ components:
         userId:
           $ref: "#/components/schemas/Id"
         amount:
-          type: number
-          format: double
-          minimum: 0
-          description: The order's total as the intent froze it. Always two decimal places, rounded half-up at the point of calculation. If the provider reports a success for a different amount or currency, the payment reads `succeeded` with what ARRIVED here, its order is canceled and the money is returned.
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
+          description: The order's total as the intent froze it. Always at the currency's own places, rounded half-up at the point of calculation. If the provider reports a success for a different amount or currency, the payment reads `succeeded` with what ARRIVED here, its order is canceled and the money is returned.
         currency:
           allOf:
             - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code (e.g. EUR)
         amountRefunded:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: How much of `amount` has been asked back, pending and succeeded together — the same reading as Stripe's `amount_refunded`. Counted when a refund is opened, so two racing partial refunds cannot return more than was paid.
         refunds:
           type: array
@@ -22095,9 +22015,7 @@ components:
       additionalProperties: false
       properties:
         amount:
-          type: number
-          format: double
-          exclusiveMinimum: 0
+          $ref: "#/components/schemas/DecimalAmount"
           description: How much to return, a decimal in the payment's own currency. Absent means everything still refundable.
         currency:
           allOf:
@@ -22140,9 +22058,7 @@ components:
         reason:
           $ref: "#/components/schemas/DisputeReason"
         amount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: The disputed amount, in `currency`.
         currency:
           allOf:
@@ -22198,18 +22114,14 @@ components:
           type: string
           description: Stable id, frozen onto orders at checkout (standard, express, pickup).
         price:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: Flat rate, in `currency`.
         currency:
           allOf:
             - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code (e.g. EUR) — this deployment's `NODE_DEFAULT_CURRENCY`.
         freeAbove:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: Items total at which this method becomes free. Absent — it never does.
         tracked:
           type: boolean
@@ -22482,9 +22394,7 @@ components:
           type: string
           description: The product's title as the order froze it.
         unitPrice:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: The gross unit price the order froze.
         restocked:
           type: integer
@@ -22634,14 +22544,10 @@ components:
           $ref: "#/components/schemas/ReturnRemedy"
           description: What staff gave when the goods arrived. Absent until then, and on a return born closed. `replace` and `repair` close the return with no money moving and hand its units back to the buyer, so they are returnable again.
         handlingDeduction:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: An amount kept back from the refund for handling damage (Art. 14(2)), entered when the goods were received. Absent when nothing was kept.
         refundAmount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: What the customer is owed for this return, fixed when the goods were received.
         closedAt:
           type: string
@@ -22782,14 +22688,10 @@ components:
           items:
             $ref: "#/components/schemas/CancelOptionLine"
         refundAmount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: What the cancel would refund, in `ReturnOptions.currency` — the lines plus `shippingRefund`.
         shippingRefund:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: The delivery inside `refundAmount` — non-zero only when this cancel takes the last unit of the order.
         cancel:
           type: boolean
@@ -22850,9 +22752,7 @@ components:
           $ref: "#/components/schemas/ReturnRemedy"
           description: What the buyer is given. Absent means `refund`. `replace` and `repair` are for a `defective` or `wrong_item` return only (422 `RETURN_REMEDY_INVALID` otherwise).
         handlingDeduction:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: Handling damage to keep back from the refund (Art. 14(2)), a decimal in the return's currency. Absent means none. More than the refund is worth is refused, and so is any amount on a `defective` or `wrong_item` return (a guarantee remedy is free of charge).
         lines:
           type: array
@@ -23802,13 +23702,9 @@ components:
           type: string
           format: date-time
         amountMin:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
         amountMax:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
         orderId:
           $ref: "#/components/schemas/Id"
         disputed:
@@ -23841,9 +23737,7 @@ components:
         orderId:
           $ref: "#/components/schemas/Id"
         amount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
         currency:
           $ref: "#/components/schemas/CurrencyCode"
         status:
@@ -23917,14 +23811,10 @@ components:
           format: date-time
           description: On a `dispute_needs_response` row, when the provider's evidence window closes. Absent when the provider gave none. A past date means the window has gone.
         alreadyRefunded:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: "On a `dispute_needs_response` row, how much of the payment was already refunded successfully, in its currency. Above zero it is a refund-then-chargeback: send the refund as evidence. Absent when nothing was refunded."
         amount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
         currency:
           $ref: "#/components/schemas/CurrencyCode"
         failureReason:
@@ -23935,9 +23825,7 @@ components:
           format: date-time
           description: When the problem was recorded, so the page can sort by age.
         exceedsBy:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: On a `refund_exceeds_remaining` row, by how much this open refund overshoots what the provider can still give back, in the payment's currency.
         refundDueBy:
           type: string
@@ -24087,45 +23975,31 @@ components:
           type: integer
           description: "`unitsOrdered` minus `unitsReversed`."
         grossSales:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: Goods net of VAT on invoices issued in the period, before shipping, discounts and reversals.
         discounts:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: Always 0 until a discount exists.
         reversals:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: The goods part (net of VAT) of credit notes issued in the period.
         netSales:
-          type: number
-          format: double
+          $ref: "#/components/schemas/DecimalAmount"
           description: "`grossSales` minus `discounts` minus `reversals`."
         shipping:
-          type: number
-          format: double
+          $ref: "#/components/schemas/DecimalAmount"
           description: Shipping net of VAT charged minus refunded. Exact for full refunds only, since a partial credit note folds its shipping into goods.
         taxes:
-          type: number
-          format: double
+          $ref: "#/components/schemas/DecimalAmount"
           description: VAT charged minus VAT refunded.
         totalSales:
-          type: number
-          format: double
+          $ref: "#/components/schemas/DecimalAmount"
           description: "`netSales` plus `shipping` plus `taxes`."
         refunds:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: Credit notes issued in the period, VAT included.
         averageOrderValue:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
           description: (`grossSales` minus `discounts`) divided by `orders`; 0 with no orders.
     SalesBucket:
       type: object
@@ -24205,8 +24079,7 @@ components:
         netUnits:
           type: integer
         netSales:
-          type: number
-          format: double
+          $ref: "#/components/schemas/DecimalAmount"
           description: Net of VAT, from the frozen line price and rate.
     ProductStats:
       type: object
@@ -24280,8 +24153,7 @@ components:
           type: integer
           minimum: 0
         netSales:
-          type: number
-          format: double
+          $ref: "#/components/schemas/DecimalAmount"
     CategoryStats:
       type: object
       additionalProperties: false
@@ -24323,9 +24195,7 @@ components:
           type: integer
           minimum: 0
         amount:
-          type: number
-          format: double
-          minimum: 0
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
     PaymentMix:
       type: object
       additionalProperties: false
@@ -24408,15 +24278,11 @@ components:
               currency:
                 $ref: "#/components/schemas/CurrencyCode"
               invoiced:
-                type: number
-                format: double
+                $ref: "#/components/schemas/NonNegativeDecimalAmount"
                 description: Invoices issued in the period, VAT included.
-                minimum: 0
               credited:
-                type: number
-                format: double
+                $ref: "#/components/schemas/NonNegativeDecimalAmount"
                 description: Credit notes issued in the period, VAT included.
-                minimum: 0
               rate:
                 type: number
                 format: double
@@ -24475,9 +24341,7 @@ components:
                 type: integer
                 minimum: 0
               amount:
-                type: number
-                format: double
-                minimum: 0
+                $ref: "#/components/schemas/NonNegativeDecimalAmount"
               nearestPayBy:
                 type: string
                 format: date-time
@@ -24699,6 +24563,7 @@ components:
         - email
         - phone
         - currency
+        - minorUnits
         - shipToCountries
         - returnAddress
         - returnPostagePayer
@@ -24733,6 +24598,11 @@ components:
           allOf:
             - $ref: "#/components/schemas/CurrencyCode"
           description: ISO-4217 currency code (e.g. EUR) — the shop's one currency, the same one `Product.currency` reports.
+        minorUnits:
+          type: integer
+          minimum: 0
+          maximum: 4
+          description: "How many decimal places `currency` has (ISO 4217's \"minor unit\": EUR 2, JPY 0, KWD 3). A client building a price input reads it here; an amount it receives already carries its own places."
         shipToCountries:
           type: array
           items:
@@ -25579,7 +25449,7 @@ x-error-codes:
     description: The address's country is outside this deployment's configured ship-to list.
   CART_TOTAL_CHANGED:
     status: 409
-    description: The total the buyer was shown is not the total this checkout would charge — a price, a shipping cost or the cart itself changed. `errors[].details` carries `expected` (what the request named) and `actual` (what the order would cost now), each `{ amount, currency }` in minor units; show the new total and let the buyer confirm.
+    description: The total the buyer was shown is not the total this checkout would charge — a price, a shipping cost or the cart itself changed. `errors[].details` carries `expected` (what the request named) and `actual` (what the order would cost now), each `{ amount, currency }` with the amount as a decimal string; show the new total and let the buyer confirm.
   CLIENT_ERROR:
     status: 400
     description: A 4xx whose status has no code of its own in this catalogue (the derived name is not listed here), so no wording is invented for it. Never a 5xx.

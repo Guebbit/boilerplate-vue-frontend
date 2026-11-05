@@ -29,7 +29,7 @@ vi.mock('@api', async (importOriginal) => ({
                     {
                         id: 'p1',
                         title: 'Widget',
-                        price: 9.99,
+                        price: '9.99',
                         currency: 'GBP',
                         inStock: true,
                         lowStock: false,
@@ -48,11 +48,10 @@ const CART: CartResponse = {
     summary: {
         itemsCount: 1,
         totalQuantity: 3,
-        itemsTotal: 29.97,
-        shippingCost: 0,
-        totalPrice: 29.97,
-        currency: 'GBP',
-        expectedTotal: { amount: 2997, currency: 'GBP' }
+        itemsTotal: '29.97',
+        shippingCost: '0.00',
+        totalPrice: '29.97',
+        currency: 'GBP'
     },
     shipping: { required: false, options: [] },
     checkoutable: true

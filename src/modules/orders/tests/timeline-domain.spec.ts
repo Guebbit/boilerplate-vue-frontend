@@ -63,12 +63,15 @@ describe('describeTimelineEntry', () => {
 
     it('joins the amount and the reason of a refund', () => {
         const line = describeTimelineEntry(
-            { type: 'refund_settled', data: { amount: 12.5, currency: 'EUR', reason: 'goodwill' } },
+            {
+                type: 'refund_settled',
+                data: { amount: '12.50', currency: 'EUR', reason: 'goodwill' }
+            },
             tools
         );
 
         expect(line.detail).toBe(
-            '12.5 EUR · order-timeline.detail-reason(order-timeline.refund-reason-goodwill)'
+            '12.50 EUR · order-timeline.detail-reason(order-timeline.refund-reason-goodwill)'
         );
     });
 
@@ -76,7 +79,12 @@ describe('describeTimelineEntry', () => {
         const line = describeTimelineEntry(
             {
                 type: 'refund_failed',
-                data: { amount: 5, currency: 'EUR', reason: 'return', failureReason: 'declined' }
+                data: {
+                    amount: '5.00',
+                    currency: 'EUR',
+                    reason: 'return',
+                    failureReason: 'declined'
+                }
             },
             tools
         );
@@ -86,11 +94,14 @@ describe('describeTimelineEntry', () => {
 
     it('shows the amount and reason of a refund staff canceled', () => {
         const line = describeTimelineEntry(
-            { type: 'refund_canceled', data: { amount: 5, currency: 'EUR', reason: 'goodwill' } },
+            {
+                type: 'refund_canceled',
+                data: { amount: '5.00', currency: 'EUR', reason: 'goodwill' }
+            },
             tools
         );
 
-        expect(line.detail).toContain('5 EUR');
+        expect(line.detail).toContain('5.00 EUR');
     });
 
     it('shows what a dispute disputes and where it stands, for staff', () => {
@@ -98,7 +109,7 @@ describe('describeTimelineEntry', () => {
             {
                 type: 'dispute_opened',
                 data: {
-                    amount: 40,
+                    amount: '40.00',
                     currency: 'EUR',
                     status: 'needs_response',
                     reason: 'fraudulent'
@@ -109,7 +120,7 @@ describe('describeTimelineEntry', () => {
 
         expect(line.title).toBe('order-timeline.type-dispute_opened');
         expect(line.detail).toBe(
-            '40 EUR · order-timeline.detail-dispute(order-timeline.dispute-status-needs_response) · order-timeline.detail-reason(order-timeline.dispute-reason-fraudulent)'
+            '40.00 EUR · order-timeline.detail-dispute(order-timeline.dispute-status-needs_response) · order-timeline.detail-reason(order-timeline.dispute-reason-fraudulent)'
         );
     });
 

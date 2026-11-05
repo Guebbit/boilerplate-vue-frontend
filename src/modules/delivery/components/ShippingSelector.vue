@@ -21,6 +21,7 @@ import { onMounted, watch, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
+import { compareDecimals } from '@/infrastructure/utils/money.ts';
 import { useDeliveryStore } from '../store.ts';
 import type { CartShippingOption } from '@types';
 import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
@@ -151,7 +152,10 @@ watch(
                             {{ formatCurrency(option.price, currency) }}
                         </strong>
                         <span
-                            v-if="freeAboveOf(option.id) !== undefined && option.price === 0"
+                            v-if="
+                                freeAboveOf(option.id) !== undefined &&
+                                compareDecimals(option.price, '0') === 0
+                            "
                             class="text-xs opacity-75"
                         >
                             {{ t('shipping-selector.free-earned') }}

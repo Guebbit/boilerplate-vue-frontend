@@ -8,13 +8,12 @@ import {
     formatDuration,
     formatText as formatTextBase,
     formatDateTime as formatDateTimeBase,
-    formatCurrency as formatCurrencyBase,
     formatFlag as formatFlagBase
 } from '@guebbit/js-toolkit';
 import type { StatsInterval } from '@types';
 import { getCurrentLocale } from '@/i18n';
 import { countryLabel } from '@/i18n/country-label.ts';
-import { minorUnitExponent } from './currency-exponents.ts';
+import { decimalScale, isDecimal } from './money.ts';
 import { runtimeValue } from '@/infrastructure/runtime-config';
 
 /**
@@ -109,48 +108,45 @@ export const formatBucketStart = (value: string, timeZone: string, interval: Sta
     });
 
 /**
- * Formats numeric values as currency with locale-aware separators and symbol.
- *
- * No default: the shop's currency is configurable (`NODE_DEFAULT_CURRENCY`), and every money
- * resource (`Product`, `Order`, `ShippingMethod`, the cart's `summary`, `Payment`) now carries its
- * own `currency` — a call site that forgot to read it is a bug, not a case to paper over with a
- * silent EUR.
- *
- * @param value - Amount to format; non-numbers yield the fallback glyph.
- * @param currency - ISO 4217 currency code, from the same resource `value` was read off.
- * @param format - `Intl.NumberFormat` overrides. Defaults to the currency's pinned ISO 4217 decimals
- *  ({@link currencyDigits}: none for JPY/KRW, 3 for KWD/BHD, 2 for the common case).
- * @returns The formatted amount, or {@link EMPTY_VALUE} when `value` is not a
- *  number. Unknown currency codes degrade to a plain number format.
+ * A currency code `Intl` accepts: three letters (ISO 4217's shape).
  */
-export const formatCurrency = (
-    value: number | null | undefined,
-    currency: string,
-    format?: Intl.NumberFormatOptions
-) =>
-    formatCurrencyBase(value, {
-        currency,
-        // The pinned ISO 4217 decimals, so a shown amount has the places the server stores.
-        format: {
-            minimumFractionDigits: currencyDigits(currency),
-            maximumFractionDigits: currencyDigits(currency),
-            ...format
-        },
-        locale: getLocale(),
-        empty: EMPTY_VALUE
-    });
+const WELL_FORMED_CURRENCY = /^[A-Za-z]{3}$/;
 
 /**
- * Decimal places a currency's minor unit represents — the pinned ISO 4217 table the backend uses
- * (`minorUnitExponent`), never `Intl`'s display table, which disagrees for HUF, IDR, COP, PKR, LBP
- * and IQD. A price input's `step`/`precision` and the cart's expected total therefore agree with
- * what the server will actually store.
+ * Formats an API amount (a decimal string) as currency with locale-aware separators and symbol.
  *
- * @param currency - An ISO 4217 currency code.
- * @returns The number of decimal places that currency's minor unit represents; 2 for a code the
- *  table does not list.
+ * No default currency: the shop's currency is configurable (`NODE_DEFAULT_CURRENCY`), and every
+ * money resource carries its own `currency`, so a call site that forgot to read it is a bug, not a
+ * case to paper over with a silent EUR.
+ *
+ * The places shown are the places the text carries (`"19.90"` shows two, `"1000"` none, `"1.500"`
+ * three): the server writes every amount at its currency's own scale, so the FE keeps no table of
+ * currencies. `Intl`'s own defaults would round HUF `"19.90"` to `"20"`.
+ *
+ * @param value - Amount as the API sends it; anything that is not a decimal string yields the
+ *  fallback glyph.
+ * @param currency - ISO 4217 currency code, from the same resource `value` was read off.
+ * @param format - `Intl.NumberFormat` overrides.
+ * @returns The formatted amount, or {@link EMPTY_VALUE} when `value` is not a decimal string. Unknown
+ *  currency codes degrade to a plain number format.
  */
-export const currencyDigits = (currency: string): number => minorUnitExponent(currency);
+export const formatCurrency = (
+    value: string | null | undefined,
+    currency: string,
+    format?: Intl.NumberFormatOptions
+): string => {
+    if (typeof value !== 'string' || !isDecimal(value)) return EMPTY_VALUE;
+    const places = decimalScale(value);
+    const digits = { minimumFractionDigits: places, maximumFractionDigits: places };
+    // `format` takes the exact decimal text, so no float rounds the amount on the way in.
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/format#using_format_with_a_string
+    const exact = value as `${number}`;
+    // `Intl` throws a RangeError for a malformed code (not three letters): show the bare number.
+    const options: Intl.NumberFormatOptions = WELL_FORMED_CURRENCY.test(currency)
+        ? { style: 'currency', currency, ...digits, ...format }
+        : { ...digits, ...format };
+    return new Intl.NumberFormat(getLocale(), options).format(exact);
+};
 
 /**
  * Formats a fraction (`0.055`) as a locale-aware percentage (`5.5%`), rounding instead of
