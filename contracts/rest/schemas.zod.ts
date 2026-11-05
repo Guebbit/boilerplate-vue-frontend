@@ -3243,18 +3243,14 @@ export const downloadAccountExportResponseNotificationsItemFiveIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemFiveIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const downloadAccountExportResponseNotificationsItemFiveParamsTaskIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemFiveParamsTaskIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const downloadAccountExportResponseNotificationsItemSixIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemSixIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseNotificationsItemSixParamsOrderIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemSixParamsOrderIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const downloadAccountExportResponseNotificationsItemSixParamsFulfillmentOrderIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemSixParamsFulfillmentOrderIdRegExp =
-    new RegExp('^[0-9A-Za-z_-]+$');
-export const downloadAccountExportResponseNotificationsItemSixParamsMessageMax = 500;
 export const downloadAccountExportResponseNotificationsItemSevenIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemSevenIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -3263,36 +3259,41 @@ export const downloadAccountExportResponseNotificationsItemSevenParamsOrderIdMax
 export const downloadAccountExportResponseNotificationsItemSevenParamsOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseNotificationsItemSevenParamsShipmentIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemSevenParamsShipmentIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
+export const downloadAccountExportResponseNotificationsItemSevenParamsFulfillmentOrderIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemSevenParamsFulfillmentOrderIdRegExp =
+    new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseNotificationsItemSevenParamsMessageMax = 500;
 export const downloadAccountExportResponseNotificationsItemEightIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemEightIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseNotificationsItemEightParamsProductIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemEightParamsProductIdRegExp = new RegExp(
+export const downloadAccountExportResponseNotificationsItemEightParamsOrderIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemEightParamsOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const downloadAccountExportResponseNotificationsItemEightParamsShipmentIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemEightParamsShipmentIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseNotificationsItemEightParamsMessageMax = 500;
 export const downloadAccountExportResponseNotificationsItemNineIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemNineIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseNotificationsItemNineParamsOrderIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemNineParamsOrderIdRegExp = new RegExp(
+export const downloadAccountExportResponseNotificationsItemNineParamsProductIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemNineParamsProductIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseNotificationsItemNineParamsFulfillmentOrderIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemNineParamsFulfillmentOrderIdRegExp =
-    new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseNotificationsItemOnezeroIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemOnezeroIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseNotificationsItemOnezeroParamsProductIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemOnezeroParamsProductIdRegExp =
+export const downloadAccountExportResponseNotificationsItemOnezeroParamsOrderIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemOnezeroParamsOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseNotificationsItemOnezeroParamsFulfillmentOrderIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemOnezeroParamsFulfillmentOrderIdRegExp =
     new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseNotificationsItemOneoneIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemOneoneIdRegExp = new RegExp(
@@ -3306,31 +3307,35 @@ export const downloadAccountExportResponseNotificationsItemOnetwoIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemOnetwoIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseNotificationsItemOnetwoParamsLinesItemProductIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemOnetwoParamsLinesItemProductIdRegExp =
-    new RegExp('^[0-9A-Za-z_-]+$');
+export const downloadAccountExportResponseNotificationsItemOnetwoParamsProductIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemOnetwoParamsProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const downloadAccountExportResponseNotificationsItemOnethreeIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemOnethreeIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseNotificationsItemOnethreeParamsUserIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemOnethreeParamsUserIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
+export const downloadAccountExportResponseNotificationsItemOnethreeParamsLinesItemProductIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemOnethreeParamsLinesItemProductIdRegExp =
+    new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseNotificationsItemOnefourIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemOnefourIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseNotificationsItemOnefourParamsReturnIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemOnefourParamsReturnIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const downloadAccountExportResponseNotificationsItemOnefourParamsOrderIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemOnefourParamsOrderIdRegExp = new RegExp(
+export const downloadAccountExportResponseNotificationsItemOnefourParamsUserIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemOnefourParamsUserIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const downloadAccountExportResponseNotificationsItemOnefiveIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemOnefiveIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseNotificationsItemOnefiveParamsReturnIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemOnefiveParamsReturnIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseNotificationsItemOnefiveParamsOrderIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemOnefiveParamsOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const downloadAccountExportResponseNotificationsItemOnesixIdMax = 64;
@@ -3367,6 +3372,10 @@ export const downloadAccountExportResponseNotificationsItemTwothreeIdRegExp = ne
 );
 export const downloadAccountExportResponseNotificationsItemTwofourIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemTwofourIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseNotificationsItemTwofiveIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemTwofiveIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const downloadAccountExportResponseStockAlertsItemProductIdMax = 64;
@@ -4288,7 +4297,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemFourIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemFourIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['notifications.staff.task-assigned']),
+                code: zod.enum(['notifications.staff.task-due-soon']),
                 params: zod.strictObject({
                     taskId: zod
                         .string()
@@ -4297,7 +4306,9 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .regex(
                             downloadAccountExportResponseNotificationsItemFourParamsTaskIdRegExp
                         ),
-                    kind: zod.string()
+                    kind: zod.string(),
+                    category: zod.string().optional(),
+                    work: zod.string().optional()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -4309,6 +4320,28 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .min(1)
                     .max(downloadAccountExportResponseNotificationsItemFiveIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemFiveIdRegExp),
+                audience: zod.enum(['own', 'staff']),
+                code: zod.enum(['notifications.staff.task-assigned']),
+                params: zod.strictObject({
+                    taskId: zod
+                        .string()
+                        .min(1)
+                        .max(downloadAccountExportResponseNotificationsItemFiveParamsTaskIdMax)
+                        .regex(
+                            downloadAccountExportResponseNotificationsItemFiveParamsTaskIdRegExp
+                        ),
+                    kind: zod.string()
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(downloadAccountExportResponseNotificationsItemSixIdMax)
+                    .regex(downloadAccountExportResponseNotificationsItemSixIdRegExp),
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['notifications.staff.outbox-dead']),
                 params: zod.strictObject({
@@ -4323,45 +4356,10 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(downloadAccountExportResponseNotificationsItemSixIdMax)
-                    .regex(downloadAccountExportResponseNotificationsItemSixIdRegExp),
-                audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.fulfillment-held']),
-                params: zod.strictObject({
-                    orderId: zod
-                        .string()
-                        .min(1)
-                        .max(downloadAccountExportResponseNotificationsItemSixParamsOrderIdMax)
-                        .regex(
-                            downloadAccountExportResponseNotificationsItemSixParamsOrderIdRegExp
-                        ),
-                    fulfillmentOrderId: zod
-                        .string()
-                        .min(1)
-                        .max(
-                            downloadAccountExportResponseNotificationsItemSixParamsFulfillmentOrderIdMax
-                        )
-                        .regex(
-                            downloadAccountExportResponseNotificationsItemSixParamsFulfillmentOrderIdRegExp
-                        ),
-                    notice: zod.enum(['check_address', 'delayed']),
-                    message: zod
-                        .string()
-                        .max(downloadAccountExportResponseNotificationsItemSixParamsMessageMax)
-                        .optional()
-                }),
-                severity: zod.enum(['info', 'success', 'warning', 'error']),
-                readAt: zod.iso.datetime({ offset: true }).optional(),
-                createdAt: zod.iso.datetime({ offset: true })
-            }),
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
                     .max(downloadAccountExportResponseNotificationsItemSevenIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemSevenIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.shipment-lost']),
+                code: zod.enum(['shop-tasks.fulfillment-held']),
                 params: zod.strictObject({
                     orderId: zod
                         .string()
@@ -4370,20 +4368,20 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .regex(
                             downloadAccountExportResponseNotificationsItemSevenParamsOrderIdRegExp
                         ),
-                    shipmentId: zod
+                    fulfillmentOrderId: zod
                         .string()
                         .min(1)
-                        .max(downloadAccountExportResponseNotificationsItemSevenParamsShipmentIdMax)
+                        .max(
+                            downloadAccountExportResponseNotificationsItemSevenParamsFulfillmentOrderIdMax
+                        )
                         .regex(
-                            downloadAccountExportResponseNotificationsItemSevenParamsShipmentIdRegExp
+                            downloadAccountExportResponseNotificationsItemSevenParamsFulfillmentOrderIdRegExp
                         ),
-                    reason: zod.enum(['lost', 'damaged']),
+                    notice: zod.enum(['check_address', 'delayed']),
                     message: zod
                         .string()
                         .max(downloadAccountExportResponseNotificationsItemSevenParamsMessageMax)
-                        .optional(),
-                    owed: zod.array(zod.string()).optional(),
-                    expectedAt: zod.iso.datetime({ offset: true }).optional()
+                        .optional()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -4396,16 +4394,29 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemEightIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemEightIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.stock-alert']),
+                code: zod.enum(['shop-tasks.shipment-lost']),
                 params: zod.strictObject({
-                    productId: zod
+                    orderId: zod
                         .string()
                         .min(1)
-                        .max(downloadAccountExportResponseNotificationsItemEightParamsProductIdMax)
+                        .max(downloadAccountExportResponseNotificationsItemEightParamsOrderIdMax)
                         .regex(
-                            downloadAccountExportResponseNotificationsItemEightParamsProductIdRegExp
+                            downloadAccountExportResponseNotificationsItemEightParamsOrderIdRegExp
                         ),
-                    titles: zod.record(zod.string(), zod.string())
+                    shipmentId: zod
+                        .string()
+                        .min(1)
+                        .max(downloadAccountExportResponseNotificationsItemEightParamsShipmentIdMax)
+                        .regex(
+                            downloadAccountExportResponseNotificationsItemEightParamsShipmentIdRegExp
+                        ),
+                    reason: zod.enum(['lost', 'damaged']),
+                    message: zod
+                        .string()
+                        .max(downloadAccountExportResponseNotificationsItemEightParamsMessageMax)
+                        .optional(),
+                    owed: zod.array(zod.string()).optional(),
+                    expectedAt: zod.iso.datetime({ offset: true }).optional()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -4418,23 +4429,45 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemNineIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemNineIdRegExp),
                 audience: zod.enum(['own', 'staff']),
+                code: zod.enum(['shop-tasks.stock-alert']),
+                params: zod.strictObject({
+                    productId: zod
+                        .string()
+                        .min(1)
+                        .max(downloadAccountExportResponseNotificationsItemNineParamsProductIdMax)
+                        .regex(
+                            downloadAccountExportResponseNotificationsItemNineParamsProductIdRegExp
+                        ),
+                    titles: zod.record(zod.string(), zod.string())
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(downloadAccountExportResponseNotificationsItemOnezeroIdMax)
+                    .regex(downloadAccountExportResponseNotificationsItemOnezeroIdRegExp),
+                audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.fulfillment-delayed']),
                 params: zod.strictObject({
                     orderId: zod
                         .string()
                         .min(1)
-                        .max(downloadAccountExportResponseNotificationsItemNineParamsOrderIdMax)
+                        .max(downloadAccountExportResponseNotificationsItemOnezeroParamsOrderIdMax)
                         .regex(
-                            downloadAccountExportResponseNotificationsItemNineParamsOrderIdRegExp
+                            downloadAccountExportResponseNotificationsItemOnezeroParamsOrderIdRegExp
                         ),
                     fulfillmentOrderId: zod
                         .string()
                         .min(1)
                         .max(
-                            downloadAccountExportResponseNotificationsItemNineParamsFulfillmentOrderIdMax
+                            downloadAccountExportResponseNotificationsItemOnezeroParamsFulfillmentOrderIdMax
                         )
                         .regex(
-                            downloadAccountExportResponseNotificationsItemNineParamsFulfillmentOrderIdRegExp
+                            downloadAccountExportResponseNotificationsItemOnezeroParamsFulfillmentOrderIdRegExp
                         ),
                     titles: zod.array(zod.string()),
                     agreedAt: zod.iso.datetime({ offset: true }),
@@ -4448,34 +4481,10 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(downloadAccountExportResponseNotificationsItemOnezeroIdMax)
-                    .regex(downloadAccountExportResponseNotificationsItemOnezeroIdRegExp),
-                audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.cart-line-removed']),
-                params: zod.strictObject({
-                    productId: zod
-                        .string()
-                        .min(1)
-                        .max(
-                            downloadAccountExportResponseNotificationsItemOnezeroParamsProductIdMax
-                        )
-                        .regex(
-                            downloadAccountExportResponseNotificationsItemOnezeroParamsProductIdRegExp
-                        ),
-                    titles: zod.record(zod.string(), zod.string())
-                }),
-                severity: zod.enum(['info', 'success', 'warning', 'error']),
-                readAt: zod.iso.datetime({ offset: true }).optional(),
-                createdAt: zod.iso.datetime({ offset: true })
-            }),
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
                     .max(downloadAccountExportResponseNotificationsItemOneoneIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemOneoneIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.wishlist-item-removed']),
+                code: zod.enum(['shop-tasks.cart-line-removed']),
                 params: zod.strictObject({
                     productId: zod
                         .string()
@@ -4497,6 +4506,28 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemOnetwoIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemOnetwoIdRegExp),
                 audience: zod.enum(['own', 'staff']),
+                code: zod.enum(['shop-tasks.wishlist-item-removed']),
+                params: zod.strictObject({
+                    productId: zod
+                        .string()
+                        .min(1)
+                        .max(downloadAccountExportResponseNotificationsItemOnetwoParamsProductIdMax)
+                        .regex(
+                            downloadAccountExportResponseNotificationsItemOnetwoParamsProductIdRegExp
+                        ),
+                    titles: zod.record(zod.string(), zod.string())
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(downloadAccountExportResponseNotificationsItemOnethreeIdMax)
+                    .regex(downloadAccountExportResponseNotificationsItemOnethreeIdRegExp),
+                audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.cart-merge-refused']),
                 params: zod.strictObject({
                     lines: zod.array(
@@ -4505,10 +4536,10 @@ export const DownloadAccountExportResponse = zod.strictObject({
                                 .string()
                                 .min(1)
                                 .max(
-                                    downloadAccountExportResponseNotificationsItemOnetwoParamsLinesItemProductIdMax
+                                    downloadAccountExportResponseNotificationsItemOnethreeParamsLinesItemProductIdMax
                                 )
                                 .regex(
-                                    downloadAccountExportResponseNotificationsItemOnetwoParamsLinesItemProductIdRegExp
+                                    downloadAccountExportResponseNotificationsItemOnethreeParamsLinesItemProductIdRegExp
                                 ),
                             requested: zod.number().min(1),
                             titles: zod.record(zod.string(), zod.string())
@@ -4523,47 +4554,19 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(downloadAccountExportResponseNotificationsItemOnethreeIdMax)
-                    .regex(downloadAccountExportResponseNotificationsItemOnethreeIdRegExp),
+                    .max(downloadAccountExportResponseNotificationsItemOnefourIdMax)
+                    .regex(downloadAccountExportResponseNotificationsItemOnefourIdRegExp),
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.purchase-hold-placed']),
                 params: zod.strictObject({
                     userId: zod
                         .string()
                         .min(1)
-                        .max(downloadAccountExportResponseNotificationsItemOnethreeParamsUserIdMax)
+                        .max(downloadAccountExportResponseNotificationsItemOnefourParamsUserIdMax)
                         .regex(
-                            downloadAccountExportResponseNotificationsItemOnethreeParamsUserIdRegExp
+                            downloadAccountExportResponseNotificationsItemOnefourParamsUserIdRegExp
                         ),
                     until: zod.iso.datetime({ offset: true })
-                }),
-                severity: zod.enum(['info', 'success', 'warning', 'error']),
-                readAt: zod.iso.datetime({ offset: true }).optional(),
-                createdAt: zod.iso.datetime({ offset: true })
-            }),
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
-                    .max(downloadAccountExportResponseNotificationsItemOnefourIdMax)
-                    .regex(downloadAccountExportResponseNotificationsItemOnefourIdRegExp),
-                audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.return-requested']),
-                params: zod.strictObject({
-                    returnId: zod
-                        .string()
-                        .min(1)
-                        .max(downloadAccountExportResponseNotificationsItemOnefourParamsReturnIdMax)
-                        .regex(
-                            downloadAccountExportResponseNotificationsItemOnefourParamsReturnIdRegExp
-                        ),
-                    orderId: zod
-                        .string()
-                        .min(1)
-                        .max(downloadAccountExportResponseNotificationsItemOnefourParamsOrderIdMax)
-                        .regex(
-                            downloadAccountExportResponseNotificationsItemOnefourParamsOrderIdRegExp
-                        )
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -4576,9 +4579,22 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemOnefiveIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemOnefiveIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.transfers-due']),
+                code: zod.enum(['shop-tasks.staff.return-requested']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    returnId: zod
+                        .string()
+                        .min(1)
+                        .max(downloadAccountExportResponseNotificationsItemOnefiveParamsReturnIdMax)
+                        .regex(
+                            downloadAccountExportResponseNotificationsItemOnefiveParamsReturnIdRegExp
+                        ),
+                    orderId: zod
+                        .string()
+                        .min(1)
+                        .max(downloadAccountExportResponseNotificationsItemOnefiveParamsOrderIdMax)
+                        .regex(
+                            downloadAccountExportResponseNotificationsItemOnefiveParamsOrderIdRegExp
+                        )
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -4591,7 +4607,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemOnesixIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemOnesixIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.preorders-late']),
+                code: zod.enum(['shop-tasks.staff.transfers-due']),
                 params: zod.strictObject({
                     count: zod.number().min(1)
                 }),
@@ -4606,7 +4622,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemOnesevenIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemOnesevenIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.delivery-holds-open']),
+                code: zod.enum(['shop-tasks.staff.preorders-late']),
                 params: zod.strictObject({
                     count: zod.number().min(1)
                 }),
@@ -4621,7 +4637,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemOneeightIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemOneeightIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.withdrawals-awaiting-goods']),
+                code: zod.enum(['shop-tasks.staff.delivery-holds-open']),
                 params: zod.strictObject({
                     count: zod.number().min(1)
                 }),
@@ -4636,7 +4652,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemOnenineIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemOnenineIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.returns-undecided']),
+                code: zod.enum(['shop-tasks.staff.withdrawals-awaiting-goods']),
                 params: zod.strictObject({
                     count: zod.number().min(1)
                 }),
@@ -4651,7 +4667,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemTwozeroIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemTwozeroIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.low-stock']),
+                code: zod.enum(['shop-tasks.staff.returns-undecided']),
                 params: zod.strictObject({
                     count: zod.number().min(1)
                 }),
@@ -4666,7 +4682,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemTwooneIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemTwooneIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.unshipped']),
+                code: zod.enum(['shop-tasks.staff.low-stock']),
                 params: zod.strictObject({
                     count: zod.number().min(1)
                 }),
@@ -4681,7 +4697,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemTwotwoIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemTwotwoIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.awaiting-tracking']),
+                code: zod.enum(['shop-tasks.staff.unshipped']),
                 params: zod.strictObject({
                     count: zod.number().min(1)
                 }),
@@ -4696,7 +4712,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemTwothreeIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemTwothreeIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.undelivered']),
+                code: zod.enum(['shop-tasks.staff.awaiting-tracking']),
                 params: zod.strictObject({
                     count: zod.number().min(1)
                 }),
@@ -4710,6 +4726,21 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .min(1)
                     .max(downloadAccountExportResponseNotificationsItemTwofourIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemTwofourIdRegExp),
+                audience: zod.enum(['own', 'staff']),
+                code: zod.enum(['shop-tasks.staff.undelivered']),
+                params: zod.strictObject({
+                    count: zod.number().min(1)
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(downloadAccountExportResponseNotificationsItemTwofiveIdMax)
+                    .regex(downloadAccountExportResponseNotificationsItemTwofiveIdRegExp),
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.stale-refunds']),
                 params: zod.strictObject({
@@ -20303,48 +20334,48 @@ export const listNotificationsResponseItemsItemFourParamsTaskIdRegExp = new RegE
 );
 export const listNotificationsResponseItemsItemFiveIdMax = 64;
 export const listNotificationsResponseItemsItemFiveIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listNotificationsResponseItemsItemFiveParamsTaskIdMax = 64;
+export const listNotificationsResponseItemsItemFiveParamsTaskIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const listNotificationsResponseItemsItemSixIdMax = 64;
 export const listNotificationsResponseItemsItemSixIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listNotificationsResponseItemsItemSixParamsOrderIdMax = 64;
-export const listNotificationsResponseItemsItemSixParamsOrderIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const listNotificationsResponseItemsItemSixParamsFulfillmentOrderIdMax = 64;
-export const listNotificationsResponseItemsItemSixParamsFulfillmentOrderIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const listNotificationsResponseItemsItemSixParamsMessageMax = 500;
 export const listNotificationsResponseItemsItemSevenIdMax = 64;
 export const listNotificationsResponseItemsItemSevenIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listNotificationsResponseItemsItemSevenParamsOrderIdMax = 64;
 export const listNotificationsResponseItemsItemSevenParamsOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const listNotificationsResponseItemsItemSevenParamsShipmentIdMax = 64;
-export const listNotificationsResponseItemsItemSevenParamsShipmentIdRegExp = new RegExp(
+export const listNotificationsResponseItemsItemSevenParamsFulfillmentOrderIdMax = 64;
+export const listNotificationsResponseItemsItemSevenParamsFulfillmentOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const listNotificationsResponseItemsItemSevenParamsMessageMax = 500;
 export const listNotificationsResponseItemsItemEightIdMax = 64;
 export const listNotificationsResponseItemsItemEightIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listNotificationsResponseItemsItemEightParamsProductIdMax = 64;
-export const listNotificationsResponseItemsItemEightParamsProductIdRegExp = new RegExp(
+export const listNotificationsResponseItemsItemEightParamsOrderIdMax = 64;
+export const listNotificationsResponseItemsItemEightParamsOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const listNotificationsResponseItemsItemEightParamsShipmentIdMax = 64;
+export const listNotificationsResponseItemsItemEightParamsShipmentIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const listNotificationsResponseItemsItemEightParamsMessageMax = 500;
 export const listNotificationsResponseItemsItemNineIdMax = 64;
 export const listNotificationsResponseItemsItemNineIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listNotificationsResponseItemsItemNineParamsOrderIdMax = 64;
-export const listNotificationsResponseItemsItemNineParamsOrderIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const listNotificationsResponseItemsItemNineParamsFulfillmentOrderIdMax = 64;
-export const listNotificationsResponseItemsItemNineParamsFulfillmentOrderIdRegExp = new RegExp(
+export const listNotificationsResponseItemsItemNineParamsProductIdMax = 64;
+export const listNotificationsResponseItemsItemNineParamsProductIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const listNotificationsResponseItemsItemOnezeroIdMax = 64;
 export const listNotificationsResponseItemsItemOnezeroIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listNotificationsResponseItemsItemOnezeroParamsProductIdMax = 64;
-export const listNotificationsResponseItemsItemOnezeroParamsProductIdRegExp = new RegExp(
+export const listNotificationsResponseItemsItemOnezeroParamsOrderIdMax = 64;
+export const listNotificationsResponseItemsItemOnezeroParamsOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const listNotificationsResponseItemsItemOnezeroParamsFulfillmentOrderIdMax = 64;
+export const listNotificationsResponseItemsItemOnezeroParamsFulfillmentOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const listNotificationsResponseItemsItemOneoneIdMax = 64;
@@ -20355,28 +20386,32 @@ export const listNotificationsResponseItemsItemOneoneParamsProductIdRegExp = new
 );
 export const listNotificationsResponseItemsItemOnetwoIdMax = 64;
 export const listNotificationsResponseItemsItemOnetwoIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listNotificationsResponseItemsItemOnetwoParamsLinesItemProductIdMax = 64;
-export const listNotificationsResponseItemsItemOnetwoParamsLinesItemProductIdRegExp = new RegExp(
+export const listNotificationsResponseItemsItemOnetwoParamsProductIdMax = 64;
+export const listNotificationsResponseItemsItemOnetwoParamsProductIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const listNotificationsResponseItemsItemOnethreeIdMax = 64;
 export const listNotificationsResponseItemsItemOnethreeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listNotificationsResponseItemsItemOnethreeParamsUserIdMax = 64;
-export const listNotificationsResponseItemsItemOnethreeParamsUserIdRegExp = new RegExp(
+export const listNotificationsResponseItemsItemOnethreeParamsLinesItemProductIdMax = 64;
+export const listNotificationsResponseItemsItemOnethreeParamsLinesItemProductIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const listNotificationsResponseItemsItemOnefourIdMax = 64;
 export const listNotificationsResponseItemsItemOnefourIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listNotificationsResponseItemsItemOnefourParamsReturnIdMax = 64;
-export const listNotificationsResponseItemsItemOnefourParamsReturnIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const listNotificationsResponseItemsItemOnefourParamsOrderIdMax = 64;
-export const listNotificationsResponseItemsItemOnefourParamsOrderIdRegExp = new RegExp(
+export const listNotificationsResponseItemsItemOnefourParamsUserIdMax = 64;
+export const listNotificationsResponseItemsItemOnefourParamsUserIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const listNotificationsResponseItemsItemOnefiveIdMax = 64;
 export const listNotificationsResponseItemsItemOnefiveIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listNotificationsResponseItemsItemOnefiveParamsReturnIdMax = 64;
+export const listNotificationsResponseItemsItemOnefiveParamsReturnIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const listNotificationsResponseItemsItemOnefiveParamsOrderIdMax = 64;
+export const listNotificationsResponseItemsItemOnefiveParamsOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const listNotificationsResponseItemsItemOnesixIdMax = 64;
 export const listNotificationsResponseItemsItemOnesixIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listNotificationsResponseItemsItemOnesevenIdMax = 64;
@@ -20395,6 +20430,8 @@ export const listNotificationsResponseItemsItemTwothreeIdMax = 64;
 export const listNotificationsResponseItemsItemTwothreeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listNotificationsResponseItemsItemTwofourIdMax = 64;
 export const listNotificationsResponseItemsItemTwofourIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listNotificationsResponseItemsItemTwofiveIdMax = 64;
+export const listNotificationsResponseItemsItemTwofiveIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const ListNotificationsResponse = zod.strictObject({
     items: zod.array(
         zod.union([
@@ -20468,14 +20505,16 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemFourIdMax)
                     .regex(listNotificationsResponseItemsItemFourIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['notifications.staff.task-assigned']),
+                code: zod.enum(['notifications.staff.task-due-soon']),
                 params: zod.strictObject({
                     taskId: zod
                         .string()
                         .min(1)
                         .max(listNotificationsResponseItemsItemFourParamsTaskIdMax)
                         .regex(listNotificationsResponseItemsItemFourParamsTaskIdRegExp),
-                    kind: zod.string()
+                    kind: zod.string(),
+                    category: zod.string().optional(),
+                    work: zod.string().optional()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -20487,6 +20526,26 @@ export const ListNotificationsResponse = zod.strictObject({
                     .min(1)
                     .max(listNotificationsResponseItemsItemFiveIdMax)
                     .regex(listNotificationsResponseItemsItemFiveIdRegExp),
+                audience: zod.enum(['own', 'staff']),
+                code: zod.enum(['notifications.staff.task-assigned']),
+                params: zod.strictObject({
+                    taskId: zod
+                        .string()
+                        .min(1)
+                        .max(listNotificationsResponseItemsItemFiveParamsTaskIdMax)
+                        .regex(listNotificationsResponseItemsItemFiveParamsTaskIdRegExp),
+                    kind: zod.string()
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(listNotificationsResponseItemsItemSixIdMax)
+                    .regex(listNotificationsResponseItemsItemSixIdRegExp),
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['notifications.staff.outbox-dead']),
                 params: zod.strictObject({
@@ -20501,57 +20560,28 @@ export const ListNotificationsResponse = zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(listNotificationsResponseItemsItemSixIdMax)
-                    .regex(listNotificationsResponseItemsItemSixIdRegExp),
+                    .max(listNotificationsResponseItemsItemSevenIdMax)
+                    .regex(listNotificationsResponseItemsItemSevenIdRegExp),
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.fulfillment-held']),
                 params: zod.strictObject({
                     orderId: zod
                         .string()
                         .min(1)
-                        .max(listNotificationsResponseItemsItemSixParamsOrderIdMax)
-                        .regex(listNotificationsResponseItemsItemSixParamsOrderIdRegExp),
+                        .max(listNotificationsResponseItemsItemSevenParamsOrderIdMax)
+                        .regex(listNotificationsResponseItemsItemSevenParamsOrderIdRegExp),
                     fulfillmentOrderId: zod
                         .string()
                         .min(1)
-                        .max(listNotificationsResponseItemsItemSixParamsFulfillmentOrderIdMax)
-                        .regex(listNotificationsResponseItemsItemSixParamsFulfillmentOrderIdRegExp),
+                        .max(listNotificationsResponseItemsItemSevenParamsFulfillmentOrderIdMax)
+                        .regex(
+                            listNotificationsResponseItemsItemSevenParamsFulfillmentOrderIdRegExp
+                        ),
                     notice: zod.enum(['check_address', 'delayed']),
                     message: zod
                         .string()
-                        .max(listNotificationsResponseItemsItemSixParamsMessageMax)
-                        .optional()
-                }),
-                severity: zod.enum(['info', 'success', 'warning', 'error']),
-                readAt: zod.iso.datetime({ offset: true }).optional(),
-                createdAt: zod.iso.datetime({ offset: true })
-            }),
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
-                    .max(listNotificationsResponseItemsItemSevenIdMax)
-                    .regex(listNotificationsResponseItemsItemSevenIdRegExp),
-                audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.shipment-lost']),
-                params: zod.strictObject({
-                    orderId: zod
-                        .string()
-                        .min(1)
-                        .max(listNotificationsResponseItemsItemSevenParamsOrderIdMax)
-                        .regex(listNotificationsResponseItemsItemSevenParamsOrderIdRegExp),
-                    shipmentId: zod
-                        .string()
-                        .min(1)
-                        .max(listNotificationsResponseItemsItemSevenParamsShipmentIdMax)
-                        .regex(listNotificationsResponseItemsItemSevenParamsShipmentIdRegExp),
-                    reason: zod.enum(['lost', 'damaged']),
-                    message: zod
-                        .string()
                         .max(listNotificationsResponseItemsItemSevenParamsMessageMax)
-                        .optional(),
-                    owed: zod.array(zod.string()).optional(),
-                    expectedAt: zod.iso.datetime({ offset: true }).optional()
+                        .optional()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -20564,14 +20594,25 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemEightIdMax)
                     .regex(listNotificationsResponseItemsItemEightIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.stock-alert']),
+                code: zod.enum(['shop-tasks.shipment-lost']),
                 params: zod.strictObject({
-                    productId: zod
+                    orderId: zod
                         .string()
                         .min(1)
-                        .max(listNotificationsResponseItemsItemEightParamsProductIdMax)
-                        .regex(listNotificationsResponseItemsItemEightParamsProductIdRegExp),
-                    titles: zod.record(zod.string(), zod.string())
+                        .max(listNotificationsResponseItemsItemEightParamsOrderIdMax)
+                        .regex(listNotificationsResponseItemsItemEightParamsOrderIdRegExp),
+                    shipmentId: zod
+                        .string()
+                        .min(1)
+                        .max(listNotificationsResponseItemsItemEightParamsShipmentIdMax)
+                        .regex(listNotificationsResponseItemsItemEightParamsShipmentIdRegExp),
+                    reason: zod.enum(['lost', 'damaged']),
+                    message: zod
+                        .string()
+                        .max(listNotificationsResponseItemsItemEightParamsMessageMax)
+                        .optional(),
+                    owed: zod.array(zod.string()).optional(),
+                    expectedAt: zod.iso.datetime({ offset: true }).optional()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -20584,19 +20625,39 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemNineIdMax)
                     .regex(listNotificationsResponseItemsItemNineIdRegExp),
                 audience: zod.enum(['own', 'staff']),
+                code: zod.enum(['shop-tasks.stock-alert']),
+                params: zod.strictObject({
+                    productId: zod
+                        .string()
+                        .min(1)
+                        .max(listNotificationsResponseItemsItemNineParamsProductIdMax)
+                        .regex(listNotificationsResponseItemsItemNineParamsProductIdRegExp),
+                    titles: zod.record(zod.string(), zod.string())
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(listNotificationsResponseItemsItemOnezeroIdMax)
+                    .regex(listNotificationsResponseItemsItemOnezeroIdRegExp),
+                audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.fulfillment-delayed']),
                 params: zod.strictObject({
                     orderId: zod
                         .string()
                         .min(1)
-                        .max(listNotificationsResponseItemsItemNineParamsOrderIdMax)
-                        .regex(listNotificationsResponseItemsItemNineParamsOrderIdRegExp),
+                        .max(listNotificationsResponseItemsItemOnezeroParamsOrderIdMax)
+                        .regex(listNotificationsResponseItemsItemOnezeroParamsOrderIdRegExp),
                     fulfillmentOrderId: zod
                         .string()
                         .min(1)
-                        .max(listNotificationsResponseItemsItemNineParamsFulfillmentOrderIdMax)
+                        .max(listNotificationsResponseItemsItemOnezeroParamsFulfillmentOrderIdMax)
                         .regex(
-                            listNotificationsResponseItemsItemNineParamsFulfillmentOrderIdRegExp
+                            listNotificationsResponseItemsItemOnezeroParamsFulfillmentOrderIdRegExp
                         ),
                     titles: zod.array(zod.string()),
                     agreedAt: zod.iso.datetime({ offset: true }),
@@ -20610,30 +20671,10 @@ export const ListNotificationsResponse = zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(listNotificationsResponseItemsItemOnezeroIdMax)
-                    .regex(listNotificationsResponseItemsItemOnezeroIdRegExp),
-                audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.cart-line-removed']),
-                params: zod.strictObject({
-                    productId: zod
-                        .string()
-                        .min(1)
-                        .max(listNotificationsResponseItemsItemOnezeroParamsProductIdMax)
-                        .regex(listNotificationsResponseItemsItemOnezeroParamsProductIdRegExp),
-                    titles: zod.record(zod.string(), zod.string())
-                }),
-                severity: zod.enum(['info', 'success', 'warning', 'error']),
-                readAt: zod.iso.datetime({ offset: true }).optional(),
-                createdAt: zod.iso.datetime({ offset: true })
-            }),
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
                     .max(listNotificationsResponseItemsItemOneoneIdMax)
                     .regex(listNotificationsResponseItemsItemOneoneIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.wishlist-item-removed']),
+                code: zod.enum(['shop-tasks.cart-line-removed']),
                 params: zod.strictObject({
                     productId: zod
                         .string()
@@ -20653,6 +20694,26 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemOnetwoIdMax)
                     .regex(listNotificationsResponseItemsItemOnetwoIdRegExp),
                 audience: zod.enum(['own', 'staff']),
+                code: zod.enum(['shop-tasks.wishlist-item-removed']),
+                params: zod.strictObject({
+                    productId: zod
+                        .string()
+                        .min(1)
+                        .max(listNotificationsResponseItemsItemOnetwoParamsProductIdMax)
+                        .regex(listNotificationsResponseItemsItemOnetwoParamsProductIdRegExp),
+                    titles: zod.record(zod.string(), zod.string())
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(listNotificationsResponseItemsItemOnethreeIdMax)
+                    .regex(listNotificationsResponseItemsItemOnethreeIdRegExp),
+                audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.cart-merge-refused']),
                 params: zod.strictObject({
                     lines: zod.array(
@@ -20661,10 +20722,10 @@ export const ListNotificationsResponse = zod.strictObject({
                                 .string()
                                 .min(1)
                                 .max(
-                                    listNotificationsResponseItemsItemOnetwoParamsLinesItemProductIdMax
+                                    listNotificationsResponseItemsItemOnethreeParamsLinesItemProductIdMax
                                 )
                                 .regex(
-                                    listNotificationsResponseItemsItemOnetwoParamsLinesItemProductIdRegExp
+                                    listNotificationsResponseItemsItemOnethreeParamsLinesItemProductIdRegExp
                                 ),
                             requested: zod.number().min(1),
                             titles: zod.record(zod.string(), zod.string())
@@ -20679,41 +20740,17 @@ export const ListNotificationsResponse = zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(listNotificationsResponseItemsItemOnethreeIdMax)
-                    .regex(listNotificationsResponseItemsItemOnethreeIdRegExp),
+                    .max(listNotificationsResponseItemsItemOnefourIdMax)
+                    .regex(listNotificationsResponseItemsItemOnefourIdRegExp),
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.purchase-hold-placed']),
                 params: zod.strictObject({
                     userId: zod
                         .string()
                         .min(1)
-                        .max(listNotificationsResponseItemsItemOnethreeParamsUserIdMax)
-                        .regex(listNotificationsResponseItemsItemOnethreeParamsUserIdRegExp),
+                        .max(listNotificationsResponseItemsItemOnefourParamsUserIdMax)
+                        .regex(listNotificationsResponseItemsItemOnefourParamsUserIdRegExp),
                     until: zod.iso.datetime({ offset: true })
-                }),
-                severity: zod.enum(['info', 'success', 'warning', 'error']),
-                readAt: zod.iso.datetime({ offset: true }).optional(),
-                createdAt: zod.iso.datetime({ offset: true })
-            }),
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
-                    .max(listNotificationsResponseItemsItemOnefourIdMax)
-                    .regex(listNotificationsResponseItemsItemOnefourIdRegExp),
-                audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.return-requested']),
-                params: zod.strictObject({
-                    returnId: zod
-                        .string()
-                        .min(1)
-                        .max(listNotificationsResponseItemsItemOnefourParamsReturnIdMax)
-                        .regex(listNotificationsResponseItemsItemOnefourParamsReturnIdRegExp),
-                    orderId: zod
-                        .string()
-                        .min(1)
-                        .max(listNotificationsResponseItemsItemOnefourParamsOrderIdMax)
-                        .regex(listNotificationsResponseItemsItemOnefourParamsOrderIdRegExp)
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -20726,9 +20763,18 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemOnefiveIdMax)
                     .regex(listNotificationsResponseItemsItemOnefiveIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.transfers-due']),
+                code: zod.enum(['shop-tasks.staff.return-requested']),
                 params: zod.strictObject({
-                    count: zod.number().min(1)
+                    returnId: zod
+                        .string()
+                        .min(1)
+                        .max(listNotificationsResponseItemsItemOnefiveParamsReturnIdMax)
+                        .regex(listNotificationsResponseItemsItemOnefiveParamsReturnIdRegExp),
+                    orderId: zod
+                        .string()
+                        .min(1)
+                        .max(listNotificationsResponseItemsItemOnefiveParamsOrderIdMax)
+                        .regex(listNotificationsResponseItemsItemOnefiveParamsOrderIdRegExp)
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -20741,7 +20787,7 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemOnesixIdMax)
                     .regex(listNotificationsResponseItemsItemOnesixIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.preorders-late']),
+                code: zod.enum(['shop-tasks.staff.transfers-due']),
                 params: zod.strictObject({
                     count: zod.number().min(1)
                 }),
@@ -20756,7 +20802,7 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemOnesevenIdMax)
                     .regex(listNotificationsResponseItemsItemOnesevenIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.delivery-holds-open']),
+                code: zod.enum(['shop-tasks.staff.preorders-late']),
                 params: zod.strictObject({
                     count: zod.number().min(1)
                 }),
@@ -20771,7 +20817,7 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemOneeightIdMax)
                     .regex(listNotificationsResponseItemsItemOneeightIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.withdrawals-awaiting-goods']),
+                code: zod.enum(['shop-tasks.staff.delivery-holds-open']),
                 params: zod.strictObject({
                     count: zod.number().min(1)
                 }),
@@ -20786,7 +20832,7 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemOnenineIdMax)
                     .regex(listNotificationsResponseItemsItemOnenineIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.returns-undecided']),
+                code: zod.enum(['shop-tasks.staff.withdrawals-awaiting-goods']),
                 params: zod.strictObject({
                     count: zod.number().min(1)
                 }),
@@ -20801,7 +20847,7 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemTwozeroIdMax)
                     .regex(listNotificationsResponseItemsItemTwozeroIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.low-stock']),
+                code: zod.enum(['shop-tasks.staff.returns-undecided']),
                 params: zod.strictObject({
                     count: zod.number().min(1)
                 }),
@@ -20816,7 +20862,7 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemTwooneIdMax)
                     .regex(listNotificationsResponseItemsItemTwooneIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.unshipped']),
+                code: zod.enum(['shop-tasks.staff.low-stock']),
                 params: zod.strictObject({
                     count: zod.number().min(1)
                 }),
@@ -20831,7 +20877,7 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemTwotwoIdMax)
                     .regex(listNotificationsResponseItemsItemTwotwoIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.awaiting-tracking']),
+                code: zod.enum(['shop-tasks.staff.unshipped']),
                 params: zod.strictObject({
                     count: zod.number().min(1)
                 }),
@@ -20846,7 +20892,7 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemTwothreeIdMax)
                     .regex(listNotificationsResponseItemsItemTwothreeIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.undelivered']),
+                code: zod.enum(['shop-tasks.staff.awaiting-tracking']),
                 params: zod.strictObject({
                     count: zod.number().min(1)
                 }),
@@ -20860,6 +20906,21 @@ export const ListNotificationsResponse = zod.strictObject({
                     .min(1)
                     .max(listNotificationsResponseItemsItemTwofourIdMax)
                     .regex(listNotificationsResponseItemsItemTwofourIdRegExp),
+                audience: zod.enum(['own', 'staff']),
+                code: zod.enum(['shop-tasks.staff.undelivered']),
+                params: zod.strictObject({
+                    count: zod.number().min(1)
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(listNotificationsResponseItemsItemTwofiveIdMax)
+                    .regex(listNotificationsResponseItemsItemTwofiveIdRegExp),
                 audience: zod.enum(['own', 'staff']),
                 code: zod.enum(['shop-tasks.staff.stale-refunds']),
                 params: zod.strictObject({
@@ -20919,40 +20980,38 @@ export const getNotificationByIdResponseFourParamsTaskIdMax = 64;
 export const getNotificationByIdResponseFourParamsTaskIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getNotificationByIdResponseFiveIdMax = 64;
 export const getNotificationByIdResponseFiveIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseFiveParamsTaskIdMax = 64;
+export const getNotificationByIdResponseFiveParamsTaskIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getNotificationByIdResponseSixIdMax = 64;
 export const getNotificationByIdResponseSixIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseSixParamsOrderIdMax = 64;
-export const getNotificationByIdResponseSixParamsOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseSixParamsFulfillmentOrderIdMax = 64;
-export const getNotificationByIdResponseSixParamsFulfillmentOrderIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const getNotificationByIdResponseSixParamsMessageMax = 500;
 export const getNotificationByIdResponseSevenIdMax = 64;
 export const getNotificationByIdResponseSevenIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getNotificationByIdResponseSevenParamsOrderIdMax = 64;
 export const getNotificationByIdResponseSevenParamsOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseSevenParamsShipmentIdMax = 64;
-export const getNotificationByIdResponseSevenParamsShipmentIdRegExp = new RegExp(
+export const getNotificationByIdResponseSevenParamsFulfillmentOrderIdMax = 64;
+export const getNotificationByIdResponseSevenParamsFulfillmentOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const getNotificationByIdResponseSevenParamsMessageMax = 500;
 export const getNotificationByIdResponseEightIdMax = 64;
 export const getNotificationByIdResponseEightIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseEightParamsProductIdMax = 64;
-export const getNotificationByIdResponseEightParamsProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseNineIdMax = 64;
-export const getNotificationByIdResponseNineIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseNineParamsOrderIdMax = 64;
-export const getNotificationByIdResponseNineParamsOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseNineParamsFulfillmentOrderIdMax = 64;
-export const getNotificationByIdResponseNineParamsFulfillmentOrderIdRegExp = new RegExp(
+export const getNotificationByIdResponseEightParamsOrderIdMax = 64;
+export const getNotificationByIdResponseEightParamsOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseEightParamsShipmentIdMax = 64;
+export const getNotificationByIdResponseEightParamsShipmentIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const getNotificationByIdResponseEightParamsMessageMax = 500;
+export const getNotificationByIdResponseNineIdMax = 64;
+export const getNotificationByIdResponseNineIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseNineParamsProductIdMax = 64;
+export const getNotificationByIdResponseNineParamsProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getNotificationByIdResponseOnezeroIdMax = 64;
 export const getNotificationByIdResponseOnezeroIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseOnezeroParamsProductIdMax = 64;
-export const getNotificationByIdResponseOnezeroParamsProductIdRegExp = new RegExp(
+export const getNotificationByIdResponseOnezeroParamsOrderIdMax = 64;
+export const getNotificationByIdResponseOnezeroParamsOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseOnezeroParamsFulfillmentOrderIdMax = 64;
+export const getNotificationByIdResponseOnezeroParamsFulfillmentOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const getNotificationByIdResponseOneoneIdMax = 64;
@@ -20963,24 +21022,28 @@ export const getNotificationByIdResponseOneoneParamsProductIdRegExp = new RegExp
 );
 export const getNotificationByIdResponseOnetwoIdMax = 64;
 export const getNotificationByIdResponseOnetwoIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseOnetwoParamsLinesItemProductIdMax = 64;
-export const getNotificationByIdResponseOnetwoParamsLinesItemProductIdRegExp = new RegExp(
+export const getNotificationByIdResponseOnetwoParamsProductIdMax = 64;
+export const getNotificationByIdResponseOnetwoParamsProductIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const getNotificationByIdResponseOnethreeIdMax = 64;
 export const getNotificationByIdResponseOnethreeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseOnethreeParamsUserIdMax = 64;
-export const getNotificationByIdResponseOnethreeParamsUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseOnefourIdMax = 64;
-export const getNotificationByIdResponseOnefourIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getNotificationByIdResponseOnefourParamsReturnIdMax = 64;
-export const getNotificationByIdResponseOnefourParamsReturnIdRegExp = new RegExp(
+export const getNotificationByIdResponseOnethreeParamsLinesItemProductIdMax = 64;
+export const getNotificationByIdResponseOnethreeParamsLinesItemProductIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const getNotificationByIdResponseOnefourParamsOrderIdMax = 64;
-export const getNotificationByIdResponseOnefourParamsOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseOnefourIdMax = 64;
+export const getNotificationByIdResponseOnefourIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseOnefourParamsUserIdMax = 64;
+export const getNotificationByIdResponseOnefourParamsUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getNotificationByIdResponseOnefiveIdMax = 64;
 export const getNotificationByIdResponseOnefiveIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseOnefiveParamsReturnIdMax = 64;
+export const getNotificationByIdResponseOnefiveParamsReturnIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getNotificationByIdResponseOnefiveParamsOrderIdMax = 64;
+export const getNotificationByIdResponseOnefiveParamsOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getNotificationByIdResponseOnesixIdMax = 64;
 export const getNotificationByIdResponseOnesixIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getNotificationByIdResponseOnesevenIdMax = 64;
@@ -20999,6 +21062,8 @@ export const getNotificationByIdResponseTwothreeIdMax = 64;
 export const getNotificationByIdResponseTwothreeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getNotificationByIdResponseTwofourIdMax = 64;
 export const getNotificationByIdResponseTwofourIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseTwofiveIdMax = 64;
+export const getNotificationByIdResponseTwofiveIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const GetNotificationByIdResponse = zod.union([
     zod.strictObject({
         id: zod
@@ -21070,14 +21135,16 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseFourIdMax)
             .regex(getNotificationByIdResponseFourIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['notifications.staff.task-assigned']),
+        code: zod.enum(['notifications.staff.task-due-soon']),
         params: zod.strictObject({
             taskId: zod
                 .string()
                 .min(1)
                 .max(getNotificationByIdResponseFourParamsTaskIdMax)
                 .regex(getNotificationByIdResponseFourParamsTaskIdRegExp),
-            kind: zod.string()
+            kind: zod.string(),
+            category: zod.string().optional(),
+            work: zod.string().optional()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21089,6 +21156,26 @@ export const GetNotificationByIdResponse = zod.union([
             .min(1)
             .max(getNotificationByIdResponseFiveIdMax)
             .regex(getNotificationByIdResponseFiveIdRegExp),
+        audience: zod.enum(['own', 'staff']),
+        code: zod.enum(['notifications.staff.task-assigned']),
+        params: zod.strictObject({
+            taskId: zod
+                .string()
+                .min(1)
+                .max(getNotificationByIdResponseFiveParamsTaskIdMax)
+                .regex(getNotificationByIdResponseFiveParamsTaskIdRegExp),
+            kind: zod.string()
+        }),
+        severity: zod.enum(['info', 'success', 'warning', 'error']),
+        readAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(getNotificationByIdResponseSixIdMax)
+            .regex(getNotificationByIdResponseSixIdRegExp),
         audience: zod.enum(['own', 'staff']),
         code: zod.enum(['notifications.staff.outbox-dead']),
         params: zod.strictObject({
@@ -21103,51 +21190,23 @@ export const GetNotificationByIdResponse = zod.union([
         id: zod
             .string()
             .min(1)
-            .max(getNotificationByIdResponseSixIdMax)
-            .regex(getNotificationByIdResponseSixIdRegExp),
+            .max(getNotificationByIdResponseSevenIdMax)
+            .regex(getNotificationByIdResponseSevenIdRegExp),
         audience: zod.enum(['own', 'staff']),
         code: zod.enum(['shop-tasks.fulfillment-held']),
         params: zod.strictObject({
             orderId: zod
                 .string()
                 .min(1)
-                .max(getNotificationByIdResponseSixParamsOrderIdMax)
-                .regex(getNotificationByIdResponseSixParamsOrderIdRegExp),
+                .max(getNotificationByIdResponseSevenParamsOrderIdMax)
+                .regex(getNotificationByIdResponseSevenParamsOrderIdRegExp),
             fulfillmentOrderId: zod
                 .string()
                 .min(1)
-                .max(getNotificationByIdResponseSixParamsFulfillmentOrderIdMax)
-                .regex(getNotificationByIdResponseSixParamsFulfillmentOrderIdRegExp),
+                .max(getNotificationByIdResponseSevenParamsFulfillmentOrderIdMax)
+                .regex(getNotificationByIdResponseSevenParamsFulfillmentOrderIdRegExp),
             notice: zod.enum(['check_address', 'delayed']),
-            message: zod.string().max(getNotificationByIdResponseSixParamsMessageMax).optional()
-        }),
-        severity: zod.enum(['info', 'success', 'warning', 'error']),
-        readAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true })
-    }),
-    zod.strictObject({
-        id: zod
-            .string()
-            .min(1)
-            .max(getNotificationByIdResponseSevenIdMax)
-            .regex(getNotificationByIdResponseSevenIdRegExp),
-        audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['shop-tasks.shipment-lost']),
-        params: zod.strictObject({
-            orderId: zod
-                .string()
-                .min(1)
-                .max(getNotificationByIdResponseSevenParamsOrderIdMax)
-                .regex(getNotificationByIdResponseSevenParamsOrderIdRegExp),
-            shipmentId: zod
-                .string()
-                .min(1)
-                .max(getNotificationByIdResponseSevenParamsShipmentIdMax)
-                .regex(getNotificationByIdResponseSevenParamsShipmentIdRegExp),
-            reason: zod.enum(['lost', 'damaged']),
-            message: zod.string().max(getNotificationByIdResponseSevenParamsMessageMax).optional(),
-            owed: zod.array(zod.string()).optional(),
-            expectedAt: zod.iso.datetime({ offset: true }).optional()
+            message: zod.string().max(getNotificationByIdResponseSevenParamsMessageMax).optional()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21160,14 +21219,22 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseEightIdMax)
             .regex(getNotificationByIdResponseEightIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['shop-tasks.stock-alert']),
+        code: zod.enum(['shop-tasks.shipment-lost']),
         params: zod.strictObject({
-            productId: zod
+            orderId: zod
                 .string()
                 .min(1)
-                .max(getNotificationByIdResponseEightParamsProductIdMax)
-                .regex(getNotificationByIdResponseEightParamsProductIdRegExp),
-            titles: zod.record(zod.string(), zod.string())
+                .max(getNotificationByIdResponseEightParamsOrderIdMax)
+                .regex(getNotificationByIdResponseEightParamsOrderIdRegExp),
+            shipmentId: zod
+                .string()
+                .min(1)
+                .max(getNotificationByIdResponseEightParamsShipmentIdMax)
+                .regex(getNotificationByIdResponseEightParamsShipmentIdRegExp),
+            reason: zod.enum(['lost', 'damaged']),
+            message: zod.string().max(getNotificationByIdResponseEightParamsMessageMax).optional(),
+            owed: zod.array(zod.string()).optional(),
+            expectedAt: zod.iso.datetime({ offset: true }).optional()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21180,21 +21247,14 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseNineIdMax)
             .regex(getNotificationByIdResponseNineIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['shop-tasks.fulfillment-delayed']),
+        code: zod.enum(['shop-tasks.stock-alert']),
         params: zod.strictObject({
-            orderId: zod
+            productId: zod
                 .string()
                 .min(1)
-                .max(getNotificationByIdResponseNineParamsOrderIdMax)
-                .regex(getNotificationByIdResponseNineParamsOrderIdRegExp),
-            fulfillmentOrderId: zod
-                .string()
-                .min(1)
-                .max(getNotificationByIdResponseNineParamsFulfillmentOrderIdMax)
-                .regex(getNotificationByIdResponseNineParamsFulfillmentOrderIdRegExp),
-            titles: zod.array(zod.string()),
-            agreedAt: zod.iso.datetime({ offset: true }),
-            expectedAt: zod.iso.datetime({ offset: true }).optional()
+                .max(getNotificationByIdResponseNineParamsProductIdMax)
+                .regex(getNotificationByIdResponseNineParamsProductIdRegExp),
+            titles: zod.record(zod.string(), zod.string())
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21207,14 +21267,21 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseOnezeroIdMax)
             .regex(getNotificationByIdResponseOnezeroIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['shop-tasks.cart-line-removed']),
+        code: zod.enum(['shop-tasks.fulfillment-delayed']),
         params: zod.strictObject({
-            productId: zod
+            orderId: zod
                 .string()
                 .min(1)
-                .max(getNotificationByIdResponseOnezeroParamsProductIdMax)
-                .regex(getNotificationByIdResponseOnezeroParamsProductIdRegExp),
-            titles: zod.record(zod.string(), zod.string())
+                .max(getNotificationByIdResponseOnezeroParamsOrderIdMax)
+                .regex(getNotificationByIdResponseOnezeroParamsOrderIdRegExp),
+            fulfillmentOrderId: zod
+                .string()
+                .min(1)
+                .max(getNotificationByIdResponseOnezeroParamsFulfillmentOrderIdMax)
+                .regex(getNotificationByIdResponseOnezeroParamsFulfillmentOrderIdRegExp),
+            titles: zod.array(zod.string()),
+            agreedAt: zod.iso.datetime({ offset: true }),
+            expectedAt: zod.iso.datetime({ offset: true }).optional()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21227,7 +21294,7 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseOneoneIdMax)
             .regex(getNotificationByIdResponseOneoneIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['shop-tasks.wishlist-item-removed']),
+        code: zod.enum(['shop-tasks.cart-line-removed']),
         params: zod.strictObject({
             productId: zod
                 .string()
@@ -21247,6 +21314,26 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseOnetwoIdMax)
             .regex(getNotificationByIdResponseOnetwoIdRegExp),
         audience: zod.enum(['own', 'staff']),
+        code: zod.enum(['shop-tasks.wishlist-item-removed']),
+        params: zod.strictObject({
+            productId: zod
+                .string()
+                .min(1)
+                .max(getNotificationByIdResponseOnetwoParamsProductIdMax)
+                .regex(getNotificationByIdResponseOnetwoParamsProductIdRegExp),
+            titles: zod.record(zod.string(), zod.string())
+        }),
+        severity: zod.enum(['info', 'success', 'warning', 'error']),
+        readAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(getNotificationByIdResponseOnethreeIdMax)
+            .regex(getNotificationByIdResponseOnethreeIdRegExp),
+        audience: zod.enum(['own', 'staff']),
         code: zod.enum(['shop-tasks.cart-merge-refused']),
         params: zod.strictObject({
             lines: zod.array(
@@ -21254,8 +21341,8 @@ export const GetNotificationByIdResponse = zod.union([
                     productId: zod
                         .string()
                         .min(1)
-                        .max(getNotificationByIdResponseOnetwoParamsLinesItemProductIdMax)
-                        .regex(getNotificationByIdResponseOnetwoParamsLinesItemProductIdRegExp),
+                        .max(getNotificationByIdResponseOnethreeParamsLinesItemProductIdMax)
+                        .regex(getNotificationByIdResponseOnethreeParamsLinesItemProductIdRegExp),
                     requested: zod.number().min(1),
                     titles: zod.record(zod.string(), zod.string())
                 })
@@ -21269,41 +21356,17 @@ export const GetNotificationByIdResponse = zod.union([
         id: zod
             .string()
             .min(1)
-            .max(getNotificationByIdResponseOnethreeIdMax)
-            .regex(getNotificationByIdResponseOnethreeIdRegExp),
+            .max(getNotificationByIdResponseOnefourIdMax)
+            .regex(getNotificationByIdResponseOnefourIdRegExp),
         audience: zod.enum(['own', 'staff']),
         code: zod.enum(['shop-tasks.staff.purchase-hold-placed']),
         params: zod.strictObject({
             userId: zod
                 .string()
                 .min(1)
-                .max(getNotificationByIdResponseOnethreeParamsUserIdMax)
-                .regex(getNotificationByIdResponseOnethreeParamsUserIdRegExp),
+                .max(getNotificationByIdResponseOnefourParamsUserIdMax)
+                .regex(getNotificationByIdResponseOnefourParamsUserIdRegExp),
             until: zod.iso.datetime({ offset: true })
-        }),
-        severity: zod.enum(['info', 'success', 'warning', 'error']),
-        readAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true })
-    }),
-    zod.strictObject({
-        id: zod
-            .string()
-            .min(1)
-            .max(getNotificationByIdResponseOnefourIdMax)
-            .regex(getNotificationByIdResponseOnefourIdRegExp),
-        audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['shop-tasks.staff.return-requested']),
-        params: zod.strictObject({
-            returnId: zod
-                .string()
-                .min(1)
-                .max(getNotificationByIdResponseOnefourParamsReturnIdMax)
-                .regex(getNotificationByIdResponseOnefourParamsReturnIdRegExp),
-            orderId: zod
-                .string()
-                .min(1)
-                .max(getNotificationByIdResponseOnefourParamsOrderIdMax)
-                .regex(getNotificationByIdResponseOnefourParamsOrderIdRegExp)
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21316,9 +21379,18 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseOnefiveIdMax)
             .regex(getNotificationByIdResponseOnefiveIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['shop-tasks.staff.transfers-due']),
+        code: zod.enum(['shop-tasks.staff.return-requested']),
         params: zod.strictObject({
-            count: zod.number().min(1)
+            returnId: zod
+                .string()
+                .min(1)
+                .max(getNotificationByIdResponseOnefiveParamsReturnIdMax)
+                .regex(getNotificationByIdResponseOnefiveParamsReturnIdRegExp),
+            orderId: zod
+                .string()
+                .min(1)
+                .max(getNotificationByIdResponseOnefiveParamsOrderIdMax)
+                .regex(getNotificationByIdResponseOnefiveParamsOrderIdRegExp)
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21331,7 +21403,7 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseOnesixIdMax)
             .regex(getNotificationByIdResponseOnesixIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['shop-tasks.staff.preorders-late']),
+        code: zod.enum(['shop-tasks.staff.transfers-due']),
         params: zod.strictObject({
             count: zod.number().min(1)
         }),
@@ -21346,7 +21418,7 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseOnesevenIdMax)
             .regex(getNotificationByIdResponseOnesevenIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['shop-tasks.staff.delivery-holds-open']),
+        code: zod.enum(['shop-tasks.staff.preorders-late']),
         params: zod.strictObject({
             count: zod.number().min(1)
         }),
@@ -21361,7 +21433,7 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseOneeightIdMax)
             .regex(getNotificationByIdResponseOneeightIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['shop-tasks.staff.withdrawals-awaiting-goods']),
+        code: zod.enum(['shop-tasks.staff.delivery-holds-open']),
         params: zod.strictObject({
             count: zod.number().min(1)
         }),
@@ -21376,7 +21448,7 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseOnenineIdMax)
             .regex(getNotificationByIdResponseOnenineIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['shop-tasks.staff.returns-undecided']),
+        code: zod.enum(['shop-tasks.staff.withdrawals-awaiting-goods']),
         params: zod.strictObject({
             count: zod.number().min(1)
         }),
@@ -21391,7 +21463,7 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseTwozeroIdMax)
             .regex(getNotificationByIdResponseTwozeroIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['shop-tasks.staff.low-stock']),
+        code: zod.enum(['shop-tasks.staff.returns-undecided']),
         params: zod.strictObject({
             count: zod.number().min(1)
         }),
@@ -21406,7 +21478,7 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseTwooneIdMax)
             .regex(getNotificationByIdResponseTwooneIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['shop-tasks.staff.unshipped']),
+        code: zod.enum(['shop-tasks.staff.low-stock']),
         params: zod.strictObject({
             count: zod.number().min(1)
         }),
@@ -21421,7 +21493,7 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseTwotwoIdMax)
             .regex(getNotificationByIdResponseTwotwoIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['shop-tasks.staff.awaiting-tracking']),
+        code: zod.enum(['shop-tasks.staff.unshipped']),
         params: zod.strictObject({
             count: zod.number().min(1)
         }),
@@ -21436,7 +21508,7 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseTwothreeIdMax)
             .regex(getNotificationByIdResponseTwothreeIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['shop-tasks.staff.undelivered']),
+        code: zod.enum(['shop-tasks.staff.awaiting-tracking']),
         params: zod.strictObject({
             count: zod.number().min(1)
         }),
@@ -21450,6 +21522,21 @@ export const GetNotificationByIdResponse = zod.union([
             .min(1)
             .max(getNotificationByIdResponseTwofourIdMax)
             .regex(getNotificationByIdResponseTwofourIdRegExp),
+        audience: zod.enum(['own', 'staff']),
+        code: zod.enum(['shop-tasks.staff.undelivered']),
+        params: zod.strictObject({
+            count: zod.number().min(1)
+        }),
+        severity: zod.enum(['info', 'success', 'warning', 'error']),
+        readAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(getNotificationByIdResponseTwofiveIdMax)
+            .regex(getNotificationByIdResponseTwofiveIdRegExp),
         audience: zod.enum(['own', 'staff']),
         code: zod.enum(['shop-tasks.staff.stale-refunds']),
         params: zod.strictObject({

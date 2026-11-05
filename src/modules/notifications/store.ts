@@ -140,7 +140,7 @@ const UNKNOWN_CODE_KEY = 'notifications.unknown';
 
 /**
  * The sentence of a row: the owning module's notice entry, else the generic "unknown" one. This
- * module words no code of its own beyond its five, which `notices.ts` declares like any other.
+ * module words no code of its own beyond its six, which `notices.ts` declares like any other.
  *
  * @param notification - The server row.
  * @returns The finished text.

@@ -14,8 +14,8 @@ import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 import { useTasksStore } from '../store';
 
 /**
- * The prefix of the codes that say a task needs someone (`task-opened`, `task-overdue`,
- * `task-assigned`).
+ * The prefix of the codes that say a task needs someone (`task-opened`, `task-due-soon`,
+ * `task-overdue`, `task-assigned`).
  */
 const TASK_NOTICE_PREFIX = 'notifications.staff.task-';
 

@@ -19193,6 +19193,37 @@ components:
         createdAt:
           type: string
           format: date-time
+    NotificationStaffTaskDueSoon:
+      type: object
+      additionalProperties: false
+      description: An open task in a jurisdiction the caller works is three days from its due date; said once per task, never for a contact message.
+      required:
+        - id
+        - audience
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        audience:
+          $ref: "#/components/schemas/NotificationAudience"
+        code:
+          type: string
+          enum:
+            - notifications.staff.task-due-soon
+        params:
+          $ref: "#/components/schemas/TaskOpenedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
     TaskAssignedParams:
       type: object
       additionalProperties: false
@@ -19287,6 +19318,7 @@ components:
         - $ref: "#/components/schemas/NotificationStaffWebhookDisabled"
         - $ref: "#/components/schemas/NotificationStaffTaskOpened"
         - $ref: "#/components/schemas/NotificationStaffTaskOverdue"
+        - $ref: "#/components/schemas/NotificationStaffTaskDueSoon"
         - $ref: "#/components/schemas/NotificationStaffTaskAssigned"
         - $ref: "#/components/schemas/NotificationStaffOutboxDead"
         - $ref: "#/components/schemas/NotificationFulfillmentHeld"
@@ -19314,6 +19346,7 @@ components:
           notifications.staff.webhook-disabled: "#/components/schemas/NotificationStaffWebhookDisabled"
           notifications.staff.task-opened: "#/components/schemas/NotificationStaffTaskOpened"
           notifications.staff.task-overdue: "#/components/schemas/NotificationStaffTaskOverdue"
+          notifications.staff.task-due-soon: "#/components/schemas/NotificationStaffTaskDueSoon"
           notifications.staff.task-assigned: "#/components/schemas/NotificationStaffTaskAssigned"
           notifications.staff.outbox-dead: "#/components/schemas/NotificationStaffOutboxDead"
           shop-tasks.fulfillment-held: "#/components/schemas/NotificationFulfillmentHeld"

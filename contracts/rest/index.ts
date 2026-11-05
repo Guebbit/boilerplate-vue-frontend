@@ -2675,6 +2675,27 @@ export interface NotificationStaffTaskOverdue {
     createdAt: string;
 }
 
+export type NotificationStaffTaskDueSoonCode =
+    (typeof NotificationStaffTaskDueSoonCode)[keyof typeof NotificationStaffTaskDueSoonCode];
+
+export const NotificationStaffTaskDueSoonCode = {
+    'notificationsstafftask-due-soon': 'notifications.staff.task-due-soon'
+} as const;
+
+/**
+ * An open task in a jurisdiction the caller works is three days from its due date; said once per task, never for a contact message.
+ */
+export interface NotificationStaffTaskDueSoon {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffTaskDueSoonCode;
+    params: TaskOpenedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
 /**
  * A task was given to the caller by someone else.
  */
@@ -3238,6 +3259,7 @@ export type Notification =
     | NotificationStaffWebhookDisabled
     | NotificationStaffTaskOpened
     | NotificationStaffTaskOverdue
+    | NotificationStaffTaskDueSoon
     | NotificationStaffTaskAssigned
     | NotificationStaffOutboxDead
     | NotificationFulfillmentHeld

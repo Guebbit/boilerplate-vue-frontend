@@ -35,6 +35,7 @@ const describeTask = (
     notice: Of<
         | 'notifications.staff.task-opened'
         | 'notifications.staff.task-overdue'
+        | 'notifications.staff.task-due-soon'
         | 'notifications.staff.task-assigned'
     >,
     { translate }: NoticeContext
@@ -55,8 +56,8 @@ const describeTask = (
 };
 
 /**
- * Where a task notice links: the screen the server named for the work (`work`, opener and overdue
- * notices only), else the task's own page.
+ * Where a task notice links: the screen the server named for the work (`work`, opener, due-soon and
+ * overdue notices only), else the task's own page.
  *
  * @param notice - The task notice.
  */
@@ -64,6 +65,7 @@ const taskTarget = (
     notice: Of<
         | 'notifications.staff.task-opened'
         | 'notifications.staff.task-overdue'
+        | 'notifications.staff.task-due-soon'
         | 'notifications.staff.task-assigned'
     >
 ): NoticeTarget => {
@@ -111,11 +113,12 @@ const outboxDeadTarget = (eventName: string, id: string): NoticeTarget | undefin
 };
 
 /**
- * The foundation's five notice codes, by code.
+ * The foundation's six notice codes, by code.
  */
 export const foundationNotices: Record<string, AppNotice> = {
     'notifications.staff.task-opened': taskNotice,
     'notifications.staff.task-overdue': taskNotice,
+    'notifications.staff.task-due-soon': taskNotice,
     'notifications.staff.task-assigned': taskNotice,
     'notifications.staff.webhook-disabled': {
         describe: (notice, { translate }) => translate(notice.code),

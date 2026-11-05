@@ -28,7 +28,7 @@ const context: NoticeContext = {
 /**
  * The entry a code was declared with.
  *
- * @param notice - A row whose code is one of the five.
+ * @param notice - A row whose code is one of the six.
  */
 const entryOf = (notice: Pick<Notification, 'code'>) => {
     const entry = foundationNotices[notice.code];
@@ -47,11 +47,12 @@ const opened = (parameters: { kind: string; category?: string }) =>
         params: { taskId: 't1', ...parameters }
     }) as Notification;
 
-describe('the foundation declares exactly its five codes', () => {
+describe('the foundation declares exactly its six codes', () => {
     it('lists them', () => {
         expect(Object.keys(foundationNotices).toSorted()).toEqual([
             'notifications.staff.outbox-dead',
             'notifications.staff.task-assigned',
+            'notifications.staff.task-due-soon',
             'notifications.staff.task-opened',
             'notifications.staff.task-overdue',
             'notifications.staff.webhook-disabled'
@@ -161,21 +162,22 @@ describe('a task notice', () => {
         );
     });
 
-    it.each(['notifications.staff.task-overdue', 'notifications.staff.task-assigned'])(
-        'says %s the way the opener does, and opens the task page',
-        (code) => {
-            const notice = {
-                code,
-                params: { taskId: 't2', kind: 'dispute' }
-            } as Notification;
+    it.each([
+        'notifications.staff.task-overdue',
+        'notifications.staff.task-due-soon',
+        'notifications.staff.task-assigned'
+    ])('says %s the way the opener does, and opens the task page', (code) => {
+        const notice = {
+            code,
+            params: { taskId: 't2', kind: 'dispute' }
+        } as Notification;
 
-            expect(said(notice)).toBe(`${code}|what=task-kind.dispute`);
-            expect(entryOf(notice).target?.(notice)).toEqual({
-                route: 'TaskDetail',
-                params: { id: 't2' }
-            });
-        }
-    );
+        expect(said(notice)).toBe(`${code}|what=task-kind.dispute`);
+        expect(entryOf(notice).target?.(notice)).toEqual({
+            route: 'TaskDetail',
+            params: { id: 't2' }
+        });
+    });
 
     it('links the screen the opener names for the work, query kept, over the task page', () => {
         const withWork = {
