@@ -1801,6 +1801,7 @@ export const TaskKind = {
     refund_refused: 'refund_refused',
     amount_mismatch: 'amount_mismatch',
     dispute: 'dispute',
+    dispute_awaiting_bank: 'dispute_awaiting_bank',
     paid_without_hold: 'paid_without_hold',
     consent_due: 'consent_due'
 } as const;
