@@ -54,56 +54,82 @@ tags:
   - name: System
     description: Public system endpoints (ping, liveness).
   - name: Locales
+    x-family: Core
     description: Supported languages, and the translations a deployment serves for its API messages, client screens and entities.
   - name: Observability
+    x-family: Core
     description: Operational observability endpoints (metrics, health, audit, events). Protected endpoints require admin role.
   - name: Audit
+    x-family: Core
     description: The shop's action history — who did what, when, to which row, platform-world rows included, since one deployment is one shop and its staff may read them. Read-only, and separate from Observability's operational audit, which is the platform operator's view.
   - name: Antibot
+    x-family: Core
     description: The human-check challenge a protected form asks for before it submits.
   - name: Analytics
+    x-family: Core
     description: Browsing events a browser reports, relayed only after the visitor agreed to be measured.
   - name: Auth
+    x-family: Core
     description: Sign up, log in, refresh and end a session, and recover or verify an account by email.
   - name: Account
+    x-family: Core
     description: The signed-in user's own account - profile, credentials, two-factor, data export and deletion.
   - name: Users
+    x-family: Core
     description: Administration of user accounts and their roles.
   - name: Tasks
+    x-family: Core
     description: Situations someone must take and close — what visitors tell the shop, and what the system opens for staff.
   - name: Products
+    x-family: Catalogue
     description: The catalogue - browsing, searching and managing products and their images.
   - name: Cart
+    x-family: Buying
     description: The signed-in user's cart, and turning it into an order.
   - name: Wishlist
+    x-family: Catalogue
     description: Products a user saved for later.
   - name: Orders
+    x-family: Buying
     description: Placing, reading and managing orders and their lifecycle.
   - name: Payments
+    x-family: Buying
     description: Paying for an order - payment intents, confirmation, offline payments and refunds.
   - name: Invoicing
+    x-family: Buying
     description: The frozen invoice and credit-note PDFs — issued at payment and at refund, never before.
   - name: Delivery
+    x-family: After the sale
     description: Fulfilling an order — the fulfillment orders it splits into, and the shipments that leave.
   - name: Returns
+    x-family: After the sale
     description: Sending goods back — including the EU withdrawal button, which is a return with `reason` `withdrawal`.
   - name: Stats
+    x-family: Running the shop
     description: Sales numbers for the staff dashboard, read on demand from the modules that own them.
   - name: Inventory
+    x-family: Catalogue
     description: Stock counters and the holds placed against them.
   - name: Webhooks
+    x-family: Core
     description: Outbound webhook subscriptions, the delivery log, replay, and the public event catalogue.
   - name: ApiKeys
+    x-family: Core
     description: Machine-to-machine credentials — list, mint, revoke.
   - name: Examples
+    x-family: Example
     description: The example module - the small, complete domain to copy when starting a new one. Safe to delete.
   - name: Notifications
+    x-family: Core
     description: The signed-in user's in-app notifications, their own and the shop's work notices for staff.
   - name: Shop
+    x-family: Running the shop
     description: The shop itself — who it is, where it ships, and what it trades in.
   - name: Sitemap
+    x-family: Catalogue
     description: The shop's pages and products as sitemap files, for search engines.
   - name: StockAlerts
+    x-family: Catalogue
     description: Requests to be told once when a product the caller cannot order can be again.
 paths:
   /:
@@ -25929,3 +25955,43 @@ x-error-codes:
   WEBHOOK_SUBSCRIPTION_LIMIT_REACHED:
     status: 409
     description: This shop already holds the most webhook subscriptions it may; delete one first.
+x-tagGroups:
+  - name: Core
+    tags:
+      - System
+      - Locales
+      - Observability
+      - Audit
+      - Antibot
+      - Analytics
+      - Auth
+      - Account
+      - Users
+      - Tasks
+      - Webhooks
+      - ApiKeys
+      - Notifications
+  - name: Catalogue
+    tags:
+      - Products
+      - Wishlist
+      - Inventory
+      - Sitemap
+      - StockAlerts
+  - name: Buying
+    tags:
+      - Cart
+      - Orders
+      - Payments
+      - Invoicing
+  - name: After the sale
+    tags:
+      - Delivery
+      - Returns
+  - name: Running the shop
+    tags:
+      - Stats
+      - Shop
+  - name: Example
+    tags:
+      - Examples
