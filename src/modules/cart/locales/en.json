@@ -22,6 +22,7 @@
         "label-shipping-cost": "Shipping",
         "label-total": "Total",
         "no-shipping-needed": "Nothing in this cart needs shipping.",
+        "ship-later-notice": "Items marked Preorder or Backorder ship later, as shown. Choosing Express does not bring them forward.",
         "label-notes": "Order notes (optional)",
         "button-remove": "Remove",
         "button-clear": "Clear cart",

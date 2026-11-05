@@ -286,6 +286,15 @@ const STATE_COLORS = {
             </div>
         </v-card>
 
+        <!-- Visible, not a tooltip: it must read on a phone, and the order of the rows is the news. -->
+        <p
+            v-if="preorderBoard.length > 0"
+            class="my-2 text-sm opacity-muted"
+            data-test="preorder-paid-hint"
+        >
+            {{ t('preorder-board.hint-paid-at') }}
+        </p>
+
         <v-empty-state
             v-if="preorderBoard.length === 0 && !loading"
             :title="t('preorder-board.empty-orders')"

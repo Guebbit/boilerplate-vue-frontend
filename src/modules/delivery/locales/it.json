@@ -106,6 +106,7 @@
         "column-buyer": "Acquirente",
         "column-products": "Prodotti",
         "column-paid-at": "Pagato",
+        "hint-paid-at": "Le righe sono ordinate per data prevista; la merce in arrivo va prima a chi ha pagato per primo.",
         "column-agreed": "Promesso",
         "column-expected": "Atteso",
         "column-state": "Stato",
