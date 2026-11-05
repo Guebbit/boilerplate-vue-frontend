@@ -102,8 +102,10 @@ compile is a real dependency another module declared on it.
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 65}}}%%
 flowchart TD
     A["src/app/views/ + src/modules/*/views/\nView layer"] --> B["src/modules/*/composables/\nsrc/infrastructure/\nComposables + infrastructure helpers"]
+    A --> C
     B --> C["src/infrastructure/ (session, observability)\nsrc/modules/*/store.ts\nPinia stores"]
-    C --> D["contracts/rest/index.ts\nGenerated axios client"]
+    B -->|"one-shot calls"| D["contracts/rest/index.ts\nGenerated axios client"]
+    C --> D
     D --> E["src/infrastructure/http/index.ts\nAxios + interceptors"]
     E --> F[("Backend\n(demo or full stack)")]
 
@@ -185,6 +187,27 @@ and `ShipmentPanel` are the case to read for that: the emit _is_ the published l
 says "a payment happened" and the order page decides what that means, neither side learning the
 other's store.
 
+### Store or composable: the test
+
+A call to the generated client has two homes, and one question picks between them:
+
+> **Does the answer need a cache key?** Another screen reads it, it should survive navigation, be
+> deduplicated, or be invalidated by a write.
+
+- **Yes: the module's `store.ts`**, through the toolkit and WITH a `key`. A write to a cached
+  resource lives there too. `fetchTranslationLocales` in the products store is the case to read.
+- **No: a composable.** The state belongs to one mounted instance: a debounced search, an
+  advisory check, a preview, a panel mounted twice. Calling `@api` directly is legal here
+  (Composable → Client in the diagram above, for one-shot calls only).
+- Never a component or `src/ui` (the lint above).
+
+Stores-only would add one-line pass-through actions for state nothing else reads. The standard
+this follows is the same split server-state libraries make: a keyed cache reached by thin
+composables ([TanStack Query: does this replace client state](https://tanstack.com/query/latest/docs/framework/vue/guides/does-this-replace-client-state),
+[Pinia Colada queries](https://pinia-colada.esm.dev/guide/queries.html)), and vue-toolkit's
+`useAsyncAction` for "one endpoint, one question, nothing to cache it against"
+([async-action](https://github.com/Guebbit/vue-toolkit/blob/main/docs/composables/async-action.md)).
+
 ## How to read a domain
 
 ```mermaid
@@ -211,7 +234,7 @@ For a product flow you typically move through:
 
 - `src/modules/products/views/ProductsList.vue`
 - `src/modules/<name>/composables/<useThing>.ts` (optional — products has two,
-  `use-translation-locales.ts` and `translation-tab-errors.ts`)
+  `use-release-date-confirm.ts` and `translation-tab-errors.ts`)
 - `src/modules/products/store.ts`
 - `contracts/rest/index.ts` → `listProducts()`
 - `src/infrastructure/http/index.ts`

@@ -77,6 +77,40 @@ const taskTarget = (
 const taskNotice: AppNotice = { describe: describeTask, target: taskTarget };
 
 /**
+ * The target each event family's aggregate opens. Written as `route:` literals, the shape the
+ * route-name sweep recognises as a notice target (guarded when the notice is followed).
+ */
+const OUTBOX_FAMILY_TARGETS = new Map<string, { route: string }>([
+    ['user', { route: 'UserTarget' }],
+    ['account', { route: 'UserTarget' }],
+    ['stock_alert', { route: 'UserTarget' }],
+    ['order', { route: 'OrderTarget' }],
+    ['payment', { route: 'OrderTarget' }],
+    ['return', { route: 'OrderTarget' }],
+    ['shipment', { route: 'OrderTarget' }],
+    ['fulfillment_order', { route: 'OrderTarget' }],
+    ['inventory', { route: 'OrderTarget' }],
+    ['product', { route: 'ProductTarget' }],
+    ['example', { route: 'ExampleTarget' }]
+]);
+
+/**
+ * The screen of the record a parked event was about, by the event name's first segment. The
+ * aggregate is the per-aggregate ordering key: money, returns, shipping and stock are ordered per
+ * order, so those families key on the order id. A record that is gone (`user.erased`,
+ * `product.deleted`) or a family this client does not know has no screen: a link to a guess is
+ * worse than none.
+ *
+ * @param eventName - The parked event, `<family>.<what happened>`.
+ * @param id - What the event was about.
+ */
+const outboxDeadTarget = (eventName: string, id: string): NoticeTarget | undefined => {
+    if (eventName === 'user.erased' || eventName === 'product.deleted') return undefined;
+    const target = OUTBOX_FAMILY_TARGETS.get(eventName.split('.')[0] ?? '');
+    return target ? { ...target, params: { id } } : undefined;
+};
+
+/**
  * The foundation's five notice codes, by code.
  */
 export const foundationNotices: Record<string, AppNotice> = {
@@ -93,11 +127,7 @@ export const foundationNotices: Record<string, AppNotice> = {
     'notifications.staff.outbox-dead': {
         describe: (notice: Of<'notifications.staff.outbox-dead'>, { translate }) =>
             translate(notice.code, { event: notice.params.eventName }),
-        // The parked event's first segment names the record; any other kind has no screen, and a
-        // link to a guess would be worse than none.
         target: (notice: Of<'notifications.staff.outbox-dead'>) =>
-            notice.params.eventName.split('.')[0] === 'user'
-                ? { route: 'UserTarget', params: { id: notice.params.aggregateId } }
-                : undefined
+            outboxDeadTarget(notice.params.eventName, notice.params.aggregateId)
     }
 };

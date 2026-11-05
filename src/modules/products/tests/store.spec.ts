@@ -117,6 +117,35 @@ const lastBody = () => asStub<{ data: Record<string, unknown> }>(lastRequest()).
 const productReads = () =>
     vi.mocked(orvalMutator).mock.calls.filter(([config]) => config.url === '/products/p1').length;
 
+/** One manifest row, as `GET /locales` reports it. */
+const row = (tag: string, active: boolean) => ({
+    tag,
+    name: tag,
+    nativeName: tag.toUpperCase(),
+    direction: 'ltr',
+    active,
+    apps: ['frontend'],
+    source: 'dynamic',
+    entryCount: 0,
+    revision: 1
+});
+
+/** How many `GET /locales` requests the transport has seen. */
+const localeReads = () =>
+    vi.mocked(orvalMutator).mock.calls.filter(([config]) => config.url === '/locales').length;
+
+/** Makes `GET /locales` answer with the given rows (`en` is the fallback). */
+const answerLocales = (...rows: ReturnType<typeof row>[]) =>
+    vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) =>
+        Promise.resolve(
+            parseOrvalFixture(config.method, config.url, {
+                locales: rows,
+                default: 'en',
+                fallback: 'en'
+            })
+        )
+    );
+
 describe('useProductsStore', () => {
     beforeEach(() => {
         setActivePinia(createPinia());
@@ -647,6 +676,87 @@ describe('useProductsStore', () => {
                         // this the page simply stops updating with no message.
                         expect(onError).toHaveBeenCalledWith(failure, expect.anything());
                     });
+            });
+        });
+
+        describe('fetchTranslationLocales', () => {
+            it('keeps a language switched off, so an editor can start a draft in it', () => {
+                answerLocales(row('en', true), row('fr', false));
+                const store = useProductsStore();
+
+                return store.fetchTranslationLocales().then(() => {
+                    expect(
+                        store.translationLocales.map(({ tag, active }) => [tag, active])
+                    ).toEqual([
+                        ['en', true],
+                        ['fr', false]
+                    ]);
+                    expect(store.translationFallbackLocale).toBe('en');
+                });
+            });
+
+            it('falls back to one tab for the configured fallback locale when the route is gone', () => {
+                vi.mocked(orvalMutator).mockRejectedValue(new Error('404'));
+                const store = useProductsStore();
+
+                // Resolving at all is the "never rejects" half: a form needs no catch of its own.
+                return store.fetchTranslationLocales().then(() => {
+                    expect(store.translationLocales).toHaveLength(1);
+                    expect(store.translationLocales[0]?.tag).toBe('en');
+                    expect(store.translationFallbackLocale).toBe('en');
+                });
+            });
+
+            it('does not cache the fallback: the next call asks again', () => {
+                vi.mocked(orvalMutator).mockRejectedValue(new Error('network down'));
+                const store = useProductsStore();
+
+                return store
+                    .fetchTranslationLocales()
+                    .then(() => store.fetchTranslationLocales())
+                    .then(() => {
+                        expect(localeReads()).toBe(2);
+                    });
+            });
+
+            it('serves a second call within staleTime from the cache', () => {
+                answerLocales(row('en', true));
+                const store = useProductsStore();
+
+                return store
+                    .fetchTranslationLocales()
+                    .then(() => store.fetchTranslationLocales())
+                    .then(() => {
+                        expect(localeReads()).toBe(1);
+                    });
+            });
+
+            it('refetches after the viewer changes, so a staff sign-in sees the drafts', async () => {
+                answerLocales(row('en', true));
+                const store = useProductsStore();
+                const session = useSessionStore();
+                session.viewer = asStub<SessionViewer>({ id: 'a', email: 'a@example.com' });
+                await store.fetchTranslationLocales();
+
+                session.viewer = asStub<SessionViewer>({ id: 'b', email: 'b@example.com' });
+                await nextTick();
+                answerLocales(row('en', true), row('fr', false));
+                await store.fetchTranslationLocales();
+
+                expect(localeReads()).toBe(2);
+                expect(store.translationLocales.map(({ tag }) => tag)).toEqual(['en', 'fr']);
+            });
+
+            it('sets the loading key while the request is in flight', () => {
+                answerLocales(row('en', true));
+                const store = useProductsStore();
+
+                const pending = store.fetchTranslationLocales();
+                expect(store.loadingTranslationLocales).toBe(true);
+
+                return pending.then(() => {
+                    expect(store.loadingTranslationLocales).toBe(false);
+                });
             });
         });
 
