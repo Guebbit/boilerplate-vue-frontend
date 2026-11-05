@@ -5788,11 +5788,13 @@ paths:
         - Tasks
       summary: Assign a task
       description: |
-        Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`.
+        Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task and `update:Task`, so they can open, note and close it. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`.
       operationId: assignTask
       x-error-codes:
         "409":
           - TASK_NOT_OPEN
+        "422":
+          - TASK_ASSIGNEE_INVALID
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -25988,7 +25990,7 @@ x-error-codes:
     description: The task is already marked as spam.
   TASK_ASSIGNEE_INVALID:
     status: 422
-    description: The person does not exist, or does not hold the permission set that works this task.
+    description: The person does not exist, or does not hold both the permission set that works this task and `update:Task`.
   TASK_NOT_OPEN:
     status: 409
     description: The task is closed; reopen it before assigning it.
