@@ -98,10 +98,31 @@ describe('a dead event', () => {
         });
     });
 
-    it('opens nothing for an event about anything else, an order included', () => {
-        expect(entryOf(dead('order.paid')).target?.(dead('order.paid'))).toBeUndefined();
-        expect(entryOf(dead('stock.moved')).target?.(dead('stock.moved'))).toBeUndefined();
+    it.each([
+        ['user.updated', 'UserTarget'],
+        ['account.deleted', 'UserTarget'],
+        ['stock_alert.sent', 'UserTarget'],
+        ['order.paid', 'OrderTarget'],
+        ['payment.settled', 'OrderTarget'],
+        ['return.approved', 'OrderTarget'],
+        ['shipment.lost', 'OrderTarget'],
+        ['fulfillment_order.held', 'OrderTarget'],
+        ['inventory.reserved', 'OrderTarget'],
+        ['product.updated', 'ProductTarget'],
+        ['example.created', 'ExampleTarget']
+    ])('opens the record %s was about', (eventName, route) => {
+        expect(entryOf(dead(eventName)).target?.(dead(eventName))).toEqual({
+            route,
+            params: { id: 'x1' }
+        });
     });
+
+    it.each(['user.erased', 'product.deleted', 'unknown.thing', 'constructor.x'])(
+        'opens nothing for %s: the record is gone or the family unknown',
+        (eventName) => {
+            expect(entryOf(dead(eventName)).target?.(dead(eventName))).toBeUndefined();
+        }
+    );
 });
 
 /**
