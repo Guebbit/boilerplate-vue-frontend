@@ -327,7 +327,7 @@
                         },
                         {
                             "q": "Where do my contact messages go?",
-                            "a": "Into the admin Tasks page on this very site. Sign in as an admin and you can move each message through its statuses."
+                            "a": "They are emailed to the shop's support address, and the team answers from that mailbox with a normal reply. Each one also appears in the admin Tasks page on this very site, where an admin marks it answered."
                         },
                         {
                             "q": "What is on the admin side?",
@@ -377,6 +377,7 @@
                     "How long the data is kept",
                     "The rights of the person (access, correction, erasure, objection, portability)",
                     "How to withdraw consent",
+                    "Contact-form messages: they are emailed to the support mailbox and copies stay there until someone erases them by hand, outside the retention period of the stored message",
                     "Account deletion: the account is locked at once and erased after a grace of up to a month (never more than one calendar month, GDPR Art. 12(3)), and how to cancel it in the meantime (the link in the email, signing in, or support)",
                     "The right to complain to the supervisory authority",
                     "The purchase hold, an automatic pause after repeated cancellations: the legal basis (legitimate interest, GDPR Art. 6(1)(f)), the logic (Art. 13(2)(f)), what it does to the person, the right to object to it (Art. 21), and how to ask a person to review it",

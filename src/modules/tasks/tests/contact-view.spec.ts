@@ -15,8 +15,26 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { configAnswer } from '../../../../tests/support/unit/config-answer.ts';
+import { resetConfig } from '@/infrastructure/config.ts';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 
 wireModulesIntoCore();
+
+// The page reads the support address from `GET /config`; the store call is spied, so this is the
+// only request the page makes.
+vi.mock('@/infrastructure/http', () => ({
+    orvalMutator: vi.fn((config: { url: string; method: string }) =>
+        Promise.resolve(
+            parseOrvalFixture(
+                config.method,
+                config.url,
+                configAnswer({ supportEmail: 'help@shop.example' })
+            )
+        )
+    )
+}));
 
 /**
  * The real app router — the page reads the address it was opened on.
@@ -24,7 +42,15 @@ wireModulesIntoCore();
 const router = createRouter({
     history: createMemoryHistory(),
     routes: [
-        { path: '/:locale', component: RouterView, children: collectModuleRoutes(enabledModules) }
+        {
+            path: '/:locale',
+            component: RouterView,
+            children: [
+                ...collectModuleRoutes(enabledModules),
+                // The privacy page belongs to the app tier, which this spec does not assemble.
+                { path: 'privacy', name: 'StaticPrivacy', component: { render: () => null } }
+            ]
+        }
     ]
 });
 
@@ -72,6 +98,7 @@ const fillAndSend = (wrapper: Awaited<ReturnType<typeof openContact>>['wrapper']
         .then(flushPromises);
 
 beforeEach(() => {
+    resetConfig();
     setActivePinia(createPinia());
     return loadLocale('en');
 });
@@ -104,5 +131,27 @@ describe('Contact', () => {
                 expect(sent).toBeDefined();
                 expect(sent?.category).toBeUndefined();
                 expect(sent?.orderNumber).toBeUndefined();
+            }));
+
+    it('offers the support address and a privacy line under the form', () =>
+        openContact('/en/contact')
+            .then(({ wrapper }) => flushPromises().then(() => wrapper))
+            .then((wrapper) => {
+                const line = wrapper.get('[data-test=contact-write-to-us]');
+
+                expect(line.text()).toContain('help@shop.example');
+                expect(line.get('a').attributes('href')).toBe('mailto:help@shop.example');
+                expect(wrapper.get('[data-test=contact-privacy-line]').find('a').exists()).toBe(
+                    true
+                );
+            }));
+
+    it('tells the visitor where the answer will go: the address they typed', () =>
+        openContact('/en/contact')
+            .then(({ wrapper }) => fillAndSend(wrapper))
+            .then(() => {
+                const shown = useNotificationsStore().messages.map(({ message }) => message);
+
+                expect(shown.join(' ')).toContain('answer at ada@example.com');
             }));
 });

@@ -5286,11 +5286,9 @@ paths:
             schema:
               $ref: "#/components/schemas/CreateContactTaskRequest"
       responses:
-        "201":
-          description: Created task
+        "202":
+          description: The message was received; staff answer it from the support mailbox.
           headers:
-            Location:
-              $ref: "#/components/headers/Location"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -5307,10 +5305,6 @@ paths:
               $ref: "#/components/headers/EntityTag"
             Idempotent-Replay:
               $ref: "#/components/headers/Idempotent-Replay"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Task"
         "400":
           $ref: "#/components/responses/BadRequest"
         "403":
@@ -15721,6 +15715,7 @@ components:
         - session
         - oauthProviders
         - antibot
+        - supportEmail
       properties:
         session:
           $ref: "#/components/schemas/SessionConfig"
@@ -15731,6 +15726,10 @@ components:
           description: Registry names this deployment holds OAuth credentials for, e.g. `["google", "github"]`. Empty when none are configured.
         antibot:
           $ref: "#/components/schemas/AntibotConfig"
+        supportEmail:
+          type: string
+          format: email
+          description: The one customer-facing support address (`NODE_SUPPORT_EMAIL`). The contact form's mail goes there and customers' replies come back to it; show it as "write to us at".
     AccountView:
       type: object
       additionalProperties: false

@@ -1,7 +1,7 @@
 /**
  * @module
- * The public config `GET /config` answers: session mode, OAuth providers and the human-check
- * config. A fixture that stays inside the contract's shape, with every part overridable.
+ * The public config `GET /config` answers: session mode, OAuth providers, the human-check
+ * config and the support address. A fixture that stays inside the contract's shape, with every part overridable.
  */
 
 /** What a part of the answer may be replaced with. */
@@ -12,6 +12,8 @@ export interface ConfigParts {
     oauthProviders?: string[];
     /** The human-challenge config. */
     antibot?: Record<string, unknown>;
+    /** The support address the contact page shows. */
+    supportEmail?: string;
 }
 
 /**
@@ -29,5 +31,6 @@ export const configAnswer = (parts: ConfigParts = {}) => ({
         provider: 'none',
         parameters: {},
         rungs: { identityBudgets: true, emailPolicy: 'off' }
-    }
+    },
+    supportEmail: parts.supportEmail ?? 'support@example.com'
 });

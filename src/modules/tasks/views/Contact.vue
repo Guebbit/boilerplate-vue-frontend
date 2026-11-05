@@ -28,6 +28,8 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import HumanCheck from '@/ui/organisms/HumanCheck.vue';
 import { withAntibotToken } from '@/infrastructure/http/antibot.ts';
+import { loadConfig, publicConfig } from '@/infrastructure/config.ts';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 
 /**
  * The public contact form. No login required — it exists for the visitor who cannot log in —
@@ -154,6 +156,15 @@ const {
 } = useBlockingError();
 
 /**
+ * The support address `GET /config` publishes: shown under the form as the email alternative.
+ */
+const supportEmail = computed(() => publicConfig.value?.supportEmail);
+
+// `GET /config` is shared and cached per tab; asking here makes sure the address is there.
+// eslint-disable-next-line @typescript-eslint/no-floating-promises -- `loadConfig` never rejects: it logs a failure and leaves the address unset
+loadConfig();
+
+/**
  * Submits the form; success empties it for the next message.
  *
  * @returns A promise resolving once the flow settles; a failure blocks the form in place
@@ -175,7 +186,8 @@ const submitForm = () =>
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof HumanCheck>), even with `token` explicitly exposed via HumanCheck.vue's own defineExpose
             withAntibotToken(humanCheck.value?.token)
         ).then(() => {
-            addMessage(t('contact-page.success'));
+            // The address the visitor typed, so a typo shows before they wait for an answer.
+            addMessage(t('contact-page.success', { email: form.value.email ?? '' }));
             resetForm();
         });
     }).catch((error: unknown) => {
@@ -265,6 +277,16 @@ const submitForm = () =>
                 rows="5"
             />
             <HumanCheck ref="humanCheck" class="mb-2" />
+            <p v-if="supportEmail" class="mt-4 text-sm opacity-80" data-test="contact-write-to-us">
+                {{ t('contact-page.write-to-us') }}
+                <a :href="`mailto:${supportEmail}`">{{ supportEmail }}</a>
+            </p>
+            <p class="mt-2 text-sm opacity-80" data-test="contact-privacy-line">
+                {{ t('contact-page.privacy-line') }}
+                <RouterLink :to="routerLinkI18n({ name: 'StaticPrivacy' })">
+                    {{ t('contact-page.privacy-link') }}
+                </RouterLink>
+            </p>
             <template #after-submit>
                 <InlineErrorAlert
                     :message="submitError"

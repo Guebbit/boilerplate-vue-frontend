@@ -327,7 +327,7 @@
                         },
                         {
                             "q": "Dove finiscono i messaggi del modulo contatti?",
-                            "a": "Nella pagina Attività admin di questo stesso sito. Accedi come amministratore e puoi gestire lo stato di ogni messaggio."
+                            "a": "Arrivano per email all'indirizzo di assistenza del negozio, e il team risponde da quella casella con una normale risposta. Ognuno compare anche nella pagina Attività admin di questo stesso sito, dove un amministratore lo segna come risposto."
                         },
                         {
                             "q": "Cosa c'è dal lato admin?",
@@ -377,6 +377,7 @@
                     "Per quanto tempo i dati vengono conservati",
                     "I diritti della persona (accesso, rettifica, cancellazione, opposizione, portabilità)",
                     "Come revocare il consenso",
+                    "Messaggi del modulo di contatto: arrivano per email alla casella di assistenza e lì ne resta una copia finché qualcuno non la cancella a mano, fuori dal periodo di conservazione del messaggio salvato",
                     "Eliminazione dell'account: l'account viene bloccato subito e cancellato dopo un periodo di tolleranza fino a un mese (mai oltre un mese di calendario, GDPR art. 12, par. 3), e come annullarla nel frattempo (il link nell'email, l'accesso o l'assistenza)",
                     "Il diritto di presentare reclamo all'autorità di controllo",
                     "Il blocco acquisti, una pausa automatica dopo annullamenti ripetuti: la base giuridica (legittimo interesse, GDPR art. 6, par. 1, lett. f), la logica (art. 13, par. 2, lett. f), cosa comporta per la persona, il diritto di opporsi (art. 21) e come chiedere il riesame di una persona",

@@ -317,6 +317,8 @@ export interface Config {
     /** Registry names this deployment holds OAuth credentials for, e.g. `["google", "github"]`. Empty when none are configured. */
     oauthProviders: string[];
     antibot: AntibotConfig;
+    /** The one customer-facing support address (`NODE_SUPPORT_EMAIL`). The contact form's mail goes there and customers' replies come back to it; show it as "write to us at". */
+    supportEmail: string;
 }
 
 export type PackedRulesItemItem = string | 0 | 1 | { [key: string]: unknown };
@@ -9862,9 +9864,9 @@ export const searchUsers = (
  */
 export const createContactTask = (
     createContactTaskRequest: CreateContactTaskRequest,
-    options?: SecondParameter<typeof orvalMutator<Task>>
+    options?: SecondParameter<typeof orvalMutator<void>>
 ) => {
-    return orvalMutator<Task>(
+    return orvalMutator<void>(
         {
             url: `/tasks`,
             method: 'POST',

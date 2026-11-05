@@ -79,7 +79,8 @@ export const GetConfigResponse = zod.strictObject({
             identityBudgets: zod.boolean(),
             emailPolicy: zod.enum(['off', 'disposable', 'mx'])
         })
-    })
+    }),
+    supportEmail: zod.email()
 });
 /**
  * Is the process up. For an orchestrator (Kubernetes' own `/livez` + `/readyz`
@@ -5987,125 +5988,7 @@ export const CreateContactTaskBody = zod.strictObject({
     orderNumber: zod.string().min(1).max(createContactTaskBodyOrderNumberMax).optional(),
     website: zod.string().max(createContactTaskBodyWebsiteMax).optional()
 });
-export const createContactTaskResponseIdMax = 64;
-export const createContactTaskResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const createContactTaskResponseSubjectIdMax = 64;
-export const createContactTaskResponseSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const createContactTaskResponseEmailMax = 254;
-export const createContactTaskResponseAssigneeIdMax = 64;
-export const createContactTaskResponseAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const createContactTaskResponseNotesItemAuthorIdMax = 64;
-export const createContactTaskResponseNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const createContactTaskResponseEarlierTasksItemIdMax = 64;
-export const createContactTaskResponseEarlierTasksItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const CreateContactTaskResponse = zod.strictObject({
-    id: zod
-        .string()
-        .min(1)
-        .max(createContactTaskResponseIdMax)
-        .regex(createContactTaskResponseIdRegExp),
-    source: zod.enum(['visitor', 'system']),
-    kind: zod.enum([
-        'contact',
-        'account_review',
-        'export_failed',
-        'manual_refund_owed',
-        'refund_refused',
-        'amount_mismatch',
-        'dispute',
-        'dispute_awaiting_bank',
-        'refund_reversed',
-        'paid_without_hold',
-        'consent_due'
-    ]),
-    name: zod.string().optional(),
-    subjectId: zod
-        .string()
-        .min(1)
-        .max(createContactTaskResponseSubjectIdMax)
-        .regex(createContactTaskResponseSubjectIdRegExp)
-        .optional(),
-    email: zod.email().max(createContactTaskResponseEmailMax).optional(),
-    subject: zod.string(),
-    message: zod.string(),
-    category: zod
-        .enum(['account', 'privacy', 'other', 'order', 'cancellation', 'return', 'payment'])
-        .optional(),
-    orderNumber: zod.string().optional(),
-    link: zod
-        .strictObject({
-            type: zod.enum(['user', 'export', 'order', 'payment', 'refund', 'fulfillment_order']),
-            id: zod.string()
-        })
-        .optional(),
-    routeSet: zod.string(),
-    assigneeId: zod
-        .string()
-        .min(1)
-        .max(createContactTaskResponseAssigneeIdMax)
-        .regex(createContactTaskResponseAssigneeIdRegExp)
-        .optional(),
-    assigneeName: zod.string().optional(),
-    notes: zod.array(
-        zod.strictObject({
-            authorId: zod
-                .string()
-                .min(1)
-                .max(createContactTaskResponseNotesItemAuthorIdMax)
-                .regex(createContactTaskResponseNotesItemAuthorIdRegExp)
-                .optional(),
-            body: zod.string(),
-            at: zod.iso.datetime({ offset: true })
-        })
-    ),
-    dueAt: zod.iso.datetime({ offset: true }).optional(),
-    overdue: zod.boolean(),
-    lastSeenAt: zod.iso.datetime({ offset: true }).optional(),
-    seenCount: zod.number().min(1).optional(),
-    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-    closedAt: zod.iso.datetime({ offset: true }).optional(),
-    resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
-    respondedAt: zod.iso.datetime({ offset: true }).optional(),
-    earlierTasks: zod
-        .array(
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
-                    .max(createContactTaskResponseEarlierTasksItemIdMax)
-                    .regex(createContactTaskResponseEarlierTasksItemIdRegExp),
-                kind: zod
-                    .enum([
-                        'contact',
-                        'account_review',
-                        'export_failed',
-                        'manual_refund_owed',
-                        'refund_refused',
-                        'amount_mismatch',
-                        'dispute',
-                        'dispute_awaiting_bank',
-                        'refund_reversed',
-                        'paid_without_hold',
-                        'consent_due'
-                    ])
-                    .optional(),
-                status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-                createdAt: zod.iso.datetime({ offset: true })
-            })
-        )
-        .optional(),
-    actions: zod.strictObject({
-        resolve: zod.boolean(),
-        markSpam: zod.boolean(),
-        reopen: zod.boolean(),
-        assign: zod.boolean(),
-        unassign: zod.boolean(),
-        note: zod.boolean(),
-        delete: zod.boolean()
-    }),
-    createdAt: zod.iso.datetime({ offset: true }),
-    updatedAt: zod.iso.datetime({ offset: true }).optional()
-});
+export const CreateContactTaskResponse = zod.void();
 /**
  * Returns the tasks the caller may work: every visitor message, and the system tasks whose route set the caller holds (an administrator holds them all). Open work first when sorted by `dueAt`.
  * @summary List tasks
