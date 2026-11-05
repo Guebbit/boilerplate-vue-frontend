@@ -902,6 +902,51 @@ describe('a cart with nothing to ship', () => {
         }));
 });
 
+describe('the ship-later shipping notice', () => {
+    it('is shown once when some lines ship now and others later', () =>
+        mountCart({
+            held: heldWith([
+                ['p1', 1, 'in_stock'],
+                ['p2', 1, 'preorder']
+            ])
+        }).then(({ wrapper }) => {
+            expect(wrapper.findAll('[data-test=cart-ship-later-notice]')).toHaveLength(1);
+            expect(wrapper.get('[data-test=cart-ship-later-notice]').text()).toBe(
+                i18n.global.t('cart-page.ship-later-notice')
+            );
+        }));
+
+    it('is shown for a backorder line beside an in-stock one', () =>
+        mountCart({
+            held: heldWith([
+                ['p1', 1, 'in_stock'],
+                ['p2', 1, 'backorder']
+            ])
+        }).then(({ wrapper }) => {
+            expect(wrapper.find('[data-test=cart-ship-later-notice]').exists()).toBe(true);
+        }));
+
+    it('is hidden when every line is in stock', () =>
+        mountCart({
+            held: heldWith([
+                ['p1', 1, 'in_stock'],
+                ['p2', 1, 'in_stock']
+            ])
+        }).then(({ wrapper }) => {
+            expect(wrapper.find('[data-test=cart-ship-later-notice]').exists()).toBe(false);
+        }));
+
+    it('is shown when every line ships later too, since Express moves none of them', () =>
+        mountCart({
+            held: heldWith([
+                ['p1', 1, 'preorder'],
+                ['p2', 1, 'backorder']
+            ])
+        }).then(({ wrapper }) => {
+            expect(wrapper.find('[data-test=cart-ship-later-notice]').exists()).toBe(true);
+        }));
+});
+
 describe('a reload in the middle of checkout', () => {
     it('puts the note back, and keeps typing saved for the next reload', () => {
         writeCheckoutDraft('u1', { notes: 'Ring twice' });

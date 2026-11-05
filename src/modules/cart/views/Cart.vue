@@ -95,6 +95,18 @@ const { loadProducts, productOf, titleOf, availabilityLabel } = useProductLines(
 const { cart, cartItems, cartSummary, cartShipping, loading } = storeToRefs(useCartStore());
 
 /**
+ * Whether a line waits for stock or a date (preorder or backorder) rather than shipping now.
+ */
+const shipsLater = (availability: string): boolean =>
+    availability === 'preorder' || availability === 'backorder';
+
+/**
+ * Whether any line waits for stock or a date. The order has one shipping method, and choosing a
+ * faster one does not bring those lines forward, so the page says so once, near the choice.
+ */
+const hasLaterLine = computed(() => cartItems.value.some((item) => shipsLater(item.availability)));
+
+/**
  * The chosen shipping method — mirrors `cart.value?.shipping.selected` (see the `watch` below that
  * loads it once the cart resolves), and drives `PUT /cart/shipping-method` on every change the
  * shopper makes through {@link ShippingSelector}.
@@ -648,6 +660,13 @@ onMounted(() =>
                         :options="cartShipping?.options ?? []"
                         :currency="cartSummary.currency"
                     />
+                    <p
+                        v-if="cartShipping?.required && hasLaterLine"
+                        class="mt-2 text-sm opacity-muted"
+                        data-test="cart-ship-later-notice"
+                    >
+                        {{ t('cart-page.ship-later-notice') }}
+                    </p>
                     <!--
                         Only asked when the chosen method actually needs one — a digital-only
                         basket, or `pickup`, never renders this at all.

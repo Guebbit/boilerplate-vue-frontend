@@ -36,7 +36,7 @@ export interface RoleSweepButton {
     can: readonly [action: string, subject: string];
 }
 
-/** One page, and the permission that opens it. */
+/** One page, and the permission that opens it, if any. */
 export interface RoleSweepCase {
     /** What a failure reports. */
     name: string;
@@ -44,7 +44,8 @@ export interface RoleSweepCase {
     route: string | (() => Cypress.Chainable<string>);
     /**
      * `[action, subject]` the page requires: allowed personas open it, the rest are turned back.
-     * Absent means the page asks no rule: every persona must load it with no 401/403.
+     * Absent means the page asks no rule, so a no-rule case lets the shopper in too: every
+     * persona must load it with no 401/403.
      */
     can?: readonly [action: string, subject: string];
     /** The administration-menu link that must be present iff allowed. */

@@ -154,6 +154,18 @@ describe('what a row says', () => {
             }
         ));
 
+    it('says which order the rows follow and which payment gets arriving stock', () =>
+        mountTable([aPreorderFulfillmentOrder()]).then(({ wrapper }) => {
+            expect(wrapper.get('[data-test=preorder-paid-hint]').text()).toBe(
+                'Rows are ordered by expected date; arriving stock goes to the earliest payment first.'
+            );
+        }));
+
+    it('shows no hint over an empty board', () =>
+        mountTable([]).then(({ wrapper }) => {
+            expect(wrapper.find('[data-test=preorder-paid-hint]').exists()).toBe(false);
+        }));
+
     it('flags a late row and shows how far it slipped', () =>
         mountTable([
             aPreorderFulfillmentOrder({
