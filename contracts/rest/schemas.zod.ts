@@ -6978,7 +6978,7 @@ export const ReopenTaskResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`.
+ * Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task and `update:Task`, so they can open, note and close it. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`.
  * @summary Assign a task
  */
 export const assignTaskPathIdMax = 64;
@@ -19246,7 +19246,7 @@ export const GetPaymentMixStatsResponse = zod.strictObject({
     )
 });
 /**
- * Cancellation rate as a cohort (orders placed in the period that ended cancelled), return rate (units returned ÷ units ordered, Shopify's `returned_quantity_rate`) and refund rate (credit notes ÷ invoices, VAT included). Needs `read:Stats`.
+ * Cancellation rate as a cohort (orders placed in the period that ended cancelled, including an order whose every parcel was lost and refunded), return rate (units returned ÷ units ordered, Shopify's `returned_quantity_rate`) and refund rate (credit notes ÷ invoices, VAT included). Needs `read:Stats`.
  * @summary Operations rates (staff)
  */
 export const GetOperationsStatsQueryParams = zod.strictObject({

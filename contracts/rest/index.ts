@@ -6578,7 +6578,7 @@ export interface PaymentMix {
 }
 
 /**
- * A cohort, meaning orders placed in the period that ended cancelled, not cancellations dated by when they happened.
+ * A cohort, meaning orders placed in the period that ended cancelled (a lost-and-refunded order among them), not cancellations dated by when they happened.
  */
 export type OperationsStatsCancellation = {
     /** @minimum 0 */
@@ -6620,7 +6620,7 @@ export type OperationsStatsRefundsItem = {
 export interface OperationsStats {
     period: StatsPeriod;
     limits: StatsLimits;
-    /** A cohort, meaning orders placed in the period that ended cancelled, not cancellations dated by when they happened. */
+    /** A cohort, meaning orders placed in the period that ended cancelled (a lost-and-refunded order among them), not cancellations dated by when they happened. */
     cancellation: OperationsStatsCancellation;
     returns: OperationsStatsReturns;
     refunds: OperationsStatsRefundsItem[];
@@ -9931,7 +9931,7 @@ export const reopenTask = (id: string, options?: SecondParameter<typeof orvalMut
 };
 
 /**
- * Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`.
+ * Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task and `update:Task`, so they can open, note and close it. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`.
  * @summary Assign a task
  */
 export const assignTask = (
@@ -12259,7 +12259,7 @@ export const getPaymentMixStats = (
 };
 
 /**
- * Cancellation rate as a cohort (orders placed in the period that ended cancelled), return rate (units returned ÷ units ordered, Shopify's `returned_quantity_rate`) and refund rate (credit notes ÷ invoices, VAT included). Needs `read:Stats`.
+ * Cancellation rate as a cohort (orders placed in the period that ended cancelled, including an order whose every parcel was lost and refunded), return rate (units returned ÷ units ordered, Shopify's `returned_quantity_rate`) and refund rate (credit notes ÷ invoices, VAT included). Needs `read:Stats`.
  * @summary Operations rates (staff)
  */
 export const getOperationsStats = (
