@@ -115,7 +115,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     currentTask = { ...TASK };
     responses = {
-        'POST /tasks': TASK
+        'POST /tasks': undefined
     };
 });
 

@@ -44,10 +44,15 @@ instance.interceptors.response.use(undefined, onResponseRejectWithStepUp);
  */
 const send = <T>(request: AxiosRequestConfig): Promise<T> =>
     instance.request<T>(request).then((response) => {
-        // A 204 has no body: axios hands it over as `''`, which the generated `zod.void()` schema
-        // rejects. `undefined` is what the contract declares, so the cast to `T` is sound for
-        // every operation that answers 204.
-        if (response.status === 204) return undefined as T;
+        // A bodiless answer (a 204, or any 2xx the server sent empty) reaches us as `''`, which the
+        // generated `zod.void()` schema rejects. `undefined` is what the contract declares, so the
+        // cast to `T` is sound for every operation that answers without a body. A `''` only counts
+        // for a JSON read: a text or blob download legitimately may be empty.
+        if (
+            response.status === 204 ||
+            (response.data === '' && (request.responseType ?? 'json') === 'json')
+        )
+            return undefined as T;
         if (shouldValidateResponses()) validateResponseAgainstContract(request, response.data);
         return response.data;
     });
