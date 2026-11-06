@@ -40,18 +40,18 @@ let scenario: Scenario = { requiresReauth: true };
 /** What the next `REAUTH_REQUIRED` 401 asks beyond recency, as `details.methods`. */
 let demandedMethods: string[] | undefined;
 
+/** The `REAUTH_REQUIRED` problem `requireFreshAuth` actually answers. */
+const reauthProblem = () =>
+    aProblem(401, [
+        {
+            code: 'REAUTH_REQUIRED',
+            message: 'Fresh authentication required',
+            details: { maxAge: 300, ...(demandedMethods && { methods: demandedMethods }) }
+        }
+    ]);
+
 /** A `REAUTH_REQUIRED` 401, matching what `requireFreshAuth` actually answers. */
-const reauthRequired = () =>
-    HttpResponse.json(
-        aProblem(401, [
-            {
-                code: 'REAUTH_REQUIRED',
-                message: 'Fresh authentication required',
-                details: { maxAge: 300, ...(demandedMethods && { methods: demandedMethods }) }
-            }
-        ]),
-        { status: 401 }
-    );
+const reauthRequired = () => HttpResponse.json(reauthProblem(), { status: 401 });
 
 /** This file's stub endpoints, registered on the shared MSW server before each test. */
 const handlers = [
@@ -59,6 +59,16 @@ const handlers = [
         const authorization = request.headers.get('authorization') ?? undefined;
         requestLog.push({ route: 'POST /checkout', authorization });
         return scenario.requiresReauth ? reauthRequired() : HttpResponse.json({ orderId: 'o1' });
+    }),
+    // A file export: the success is bytes, the refusal is problem JSON the client reads as a Blob.
+    http.get(`${API}/export`, () => {
+        requestLog.push({ route: 'GET /export' });
+        return scenario.requiresReauth
+            ? new HttpResponse(JSON.stringify(reauthProblem()), {
+                  status: 401,
+                  headers: { 'content-type': 'application/problem+json' }
+              })
+            : new HttpResponse('a,b', { headers: { 'content-type': 'text/csv' } });
     })
 ];
 
@@ -110,6 +120,22 @@ describe('the REAUTH_REQUIRED step-up flow', () => {
                 });
         });
     });
+
+    it('reads a REAUTH_REQUIRED body that arrives as a Blob, and replays the download', () =>
+        loadHttp().then(({ orvalMutator }) => {
+            // The exports (`exportOrders`, `/account/export/file`) ask for a blob, so axios does not parse.
+            const pending = orvalMutator({ url: '/export', method: 'GET', responseType: 'blob' });
+
+            return waitForPrompt()
+                .then(() => {
+                    scenario.requiresReauth = false;
+                    useReauthPromptStore().resolveStepUp();
+                    return pending;
+                })
+                .then(() => {
+                    expect(routes()).toEqual(['GET /export', 'GET /export']);
+                });
+        }));
 
     it('opens the prompt with the proofs the 401 asked for beyond recency', () => {
         demandedMethods = ['otp'];

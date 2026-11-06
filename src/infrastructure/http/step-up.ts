@@ -14,6 +14,7 @@
 import { instance } from './client.ts';
 import { getFirstApiError, isObjectRecord } from './envelope.ts';
 import { onResponseReject } from './interceptors.ts';
+import { readProblemBody } from './problem.ts';
 import { onResponseRejectWithRefresh } from './refresh.ts';
 import { useReauthPromptStore } from './reauth-prompt.ts';
 import { singleFlight } from './single-flight.ts';
@@ -66,26 +67,29 @@ const methodsOf = (details: unknown): readonly string[] => {
  */
 export const onResponseRejectWithStepUp = (
     error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
-) => {
-    const originalRequest = error.config as AxiosRequestConfigWithRetry | undefined;
-    const { code, details } = getFirstApiError(error.response?.data) ?? {};
+) =>
+    // Read once, here: a `blob` or `text` request (a file export) hands even its refusal over
+    // unparsed, and both the code below and the refresh branch need the same object.
+    (error.response ? readProblemBody(error.response) : Promise.resolve()).then((body) => {
+        const originalRequest = error.config as AxiosRequestConfigWithRetry | undefined;
+        const { code, details } = getFirstApiError(body) ?? {};
 
-    if (
-        error.response?.status === 401 &&
-        code === ERROR_CODES.REAUTH_REQUIRED &&
-        !originalRequest?._steppedUp &&
-        originalRequest
-    ) {
-        demandedMethods = methodsOf(details);
-        return requestFreshSession()
-            .then(() =>
-                instance.request({
-                    ...originalRequest,
-                    _steppedUp: true
-                } as AxiosRequestConfigWithRetry)
-            )
-            .catch(() => onResponseReject(error));
-    }
+        if (
+            error.response?.status === 401 &&
+            code === ERROR_CODES.REAUTH_REQUIRED &&
+            !originalRequest?._steppedUp &&
+            originalRequest
+        ) {
+            demandedMethods = methodsOf(details);
+            return requestFreshSession()
+                .then(() =>
+                    instance.request({
+                        ...originalRequest,
+                        _steppedUp: true
+                    } as AxiosRequestConfigWithRetry)
+                )
+                .catch(() => onResponseReject(error));
+        }
 
-    return onResponseRejectWithRefresh(error);
-};
+        return onResponseRejectWithRefresh(error, body);
+    });

@@ -16,6 +16,7 @@ import { ERROR_CODES } from '@api/error-codes';
 import { ROUTES } from '@api/routes';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { instance } from './client.ts';
+import { getFirstApiError } from './envelope.ts';
 import { onResponseReject } from './interceptors.ts';
 import { toPathname } from './url.ts';
 import type { AxiosError } from 'axios';
@@ -59,13 +60,13 @@ const isAccountRead = (request?: AxiosRequestConfigWithRetry): boolean =>
  * Whether a 401 says the session ended for inactivity — the server's `SESSION_IDLE`.
  *
  * @param error - The failed request.
+ * @param body - Its body as `readProblemBody` read it (a blob or text answer is already an object).
  */
 const isIdleRefusal = (
-    error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
+    error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>,
+    body: unknown
 ): boolean =>
-    error.response?.status === 401 &&
-    (error.response.data as { errors?: { code?: string }[] } | undefined)?.errors?.[0]?.code ===
-        ERROR_CODES.SESSION_IDLE;
+    error.response?.status === 401 && getFirstApiError(body)?.code === ERROR_CODES.SESSION_IDLE;
 
 /**
  * A 401 in `cookie` mode: the cookie no longer names a live session. A visitor who held one is
@@ -85,17 +86,19 @@ const endCookieSession = (error: AxiosError<AxiosResponseErrorData, AxiosRespons
  * request once.
  *
  * @param error - Axios error that triggered the interceptor.
+ * @param body - The error's response body, already read by the caller (`readProblemBody`).
  * @returns The replayed request's response when the refresh succeeds, otherwise the normalized
  *  rejection from {@link onResponseReject}.
  */
 export const onResponseRejectWithRefresh = (
-    error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
+    error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>,
+    body: unknown
 ) => {
     const session = useSessionStore();
     const originalRequest = error.config as AxiosRequestConfigWithRetry | undefined;
     // A staff session that sat idle too long: refreshing would only mint a token for a session the
     // server has already ended, so say why and stop.
-    if (isIdleRefusal(error)) {
+    if (isIdleRefusal(error, body)) {
         session.signalIdle();
         return onResponseReject(error);
     }
