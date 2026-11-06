@@ -100,6 +100,8 @@ Every entry carries a lucide `icon`. Whether a section's chrome renders at all f
 
 An entry in a menu section can also be **`pinned`**: it is lifted out of its menu and rendered as its own button beside the account menu, on every width, wearing its `badge` count and the short live text its `detail` accessor returns. The cart is the canonical case — a shop's cart is never behind a dropdown — and it shows "3 items, €59.97" right on the bar. The drawer still lists a pinned entry under its section.
 
+An entry can also wear a **staff badge**: the count of open work behind its screen. Five of them (orders, payments, returns, preorders, inventory) come from one read, `GET /shop-tasks/summary`, written into `@/kernel/work-counts` by `shop-tasks` and read by each owning module's `badge` accessor; the Tasks, Users and Webhooks badges each read their own list. Every one re-reads on the same triggers (see [`shop-tasks`](../modules/shop-tasks.md#the-nav-badges)).
+
 The phone drawer opens from the **right**, under the hamburger that sits last in the bar. On a phone the `main` section lives only in the drawer; the account and administration menus, the pinned buttons, sign-in and the footer's prose-page links stay on the bar and below the page at every width, so every entry is reachable without the drawer except the `main` ones.
 
 ### The platform's own routes

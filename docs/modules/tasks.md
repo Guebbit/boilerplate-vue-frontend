@@ -120,7 +120,7 @@ validation on and deleting the folder turns it off.
 | Route | Label key | Section | Order | Icon | Badge |
 | --------------- | --------------------------- | --- | --- | --- | --- | --- |
 | `Contact` | `navigation.label-contact` | `main` | 95 | yes | — |
-| `TaskInbox` | `navigation.label-tasks` | `admin` | 45 | yes | — |
+| `TaskInbox` | `navigation.label-tasks` | `admin` | 45 | yes | unassigned plus mine, from `GET /tasks/summary` |
 
 #### Analytics events
 

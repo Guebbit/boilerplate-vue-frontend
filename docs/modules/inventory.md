@@ -144,8 +144,8 @@ Each row registers one Zod schema through the manifest, so enabling the domain t
 
 | Route | Label key | Section | Order | Icon | Badge |
 | ----------------- | ---------------------------- | --- | --- | --- | --- | --- |
-| `InventoryLedger` | `navigation.label-inventory` | `admin` | 47 | yes | — |
-| `PreordersBoard` | `navigation.label-preorders` | `admin` (group Sales) | 58 | yes | — |
+| `InventoryLedger` | `navigation.label-inventory` | `admin` | 47 | yes | `inventory`: levels at or under the low-stock threshold |
+| `PreordersBoard` | `navigation.label-preorders` | `admin` (group Sales) | 58 | yes | `salesPreorders`: late fulfillment orders |
 
 ## Files
 

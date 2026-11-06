@@ -117,6 +117,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     getSession: 'account',
     getShipment: 'delivery',
     getShop: 'shop',
+    getShopWorkSummary: 'shop-tasks',
     getSitemapIndex: 'sitemap',
     getSitemapPages: 'sitemap',
     getSitemapProducts: 'sitemap',

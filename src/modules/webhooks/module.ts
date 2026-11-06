@@ -7,6 +7,7 @@ import { Webhook, History } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
+import { useAutoDisabledBadge } from './composables/use-auto-disabled-badge';
 
 /**
  * Webhook subscription management: who gets notified of what, the signing secret ring, and the
@@ -34,7 +35,9 @@ export default {
             plural: 2,
             order: 48,
             section: 'admin',
-            icon: Webhook
+            icon: Webhook,
+            // Subscriptions the failure guard switched off: the list's own total; see the composable.
+            badge: () => useAutoDisabledBadge()
         },
         {
             name: 'WebhookDeliveries',

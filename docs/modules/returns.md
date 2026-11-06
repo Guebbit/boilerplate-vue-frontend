@@ -191,10 +191,10 @@ Each row registers one Zod schema through the manifest, so enabling the domain t
 
 #### Navigation entries
 
-| Route          | Label key                        | Section   | Order | Icon | Badge |
-| -------------- | -------------------------------- | --------- | ----- | ---- | ----- |
-| `ReturnsList`  | `navigation.label-returns`       | `account` | 92    | yes  | —     |
-| `SalesReturns` | `navigation.label-sales-returns` | `admin`   | 59    | yes  | —     |
+| Route          | Label key                        | Section   | Order | Icon | Badge                                     |
+| -------------- | -------------------------------- | --------- | ----- | ---- | ----------------------------------------- |
+| `ReturnsList`  | `navigation.label-returns`       | `account` | 92    | yes  | —                                         |
+| `SalesReturns` | `navigation.label-sales-returns` | `admin`   | 59    | yes  | `returns`: returns waiting for a decision |
 
 ## Files
 

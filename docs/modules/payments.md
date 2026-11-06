@@ -180,9 +180,9 @@ The rest of the module is components, schemas and a store contributed to the mod
 
 #### Navigation entries
 
-| Route          | Label key                   | Section | Order | Icon | Badge |
-| -------------- | --------------------------- | ------- | ----- | ---- | ----- |
-| `PaymentsList` | `navigation.label-payments` | `admin` | 56    | yes  | —     |
+| Route          | Label key                   | Section | Order | Icon | Badge                                      |
+| -------------- | --------------------------- | ------- | ----- | ---- | ------------------------------------------ |
+| `PaymentsList` | `navigation.label-payments` | `admin` | 56    | yes  | `salesPayments`: the rows needing a person |
 
 Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 

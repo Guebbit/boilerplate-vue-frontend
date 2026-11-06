@@ -19098,7 +19098,7 @@ export const ListRefundsResponse = zod.strictObject({
     })
 });
 /**
- * Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`), card refunds the provider refused for good (`refused_refund`: shown at once, the money has to go back another way), and refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age). A canceled order's refund is one of them, because its record opens before the provider is asked. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`.
+ * Only problems still recorded on a document, so a fixed one disappears. Six kinds, each source capped at 100 rows: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`); card refunds the provider refused for good (`refused_refund`: shown at once, the money has to go back another way); refunds the provider took back after settling them (`reversed_refund`); an open refund an outside refund left no room for (`refund_exceeds_remaining`); refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age); and disputes the shop has to answer (`dispute_needs_response`, with its deadline). A canceled order's refund is one of them, because its record opens before the provider is asked. Oldest first. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`.
  * @summary Payments that need a person (staff)
  */
 export const listPaymentAttentionResponseItemsItemOrderIdMax = 64;
@@ -22693,6 +22693,22 @@ export const GetShopResponse = zod.strictObject({
     termsVersion: zod.string(),
     backorderPromiseDays: zod.number().min(1),
     timeZone: zod.string()
+});
+/**
+ * One count per staff screen that has a badge: the same number the screen's own list shows, so a badge and its screen never disagree. A count is present only when the caller may open that screen; zero is sent as `0`, never left out. Every count is read as the caller (a person's session, never an API key), so it is the caller's own jurisdiction. Never cached: it is one person's view.
+ * @summary Open work behind the staff navigation badges
+ */
+export const getShopWorkSummaryResponseSalesOrdersMin = 0;
+export const getShopWorkSummaryResponseSalesPaymentsMin = 0;
+export const getShopWorkSummaryResponseReturnsMin = 0;
+export const getShopWorkSummaryResponseSalesPreordersMin = 0;
+export const getShopWorkSummaryResponseInventoryMin = 0;
+export const GetShopWorkSummaryResponse = zod.strictObject({
+    salesOrders: zod.number().min(getShopWorkSummaryResponseSalesOrdersMin).optional(),
+    salesPayments: zod.number().min(getShopWorkSummaryResponseSalesPaymentsMin).optional(),
+    returns: zod.number().min(getShopWorkSummaryResponseReturnsMin).optional(),
+    salesPreorders: zod.number().min(getShopWorkSummaryResponseSalesPreordersMin).optional(),
+    inventory: zod.number().min(getShopWorkSummaryResponseInventoryMin).optional()
 });
 /**
  * The one address a search engine needs: it lists `pages.xml` and one `products-{page}.xml` per run of public products. Always an index, so the address the frontend's `robots.txt` names never changes as the catalogue grows. Public; built from the live catalogue on each request and cacheable for an hour.

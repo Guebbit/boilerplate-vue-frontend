@@ -203,7 +203,7 @@ Each row registers one Zod schema through the manifest, so enabling the domain t
 | Route | Label key | Section | Order | Icon | Badge |
 | ------------ | ------------------------- | --- | --- | --- | --- | --- |
 | `OrdersList` | `navigation.label-orders` | `account` | 90 | yes | — |
-| `SalesOrders` | `navigation.label-sales-orders` | `admin` | 55 | yes | — |
+| `SalesOrders` | `navigation.label-sales-orders` | `admin` | 55 | yes | `salesOrders`: orders paid and not yet with a carrier |
 
 ## Files
 

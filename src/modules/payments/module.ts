@@ -6,6 +6,7 @@
 import { Landmark } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
+import { useWorkCount } from '@/kernel/work-counts.ts';
 import routes from './routes';
 
 /**
@@ -35,7 +36,9 @@ export default {
             order: 56,
             section: 'admin',
             group: 'navigation.group-sales',
-            icon: Landmark
+            icon: Landmark,
+            // Rows the attention list shows: the shop-tasks summary, see `@/kernel/work-counts`.
+            badge: () => useWorkCount('salesPayments')
         }
     ],
     responseSchemas: () => import('./response-schemas').then((m) => m.paymentsResponseSchemas),

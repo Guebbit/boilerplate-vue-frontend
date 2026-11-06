@@ -6,6 +6,7 @@
 import { Undo2 } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
+import { useWorkCount } from '@/kernel/work-counts.ts';
 import routes from './routes';
 
 /**
@@ -40,7 +41,9 @@ export default {
             order: 59,
             section: 'admin',
             group: 'navigation.group-sales',
-            icon: Undo2
+            icon: Undo2,
+            // Returns waiting for a decision: the shop-tasks summary, see `@/kernel/work-counts`.
+            badge: () => useWorkCount('returns')
         }
     ],
     responseSchemas: () => import('./response-schemas').then((m) => m.returnsResponseSchemas),

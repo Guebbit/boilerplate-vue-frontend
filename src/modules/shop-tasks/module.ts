@@ -2,8 +2,10 @@
  * @module
  * Shop-tasks module manifest. Declares no routes and no menu entry: it is the shop's words and
  * links for the notices the foundation's bell shows, plus the shop's half of the task labels
- * (`task-kind`, `task-category`, `task-link`), which the tasks screens read.
+ * (`task-kind`, `task-category`, `task-link`), which the tasks screens read, and the feed of the
+ * staff nav badge counts (`GET /shop-tasks/summary`, read by the screens through `@/kernel/work-counts`).
  */
+import { defineAsyncComponent } from 'vue';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import { shopNotices } from './notices';
@@ -24,8 +26,13 @@ export default {
     name: 'shop-tasks',
     routes: [],
     notices: shopNotices,
+    responseSchemas: () => import('./response-schemas').then((m) => m.shopTasksResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)
+    },
+    // The feed behind the staff nav badges: mounted with the shell, renders nothing.
+    slots: {
+        'app-bar': [defineAsyncComponent(() => import('./components/ShopWorkFeed.vue'))]
     }
 } satisfies AppModule;

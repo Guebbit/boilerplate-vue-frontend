@@ -7,6 +7,7 @@ import { Users } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
+import { useReviewBadge } from './composables/use-review-badge';
 
 /**
  * User administration: the admin-only list, detail, create and edit screens.
@@ -33,7 +34,9 @@ export default {
             plural: 2,
             order: 50,
             section: 'admin',
-            icon: Users
+            icon: Users,
+            // Live accounts flagged for review: the users list's own total; see the composable.
+            badge: () => useReviewBadge()
         }
     ],
     responseSchemas: () => import('./response-schemas').then((m) => m.usersResponseSchemas),

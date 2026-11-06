@@ -6,6 +6,7 @@
 import { ClipboardList, ReceiptText } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
+import { useWorkCount } from '@/kernel/work-counts.ts';
 import routes from './routes';
 
 /**
@@ -39,7 +40,9 @@ export default {
             order: 55,
             section: 'admin',
             group: 'navigation.group-sales',
-            icon: ClipboardList
+            icon: ClipboardList,
+            // Orders paid and not yet with a carrier: the shop-tasks summary, see `@/kernel/work-counts`.
+            badge: () => useWorkCount('salesOrders')
         }
     ],
     tours: [

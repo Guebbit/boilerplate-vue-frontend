@@ -117,6 +117,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "GET", pattern: /^\/returns\/options$/, schemaName: "GetReturnOptionsResponse", bodySchemaName: undefined, module: "returns", noRefresh: false },
     { method: "GET", pattern: /^\/returns$/, schemaName: "ListReturnsResponse", bodySchemaName: undefined, module: "returns", noRefresh: false },
     { method: "POST", pattern: /^\/returns$/, schemaName: "CreateReturnResponse", bodySchemaName: "CreateReturnBody", module: "returns", noRefresh: false },
+    { method: "GET", pattern: /^\/shop-tasks\/summary$/, schemaName: "GetShopWorkSummaryResponse", bodySchemaName: undefined, module: "shop-tasks", noRefresh: false },
     { method: "GET", pattern: /^\/shop$/, schemaName: "GetShopResponse", bodySchemaName: undefined, module: "shop", noRefresh: false },
     { method: "GET", pattern: /^\/sitemap\/index\.xml$/, schemaName: "GetSitemapIndexResponse", bodySchemaName: undefined, module: "sitemap", noRefresh: false },
     { method: "GET", pattern: /^\/sitemap\/pages\.xml$/, schemaName: "GetSitemapPagesResponse", bodySchemaName: undefined, module: "sitemap", noRefresh: false },

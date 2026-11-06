@@ -157,7 +157,7 @@ session without `read:Notification`.
 | Clear all       | With tabs: `DELETE /notifications?audience=` (`own` or `staff`), the tab in view, one call; the server filters. Without tabs: the unfiltered bulk call.                                                                                                                                                                                                       |
 | Focus           | Moves into the panel on open; Escape closes it and returns focus to the bell.                                                                                                                                                                                                                                                                                 |
 
-Staff badges: see `nav-badges-open-work`.
+Staff nav badges count open work, not unread notices, so opening the bell never empties them: see [`shop-tasks`](./shop-tasks.md#the-nav-badges). A staff notice arriving only tells them to re-read.
 
 ## State
 

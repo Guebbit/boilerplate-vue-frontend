@@ -119,7 +119,7 @@ Each row registers one Zod schema through the manifest, so enabling the domain t
 
 | Route | Label key | Section | Order | Icon | Badge |
 | ----------- | ----------------------------- | --- | --- | --- | --- | --- |
-| `UsersList` | `navigation.label-users-list` | `admin` | 50 | yes | — |
+| `UsersList` | `navigation.label-users-list` | `admin` | 50 | yes | live accounts flagged for review (its own list total) |
 
 ## Files
 

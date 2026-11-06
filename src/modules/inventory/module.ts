@@ -8,6 +8,7 @@ import { defineAsyncComponent } from 'vue';
 import { CalendarClock, Warehouse } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
+import { useWorkCount } from '@/kernel/work-counts.ts';
 import routes from './routes';
 
 /**
@@ -36,7 +37,9 @@ export default {
             plural: 1,
             order: 47,
             section: 'admin',
-            icon: Warehouse
+            icon: Warehouse,
+            // Levels at or under the low-stock threshold: the shop-tasks summary, see `@/kernel/work-counts`.
+            badge: () => useWorkCount('inventory')
         },
         {
             name: 'PreordersBoard',
@@ -45,7 +48,9 @@ export default {
             order: 58,
             section: 'admin',
             group: 'navigation.group-sales',
-            icon: CalendarClock
+            icon: CalendarClock,
+            // Late fulfillment orders: the shop-tasks summary, see `@/kernel/work-counts`.
+            badge: () => useWorkCount('salesPreorders')
         }
     ],
     tours: [

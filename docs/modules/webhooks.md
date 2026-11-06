@@ -135,7 +135,7 @@ Each row registers one Zod schema through the manifest, so enabling the domain t
 
 | Route | Label key | Section | Order | Icon | Badge |
 | ------------------- | ------------------------------------- | --- | --- | --- | --- | --- |
-| `WebhooksList` | `navigation.label-webhooks` | `admin` | 48 | yes | — |
+| `WebhooksList` | `navigation.label-webhooks` | `admin` | 48 | yes | subscriptions the failure guard switched off (its own list total) |
 | `WebhookDeliveries` | `navigation.label-webhook-deliveries` | `admin` | 49 | yes | — |
 
 Two entries from one manifest — the same split the `tasks` module uses for its public form vs. its admin tasks page: subscriptions and the delivery log are different jobs an operator reaches for at different times.

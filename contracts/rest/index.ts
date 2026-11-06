@@ -6703,6 +6703,37 @@ export interface Shop {
 }
 
 /**
+ * The open work behind each staff navigation badge. Each key is present only when the caller may open the screen it counts.
+ */
+export interface ShopWorkSummary {
+    /**
+     * Orders paid and not yet with a carrier (`paid` or `processing`), held ones included. Needs `display:Order`.
+     * @minimum 0
+     */
+    salesOrders?: number;
+    /**
+     * The rows `GET /payments/attention` lists, all its sources together (each capped at 100). Transfers still awaited are not counted: the buyer acts there. Needs `display:Payment`.
+     * @minimum 0
+     */
+    salesPayments?: number;
+    /**
+     * Returns waiting for a decision (`status=requested`). Needs `read:Return`.
+     * @minimum 0
+     */
+    returns?: number;
+    /**
+     * Preorder fulfillment orders past their expected date (`late=true`). Needs `display:Order`.
+     * @minimum 0
+     */
+    salesPreorders?: number;
+    /**
+     * Stock levels at or under the low-stock threshold (`lowOnly=true`). Needs `read:StockLevel`.
+     * @minimum 0
+     */
+    inventory?: number;
+}
+
+/**
  * A sitemap file (sitemaps.org 0.9): an `urlset` of `url` entries, or a `sitemapindex` of `sitemap` entries. Served as `application/xml`, not JSON.
  */
 export type SitemapDocument = string;
@@ -11798,7 +11829,7 @@ export const listRefunds = (
 };
 
 /**
- * Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`), card refunds the provider refused for good (`refused_refund`: shown at once, the money has to go back another way), and refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age). A canceled order's refund is one of them, because its record opens before the provider is asked. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`.
+ * Only problems still recorded on a document, so a fixed one disappears. Six kinds, each source capped at 100 rows: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`); card refunds the provider refused for good (`refused_refund`: shown at once, the money has to go back another way); refunds the provider took back after settling them (`reversed_refund`); an open refund an outside refund left no room for (`refund_exceeds_remaining`); refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age); and disputes the shop has to answer (`dispute_needs_response`, with its deadline). A canceled order's refund is one of them, because its record opens before the provider is asked. Oldest first. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`.
  * @summary Payments that need a person (staff)
  */
 export const listPaymentAttention = (
@@ -12460,6 +12491,16 @@ export const getShop = (options?: SecondParameter<typeof orvalMutator<Shop>>) =>
 };
 
 /**
+ * One count per staff screen that has a badge: the same number the screen's own list shows, so a badge and its screen never disagree. A count is present only when the caller may open that screen; zero is sent as `0`, never left out. Every count is read as the caller (a person's session, never an API key), so it is the caller's own jurisdiction. Never cached: it is one person's view.
+ * @summary Open work behind the staff navigation badges
+ */
+export const getShopWorkSummary = (
+    options?: SecondParameter<typeof orvalMutator<ShopWorkSummary>>
+) => {
+    return orvalMutator<ShopWorkSummary>({ url: `/shop-tasks/summary`, method: 'GET' }, options);
+};
+
+/**
  * The one address a search engine needs: it lists `pages.xml` and one `products-{page}.xml` per run of public products. Always an index, so the address the frontend's `robots.txt` names never changes as the catalogue grows. Public; built from the live catalogue on each request and cacheable for an hour.
  * @summary Sitemap index
  */
@@ -12994,6 +13035,7 @@ export type DeleteNotificationByIdResult = NonNullable<
     Awaited<ReturnType<typeof deleteNotificationById>>
 >;
 export type GetShopResult = NonNullable<Awaited<ReturnType<typeof getShop>>>;
+export type GetShopWorkSummaryResult = NonNullable<Awaited<ReturnType<typeof getShopWorkSummary>>>;
 export type GetSitemapIndexResult = NonNullable<Awaited<ReturnType<typeof getSitemapIndex>>>;
 export type GetSitemapPagesResult = NonNullable<Awaited<ReturnType<typeof getSitemapPages>>>;
 export type GetSitemapProductsResult = NonNullable<Awaited<ReturnType<typeof getSitemapProducts>>>;
