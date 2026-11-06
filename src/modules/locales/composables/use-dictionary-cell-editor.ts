@@ -250,10 +250,12 @@ export function useDictionaryCellEditor(
 
     /**
      * Records a keystroke in the cell's draft; a cell being typed into is no longer in error.
+     * The field reports `null` when it is cleared; that is an empty draft, and the blur that
+     * follows leaves the stored entry alone (only Enter or the clear button removes one).
      */
-    const handleCellInput = (language: Language, key: string, draft: string) => {
+    const handleCellInput = (language: Language, key: string, draft: string | null) => {
         const id = cellId(language.tag, key);
-        drafts.value[id] = draft;
+        drafts.value[id] = draft ?? '';
         if (cellErrors.value[id]) forgetError(id);
     };
 

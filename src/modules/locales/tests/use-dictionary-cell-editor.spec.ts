@@ -143,6 +143,15 @@ describe('handleCellBlur', () => {
         expect(addEntry).not.toHaveBeenCalled();
     });
 
+    it('treats a cleared field (null) as an empty draft: blur writes and removes nothing', () => {
+        const { editor } = editorWith({ greeting: entry('greeting', 'Hello') });
+        editor.handleCellInput(ENGLISH, 'greeting', null);
+
+        expect(editor.handleCellBlur(ENGLISH, 'greeting')).toBeUndefined();
+        expect(editEntry).not.toHaveBeenCalled();
+        expect(addEntry).not.toHaveBeenCalled();
+    });
+
     it('creates an entry in the chosen app when the cell was empty', () => {
         const { editor, afterWrite } = editorWith();
         editor.handleCellInput(ENGLISH, 'greeting', 'Ciao');
