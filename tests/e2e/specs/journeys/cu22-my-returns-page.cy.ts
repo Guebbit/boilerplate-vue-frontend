@@ -16,8 +16,14 @@
  */
 import { centsOf, cents, paymentOfOrder } from '../../../support/e2e/steps';
 
-/** The reason support gives for declining, which the customer must be able to read. */
-const DECLINE_REASON = 'The photos show ordinary wear, not a fault.';
+/** The reason code support picks for declining, as the customer reads it on the page. */
+const DECLINE_REASON = 'no_defect_found';
+
+/** What the customer reads for {@link DECLINE_REASON}. */
+const DECLINE_REASON_TEXT = 'No defect found';
+
+/** Support's own words beside the code: free text, which the customer must be able to read. */
+const DECLINE_MESSAGE = 'The photos show ordinary wear, not a fault.';
 
 /** What the warehouse keeps back from the withdrawal's refund, in major units and in cents. */
 const DEDUCTION = 3;
@@ -107,7 +113,8 @@ describe('CU22 · My returns page tells me where each one stands', () => {
                 cy.subjectId('order.deliveredRecent').then((orderId) => {
                     cy.step('support declines one request, with a reason the customer will read');
                     cy.apiAs('support', 'POST', `/returns/${declinedId}/decline`, {
-                        reason: DECLINE_REASON
+                        reason: DECLINE_REASON,
+                        message: DECLINE_MESSAGE
                     });
 
                     cy.step(
@@ -174,7 +181,11 @@ describe('CU22 · My returns page tells me where each one stands', () => {
                     cy.get('#return-target').should('exist');
                     cy.get('[data-test=return-decline-reason-text]').should(
                         'contain.text',
-                        DECLINE_REASON
+                        DECLINE_REASON_TEXT
+                    );
+                    cy.get('[data-test=return-decline-message-text]').should(
+                        'contain.text',
+                        DECLINE_MESSAGE
                     );
                     cy.get('[data-test=return-approve]').should('not.exist');
                     cy.get('[data-test=return-receive]').should('not.exist');
