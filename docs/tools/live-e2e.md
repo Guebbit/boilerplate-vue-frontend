@@ -206,7 +206,7 @@ export NODE_PAYMENT_WEBHOOK_SECRET=any-throwaway-secret   # a spec signs a payme
 
 # The shop's identity, printed on invoices and in every order mail's withdrawal notice. Boot refuses without it.
 export NODE_SHOP_LEGAL_NAME='Guebbit Demo Shop Srl' NODE_SHOP_STREET='Via Roma 1' NODE_SHOP_CITY=Milano \
-       NODE_SHOP_ZIP=20100 NODE_SHOP_EMAIL=shop@example.com NODE_SHOP_PHONE='+39 02 1234567'
+       NODE_SHOP_ZIP=20100 NODE_SUPPORT_EMAIL=support@example.com NODE_SHOP_PHONE='+39 02 1234567'
 # Its country and clock, and the VAT pair (`orders` and `products` refuse to boot without them too).
 export NODE_SHOP_COUNTRY=IT NODE_SHOP_TIMEZONE=Europe/Rome NODE_VAT_RATE_DEFAULT=0.22 NODE_VAT_RATE_REDUCED=0.10
 
