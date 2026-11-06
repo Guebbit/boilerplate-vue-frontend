@@ -481,6 +481,28 @@ describe('useProductsStore', () => {
 
             expect(store.products).toEqual({});
         });
+
+        // A product page open across a sign-out must not be left empty: its watcher asks again.
+        it('refetches what a mounted watcher shows', async () => {
+            const store = useProductsStore();
+            const session = useSessionStore();
+            session.viewer = asStub<SessionViewer>({ id: 'a', email: 'a@example.com' });
+            const scope = effectScope();
+            scope.run(() => store.watchProduct(() => 'p1'));
+            await flushPromises();
+            const before = productReads();
+            expect(before).toBeGreaterThan(0);
+
+            try {
+                session.viewer = asStub<SessionViewer>({ id: 'b', email: 'b@example.com' });
+                await flushPromises();
+
+                expect(productReads()).toBe(before + 1);
+                expect(store.products.p1).toBeDefined();
+            } finally {
+                scope.stop();
+            }
+        });
     });
 
     describe('hardDeleteProduct', () => {

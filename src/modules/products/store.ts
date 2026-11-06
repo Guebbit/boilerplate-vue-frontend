@@ -179,6 +179,7 @@ export const useProductsStore = defineStore('products', () => {
         updateOne: updateProduct,
         deleteOne: deleteProduct,
         deleteTarget,
+        resetAll,
         fetchAny,
         fetchMultiple
     } = useStructureCrudApi<
@@ -346,9 +347,18 @@ export const useProductsStore = defineStore('products', () => {
      * The cache scope is the language alone, but what an answer holds depends on who asked: a
      * staff member's draft-language text and admin-only rows must not outlive their sign-out in
      * the same tab.
+     *
+     * Two steps: the toolkit's `resetAll` empties the store's own dictionary and every watcher
+     * refetches under the new viewer; the cache sweep then drops what NO watcher shows. A blanket
+     * `removeQueries` would also pull the entry out from under a mounted watcher, which never
+     * refetches it.
      */
     useResetOnViewerChange(() => {
-        queryClient.removeQueries({ queryKey: [PRODUCTS_RESOURCE_KEY] });
+        resetAll();
+        queryClient.removeQueries({
+            queryKey: [PRODUCTS_RESOURCE_KEY],
+            predicate: (query) => query.getObserversCount() === 0
+        });
     });
 
     /**
