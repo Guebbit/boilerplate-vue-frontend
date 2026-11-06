@@ -1,17 +1,13 @@
 /**
  * @module
- * `composables/idempotent-calls.ts` — the keyed calls' transport rules, on their own: the in-flight
+ * `idempotent-calls.ts` — the keyed calls' transport rules, on their own: the in-flight
  * 409 is asked again under the SAME key once per delay, any other refusal is rethrown at once, and
  * a merge refusal is final only when the server answered 400, 413 or 422.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkout as apiCheckout } from '@api';
 import type { CheckoutRequest } from '@types';
-import {
-    IDEMPOTENCY_KEY_HEADER,
-    isMergeRefusedForGood,
-    sendCheckout
-} from '../composables/idempotent-calls';
+import { IDEMPOTENCY_KEY_HEADER, isMergeRefusedForGood, sendCheckout } from '../idempotent-calls';
 import {
     apiRejection,
     lostAnswer,

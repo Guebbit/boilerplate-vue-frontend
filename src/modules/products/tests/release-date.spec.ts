@@ -4,7 +4,7 @@
  * logic is comparing two strings: nothing here may read or shift a date, in any host zone.
  */
 import { describe, expect, it } from 'vitest';
-import { dayChange, isReleaseDateChanged } from '../domain';
+import { dayChange, isReleaseDateChanged } from '../release-date.ts';
 
 describe('isReleaseDateChanged', () => {
     const original = '2027-03-15';

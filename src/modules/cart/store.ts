@@ -36,17 +36,9 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { invalidateProductsCache } from '@/modules/products';
 import { changedMergeLines, classifyCheckoutError, emptyCart, subtractGuestLines } from './domain';
 import type { GuestCartLine, MergeReportLine } from './domain';
-import { checkoutKeyFor, endCheckoutAttempt } from './composables/checkout-attempt-storage';
-import {
-    IDEMPOTENCY_KEY_HEADER,
-    isMergeRefusedForGood,
-    sendCheckout
-} from './composables/idempotent-calls';
-import {
-    linesOfMergeAttempt,
-    readMergeAttempt,
-    writeMergeAttempt
-} from './composables/guest-cart-storage';
+import { checkoutKeyFor, endCheckoutAttempt } from './checkout-attempt-storage';
+import { IDEMPOTENCY_KEY_HEADER, isMergeRefusedForGood, sendCheckout } from './idempotent-calls';
+import { linesOfMergeAttempt, readMergeAttempt, writeMergeAttempt } from './guest-cart-storage';
 import { useGuestCart } from './composables/use-guest-cart';
 import { logger } from '@/infrastructure/utils/logger.ts';
 

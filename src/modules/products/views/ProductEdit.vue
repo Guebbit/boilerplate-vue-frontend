@@ -56,8 +56,8 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { backorderPromiseDays } from '@/infrastructure/shop.ts';
-import { toPatchTranslations } from '../composables/translations-body.ts';
-import { dayChange } from '../domain';
+import { toPatchTranslations } from '../translations-body.ts';
+import { dayChange } from '../release-date.ts';
 import { useReleaseDateConfirm } from '../composables/use-release-date-confirm.ts';
 import type { ProductTranslationsWrite, TaxClass } from '@types';
 

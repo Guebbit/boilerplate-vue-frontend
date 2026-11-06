@@ -5,7 +5,7 @@
  * PATCH (RFC 7396 — the only way to clear a field).
  */
 import { describe, expect, it } from 'vitest';
-import { toCreateTranslations, toPatchTranslations } from '../composables/translations-body.ts';
+import { toCreateTranslations, toPatchTranslations } from '../translations-body.ts';
 
 describe('toCreateTranslations', () => {
     it('leaves a blank description out — there is nothing to clear on a new product', () => {

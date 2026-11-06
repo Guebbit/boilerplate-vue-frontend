@@ -3,7 +3,7 @@
  * The save body sent for the entity-translations editor: a blank field clears, never drops.
  */
 import { describe, expect, it } from 'vitest';
-import { toUpdateEntityTranslationsBody } from '../domain/translation-drafts.ts';
+import { toUpdateEntityTranslationsBody } from '../domain';
 
 describe('toUpdateEntityTranslationsBody', () => {
     it('sends null for a blank field so the stored value is cleared', () => {

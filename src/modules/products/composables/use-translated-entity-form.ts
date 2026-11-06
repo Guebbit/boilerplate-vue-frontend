@@ -17,7 +17,7 @@ import {
     translationTabErrorCountsFromZodError,
     translationTabErrorCountsFromServerError,
     type TranslationTabErrorCounts
-} from './translation-tab-errors.ts';
+} from '../translation-tab-errors.ts';
 import type { ProductTranslationsWrite } from '@types';
 
 /**

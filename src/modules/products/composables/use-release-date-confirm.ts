@@ -12,7 +12,7 @@ import { useI18n } from 'vue-i18n';
 import { previewReleaseDateImpact, previewRestockDateImpact } from '@api';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
-import { isReleaseDateChanged } from '../domain';
+import { isReleaseDateChanged } from '../release-date.ts';
 
 /**
  * What the preview counts, as the dialog reads it.

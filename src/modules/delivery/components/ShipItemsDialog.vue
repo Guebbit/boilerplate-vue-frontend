@@ -15,7 +15,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useDeliveryStore } from '../store.ts';
-import { readShipLines, shippableLines } from '../domain/ship-lines.ts';
+import { readShipLines, shippableLines } from '../domain';
 import type { FulfillmentOrder } from '@types';
 
 /**

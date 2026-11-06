@@ -37,7 +37,7 @@ import { useTranslationTabOrder } from '@/ui/composables/use-translation-tab-ord
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { Translation } from '@types';
-import { toUpdateEntityTranslationsBody } from '../domain/translation-drafts.ts';
+import { toUpdateEntityTranslationsBody } from '../domain';
 
 /**
  * Localized dictionary helper.

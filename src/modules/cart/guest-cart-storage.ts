@@ -11,8 +11,8 @@
  */
 import { parseJsonSafe, readJson, writeJson } from '@/infrastructure/utils/safe-storage.ts';
 import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
-import { parseGuestCart, parseMergeAttempt, parseStoredGuestCart } from '../domain';
-import type { GuestCartLine, MergeAttempt } from '../domain';
+import { parseGuestCart, parseMergeAttempt, parseStoredGuestCart } from './domain';
+import type { GuestCartLine, MergeAttempt } from './domain';
 
 /**
  * The storage key. Also what the `storage` event names when another tab changes the cart.

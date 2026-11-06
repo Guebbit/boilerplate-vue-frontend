@@ -15,7 +15,7 @@ import {
     readMergeAttempt,
     writeGuestCart,
     writeMergeAttempt
-} from './guest-cart-storage';
+} from '../guest-cart-storage';
 
 /**
  * Starts the guest cart for the lifetime of the calling scope.

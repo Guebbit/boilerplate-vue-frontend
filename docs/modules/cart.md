@@ -65,7 +65,7 @@ order and the header keeps showing items the server has already turned into one.
 The store keeps every write to `cart` and its ordering rules (tickets, epoch, seeding, the reset barrier)
 in one file, so "can a poll land over a merge?" is answered by reading one place. What touches no store
 state — the key header, the in-flight retry ladder, the empty-cart shape — lives in
-`composables/idempotent-calls.ts` and `domain/empty-cart.ts`.
+`idempotent-calls.ts` and `domain/empty-cart.ts`.
 
 Stepping a line's quantity does not call the store directly. `composables/use-line-quantity.ts`
 debounces per-product clicks into one trailing request each — three quick clicks on `+` would put
@@ -111,15 +111,15 @@ sequenceDiagram
     S-->>G: the cart page's alert for the lines that changed or are short
 ```
 
-| Piece                               | What it does                                                                                                                                                                              |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `domain/guest-cart.ts`              | The rules: a line already there grows (the `POST /cart/items` rule), a line stops at 999, a cart holds at most 100 products, storage is never trusted.                                    |
-| `composables/guest-cart-storage.ts` | Reads and writes the two `localStorage` keys (the list and the pending merge), guarded: blocked or full storage costs the next visit, never this one.                                     |
-| `composables/use-guest-cart.ts`     | `guestLines` and its actions, saved on every change and re-read when another tab changes the key; the cart store sends it (`mergeGuestCart`) and `badgeQuantity` falls back to its total. |
-| `components/MergeReportAlert.vue`   | The cart page's merge alert: reads the store's report, renders nothing while it is empty.                                                                                                 |
-| `components/SignedInCart.vue`       | The signed-in page: lines, shipping, addresses, payment and checkout.                                                                                                                     |
-| `components/GuestCart.vue`          | The guest's page: priced lines, steppers, "Sign in to check out". No shipping, address or payment: checkout needs an account.                                                             |
-| `views/Cart.vue`                    | The route's screen: `GuestCart` for a guest, `SignedInCart` for a signed-in visitor.                                                                                                      |
+| Piece                             | What it does                                                                                                                                                                              |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `domain/guest-cart.ts`            | The rules: a line already there grows (the `POST /cart/items` rule), a line stops at 999, a cart holds at most 100 products, storage is never trusted.                                    |
+| `guest-cart-storage.ts`           | Reads and writes the two `localStorage` keys (the list and the pending merge), guarded: blocked or full storage costs the next visit, never this one.                                     |
+| `composables/use-guest-cart.ts`   | `guestLines` and its actions, saved on every change and re-read when another tab changes the key; the cart store sends it (`mergeGuestCart`) and `badgeQuantity` falls back to its total. |
+| `components/MergeReportAlert.vue` | The cart page's merge alert: reads the store's report, renders nothing while it is empty.                                                                                                 |
+| `components/SignedInCart.vue`     | The signed-in page: lines, shipping, addresses, payment and checkout.                                                                                                                     |
+| `components/GuestCart.vue`        | The guest's page: priced lines, steppers, "Sign in to check out". No shipping, address or payment: checkout needs an account.                                                             |
+| `views/Cart.vue`                  | The route's screen: `GuestCart` for a guest, `SignedInCart` for a signed-in visitor.                                                                                                      |
 
 The route is `access: 'open'` and asks no permission: a guest passes, and so does every signed-in
 account, staff included, since every account shops.
@@ -327,7 +327,7 @@ included), the cart's lines
 and the selected shipping method (`domain/checkout-attempt.ts`). The same order asked again is the
 same call; anything else gets a fresh key, whoever changed it (the wishlist, the stock poll, a
 merge, a reorder), without any of them having to remember to say so. The attempt is saved in
-`sessionStorage` (`composables/checkout-attempt-storage.ts`), so a reload in the middle of an
+`sessionStorage` (`checkout-attempt-storage.ts`), so a reload in the middle of an
 unanswered checkout still replays the order instead of placing a second one.
 
 | What came back              | The key                           | What the page does                                                                        |
@@ -448,12 +448,12 @@ in Faro. See [Observability](../tools/observability.md#event-taxonomy).
 
 | File                                        | What it is                                                                                                                                                                          | Explained in                          |
 | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `composables/guest-cart-storage.ts`         | Reads and writes the guest cart's `localStorage` key, and the pending merge's, guarded against blocked or full storage.                                                             | [read](../theory/layers.md)           |
+| `guest-cart-storage.ts`                     | Reads and writes the guest cart's `localStorage` key, and the pending merge's, guarded against blocked or full storage.                                                             | [read](../theory/layers.md)           |
 | `composables/use-cart-stock-poll.ts`        | Starts the opt-in stock poll for the lifetime of the page's setup: the interval, the visibility pause, the stop on logout. Registers nothing when the knob is off.                  | [read](../theory/layers.md)           |
 | `composables/use-cart-focus-refresh.ts`     | Reads the cart again when the shopper comes back to the page: the window gets focus or the tab becomes visible.                                                                     | [read](../theory/layers.md)           |
 | `composables/use-guest-cart.ts`             | The guest cart as a composable: the list, its actions, the copy-taking from another tab and the merge key rules.                                                                    | [read](../theory/layers.md)           |
-| `composables/checkout-attempt-storage.ts`   | Where the checkout attempt in progress is remembered: its key, its person and its fingerprint, in `sessionStorage`, guarded; also picks the key for the next checkout.              | [read](../theory/layers.md)           |
-| `composables/idempotent-calls.ts`           | The transport rules of the keyed calls: the `Idempotency-Key` header, the in-flight retry ladder and which merge refusals are final. Stateless.                                     | [read](../theory/layers.md)           |
+| `checkout-attempt-storage.ts`               | Where the checkout attempt in progress is remembered: its key, its person and its fingerprint, in `sessionStorage`, guarded; also picks the key for the next checkout.              | [read](../theory/layers.md)           |
+| `idempotent-calls.ts`                       | The transport rules of the keyed calls: the `Idempotency-Key` header, the in-flight retry ladder and which merge refusals are final. Stateless.                                     | [read](../theory/layers.md)           |
 | `composables/use-line-quantity.ts`          | Debounces per-product stepper clicks into one trailing API call each, answering the visitor's own last click locally so the UI never waits on the round trip.                       | [read](../theory/layers.md)           |
 | `domain/checkout-errors.ts`                 | Pure rules over plain data — no store, no component, no axios. Classifies a checkout rejection into one of its verdicts.                                                            | [read](../theory/domain-layer.md)     |
 | `domain/guest-cart.ts`                      | Pure rules over plain data — no store, no component, no axios. The guest cart's lines, caps and read-back.                                                                          | [read](../theory/domain-layer.md)     |

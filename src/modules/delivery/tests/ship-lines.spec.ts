@@ -4,7 +4,7 @@
  * way the quantities, or the record counts, can disagree with what the server would accept.
  */
 import { describe, expect, it } from 'vitest';
-import { readShipLines, shipmentCount, shippableLines } from '../domain/ship-lines.ts';
+import { readShipLines, shipmentCount, shippableLines } from '../domain';
 import { aFulfillmentOrder, aShipment } from '../../../../tests/support/unit/fixtures.ts';
 
 /**

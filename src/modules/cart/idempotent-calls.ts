@@ -7,7 +7,7 @@
 import { checkout as apiCheckout } from '@api';
 import type { CheckoutRequest } from '@types';
 import { isTransportFailure } from '@/infrastructure/utils/errors';
-import { classifyCheckoutError } from '../domain';
+import { classifyCheckoutError } from './domain';
 
 /**
  * The header the paired backend's `idempotency` middleware reads off `POST /cart/checkout` — see

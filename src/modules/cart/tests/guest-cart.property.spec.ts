@@ -1,7 +1,7 @@
 /**
  * @module
  * Property-based tests — the guest cart's pure domain (`domain/guest-cart.ts`) and where it is saved
- * (`composables/guest-cart-storage.ts`).
+ * (`guest-cart-storage.ts`).
  *
  * The example specs (`guest-cart.spec.ts`, `guest-cart-storage.spec.ts`) own the exact boundaries:
  * the 999th unit, the 101st product, one named bad line. These own what only generation can claim:
@@ -30,7 +30,7 @@ import {
     subtractGuestLines
 } from '../domain';
 import type { GuestCartLine } from '../domain';
-import { readGuestCart, writeGuestCart } from '../composables/guest-cart-storage';
+import { readGuestCart, writeGuestCart } from '../guest-cart-storage';
 
 /**
  * One seed for the file. `endOnFailure` stops at the first shrunk counterexample, short enough to

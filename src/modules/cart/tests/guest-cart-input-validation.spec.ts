@@ -7,7 +7,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { MAX_GUEST_LINE_QUANTITY, addGuestLine, setGuestLineQuantity } from '../domain';
-import { readGuestCart, writeGuestCart } from '../composables/guest-cart-storage';
+import { readGuestCart, writeGuestCart } from '../guest-cart-storage';
 
 /**
  * One seed for the file.

@@ -14,7 +14,7 @@ import {
     GUEST_MERGE_ATTEMPT_STORAGE_KEY,
     readGuestCart,
     writeGuestCart
-} from '../composables/guest-cart-storage';
+} from '../guest-cart-storage';
 import { getCart, getCartSummary, mergeCart } from '@api';
 import * as schemas from '@api/schemas';
 import { loadLocale } from '@/i18n';

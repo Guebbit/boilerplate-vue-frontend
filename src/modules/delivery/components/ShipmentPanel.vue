@@ -22,7 +22,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useDeliveryStore } from '../store.ts';
-import { shipmentCount } from '../domain/ship-lines.ts';
+import { shipmentCount } from '../domain';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import FulfillmentOrderCard from './FulfillmentOrderCard.vue';

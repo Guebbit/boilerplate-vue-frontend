@@ -11,7 +11,7 @@ import {
     translationTabErrorCounts,
     translationTabErrorCountsFromServerError,
     translationTabErrorCountsFromZodError
-} from '../composables/translation-tab-errors';
+} from '../translation-tab-errors';
 
 describe('translationTabErrorCounts', () => {
     it('buckets issues by the locale their path names', () => {

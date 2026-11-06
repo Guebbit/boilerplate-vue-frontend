@@ -233,8 +233,7 @@ flowchart LR
 For a product flow you typically move through:
 
 - `src/modules/products/views/ProductsList.vue`
-- `src/modules/<name>/composables/<useThing>.ts` (optional — products has two,
-  `use-release-date-confirm.ts` and `translation-tab-errors.ts`)
+- `src/modules/<name>/composables/<useThing>.ts` (optional — products has `use-release-date-confirm.ts`)
 - `src/modules/products/store.ts`
 - `contracts/rest/index.ts` → `listProducts()`
 - `src/infrastructure/http/index.ts`

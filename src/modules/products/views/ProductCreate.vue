@@ -37,7 +37,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
-import { toCreateTranslations } from '../composables/translations-body.ts';
+import { toCreateTranslations } from '../translations-body.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { normalizeAmount, padDecimal } from '@/infrastructure/utils/money.ts';
 import {

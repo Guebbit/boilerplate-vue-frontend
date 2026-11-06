@@ -10,7 +10,7 @@
 import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
 import { readJson, writeJson } from '@/infrastructure/utils/safe-storage.ts';
 import type { CartResponse, CheckoutRequest } from '@types';
-import { checkoutFingerprint } from '../domain';
+import { checkoutFingerprint } from './domain';
 
 /**
  * The storage key.
