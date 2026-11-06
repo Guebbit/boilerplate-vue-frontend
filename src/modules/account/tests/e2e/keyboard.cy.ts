@@ -55,6 +55,8 @@ describe('two-factor dialogs by keyboard', () => {
 
         cy.step('the code prompt ignores Escape');
         cy.get('[data-test=two-factor-remove-email]').click();
+        // Removing asks to confirm first; the code prompt opens after the answer.
+        cy.get('[data-test=app-dialog-confirm]').click();
         expectEscapeLeavesItOpen(`${ACTIVE_OVERLAY} [data-test=two-factor-code-prompt-input]`);
     });
 });
