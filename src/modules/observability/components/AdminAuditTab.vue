@@ -334,6 +334,11 @@ void load();
                     :is="targetLink(item) ? RouterLink : 'span'"
                     v-if="item.targetId"
                     class="whitespace-nowrap"
+                    :class="
+                        targetLink(item)
+                            ? 'inline-flex min-h-11 items-center sm:min-h-0'
+                            : undefined
+                    "
                     data-test="audit-target"
                     :to="targetLink(item)"
                 >

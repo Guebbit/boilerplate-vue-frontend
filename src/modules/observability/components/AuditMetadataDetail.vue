@@ -8,6 +8,7 @@
  */
 import { computed, ref, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 
 /**
  * The entry's `metadata`, as the API returns it: an open object.
@@ -20,6 +21,11 @@ const { metadata } = defineProps<{
  * i18n translator for this component's template.
  */
 const { t } = useI18n();
+
+/**
+ * Button size: large under a finger, small under a mouse.
+ */
+const size = useTouchFriendlySize();
 
 /**
  * Whether the detail is open.
@@ -88,7 +94,7 @@ const pairs = computed(() =>
 <template>
     <div v-if="pairs.length > 0 || changes.length > 0" class="mt-1">
         <v-btn
-            size="x-small"
+            :size="size"
             variant="text"
             data-test="audit-details-toggle"
             :aria-expanded="open ? 'true' : 'false'"
