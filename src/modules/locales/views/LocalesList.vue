@@ -450,6 +450,7 @@ onMounted(() => {
                 class="flex items-center gap-2"
             >
                 <v-chip
+                    class="shrink-0"
                     size="small"
                     variant="tonal"
                     :color="kind === 'backend' ? 'tertiary' : 'secondary'"
