@@ -5,11 +5,10 @@
  * order of two units and opens the ship dialog: Cancel writes nothing, a quantity beyond what
  * remains (or all zeros) shuts the submit, and one unit goes out under a typo of a code. The code
  * is corrected on the shipment, the dialog is shown stale when someone else ships the rest first,
- * and once both parcels are delivered the tracking control is gone and the door answers 409. The
- * buyer ends up with the corrected code only.
+ * and once both parcels are delivered each still has its tracking control, and a delivered parcel's
+ * code is corrected and saves. The buyer ends up with the corrected code only.
  */
-import { loginDevice } from '../../../support/e2e/harness';
-import { eventually, refusedWith } from '../../../support/e2e/steps';
+import { eventually } from '../../../support/e2e/steps';
 import { byTemplate } from '../../../../scripts/e2e/mail-filters';
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
 
@@ -18,6 +17,12 @@ const TYPO = 'TRK-OP3O';
 
 /** The corrected code. */
 const FIXED = 'TRK-OP30';
+
+/** The code the second parcel ships under, and the one it is corrected to once delivered. */
+const SECOND = 'TRK-OP30-B';
+
+/** The correction of the delivered second parcel. */
+const SECOND_FIXED = 'TRK-OP30-C';
 
 /** The slice of an order's fulfillment this story reads. */
 interface FulfillmentLike {
@@ -150,7 +155,7 @@ describe('OP30 · Ship in part, correct a tracking code', () => {
                     'admin',
                     'POST',
                     `/delivery/fulfillment-orders/${fulfillment.fulfillmentOrders[0]?.id ?? ''}/shipments`,
-                    { trackingCode: 'TRK-OP30-B' }
+                    { trackingCode: SECOND }
                 );
             });
             cy.get('[data-test=ship-submit]').should('not.be.disabled').click();
@@ -159,25 +164,27 @@ describe('OP30 · Ship in part, correct a tracking code', () => {
             fulfillmentOf(orderId).its('shipments').should('have.length', 2);
             cy.get('[data-test=ship-cancel]').click();
 
-            cy.step('both parcels are delivered: the tracking control is gone');
+            cy.step('both parcels are delivered, and each still has its tracking control');
             cy.reload();
             cy.get('[data-test=mark-delivered]').should('have.length', 2);
             cy.get('[data-test=mark-delivered]').first().click();
             cy.get('[data-test=mark-delivered]').should('have.length', 1);
             cy.get('[data-test=mark-delivered]').click();
             cy.get('[data-test=mark-delivered]').should('not.exist');
-            cy.get('[data-test=shipment-tracking-input]').should('not.exist');
+            cy.get('[data-test=shipment-tracking-input]').should('have.length', 2);
+
+            cy.step('a delivered parcel’s code is corrected, and it saves');
             fulfillmentOf(orderId).then((fulfillment) => {
-                loginDevice('warehouse').then((device) => {
-                    refusedWith(
-                        device,
-                        'PATCH',
-                        `/delivery/shipments/${fulfillment.shipments[0]?.id ?? ''}`,
-                        { trackingCode: 'TRK-LATE' },
-                        409
-                    );
+                const second = fulfillment.shipments.find((row) => row.trackingCode === SECOND);
+                cy.apiAs('warehouse', 'PATCH', `/delivery/shipments/${second?.id ?? ''}`, {
+                    trackingCode: SECOND_FIXED
                 });
             });
+            fulfillmentOf(orderId)
+                .its('shipments')
+                .should((shipments) => {
+                    expect(shipments.map((row) => row.trackingCode)).to.include(SECOND_FIXED);
+                });
 
             cy.step('the buyer’s parcels carry the corrected code, never the typo');
             cy.logout();
