@@ -14,7 +14,7 @@ import * as schemas from '@api/schemas';
 import {
     contractRequest,
     parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+} from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();

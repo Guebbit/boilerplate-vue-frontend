@@ -3,9 +3,32 @@
  *
  * Typed against the generated contract types, so a field the contract adds or makes required is a
  * compile error in every spec at once — rather than a hand-typed `{ id, totalPrice }` that only
- * fails when something finally parses it.
+ * fails when something finally parses it. Each factory also parses what it builds through the
+ * generated response schema (`contractBody`), so a value a spec overrides with one the contract
+ * refuses fails at the factory, not in a mounted view. The result is the ORIGINAL object, never
+ * the parse, so no `.default()` the test did not write appears.
+ *
+ * Fork of BE `tests/support/body-of.ts` (a body read through the contract's schema), not kept in
+ * step.
  */
 import { STATUS_CODES } from 'node:http';
+import {
+    GetFulfillmentOrderResponse,
+    GetInventoryLevelResponse,
+    GetOrderByIdResponse,
+    GetPaymentResponse,
+    GetProductByIdResponse,
+    GetReturnByIdResponse,
+    GetShipmentResponse,
+    GetShopResponse,
+    GetTaskResponse,
+    GetUserByIdResponse,
+    ListPreorderFulfillmentOrdersResponse,
+    ListPreorderLevelsResponse,
+    SummarizePreorderFulfillmentOrdersResponse,
+    UpdateAccountResponse
+} from '@api/schemas';
+import { contractBody } from './orval-fixture-schema.ts';
 import type {
     Account,
     ErrorItem,
@@ -48,28 +71,29 @@ export const NO_ORDER_ACTIONS: OrderActions = {
  * @param overrides - the fields a case actually cares about
  * @returns an `Order` that parses against the generated schema
  */
-export const anOrder = (overrides: Partial<Order> = {}): Order => ({
-    id: 'o1',
-    userId: 'u1',
-    email: 'ada@example.com',
-    items: [],
-    totalItems: 0,
-    totalQuantity: 0,
-    totalPrice: '0.00',
-    netTotal: '0.00',
-    taxTotal: '0.00',
-    shippingNetAmount: '0.00',
-    shippingTaxAmount: '0.00',
-    taxSummary: [],
-    status: 'pending',
-    paymentStatus: 'unpaid',
-    fulfillmentStatus: 'unfulfilled',
-    returnStatus: 'none',
-    currency: 'EUR',
-    orderNumber: '2026-000001',
-    actions: NO_ORDER_ACTIONS,
-    ...overrides
-});
+export const anOrder = (overrides: Partial<Order> = {}): Order =>
+    contractBody<Order>(GetOrderByIdResponse, {
+        id: 'o1',
+        userId: 'u1',
+        email: 'ada@example.com',
+        items: [],
+        totalItems: 0,
+        totalQuantity: 0,
+        totalPrice: '0.00',
+        netTotal: '0.00',
+        taxTotal: '0.00',
+        shippingNetAmount: '0.00',
+        shippingTaxAmount: '0.00',
+        taxSummary: [],
+        status: 'pending',
+        paymentStatus: 'unpaid',
+        fulfillmentStatus: 'unfulfilled',
+        returnStatus: 'none',
+        currency: 'EUR',
+        orderNumber: '2026-000001',
+        actions: NO_ORDER_ACTIONS,
+        ...overrides
+    });
 
 /**
  * A valid payment as `GET /payments` answers it for staff — the required fields, plus whatever a
@@ -78,37 +102,39 @@ export const anOrder = (overrides: Partial<Order> = {}): Order => ({
  * @param overrides - the fields a case actually cares about
  * @returns a `Payment` that parses against the generated schema
  */
-export const aPayment = (overrides: Partial<Payment> = {}): Payment => ({
-    id: 'pay-1',
-    orderId: 'o1',
-    amount: '50.00',
-    currency: 'EUR',
-    amountRefunded: '0.00',
-    refunds: [],
-    status: 'succeeded',
-    displayStatus: 'succeeded',
-    provider: 'fake',
-    method: 'card',
-    orderNumber: '2026-000001',
-    email: 'ada@example.com',
-    createdAt: '2026-03-04T10:00:00Z',
-    actions: { pay: false, sync: false, refund: false, settleByHand: [], cancelRefund: [] },
-    ...overrides
-});
+export const aPayment = (overrides: Partial<Payment> = {}): Payment =>
+    contractBody<Payment>(GetPaymentResponse, {
+        id: 'pay-1',
+        orderId: 'o1',
+        amount: '50.00',
+        currency: 'EUR',
+        amountRefunded: '0.00',
+        refunds: [],
+        status: 'succeeded',
+        displayStatus: 'succeeded',
+        provider: 'fake',
+        method: 'card',
+        orderNumber: '2026-000001',
+        email: 'ada@example.com',
+        createdAt: '2026-03-04T10:00:00Z',
+        actions: { pay: false, sync: false, refund: false, settleByHand: [], cancelRefund: [] },
+        ...overrides
+    });
 
 /**
- * A valid account as `GET /account` answers it — the three required fields, plus whatever a case
+ * A valid account as `PATCH /account` answers it — the three required fields, plus whatever a case
  * sets.
  *
  * @param overrides - the fields a case actually cares about
  * @returns an `Account` that parses against the generated schema
  */
-export const anAccount = (overrides: Partial<Account> = {}): Account => ({
-    id: '1',
-    email: 'ada@example.com',
-    username: 'ada',
-    ...overrides
-});
+export const anAccount = (overrides: Partial<Account> = {}): Account =>
+    contractBody<Account>(UpdateAccountResponse, {
+        id: '1',
+        email: 'ada@example.com',
+        username: 'ada',
+        ...overrides
+    });
 
 /** Every `UserActions` flag `false`: a row the caller may do nothing to. */
 export const NO_USER_ACTIONS: UserActions = {
@@ -154,13 +180,14 @@ export const userActionsOf = (allowed: Partial<UserActions>): UserActions => ({
  * @param overrides - the fields a case actually cares about
  * @returns a `User` that parses against the generated schema
  */
-export const aUser = (overrides: Partial<User> = {}): User => ({
-    id: '1',
-    email: 'ada@example.com',
-    username: 'ada',
-    actions: NO_USER_ACTIONS,
-    ...overrides
-});
+export const aUser = (overrides: Partial<User> = {}): User =>
+    contractBody<User>(GetUserByIdResponse, {
+        id: '1',
+        email: 'ada@example.com',
+        username: 'ada',
+        actions: NO_USER_ACTIONS,
+        ...overrides
+    });
 
 /**
  * A valid return as `GET /returns/{id}` answers it — one line, approved, nothing yet open to staff.
@@ -168,23 +195,24 @@ export const aUser = (overrides: Partial<User> = {}): User => ({
  * @param overrides - the fields a case actually cares about
  * @returns a `Return` that parses against the generated schema
  */
-export const aReturn = (overrides: Partial<Return> = {}): Return => ({
-    id: 'r1',
-    orderId: 'o1',
-    orderNumber: '2026-000001',
-    currency: 'EUR',
-    status: 'approved',
-    reason: 'withdrawal',
-    kind: 'return',
-    lines: [{ productId: 'p1', quantity: 1, title: 'Shirt', unitPrice: '30.00' }],
-    returnPostage: 'consumer',
-    requestedAt: '2026-09-01T10:00:00.000Z',
-    openedBy: 'buyer',
-    policyExceptions: [],
-    createdAt: '2026-09-01T10:00:00.000Z',
-    actions: { approve: false, decline: false, receive: false, close: false, cancel: false },
-    ...overrides
-});
+export const aReturn = (overrides: Partial<Return> = {}): Return =>
+    contractBody<Return>(GetReturnByIdResponse, {
+        id: 'r1',
+        orderId: 'o1',
+        orderNumber: '2026-000001',
+        currency: 'EUR',
+        status: 'approved',
+        reason: 'withdrawal',
+        kind: 'return',
+        lines: [{ productId: 'p1', quantity: 1, title: 'Shirt', unitPrice: '30.00' }],
+        returnPostage: 'consumer',
+        requestedAt: '2026-09-01T10:00:00.000Z',
+        openedBy: 'buyer',
+        policyExceptions: [],
+        createdAt: '2026-09-01T10:00:00.000Z',
+        actions: { approve: false, decline: false, receive: false, close: false, cancel: false },
+        ...overrides
+    });
 
 /**
  * A valid catalogue product — the required fields only, plus whatever a case sets.
@@ -204,10 +232,10 @@ export const aProduct = (overrides: Partial<Product> = {}): Product => {
         ...overrides
     };
     // The server's rule, kept coarse: on sale and something to order (shelf or open backorder).
-    return {
+    return contractBody<Product>(GetProductByIdResponse, {
         buyable: product.purchasable !== false && (product.inStock || product.backorder === true),
         ...product
-    };
+    });
 };
 
 /**
@@ -216,16 +244,17 @@ export const aProduct = (overrides: Partial<Product> = {}): Product => {
  * @param overrides - the fields a case actually cares about
  * @returns an `InventoryLevel` that parses against the generated schema
  */
-export const aLevel = (overrides: Partial<InventoryLevel> = {}): InventoryLevel => ({
-    productId: 'p1',
-    title: 'Walnut desk',
-    onHand: 10,
-    reserved: 2,
-    available: 8,
-    backorderLimit: 0,
-    backordered: 0,
-    ...overrides
-});
+export const aLevel = (overrides: Partial<InventoryLevel> = {}): InventoryLevel =>
+    contractBody<InventoryLevel>(GetInventoryLevelResponse, {
+        productId: 'p1',
+        title: 'Walnut desk',
+        onHand: 10,
+        reserved: 2,
+        available: 8,
+        backorderLimit: 0,
+        backordered: 0,
+        ...overrides
+    });
 
 /**
  * A valid preorder allowance row — a limit of ten, four outstanding (one unpaid, three paid).
@@ -233,18 +262,19 @@ export const aLevel = (overrides: Partial<InventoryLevel> = {}): InventoryLevel 
  * @param overrides - the fields a case actually cares about
  * @returns a `PreorderLevel` that parses against the generated schema
  */
-export const aPreorderLevel = (overrides: Partial<PreorderLevel> = {}): PreorderLevel => ({
-    productId: 'p1',
-    title: 'Walnut desk',
-    releaseDate: '2027-03-15',
-    backorderLimit: 10,
-    backordered: 4,
-    held: 1,
-    paid: 3,
-    left: 6,
-    ordered: 7,
-    ...overrides
-});
+export const aPreorderLevel = (overrides: Partial<PreorderLevel> = {}): PreorderLevel =>
+    contractBody<PreorderLevel>(ListPreorderLevelsResponse.shape.items.element, {
+        productId: 'p1',
+        title: 'Walnut desk',
+        releaseDate: '2027-03-15',
+        backorderLimit: 10,
+        backordered: 4,
+        held: 1,
+        paid: 3,
+        left: 6,
+        ordered: 7,
+        ...overrides
+    });
 
 /**
  * A valid per-product preorder summary — three paid units, all waiting for stock.
@@ -254,18 +284,22 @@ export const aPreorderLevel = (overrides: Partial<PreorderLevel> = {}): Preorder
  */
 export const aPreorderSummary = (
     overrides: Partial<PreorderProductSummary> = {}
-): PreorderProductSummary => ({
-    productId: 'p1',
-    title: 'Walnut desk',
-    firstAgreedAt: '2027-03-15',
-    paid: 3,
-    waiting: 3,
-    allocated: 0,
-    shipped: 0,
-    canceled: 0,
-    late: 0,
-    ...overrides
-});
+): PreorderProductSummary =>
+    contractBody<PreorderProductSummary>(
+        SummarizePreorderFulfillmentOrdersResponse.shape.items.element,
+        {
+            productId: 'p1',
+            title: 'Walnut desk',
+            firstAgreedAt: '2027-03-15',
+            paid: 3,
+            waiting: 3,
+            allocated: 0,
+            shipped: 0,
+            canceled: 0,
+            late: 0,
+            ...overrides
+        }
+    );
 
 /**
  * A valid row of the preorder board's second tab — one waiting fulfillment order of a paid order.
@@ -275,33 +309,37 @@ export const aPreorderSummary = (
  */
 export const aPreorderFulfillmentOrder = (
     overrides: Partial<PreorderFulfillmentOrder> = {}
-): PreorderFulfillmentOrder => ({
-    id: 'fo1',
-    orderId: 'o1',
-    orderNumber: '2027-000001',
-    number: 1,
-    status: 'on_hold',
-    state: 'waiting',
-    lines: [
+): PreorderFulfillmentOrder =>
+    contractBody<PreorderFulfillmentOrder>(
+        ListPreorderFulfillmentOrdersResponse.shape.items.element,
         {
-            productId: 'p1',
-            title: 'Walnut desk',
-            quantity: 1,
-            shippedQuantity: 0,
-            canceledQuantity: 0,
-            remaining: 1
+            id: 'fo1',
+            orderId: 'o1',
+            orderNumber: '2027-000001',
+            number: 1,
+            status: 'on_hold',
+            state: 'waiting',
+            lines: [
+                {
+                    productId: 'p1',
+                    title: 'Walnut desk',
+                    quantity: 1,
+                    shippedQuantity: 0,
+                    canceledQuantity: 0,
+                    remaining: 1
+                }
+            ],
+            buyer: { userId: 'u1', email: 'buyer@example.com' },
+            paidAt: '2026-10-01T10:00:00.000Z',
+            agreedAt: '2027-03-15',
+            slippedDays: 0,
+            late: false,
+            delivered: false,
+            holdReason: 'awaiting_stock',
+            createdAt: '2026-10-01T10:00:00.000Z',
+            ...overrides
         }
-    ],
-    buyer: { userId: 'u1', email: 'buyer@example.com' },
-    paidAt: '2026-10-01T10:00:00.000Z',
-    agreedAt: '2027-03-15',
-    slippedDays: 0,
-    late: false,
-    delivered: false,
-    holdReason: 'awaiting_stock',
-    createdAt: '2026-10-01T10:00:00.000Z',
-    ...overrides
-});
+    );
 
 /**
  * A valid fulfillment order as `GET /orders/{id}/fulfillment-orders` answers it — one physical line, open,
@@ -310,26 +348,27 @@ export const aPreorderFulfillmentOrder = (
  * @param overrides - the fields a case actually cares about
  * @returns a `FulfillmentOrder` that parses against the generated schema
  */
-export const aFulfillmentOrder = (overrides: Partial<FulfillmentOrder> = {}): FulfillmentOrder => ({
-    id: 'fo1',
-    orderId: 'o1',
-    number: 1,
-    kind: 'physical',
-    status: 'open',
-    lines: [
-        {
-            productId: 'p1',
-            title: 'Shirt',
-            quantity: 2,
-            shippedQuantity: 0,
-            canceledQuantity: 0,
-            remaining: 2
-        }
-    ],
-    actions: { ship: false, fulfill: false, hold: false, release: false },
-    createdAt: '2026-09-01T10:00:00.000Z',
-    ...overrides
-});
+export const aFulfillmentOrder = (overrides: Partial<FulfillmentOrder> = {}): FulfillmentOrder =>
+    contractBody<FulfillmentOrder>(GetFulfillmentOrderResponse, {
+        id: 'fo1',
+        orderId: 'o1',
+        number: 1,
+        kind: 'physical',
+        status: 'open',
+        lines: [
+            {
+                productId: 'p1',
+                title: 'Shirt',
+                quantity: 2,
+                shippedQuantity: 0,
+                canceledQuantity: 0,
+                remaining: 2
+            }
+        ],
+        actions: { ship: false, fulfill: false, hold: false, release: false },
+        createdAt: '2026-09-01T10:00:00.000Z',
+        ...overrides
+    });
 
 /**
  * A valid shipment as the delivery routes answer it — shipped, one line, no action offered.
@@ -337,19 +376,20 @@ export const aFulfillmentOrder = (overrides: Partial<FulfillmentOrder> = {}): Fu
  * @param overrides - the fields a case actually cares about
  * @returns a `Shipment` that parses against the generated schema
  */
-export const aShipment = (overrides: Partial<Shipment> = {}): Shipment => ({
-    id: 's1',
-    orderId: 'o1',
-    fulfillmentOrderId: 'fo1',
-    number: 1,
-    status: 'shipped',
-    lines: [{ productId: 'p1', title: 'Shirt', quantity: 1 }],
-    forced: false,
-    awaitingTracking: false,
-    shippedAt: '2026-09-02T10:00:00.000Z',
-    actions: { deliver: false, update: false, markLost: false },
-    ...overrides
-});
+export const aShipment = (overrides: Partial<Shipment> = {}): Shipment =>
+    contractBody<Shipment>(GetShipmentResponse, {
+        id: 's1',
+        orderId: 'o1',
+        fulfillmentOrderId: 'fo1',
+        number: 1,
+        status: 'shipped',
+        lines: [{ productId: 'p1', title: 'Shirt', quantity: 1 }],
+        forced: false,
+        awaitingTracking: false,
+        shippedAt: '2026-09-02T10:00:00.000Z',
+        actions: { deliver: false, update: false, markLost: false },
+        ...overrides
+    });
 
 /**
  * A valid shop as `GET /shop` answers it — an Italian seller trading in euros, shipping to Italy.
@@ -357,24 +397,25 @@ export const aShipment = (overrides: Partial<Shipment> = {}): Shipment => ({
  * @param overrides - the fields a case actually cares about
  * @returns a `Shop` that parses against the generated schema
  */
-export const aShop = (overrides: Partial<Shop> = {}): Shop => ({
-    legalName: 'Guebbit Demo Shop Srl',
-    street: 'Via Roma 1',
-    city: 'Milano',
-    zip: '20100',
-    country: 'IT',
-    email: 'shop@example.com',
-    phone: '+39 02 1234567',
-    currency: 'EUR',
-    minorUnits: 2,
-    shipToCountries: ['IT'],
-    returnAddress: { street: 'Via Roma 1', city: 'Milano', zip: '20100', country: 'IT' },
-    returnPostagePayer: 'consumer',
-    termsVersion: '1',
-    backorderPromiseDays: 30,
-    timeZone: 'Europe/Rome',
-    ...overrides
-});
+export const aShop = (overrides: Partial<Shop> = {}): Shop =>
+    contractBody<Shop>(GetShopResponse, {
+        legalName: 'Guebbit Demo Shop Srl',
+        street: 'Via Roma 1',
+        city: 'Milano',
+        zip: '20100',
+        country: 'IT',
+        email: 'shop@example.com',
+        phone: '+39 02 1234567',
+        currency: 'EUR',
+        minorUnits: 2,
+        shipToCountries: ['IT'],
+        returnAddress: { street: 'Via Roma 1', city: 'Milano', zip: '20100', country: 'IT' },
+        returnPostagePayer: 'consumer',
+        termsVersion: '1',
+        backorderPromiseDays: 30,
+        timeZone: 'Europe/Rome',
+        ...overrides
+    });
 
 /** One error item as a spec writes it; `field` is the key `onResponseReject` lifts for the forms. */
 type ProblemItem = ErrorItem & { field?: string };
@@ -413,26 +454,27 @@ export const aProblem = (
  * @param overrides - Fields to replace.
  * @returns A task that passes the response schema.
  */
-export const aTask = (overrides: Partial<Task> = {}): Task => ({
-    id: 't1',
-    source: 'visitor',
-    kind: 'contact',
-    routeSet: 'TaskDisplay',
-    notes: [],
-    overdue: false,
-    actions: {
-        resolve: true,
-        markSpam: true,
-        reopen: false,
-        assign: true,
-        unassign: false,
-        note: true,
-        delete: true
-    },
-    email: 'curious@example.com',
-    subject: 'A question',
-    message: 'About the cats',
-    status: 'new',
-    createdAt: '2026-01-01T00:00:00.000Z',
-    ...overrides
-});
+export const aTask = (overrides: Partial<Task> = {}): Task =>
+    contractBody<Task>(GetTaskResponse, {
+        id: 't1',
+        source: 'visitor',
+        kind: 'contact',
+        routeSet: 'TaskDisplay',
+        notes: [],
+        overdue: false,
+        actions: {
+            resolve: true,
+            markSpam: true,
+            reopen: false,
+            assign: true,
+            unassign: false,
+            note: true,
+            delete: true
+        },
+        email: 'curious@example.com',
+        subject: 'A question',
+        message: 'About the cats',
+        status: 'new',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        ...overrides
+    });

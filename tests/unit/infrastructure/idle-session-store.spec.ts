@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
-import { parseOrvalFixture } from '../../unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../support/unit/orval-fixture-schema.ts';
 
 /** What `POST /account/sessions/current/touch` answers in the case at hand. */
 let touchAnswer: unknown;

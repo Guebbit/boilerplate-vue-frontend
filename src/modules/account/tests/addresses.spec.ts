@@ -14,7 +14,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useAccountAddressesStore } from '../stores/addresses.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 

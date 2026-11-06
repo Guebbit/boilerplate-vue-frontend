@@ -27,7 +27,7 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import { asStub } from '../../../../tests/support/stub.ts';
 import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
-import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { contractResponse } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();

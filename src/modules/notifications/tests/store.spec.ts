@@ -21,7 +21,7 @@ import type { AppNotice } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import type { Notification } from '@types';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 

@@ -13,7 +13,7 @@ import {
 import { orvalMutator } from '@/infrastructure/http';
 import { instance } from '@/infrastructure/http/client.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import { configAnswer } from '../../../../tests/support/unit/config-answer.ts';
 import { resetConfig } from '@/infrastructure/config.ts';
 

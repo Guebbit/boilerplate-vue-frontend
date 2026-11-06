@@ -18,7 +18,7 @@ import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { WebhookSubscriptionCreated } from '@types';
 import * as schemas from '@api/schemas';
-import { contractRequest } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { contractRequest } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();

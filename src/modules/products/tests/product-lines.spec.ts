@@ -15,7 +15,7 @@ import { useProductsStore } from '../store';
 import { useProductLines } from '../composables/use-product-lines';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { asStub } from '../../../../tests/support/stub';
-import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { contractResponse } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 
 // The shop states the backorder promise; these cases are about the wording around it.
 vi.mock('@/infrastructure/shop.ts', async (importOriginal) => {

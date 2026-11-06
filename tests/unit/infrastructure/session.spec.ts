@@ -10,7 +10,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import * as schemas from '@api/schemas';
-import { contractBody } from './http/orval-fixture-schema.ts';
+import { contractBody } from '../../support/unit/orval-fixture-schema.ts';
 import type { AccountView } from '@types';
 import { anAccount, aProblem } from '../../support/unit/fixtures.ts';
 import { accountView } from '../../support/unit/account-view.ts';

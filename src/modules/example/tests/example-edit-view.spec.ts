@@ -15,7 +15,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { contractRequest } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { contractRequest } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import * as schemas from '@api/schemas';
 import type { Example } from '@types';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';

@@ -23,7 +23,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { asStub } from '../../../../tests/support/stub';
-import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { contractResponse } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import type { Product } from '@types';
 
 wireModulesIntoCore();

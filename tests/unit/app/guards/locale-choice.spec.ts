@@ -18,7 +18,7 @@
 
 import { asStub } from '../../../support/stub';
 import * as schemas from '@api/schemas';
-import { contractResponse } from '../../infrastructure/http/orval-fixture-schema.ts';
+import { contractResponse } from '../../../support/unit/orval-fixture-schema.ts';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import type { RouteLocationNormalized } from 'vue-router';
 

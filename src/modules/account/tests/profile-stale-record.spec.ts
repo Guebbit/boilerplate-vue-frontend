@@ -16,7 +16,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 import { accountView } from '../../../../tests/support/unit/account-view.ts';
 

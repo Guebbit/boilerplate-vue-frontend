@@ -20,7 +20,7 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import {
     contractRequest,
     parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+} from '../../../../tests/support/unit/orval-fixture-schema.ts';
 
 import { accountView } from '../../../../tests/support/unit/account-view.ts';
 

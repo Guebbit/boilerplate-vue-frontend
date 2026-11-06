@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as schemas from '@api/schemas';
-import { contractResponse } from './http/orval-fixture-schema.ts';
+import { contractResponse } from '../../support/unit/orval-fixture-schema.ts';
 
 /**
  * Runtime locale discovery and the override tier — `src/infrastructure/locale-overrides.ts`.

@@ -14,7 +14,7 @@ import { useAccountAddressesStore } from '../stores/addresses.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { contractRequest } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { contractRequest } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();

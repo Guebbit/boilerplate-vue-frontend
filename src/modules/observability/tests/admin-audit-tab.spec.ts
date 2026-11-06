@@ -19,7 +19,7 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import {
     contractBody,
     contractResponse
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+} from '../../../../tests/support/unit/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 

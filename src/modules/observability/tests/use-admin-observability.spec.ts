@@ -16,7 +16,7 @@ import { getObservabilityHealth, getObservabilityMetricsOverview } from '@api';
 import type { ObservabilityHealth, ObservabilityMetricsSummary } from '@api';
 import * as schemas from '@api/schemas';
 import { useAdminObservability } from '../composables/use-admin-observability';
-import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { contractResponse } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 /**
