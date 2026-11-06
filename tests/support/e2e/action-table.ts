@@ -93,8 +93,6 @@ export interface ActionRow {
     field?: string;
     /** For `slow`: what is typed into `field`. */
     typed?: string;
-    /** For `slow`: how `field` reads after the language switch re-reads the record; `typed` when omitted. */
-    keptAs?: string;
     /** For `empty`: the list read's body, served as a 200. */
     emptyBody?: unknown;
     /** For `empty`: the generated response schema `emptyBody` must satisfy. */
@@ -302,7 +300,7 @@ const SLOW_READ_MS = 2000;
  * @param row - the row
  */
 const runSlowRead = (row: ActionRow): void => {
-    const { field, intercept, keptAs, name } = row;
+    const { field, intercept, name } = row;
     const typed = row.typed ?? 'typed';
     if (!field) throw new Error(`action row "${name}": a slow row needs \`field\``);
     cy.intercept(apiRequest(intercept), (request) => {
@@ -319,7 +317,7 @@ const runSlowRead = (row: ActionRow): void => {
     cy.get('[data-test=language-switcher]').first().click();
     cy.get('[data-test=language-option-it]').click();
     cy.get('html').should('have.attr', 'lang', 'it');
-    cy.get(`[data-test=${field}] input`).should('have.value', keptAs ?? typed);
+    cy.get(`[data-test=${field}] input`).should('have.value', typed);
 };
 
 /**

@@ -64,8 +64,6 @@ actionTable('products', [
         intercept: { method: 'GET', url: '**/products/*', operation: '/products/{id}' },
         kind: 'slow',
         field: 'product-price-field',
-        typed: '41.50',
-        // The Italian number format: the value kept, written as the new language writes it.
-        keptAs: '41,50'
+        typed: '41.50'
     }
 ]);
