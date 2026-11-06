@@ -38,15 +38,36 @@ const applyPeriod = (from: string, to: string) => {
 };
 
 /**
- * Regroups the revenue table by a bucket size and counts its rows.
+ * Regroups the revenue table by a bucket size and waits until it shows `expected` rows: the table
+ * refetches after Apply, so a single read can catch the rows of the grouping before.
  *
- * @param interval - the size to pick: `Day`, `Week` or `Month`
- * @returns a chain yielding the number of rows the table then shows
+ * @param interval - the size to pick: `Week` or `Month`
+ * @param expected - the number of rows the table must settle on
  */
-const rowsFor = (interval: string): Cypress.Chainable<number> => {
+const rowsSettleAt = (interval: 'Week' | 'Month', expected: number): void => {
     cy.pickOption('[data-test=stats-interval]', interval);
     cy.get('[data-test=stats-apply]').click();
-    return cy.get('[data-test=revenue-table] tbody tr').its('length');
+    cy.get('[data-test=revenue-table] tbody tr').should('have.length', expected);
+};
+
+/**
+ * How many week or month buckets an inclusive range touches. Rules: BE
+ * `src/modules/stats/domain/calendar.ts` `bucketStart` (week starts Monday, month on the 1st).
+ *
+ * @param from - first day, `YYYY-MM-DD`
+ * @param to - last day, `YYYY-MM-DD`
+ * @param interval - the bucket size
+ * @returns the number of distinct bucket starts between the two days
+ */
+const bucketsTouched = (from: string, to: string, interval: 'week' | 'month'): number => {
+    const starts = new Set<string>();
+    const last = Date.parse(to);
+    for (let ms = Date.parse(from); ms <= last; ms += 86_400_000) {
+        const day = new Date(ms);
+        const back = interval === 'week' ? (day.getUTCDay() + 6) % 7 : day.getUTCDate() - 1;
+        starts.add(new Date(ms - back * 86_400_000).toISOString());
+    }
+    return starts.size;
 };
 
 describe('OP27 · The shop in numbers', () => {
@@ -190,15 +211,18 @@ describe('OP27 · The shop in numbers', () => {
             });
         });
 
-        cy.step('day, week and month group the same range into fewer and fewer rows');
-        rowsFor('Day').then((days) => {
-            rowsFor('Week').then((weeks) => {
-                expect(weeks, 'weeks are fewer than days').to.be.lessThan(days);
-                rowsFor('Month').then((months) => {
-                    expect(months, 'months are fewer than weeks').to.be.lessThan(weeks);
-                });
+        cy.step('week and month group the form’s range into exactly the buckets it touches');
+        cy.get('[data-test=stats-from] input')
+            .invoke('val')
+            .then((from) => {
+                cy.get('[data-test=stats-to] input')
+                    .invoke('val')
+                    .then((to) => {
+                        const [first, last] = [String(from), String(to)];
+                        rowsSettleAt('Week', bucketsTouched(first, last, 'week'));
+                        rowsSettleAt('Month', bucketsTouched(first, last, 'month'));
+                    });
             });
-        });
 
         cy.step('a period before the shop opened shows no sales, and the products block says so');
         const farBack = new Date(Date.now() - 400 * 86_400_000).toISOString().slice(0, 10);
