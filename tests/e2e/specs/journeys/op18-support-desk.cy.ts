@@ -23,7 +23,11 @@ const NOTE = 'Rang the courier, parcel is at the depot.';
 const NEW_PHONE = '+39 055 7654321';
 
 /** The reason support gives for declining, which the customer must be able to read. */
-const DECLINE_REASON = 'The photos show ordinary wear, not a fault.';
+/** The reason picked from the list, as the page then shows it. */
+const DECLINE_REASON = 'No defect found';
+
+/** The note typed for the buyer beside the reason. */
+const DECLINE_MESSAGE = 'The photos show ordinary wear, not a fault.';
 
 /** One audit row, as far as this story reads it. */
 interface AuditRowLike {
@@ -179,15 +183,24 @@ describe('OP18 · The support desk', () => {
         cy.step('a return request is declined with a reason');
         cy.subjectId('return.requestedSecond').then((returnId) => {
             cy.visit(`/en/returns/${returnId}`);
-            cy.get('[data-test=return-decline-reason] input').type(DECLINE_REASON);
+            cy.pickOption('[data-test=return-decline-reason]', DECLINE_REASON);
+            cy.get('[data-test=return-decline-message] textarea').type(DECLINE_MESSAGE);
             cy.get('[data-test=return-decline]').click();
             cy.get('[data-test=return-decline-reason-text]').should('contain.text', DECLINE_REASON);
+            cy.get('[data-test=return-decline-message-text]').should(
+                'contain.text',
+                DECLINE_MESSAGE
+            );
             auditedAsSupport(returnId, 'admin.return.declined');
 
             cy.step('the customer reads the reason');
             cy.switchUser('user');
             cy.visit(`/en/returns/${returnId}`);
             cy.get('[data-test=return-decline-reason-text]').should('contain.text', DECLINE_REASON);
+            cy.get('[data-test=return-decline-message-text]').should(
+                'contain.text',
+                DECLINE_MESSAGE
+            );
         });
 
         cy.step('the task’s resolving is on record under the support role');
