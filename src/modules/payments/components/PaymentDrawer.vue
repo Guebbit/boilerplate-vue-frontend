@@ -64,13 +64,15 @@ const open = defineModel<boolean>({ default: false });
 useReturnFocus(() => open.value);
 
 /**
- * Emitted after a refund went through, so the list reloads what the drawer changed.
+ * Emitted after a refund call settled, so the list reloads what the drawer changed.
  */
 const emit = defineEmits<
     /**
-     * The payment's money moved.
+     * The payment's money moved; carries the payment as it was re-read (absent when the read
+     * was superseded), so a drawer that stays open
+     * shows the new refund (a refused one keeps its reason) instead of the row it was opened on.
      */
-    (event: 'changed') => void
+    (event: 'changed', payment?: Payment) => void
 >();
 
 /**
@@ -189,7 +191,7 @@ const handleRefund = singleFlight(() => {
                         'payments-list-page.refund-done'
                     );
                     addMessage(notice.text, notice.type);
-                    emit('changed');
+                    emit('changed', refreshed);
                     // A refused refund keeps the drawer open: its Mark returned is right there.
                     if (refund.status !== 'failed') open.value = false;
                 })
@@ -228,9 +230,9 @@ const handleMarkReturned = singleFlight((refund: Payment['refunds'][number]) => 
             refunding.value = true;
             return store
                 .settleRefundByHand(current, refund.id)
-                .then(() => {
+                .then((refreshed) => {
                     addMessage(t('payments-list-page.mark-returned-done'));
-                    emit('changed');
+                    emit('changed', refreshed);
                     open.value = false;
                 })
                 .catch((error: unknown) => reportRefundError(error))
@@ -256,10 +258,10 @@ const handleCancelRefund = singleFlight((refund: Payment['refunds'][number], not
     refunding.value = true;
     return store
         .cancelRefund(current, refund.id, note)
-        .then(() => {
+        .then((refreshed) => {
             addMessage(t('payments-list-page.cancel-refund-done'));
             cancelling.value = undefined;
-            emit('changed');
+            emit('changed', refreshed);
             open.value = false;
         })
         .catch((error: unknown) => reportRefundError(error))

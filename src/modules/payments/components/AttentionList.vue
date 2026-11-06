@@ -84,6 +84,17 @@ const picked = ref<Payment>();
 const drawerOpen = ref(false);
 
 /**
+ * The drawer changed money: it stays on the payment as re-read, and the list reads again.
+ *
+ * @param payment - The payment after the change, when the drawer got one back.
+ * @returns A promise settling once the list was read again.
+ */
+const handleChanged = (payment?: Payment) => {
+    if (payment) picked.value = payment;
+    return load();
+};
+
+/**
  * Opens the drawer on the payment an item is about.
  *
  * @param paymentId - The payment the item names.
@@ -266,7 +277,7 @@ const auditLink = computed(() => {
             </template>
         </DataTable>
 
-        <PaymentDrawer v-model="drawerOpen" :payment="picked" @changed="load" />
+        <PaymentDrawer v-model="drawerOpen" :payment="picked" @changed="handleChanged" />
 
         <p class="mt-6 text-sm opacity-75" data-test="attention-audit-note">
             {{ t('payments-list-page.attention-audit-note') }}

@@ -186,7 +186,8 @@ describe('PaymentDrawer', () => {
         await flushPromises();
 
         expect(refund).toHaveBeenCalledWith(expect.objectContaining({ orderId: 'o1' }));
-        expect(wrapper.emitted('changed')).toHaveLength(1);
+        // The payment as re-read travels with the event.
+        expect(wrapper.emitted('changed')).toEqual([[FULL]]);
         expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]);
     });
 

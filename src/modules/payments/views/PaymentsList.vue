@@ -116,6 +116,16 @@ const openDrawer = (payment: Payment) => {
 const reloadKey = ref(0);
 
 /**
+ * The drawer changed money: it stays on the payment as re-read, and the list reads again.
+ *
+ * @param payment - The payment after the change, when the drawer got one back.
+ */
+const handleChanged = (payment?: Payment) => {
+    if (payment) picked.value = payment;
+    reloadKey.value += 1;
+};
+
+/**
  * `OrderReferenceSearch`'s `@found` handler: the order's edit page, where the offline form lives.
  * `payments` names no order route, so this resolves it by name and does nothing when absent.
  *
@@ -161,6 +171,6 @@ const handleReferenceFound = (orderId: string) => {
             </v-tabs-window-item>
         </v-tabs-window>
 
-        <PaymentDrawer v-model="drawerOpen" :payment="picked" @changed="reloadKey += 1" />
+        <PaymentDrawer v-model="drawerOpen" :payment="picked" @changed="handleChanged" />
     </div>
 </template>
