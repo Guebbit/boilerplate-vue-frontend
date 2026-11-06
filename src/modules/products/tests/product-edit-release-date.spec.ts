@@ -1,8 +1,8 @@
 /**
  * @module
- * The edit form's release date: hydrated from the admin record into the `datetime-local` input,
+ * The edit form's release date: hydrated from the admin record into the `date` input,
  * left OUT of the PATCH while untouched (a moved date notifies the buyers who already paid, so it
- * travels only when it changed), sent as an ISO instant when edited and as `null` when cleared.
+ * travels only when it changed), sent as a plain day when edited and as `null` when cleared.
  * Proven against the contract's own body schema. Mounting mirrors `product-edit-purchasable.spec.ts`.
  */
 import { describe, it, expect, beforeEach, vi, type MockInstance } from 'vitest';
@@ -141,15 +141,15 @@ const mountHydrated = (adminRecord: Record<string, unknown>) => {
 
 describe('ProductEdit — release date', () => {
     /**
-     * An instant on the minute, so the input's spelling loses nothing.
+     * The day the product holds, as the server answers it.
      */
-    const RELEASE = new Date(2027, 2, 15, 9, 30).toISOString();
+    const RELEASE = '2027-03-15';
 
-    it('shows a dated product in the input, in the browser zone', () =>
+    it('shows the day of a dated product in the input, as the server sent it', () =>
         mountHydrated({ releaseDate: RELEASE, preorder: true }).then((wrapper) => {
             const input = wrapper.get('[data-test=product-release-date-field] input');
 
-            expect((input.element as HTMLInputElement).value).toBe('2027-03-15T09:30');
+            expect((input.element as HTMLInputElement).value).toBe('2027-03-15');
         }));
 
     it('leaves an untouched date out of the PATCH', () =>
@@ -160,12 +160,12 @@ describe('ProductEdit — release date', () => {
                 expect(lastPatch().data).not.toHaveProperty('releaseDate');
             }));
 
-    it('sends a changed date as an ISO instant the contract accepts', () =>
+    it('sends a changed day as the plain day the contract accepts', () =>
         mountHydrated({ releaseDate: RELEASE })
             .then((wrapper) =>
                 wrapper
                     .get('[data-test=product-release-date-field] input')
-                    .setValue('2027-04-01T10:00')
+                    .setValue('2027-04-01')
                     .then(() => wrapper.get('form').trigger('submit'))
             )
             .then(flushPromises)
@@ -173,7 +173,7 @@ describe('ProductEdit — release date', () => {
                 expect(
                     contractRequest(schemas.UpdateProductByIdBody, lastPatch().data)
                 ).toMatchObject({
-                    releaseDate: new Date(2027, 3, 1, 10, 0).toISOString()
+                    releaseDate: '2027-04-01'
                 });
             }));
 
@@ -263,8 +263,8 @@ describe('ProductEdit — the preview before a changed date', () => {
         });
     };
 
-    /** An instant on the minute, so the input's spelling loses nothing. */
-    const RELEASE_ISO = new Date(2027, 2, 15, 9, 30).toISOString();
+    /** The day the product holds. */
+    const RELEASE_ISO = '2027-03-15';
 
     beforeEach(() => {
         signIn(MANAGER);
@@ -272,10 +272,10 @@ describe('ProductEdit — the preview before a changed date', () => {
     });
 
     it('asks before saving a later date, naming how many orders get an email', () =>
-        submitWith({ notify: 12 }, '2027-04-01T10:00').then(() => {
+        submitWith({ notify: 12 }, '2027-04-01').then(() => {
             expect(previewCalls()).toHaveLength(1);
             expect(previewCalls()[0][0]).toMatchObject({
-                params: { productId: 'p1', releaseDate: new Date(2027, 3, 1, 10, 0).toISOString() }
+                params: { productId: 'p1', releaseDate: '2027-04-01' }
             });
             expect(confirmSpy).toHaveBeenCalledOnce();
             const request = confirmSpy.mock.calls[0][0] as { message: string; color: string };
@@ -288,7 +288,7 @@ describe('ProductEdit — the preview before a changed date', () => {
         }));
 
     it('names one order in the singular', () =>
-        submitWith({ notify: 1 }, '2027-04-01T10:00').then(() => {
+        submitWith({ notify: 1 }, '2027-04-01').then(() => {
             const request = confirmSpy.mock.calls[0][0] as { message: string };
             expect(request.message).toBe('1 order gets an email about the new date');
         }));
@@ -334,8 +334,8 @@ describe('ProductEdit — the preview before a changed date', () => {
     });
 
     it.each([
-        ['an earlier date', '2027-03-01T10:00', RELEASE_ISO],
-        ['a product that never had a date', '2027-04-01T10:00', null]
+        ['an earlier date', '2027-03-01', RELEASE_ISO],
+        ['a product that never had a date', '2027-04-01', null]
     ])('asks the server for %s, which counts nobody, and saves', (_name, next, original) =>
         submitWith({ notify: 0 }, next, original).then(() => {
             expect(previewCalls()).toHaveLength(1);

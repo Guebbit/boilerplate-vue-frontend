@@ -1887,7 +1887,7 @@ export interface WishlistExportItem {
 export type Sku = string;
 
 /**
- * When a product ships from, as an ISO 8601 date-time with a zone. A product with a future date that is active and purchasable is a preorder. At most one year ahead (Google's `availability_date` rule); a date in the past is accepted and simply means "released". Moving it later notifies the buyers who already paid (`delivery`).
+ * The day a product ships from, a day on the shop's calendar (`Shop.timeZone`) as `YYYY-MM-DD`; stored as the UTC instant of that day's midnight in the shop's zone and always answered back as the same day. A product with a future date that is active and purchasable is a preorder. At most one year ahead (Google's `availability_date` rule); a day in the past is accepted and simply means "released". Moving it later notifies the buyers who already paid (`delivery`).
  */
 export type ReleaseDate = string;
 
@@ -2438,7 +2438,9 @@ export interface ExportFulfillmentOrder {
      * @maxLength 1000
      */
     holdNote?: string;
+    /** The day promised when ordering, a day on the shop's calendar (`Shop.timeZone`). */
     agreedAt?: string;
+    /** The day now expected, a day on the shop's calendar (`Shop.timeZone`). */
     expectedAt?: string;
     /** When the buyer was last told the date had moved or would be missed. */
     lastNoticeAt?: string;
@@ -3873,7 +3875,7 @@ export const TaxClass = {
 } as const;
 
 /**
- * When stock is expected back, as an ISO 8601 date-time with a zone, for a product that allows backorder. At most one year ahead. Without one the shop promises delivery within 30 days. A date in the past is accepted and the product then reads sold out until staff set a new date or clear it. Moving it later notifies the buyers who already paid (`delivery`).
+ * The day stock is expected back, for a product that allows backorder: a day on the shop's calendar (`Shop.timeZone`) as `YYYY-MM-DD`; stored as the UTC instant of that day's midnight in the shop's zone and always answered back as the same day. At most one year ahead. Without one the shop promises delivery within 30 days. A day in the past is accepted and the product then reads sold out until staff set a new date or clear it. Moving it later notifies the buyers who already paid (`delivery`).
  */
 export type RestockDate = string;
 
@@ -4920,9 +4922,9 @@ export interface FulfillmentOrder {
      * @maxLength 1000
      */
     holdNote?: string;
-    /** The date promised when ordering, frozen from the line snapshot (CRD Art. 18). */
+    /** The day promised when ordering, frozen from the line snapshot (CRD Art. 18). A day on the shop's calendar (`Shop.timeZone`); stored as the UTC instant of its midnight. */
     agreedAt?: string;
-    /** When it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected. */
+    /** The shop-calendar day it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected. */
     expectedAt?: string;
     /** When the buyer was last told the date had moved or would be missed. */
     lastNoticeAt?: string;
@@ -5140,7 +5142,9 @@ export interface PreorderFulfillmentOrder {
     buyer: PreorderBuyer;
     /** When the order was paid. The payment's instant, which is also the queue key stock is allocated by (`inventory` stamps the hold in the same transaction). */
     paidAt?: string;
+    /** The day promised when ordering, a day on the shop's calendar (`Shop.timeZone`). */
     agreedAt?: string;
+    /** The day now expected, a day on the shop's calendar (`Shop.timeZone`). */
     expectedAt?: string;
     /**
      * Whole days between the date promised and the date expected; `0` when it has not slipped.
@@ -5169,7 +5173,7 @@ export interface PreorderProductSummary {
     productId: Id;
     /** As the earliest order froze it. */
     title: string;
-    /** The earliest date any buyer was promised. */
+    /** The earliest day any buyer was promised, a day on the shop's calendar (`Shop.timeZone`). */
     firstAgreedAt: string;
     /** @minimum 0 */
     paid: number;
@@ -6691,6 +6695,8 @@ export interface Shop {
      * @minimum 1
      */
     backorderPromiseDays: number;
+    /** The shop's calendar, a canonical IANA zone name such as `Europe/Rome`. The promised days (`releaseDate`, `restockDate`, `agreedAt`, `expectedAt`) are days on this calendar; they are sent and answered as plain days, so a screen never converts them. */
+    timeZone: string;
 }
 
 /**
@@ -7550,7 +7556,7 @@ export type PreviewReleaseDateImpactParams = {
      */
     productId: Id;
     /**
-     * The date to preview, an ISO 8601 date-time with a zone. Absent or blank means cleared.
+     * The day to preview, a day on the shop's calendar as `YYYY-MM-DD`. Absent or blank means cleared.
      */
     releaseDate?: string;
 };
@@ -7561,7 +7567,7 @@ export type PreviewRestockDateImpactParams = {
      */
     productId: Id;
     /**
-     * The date to preview, an ISO 8601 date-time with a zone. Absent or blank means cleared.
+     * The day to preview, a day on the shop's calendar as `YYYY-MM-DD`. Absent or blank means cleared.
      */
     restockDate?: string;
 };
@@ -12443,7 +12449,7 @@ export const deleteNotificationById = (
 };
 
 /**
- * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, where returned goods go, the version of the Terms in force and the backorder promise in days. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order.
+ * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, where returned goods go, the version of the Terms in force and the backorder promise in days. Public and cheap to read; it never changes without a redeploy. The shop's time zone (an IANA name) is published so a screen can name the calendar a promised day belongs to. Not published: the bank-transfer details, which travel on each order.
  * @summary The shop's identity, currency, ship-to countries and return address
  */
 export const getShop = (options?: SecondParameter<typeof orvalMutator<Shop>>) => {

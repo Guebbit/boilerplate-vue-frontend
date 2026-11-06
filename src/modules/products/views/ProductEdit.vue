@@ -57,7 +57,7 @@ import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { backorderPromiseDays } from '@/infrastructure/shop.ts';
 import { toPatchTranslations } from '../composables/translations-body.ts';
-import { fromDateTimeLocal, toDateTimeLocal } from '../domain';
+import { dayChange } from '../domain';
 import { useReleaseDateConfirm } from '../composables/use-release-date-confirm.ts';
 import type { ProductTranslationsWrite } from '@types';
 import type { TaxClass } from '@api';
@@ -254,9 +254,9 @@ activateAutoHydrate(
                   price: adminProduct.value.price,
                   active: adminProduct.value.active ?? false,
                   purchasable: adminProduct.value.purchasable ?? true,
-                  releaseDate: toDateTimeLocal(adminProduct.value.releaseDate),
+                  releaseDate: adminProduct.value.releaseDate,
                   allowBackorder: adminProduct.value.allowBackorder ?? false,
-                  restockDate: toDateTimeLocal(adminProduct.value.restockDate),
+                  restockDate: adminProduct.value.restockDate,
                   requiresShipping: adminProduct.value.requiresShipping ?? true,
                   noWithdrawal: adminProduct.value.noWithdrawal ?? false,
                   weight: adminProduct.value.weight,
@@ -306,33 +306,6 @@ const heroTitle = computed(
  * Hero subheading.
  */
 const heroDescription = computed(() => formatText(adminProduct.value?.description));
-
-/**
- * The release date as the PATCH should carry it: only when the field differs from what was
- * loaded. Every other field is resent whole, but a moved release date notifies the buyers who
- * already paid, so an untouched one must not travel — a round trip through the input's
- * minute-wide spelling could otherwise nudge a date set through the API.
- *
- * @param current - The input's value.
- * @returns The wire value (`''` clears it), or `undefined` to leave it out.
- */
-const releaseDateChange = (current?: string | null): string | undefined =>
-    // `clearable` empties the input to `null`, which is the same "no date" as `''`.
-    toDateTimeLocal(adminProduct.value?.releaseDate) === (current ?? '')
-        ? undefined
-        : fromDateTimeLocal(current);
-
-/**
- * The restock date's twin of {@link releaseDateChange}: an untouched one must not travel, because a
- * moved restock date reaches the buyers who were promised it.
- *
- * @param current - The input's value.
- * @returns The wire value (`''` clears it), or `undefined` to leave it out.
- */
-const restockDateChange = (current?: string | null): string | undefined =>
-    toDateTimeLocal(adminProduct.value?.restockDate) === (current ?? '')
-        ? undefined
-        : fromDateTimeLocal(current);
 
 /**
  * Asks, before a later or cleared release date is saved, how many buyers it reaches.
@@ -424,9 +397,9 @@ const submitForm = () => {
                     ),
                     active,
                     purchasable,
-                    releaseDate: releaseDateChange(releaseDate),
+                    releaseDate: dayChange(adminProduct.value?.releaseDate, releaseDate),
                     allowBackorder,
-                    restockDate: restockDateChange(restockDate),
+                    restockDate: dayChange(adminProduct.value?.restockDate, restockDate),
                     requiresShipping,
                     noWithdrawal,
                     weight,
@@ -590,7 +563,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                         />
                         <v-text-field
                             v-model="form.releaseDate"
-                            type="datetime-local"
+                            type="date"
                             :label="t('product-edit-page.label-release-date')"
                             :hint="
                                 adminProduct?.preorder
@@ -615,7 +588,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                         <v-text-field
                             v-if="form.allowBackorder"
                             v-model="form.restockDate"
-                            type="datetime-local"
+                            type="date"
                             :label="t('product-edit-page.label-restock-date')"
                             :hint="
                                 t('product-edit-page.hint-restock-date', {

@@ -1,6 +1,6 @@
 /**
  * @module
- * The create form's release date: an entered date goes out as an ISO instant, and an empty field
+ * The create form's release date: an entered day goes out as the plain day, and an empty field
  * leaves the key out (a create has nothing to clear, and the contract's create body takes no `null`).
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -92,7 +92,7 @@ const mountCreate = () =>
 /**
  * Fills the title, optionally the release date, submits, and returns the POST body.
  *
- * @param releaseDate - The `datetime-local` text to type, or nothing to leave the field empty.
+ * @param releaseDate - The `YYYY-MM-DD` text to type, or nothing to leave the field empty.
  */
 const submitCreate = (releaseDate?: string) => {
     const wrapper = mountCreate();
@@ -112,9 +112,9 @@ const submitCreate = (releaseDate?: string) => {
 };
 
 describe('ProductCreate — release date', () => {
-    it('sends an entered date as the ISO instant of that wall-clock time', () =>
-        submitCreate('2027-03-15T09:30').then((data) => {
-            expect(data.releaseDate).toBe(new Date(2027, 2, 15, 9, 30).toISOString());
+    it('sends an entered day as the plain day, with no time and no zone', () =>
+        submitCreate('2027-03-15').then((data) => {
+            expect(data.releaseDate).toBe('2027-03-15');
         }));
 
     it('leaves the key out when the field is empty', () =>

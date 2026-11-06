@@ -12,6 +12,7 @@ import {
     formatText,
     formatDate,
     formatDateTime,
+    formatDay,
     formatUtcDate,
     formatBucketStart,
     formatCurrency,
@@ -391,5 +392,28 @@ describe('formatCountry', () => {
     it('is empty for an absent code', () => {
         expect(formatCountry(undefined)).toBe('');
         expect(formatCountry('')).toBe('');
+    });
+});
+
+describe('formatDay', () => {
+    it.each(['Pacific/Auckland', 'America/Los_Angeles', 'UTC'])(
+        'prints a plain day as that day in %s, with no time and no shift',
+        (zone) => {
+            pretendBrowserZone(zone);
+
+            const printed = formatDay('2026-12-01');
+
+            expect(printed).toContain('1');
+            expect(printed).toContain('2026');
+            expect(printed).not.toMatch(/\d:\d\d/);
+            // West of UTC, a date-only string read in the local zone would be 30 November.
+            expect(printed).not.toContain('30');
+        }
+    );
+
+    it('falls back for undefined, null and empty input', () => {
+        expect(formatDay()).toBe(EMPTY_VALUE);
+        expect(formatDay(null)).toBe(EMPTY_VALUE);
+        expect(formatDay('')).toBe(EMPTY_VALUE);
     });
 });

@@ -606,7 +606,7 @@ describe('a preorder line', () => {
                         price: '29.00',
                         taxRate: 0,
                         preorder: true,
-                        releaseDate: '2027-03-15T12:00:00.000Z'
+                        releaseDate: '2027-03-15'
                     }
                 }
             ]

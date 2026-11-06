@@ -16,7 +16,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { Product } from '@types';
 import { shelfStateOf } from '@/modules/products';
-import { formatDate } from '@/infrastructure/utils/formatters.ts';
+import { formatDay } from '@/infrastructure/utils/formatters.ts';
 import { useCartStore } from '../store';
 import { backorderPromiseDays } from '@/infrastructure/shop.ts';
 
@@ -81,7 +81,7 @@ const label = computed(() => {
  */
 const promise = computed(() =>
     product.restockDate
-        ? t('add-to-cart-button.backorder-ships-by', { date: formatDate(product.restockDate) })
+        ? t('add-to-cart-button.backorder-ships-by', { date: formatDay(product.restockDate) })
         : t('add-to-cart-button.backorder-ships-undated', { days: backorderPromiseDays.value })
 );
 

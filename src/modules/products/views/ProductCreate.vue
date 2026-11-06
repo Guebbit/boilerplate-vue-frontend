@@ -37,7 +37,6 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
-import { fromDateTimeLocal } from '../domain';
 import { toCreateTranslations } from '../composables/translations-body.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { normalizeAmount, padDecimal } from '@/infrastructure/utils/money.ts';
@@ -231,8 +230,8 @@ const submitForm = () => {
                 normalizeAmount(price, getCurrentLocale()),
                 shopMinorUnits.value ?? 0
             ),
-            releaseDate: fromDateTimeLocal(releaseDate),
-            restockDate: fromDateTimeLocal(restockDate),
+            releaseDate: releaseDate ?? '',
+            restockDate: restockDate ?? '',
             translations: toCreateTranslations(translations),
             imageUpload: undefined
         })
@@ -352,7 +351,7 @@ const submitForm = () => {
             />
             <v-text-field
                 v-model="form.releaseDate"
-                type="datetime-local"
+                type="date"
                 :label="t('product-create-page.label-release-date')"
                 :hint="t('product-create-page.hint-release-date')"
                 persistent-hint
@@ -373,7 +372,7 @@ const submitForm = () => {
             <v-text-field
                 v-if="form.allowBackorder"
                 v-model="form.restockDate"
-                type="datetime-local"
+                type="date"
                 :label="t('product-create-page.label-restock-date')"
                 :hint="t('product-create-page.hint-restock-date', { days: backorderPromiseDays })"
                 persistent-hint

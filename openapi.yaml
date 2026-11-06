@@ -12497,8 +12497,8 @@ paths:
           required: false
           schema:
             type: string
-            format: date-time
-          description: The date to preview, an ISO 8601 date-time with a zone. Absent or blank means cleared.
+            format: date
+          description: The day to preview, a day on the shop's calendar as `YYYY-MM-DD`. Absent or blank means cleared.
       responses:
         "200":
           description: How many orders the move would email
@@ -12567,8 +12567,8 @@ paths:
           required: false
           schema:
             type: string
-            format: date-time
-          description: The date to preview, an ISO 8601 date-time with a zone. Absent or blank means cleared.
+            format: date
+          description: The day to preview, a day on the shop's calendar as `YYYY-MM-DD`. Absent or blank means cleared.
       responses:
         "200":
           description: How many orders the move would email
@@ -14484,7 +14484,7 @@ paths:
       tags:
         - Shop
       summary: The shop's identity, currency, ship-to countries and return address
-      description: "Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, where returned goods go, the version of the Terms in force and the backorder promise in days. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order."
+      description: "Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, where returned goods go, the version of the Terms in force and the backorder promise in days. Public and cheap to read; it never changes without a redeploy. The shop's time zone (an IANA name) is published so a screen can name the calendar a promised day belongs to. Not published: the bank-transfer details, which travel on each order."
       operationId: getShop
       security: []
       responses:
@@ -18019,8 +18019,8 @@ components:
       description: "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
     ReleaseDate:
       type: string
-      format: date-time
-      description: When a product ships from, as an ISO 8601 date-time with a zone. A product with a future date that is active and purchasable is a preorder. At most one year ahead (Google's `availability_date` rule); a date in the past is accepted and simply means "released". Moving it later notifies the buyers who already paid (`delivery`).
+      format: date
+      description: The day a product ships from, a day on the shop's calendar (`Shop.timeZone`) as `YYYY-MM-DD`; stored as the UTC instant of that day's midnight in the shop's zone and always answered back as the same day. A product with a future date that is active and purchasable is a preorder. At most one year ahead (Google's `availability_date` rule); a day in the past is accepted and simply means "released". Moving it later notifies the buyers who already paid (`delivery`).
     RateType:
       type: string
       enum:
@@ -18755,10 +18755,12 @@ components:
           description: Staff's free text about the hold. Present until the retention sweep unsets it.
         agreedAt:
           type: string
-          format: date-time
+          format: date
+          description: The day promised when ordering, a day on the shop's calendar (`Shop.timeZone`).
         expectedAt:
           type: string
-          format: date-time
+          format: date
+          description: The day now expected, a day on the shop's calendar (`Shop.timeZone`).
         lastNoticeAt:
           type: string
           format: date-time
@@ -20181,8 +20183,8 @@ components:
       description: A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate.
     RestockDate:
       type: string
-      format: date-time
-      description: When stock is expected back, as an ISO 8601 date-time with a zone, for a product that allows backorder. At most one year ahead. Without one the shop promises delivery within 30 days. A date in the past is accepted and the product then reads sold out until staff set a new date or clear it. Moving it later notifies the buyers who already paid (`delivery`).
+      format: date
+      description: "The day stock is expected back, for a product that allows backorder: a day on the shop's calendar (`Shop.timeZone`) as `YYYY-MM-DD`; stored as the UTC instant of that day's midnight in the shop's zone and always answered back as the same day. At most one year ahead. Without one the shop promises delivery within 30 days. A day in the past is accepted and the product then reads sold out until staff set a new date or clear it. Moving it later notifies the buyers who already paid (`delivery`)."
     ProductTranslationFields:
       type: object
       additionalProperties: false
@@ -21860,12 +21862,12 @@ components:
           description: Staff's free text about the hold. Left out for anyone who cannot update fulfillment.
         agreedAt:
           type: string
-          format: date-time
-          description: The date promised when ordering, frozen from the line snapshot (CRD Art. 18).
+          format: date
+          description: The day promised when ordering, frozen from the line snapshot (CRD Art. 18). A day on the shop's calendar (`Shop.timeZone`); stored as the UTC instant of its midnight.
         expectedAt:
           type: string
-          format: date-time
-          description: When it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected.
+          format: date
+          description: The shop-calendar day it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected.
         lastNoticeAt:
           type: string
           format: date-time
@@ -22211,10 +22213,12 @@ components:
           description: When the order was paid. The payment's instant, which is also the queue key stock is allocated by (`inventory` stamps the hold in the same transaction).
         agreedAt:
           type: string
-          format: date-time
+          format: date
+          description: The day promised when ordering, a day on the shop's calendar (`Shop.timeZone`).
         expectedAt:
           type: string
-          format: date-time
+          format: date
+          description: The day now expected, a day on the shop's calendar (`Shop.timeZone`).
         slippedDays:
           type: integer
           minimum: 0
@@ -22270,8 +22274,8 @@ components:
           description: As the earliest order froze it.
         firstAgreedAt:
           type: string
-          format: date-time
-          description: The earliest date any buyer was promised.
+          format: date
+          description: The earliest day any buyer was promised, a day on the shop's calendar (`Shop.timeZone`).
         paid:
           type: integer
           minimum: 0
@@ -24571,6 +24575,7 @@ components:
         - returnPostagePayer
         - termsVersion
         - backorderPromiseDays
+        - timeZone
       properties:
         legalName:
           type: string
@@ -24621,6 +24626,9 @@ components:
           type: integer
           minimum: 1
           description: 'Days a buyer is promised when a backorder names no restock date: "ships within N days". A legal value the server fixes (CRD Art. 18(1)), not a setting.'
+        timeZone:
+          type: string
+          description: The shop's calendar, a canonical IANA zone name such as `Europe/Rome`. The promised days (`releaseDate`, `restockDate`, `agreedAt`, `expectedAt`) are days on this calendar; they are sent and answered as plain days, so a screen never converts them.
     SitemapDocument:
       type: string
       description: "A sitemap file (sitemaps.org 0.9): an `urlset` of `url` entries, or a `sitemapindex` of `sitemap` entries. Served as `application/xml`, not JSON."

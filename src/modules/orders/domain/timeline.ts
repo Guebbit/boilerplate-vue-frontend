@@ -19,8 +19,8 @@ export interface TimelineTools {
     has: (key: string) => boolean;
     /** Formats an amount in a currency. */
     money: (amount: string, currency: string) => string;
-    /** Formats an ISO date, no time, in the reader's zone. */
-    date: (iso: string) => string;
+    /** Formats a `YYYY-MM-DD` shop day, no time and no zone shift: a promised date. */
+    day: (iso: string) => string;
     /** Formats an ISO date, no time, as the UTC day it names: the withdrawal deadline. */
     utcDate: (iso: string) => string;
 }
@@ -220,7 +220,7 @@ const documentNumber: DetailBuilder = (tools, data) => [
 const dateMove: DetailBuilder = (tools, data) => {
     const dateOf = (field: string): string => {
         const iso = textOf(data, field);
-        return iso ? tools.date(iso) : tools.t('order-timeline.date-none');
+        return iso ? tools.day(iso) : tools.t('order-timeline.date-none');
     };
     return [tools.t('order-timeline.detail-move', { from: dateOf('from'), to: dateOf('to') })];
 };
@@ -236,7 +236,7 @@ const delayNotice: DetailBuilder = (tools, data) => {
     const expected = textOf(data, 'expectedAt');
     return [
         expected
-            ? tools.t('order-timeline.detail-expected', { value: tools.date(expected) })
+            ? tools.t('order-timeline.detail-expected', { value: tools.day(expected) })
             : undefined
     ];
 };

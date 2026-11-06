@@ -27,7 +27,7 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
-import { EMPTY_VALUE, formatDate } from '@/infrastructure/utils/formatters.ts';
+import { EMPTY_VALUE, formatDay } from '@/infrastructure/utils/formatters.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
@@ -199,10 +199,10 @@ const editLink = (productId: string) => {
             row-test="preorder-product-row"
         >
             <template v-slot:[`item.releaseDate`]="{ item }">
-                {{ formatDate(item.releaseDate) }}
+                {{ formatDay(item.releaseDate) }}
             </template>
             <template v-slot:[`item.firstPromised`]="{ item }">
-                {{ formatDate(item.summary?.firstAgreedAt) }}
+                {{ formatDay(item.summary?.firstAgreedAt) }}
             </template>
             <template v-slot:[`item.limit`]="{ item }">
                 {{

@@ -1,59 +1,33 @@
 /**
  * @module
- * The release-date field's two spellings: the wire's ISO 8601 instant and the `datetime-local`
- * input's zone-less wall-clock string. Pure; the browser's own zone is the only ambient input,
- * and it is what a person typing a date means.
+ * The promise-date fields' one spelling: a plain `YYYY-MM-DD` day, the same on the wire and in
+ * the `<input type="date">`. The server turns the day into the shop's midnight and back, so the
+ * browser's zone never enters; nothing here parses or shifts a date, it only compares strings.
  */
 
 /**
- * Left-pads a date part to two digits.
- *
- * @param part - A month, day, hour or minute.
- */
-const pad = (part: number): string => String(part).padStart(2, '0');
-
-/**
- * An instant as the `datetime-local` input spells it, in the browser's zone, to the minute.
- *
- * @param iso - The wire value, when the product has one.
- * @returns `YYYY-MM-DDTHH:mm`, or `''` for an absent or unreadable value (an empty field).
- */
-export const toDateTimeLocal = (iso?: string | null): string => {
-    if (!iso) return '';
-    const date = new Date(iso);
-    if (Number.isNaN(date.getTime())) return '';
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
-
-/**
- * The input's value back as the wire's ISO 8601 instant.
- *
- * @param local - The input's value.
- * @returns A UTC date-time, or `''` when the field is empty or unreadable — which the body helper
- *  then spells as `null` (clear) on an edit and leaves out of a create.
- */
-export const fromDateTimeLocal = (local?: string | null): string => {
-    if (!local) return '';
-    // Single-argument `Date` parses a zone-less `YYYY-MM-DDTHH:mm` as local time, per the spec.
-    const date = new Date(local);
-    return Number.isNaN(date.getTime()) ? '' : date.toISOString();
-};
-
-/**
- * Whether saving would change the date at all. Whether a change reaches any buyer is the server's
+ * Whether saving would change the day at all. Whether a change reaches any buyer is the server's
  * call (`release-date-impact` counts them), so this only spares a preview for a save that left the
- * date alone.
+ * day alone.
  *
- * @param originalIso - The date as the product holds it now, when it has one.
- * @param nextLocal - The input's value; empty or `null` means cleared.
+ * @param original - The day as the product holds it now, when it has one.
+ * @param next - The input's value; empty or `null` means cleared.
  */
 export const isReleaseDateChanged = (
-    originalIso: string | null | undefined,
-    nextLocal: string | null | undefined
-): boolean => {
-    const original = originalIso ? new Date(originalIso).getTime() : Number.NaN;
-    const next = fromDateTimeLocal(nextLocal);
-    const nextTime = next === '' ? Number.NaN : new Date(next).getTime();
-    // NaN stands for "no date": two of them are the same.
-    return Number.isNaN(original) ? !Number.isNaN(nextTime) : original !== nextTime;
-};
+    original: string | null | undefined,
+    next: string | null | undefined
+): boolean => (original ?? '') !== (next ?? '');
+
+/**
+ * A promise day as the PATCH should carry it: only when the field differs from what was loaded.
+ * Every other field is resent whole, but a moved day notifies the buyers who already paid, so an
+ * untouched one does not travel.
+ *
+ * @param held - The day the product holds now, when it has one.
+ * @param current - The input's value; `clearable` empties it to `null`, the same "no date" as `''`.
+ * @returns The wire value (`''` clears it), or `undefined` to leave the field out.
+ */
+export const dayChange = (
+    held: string | null | undefined,
+    current: string | null | undefined
+): string | undefined => (isReleaseDateChanged(held, current) ? (current ?? '') : undefined);

@@ -26,7 +26,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import {
     formatCurrency,
-    formatDate,
+    formatDay,
     formatDateTime,
     formatUtcDate
 } from '@/infrastructure/utils/formatters.ts';
@@ -87,7 +87,7 @@ const tools: TimelineTools = {
     t: (key, params) => t(key, params ?? {}),
     has: (key) => i18n.te(key),
     money: (amount, currency) => formatCurrency(amount, currency),
-    date: (iso) => formatDate(iso),
+    day: (iso) => formatDay(iso),
     utcDate: (iso) => formatUtcDate(iso)
 };
 

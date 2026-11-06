@@ -52,6 +52,13 @@ export const shipToCountries = computed(() => shop.value?.shipToCountries ?? [])
 export const backorderPromiseDays = computed(() => shop.value?.backorderPromiseDays);
 
 /**
+ * The shop's IANA time zone (`Europe/Rome`), or `''` while unknown. The promised days arrive as
+ * plain days already resolved on this calendar, so they do not need it; it names the calendar for
+ * anything that must say which one a day belongs to.
+ */
+export const shopTimeZone = computed(() => shop.value?.timeZone ?? '');
+
+/**
  * Loads the shop once. A failure is logged and leaves it empty, and the next call tries again —
  * the endpoint is public, so a failure here is the network's, not a refusal.
  *

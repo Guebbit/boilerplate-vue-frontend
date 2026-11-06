@@ -1,49 +1,40 @@
 /**
  * @module
- * The release-date field's two spellings round-trip: what the `datetime-local` input shows and
- * what the wire carries. Runs under whatever zone the host has — the contract is that the input
- * value is wall-clock time and the wire value is the same instant.
+ * The promise-date field is a plain `YYYY-MM-DD` day on the wire and in the input, so the only
+ * logic is comparing two strings: nothing here may read or shift a date, in any host zone.
  */
 import { describe, expect, it } from 'vitest';
-import { fromDateTimeLocal, isReleaseDateChanged, toDateTimeLocal } from '../domain';
-
-describe('release date spellings', () => {
-    it('reads an instant back to the minute it was typed at', () => {
-        const typed = '2027-03-15T09:30';
-
-        expect(toDateTimeLocal(fromDateTimeLocal(typed))).toBe(typed);
-    });
-
-    it('writes the typed wall-clock time as one UTC instant', () => {
-        expect(fromDateTimeLocal('2027-03-15T09:30')).toBe(
-            new Date(2027, 2, 15, 9, 30).toISOString()
-        );
-    });
-
-    it.each([undefined, null, '', 'not a date'])('reads %j as an empty field', (value) => {
-        expect(toDateTimeLocal(value)).toBe('');
-    });
-
-    it.each([undefined, null, '', 'not a date'])('writes %j as no date', (value) => {
-        expect(fromDateTimeLocal(value)).toBe('');
-    });
-});
+import { dayChange, isReleaseDateChanged } from '../domain';
 
 describe('isReleaseDateChanged', () => {
-    const original = new Date(2027, 2, 15, 9, 30).toISOString();
+    const original = '2027-03-15';
 
     it.each([
-        ['a later date', '2027-04-01T10:00', true],
-        ['a cleared date', '', true],
-        ['a cleared date spelled null', null, true],
-        ['an earlier date', '2027-03-01T10:00', true],
-        ['the same date', '2027-03-15T09:30', false]
+        ['a later day', '2027-04-01', true],
+        ['a cleared day', '', true],
+        ['a cleared day spelled null', null, true],
+        ['an earlier day', '2027-03-01', true],
+        ['the same day', '2027-03-15', false]
     ])('is %s: %s', (_name, next, expected) => {
         expect(isReleaseDateChanged(original, next)).toBe(expected);
     });
 
-    it.each([undefined, null, '', 'not a date'])('sees a date set where %j was held', (held) => {
-        expect(isReleaseDateChanged(held, '2027-04-01T10:00')).toBe(true);
+    it.each([undefined, null, ''])('sees a day set where %j was held', (held) => {
+        expect(isReleaseDateChanged(held, '2027-04-01')).toBe(true);
         expect(isReleaseDateChanged(held, '')).toBe(false);
+    });
+});
+
+describe('dayChange', () => {
+    it('leaves an untouched day out of the body', () => {
+        expect(dayChange('2027-03-15', '2027-03-15')).toBeUndefined();
+    });
+
+    it('sends the typed day as it is', () => {
+        expect(dayChange('2027-03-15', '2027-04-01')).toBe('2027-04-01');
+    });
+
+    it.each([null, undefined, ''])('spells a cleared %j field as the empty string', (current) => {
+        expect(dayChange('2027-03-15', current)).toBe('');
     });
 });

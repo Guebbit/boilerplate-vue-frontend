@@ -171,7 +171,7 @@ describe('what a row says', () => {
             aPreorderFulfillmentOrder({
                 late: true,
                 slippedDays: 12,
-                expectedAt: '2027-03-27T12:00:00.000Z'
+                expectedAt: '2027-03-27'
             })
         ]).then(({ wrapper }) => {
             expect(wrapper.get('[data-test=preorder-late]').text()).toBe('Late');

@@ -12,7 +12,7 @@ import { storeToRefs } from 'pinia';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useSlot } from '@/kernel/slots';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
+import { formatCurrency, formatDay } from '@/infrastructure/utils/formatters.ts';
 import type { ThemeColor } from '@/ui/types.ts';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import type { Product } from '@types';
@@ -77,7 +77,7 @@ const shelfText = computed(() =>
     shelf.value === 'backorder' && !product.restockDate
         ? t('product-card.backorder-undated', { days: backorderPromiseDays.value })
         : t(SHELF_LABELS[shelf.value], {
-              date: formatDate(
+              date: formatDay(
                   shelf.value === 'backorder' ? product.restockDate : product.releaseDate
               )
           })

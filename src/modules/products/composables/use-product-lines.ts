@@ -6,7 +6,7 @@
  */
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-import { formatDate } from '@/infrastructure/utils/formatters.ts';
+import { formatDay } from '@/infrastructure/utils/formatters.ts';
 import type { LineAvailability, Product } from '@types';
 import { useProductsStore } from '../store';
 import { backorderPromiseDays } from '@/infrastructure/shop.ts';
@@ -104,7 +104,7 @@ export const useProductLines = (): ProductLines => {
             if (availability === 'backorder' && !dates?.restockDate)
                 return t('product-lines.backorder-undated', { days: backorderPromiseDays.value });
             return t(LABEL_KEYS[availability], {
-                date: formatDate(
+                date: formatDay(
                     availability === 'backorder' ? dates?.restockDate : dates?.releaseDate
                 )
             });

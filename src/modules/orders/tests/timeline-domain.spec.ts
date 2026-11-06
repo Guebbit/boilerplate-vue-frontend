@@ -18,7 +18,7 @@ const tools: TimelineTools = {
     t: (key, parameters) => (parameters ? `${key}(${Object.values(parameters).join(',')})` : key),
     has: (key) => !key.includes('unknown'),
     money: (amount, currency) => `${amount} ${currency}`,
-    date: (iso) => `date:${iso}`,
+    day: (iso) => `day:${iso}`,
     utcDate: (iso) => `utc:${iso}`
 };
 
@@ -182,22 +182,22 @@ describe('describeTimelineEntry', () => {
 describe('the preorder rows', () => {
     it('shows a moved date as from and to, and a missing end as no date', () => {
         const moved = describeTimelineEntry(
-            { type: 'release_date_moved', data: { from: '2026-11-01T00:00:00.000Z', to: null } },
+            { type: 'release_date_moved', data: { from: '2026-11-01', to: null } },
             tools
         );
 
         expect(moved.detail).toBe(
-            'order-timeline.detail-move(date:2026-11-01T00:00:00.000Z,order-timeline.date-none)'
+            'order-timeline.detail-move(day:2026-11-01,order-timeline.date-none)'
         );
     });
 
     it('shows the date a notice promised', () => {
         const notice = describeTimelineEntry(
-            { type: 'delay_notice_sent', data: { expectedAt: '2026-12-01T00:00:00.000Z' } },
+            { type: 'delay_notice_sent', data: { expectedAt: '2026-12-01' } },
             tools
         );
 
-        expect(notice.detail).toBe('order-timeline.detail-expected(date:2026-12-01T00:00:00.000Z)');
+        expect(notice.detail).toBe('order-timeline.detail-expected(day:2026-12-01)');
     });
 
     it('shows no detail on a notice that named no new date', () => {

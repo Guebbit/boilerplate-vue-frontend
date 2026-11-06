@@ -17,9 +17,9 @@ vi.mock('@api', () => ({
 }));
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }));
 
-/** The date the product holds, and a different one typed into the input. */
-const HELD = new Date(2027, 2, 15, 9, 30).toISOString();
-const EARLIER = '2027-03-01T10:00';
+/** The day the product holds, and a different one typed into the input. */
+const HELD = '2027-03-15';
+const EARLIER = '2027-03-01';
 
 beforeEach(() => {
     setActivePinia(createPinia());
@@ -41,7 +41,7 @@ describe('confirmReleaseDateMove', () => {
     it('does not ask when the date was left alone', () => {
         const { confirmReleaseDateMove } = useReleaseDateConfirm(() => HELD);
 
-        return confirmReleaseDateMove('p1', '2027-03-15T09:30').then((go) => {
+        return confirmReleaseDateMove('p1', HELD).then((go) => {
             expect(previewRelease).not.toHaveBeenCalled();
             expect(go).toBe(true);
         });

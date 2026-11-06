@@ -12,7 +12,7 @@ import { useI18n } from 'vue-i18n';
 import { previewReleaseDateImpact, previewRestockDateImpact } from '@api';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
-import { fromDateTimeLocal, isReleaseDateChanged } from '../domain';
+import { isReleaseDateChanged } from '../domain';
 
 /**
  * What the preview counts, as the dialog reads it.
@@ -53,7 +53,7 @@ export const useReleaseDateConfirm = (
      * reached, or the preview fails.
      *
      * @param productId - The product being saved.
-     * @param current - The release-date input's value.
+     * @param current - The date input's value, a `YYYY-MM-DD` day.
      * @returns Whether to go on and save.
      */
     const confirmReleaseDateMove = (
@@ -63,7 +63,7 @@ export const useReleaseDateConfirm = (
         if (!isReleaseDateChanged(heldDate(), current) || !session.can('display', 'Order'))
             return Promise.resolve(true);
         // A cleared date sends no date: the contract reads absent as cleared.
-        const date = fromDateTimeLocal(current) || undefined;
+        const date = current || undefined;
         return (
             (
                 kind === 'release'

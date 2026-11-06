@@ -13,7 +13,12 @@
  * jumps and the sweeps are pulled with the job lever.
  */
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
-import { eventually, idFromLocation, preorderOnSale } from '../../../support/e2e/steps';
+import {
+    eventually,
+    idFromLocation,
+    preorderOnSale,
+    releaseDateIn
+} from '../../../support/e2e/steps';
 
 /** One day in milliseconds, for the clock jumps. */
 const DAY_MS = 86_400_000;
@@ -79,7 +84,7 @@ describe('PS5 · My preorder is late', () => {
                         'the date moves a fortnight later: the buyer is told, with nothing to answer'
                     );
                     cy.apiAs('editor', 'PATCH', `/products/${productId}`, {
-                        releaseDate: new Date(Date.now() + 24 * DAY_MS).toISOString()
+                        releaseDate: releaseDateIn(24)
                     });
                     mailedToCustomer('Part of your order will arrive later than planned');
                     cy.visit(`/en/orders/${first}`);

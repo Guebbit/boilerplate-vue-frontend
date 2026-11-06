@@ -386,12 +386,12 @@ export const solveHumanCheck = (): void => {
 };
 
 /**
- * A `datetime-local` value `days` from now, the format the product form's release-date field takes.
+ * A `YYYY-MM-DD` day `days` from now, the format the product form's release-date field takes.
  *
  * @param days - how far ahead; the shop sells a preorder up to one year out
  */
 export const releaseDateIn = (days: number): string =>
-    new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 16);
+    new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
 
 /**
  * The editor makes a product through the create form, with a release date when one is given, and
@@ -500,7 +500,7 @@ export const preorderOnSale = (options: {
     cy
         .apiAs<{ id: string }>('editor', 'POST', '/products', {
             price: '19.90',
-            releaseDate: new Date(Date.now() + options.releaseInDays * 86_400_000).toISOString(),
+            releaseDate: releaseDateIn(options.releaseInDays),
             translations: {
                 en: {
                     title:

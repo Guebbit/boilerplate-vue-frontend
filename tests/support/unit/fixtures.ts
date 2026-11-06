@@ -236,7 +236,7 @@ export const aLevel = (overrides: Partial<InventoryLevel> = {}): InventoryLevel 
 export const aPreorderLevel = (overrides: Partial<PreorderLevel> = {}): PreorderLevel => ({
     productId: 'p1',
     title: 'Walnut desk',
-    releaseDate: '2027-03-15T12:00:00.000Z',
+    releaseDate: '2027-03-15',
     backorderLimit: 10,
     backordered: 4,
     held: 1,
@@ -257,7 +257,7 @@ export const aPreorderSummary = (
 ): PreorderProductSummary => ({
     productId: 'p1',
     title: 'Walnut desk',
-    firstAgreedAt: '2027-03-15T12:00:00.000Z',
+    firstAgreedAt: '2027-03-15',
     paid: 3,
     waiting: 3,
     allocated: 0,
@@ -294,7 +294,7 @@ export const aPreorderFulfillmentOrder = (
     ],
     buyer: { userId: 'u1', email: 'buyer@example.com' },
     paidAt: '2026-10-01T10:00:00.000Z',
-    agreedAt: '2027-03-15T12:00:00.000Z',
+    agreedAt: '2027-03-15',
     slippedDays: 0,
     late: false,
     delivered: false,
@@ -372,6 +372,7 @@ export const aShop = (overrides: Partial<Shop> = {}): Shop => ({
     returnPostagePayer: 'consumer',
     termsVersion: '1',
     backorderPromiseDays: 30,
+    timeZone: 'Europe/Rome',
     ...overrides
 });
 

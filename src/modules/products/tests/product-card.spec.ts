@@ -95,7 +95,7 @@ describe('ProductCard — what a shopper reads', () => {
 
     it('reads a preorder whose allowance is full as sold out', () => {
         const wrapper = mountCard(
-            aProduct({ preorder: true, inStock: false, releaseDate: '2027-03-15T12:00:00.000Z' })
+            aProduct({ preorder: true, inStock: false, releaseDate: '2027-03-15' })
         );
         const badge = wrapper.get('[data-test=product-card-availability]');
 
@@ -105,7 +105,7 @@ describe('ProductCard — what a shopper reads', () => {
 
     it('tells a preorder from sold out, with the date it ships from', () => {
         const wrapper = mountCard(
-            aProduct({ preorder: true, inStock: true, releaseDate: '2027-03-15T12:00:00.000Z' })
+            aProduct({ preorder: true, inStock: true, releaseDate: '2027-03-15' })
         );
         const badge = wrapper.get('[data-test=product-card-availability]');
 
@@ -115,7 +115,7 @@ describe('ProductCard — what a shopper reads', () => {
 
     it('tells a backorder from sold out, always with its promise', () => {
         const dated = mountCard(
-            aProduct({ backorder: true, inStock: false, restockDate: '2027-03-15T12:00:00.000Z' })
+            aProduct({ backorder: true, inStock: false, restockDate: '2027-03-15' })
         );
         const undated = mountCard(aProduct({ backorder: true, inStock: false }));
 

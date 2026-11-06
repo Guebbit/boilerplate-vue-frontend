@@ -46,7 +46,7 @@ describe('BO1 · The buyer backorders', () => {
         createProductThroughTheForm(`BO1 backorder ${unique()}`).then((id) => {
             cy.apiAs('editor', 'PATCH', `/products/${id}`, {
                 allowBackorder: true,
-                restockDate: new Date(Date.parse(releaseDateIn(20))).toISOString()
+                restockDate: releaseDateIn(20)
             });
             cy.step('the admin puts one unit on the shelf and opens room for backorders');
             cy.apiAs('admin', 'PATCH', `/inventory/levels/${id}`, {

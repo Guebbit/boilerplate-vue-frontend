@@ -130,8 +130,12 @@ A preorder's shelf may be empty: its units are claimed against the preorder allo
 asked. The shopper never sees the allowance; a full one shows up as "Sold out" on the cart line.
 
 Staff set the date with the "Release date" field on the create and edit forms
-(`datetime-local`, the browser's zone, sent as an ISO instant; at most one year ahead, which the
-server enforces). An edit sends it only when it changed: moving it later notifies the buyers who
+(`<input type="date">`, sent as the plain `YYYY-MM-DD` day; at most one year ahead, which the
+server enforces). The day is the shop's: the server stores the UTC instant of its midnight in the
+shop's zone and sends the same day back, so the form fills the field from the response as it is and
+no screen does zone maths. Every place that prints a promise date (`releaseDate`, `restockDate`,
+`agreedAt`, `expectedAt`, `firstAgreedAt` and the timeline's moved-date rows) uses `formatDay`, which prints the day with no
+time and no shift in any browser zone. An edit sends it only when it changed: moving it later notifies the buyers who
 already paid, so an untouched date must not travel. Clearing the field sends `null` and ends the
 preorder.
 

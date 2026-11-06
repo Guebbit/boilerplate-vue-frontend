@@ -34,7 +34,7 @@ import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import {
     formatText,
-    formatDate,
+    formatDay,
     formatDateTime,
     formatCurrency,
     formatFlag
@@ -151,11 +151,11 @@ const stockLabel = computed(() => {
     if (shelf === 'off-sale') return t('product-target-page.off-sale');
     // A preorder is bought before it exists: the shelf may be empty, the date is what matters.
     if (shelf === 'preorder')
-        return t('product-target-page.preorder', { date: formatDate(shown.releaseDate) });
+        return t('product-target-page.preorder', { date: formatDay(shown.releaseDate) });
     // A backorder is bought now and ships by its restock date, or within 30 days when none is named.
     if (shelf === 'backorder')
         return shown.restockDate
-            ? t('product-target-page.backorder', { date: formatDate(shown.restockDate) })
+            ? t('product-target-page.backorder', { date: formatDay(shown.restockDate) })
             : t('product-target-page.backorder-undated', { days: backorderPromiseDays.value });
     if (!shown.inStock) return t('product-target-page.out-of-stock');
     if (shown.lowStock) return t('product-target-page.low-stock');
@@ -274,7 +274,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                     <ItemDetailField
                         v-if="currentProduct.releaseDate"
                         :label="t('product-target-page.label-release-date')"
-                        :value="formatDateTime(currentProduct.releaseDate)"
+                        :value="formatDay(currentProduct.releaseDate)"
                         :icon="Calendar"
                         data-test="product-release-date"
                     />

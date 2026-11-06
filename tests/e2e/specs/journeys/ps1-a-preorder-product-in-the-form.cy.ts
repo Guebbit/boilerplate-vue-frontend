@@ -6,7 +6,7 @@
  * it later or clearing it is a plain edit of the same field. Clearing it ends the preorder.
  *
  * Written against the live form and not yet run in a browser: the first run may need its
- * selectors nudged (a `datetime-local` field is typed as one string).
+ * selectors nudged (a `date` field is typed as one `YYYY-MM-DD` string).
  */
 import { createProductThroughTheForm, releaseDateIn } from '../../../support/e2e/steps';
 

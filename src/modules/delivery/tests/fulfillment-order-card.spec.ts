@@ -130,8 +130,8 @@ describe('what a card shows', () => {
                 holdReason: 'incorrect_address',
                 holdNotice: 'check_address',
                 holdNote: 'call the buyer',
-                agreedAt: '2026-12-01T00:00:00.000Z',
-                expectedAt: '2026-12-12T00:00:00.000Z'
+                agreedAt: '2026-12-01',
+                expectedAt: '2026-12-12'
             })
         );
 
@@ -149,7 +149,7 @@ describe('what a card shows', () => {
             aFulfillmentOrder({
                 status: 'on_hold',
                 holdReason: 'awaiting_stock',
-                agreedAt: '2026-12-01T00:00:00.000Z'
+                agreedAt: '2026-12-01'
             })
         );
 
@@ -318,8 +318,8 @@ describe('a late preorder', () => {
             aFulfillmentOrder({
                 status: 'on_hold',
                 holdReason: 'awaiting_stock',
-                agreedAt: '2027-03-01T00:00:00.000Z',
-                expectedAt: '2027-03-20T00:00:00.000Z'
+                agreedAt: '2027-03-01',
+                expectedAt: '2027-03-20'
             })
         );
 

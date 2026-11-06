@@ -13,7 +13,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { formatDateTime, formatDay } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useDeliveryStore } from '../store.ts';
 import HoldDialog from './HoldDialog.vue';
@@ -212,7 +212,7 @@ const release = () =>
         >
             {{
                 t('fulfillment-order-card.expected', {
-                    date: formatDateTime(fulfillmentOrder.expectedAt)
+                    date: formatDay(fulfillmentOrder.expectedAt)
                 })
             }}
         </p>
@@ -229,7 +229,7 @@ const release = () =>
             class="m-0 text-sm opacity-75"
             data-test="fulfillment-order-promised"
         >
-            {{ t('fulfillment-order-card.promised', { date: formatDateTime(promisedDate) }) }}
+            {{ t('fulfillment-order-card.promised', { date: formatDay(promisedDate) }) }}
         </p>
         <p
             v-if="fulfillmentOrder.lastNoticeAt"

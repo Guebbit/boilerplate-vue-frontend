@@ -25,7 +25,7 @@ import { X } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrderLink } from '@/kernel/order-link.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
-import { EMPTY_VALUE, formatDate, formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { EMPTY_VALUE, formatDateTime, formatDay } from '@/infrastructure/utils/formatters.ts';
 import type { ThemeColor } from '@/ui/types.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
@@ -337,13 +337,13 @@ const STATE_COLORS = {
                 {{ formatDateTime(item.paidAt) }}
             </template>
             <template v-slot:[`item.agreedAt`]="{ item }">
-                {{ formatDate(item.agreedAt) }}
+                {{ formatDay(item.agreedAt) }}
             </template>
             <template v-slot:[`item.expectedAt`]="{ item }">
                 <span v-if="!item.expectedAt" data-test="preorder-no-date">
                     {{ t('preorder-board.no-date-yet') }}
                 </span>
-                <template v-else>{{ formatDate(item.expectedAt) }}</template>
+                <template v-else>{{ formatDay(item.expectedAt) }}</template>
                 <span
                     v-if="item.slippedDays > 0"
                     class="ml-1 text-xs opacity-80"

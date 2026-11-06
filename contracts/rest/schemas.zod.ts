@@ -3697,7 +3697,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                             .number()
                             .min(downloadAccountExportResponseOrdersItemItemsItemProductWeightMin)
                             .optional(),
-                        releaseDate: zod.iso.datetime({ offset: true }).optional(),
+                        releaseDate: zod.iso.date().optional(),
                         preorder: zod.boolean().optional(),
                         categories: zod.array(zod.string()).optional(),
                         tags: zod.array(zod.string()).optional(),
@@ -4217,8 +4217,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .string()
                 .max(downloadAccountExportResponseFulfillmentOrdersItemHoldNoteMax)
                 .optional(),
-            agreedAt: zod.iso.datetime({ offset: true }).optional(),
-            expectedAt: zod.iso.datetime({ offset: true }).optional(),
+            agreedAt: zod.iso.date().optional(),
+            expectedAt: zod.iso.date().optional(),
             lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
             cancelReason: zod.enum(['buyer', 'staff', 'order', 'found']).optional()
         })
@@ -7494,9 +7494,9 @@ export const ListProductsResponse = zod.strictObject({
             description: zod.string().optional(),
             active: zod.boolean().optional(),
             purchasable: zod.boolean().default(listProductsResponseItemsItemPurchasableDefault),
-            releaseDate: zod.iso.datetime({ offset: true }).optional(),
+            releaseDate: zod.iso.date().optional(),
             allowBackorder: zod.boolean().optional(),
-            restockDate: zod.iso.datetime({ offset: true }).optional(),
+            restockDate: zod.iso.date().optional(),
             buyable: zod.boolean(),
             preorder: zod.boolean().optional(),
             backorder: zod.boolean().optional(),
@@ -7577,9 +7577,9 @@ export const CreateProductBody = zod.strictObject({
     sku: zod.string().min(1).max(createProductBodySkuMax).optional(),
     active: zod.boolean().default(createProductBodyActiveDefault),
     purchasable: zod.boolean().default(createProductBodyPurchasableDefault),
-    releaseDate: zod.iso.datetime({ offset: true }).optional(),
+    releaseDate: zod.iso.date().optional(),
     allowBackorder: zod.boolean().default(createProductBodyAllowBackorderDefault),
-    restockDate: zod.iso.datetime({ offset: true }).optional(),
+    restockDate: zod.iso.date().optional(),
     requiresShipping: zod.boolean().default(createProductBodyRequiresShippingDefault),
     noWithdrawal: zod.boolean().default(createProductBodyNoWithdrawalDefault),
     weight: zod.number().min(createProductBodyWeightMin).optional(),
@@ -7623,9 +7623,9 @@ export const CreateProductResponse = zod.strictObject({
     description: zod.string().optional(),
     active: zod.boolean().optional(),
     purchasable: zod.boolean().default(createProductResponsePurchasableDefault),
-    releaseDate: zod.iso.datetime({ offset: true }).optional(),
+    releaseDate: zod.iso.date().optional(),
     allowBackorder: zod.boolean().optional(),
-    restockDate: zod.iso.datetime({ offset: true }).optional(),
+    restockDate: zod.iso.date().optional(),
     buyable: zod.boolean(),
     preorder: zod.boolean().optional(),
     backorder: zod.boolean().optional(),
@@ -7713,9 +7713,9 @@ export const GetProductByIdResponse = zod.strictObject({
     description: zod.string().optional(),
     active: zod.boolean().optional(),
     purchasable: zod.boolean().default(getProductByIdResponsePurchasableDefault),
-    releaseDate: zod.iso.datetime({ offset: true }).optional(),
+    releaseDate: zod.iso.date().optional(),
     allowBackorder: zod.boolean().optional(),
-    restockDate: zod.iso.datetime({ offset: true }).optional(),
+    restockDate: zod.iso.date().optional(),
     buyable: zod.boolean(),
     preorder: zod.boolean().optional(),
     backorder: zod.boolean().optional(),
@@ -7796,9 +7796,9 @@ export const ReplaceProductByIdBody = zod.strictObject({
         .optional(),
     active: zod.boolean(),
     purchasable: zod.boolean(),
-    releaseDate: zod.union([zod.iso.datetime({ offset: true }), zod.null()]).optional(),
+    releaseDate: zod.union([zod.iso.date(), zod.null()]).optional(),
     allowBackorder: zod.boolean(),
-    restockDate: zod.union([zod.iso.datetime({ offset: true }), zod.null()]).optional(),
+    restockDate: zod.union([zod.iso.date(), zod.null()]).optional(),
     requiresShipping: zod.boolean(),
     noWithdrawal: zod.boolean(),
     weight: zod.number().min(replaceProductByIdBodyWeightMin).nullish(),
@@ -7847,9 +7847,9 @@ export const ReplaceProductByIdResponse = zod.strictObject({
     description: zod.string().optional(),
     active: zod.boolean().optional(),
     purchasable: zod.boolean().default(replaceProductByIdResponsePurchasableDefault),
-    releaseDate: zod.iso.datetime({ offset: true }).optional(),
+    releaseDate: zod.iso.date().optional(),
     allowBackorder: zod.boolean().optional(),
-    restockDate: zod.iso.datetime({ offset: true }).optional(),
+    restockDate: zod.iso.date().optional(),
     buyable: zod.boolean(),
     preorder: zod.boolean().optional(),
     backorder: zod.boolean().optional(),
@@ -7943,9 +7943,9 @@ export const UpdateProductByIdBody = zod.strictObject({
         .optional(),
     active: zod.boolean().optional(),
     purchasable: zod.boolean().optional(),
-    releaseDate: zod.union([zod.iso.datetime({ offset: true }), zod.null()]).optional(),
+    releaseDate: zod.union([zod.iso.date(), zod.null()]).optional(),
     allowBackorder: zod.boolean().optional(),
-    restockDate: zod.union([zod.iso.datetime({ offset: true }), zod.null()]).optional(),
+    restockDate: zod.union([zod.iso.date(), zod.null()]).optional(),
     requiresShipping: zod.boolean().optional(),
     noWithdrawal: zod.boolean().optional(),
     weight: zod.number().min(updateProductByIdBodyWeightMin).nullish(),
@@ -7996,9 +7996,9 @@ export const UpdateProductByIdResponse = zod.strictObject({
     description: zod.string().optional(),
     active: zod.boolean().optional(),
     purchasable: zod.boolean().default(updateProductByIdResponsePurchasableDefault),
-    releaseDate: zod.iso.datetime({ offset: true }).optional(),
+    releaseDate: zod.iso.date().optional(),
     allowBackorder: zod.boolean().optional(),
-    restockDate: zod.iso.datetime({ offset: true }).optional(),
+    restockDate: zod.iso.date().optional(),
     buyable: zod.boolean(),
     preorder: zod.boolean().optional(),
     backorder: zod.boolean().optional(),
@@ -8090,9 +8090,9 @@ export const RestoreProductByIdResponse = zod.strictObject({
     description: zod.string().optional(),
     active: zod.boolean().optional(),
     purchasable: zod.boolean().default(restoreProductByIdResponsePurchasableDefault),
-    releaseDate: zod.iso.datetime({ offset: true }).optional(),
+    releaseDate: zod.iso.date().optional(),
     allowBackorder: zod.boolean().optional(),
-    restockDate: zod.iso.datetime({ offset: true }).optional(),
+    restockDate: zod.iso.date().optional(),
     buyable: zod.boolean(),
     preorder: zod.boolean().optional(),
     backorder: zod.boolean().optional(),
@@ -8242,9 +8242,9 @@ export const SearchProductsResponse = zod.strictObject({
             description: zod.string().optional(),
             active: zod.boolean().optional(),
             purchasable: zod.boolean().default(searchProductsResponseItemsItemPurchasableDefault),
-            releaseDate: zod.iso.datetime({ offset: true }).optional(),
+            releaseDate: zod.iso.date().optional(),
             allowBackorder: zod.boolean().optional(),
-            restockDate: zod.iso.datetime({ offset: true }).optional(),
+            restockDate: zod.iso.date().optional(),
             buyable: zod.boolean(),
             preorder: zod.boolean().optional(),
             backorder: zod.boolean().optional(),
@@ -8974,7 +8974,7 @@ export const CheckoutResponse = zod.strictObject({
                 noWithdrawal: zod.boolean().optional(),
                 sku: zod.string().min(1).max(checkoutResponseItemsItemProductSkuMax).optional(),
                 weight: zod.number().min(checkoutResponseItemsItemProductWeightMin).optional(),
-                releaseDate: zod.iso.datetime({ offset: true }).optional(),
+                releaseDate: zod.iso.date().optional(),
                 preorder: zod.boolean().optional(),
                 categories: zod.array(zod.string()).optional(),
                 tags: zod.array(zod.string()).optional(),
@@ -9558,7 +9558,7 @@ export const ListOrdersResponse = zod.strictObject({
                             .number()
                             .min(listOrdersResponseItemsItemItemsItemProductWeightMin)
                             .optional(),
-                        releaseDate: zod.iso.datetime({ offset: true }).optional(),
+                        releaseDate: zod.iso.date().optional(),
                         preorder: zod.boolean().optional(),
                         categories: zod.array(zod.string()).optional(),
                         tags: zod.array(zod.string()).optional(),
@@ -9885,7 +9885,7 @@ export const CreateOrderResponse = zod.strictObject({
                 noWithdrawal: zod.boolean().optional(),
                 sku: zod.string().min(1).max(createOrderResponseItemsItemProductSkuMax).optional(),
                 weight: zod.number().min(createOrderResponseItemsItemProductWeightMin).optional(),
-                releaseDate: zod.iso.datetime({ offset: true }).optional(),
+                releaseDate: zod.iso.date().optional(),
                 preorder: zod.boolean().optional(),
                 categories: zod.array(zod.string()).optional(),
                 tags: zod.array(zod.string()).optional(),
@@ -10233,7 +10233,7 @@ export const SearchOrdersResponse = zod.strictObject({
                             .number()
                             .min(searchOrdersResponseItemsItemItemsItemProductWeightMin)
                             .optional(),
-                        releaseDate: zod.iso.datetime({ offset: true }).optional(),
+                        releaseDate: zod.iso.date().optional(),
                         preorder: zod.boolean().optional(),
                         categories: zod.array(zod.string()).optional(),
                         tags: zod.array(zod.string()).optional(),
@@ -10535,7 +10535,7 @@ export const GetOrderByIdResponse = zod.strictObject({
                 noWithdrawal: zod.boolean().optional(),
                 sku: zod.string().min(1).max(getOrderByIdResponseItemsItemProductSkuMax).optional(),
                 weight: zod.number().min(getOrderByIdResponseItemsItemProductWeightMin).optional(),
-                releaseDate: zod.iso.datetime({ offset: true }).optional(),
+                releaseDate: zod.iso.date().optional(),
                 preorder: zod.boolean().optional(),
                 categories: zod.array(zod.string()).optional(),
                 tags: zod.array(zod.string()).optional(),
@@ -10792,7 +10792,7 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                     .number()
                     .min(replaceOrderByIdResponseItemsItemProductWeightMin)
                     .optional(),
-                releaseDate: zod.iso.datetime({ offset: true }).optional(),
+                releaseDate: zod.iso.date().optional(),
                 preorder: zod.boolean().optional(),
                 categories: zod.array(zod.string()).optional(),
                 tags: zod.array(zod.string()).optional(),
@@ -11057,7 +11057,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                     .number()
                     .min(updateOrderByIdResponseItemsItemProductWeightMin)
                     .optional(),
-                releaseDate: zod.iso.datetime({ offset: true }).optional(),
+                releaseDate: zod.iso.date().optional(),
                 preorder: zod.boolean().optional(),
                 categories: zod.array(zod.string()).optional(),
                 tags: zod.array(zod.string()).optional(),
@@ -11328,7 +11328,7 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                     .number()
                     .min(restoreOrderByIdResponseItemsItemProductWeightMin)
                     .optional(),
-                releaseDate: zod.iso.datetime({ offset: true }).optional(),
+                releaseDate: zod.iso.date().optional(),
                 preorder: zod.boolean().optional(),
                 categories: zod.array(zod.string()).optional(),
                 tags: zod.array(zod.string()).optional(),
@@ -11604,7 +11604,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
                     .number()
                     .min(cancelOrderByIdResponseItemsItemProductWeightMin)
                     .optional(),
-                releaseDate: zod.iso.datetime({ offset: true }).optional(),
+                releaseDate: zod.iso.date().optional(),
                 preorder: zod.boolean().optional(),
                 categories: zod.array(zod.string()).optional(),
                 tags: zod.array(zod.string()).optional(),
@@ -11868,7 +11868,7 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                     .number()
                     .min(overrideOrderStatusResponseItemsItemProductWeightMin)
                     .optional(),
-                releaseDate: zod.iso.datetime({ offset: true }).optional(),
+                releaseDate: zod.iso.date().optional(),
                 preorder: zod.boolean().optional(),
                 categories: zod.array(zod.string()).optional(),
                 tags: zod.array(zod.string()).optional(),
@@ -12685,7 +12685,7 @@ export const ProcessOrderResponse = zod.strictObject({
                 noWithdrawal: zod.boolean().optional(),
                 sku: zod.string().min(1).max(processOrderResponseItemsItemProductSkuMax).optional(),
                 weight: zod.number().min(processOrderResponseItemsItemProductWeightMin).optional(),
-                releaseDate: zod.iso.datetime({ offset: true }).optional(),
+                releaseDate: zod.iso.date().optional(),
                 preorder: zod.boolean().optional(),
                 categories: zod.array(zod.string()).optional(),
                 tags: zod.array(zod.string()).optional(),
@@ -12904,8 +12904,8 @@ export const ListOrderFulfillmentOrdersResponse = zod.strictObject({
                 .string()
                 .max(listOrderFulfillmentOrdersResponseItemsItemHoldNoteMax)
                 .optional(),
-            agreedAt: zod.iso.datetime({ offset: true }).optional(),
-            expectedAt: zod.iso.datetime({ offset: true }).optional(),
+            agreedAt: zod.iso.date().optional(),
+            expectedAt: zod.iso.date().optional(),
             lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
             cancelReason: zod.enum(['buyer', 'staff', 'order', 'found']).optional(),
             actions: zod.strictObject({
@@ -14099,8 +14099,8 @@ export const ListPreorderFulfillmentOrdersResponse = zod.strictObject({
                 email: zod.email().max(listPreorderFulfillmentOrdersResponseItemsItemBuyerEmailMax)
             }),
             paidAt: zod.iso.datetime({ offset: true }).optional(),
-            agreedAt: zod.iso.datetime({ offset: true }).optional(),
-            expectedAt: zod.iso.datetime({ offset: true }).optional(),
+            agreedAt: zod.iso.date().optional(),
+            expectedAt: zod.iso.date().optional(),
             slippedDays: zod
                 .number()
                 .min(listPreorderFulfillmentOrdersResponseItemsItemSlippedDaysMin),
@@ -14187,7 +14187,7 @@ export const SummarizePreorderFulfillmentOrdersResponse = zod.strictObject({
                 .max(summarizePreorderFulfillmentOrdersResponseItemsItemProductIdMax)
                 .regex(summarizePreorderFulfillmentOrdersResponseItemsItemProductIdRegExp),
             title: zod.string(),
-            firstAgreedAt: zod.iso.datetime({ offset: true }),
+            firstAgreedAt: zod.iso.date(),
             paid: zod.number().min(summarizePreorderFulfillmentOrdersResponseItemsItemPaidMin),
             waiting: zod
                 .number()
@@ -14521,8 +14521,8 @@ export const HoldFulfillmentOrderResponse = zod.strictObject({
     holdMessage: zod.string().max(holdFulfillmentOrderResponseHoldMessageMax).optional(),
     holdReason: zod.enum(['awaiting_stock', 'incorrect_address', 'high_risk', 'other']).optional(),
     holdNote: zod.string().max(holdFulfillmentOrderResponseHoldNoteMax).optional(),
-    agreedAt: zod.iso.datetime({ offset: true }).optional(),
-    expectedAt: zod.iso.datetime({ offset: true }).optional(),
+    agreedAt: zod.iso.date().optional(),
+    expectedAt: zod.iso.date().optional(),
     lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
     cancelReason: zod.enum(['buyer', 'staff', 'order', 'found']).optional(),
     actions: zod.strictObject({
@@ -14596,8 +14596,8 @@ export const ReleaseFulfillmentOrderResponse = zod.strictObject({
     holdMessage: zod.string().max(releaseFulfillmentOrderResponseHoldMessageMax).optional(),
     holdReason: zod.enum(['awaiting_stock', 'incorrect_address', 'high_risk', 'other']).optional(),
     holdNote: zod.string().max(releaseFulfillmentOrderResponseHoldNoteMax).optional(),
-    agreedAt: zod.iso.datetime({ offset: true }).optional(),
-    expectedAt: zod.iso.datetime({ offset: true }).optional(),
+    agreedAt: zod.iso.date().optional(),
+    expectedAt: zod.iso.date().optional(),
     lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
     cancelReason: zod.enum(['buyer', 'staff', 'order', 'found']).optional(),
     actions: zod.strictObject({
@@ -15823,7 +15823,7 @@ export const ListPreorderLevelsResponse = zod.strictObject({
                 .max(listPreorderLevelsResponseItemsItemProductIdMax)
                 .regex(listPreorderLevelsResponseItemsItemProductIdRegExp),
             title: zod.string(),
-            releaseDate: zod.iso.datetime({ offset: true }).optional(),
+            releaseDate: zod.iso.date().optional(),
             backorderLimit: zod
                 .number()
                 .min(listPreorderLevelsResponseItemsItemBackorderLimitMin)
@@ -17940,7 +17940,7 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
                     .number()
                     .min(correctOrderShippingAddressResponseItemsItemProductWeightMin)
                     .optional(),
-                releaseDate: zod.iso.datetime({ offset: true }).optional(),
+                releaseDate: zod.iso.date().optional(),
                 preorder: zod.boolean().optional(),
                 categories: zod.array(zod.string()).optional(),
                 tags: zod.array(zod.string()).optional(),
@@ -19361,7 +19361,7 @@ export const PreviewReleaseDateImpactQueryParams = zod.strictObject({
         .min(1)
         .max(previewReleaseDateImpactQueryProductIdMax)
         .regex(previewReleaseDateImpactQueryProductIdRegExp),
-    releaseDate: zod.iso.datetime({ offset: true }).optional()
+    releaseDate: zod.iso.date().optional()
 });
 export const previewReleaseDateImpactResponseNotifyMin = 0;
 export const PreviewReleaseDateImpactResponse = zod.strictObject({
@@ -19387,7 +19387,7 @@ export const PreviewRestockDateImpactQueryParams = zod.strictObject({
         .min(1)
         .max(previewRestockDateImpactQueryProductIdMax)
         .regex(previewRestockDateImpactQueryProductIdRegExp),
-    restockDate: zod.iso.datetime({ offset: true }).optional()
+    restockDate: zod.iso.date().optional()
 });
 export const previewRestockDateImpactResponseNotifyMin = 0;
 export const PreviewRestockDateImpactResponse = zod.strictObject({
@@ -19449,8 +19449,8 @@ export const GetFulfillmentOrderResponse = zod.strictObject({
     holdMessage: zod.string().max(getFulfillmentOrderResponseHoldMessageMax).optional(),
     holdReason: zod.enum(['awaiting_stock', 'incorrect_address', 'high_risk', 'other']).optional(),
     holdNote: zod.string().max(getFulfillmentOrderResponseHoldNoteMax).optional(),
-    agreedAt: zod.iso.datetime({ offset: true }).optional(),
-    expectedAt: zod.iso.datetime({ offset: true }).optional(),
+    agreedAt: zod.iso.date().optional(),
+    expectedAt: zod.iso.date().optional(),
     lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
     cancelReason: zod.enum(['buyer', 'staff', 'order', 'found']).optional(),
     actions: zod.strictObject({
@@ -22641,7 +22641,7 @@ export const DeleteNotificationByIdParams = zod.strictObject({
 });
 export const DeleteNotificationByIdResponse = zod.void();
 /**
- * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, where returned goods go, the version of the Terms in force and the backorder promise in days. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order.
+ * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, where returned goods go, the version of the Terms in force and the backorder promise in days. Public and cheap to read; it never changes without a redeploy. The shop's time zone (an IANA name) is published so a screen can name the calendar a promised day belongs to. Not published: the bank-transfer details, which travel on each order.
  * @summary The shop's identity, currency, ship-to countries and return address
  */
 export const getShopResponseCountryMax = 2;
@@ -22691,7 +22691,8 @@ export const GetShopResponse = zod.strictObject({
     }),
     returnPostagePayer: zod.enum(['consumer', 'shop']),
     termsVersion: zod.string(),
-    backorderPromiseDays: zod.number().min(1)
+    backorderPromiseDays: zod.number().min(1),
+    timeZone: zod.string()
 });
 /**
  * The one address a search engine needs: it lists `pages.xml` and one `products-{page}.xml` per run of public products. Always an index, so the address the frontend's `robots.txt` names never changes as the catalogue grows. Public; built from the live catalogue on each request and cacheable for an hour.

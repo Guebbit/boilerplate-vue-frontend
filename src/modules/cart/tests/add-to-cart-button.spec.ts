@@ -149,7 +149,7 @@ describe('the shelf', () => {
             inStock: false,
             backorder: true,
             buyable: true,
-            restockDate: '2027-03-15T12:00:00.000Z'
+            restockDate: '2027-03-15'
         });
         const undated = mountButton({
             ...IN_STOCK,

@@ -60,6 +60,7 @@ import {
     formatAddressLine,
     formatText,
     formatDate,
+    formatDay,
     formatDateTime,
     formatCurrency,
     formatPercent
@@ -536,7 +537,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                                         >
                                             {{
                                                 t('order-target-page.preorder-line', {
-                                                    date: formatDate(item.product.releaseDate)
+                                                    date: formatDay(item.product.releaseDate)
                                                 })
                                             }}
                                         </p>

@@ -93,7 +93,7 @@ export const productsSchema = z.object({
     price: productsPriceSchema,
     active: z.boolean().nullish(),
     purchasable: z.boolean().nullish(),
-    // The `datetime-local` field's own string; the wire spelling is `fromDateTimeLocal`'s.
+    // The date field's own string: a `YYYY-MM-DD` day, which is also the wire spelling.
     releaseDate: z.string().nullish(),
     allowBackorder: z.boolean().nullish(),
     restockDate: z.string().nullish(),
