@@ -173,7 +173,8 @@ const goToConfirm = () => {
  */
 const handleConfirm = () => {
     emit('confirm', {
-        role: roleChanged.value ? selectedRole.value : undefined,
+        // The select's "none" option is `''`; the contract's way to say "no role" is `null`.
+        role: roleChanged.value ? selectedRole.value || null : undefined,
         active: activeChanged.value ? selectedActive.value : undefined
     });
 };

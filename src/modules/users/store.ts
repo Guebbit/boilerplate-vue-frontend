@@ -254,7 +254,10 @@ export const useUsersStore = defineStore('users', () => {
      * @param change - The confirmed fields: a new `role`, a new `active` state, or both.
      * @returns A promise resolving once every requested write has landed.
      */
-    const applyAccessChange = (userId: string, change: { role?: string; active?: boolean }) =>
+    const applyAccessChange = (
+        userId: string,
+        change: { role?: string | null; active?: boolean }
+    ) =>
         (change.role === undefined
             ? Promise.resolve()
             : updateUser(userId, { role: change.role })

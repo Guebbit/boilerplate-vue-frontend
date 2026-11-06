@@ -149,6 +149,19 @@ describe('useUsersStore', () => {
                 }));
     });
 
+    describe('applyAccessChange', () => {
+        it('patches a null role when the staff role is removed', () =>
+            useUsersStore()
+                .applyAccessChange('u1', { role: null })
+                .then(() => {
+                    const request = lastRequest();
+                    expect(request).toMatchObject({ url: '/users/u1', method: 'PATCH' });
+                    expect(contractRequest(schemas.UpdateUserByIdBody, request.data)).toMatchObject(
+                        { role: null }
+                    );
+                }));
+    });
+
     describe('updateUser', () => {
         // PATCH, not PUT — `UserEdit.vue` sends only the fields its form holds,
         // and a PUT would clear every field it omits (RFC 9110 §9.3.4).

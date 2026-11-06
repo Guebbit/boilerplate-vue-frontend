@@ -44,7 +44,8 @@ export interface UserAccessDialogRequestOptions {
  * The store's `applyAccessChange` turns it into a `PATCH` (role) and an activate / deactivate call.
  */
 export interface UserAccessDialogResult {
-    role?: string;
+    /** The new role; `null` removes the staff role (the dialog's "none" option). */
+    role?: string | null;
     active?: boolean;
 }
 

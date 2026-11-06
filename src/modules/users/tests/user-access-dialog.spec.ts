@@ -103,6 +103,21 @@ describe('UserAccessDialog', () => {
                 ]);
             }));
 
+    it('confirms the "none" option as a null role, not an empty string', () =>
+        mountDialog({
+            target: { id: 'u1', name: 'ada', role: 'manager', active: true },
+            options: { skipPicker: true, chosenRole: '', chosenActive: true }
+        })
+            .then((wrapper) =>
+                wrapper
+                    .get('[data-test=user-access-confirm]')
+                    .trigger('click')
+                    .then(() => wrapper)
+            )
+            .then((wrapper) => {
+                expect(wrapper.emitted('confirm')).toEqual([[{ role: null, active: undefined }]]);
+            }));
+
     it('emits cancel and nothing else when backing out', () =>
         mountDialog({ target: { id: 'u1', name: 'ada', role: 'customer', active: true } })
             .then((wrapper) =>
