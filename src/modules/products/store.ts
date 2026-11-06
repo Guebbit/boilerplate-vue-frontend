@@ -333,7 +333,7 @@ export const useProductsStore = defineStore('products', () => {
              * — an expired entry keeps rendering while the refetch runs — so the cost of the
              * shorter window is a background request, not a spinner.
              *
-             * The product PAGE does not wait for it: `Product.vue` refetches on every open, because
+             * The product PAGE does not wait for it: `ProductTarget.vue` refetches on every open, because
              * that is where a stock number gets read. The shopper's own cart and checkout writes
              * also end this window early (`invalidateProductsCache`).
              */

@@ -7,7 +7,7 @@
  * fresh build serves the page. If the chunk is STILL gone after that one reload, the build is
  * broken rather than stale, and the tab shows the error page instead of reloading for ever.
  *
- * The chunk is the cart route's (`assets/CartEntry-<hash>.js`), made to answer 404 by an intercept.
+ * The chunk is the cart route's (`assets/Cart-<hash>.js`), made to answer 404 by an intercept.
  * That route is open to guests too, but this journey is the signed-in customer's. The retries are
  * counted as DOCUMENT requests for the cart's address, not chunk requests: a browser also preloads
  * a chunk, so one failed attempt is several requests for the same file.
@@ -17,7 +17,7 @@
  */
 
 /** The cart route's lazy chunk: Vite names it after its entry view, with a content hash. */
-const CART_CHUNK = '**/assets/CartEntry-*.js';
+const CART_CHUNK = '**/assets/Cart-*.js';
 
 /** The address the customer is heading to. */
 const CART_PAGE = '**/en/cart';

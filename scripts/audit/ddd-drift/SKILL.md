@@ -156,7 +156,7 @@ finds far fewer than about six, the procedure was too loose. Far more means pres
   before that (FE `655c56bd`), it finds `orders/domain/hard-delete.ts` and `FulfillmentOrderCard.vue`
   (forced ship) as ROUTE, `ShipmentRow.vue` (forced deliver) and `WebhookDeliveriesFilters.vue`
   (replay) as DRIFT — and `hard-delete.ts` must NOT come out OK because `DELETE /orders` states the
-  rule in prose. F2 OK, as the control: the status check in `Order.vue` that only labels.
+  rule in prose. F2 OK, as the control: the status check in `OrderTarget.vue` that only labels.
 - F3 DRIFT: the swapped label in `wishlist/module.ts`.
 
 Rows move as the code is fixed. The point is the count and the false-positive control, not these exact lines.

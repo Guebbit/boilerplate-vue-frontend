@@ -70,7 +70,7 @@ checkout" opens `UserPurchaseHoldDialog` (an end date and a note the buyer reads
 once (a toast says what happened) and doubles as the staff review. The list filters by it (`purchaseHold`, `true` only) and marks
 the rows. The buyer's side is `account`'s `PurchaseHoldNotice`, mounted by the cart.
 
-`UserTarget` (`views/User.vue`) also carries the one deliberate exception to "prove the factor to
+`UserTarget` (`views/UserTarget.vue`) also carries the one deliberate exception to "prove the factor to
 remove it": an admin-assisted 2FA recovery button, `adminDisableTwoFactor`, for an owner who has
 lost both their authenticator and their backup codes. No code is asked for — the audited server-side
 log is what makes skipping that proof safe to expose at all. It is the reason `account`'s own 2FA
@@ -92,7 +92,7 @@ Store `users`, from `store.ts`. Only what the setup function returns is listed �
 | ---------------- | ------------ | ------ | ------------- | ---------------------- |
 | `users`          | `UsersList`  | `auth` | `read User`   | `views/UsersList.vue`  |
 | `users/create`   | `UserCreate` | `auth` | `create User` | `views/UserCreate.vue` |
-| `users/:id`      | `UserTarget` | `auth` | `read User`   | `views/User.vue`       |
+| `users/:id`      | `UserTarget` | `auth` | `read User`   | `views/UserTarget.vue` |
 | `users/:id/edit` | `UserEdit`   | `auth` | `update User` | `views/UserEdit.vue`   |
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
@@ -148,8 +148,8 @@ Each row registers one Zod schema through the manifest, so enabling the domain t
 | `tests/user-access-dialog.spec.ts`               | Vitest suite — `UserAccessDialog.vue`'s picker/confirm flow, mounted directly.                                                                                                                                                                   | [read](../tools/unit-testing.md)      |
 | `tests/user-create-view.spec.ts`                 | Vitest suite — `UserCreate.vue`, mounted against a real router.                                                                                                                                                                                  | [read](../tools/unit-testing.md)      |
 | `tests/user-edit-view.spec.ts`                   | Vitest suite — `UserEdit.vue`, mounted against a real router.                                                                                                                                                                                    | [read](../tools/unit-testing.md)      |
-| `tests/user-target-view.spec.ts`                 | Vitest suite — `User.vue`, mounted against a real router.                                                                                                                                                                                        | [read](../tools/unit-testing.md)      |
-| `views/User.vue`                                 | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
+| `tests/user-target-view.spec.ts`                 | Vitest suite — `UserTarget.vue`, mounted against a real router.                                                                                                                                                                                  | [read](../tools/unit-testing.md)      |
+| `views/UserTarget.vue`                           | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
 | `views/UserCreate.vue`                           | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
 | `views/UserEdit.vue`                             | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
 | `views/UsersList.vue`                            | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |

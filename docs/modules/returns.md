@@ -35,7 +35,7 @@ Inside the module, the pieces connect like this:
 
 ```mermaid
 flowchart LR
-    orders["orders (Order.vue)"] -.->|mounts| panel["WithdrawalPanel"]
+    orders["orders (OrderTarget.vue)"] -.->|mounts| panel["WithdrawalPanel"]
     panel --> form["ReturnRequestForm"]
     form --> store["returns store"]
     panel --> store

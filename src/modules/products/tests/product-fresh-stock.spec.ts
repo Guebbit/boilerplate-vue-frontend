@@ -10,7 +10,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import { getProductById } from '@api';
-import Product from '../views/Product.vue';
+import Product from '../views/ProductTarget.vue';
 import { useProductsStore, invalidateProductsCache } from '../store';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { i18n, loadLocale } from '@/i18n';

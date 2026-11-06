@@ -10,7 +10,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
-import Order from '../views/Order.vue';
+import Order from '../views/OrderTarget.vue';
 import { useOrdersStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { reorder as apiReorder, listOrderCreditNotes, getOrderCreditNote } from '@api';

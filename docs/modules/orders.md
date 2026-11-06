@@ -120,7 +120,7 @@ the order's status, payment, fulfilment or return state changes.
 
 ```mermaid
 flowchart LR
-    page[Order.vue] -- orderId + refreshKey --> tl[OrderTimeline]
+    page[OrderTarget.vue] -- orderId + refreshKey --> tl[OrderTimeline]
     tl --> api["GET /orders/id/timeline"]
     api -- rows for this caller --> tl
     tl --> dom[describeTimelineEntry]
@@ -164,12 +164,12 @@ Store `orders`, from `store.ts`. Only what the setup function returns is listed 
 
 ## Screens
 
-| Path              | Route name    | Access | Permission      | View                   |
-| ----------------- | ------------- | ------ | --------------- | ---------------------- |
-| `orders`          | `OrdersList`  | `auth` | —               | `views/OrdersList.vue` |
-| `sales/orders`    | `SalesOrders` | `auth` | `display Order` | `views/OrdersList.vue` |
-| `orders/:id`      | `OrderTarget` | `auth` | —               | `views/Order.vue`      |
-| `orders/:id/edit` | `OrderEdit`   | `auth` | `update Order`  | `views/OrderEdit.vue`  |
+| Path              | Route name    | Access | Permission      | View                    |
+| ----------------- | ------------- | ------ | --------------- | ----------------------- |
+| `orders`          | `OrdersList`  | `auth` | —               | `views/OrdersList.vue`  |
+| `sales/orders`    | `SalesOrders` | `auth` | `display Order` | `views/OrdersList.vue`  |
+| `orders/:id`      | `OrderTarget` | `auth` | —               | `views/OrderTarget.vue` |
+| `orders/:id/edit` | `OrderEdit`   | `auth` | `update Order`  | `views/OrderEdit.vue`   |
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
@@ -226,7 +226,7 @@ Each row registers one Zod schema through the manifest, so enabling the domain t
 | `tests/routes.spec.ts`                            | Vitest suite — the route records and the `meta.access` each one declares.                                                                                                                                                                        | [read](../tools/unit-testing.md)      |
 | `tests/schemas-i18n.spec.ts`                      | Vitest suite — the `schemas-i18n` validation rules.                                                                                                                                                                                              | [read](../tools/unit-testing.md)      |
 | `tests/store.spec.ts`                             | Vitest suite — this domain's store, with the transport mocked.                                                                                                                                                                                   | [read](../tools/unit-testing.md)      |
-| `views/Order.vue`                                 | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
+| `views/OrderTarget.vue`                           | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
 | `views/OrderEdit.vue`                             | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
 | `views/OrdersList.vue`                            | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
 

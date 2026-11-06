@@ -34,7 +34,7 @@ export default [
         path: 'orders/:id',
         name: 'OrderTarget',
         meta: { access: 'auth', title: 'order-target-page.page-title' },
-        component: () => import('./views/Order.vue'),
+        component: () => import('./views/OrderTarget.vue'),
         props: true
     },
     {

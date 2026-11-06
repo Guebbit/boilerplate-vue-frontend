@@ -57,7 +57,7 @@ const {
      */
     sameAsShipping?: boolean;
     /**
-     * Narrows the add-address dialog's country select to this list — `Cart.vue` reads it
+     * Narrows the add-address dialog's country select to this list — `SignedInCart.vue` reads it
      * off `ShippingSelector` and forwards it here, so checkout never offers a country the shop
      * cannot deliver to. Forwarded to `AddressFormDialog.vue` as-is.
      */

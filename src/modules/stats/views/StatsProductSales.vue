@@ -4,7 +4,7 @@
  * required alongside `<script setup>` since the latter cannot declare one itself.
  */
 export default {
-    name: 'ProductSalesPage'
+    name: 'StatsProductSalesPage'
 };
 </script>
 

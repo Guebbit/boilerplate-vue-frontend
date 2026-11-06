@@ -11,7 +11,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { defineComponent } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { axeViolations } from '../../../../tests/support/unit/axe.ts';
-import Cart from '../views/Cart.vue';
+import SignedInCart from '../components/SignedInCart.vue';
 import { useCartStore } from '../store.ts';
 import type { MergeReportLine } from '../domain';
 import { seedProducts, spyOnProductReads } from '@/modules/products/tests/products-store.ts';
@@ -113,7 +113,7 @@ const checkoutRejection = (status: number, code: string, details?: Record<string
  * Mounts the page with the store already holding `A_CART`, and its own fetches stubbed so the
  * refusal under test is the only network outcome each case controls.
  *
- * `checkout` is spied BEFORE mounting, deliberately: `Cart.vue` destructures it from the store at
+ * `checkout` is spied BEFORE mounting, deliberately: `SignedInCart.vue` destructures it from the store at
  * setup time (`const { ..., checkout: placeOrder } = useCartStore()`), so a spy installed after
  * mount replaces the store's OWN property without touching the reference the component already
  * captured — every case has to configure the mock this returns, never re-spy the store.
@@ -166,7 +166,7 @@ const mountCart = ({
         }
     });
 
-    const wrapper = mount(Cart, {
+    const wrapper = mount(SignedInCart, {
         attachTo: attach ? document.body : undefined,
         global: {
             plugins: [router, vuetify, i18n],
@@ -511,7 +511,7 @@ describe('the checkout refusals', () => {
 
     /**
      * `mountCart`'s stub renders no radios, so the picked method is driven through the same
-     * `v-model` event Cart.vue binds — this case's own stub answers it, rather than reaching for
+     * `v-model` event SignedInCart.vue binds — this case's own stub answers it, rather than reaching for
      * a real `ShippingSelector` that would need a delivery-store methods list this suite never
      * seeds.
      */
@@ -527,7 +527,7 @@ describe('the checkout refusals', () => {
         const checkoutSpy = vi.spyOn(cart, 'checkout');
         checkoutSpy.mockRejectedValueOnce(checkoutRejection(409, 'CART_SHIPPING_METHOD_WEIGHT'));
 
-        const wrapper = mount(Cart, {
+        const wrapper = mount(SignedInCart, {
             global: {
                 plugins: [router, vuetify, i18n],
                 stubs: {
@@ -594,7 +594,7 @@ describe('the checkout payload', () => {
             }
         });
 
-        const wrapper = mount(Cart, {
+        const wrapper = mount(SignedInCart, {
             global: {
                 plugins: [router, vuetify, i18n],
                 stubs: {
@@ -731,7 +731,7 @@ describe('the checkout payload — billing', () => {
                 this.$emit('update:requiresAddress', true);
             }
         });
-        const wrapper = mount(Cart, {
+        const wrapper = mount(SignedInCart, {
             global: {
                 plugins: [router, vuetify, i18n],
                 stubs: {
@@ -777,7 +777,7 @@ describe('the checkout payload — billing', () => {
         vi.spyOn(cart, 'fetchCart').mockResolvedValue(cart.cart);
         spyOnProductReads().mockResolvedValue([]);
         vi.spyOn(cart, 'checkout').mockResolvedValue(undefined);
-        const wrapper = mount(Cart, {
+        const wrapper = mount(SignedInCart, {
             global: {
                 plugins: [router, vuetify, i18n],
                 stubs: {
@@ -854,9 +854,9 @@ describe('a cart with nothing to ship', () => {
         cart.cart = DIGITAL_CART;
         vi.spyOn(cart, 'fetchCart').mockResolvedValue(DIGITAL_CART);
         spyOnProductReads().mockResolvedValue([]);
-        // Before mounting: `Cart.vue` captures `checkout` from the store at setup time.
+        // Before mounting: `SignedInCart.vue` captures `checkout` from the store at setup time.
         const checkoutSpy = vi.spyOn(cart, 'checkout').mockResolvedValue(undefined);
-        const wrapper = mount(Cart, {
+        const wrapper = mount(SignedInCart, {
             global: {
                 plugins: [router, vuetify, i18n],
                 stubs: {

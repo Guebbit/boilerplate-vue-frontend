@@ -10,7 +10,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
-import User from '../views/User.vue';
+import User from '../views/UserTarget.vue';
 import { useUsersStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';

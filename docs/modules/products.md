@@ -53,7 +53,7 @@ Products are cached for **five minutes** (`staleTime` in `store.ts`), and an exp
 rendering while the refetch runs. That window is the lists': a stock count a few minutes old on a
 grid is fine, because the server checks stock again at add-to-cart and at checkout.
 
-The **product page** does not wait for it. `Product.vue` watches its record with `staleTime: 0`, so
+The **product page** does not wait for it. `ProductTarget.vue` watches its record with `staleTime: 0`, so
 every open renders the cached copy at once and swaps the fresh one in (stale-while-revalidate, the
 default behaviour of the query library the toolkit sits on). The shopper's own cart and checkout
 writes also end the window early, through `invalidateProductsCache` — the one handle `cart` reaches
@@ -160,7 +160,7 @@ Store `products`, from `store.ts`. Only what the setup function returns is liste
 | ------------------- | --------------- | -------- | ---------------- | ------------------------- |
 | `products`          | `ProductsList`  | `public` | —                | `views/ProductsList.vue`  |
 | `products/create`   | `ProductCreate` | `auth`   | `create Product` | `views/ProductCreate.vue` |
-| `products/:id`      | `ProductTarget` | `public` | —                | `views/Product.vue`       |
+| `products/:id`      | `ProductTarget` | `public` | —                | `views/ProductTarget.vue` |
 | `products/:id/edit` | `ProductEdit`   | `auth`   | `update Product` | `views/ProductEdit.vue`   |
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
@@ -236,7 +236,7 @@ Each row registers one Zod schema through the manifest, so enabling the domain t
 | `tests/routes.spec.ts`                                 | Vitest suite — the route records and the `meta.access` each one declares.                                                                                                                                                                        | [read](../tools/unit-testing.md)      |
 | `tests/schemas-i18n.spec.ts`                           | Vitest suite — the `schemas-i18n` validation rules.                                                                                                                                                                                              | [read](../tools/unit-testing.md)      |
 | `tests/store.spec.ts`                                  | Vitest suite — this domain's store, with the transport mocked.                                                                                                                                                                                   | [read](../tools/unit-testing.md)      |
-| `views/Product.vue`                                    | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
+| `views/ProductTarget.vue`                              | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
 | `views/ProductCreate.vue`                              | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
 | `views/ProductEdit.vue`                                | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
 | `views/ProductsList.vue`                               | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |

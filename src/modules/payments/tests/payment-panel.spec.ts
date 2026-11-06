@@ -267,7 +267,7 @@ describe('PaymentPanel', () => {
 
     /**
      * The store's `payment` ref is shared across every order this panel instance is ever
-     * given — `Order.vue` reuses the same instance across orders (`watchOrder`, no remount on a
+     * given — `OrderTarget.vue` reuses the same instance across orders (`watchOrder`, no remount on a
      * route param change alone) — so it must both re-fetch on a new `orderId` and refuse to render
      * a record left over from the order it just moved on from.
      */

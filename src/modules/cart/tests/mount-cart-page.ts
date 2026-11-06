@@ -15,7 +15,7 @@ import { defineComponent } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
-import Cart from '../views/Cart.vue';
+import SignedInCart from '../components/SignedInCart.vue';
 import { useCartStore } from '../store.ts';
 // eslint-disable-next-line boundaries/dependencies -- the page reads the account on mount; the account barrel publishes no store, and this spy is the only way to keep that read off the network
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
@@ -119,7 +119,7 @@ export const mountCartPage = (held?: CartResponse): Promise<MountedCartPage> => 
     // reaches whatever listens on the dev API port (a dev server answering HTML, say), and the
     // junk answer publishes an empty viewer: the cart then resets and the page shows it empty.
     vi.spyOn(useProfileStore(), 'fetchProfile').mockResolvedValue(undefined);
-    const wrapper = mount(Cart, {
+    const wrapper = mount(SignedInCart, {
         global: {
             plugins: [router, vuetify, i18n],
             stubs: {

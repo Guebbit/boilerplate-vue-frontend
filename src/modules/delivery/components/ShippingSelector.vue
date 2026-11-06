@@ -49,14 +49,14 @@ const methodId = defineModel<string | undefined>();
 
 /**
  * Whether the chosen method needs a shipping address — `undefined` while nothing is selected.
- * The caller (`Cart.vue`) reads this to decide whether to require one too, without reaching past
+ * The caller (`SignedInCart.vue`) reads this to decide whether to require one too, without reaching past
  * this component into the delivery store, which this module does not publish.
  */
 const requiresAddress = defineModel<boolean | undefined>('requiresAddress');
 
 /**
  * The deployment's ship-to list — mirrored out of the delivery store the same way
- * {@link requiresAddress} is, so `Cart.vue` can narrow `AddressPicker`'s country select without
+ * {@link requiresAddress} is, so `SignedInCart.vue` can narrow `AddressPicker`'s country select without
  * reaching past this component into a store `cart` may not import directly.
  */
 const shipToCountries = defineModel<string[]>('shipToCountries', { default: () => [] });

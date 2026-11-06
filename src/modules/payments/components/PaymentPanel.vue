@@ -92,7 +92,7 @@ const { payment: rawPayment, loading } = storeToRefs(paymentsStore);
 /**
  * This panel's own payment, discarding a stale or mismatched record. The store's `payment` is one
  * shared ref: this page component reuses the same panel instance across orders (no remount on a
- * route param change alone, per `Order.vue`'s `watchOrder`), and a slow response for the PREVIOUS
+ * route param change alone, per `OrderTarget.vue`'s `watchOrder`), and a slow response for the PREVIOUS
  * order landing after `orderId` has already moved on must not render as this order's chip.
  */
 const payment = computed(() =>

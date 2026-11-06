@@ -1,7 +1,7 @@
 /**
  * @module
  * `AuditLog.vue` — one thing to prove: the page reads `target` off its own query string and hands
- * it straight to `AdminAuditTab`, so a "History" link (`User.vue`/`Order.vue`) and the plain
+ * it straight to `AdminAuditTab`, so a "History" link (`UserTarget.vue`/`OrderTarget.vue`) and the plain
  * `/audit` nav entry land on the same page scoped correctly either way. `AdminAuditTab` itself is
  * stubbed — its own fetching is `admin-audit-tab.spec.ts`'s job.
  */

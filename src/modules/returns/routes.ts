@@ -33,7 +33,7 @@ export default [
         path: 'returns/:id',
         name: 'ReturnTarget',
         meta: { access: 'auth', title: 'return-target-page.page-title' },
-        component: () => import('./views/Return.vue'),
+        component: () => import('./views/ReturnTarget.vue'),
         props: true
     }
 ] satisfies RouteRecordRaw[];

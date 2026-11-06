@@ -10,7 +10,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
-import UserTarget from '../views/User.vue';
+import UserTarget from '../views/UserTarget.vue';
 import UserAccessDialog from '../components/UserAccessDialog.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';

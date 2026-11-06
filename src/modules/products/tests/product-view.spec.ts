@@ -17,7 +17,7 @@ import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import { SLOTS_KEY } from '@/kernel/slots';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
-import Product from '../views/Product.vue';
+import Product from '../views/ProductTarget.vue';
 import { useProductsStore } from '../store';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';

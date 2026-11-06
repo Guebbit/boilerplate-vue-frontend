@@ -14,7 +14,7 @@ export default {
  * The shop's own audit trail — reachable by any tenant role `read:AuditLog` holds
  * (`manager`/`support`/`moderator`/`admin`), unlike `Admin.vue`'s installation-wide tab, which is
  * platform-`operator`-only. Doubles as a single record's history: `?target=<id>` (set by the
- * "History" link on `User.vue`/`Order.vue`) pre-fills the target filter in {@link AdminAuditTab},
+ * "History" link on `UserTarget.vue`/`OrderTarget.vue`) pre-fills the target filter in {@link AdminAuditTab},
  * which does the actual fetching and rendering either way. The filter stays editable.
  */
 import { computed } from 'vue';

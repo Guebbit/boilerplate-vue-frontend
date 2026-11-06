@@ -7,10 +7,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
-import CartEntry from '../views/CartEntry.vue';
+import Cart from '../views/Cart.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
 
-vi.mock('../views/Cart.vue', () => ({
+vi.mock('../components/SignedInCart.vue', () => ({
     default: { template: '<div data-test="signed-in-cart" />' }
 }));
 
@@ -33,7 +33,7 @@ beforeEach(() => {
 
 describe('the cart route', () => {
     it('shows a guest the guest cart', () => {
-        const wrapper = mount(CartEntry);
+        const wrapper = mount(Cart);
 
         expect(wrapper.find('[data-test=guest-cart-stub]').exists()).toBe(true);
         expect(wrapper.find('[data-test=signed-in-cart]').exists()).toBe(false);
@@ -42,14 +42,14 @@ describe('the cart route', () => {
     it('shows a signed-in visitor the real cart', () => {
         signIn();
 
-        const wrapper = mount(CartEntry);
+        const wrapper = mount(Cart);
 
         expect(wrapper.find('[data-test=signed-in-cart]').exists()).toBe(true);
         expect(wrapper.find('[data-test=guest-cart-stub]').exists()).toBe(false);
     });
 
     it('swaps the screen when the guest signs in', async () => {
-        const wrapper = mount(CartEntry);
+        const wrapper = mount(Cart);
 
         signIn();
         await nextTick();

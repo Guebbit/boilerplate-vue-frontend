@@ -1,0 +1,787 @@
+<script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
+export default {
+    name: 'SignedInCart'
+};
+</script>
+
+<script setup lang="ts">
+/**
+ * @module
+ * Cart page. Renders the store's lines and summary, and layers a debounced local
+ * stepper (`useLineQuantity`) on top of the store's own quantity update so rapid
+ * clicks collapse into one request per line.
+ */
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { RouterLink, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
+import { useOrderLink } from '@/kernel/order-link.ts';
+import { linkIfRouted } from '@/kernel/route-link.ts';
+import { useCartStore } from '../store.ts';
+// The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`; the
+// clamping half of that rule lives with the stepping itself, in `use-line-quantity.ts`.
+import { MIN_LINE_QUANTITY, classifyCheckoutError } from '../domain';
+import CartEmptyState from './CartEmptyState.vue';
+import CartLineCard from './CartLineCard.vue';
+import type { CheckoutShortfallLine } from '../domain';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
+import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { useLineQuantity } from '../composables/use-line-quantity.ts';
+import { useCheckoutRefusals } from '../composables/use-checkout-refusals.ts';
+import { useCartStockPoll } from '../composables/use-cart-stock-poll.ts';
+import { useCartFocusRefresh } from '../composables/use-cart-focus-refresh.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
+import {
+    clearCheckoutDrafts,
+    readCheckoutDraft,
+    writeCheckoutDraft
+} from '../composables/use-checkout-draft.ts';
+import { sendKeepalive } from '@/infrastructure/http/keepalive.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
+import type { CartResponseItem, PaymentMethodId } from '@types';
+
+import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import TourButton from '@/ui/molecules/TourButton.vue';
+import MergeReportAlert from './MergeReportAlert.vue';
+import { ShippingSelector } from '@/modules/delivery';
+import { PaymentMethodSelector } from '@/modules/payments';
+import { AddressPicker, PurchaseHoldNotice } from '@/modules/account';
+import { useProductLines } from '@/modules/products';
+
+/**
+ * Translation function.
+ */
+const { t } = useI18n();
+
+/**
+ * Router, for the post-checkout navigation to the new order's own page.
+ */
+const router = useRouter();
+
+/**
+ * Toast notifications.
+ */
+const { addMessage } = useNotificationsStore();
+
+/**
+ * Cart store actions this page drives directly.
+ */
+const {
+    fetchCart,
+    updateCartItem,
+    removeCartItem,
+    clearCart,
+    setShippingMethod,
+    checkout: placeOrder
+} = useCartStore();
+
+/**
+ * The lines' product join: one batched read, then title and price off the products dictionary —
+ * the record the product page shows, not a copy this store keeps.
+ */
+const { loadProducts, productOf, titleOf, availabilityLabel } = useProductLines();
+
+/**
+ * Cart store state, reactive. `loading` is the in-flight guard for checkout and clear: both
+ * write endpoints, so a double-click before the first request answers must not fire a second one.
+ */
+const { cart, cartItems, cartSummary, cartShipping, loading } = storeToRefs(useCartStore());
+
+/**
+ * Whether a line waits for stock or a date (preorder or backorder) rather than shipping now.
+ */
+const shipsLater = (availability: string): boolean =>
+    availability === 'preorder' || availability === 'backorder';
+
+/**
+ * Whether any line waits for stock or a date. The order has one shipping method, and choosing a
+ * faster one does not bring those lines forward, so the page says so once, near the choice.
+ */
+const hasLaterLine = computed(() => cartItems.value.some((item) => shipsLater(item.availability)));
+
+/**
+ * The chosen shipping method — mirrors `cart.value?.shipping.selected` (see the `watch` below that
+ * loads it once the cart resolves), and drives `PUT /cart/shipping-method` on every change the
+ * shopper makes through {@link ShippingSelector}.
+ */
+const shippingMethodId = ref<string | undefined>();
+
+/**
+ * Keeps {@link shippingMethodId} on what the cart says: a returning shopper's earlier choice
+ * pre-selects the radio, and a later answer that changes the choice (the server cleared a method
+ * the basket outgrew, or a slow read landed) moves it too. The shopper's own pick needs no special
+ * case: it reaches the cart through the `watch` below, and the cart then says the same thing.
+ */
+watch(
+    () => cart.value?.shipping.selected,
+    (selected) => {
+        shippingMethodId.value = selected;
+    },
+    { immediate: true }
+);
+
+/**
+ * Persists a shopper's shipping-method choice the moment they make it — priced and validated
+ * against the real basket server-side, rather than only checked once at checkout. A refusal
+ * (the basket no longer needs shipping, or has outgrown the method's weight range) reverts the
+ * picker to its previous choice rather than leaving a selection the server rejected.
+ */
+watch(shippingMethodId, (chosen, previous) => {
+    if (chosen === cart.value?.shipping.selected) return;
+    void setShippingMethod(chosen ?? null).catch((error: unknown) => {
+        const verdict = classifyCheckoutError(error);
+        addMessage(
+            t(
+                verdict.kind === 'shipping-method-weight'
+                    ? 'cart-page.error-shipping-method-weight'
+                    : 'cart-page.error-shipping-method-generic'
+            )
+        );
+        shippingMethodId.value = previous;
+    });
+});
+
+/**
+ * Whether the chosen method needs an address — `undefined` while nothing is selected, mirrored
+ * out of `ShippingSelector` since `cart` may not reach `delivery`'s store directly.
+ */
+const shippingMethodRequiresAddress = ref<boolean>();
+
+/**
+ * The deployment's ship-to list, mirrored out of `ShippingSelector` the same way — narrows
+ * `AddressPicker`'s add-address dialog so checkout never offers a country the shop cannot deliver
+ * to.
+ */
+const shipToCountries = ref<string[]>([]);
+
+/**
+ * The signed-in visitor, whose id keys the saved checkout draft.
+ */
+const { viewer } = storeToRefs(useSessionStore());
+
+/**
+ * What this visitor had typed or picked before the page last went away — empty on a first visit.
+ */
+const savedDraft = viewer.value ? readCheckoutDraft(viewer.value.id) : readCheckoutDraft('');
+
+/**
+ * The chosen shipping address's entry id — required only when
+ * {@link shippingMethodRequiresAddress} is true; omitted, checkout resolves the caller's default.
+ */
+const addressId = ref<string | undefined>(savedDraft.addressId);
+
+/**
+ * The chosen billing address's entry id. `undefined` means "same as the shipping address" while
+ * {@link shipsToAddress} holds; otherwise the picker always holds an entry (the book's
+ * default until the visitor picks), so checkout never asks the API to guess.
+ */
+const billingAddressId = ref<string | undefined>();
+
+/**
+ * Whether the shipping address is asked at all — a physical basket under a method that needs one.
+ * It is the one condition under which billing can be "the same as" it; otherwise (a digital-only
+ * basket, or a pickup) billing is asked on its own.
+ */
+const shipsToAddress = computed(
+    () => cartShipping.value?.required === true && shippingMethodRequiresAddress.value === true
+);
+
+/**
+ * The chosen payment method — optional; the API defaults an omitted choice to `card`.
+ */
+const paymentMethodId = ref<PaymentMethodId | undefined>(savedDraft.paymentMethodId);
+
+/**
+ * Free-text notes left at checkout — optional, trimmed to `undefined` when blank so an empty
+ * textarea does not send an empty string the contract would rather see omitted.
+ */
+const notes = ref(savedDraft.notes);
+
+/**
+ * Keeps the note, the payment choice and the address in the tab's own storage as they change, so a
+ * reload puts them back. Dropped by checkout and by logout (`module.ts`).
+ */
+watch([notes, paymentMethodId, addressId], () => {
+    if (viewer.value)
+        writeCheckoutDraft(viewer.value.id, {
+            notes: notes.value,
+            ...(paymentMethodId.value === undefined
+                ? {}
+                : { paymentMethodId: paymentMethodId.value }),
+            ...(addressId.value === undefined ? {} : { addressId: addressId.value })
+        });
+});
+
+/**
+ * Whether checkout may run yet: the cart says every line is buyable (`checkoutable`: short, sold
+ * out, off sale and removed lines block it, preorder and backorder ones do not), a physical basket
+ * has a method, and — only when that method demands it — an address. Reads the cart's own `shipping.required` flag rather
+ * than re-deriving it from the lines: the server already decided.
+ */
+const canCheckout = computed(() => {
+    if (!cart.value?.checkoutable) return false;
+    // Billing is asked on its own when nothing ships to an address: an entry must be chosen
+    // (the picker pre-selects the default, so this only holds back an empty book).
+    if (!shipsToAddress.value && billingAddressId.value === undefined) return false;
+    if (!cartShipping.value?.required) return true;
+    if (shippingMethodId.value === undefined) return false;
+    return !shippingMethodRequiresAddress.value || addressId.value !== undefined;
+});
+
+/**
+ * What a refused checkout left on screen (named lines, unpaid orders, the hold banner's signal,
+ * the button's blocked state), and the handler that reacts to each refusal.
+ */
+const {
+    insufficientStockLines,
+    unavailableLines,
+    openOrderIds,
+    holdSignal,
+    checkoutError,
+    resetRefusals,
+    handleRefusal
+} = useCheckoutRefusals({
+    onShippingMethodRefused: () => {
+        shippingMethodId.value = undefined;
+    }
+});
+
+/**
+ * The sentence for one refused line: fewer left, none left, or off sale. Literal keys, so a
+ * translation check can see each of them.
+ *
+ * @param line - A line the stock refusal named.
+ * @returns The line's message.
+ */
+const shortfallText = ({ title, requested, availability }: CheckoutShortfallLine): string => {
+    if (availability === 'out_of_stock')
+        return t('cart-page.shortfall-line-out-of-stock', { title });
+    if (availability === 'unavailable') return t('cart-page.shortfall-line-unavailable', { title });
+    return t('cart-page.shortfall-line', { title, requested });
+};
+
+/**
+ * The order page's link-maker; `undefined` when this build ships no order page.
+ */
+const orderLink = useOrderLink();
+
+/**
+ * Where each unpaid order `CART_OPEN_ORDER_LIMIT_REACHED` named lives, as links the shopper can follow to
+ * pay or cancel one. An order page is the orders module's: a build without
+ * it has nowhere to send the shopper, so those ids simply get no link.
+ */
+const openOrderTargets = computed(() =>
+    openOrderIds.value.flatMap((id) => {
+        const to = orderLink(id);
+        return to ? [{ id, to }] : [];
+    })
+);
+
+/**
+ * Whether an order is being placed, from the first instant of the press. Set synchronously, which
+ * `loading` is not (it flips inside the store, a task later), so a second press in the same task
+ * and the steppers are both shut out for the whole call. See `docs/modules/cart-checkout.md`.
+ */
+const placing = ref(false);
+
+/**
+ * The checkout request itself, once {@link checkout} has confirmed no line-quantity step is still
+ * in the debounce window. A refusal goes to {@link handleRefusal}.
+ *
+ * @returns A promise resolving once the flow settles: a success toast and a navigation to the new
+ *  order's own page, or the refusal's own reaction.
+ */
+const runCheckout = () =>
+    placeOrder({
+        // No `shippingMethodId`: the cart holds that choice, persisted via
+        // `PUT /cart/shipping-method` by the `watch` above.
+        // An address only when the chosen method needs one: the picker unmounts on pickup but
+        // leaves `addressId` holding its last value, and the API refuses an address paired with
+        // a method that cannot use it (409 `CART_ADDRESS_NOT_APPLICABLE`).
+        ...(cartShipping.value?.required &&
+        shippingMethodRequiresAddress.value &&
+        addressId.value !== undefined
+            ? { addressId: addressId.value }
+            : {}),
+        // The billing entry the visitor named; left out, the API reads it as "same as shipping".
+        ...(billingAddressId.value === undefined
+            ? {}
+            : { billingAddressId: billingAddressId.value }),
+        ...(paymentMethodId.value === undefined ? {} : { paymentMethod: paymentMethodId.value }),
+        ...(notes.value.trim() === '' ? {} : { notes: notes.value.trim() })
+    })
+        .then((result) => {
+            // `fetchAny`'s type allows `undefined` on a swallowed failure — this call never
+            // actually takes that path (see `useCartStore.checkout`'s own docblock), but the
+            // guard is what lets `result.id` below type-check, and it is cheap insurance
+            // against a client-side navigation to `/orders/undefined` either way.
+            if (!result?.id) return;
+            // The order consumed these lines: a step still in its debounce window must not fire
+            // afterwards, where its `PUT` would create the line again in the new, empty cart.
+            forgetAll();
+            clearCheckoutDrafts();
+            addMessage(t('cart-page.success-checkout'));
+            // `orders` is not one of cart's declared `dependsOn` reaches — a build
+            // shipping no orders module still completes the checkout, just with nowhere to SHOW
+            // the order it just placed, so it lands Home instead of throwing.
+            const target = linkIfRouted(router, 'OrderTarget', { id: result.id }) ?? {
+                name: 'Home'
+            };
+            // Fire-and-forget: a NavigationFailure here must not convert a completed checkout into an error toast.
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
+            void router.push(routerLinkI18n(target));
+        })
+        .catch(handleRefusal);
+
+/**
+ * Places an order from the current cart.
+ *
+ * Awaits {@link settle} first: a line-quantity step still in the debounce window when
+ * checkout reads the cart could otherwise land after the server already emptied it, either
+ * re-creating a line in an already-completed order's aftermath or racing the read itself.
+ *
+ * `settle` rejects when a flushed step failed to reach the server — `useLineQuantity`'s own
+ * `onError` has already reported that failure, so this only needs to skip {@link runCheckout}
+ * rather than place the order at whatever stale quantity the cart still holds.
+ *
+ * @returns Same as {@link runCheckout}, or nothing when settling failed.
+ */
+const checkout = () => {
+    if (placing.value) return Promise.resolve();
+    placing.value = true;
+    resetRefusals();
+    return (
+        settle()
+            // Only `settle`'s rejection is absorbed: `useLineQuantity`'s `onError` already
+            // reported it, and the order must not be placed at a stale quantity.
+            .then(runCheckout, () => undefined)
+            .finally(() => {
+                placing.value = false;
+            })
+    );
+};
+
+/**
+ * The cart lines' own blocked state — stepping a quantity or removing a line has no per-line slot
+ * for an alert, and the list keeps working regardless, so every line action shares ONE instance
+ * rendered above the lines, the same reasoning `ProductsList.vue`'s row actions use.
+ */
+const {
+    message: lineActionError,
+    report: reportLineActionError,
+    clear: clearLineActionError
+} = useBlockingError();
+
+/**
+ * Stepping a line's quantity, debounced per product so three quick clicks are one request for the
+ * number the visitor stopped on — rather than three racing requests whose last answer wins. The
+ * reason that mattered, and why the delay is invisible, is in the composable.
+ */
+const { quantityOf, stepQuantity, forget, forgetAll, flushPending, sendPendingKeepalive, settle } =
+    useLineQuantity(updateCartItem, (error: unknown) => reportLineActionError(error));
+
+/**
+ * @param item - The cart line.
+ * @returns The quantity the line should show — the visitor's own pending step while one is
+ *  outstanding, the store's number the rest of the time.
+ */
+const lineQuantity = (item: CartResponseItem) => quantityOf(item.productId, item.quantity);
+
+/**
+ * Removes a line, forgetting any step still queued for it first: a pending quantity for a line
+ * that no longer exists would fire after the removal and put the line back.
+ *
+ * @param productId - The line to remove.
+ * @returns A promise resolving once the removal settles; a failure blocks the line actions in
+ *  place ({@link lineActionError}).
+ */
+const removeLine = (productId: string) => {
+    forget(productId);
+    clearLineActionError();
+    return removeCartItem(productId).catch((error: unknown) => reportLineActionError(error));
+};
+
+/**
+ * Empties the whole cart after an explicit confirmation — the same dialog cancelling an order
+ * uses, since a clear is destructive and cannot be undone.
+ *
+ * Forgets every line's pending step once the shopper accepts: a queued step for a line this
+ * is about to wipe would otherwise fire afterward and put that line back. A declined dialog
+ * touches nothing, pending steps included.
+ *
+ * @returns A promise resolving once the shopper declines or the clear settles; a failure blocks
+ *  the line actions in place ({@link lineActionError}).
+ */
+const handleClearCart = singleFlight(() => {
+    // The line count is what the question names: a bulk action has no single row to point at.
+    const count = cartItems.value.length;
+    return useDialogStore()
+        .confirm({ message: t('cart-page.confirm-clear', { count }, count), color: 'error' })
+        .then((accepted) => {
+            if (!accepted) return;
+            forgetAll();
+            clearLineActionError();
+            return clearCart().catch((error: unknown) => reportLineActionError(error));
+        });
+});
+
+/**
+ * A step still inside its debounce when the page goes away (a reload, a closed tab) is sent by a
+ * request that outlives the page, rather than lost with its timer.
+ */
+const onPageHide = () =>
+    sendPendingKeepalive((productId, quantity) => {
+        sendKeepalive('PATCH', `/cart/items/${productId}`, { quantity });
+    });
+
+onMounted(() => window.addEventListener('pagehide', onPageHide));
+
+onBeforeUnmount(() => {
+    window.removeEventListener('pagehide', onPageHide);
+    flushPending();
+});
+
+/**
+ * Keeps each line's `availability` fresh while this page is open, when the deployment
+ * turned the poll on (`VITE_CART_STOCK_POLL_SECONDS`). Checkout is this same page.
+ */
+useCartStockPoll();
+
+/**
+ * Catches the page up when the shopper comes back to it: the server's cart may have changed behind
+ * the open screen, and "Place order" is about to act on what is shown.
+ */
+useCartFocusRefresh();
+
+/**
+ * Load cart on mount
+ */
+onMounted(() =>
+    fetchCart().then((cart) => loadProducts((cart?.items ?? []).map(({ productId }) => productId)))
+);
+</script>
+
+<template>
+    <div id="cart-page">
+        <!--
+            Above both states: a merge in which nothing could be added leaves an EMPTY cart, and
+            that is exactly when the shopper most needs to be told why.
+        -->
+        <MergeReportAlert class="mx-auto mb-4 w-full max-w-4xl" />
+
+        <CartEmptyState v-if="cartItems.length === 0" />
+
+        <div v-else class="mx-auto grid w-full max-w-4xl gap-4 lg:grid-cols-cart">
+            <div class="flex justify-end lg:col-span-2">
+                <TourButton tour="checkout" />
+            </div>
+
+            <!--
+                CART_INSUFFICIENT_STOCK names every short line in one response — rendering it as a
+                single "some items are unavailable" toast would turn a one-pass fix into a
+                guessing game. See `docs/modules/cart-checkout.md`.
+            -->
+            <v-alert
+                v-if="insufficientStockLines.length > 0"
+                type="warning"
+                variant="tonal"
+                data-test="checkout-shortfall"
+                class="lg:col-span-2"
+            >
+                <ul class="flex flex-col gap-1">
+                    <li
+                        v-for="line in insufficientStockLines"
+                        :key="line.productId"
+                        data-test="checkout-shortfall-line"
+                    >
+                        {{ shortfallText(line) }}
+                    </li>
+                </ul>
+            </v-alert>
+
+            <!--
+                CART_PRODUCT_UNAVAILABLE names every line whose product left the catalogue since
+                the basket was built — the same one-pass-fix reasoning as the shortfall alert
+                above, not a generic "some items are unavailable" toast.
+            -->
+            <v-alert
+                v-if="unavailableLines.length > 0"
+                type="warning"
+                variant="tonal"
+                data-test="checkout-unavailable"
+                class="lg:col-span-2"
+            >
+                <ul class="flex flex-col gap-1">
+                    <li
+                        v-for="line in unavailableLines"
+                        :key="line.productId"
+                        data-test="checkout-unavailable-line"
+                    >
+                        {{ line.title ?? line.productId }}
+                    </li>
+                </ul>
+            </v-alert>
+
+            <!--
+                A purchase hold pauses new orders only. The banner reads the buyer's own record,
+                so it shows before a checkout is tried as well as after one is refused.
+            -->
+            <PurchaseHoldNotice :refresh-signal="holdSignal" />
+
+            <!--
+                CART_OPEN_ORDER_LIMIT_REACHED names the unpaid orders in the way: the fix is paying or
+                cancelling one, so each is a link to its page rather than a sentence alone.
+            -->
+            <v-alert
+                v-if="openOrderTargets.length > 0"
+                type="warning"
+                variant="tonal"
+                data-test="cart-open-orders"
+                class="lg:col-span-2"
+            >
+                <p>{{ t('cart-page.error-open-order-limit') }}</p>
+                <ul class="mt-2 flex flex-col gap-1">
+                    <li v-for="(order, index) in openOrderTargets" :key="order.id">
+                        <router-link :to="order.to" data-test="cart-open-order-link">
+                            {{ t('cart-page.open-order-link', { n: index + 1 }) }}
+                        </router-link>
+                    </li>
+                </ul>
+            </v-alert>
+
+            <!--
+                "Place order" is held back while any line cannot be bought; this says why, so the
+                shopper is not left with a dead button and no reason.
+            -->
+            <v-alert
+                v-if="cartItems.length > 0 && !cart?.checkoutable"
+                type="info"
+                variant="tonal"
+                data-test="cart-lines-need-attention"
+                class="lg:col-span-2"
+            >
+                {{ t('cart-page.error-line-needs-attention') }}
+            </v-alert>
+
+            <InlineErrorAlert
+                :message="lineActionError"
+                class="lg:col-span-2"
+                data-test="cart-line-action-error"
+            />
+
+            <div class="flex flex-col gap-4" data-tour="checkout-lines">
+                <CartLineCard
+                    v-for="item in cartItems"
+                    :key="'cart-item-' + item.productId"
+                    test-prefix="cart"
+                    :title="titleOf(item.productId)"
+                    :quantity="lineQuantity(item)"
+                    :unit-price="productOf(item.productId)?.price"
+                    :currency="productOf(item.productId)?.currency ?? ''"
+                    :can-decrease="!placing && lineQuantity(item) > MIN_LINE_QUANTITY"
+                    :can-increase="!placing && item.canIncrease"
+                    :remove-disabled="loading"
+                    @step="(delta) => stepQuantity(item.productId, item.quantity, delta)"
+                    @remove="removeLine(item.productId)"
+                >
+                    <template #badges>
+                        <v-chip
+                            v-if="availabilityLabel(item.availability)"
+                            size="small"
+                            :color="
+                                item.availability === 'preorder' ||
+                                item.availability === 'backorder'
+                                    ? 'info'
+                                    : 'warning'
+                            "
+                            variant="tonal"
+                            label
+                            class="ml-2"
+                            :data-availability="item.availability"
+                            data-test="cart-line-availability"
+                        >
+                            {{ availabilityLabel(item.availability, productOf(item.productId)) }}
+                        </v-chip>
+                        <!-- Art. 6(1)(k) CRD: told BEFORE buying that this item has no right of withdrawal. -->
+                        <v-chip
+                            v-if="productOf(item.productId)?.noWithdrawal"
+                            size="small"
+                            variant="tonal"
+                            label
+                            class="ml-2"
+                            data-test="cart-line-no-withdrawal"
+                        >
+                            {{ t('cart-page.label-no-withdrawal') }}
+                        </v-chip>
+                    </template>
+                </CartLineCard>
+            </div>
+
+            <div class="flex flex-col gap-4">
+                <v-card
+                    v-if="cartSummary"
+                    data-test="cart-summary"
+                    data-tour="checkout-summary"
+                    class="p-5 lg:sticky lg:top-20"
+                >
+                    <h2 class="text-lg font-semibold">{{ t('cart-page.label-summary') }}</h2>
+                    <dl class="mt-3 grid grid-cols-summary gap-y-1">
+                        <dt class="opacity-muted">{{ t('cart-page.label-items-count') }}</dt>
+                        <dd class="text-right font-medium">{{ cartSummary.itemsCount }}</dd>
+                        <dt class="opacity-muted">{{ t('cart-page.label-total-quantity') }}</dt>
+                        <dd class="text-right font-medium">{{ cartSummary.totalQuantity }}</dd>
+                    </dl>
+                    <v-divider class="my-3" />
+                    <!--
+                        A basket with nothing to ship (every line digital) has no method to
+                        choose, so the selector is replaced by one plain line rather than shown as
+                        an empty heading. The line promises nothing about how a digital good
+                        arrives: no channel delivers one yet.
+                    -->
+                    <p
+                        v-if="cartShipping && !cartShipping.required"
+                        class="opacity-80"
+                        data-test="cart-no-shipping"
+                    >
+                        {{ t('cart-page.no-shipping-needed') }}
+                    </p>
+                    <ShippingSelector
+                        v-else
+                        v-model="shippingMethodId"
+                        v-model:requires-address="shippingMethodRequiresAddress"
+                        v-model:ship-to-countries="shipToCountries"
+                        :options="cartShipping?.options ?? []"
+                        :currency="cartSummary.currency"
+                    />
+                    <p
+                        v-if="cartShipping?.required && hasLaterLine"
+                        class="mt-2 text-sm opacity-muted"
+                        data-test="cart-ship-later-notice"
+                    >
+                        {{ t('cart-page.ship-later-notice') }}
+                    </p>
+                    <!--
+                        Only asked when the chosen method actually needs one — a digital-only
+                        basket, or `pickup`, never renders this at all.
+                    -->
+                    <AddressPicker
+                        v-if="shipsToAddress"
+                        v-model="addressId"
+                        :ship-to-countries="shipToCountries"
+                        class="mt-3"
+                    />
+                    <!--
+                        Every order carries a billing address for its invoice, so this is always
+                        asked: "same as the shipping address" when something ships to one, the
+                        book's entries alone otherwise. It binds no ship-to list — an invoice may
+                        go anywhere.
+                    -->
+                    <AddressPicker
+                        v-model="billingAddressId"
+                        purpose="billing"
+                        :same-as-shipping="shipsToAddress"
+                        class="mt-3"
+                    />
+                    <PaymentMethodSelector v-model="paymentMethodId" />
+                    <v-textarea
+                        v-model="notes"
+                        :label="t('cart-page.label-notes')"
+                        rows="2"
+                        auto-grow
+                        class="mt-3"
+                        data-test="cart-notes"
+                        data-tour="checkout-notes"
+                    />
+                    <v-divider class="my-3" />
+                    <dl class="grid grid-cols-summary gap-y-1">
+                        <dt class="opacity-muted">{{ t('cart-page.label-items-total') }}</dt>
+                        <dd class="text-right font-medium" data-test="cart-items-total">
+                            {{ formatCurrency(cartSummary.itemsTotal, cartSummary.currency) }}
+                        </dd>
+                        <dt v-if="shippingMethodId" class="opacity-muted">
+                            {{ t('cart-page.label-shipping-cost') }}
+                        </dt>
+                        <dd
+                            v-if="shippingMethodId"
+                            class="text-right font-medium"
+                            data-test="cart-shipping-cost"
+                        >
+                            {{ formatCurrency(cartSummary.shippingCost, cartSummary.currency) }}
+                        </dd>
+                    </dl>
+                    <v-divider class="my-3" />
+                    <div class="flex items-baseline justify-between">
+                        <span class="opacity-muted">{{ t('cart-page.label-total') }}</span>
+                        <span
+                            class="text-xl font-bold"
+                            role="status"
+                            data-test="cart-total"
+                            data-tour="checkout-total"
+                        >
+                            {{ formatCurrency(cartSummary.totalPrice, cartSummary.currency) }}
+                        </span>
+                    </div>
+                    <!-- The key terms (withdrawal, delivery) in front of the buyer right before the order
+                         (Consumer Rights Directive Art. 6, 8). -->
+                    <i18n-t
+                        keypath="cart-page.text-order-terms"
+                        tag="p"
+                        class="mt-4 text-xs opacity-muted"
+                        data-test="cart-order-terms"
+                    >
+                        <template #terms>
+                            <RouterLink
+                                :to="routerLinkI18n({ name: 'StaticTerms' })"
+                                class="underline"
+                            >
+                                {{ t('static-pages.terms.title') }}
+                            </RouterLink>
+                        </template>
+                        <template #privacy>
+                            <RouterLink
+                                :to="routerLinkI18n({ name: 'StaticPrivacy' })"
+                                class="underline"
+                            >
+                                {{ t('static-pages.privacy.title') }}
+                            </RouterLink>
+                        </template>
+                    </i18n-t>
+                    <v-btn
+                        color="primary"
+                        size="large"
+                        block
+                        class="mt-2"
+                        data-test="cart-checkout"
+                        data-tour="checkout-place-order"
+                        :disabled="!canCheckout || loading || placing"
+                        @click="checkout"
+                    >
+                        {{ t('cart-page.button-checkout') }}
+                    </v-btn>
+                    <InlineErrorAlert
+                        :message="checkoutError"
+                        class="mt-2"
+                        data-test="cart-checkout-error"
+                    />
+                    <v-btn
+                        variant="text"
+                        block
+                        class="mt-2"
+                        data-test="cart-clear"
+                        :disabled="loading"
+                        @click="handleClearCart"
+                    >
+                        {{ t('cart-page.button-clear') }}
+                    </v-btn>
+                </v-card>
+            </div>
+        </div>
+    </div>
+</template>

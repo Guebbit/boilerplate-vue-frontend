@@ -100,10 +100,10 @@ Store `stats`, from `store.ts`. Only what the setup function returns is listed.
 
 ## Screens
 
-| Path                              | Route name          | Access | Permission   | View                       |
-| --------------------------------- | ------------------- | ------ | ------------ | -------------------------- |
-| `sales/stats`                     | `StatsDashboard`    | `auth` | `read Stats` | `views/StatsDashboard.vue` |
-| `sales/stats/products/:productId` | `StatsProductSales` | `auth` | `read Stats` | `views/ProductSales.vue`   |
+| Path                              | Route name          | Access | Permission   | View                          |
+| --------------------------------- | ------------------- | ------ | ------------ | ----------------------------- |
+| `sales/stats`                     | `StatsDashboard`    | `auth` | `read Stats` | `views/StatsDashboard.vue`    |
+| `sales/stats/products/:productId` | `StatsProductSales` | `auth` | `read Stats` | `views/StatsProductSales.vue` |
 
 The permission is `read:Stats`, which the backend grants to `manager` and `admin`. See
 [Security](../tools/security.md#route-guards).

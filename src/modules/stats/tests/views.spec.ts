@@ -8,7 +8,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router';
 import StatsDashboard from '../views/StatsDashboard.vue';
-import ProductSales from '../views/ProductSales.vue';
+import StatsProductSales from '../views/StatsProductSales.vue';
 import { useStatsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
@@ -77,7 +77,7 @@ const mountDashboard = (router: ReturnType<typeof makeRouter>, url = '/en/sales/
  */
 const mountProduct = (router: ReturnType<typeof makeRouter>, url: string) =>
     router.push(url).then(() => {
-        const wrapper = mount(ProductSales, {
+        const wrapper = mount(StatsProductSales, {
             props: { productId: 'p1' },
             global: { plugins: [router, vuetify, i18n], stubs: { MermaidChart: MermaidStub } }
         });
@@ -145,7 +145,7 @@ describe('StatsDashboard', () => {
     });
 });
 
-describe('ProductSales', () => {
+describe('StatsProductSales', () => {
     it('reads the product for the period in the URL and shows its title', () => {
         const load = answerProductWith(SERIES);
         return mountProduct(

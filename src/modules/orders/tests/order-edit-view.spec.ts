@@ -1,7 +1,7 @@
 /**
  * @module
  * Mounts the real edit page against a real, memory-history router, proving `OrderEdit.vue` gains
- * its controls from the order's `actions`, as `Order.vue` does: a list-cache arrival carries them
+ * its controls from the order's `actions`, as `OrderTarget.vue` does: a list-cache arrival carries them
  * already, so the page offers the moves without a second fetch. Same template as
  * `product-view.spec.ts`/`wishlist-view.spec.ts`: a real router over
  * `collectModuleRoutes(enabledModules)`, and the store's own watch stubbed.

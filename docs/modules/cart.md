@@ -117,8 +117,9 @@ sequenceDiagram
 | `composables/guest-cart-storage.ts` | Reads and writes the two `localStorage` keys (the list and the pending merge), guarded: blocked or full storage costs the next visit, never this one.                                     |
 | `composables/use-guest-cart.ts`     | `guestLines` and its actions, saved on every change and re-read when another tab changes the key; the cart store sends it (`mergeGuestCart`) and `badgeQuantity` falls back to its total. |
 | `components/MergeReportAlert.vue`   | The cart page's merge alert: reads the store's report, renders nothing while it is empty.                                                                                                 |
+| `components/SignedInCart.vue`       | The signed-in page: lines, shipping, addresses, payment and checkout.                                                                                                                     |
 | `components/GuestCart.vue`          | The guest's page: priced lines, steppers, "Sign in to check out". No shipping, address or payment: checkout needs an account.                                                             |
-| `views/CartEntry.vue`               | The route's screen: `GuestCart` for a guest, `Cart` for a signed-in visitor.                                                                                                              |
+| `views/Cart.vue`                    | The route's screen: `GuestCart` for a guest, `SignedInCart` for a signed-in visitor.                                                                                                      |
 
 The route is `access: 'open'` and asks no permission: a guest passes, and so does every signed-in
 account, staff included, since every account shops.
@@ -407,9 +408,9 @@ Store `cart`, from `store.ts`. Only what the setup function returns is listed �
 
 ## Screens
 
-| Path   | Route name | Access | Permission | View                  |
-| ------ | ---------- | ------ | ---------- | --------------------- |
-| `cart` | `Cart`     | `open` | —          | `views/CartEntry.vue` |
+| Path   | Route name | Access | Permission | View             |
+| ------ | ---------- | ------ | ---------- | ---------------- |
+| `cart` | `Cart`     | `open` | —          | `views/Cart.vue` |
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
@@ -484,7 +485,7 @@ in Faro. See [Observability](../tools/observability.md#event-taxonomy).
 | `tests/routes.spec.ts`                      | Vitest suite — the route records and the `meta.access` each one declares.                                                                                                           | [read](../tools/unit-testing.md)      |
 | `tests/store.spec.ts`                       | Vitest suite — this domain's store, with the transport mocked.                                                                                                                      | [read](../tools/unit-testing.md)      |
 | `tests/use-line-quantity.spec.ts`           | Vitest suite — the `useLineQuantity` composable, in isolation.                                                                                                                      | [read](../tools/unit-testing.md)      |
-| `tests/cart-entry-view.spec.ts`             | Vitest suite — `cart-entry-view`, in isolation.                                                                                                                                     | [read](../tools/unit-testing.md)      |
+| `tests/cart-route-view.spec.ts`             | Vitest suite — `cart-route-view`, in isolation.                                                                                                                                     | [read](../tools/unit-testing.md)      |
 | `tests/guest-cart-storage.spec.ts`          | Vitest suite — `guest-cart-storage`, in isolation.                                                                                                                                  | [read](../tools/unit-testing.md)      |
 | `tests/guest-cart-store.spec.ts`            | Vitest suite — `guest-cart-store`, in isolation.                                                                                                                                    | [read](../tools/unit-testing.md)      |
 | `tests/guest-cart-view.spec.ts`             | Vitest suite — `guest-cart-view`, in isolation.                                                                                                                                     | [read](../tools/unit-testing.md)      |
@@ -504,8 +505,8 @@ in Faro. See [Observability](../tools/observability.md#event-taxonomy).
 | `tests/cart-view-double-submit.spec.ts`     | Vitest suite — the page is shut while an order is placed.                                                                                                                           | [read](../tools/unit-testing.md)      |
 | `tests/guest-cart-input-validation.spec.ts` | Vitest suite — the guest cart's rules over every number, NaN included.                                                                                                              | [read](../tools/unit-testing.md)      |
 | `tests/merge-report-alert.spec.ts`          | Vitest suite — the merge alert: content per kind (changed, short, gone), language, dismiss, live region, axe.                                                                       | [read](../tools/unit-testing.md)      |
+| `components/SignedInCart.vue`               | The signed-in cart's page. Reads its store, renders, and holds no fetching logic of its own.                                                                                        | [read](../theory/layers.md)           |
 | `views/Cart.vue`                            | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
-| `views/CartEntry.vue`                       | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
 
 ## Working on it
 

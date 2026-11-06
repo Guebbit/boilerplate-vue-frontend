@@ -1,6 +1,6 @@
 /**
  * @module
- * The four read-only labels both user pages (`User.vue`, `UserEdit.vue`) show about the routed
+ * The four read-only labels both user pages (`UserTarget.vue`, `UserEdit.vue`) show about the routed
  * record: hero heading, hero subheading, role chip and status chip. Pure `computed`s over the
  * loaded user, so each page keeps its own store read and only the wording lives here once.
  */

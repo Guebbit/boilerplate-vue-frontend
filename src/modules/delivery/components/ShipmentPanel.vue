@@ -83,7 +83,7 @@ const {
 /**
  * This order's fulfillment orders, discarding stale ones. The store's lists are shared: this
  * panel instance is reused across orders (no remount on a route param change alone, per
- * `Order.vue`'s `watchOrder`), and a slow response for the PREVIOUS order landing after `orderId`
+ * `OrderTarget.vue`'s `watchOrder`), and a slow response for the PREVIOUS order landing after `orderId`
  * moved on must not render as this order's.
  */
 const fulfillmentOrders = computed(() =>

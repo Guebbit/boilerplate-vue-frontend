@@ -19,7 +19,7 @@ export default [
     {
         path: 'sales/stats/products/:productId',
         name: 'StatsProductSales',
-        component: () => import('./views/ProductSales.vue'),
+        component: () => import('./views/StatsProductSales.vue'),
         props: true,
         meta: { access: 'auth', can: ['read', 'Stats'], title: 'stats-page.product-sales-title' }
     }

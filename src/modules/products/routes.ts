@@ -33,7 +33,7 @@ export default [
         path: 'products/:id',
         name: 'ProductTarget',
         meta: { title: 'product-target-page.page-title' },
-        component: () => import('./views/Product.vue'),
+        component: () => import('./views/ProductTarget.vue'),
         props: true
     },
     {

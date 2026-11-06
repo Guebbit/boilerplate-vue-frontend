@@ -7,7 +7,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import Cart from '../views/Cart.vue';
+import SignedInCart from '../components/SignedInCart.vue';
 import { router } from './mount-cart-page.ts';
 import { useCartStore } from '../store.ts';
 import { searchProducts } from '@api';
@@ -63,7 +63,7 @@ const mountCart = () => {
     cart.cart = CART;
     vi.spyOn(cart, 'fetchCart').mockResolvedValue(CART);
 
-    const wrapper = mount(Cart, {
+    const wrapper = mount(SignedInCart, {
         global: {
             plugins: [router, vuetify, i18n],
             stubs: {
@@ -98,7 +98,7 @@ describe('a cart line price', () => {
         cart.cart = CART;
         vi.spyOn(cart, 'fetchCart').mockResolvedValue(CART);
 
-        const wrapper = mount(Cart, {
+        const wrapper = mount(SignedInCart, {
             global: {
                 plugins: [router, vuetify, i18n],
                 stubs: {

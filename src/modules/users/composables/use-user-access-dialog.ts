@@ -4,7 +4,7 @@
  * way it already awaits `useDialogStore().confirm()` — `request(...).then((result) => ...)` —
  * instead of wiring its own open flag and resolver. `UserAccessDialog` itself stays a plain
  * `v-model` component (this module's usual pattern, see `LanguageFormDialog.vue`); this composable
- * is what three call sites (`UsersList.vue`, `User.vue`, `UserEdit.vue`) would otherwise each
+ * is what three call sites (`UsersList.vue`, `UserTarget.vue`, `UserEdit.vue`) would otherwise each
  * reimplement.
  */
 import { ref } from 'vue';

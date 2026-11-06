@@ -25,7 +25,7 @@ export default [
         path: 'users/:id',
         name: 'UserTarget',
         meta: { access: 'auth', can: ['read', 'User'], title: 'user-target-page.page-title' },
-        component: () => import('./views/User.vue'),
+        component: () => import('./views/UserTarget.vue'),
         props: true
     },
     {
