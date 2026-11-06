@@ -143,9 +143,28 @@ describe('OP27 · The shop in numbers', () => {
                             cy.get('[data-test=refund-amount] input').clear();
                             cy.get('[data-test=refund-amount] input').type(total.toFixed(2));
                             cy.get('[data-test=button-refund-only]').click();
-                            cy.contains('Payment refunded. The order status is unchanged.').should(
-                                'exist'
+                            // Cash is handed back outside the app: the refund opens as pending.
+                            cy.contains(
+                                'Refund recorded. Hand the money back outside the app, then press Mark returned.'
+                            ).should('exist');
+
+                            cy.step(
+                                'the money is handed back, and Mark returned settles the record'
                             );
+                            cy.apiAs<{ items: { refunds: { id: string }[] }[] }>(
+                                'admin',
+                                'GET',
+                                `/orders/${orderId}/payments`
+                            ).then((after) => {
+                                const refundId = after?.items[0].refunds[0].id;
+                                cy.get(
+                                    `[data-test=button-mark-returned-${String(refundId)}]`
+                                ).click();
+                                cy.get('[data-test=app-dialog-confirm]').click();
+                                cy.get(
+                                    `[data-test=button-mark-returned-${String(refundId)}]`
+                                ).should('not.exist');
+                            });
 
                             cy.step('the refunds card grows by the refunded amount');
                             cy.switchUser('manager');
