@@ -73,7 +73,7 @@ describe('AT10 · The last administrator removes itself', () => {
             cy.get('[data-test=user-go-to-edit]').should('not.exist');
             cy.get('[data-test=user-manage-access]').should('not.exist');
             loginDevice('moderator').then((device) => {
-                requestAsDevice(device, 'PATCH', `/users/${adminId}`, { active: true })
+                requestAsDevice(device, 'POST', `/users/${adminId}/activate`)
                     .its('status')
                     .should('equal', 403);
             });
