@@ -36,7 +36,7 @@ import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { Payment } from '@types';
 import { usePaymentsStore } from '../store.ts';
-import { refundNotice } from '../composables/refund-notice.ts';
+import { refundNotice } from '../refund-notice.ts';
 import PaymentStatusChip from './PaymentStatusChip.vue';
 import RefundCancelForm from './RefundCancelForm.vue';
 import DisputeBanner from './DisputeBanner.vue';

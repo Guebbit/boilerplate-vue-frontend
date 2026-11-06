@@ -8,7 +8,7 @@ import { storeToRefs } from 'pinia';
 import { translate as t } from '@/i18n';
 import type { EToastType } from '@guebbit/vue-toolkit';
 import { usePaymentsStore } from '../store';
-import { refundNotice } from './refund-notice';
+import { refundNotice } from '../refund-notice.ts';
 import { decimalScale, padDecimal } from '@/infrastructure/utils/money.ts';
 import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 

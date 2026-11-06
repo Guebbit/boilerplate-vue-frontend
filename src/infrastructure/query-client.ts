@@ -20,11 +20,10 @@ import { QueryClient } from '@tanstack/vue-query';
 /**
  * The app's one TanStack query cache.
  *
- * vue-toolkit 4.x gave each resource its own client, configured with `retry: false` and
- * `networkMode: 'always'`; 5.x's shared client defaults to TanStack's own (3 retries for an
- * active query, pausing while the browser reports itself offline). Every store here, and every
- * store unit test, was written against the 4.x behaviour — a single mocked request per call, no
- * retry loop to wait out — so those two options are set explicitly to keep it.
+ * TanStack's own defaults would retry an active query 3 times and pause while the browser
+ * reports itself offline. Every store here, and every store unit test, expects a single request
+ * per call with no retry loop to wait out, so both options are set explicitly:
+ * `retry: false` and `networkMode: 'always'`.
  */
 export const queryClient = new QueryClient({
     defaultOptions: {

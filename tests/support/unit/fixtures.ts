@@ -431,6 +431,9 @@ const CURRENT_TITLES: Record<number, string> = {
  * a catch. One builder for every spec, typed on the generated `Problem`, so a member the contract
  * adds or requires is a compile error here and not a drift nobody sees.
  *
+ * `Problem` has no response schema in `schemas.zod.ts`, so this fixture is typed on the generated
+ * type but not parsed through the contract.
+ *
  * @param status - The HTTP status the server answered with.
  * @param errors - The `errors` items; the first one's message is the `detail` unless one is given.
  * @param detail - The summary sentence, when a spec needs one that differs from the first item's.

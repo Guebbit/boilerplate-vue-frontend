@@ -4,7 +4,7 @@
  * build that ships the route, and nothing else.
  */
 import { describe, expect, it } from 'vitest';
-import { auditTargetLocation, shortTargetId } from '../composables/audit-target.ts';
+import { auditTargetLocation, shortTargetId } from '../audit-target.ts';
 
 /** A router that knows exactly the route names it is given. */
 const routerWith = (...names: string[]) => ({ hasRoute: (name: string) => names.includes(name) });

@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { EToastType } from '@guebbit/vue-toolkit';
 import { loadLocale, translate } from '@/i18n';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { refundNotice } from '../composables/refund-notice.ts';
+import { refundNotice } from '../refund-notice.ts';
 
 wireModulesIntoCore();
 

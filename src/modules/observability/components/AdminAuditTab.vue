@@ -17,7 +17,7 @@ import CopyButton from '@/ui/molecules/CopyButton.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
 import AuditMetadataDetail from './AuditMetadataDetail.vue';
-import { auditTargetLocation, shortTargetId } from '../composables/audit-target.ts';
+import { auditTargetLocation, shortTargetId } from '../audit-target.ts';
 import { useAuditTrail, type AuditEndpoint } from '../composables/use-audit-trail.ts';
 import { ListAuditEntriesOutcome } from '@/types/enums.ts';
 import type { AuditEntryItem } from '@types';
