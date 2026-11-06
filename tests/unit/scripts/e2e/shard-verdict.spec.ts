@@ -68,8 +68,31 @@ describe('countFinishedSpecs', () => {
         expect(countFinishedSpecs(summary)).toBe(3);
     });
 
-    it('counts a spec once if its row is printed twice', () => {
-        expect(countFinishedSpecs(`${summary}\n${summary}`)).toBe(3);
+    it('counts a row printed in milliseconds', () => {
+        const row =
+            '  │ ✔  quick.cy.ts                     962ms        1        1        -        -        - │';
+        expect(countFinishedSpecs(`(Run Finished)\n${row}`)).toBe(1);
+    });
+
+    it('counts a wrapped two-line name once', () => {
+        const wrapped = [
+            '  (Run Finished)',
+            '  │ ✔  a/very/long/folder/name-that-wr…   00:05        3        3        -        -        - │',
+            '  │    aps.cy.ts                                                                          │'
+        ].join('\n');
+        expect(countFinishedSpecs(wrapped)).toBe(1);
+    });
+
+    it('counts two rows that print the same truncated name', () => {
+        const row =
+            '  │ ✔  same/truncated-na…              00:05        3        3        -        -        - │';
+        expect(countFinishedSpecs(`(Run Finished)\n${row}\n${row}`)).toBe(2);
+    });
+
+    it('counts only the table after the last Run Finished marker', () => {
+        const last =
+            '  (Run Finished)\n  │ ✔  only.cy.ts                      00:01        1        1        -        -        - │';
+        expect(countFinishedSpecs(`${summary}\n${last}`)).toBe(1);
     });
 
     it('ignores the totals row and the "Running:" lines', () => {

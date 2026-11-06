@@ -25,17 +25,24 @@ export interface ShardOutcome {
 /** A shard's verdict; `reason` says why it failed. */
 export type ShardVerdict = { ok: true } | { ok: false; reason: string };
 
-/** A row of Cypress' final summary table: `✔  login.cy.ts   00:05   3   3   -   -   -`. */
-const SUMMARY_ROW = /^\s*[│|]?\s*[✔✖−-]\s+(\S+\.cy\.[cm]?[jt]sx?)\s+\d{2}:\d{2}/gmu;
+/** A row of Cypress' final summary table: `│ ✔  login.cy.ts   00:05   3   3   -   -   - │`. */
+const SUMMARY_ROW = /^\s*│\s*[✔✖−-]\s+\S+\s+(?:\d+:\d{2}|\d+ms)\s/gmu;
+
+/** The marker Cypress prints once, right before the final summary table. */
+const RUN_FINISHED = '(Run Finished)';
 
 /**
- * Counts the distinct specs in a Cypress run's final summary table.
+ * Counts the spec rows in the LAST final summary table of a Cypress run.
+ *
+ * Only the text after the last `(Run Finished)` counts, so an earlier table cannot be added in.
+ * Rows are not de-duplicated by name: a long name is truncated in the table and two specs can
+ * print the same one. A wrapped name's second line carries no status mark, so it is not a row.
  *
  * @param output - the shard's whole captured output
  * @returns how many specs Cypress reported as finished
  */
 export const countFinishedSpecs = (output: string): number =>
-    new Set([...output.matchAll(SUMMARY_ROW)].map((match) => match[1])).size;
+    [...output.slice(output.lastIndexOf(RUN_FINISHED) + 1).matchAll(SUMMARY_ROW)].length;
 
 /**
  * Judges a finished shard. Order matters: the most specific cause is named first.
