@@ -89,11 +89,11 @@ actionTable('webhooks', [
             sinkEndpoint(`/hook-${unique()}`)
                 .then((url) => cy.createWebhookSubscription({ url, eventTypes: ['order.created'] }))
                 .then((subscription) => `/en/webhooks/subscriptions/${subscription.id}/edit`),
-        // The edit page reads the subscription out of the list answer.
+        // The edit page reads the subscription by its own id.
         intercept: {
             method: 'GET',
-            url: '**/webhooks/subscriptions?*',
-            operation: '/webhooks/subscriptions'
+            url: '**/webhooks/subscriptions/*',
+            operation: '/webhooks/subscriptions/{id}'
         },
         kind: 'slow',
         field: 'webhook-description',
