@@ -36,7 +36,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import HumanCheck from '@/ui/organisms/HumanCheck.vue';
 import { withAntibotToken, isAntibotVerificationFailed } from '@/infrastructure/http/antibot.ts';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
-import type { LoginRequest } from '@api';
+import type { LoginRequest } from '@types';
 
 /**
  * UI logics

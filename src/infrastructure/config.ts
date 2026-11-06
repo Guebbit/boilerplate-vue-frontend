@@ -11,7 +11,7 @@
  */
 import { readonly, ref } from 'vue';
 import { getConfig } from '@api';
-import type { Config } from '@api';
+import type { Config } from '@types';
 import { logger } from '@/infrastructure/utils/logger.ts';
 
 /** The loaded answer, or `undefined` while unknown. */

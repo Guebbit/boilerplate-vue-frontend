@@ -32,7 +32,7 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import type { TwoFactorSetup } from '@api';
+import type { TwoFactorSetup } from '@types';
 import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
 /**

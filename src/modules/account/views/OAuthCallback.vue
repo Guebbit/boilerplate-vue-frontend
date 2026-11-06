@@ -29,7 +29,7 @@ import { parseJsonSafe } from '@/infrastructure/utils/safe-storage.ts';
 import { useAccountTwoFactorStore } from '../stores/two-factor.ts';
 import { useAccountDeletionRestoreStore } from '../stores/deletion-restore.ts';
 import { usePostLoginRedirect } from '../composables/use-post-login-redirect.ts';
-import type { TwoFactorMethodSummary } from '@api';
+import type { TwoFactorMethodSummary } from '@types';
 
 /**
  * Translation function.

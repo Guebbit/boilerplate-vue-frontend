@@ -59,8 +59,7 @@ import { backorderPromiseDays } from '@/infrastructure/shop.ts';
 import { toPatchTranslations } from '../composables/translations-body.ts';
 import { dayChange } from '../domain';
 import { useReleaseDateConfirm } from '../composables/use-release-date-confirm.ts';
-import type { ProductTranslationsWrite } from '@types';
-import type { TaxClass } from '@api';
+import type { ProductTranslationsWrite, TaxClass } from '@types';
 
 /**
  * Localized dictionary helper.

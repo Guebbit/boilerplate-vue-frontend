@@ -35,7 +35,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import TwoFactorEnroll from './TwoFactorEnroll.vue';
 import TwoFactorBackupCodes from './TwoFactorBackupCodes.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import type { TwoFactorSetup } from '@api';
+import type { TwoFactorSetup } from '@types';
 import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 

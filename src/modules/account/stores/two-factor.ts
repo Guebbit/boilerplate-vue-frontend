@@ -28,7 +28,7 @@ import { useCountdown } from '../composables/use-countdown.ts';
 import { useAccountProfileStore } from './profile.ts';
 import { useAccountDeletionRestoreStore } from './deletion-restore.ts';
 import { ERROR_CODES } from '@api/error-codes';
-import type { TwoFactorStatus, TwoFactorDelivery, TwoFactorMethodSummary } from '@api';
+import type { TwoFactorStatus, TwoFactorDelivery, TwoFactorMethodSummary } from '@types';
 import type { LoginOutcome } from './auth.ts';
 
 /**

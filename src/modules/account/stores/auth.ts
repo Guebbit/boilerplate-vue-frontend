@@ -16,7 +16,7 @@ import {
     requestPasswordReset as apiRequestPasswordReset,
     confirmPasswordReset as apiConfirmPasswordReset
 } from '@api';
-import type { MfaChallenge } from '@api';
+import type { MfaChallenge } from '@types';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
 import { useAccountProfileStore } from './profile.ts';

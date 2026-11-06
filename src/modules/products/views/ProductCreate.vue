@@ -46,8 +46,7 @@ import {
     shopCurrency,
     shopMinorUnits
 } from '@/infrastructure/shop.ts';
-import type { ProductTranslationsWrite } from '@types';
-import type { TaxClass } from '@api';
+import type { ProductTranslationsWrite, TaxClass } from '@types';
 
 /**
  * Localized dictionary helper.

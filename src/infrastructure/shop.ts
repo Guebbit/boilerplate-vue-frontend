@@ -10,7 +10,7 @@
  */
 import { computed, readonly, ref } from 'vue';
 import { getShop } from '@api';
-import type { Shop } from '@api';
+import type { Shop } from '@types';
 import { logger } from '@/infrastructure/utils/logger.ts';
 
 /** The loaded record, or `undefined` while unknown. */

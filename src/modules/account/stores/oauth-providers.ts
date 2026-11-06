@@ -11,7 +11,7 @@ import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { loadConfig } from '@/infrastructure/config.ts';
 import { instance } from '@/infrastructure/http/client.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
-import type { StartOAuthLoginParams } from '@api';
+import type { StartOAuthLoginParams } from '@types';
 import { REDIRECT_QUERY_ENUMS } from '@api/routes';
 
 /**
