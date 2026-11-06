@@ -89,10 +89,42 @@ sweepA11y(
         // Nothing is fetched until the button is pressed, so any well-formed id renders the page.
         ['account export download', '/en/account-export'],
         {
+            // No export on file: the status read finds none, so the page says so and offers nothing.
+            name: 'account export download, no export',
+            route: () => {
+                cy.intercept('GET', '**/account/export', {
+                    statusCode: 404,
+                    body: { status: 404, title: 'Not Found' }
+                });
+                return cy.wrap('/en/account-export', { log: false });
+            },
+            prepare: () => {
+                cy.get('[data-test=account-export-none]').should('be.visible');
+            }
+        },
+        {
             // The same page after the visitor presses the button for an export nobody made: the
-            // 404 lands as an alert next to the button, with the hint to ask for a new one.
+            // 404 lands as an alert next to the button, with the hint to ask for a new one. The
+            // status read says `ready` and the file read says 404, since that is the only way a
+            // button that is enabled can meet a file that is gone.
             name: 'account export download, export gone',
-            route: '/en/account-export',
+            route: () => {
+                cy.intercept('GET', '**/account/export', {
+                    statusCode: 200,
+                    body: {
+                        id: 'export1',
+                        status: 'ready',
+                        createdAt: '2026-01-01T00:00:00.000Z',
+                        expiresAt: '2099-01-01T00:00:00.000Z',
+                        actions: { download: true, request: false }
+                    }
+                });
+                cy.intercept('GET', '**/account/export/file', {
+                    statusCode: 404,
+                    body: { status: 404, title: 'Not Found' }
+                });
+                return cy.wrap('/en/account-export', { log: false });
+            },
             prepare: () => {
                 cy.get('[data-test=account-export-download]').click();
                 cy.get('[data-test=account-export-error]').should('be.visible');

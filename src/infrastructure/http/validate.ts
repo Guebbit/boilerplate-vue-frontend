@@ -97,6 +97,12 @@ export const validateResponseAgainstContract = (
     config: AxiosRequestConfig,
     data: unknown
 ): void => {
+    // A blob is a file, not a JSON document: the contract types the export's file as its JSON
+    // content, but the bytes are handed over untouched, so there is no body to check. Keyed on
+    // the request's `responseType`, not `instanceof Blob`, so the rule reads the same in every
+    // runtime.
+    if (config.responseType === 'blob') return;
+
     const mappedSchema = resolveResponseSchema(config.method, config.url);
     if (!mappedSchema) {
         // The lazy schema chunk is still loading: every route reads as unmapped

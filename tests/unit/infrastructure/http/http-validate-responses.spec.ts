@@ -159,6 +159,16 @@ describe('orvalMutator contract validation', () => {
         );
     });
 
+    it('does not validate a file download asked for as a blob', () => {
+        server.use(http.get(`${API}/account`, () => HttpResponse.json({ not: 'an account' })));
+        vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
+        return loadHttp().then(({ orvalMutator }) =>
+            expect(
+                orvalMutator({ url: '/account', method: 'GET', responseType: 'blob' })
+            ).resolves.toBeDefined()
+        );
+    });
+
     it('resolves normally when VITE_VALIDATE_RESPONSES=true and the response satisfies its schema', () => {
         server.use(
             http.get(`${API}/account`, () =>
