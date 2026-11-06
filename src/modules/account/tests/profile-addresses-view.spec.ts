@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import ProfileAddresses from '../components/ProfileAddresses.vue';
-import { useAddressesStore } from '../stores/addresses.ts';
+import { useAccountAddressesStore } from '../stores/addresses.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -50,7 +50,7 @@ const V_COUNTRY_SELECT_STUB = {
  * spied, so each case only has to assert on the payload sent.
  */
 const mountPanel = () => {
-    const store = useAddressesStore();
+    const store = useAccountAddressesStore();
     store.addresses = [OFFICE];
     // Fire-and-forget in the component; stubbed so the real transport is never hit.
     vi.spyOn(store, 'fetchAddresses').mockResolvedValue([OFFICE]);

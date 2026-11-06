@@ -26,7 +26,7 @@ export default {
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { AccountExport } from '@types';
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 import { formatDate } from '@/infrastructure/utils/formatters.ts';
@@ -45,7 +45,7 @@ const { t } = useI18n();
 /**
  * Asks the API to build the visitor's own data export, and reads where it stands.
  */
-const { requestAccountExport, fetchAccountExport } = useProfileStore();
+const { requestAccountExport, fetchAccountExport } = useAccountProfileStore();
 
 /**
  * Where the export stands; `undefined` when there is none.

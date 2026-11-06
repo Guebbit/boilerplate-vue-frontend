@@ -21,7 +21,7 @@ import { onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useDeletionRestoreStore } from '../stores/deletion-restore.ts';
+import { useAccountDeletionRestoreStore } from '../stores/deletion-restore.ts';
 import { usePostLoginRedirect } from '../composables/use-post-login-redirect.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDate } from '@/infrastructure/utils/formatters.ts';
@@ -41,7 +41,7 @@ const router = useRouter();
 /**
  * The deletion-restore store, held whole: its actions and its `storeToRefs` slice are both read.
  */
-const restore = useDeletionRestoreStore();
+const restore = useAccountDeletionRestoreStore();
 
 /**
  * The offer on screen, and whether a call is in flight.

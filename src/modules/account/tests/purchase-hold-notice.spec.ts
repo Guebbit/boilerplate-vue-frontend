@@ -22,7 +22,7 @@ const profile = ref<Partial<Account> | undefined>();
 const fetchProfile = vi.fn(() => Promise.resolve(undefined));
 
 vi.mock('../stores/profile.ts', () => ({
-    useProfileStore: () => ({ profile, fetchProfile })
+    useAccountProfileStore: () => ({ profile, fetchProfile })
 }));
 
 // The store above is a plain object of refs, not a real Pinia store: an identity `storeToRefs` is enough.

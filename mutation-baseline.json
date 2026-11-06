@@ -38,7 +38,7 @@
         "src/modules/account/response-schemas.ts": 100,
         "src/modules/account/stores/addresses.ts": 85.71,
         "src/modules/account/stores/auth.ts": 84,
-        "src/modules/account/stores/oauth.ts": 85.71,
+        "src/modules/account/stores/oauth-providers.ts": 85.71,
         "src/modules/account/stores/profile.ts": 77.97,
         "src/modules/account/stores/sessions.ts": 78.57,
         "src/modules/account/stores/two-factor.ts": 76.62,

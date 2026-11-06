@@ -44,13 +44,13 @@ export const startProviderLink = (
 /**
  * The providers linked to the signed-in account. Scoped to `ProfileConnectedAccounts.vue`.
  */
-export const useOAuthLinksStore = defineStore('accountOAuthLinks', () => {
+export const useAccountOAuthLinksStore = defineStore('account-oauth-links', () => {
     /**
      * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
      * every action below goes through.
      */
     const { loading, fetchAny } = useStructureRestApi<OAuthLink, string>({
-        resourceKey: 'accountOAuthLinks',
+        resourceKey: 'account-oauth-links',
         queryClient
     });
 

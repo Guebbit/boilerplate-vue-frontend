@@ -16,13 +16,13 @@ import type { Session } from '@types';
  * Scoped to `ProfileSessions.vue`, the only component that renders it; ending EVERY session at
  * once is `stores/auth.ts`'s `logoutEverywhere`, which this store has no reason to call.
  */
-export const useAccountSessionsStore = defineStore('accountSessions', () => {
+export const useAccountSessionsStore = defineStore('account-sessions', () => {
     /**
      * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
      * every action below goes through.
      */
     const { loading, fetchAny } = useStructureRestApi<Session, string>({
-        resourceKey: 'accountSessions',
+        resourceKey: 'account-sessions',
         queryClient
     });
 

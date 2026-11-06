@@ -9,7 +9,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { http, HttpResponse } from 'msw';
 import ProfileExportData from '../components/ProfileExportData.vue';
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -24,7 +24,7 @@ wireModulesIntoCore();
  * @returns The wrapper and the spy each case configures.
  */
 const mountComponent = () => {
-    const request = vi.spyOn(useProfileStore(), 'requestAccountExport');
+    const request = vi.spyOn(useAccountProfileStore(), 'requestAccountExport');
     const wrapper = mount(ProfileExportData, { global: { plugins: [vuetify, i18n] } });
     return { wrapper, request };
 };

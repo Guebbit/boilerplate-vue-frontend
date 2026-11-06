@@ -12,7 +12,7 @@ import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { loginRestore as apiLoginRestore, RememberTier } from '@api';
-import { useProfileStore } from './profile.ts';
+import { useAccountProfileStore } from './profile.ts';
 import type { LoginOutcome } from './auth.ts';
 
 /**
@@ -34,12 +34,12 @@ interface PendingRestore {
 /**
  * The restore offer and its two outcomes: restore and sign in, or leave it to be erased.
  */
-export const useDeletionRestoreStore = defineStore('accountDeletionRestore', () => {
+export const useAccountDeletionRestoreStore = defineStore('account-deletion-restore', () => {
     /**
      * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper.
      */
     const { loading, fetchAny } = useStructureRestApi({
-        resourceKey: 'accountDeletionRestore',
+        resourceKey: 'account-deletion-restore',
         queryClient
     });
 
@@ -100,7 +100,7 @@ export const useDeletionRestoreStore = defineStore('accountDeletionRestore', () 
                 remember: remember ? RememberTier.long : undefined
             }).then((data) => {
                 useSessionStore().adoptSession(data, remember ?? false);
-                return useProfileStore()
+                return useAccountProfileStore()
                     .fetchProfile(true, data.account)
                     .then(() => {
                         clear();

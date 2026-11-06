@@ -81,7 +81,7 @@ const writeStoredChoice = (choice: Exclude<AnalyticsConsentChoice, 'unknown'>) =
 /**
  * The guest consent banner's own state: what was chosen, and the two actions it offers.
  */
-export const useAnalyticsConsentStore = defineStore('analyticsConsent', () => {
+export const useAnalyticsConsentStore = defineStore('analytics-consent', () => {
     /**
      * The current choice — `unknown` until the banner is answered, then whichever button was
      * pressed, restored from the cookie on every fresh load.

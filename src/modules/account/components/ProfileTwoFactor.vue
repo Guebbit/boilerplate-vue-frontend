@@ -28,7 +28,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useI18n } from 'vue-i18n';
 import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
-import { useTwoFactorStore } from '../stores/two-factor.ts';
+import { useAccountTwoFactorStore } from '../stores/two-factor.ts';
 import { useMethodLabel } from '../composables/use-method-label.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -67,7 +67,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * The two-factor store, held whole: its actions and its `storeToRefs` slice are both read.
  */
-const twoFactor = useTwoFactorStore();
+const twoFactor = useAccountTwoFactorStore();
 
 /**
  * Two-factor state: what is armed, and whether a code-guarded mutation is in flight.

@@ -27,13 +27,13 @@ import type {
  * The visitor's address book. Scoped to `ProfileAddresses.vue`, the only component that renders
  * it — a book is a property of the profile page, not of the session or the editable record.
  */
-export const useAddressesStore = defineStore('accountAddresses', () => {
+export const useAccountAddressesStore = defineStore('account-addresses', () => {
     /**
      * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
      * every action below goes through.
      */
     const { loading, fetchAny } = useStructureRestApi<Address, string>({
-        resourceKey: 'accountAddresses',
+        resourceKey: 'account-addresses',
         queryClient
     });
 

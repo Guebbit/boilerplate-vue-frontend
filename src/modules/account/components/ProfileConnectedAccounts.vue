@@ -22,8 +22,8 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Link2 } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { startProviderLink, useOAuthLinksStore } from '../stores/oauth-links.ts';
-import { providerLabel, useOAuthProvidersStore } from '../stores/oauth.ts';
+import { startProviderLink, useAccountOAuthLinksStore } from '../stores/oauth-links.ts';
+import { providerLabel, useAccountOAuthProvidersStore } from '../stores/oauth-providers.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
@@ -43,12 +43,12 @@ const { addMessage } = useNotificationsStore();
 /**
  * The link-list actions: load them, and remove one.
  */
-const { fetchLinks, unlinkProvider } = useOAuthLinksStore();
+const { fetchLinks, unlinkProvider } = useAccountOAuthLinksStore();
 
 /**
  * The providers this deployment offers, so the panel can offer to connect the ones not yet linked.
  */
-const { providers: offeredProviders } = storeToRefs(useOAuthProvidersStore());
+const { providers: offeredProviders } = storeToRefs(useAccountOAuthProvidersStore());
 
 /**
  * The offered providers this account has not connected yet.
@@ -67,7 +67,7 @@ const connecting = ref<string>();
 /**
  * The connected providers.
  */
-const { links } = storeToRefs(useOAuthLinksStore());
+const { links } = storeToRefs(useAccountOAuthLinksStore());
 
 /**
  * The provider being removed, if any — per row, so only that button spins.
@@ -138,7 +138,7 @@ const handleConnect = (provider: string) => {
 
 onMounted(() => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises -- fetchProviders falls back to the providers already held
-    void useOAuthProvidersStore().fetchProviders();
+    void useAccountOAuthProvidersStore().fetchProviders();
     return fetchLinks();
 });
 </script>

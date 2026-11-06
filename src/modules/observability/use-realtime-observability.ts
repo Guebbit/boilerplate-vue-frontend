@@ -6,7 +6,7 @@
  * stream.
  */
 import { storeToRefs } from 'pinia';
-import { useRealtimeObservabilityStore } from './store';
+import { useObservabilityRealtimeStore } from './store';
 import { createSseClient } from '@/infrastructure/create-sse-client';
 import { OBSERVABILITY_CHANNELS } from '@types';
 import { instance } from '@/infrastructure/http/client';
@@ -60,7 +60,7 @@ export const useRealtimeObservability = () => {
     /**
      * The realtime store, which owns the connection and the capped feed this composable reads.
      */
-    const store = useRealtimeObservabilityStore();
+    const store = useObservabilityRealtimeStore();
 
     /**
      * Opens (or replaces) the SSE connection, routing each metrics event to its

@@ -60,12 +60,12 @@ const updateLoadingKey = (imageUpload?: File, imageUrl?: null): string[] => {
  * and the guards need. This store holds the whole `Account` — the split `docs/theory/layers.md`
  * describes.
  *
- * Deliberately NOT here: establishing or ending a session (`stores/auth.ts`'s `useAuthStore`), and
+ * Deliberately NOT here: establishing or ending a session (`stores/auth.ts`'s `useAccountAuthStore`), and
  * the device-session list / address book, each owned by the component that renders it
- * (`stores/sessions.ts`'s `useAccountSessionsStore`, `stores/addresses.ts`'s `useAddressesStore`).
+ * (`stores/sessions.ts`'s `useAccountSessionsStore`, `stores/addresses.ts`'s `useAccountAddressesStore`).
  * See `docs/theory/modules.md` for why this domain is split this many ways.
  */
-export const useProfileStore = defineStore('accountProfile', () => {
+export const useAccountProfileStore = defineStore('account-profile', () => {
     /**
      * The session store, whose token and viewer this store writes.
      */
@@ -85,7 +85,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         fetchTarget,
         updateTarget
     } = useStructureRestApi<Account, string>({
-        resourceKey: 'accountProfile',
+        resourceKey: 'account-profile',
         queryClient
     });
 

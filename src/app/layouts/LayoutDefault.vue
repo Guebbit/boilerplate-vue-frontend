@@ -156,7 +156,7 @@ const isMainLoading = computed(() => isLoading(MAIN_LOADING_KEYS));
 
 /**
  * Whether a domain store is working — the corner indicator's flag. Every domain store's
- * `resourceKey` (`'cart'`, `'accountProfile'`, …) lives on the app's one shared `QueryClient`,
+ * `resourceKey` (`'cart'`, `'account-profile'`, …) lives on the app's one shared `QueryClient`,
  * so this reads that rather than `useCoreStore`'s dictionary, which no toolkit composable
  * writes to.
  */

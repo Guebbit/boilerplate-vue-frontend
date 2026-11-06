@@ -38,7 +38,7 @@ interface PendingStepUp {
  * {@link requestStepUp} a second time while one is outstanding — so this store only ever holds
  * ONE pending entry, unlike `ui/dialog.ts`'s queue of independent confirmations.
  */
-export const useReauthPromptStore = defineStore('reauthPrompt', () => {
+export const useReauthPromptStore = defineStore('reauth-prompt', () => {
     /**
      * The live prompt, or `undefined` when nothing is asking.
      */

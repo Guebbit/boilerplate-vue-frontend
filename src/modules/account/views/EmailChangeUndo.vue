@@ -15,13 +15,13 @@ export default {
  * type server-side) is the credential. The form is `LinkTokenConfirmCard`. Success lands on Login: the server ended every session, so there is
  * nothing signed in to return to.
  */
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import LinkTokenConfirmCard from '../components/LinkTokenConfirmCard.vue';
 
 /**
  * Spends the undo token.
  */
-const { undoEmailChange } = useProfileStore();
+const { undoEmailChange } = useAccountProfileStore();
 
 /**
  * This page's translation keys.

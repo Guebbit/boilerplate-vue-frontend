@@ -26,7 +26,7 @@ import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { MonitorSmartphone } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useAuthStore } from '../stores/auth.ts';
+import { useAccountAuthStore } from '../stores/auth.ts';
 import { useAccountSessionsStore } from '../stores/sessions.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
@@ -73,7 +73,7 @@ const { sessions } = storeToRefs(useAccountSessionsStore());
 /**
  * Ends every session this visitor holds, on every device.
  */
-const { logoutEverywhere } = useAuthStore();
+const { logoutEverywhere } = useAccountAuthStore();
 
 /**
  * The session currently being revoked, if any.

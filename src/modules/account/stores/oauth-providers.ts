@@ -81,13 +81,13 @@ export const oauthStartUrl = (
  * The enabled OAuth providers — `Login.vue`/`Signup.vue` render one button per name, and render
  * none at all when the list is empty (no provider configured on this deployment).
  */
-export const useOAuthProvidersStore = defineStore('accountOAuthProviders', () => {
+export const useAccountOAuthProvidersStore = defineStore('account-oauth-providers', () => {
     /**
      * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
      * every action below goes through.
      */
     const { loading, fetchAny } = useStructureRestApi({
-        resourceKey: 'accountOAuthProviders',
+        resourceKey: 'account-oauth-providers',
         queryClient
     });
 

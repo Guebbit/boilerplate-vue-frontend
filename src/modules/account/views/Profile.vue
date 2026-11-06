@@ -26,7 +26,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { supportedLanguages } from '@/i18n';
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { usersSchema } from '@/modules/users';
@@ -70,12 +70,12 @@ const { addMessage } = useNotificationsStore();
  * Profile logic
  */
 const { updateProfile, cancelPendingEmailChange, resendPendingEmail, fetchProfile } =
-    useProfileStore();
+    useAccountProfileStore();
 
 /**
  * The signed-in visitor's profile record.
  */
-const { profile, savingProfile, changingPendingEmail } = storeToRefs(useProfileStore());
+const { profile, savingProfile, changingPendingEmail } = storeToRefs(useAccountProfileStore());
 
 /*
  * The record this page edits, loaded by this page. The session restore only fills the shell's

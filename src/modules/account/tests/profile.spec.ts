@@ -6,14 +6,14 @@
  * observability store, `useStructureRestApi` — runs for real.
  *
  * A few cases need a session established first (`updateOwnRole`'s refetch, deletion's "must not
- * touch the session yet"), so those log in through the real `useAuthStore().login` first, exactly
+ * touch the session yet"), so those log in through the real `useAccountAuthStore().login` first, exactly
  * like a real caller would.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
-import { useProfileStore } from '../stores/profile.ts';
-import { useAuthStore } from '../stores/auth.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
+import { useAccountAuthStore } from '../stores/auth.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -100,18 +100,18 @@ beforeEach(() => {
 
 describe('fetchProfile', () => {
     it('selects the identifier the profile updates address', () =>
-        useProfileStore()
+        useAccountProfileStore()
             .fetchProfile(true)
             .then(() => {
                 // `updateProfile` rejects without this, so a fetch that loads the record but does
                 // not select it leaves the store readable and unwritable.
-                expect(useProfileStore().profile).toMatchObject({ id: 'u1' });
+                expect(useAccountProfileStore().profile).toMatchObject({ id: 'u1' });
             }));
 
     it('publishes the viewer without a login having happened', () =>
         // The restore path: a returning visitor holds a refresh cookie, so `tryRestoreAuth` calls
         // this directly and the guards depend on it filling the projection.
-        useProfileStore()
+        useAccountProfileStore()
             .fetchProfile(true)
             .then(() => {
                 expect(useSessionStore().viewer).toMatchObject({ id: 'u1' });
@@ -122,12 +122,12 @@ describe('updateProfile', () => {
     it('rejects when no profile has been loaded', () =>
         // Not a thrown error: the caller is a form submit handler, and an unhandled rejection here
         // would surface as a silent no-op on the button.
-        expect(useProfileStore().updateProfile({ username: 'ada2' })).rejects.toThrow(
+        expect(useAccountProfileStore().updateProfile({ username: 'ada2' })).rejects.toThrow(
             'invalid user'
         ));
 
     it('sends only the fields a user owns, to the self-service endpoint', () => {
-        const store = useProfileStore();
+        const store = useAccountProfileStore();
 
         return store
             .fetchProfile(true)
@@ -176,7 +176,7 @@ describe('updateProfile', () => {
 
 describe('locale preference', () => {
     it('persists the chosen language through PATCH /account', () => {
-        const store = useProfileStore();
+        const store = useAccountProfileStore();
 
         return store
             .fetchProfile(true)
@@ -199,9 +199,9 @@ describe('locale preference', () => {
 
 describe('the account deletion flow', () => {
     it('ends the local session and answers the erasure date once the account is locked', () => {
-        const profile = useProfileStore();
+        const profile = useAccountProfileStore();
 
-        return useAuthStore()
+        return useAccountAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => profile.requestAccountDelete())
             .then((schedule) => {
@@ -223,7 +223,7 @@ describe('the account deletion flow', () => {
     it('restores with the mailed token and signs nobody in', () => {
         const session = useSessionStore();
 
-        return useProfileStore()
+        return useAccountProfileStore()
             .restoreAccount('restore-token')
             .then(() => {
                 expect(requestedUrls().at(-1)).toBe('/account/restore');
@@ -234,7 +234,7 @@ describe('the account deletion flow', () => {
 
 describe('requestAccountExport', () => {
     it('answers the export and its status from POST /account/export, and carries no data', () =>
-        useProfileStore()
+        useAccountProfileStore()
             .requestAccountExport()
             .then((data) => {
                 expect(requestedUrls().at(-1)).toBe('/account/export');
@@ -244,7 +244,7 @@ describe('requestAccountExport', () => {
 
 describe('fetchAccountExport', () => {
     it('reads where the export stands from GET /account/export', () =>
-        useProfileStore()
+        useAccountProfileStore()
             .fetchAccountExport()
             .then((data) => {
                 expect(requestedUrls().at(-1)).toBe('/account/export');
@@ -254,7 +254,7 @@ describe('fetchAccountExport', () => {
 
 describe('downloadAccountExport', () => {
     it('returns the file GET /account/export/file sends, under the server-chosen name', () =>
-        useProfileStore()
+        useAccountProfileStore()
             .downloadAccountExport()
             .then((file) => {
                 expect(requestedUrls().at(-1)).toBe('/account/export/file');
@@ -265,7 +265,7 @@ describe('downloadAccountExport', () => {
 
 describe('the self-service actions', () => {
     it('changePassword sends all three fields and adopts the rotated access token', () =>
-        useProfileStore()
+        useAccountProfileStore()
             .changePassword('old-secret', 'New-secret-1!', 'New-secret-1!')
             .then(() => {
                 const last = vi.mocked(orvalMutator).mock.calls.at(-1)![0] as {
@@ -284,14 +284,14 @@ describe('the self-service actions', () => {
             }));
 
     it('confirmEmailVerification refetches the profile only for a live session', () => {
-        const profile = useProfileStore();
+        const profile = useAccountProfileStore();
         // Guest first: spend a token with no session — no profile call may follow.
         return profile
             .confirmEmailVerification('a-token')
             .then(() => {
                 expect(requestedUrls()).toEqual(['/account/email-verification/confirm']);
             })
-            .then(() => useAuthStore().login('ada@example.com', 'hunter2hunter2'))
+            .then(() => useAccountAuthStore().login('ada@example.com', 'hunter2hunter2'))
             .then(() => profile.confirmEmailVerification('a-token'))
             .then(() => {
                 // Authenticated: the freshly verified record is pulled back in, and the rules
@@ -305,9 +305,9 @@ describe('the self-service actions', () => {
     });
 
     it("undoEmailChange posts the token, refetches nothing and drops this tab's dead session", () => {
-        const profile = useProfileStore();
+        const profile = useAccountProfileStore();
 
-        return useAuthStore()
+        return useAccountAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => {
                 const before = requestedUrls().length;
@@ -322,7 +322,7 @@ describe('the self-service actions', () => {
     });
 
     it('confirmEmailChange refetches the profile only for a live session', () => {
-        const profile = useProfileStore();
+        const profile = useAccountProfileStore();
         // Guest first: spend a token with no session — no profile call may follow. Same shape as
         // confirmEmailVerification above — the two prove different tokens, never each other's.
         return profile
@@ -330,7 +330,7 @@ describe('the self-service actions', () => {
             .then(() => {
                 expect(requestedUrls()).toEqual(['/account/email-change/confirm']);
             })
-            .then(() => useAuthStore().login('ada@example.com', 'hunter2hunter2'))
+            .then(() => useAccountAuthStore().login('ada@example.com', 'hunter2hunter2'))
             .then(() => profile.confirmEmailChange('a-token'))
             .then(() => {
                 // Authenticated: the freshly swapped-in address is pulled back in, and the rules

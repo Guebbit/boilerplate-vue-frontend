@@ -22,7 +22,7 @@ import { useI18n } from 'vue-i18n';
 import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { useAddressesStore } from '../stores/addresses.ts';
+import { useAccountAddressesStore } from '../stores/addresses.ts';
 import { addressSchema } from '../schemas.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
@@ -63,10 +63,10 @@ const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /** Store actions the dialog saves through. */
-const { addAddress, updateAddress } = useAddressesStore();
+const { addAddress, updateAddress } = useAccountAddressesStore();
 
 /** Reactive address book and its in-flight flag. */
-const { addresses, loading } = storeToRefs(useAddressesStore());
+const { addresses, loading } = storeToRefs(useAccountAddressesStore());
 
 /**
  * Whether to offer "set as default" on add — hidden on the very first entry, which is

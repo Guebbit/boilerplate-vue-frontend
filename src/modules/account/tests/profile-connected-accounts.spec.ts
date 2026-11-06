@@ -27,7 +27,7 @@ let offered: string[] = [];
 let links: { provider: string; connectedAt: string }[] = [];
 
 vi.mock('../stores/oauth-links.ts', () => ({
-    useOAuthLinksStore: () => ({
+    useAccountOAuthLinksStore: () => ({
         links,
         fetchLinks: vi.fn(),
         unlinkProvider
@@ -36,9 +36,9 @@ vi.mock('../stores/oauth-links.ts', () => ({
         startLink(provider, options) as Promise<string>
 }));
 
-vi.mock('../stores/oauth.ts', async (importOriginal) => ({
-    ...(await importOriginal<typeof import('../stores/oauth.ts')>()),
-    useOAuthProvidersStore: () => ({ providers: offered, fetchProviders: vi.fn() })
+vi.mock('../stores/oauth-providers.ts', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../stores/oauth-providers.ts')>()),
+    useAccountOAuthProvidersStore: () => ({ providers: offered, fetchProviders: vi.fn() })
 }));
 
 // The store above is a plain object, not a real Pinia store — an identity `storeToRefs` is enough.

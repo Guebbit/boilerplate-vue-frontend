@@ -6,7 +6,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
-import { startProviderLink, useOAuthLinksStore } from '../stores/oauth-links.ts';
+import { startProviderLink, useAccountOAuthLinksStore } from '../stores/oauth-links.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
@@ -50,9 +50,9 @@ beforeEach(() => {
     };
 });
 
-describe('useOAuthLinksStore', () => {
+describe('useAccountOAuthLinksStore', () => {
     it('fetchLinks keeps the providers and when each was connected', () => {
-        const store = useOAuthLinksStore();
+        const store = useAccountOAuthLinksStore();
 
         return store.fetchLinks().then(() => {
             expect(store.links).toEqual([
@@ -62,7 +62,7 @@ describe('useOAuthLinksStore', () => {
     });
 
     it('unlinkProvider deletes the one link and keeps the links the answer carries, with no reload', () => {
-        const store = useOAuthLinksStore();
+        const store = useAccountOAuthLinksStore();
 
         return store
             .fetchLinks()

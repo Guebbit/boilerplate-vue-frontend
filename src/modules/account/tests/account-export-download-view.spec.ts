@@ -12,7 +12,7 @@ import { http, HttpResponse } from 'msw';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import AccountExportDownload from '../views/AccountExportDownload.vue';
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
@@ -46,7 +46,7 @@ const router = createRouter({
  * @returns The wrapper and the spy each case configures.
  */
 const mountPage = () => {
-    const download = vi.spyOn(useProfileStore(), 'downloadAccountExport');
+    const download = vi.spyOn(useAccountProfileStore(), 'downloadAccountExport');
     const wrapper = mount(AccountExportDownload, { global: { plugins: [router, vuetify, i18n] } });
     return { wrapper, download };
 };

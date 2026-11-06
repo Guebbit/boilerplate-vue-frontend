@@ -1,6 +1,6 @@
 /**
  * @module
- * Unit tests for `useTwoFactorStore()`: the enrollment machine (setup → confirm → backup codes),
+ * Unit tests for `useAccountTwoFactorStore()`: the enrollment machine (setup → confirm → backup codes),
  * the login-time challenge (send → submit, adopting the session on success), the `resendAfter`
  * countdown, and a 429 surfacing untouched for the view to branch on. Mocks only the transport,
  * same pattern as `sessions.spec.ts` and `auth-session.spec.ts`.
@@ -8,8 +8,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
-import { useTwoFactorStore } from '../stores/two-factor.ts';
-import { useDeletionRestoreStore } from '../stores/deletion-restore.ts';
+import { useAccountTwoFactorStore } from '../stores/two-factor.ts';
+import { useAccountDeletionRestoreStore } from '../stores/deletion-restore.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -91,7 +91,7 @@ beforeEach(() => {
 
 describe('fetchStatus', () => {
     it('loads the account status', () => {
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         return store.fetchStatus().then(() => {
             expect(store.status).toEqual(STATUS_OFF);
         });
@@ -106,7 +106,7 @@ describe('the enrollment machine', () => {
             secret: 'JBSWY3DPEHPK3PXP',
             otpauthUri: 'otpauth://totp/x'
         };
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         return store.setupMethod('totp').then((payload) => {
             expect(payload).toMatchObject({ delivers: false, secret: 'JBSWY3DPEHPK3PXP' });
             expect(store).not.toHaveProperty('setup');
@@ -122,7 +122,7 @@ describe('the enrollment machine', () => {
             resendAfter: 30,
             expiresAt: '2026-01-01T00:10:00.000Z'
         };
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         return store.setupMethod('email').then((payload) => {
             expect(payload).toMatchObject({ delivers: true, sentTo: 'a***a@example.com' });
             expect(store.delivery).toMatchObject({ sentTo: 'a***a@example.com', resendAfter: 30 });
@@ -142,7 +142,7 @@ describe('the enrollment machine', () => {
             available: [],
             backupCodesRemaining: 2
         };
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         return store.confirmMethod('email', '123456').then((confirmed) => {
             expect(confirmed?.backupCodes).toEqual(['aaa-111', 'bbb-222']);
             expect(store).not.toHaveProperty('confirmed');
@@ -155,7 +155,7 @@ describe('the enrollment machine', () => {
             method: 'totp',
             backupCodesRemaining: 7
         };
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         return store.confirmMethod('totp', '123456').then((confirmed) => {
             expect(confirmed?.backupCodes).toBeUndefined();
             expect(confirmed?.backupCodesRemaining).toBe(7);
@@ -170,7 +170,7 @@ describe('the enrollment machine', () => {
             resendAfter: 30,
             expiresAt: '2026-01-01T00:10:00.000Z'
         };
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         return store.setupMethod('email').then(() => {
             expect(store.secondsUntilResend).toBeGreaterThan(0);
             store.clearSetup();
@@ -188,7 +188,7 @@ describe('the enrollment machine', () => {
                 }
             ])
         };
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         return expect(store.setupMethod('email'))
             .rejects.toMatchObject({
                 errors: [{ code: 'TWO_FACTOR_RESEND_TOO_SOON' }]
@@ -204,7 +204,7 @@ describe('the enrollment machine', () => {
         responses['POST /account/2fa/methods/email/setup'] = {
             __reject: aProblem(400, [{ code: 'INVALID_METHOD', message: 'nope' }])
         };
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         return expect(store.setupMethod('email'))
             .rejects.toMatchObject({ errors: [{ code: 'INVALID_METHOD' }] })
             .then(() => {
@@ -223,7 +223,7 @@ describe('the enrollment machine', () => {
             available: [],
             backupCodesRemaining: 10
         };
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         return store.regenerateBackupCodes('123456').then((regenerated) => {
             expect(regenerated?.backupCodes).toEqual(['ccc-333', 'ddd-444']);
             expect(store).not.toHaveProperty('confirmed');
@@ -234,7 +234,7 @@ describe('the enrollment machine', () => {
     it('removeMethod and disableAll each refetch status afterward', () => {
         responses['POST /account/2fa/methods/email/remove'] = undefined;
         responses['POST /account/2fa/disable'] = undefined;
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         return store
             .removeMethod('email', '123456')
             .then(() => store.disableAll('123456'))
@@ -263,7 +263,7 @@ describe('every write reaches the API each time', () => {
             backupCodes: ['aaa-111'],
             backupCodesRemaining: 10
         };
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         return store
             .setupMethod('email')
             .then(() => store.setupMethod('email'))
@@ -288,7 +288,7 @@ describe('every write reaches the API each time', () => {
             backupCodesRemaining: 10
         };
         responses['POST /account/2fa/disable'] = undefined;
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         return store
             .confirmMethod('email', '111111')
             .then(() => store.confirmMethod('email', '222222'))
@@ -310,7 +310,7 @@ describe('proving a factor before changing one', () => {
             secret: 'JBSWY3DPEHPK3PXP',
             otpauthUri: 'otpauth://totp/x'
         };
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         return store
             .setupMethod('totp')
             .then(() => store.setupMethod('totp', '123456'))
@@ -329,7 +329,7 @@ describe('proving a factor before changing one', () => {
             resendAfter: 30,
             expiresAt: '2026-01-01T00:10:00.000Z'
         };
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         return store.sendMethodCode('email').then((payload) => {
             expect(payload).toMatchObject({ sentTo: 'a***a@example.com' });
             expect(requestedUrls()).toEqual(['/account/2fa/methods/email/send']);
@@ -350,7 +350,7 @@ describe('the resend countdown', () => {
             resendAfter: 2,
             expiresAt: '2026-01-01T00:10:00.000Z'
         };
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         return store.setupMethod('email').then(() => {
             expect(store.secondsUntilResend).toBe(2);
             vi.advanceTimersByTime(3000);
@@ -369,7 +369,7 @@ describe('the login-time challenge', () => {
     };
 
     it('sendLoginCode delivers a code against the live challenge and tracks its resend cooldown', () => {
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, false);
         responses['POST /account/login/2fa/send'] = {
             method: 'email',
@@ -392,7 +392,7 @@ describe('the login-time challenge', () => {
     });
 
     it('sendLoginCode also starts the cooldown from a 429s own retryAfter', () => {
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, false);
         responses['POST /account/login/2fa/send'] = {
             __reject: aProblem(429, [
@@ -411,7 +411,7 @@ describe('the login-time challenge', () => {
     });
 
     it('submitLoginCode adopts the session — token, viewer, isAuth — and clears the challenge', () => {
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, false);
         responses['POST /account/login/2fa'] = { token: 'stepped-up-jwt' };
         responses['GET /account'] = accountView({
@@ -430,7 +430,7 @@ describe('the login-time challenge', () => {
     });
 
     it('submitLoginCode opens the restore offer, and adopts no session, for an account in its deletion grace', () => {
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, false);
         responses['POST /account/login/2fa'] = {
             deletionPending: true,
@@ -443,12 +443,12 @@ describe('the login-time challenge', () => {
             expect(outcome).toBe('deletion-pending');
             expect(useSessionStore().isAuth).toBe(false);
             expect(store.challenge).toBeUndefined();
-            expect(useDeletionRestoreStore().pending?.challenge).toBe('restore-claim-check');
+            expect(useAccountDeletionRestoreStore().pending?.challenge).toBe('restore-claim-check');
         });
     });
 
     it('submitLoginCode carries a ticked remember-me box to the API as the long tier', () => {
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, true);
         responses['POST /account/login/2fa'] = { token: 'stepped-up-jwt' };
         responses['GET /account'] = accountView({
@@ -473,7 +473,7 @@ describe('the login-time challenge', () => {
     });
 
     it('submitLoginCode sends no tier when the box was unticked', () => {
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, false);
         responses['POST /account/login/2fa'] = { token: 'stepped-up-jwt' };
         responses['GET /account'] = accountView({
@@ -494,7 +494,7 @@ describe('the login-time challenge', () => {
     });
 
     it('a backup code takes the same path — the server tells the two apart, not this store', () => {
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, false);
         responses['POST /account/login/2fa'] = { token: 'stepped-up-jwt' };
         responses['GET /account'] = accountView({
@@ -518,7 +518,7 @@ describe('the login-time challenge', () => {
     });
 
     it('rejects rather than calling the API when there is no live challenge', () => {
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         return expect(store.sendLoginCode('email'))
             .rejects.toBeInstanceOf(Error)
             .then(() => expect(store.submitLoginCode('123456')).rejects.toBeInstanceOf(Error))
@@ -528,7 +528,7 @@ describe('the login-time challenge', () => {
     });
 
     it('clearChallenge drops the challenge and its delivery', () => {
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, false);
         store.clearChallenge();
         expect(store.challenge).toBeUndefined();
@@ -544,13 +544,13 @@ describe('the OAuth-originated login-time challenge (1b)', () => {
     };
 
     it('beginOAuthChallenge opens a challenge with no token of its own', () => {
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         store.beginOAuthChallenge(OAUTH_CHALLENGE);
         expect(store.challenge).toEqual({ ...OAUTH_CHALLENGE, challenge: undefined });
     });
 
     it('submitLoginCode omits `challenge` from the body — the backend reads it off its own cookie', () => {
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         store.beginOAuthChallenge(OAUTH_CHALLENGE);
         responses['POST /account/login/2fa'] = { token: 'stepped-up-jwt' };
         responses['GET /account'] = accountView({
@@ -574,7 +574,7 @@ describe('the OAuth-originated login-time challenge (1b)', () => {
     });
 
     it('sendLoginCode omits `challenge` from the body too', () => {
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         store.beginOAuthChallenge(OAUTH_CHALLENGE);
         responses['POST /account/login/2fa/send'] = {
             method: 'email',
@@ -603,7 +603,7 @@ describe('per-action loading flags', () => {
             resendAfter: 30,
             expiresAt: '2026-01-01T00:10:00.000Z'
         };
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         const release = gateNextCall();
         const pending = store.setupMethod('email');
 
@@ -622,7 +622,7 @@ describe('per-action loading flags', () => {
             backupCodes: ['aaa-111'],
             backupCodesRemaining: 1
         };
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         const release = gateNextCall();
         const pending = store.confirmMethod('email', '123456');
 
@@ -640,7 +640,7 @@ describe('per-action loading flags', () => {
             backupCodes: ['ccc-333'],
             backupCodesRemaining: 10
         };
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
 
         const releaseRemove = gateNextCall();
         const removing = store.removeMethod('email', '123456');

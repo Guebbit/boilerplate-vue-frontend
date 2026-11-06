@@ -12,7 +12,7 @@ import { effectScope } from 'vue';
 import type { EffectScope } from 'vue';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useInboxLifecycle } from '../composables/use-inbox-lifecycle';
-import { useInboxStore } from '../store';
+import { useNotificationsInboxStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { loadLocale } from '@/i18n';
@@ -144,7 +144,7 @@ describe('a signed-in person', () => {
         await flushPromises();
 
         expect(mayRead.value).toBe(true);
-        expect(useInboxStore().items.map(({ id }) => id)).toEqual(['n1']);
+        expect(useNotificationsInboxStore().items.map(({ id }) => id)).toEqual(['n1']);
         expect(createSseClient).toHaveBeenCalledTimes(1);
         expect(createSseClient.mock.calls[0]?.[0]).toMatch(/\/notifications\/stream$/);
         expect(createSseClient.mock.calls[0]?.[1]).toEqual([
@@ -196,7 +196,7 @@ describe("the stream's frames", () => {
 
         callbacks.onEvent?.('notifications.created', { notification: row('n1') });
 
-        expect(useInboxStore().items.map(({ id }) => id)).toEqual(['n1']);
+        expect(useNotificationsInboxStore().items.map(({ id }) => id)).toEqual(['n1']);
     });
 
     it('removes a deleted one', async () => {
@@ -205,7 +205,7 @@ describe("the stream's frames", () => {
 
         callbacks.onEvent?.('notifications.deleted', { all: false, ids: ['n1'] });
 
-        expect(useInboxStore().items.map(({ id }) => id)).toEqual(['n2']);
+        expect(useNotificationsInboxStore().items.map(({ id }) => id)).toEqual(['n2']);
     });
 
     it('marks everything read on a read frame', async () => {
@@ -214,7 +214,7 @@ describe("the stream's frames", () => {
 
         callbacks.onEvent?.('notifications.read', { readAt: '2026-10-04T12:00:00.000Z' });
 
-        expect(useInboxStore().unreadCount).toBe(0);
+        expect(useNotificationsInboxStore().unreadCount).toBe(0);
     });
 });
 
@@ -229,7 +229,7 @@ describe('the end of a session', () => {
         await flushPromises();
 
         expect(close).toHaveBeenCalledTimes(1);
-        expect(useInboxStore().items).toEqual([]);
+        expect(useNotificationsInboxStore().items).toEqual([]);
     });
 
     it('swaps the inbox for the next person on the same tab', async () => {
@@ -244,7 +244,7 @@ describe('the end of a session', () => {
 
         expect(close).toHaveBeenCalledTimes(1);
         expect(createSseClient).toHaveBeenCalledTimes(2);
-        expect(useInboxStore().items.map(({ id }) => id)).toEqual(['n2']);
+        expect(useNotificationsInboxStore().items.map(({ id }) => id)).toEqual(['n2']);
     });
 
     it('closes the stream when the component that started it goes', async () => {
@@ -268,7 +268,7 @@ describe('a language switch', () => {
         await loadLocale('it');
         await flushPromises();
 
-        expect(useInboxStore().items[0]?.text).toContain('Un evento (event.parked)');
+        expect(useNotificationsInboxStore().items[0]?.text).toContain('Un evento (event.parked)');
         await loadLocale('en');
     });
 });

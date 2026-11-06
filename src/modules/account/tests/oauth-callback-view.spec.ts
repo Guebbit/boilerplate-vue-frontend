@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import OAuthCallback from '../views/OAuthCallback.vue';
-import { useDeletionRestoreStore } from '../stores/deletion-restore.ts';
+import { useAccountDeletionRestoreStore } from '../stores/deletion-restore.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -77,7 +77,7 @@ describe('OAuthCallback — an account in its deletion grace', () => {
         mountPage();
         await flushPromises();
 
-        expect(useDeletionRestoreStore().pending).toEqual({
+        expect(useAccountDeletionRestoreStore().pending).toEqual({
             purgeAt: '2026-11-23T00:00:00.000Z',
             expiresAt: '2026-10-24T10:05:00.000Z'
         });
@@ -93,7 +93,7 @@ describe('OAuthCallback — an account in its deletion grace', () => {
         mountPage();
         await flushPromises();
 
-        expect(useDeletionRestoreStore().pending).toBeUndefined();
+        expect(useAccountDeletionRestoreStore().pending).toBeUndefined();
         expect(redirectAfterLogin).toHaveBeenCalledOnce();
     });
 });

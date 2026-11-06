@@ -17,7 +17,7 @@ const changePassword = vi.fn(() => Promise.resolve());
 const fetchSessions = vi.fn();
 
 vi.mock('../stores/profile.ts', () => ({
-    useProfileStore: () => ({ changePassword })
+    useAccountProfileStore: () => ({ changePassword })
 }));
 
 vi.mock('../stores/sessions.ts', () => ({

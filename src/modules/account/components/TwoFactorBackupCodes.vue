@@ -12,7 +12,7 @@ export default {
 /**
  * @module
  * The one-time backup-codes screen: shown exactly once, after the FIRST factor an account arms —
- * `useTwoFactorStore().confirmed.backupCodes` is only ever populated on that call. Blocking: the
+ * `useAccountTwoFactorStore().confirmed.backupCodes` is only ever populated on that call. Blocking: the
  * checkbox is the only way out, since these codes are never retrievable again.
  */
 import { ref, watch } from 'vue';

@@ -26,7 +26,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { MapPin, Plus, Star } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useAddressesStore } from '../stores/addresses.ts';
+import { useAccountAddressesStore } from '../stores/addresses.ts';
 import { formatCountry } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { Address } from '@types';
@@ -50,12 +50,12 @@ const { addMessage } = useNotificationsStore();
 /**
  * The address book's remaining two actions — add/edit now live in `AddressFormDialog.vue`.
  */
-const { fetchAddresses, setDefaultAddress, removeAddress } = useAddressesStore();
+const { fetchAddresses, setDefaultAddress, removeAddress } = useAccountAddressesStore();
 
 /**
  * The visitor's saved addresses.
  */
-const { addresses } = storeToRefs(useAddressesStore());
+const { addresses } = storeToRefs(useAccountAddressesStore());
 
 /**
  * Whether the add/edit dialog is open.

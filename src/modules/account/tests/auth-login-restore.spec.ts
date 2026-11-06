@@ -7,8 +7,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
-import { useAuthStore } from '../stores/auth.ts';
-import { useDeletionRestoreStore } from '../stores/deletion-restore.ts';
+import { useAccountAuthStore } from '../stores/auth.ts';
+import { useAccountDeletionRestoreStore } from '../stores/deletion-restore.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -55,7 +55,7 @@ beforeEach(() => {
 
 describe('login — the deletion-pending branch', () => {
     it('resolves with the claim check and the date, and starts no session', () =>
-        useAuthStore()
+        useAccountAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
             .then((outcome) => {
                 expect(outcome).toEqual({
@@ -71,28 +71,28 @@ describe('login — the deletion-pending branch', () => {
 
 /** Signs in and opens the offer the way `Login.vue` does. */
 const openOffer = (remember: boolean) =>
-    useAuthStore()
+    useAccountAuthStore()
         .login('ada@example.com', 'hunter2hunter2', remember)
         .then((outcome) => {
             if (outcome.kind !== 'deletion-pending') throw new Error('expected an offer');
-            useDeletionRestoreStore().begin(outcome, remember);
+            useAccountDeletionRestoreStore().begin(outcome, remember);
         });
 
 describe('the deletion-restore store', () => {
     it('redeems the claim check, adopts the session and clears the offer', () =>
         openOffer(false)
-            .then(() => useDeletionRestoreStore().restoreAndSignIn())
+            .then(() => useAccountDeletionRestoreStore().restoreAndSignIn())
             .then(() => {
                 const session = useSessionStore();
                 expect(requestedUrls()).toContain('/account/login/restore');
                 expect(session.accessToken).toBe('restored-jwt');
                 expect(session.isAuth).toBe(true);
-                expect(useDeletionRestoreStore().pending).toBeUndefined();
+                expect(useAccountDeletionRestoreStore().pending).toBeUndefined();
             }));
 
     it('sends the claim check and the ticked remember-me box as the long tier', () =>
         openOffer(true)
-            .then(() => useDeletionRestoreStore().restoreAndSignIn())
+            .then(() => useAccountDeletionRestoreStore().restoreAndSignIn())
             .then(() => {
                 const call = vi
                     .mocked(orvalMutator)
@@ -106,7 +106,7 @@ describe('the deletion-restore store', () => {
             }));
 
     it('sends no challenge for an OAuth offer: its claim check is a cookie', () => {
-        const store = useDeletionRestoreStore();
+        const store = useAccountDeletionRestoreStore();
         store.beginOAuth({
             purgeAt: '2026-11-23T00:00:00.000Z',
             expiresAt: '2026-10-24T10:05:00.000Z'
@@ -123,7 +123,9 @@ describe('the deletion-restore store', () => {
     });
 
     it('refuses to restore with no offer', () =>
-        expect(useDeletionRestoreStore().restoreAndSignIn()).rejects.toThrow('NO_ACTIVE_RESTORE'));
+        expect(useAccountDeletionRestoreStore().restoreAndSignIn()).rejects.toThrow(
+            'NO_ACTIVE_RESTORE'
+        ));
 
     it('keeps the offer when the API refuses the claim check, so the visitor sees why', () => {
         responses['POST /account/login/restore'] = Promise.reject(
@@ -131,11 +133,11 @@ describe('the deletion-restore store', () => {
         );
 
         return openOffer(false).then(() =>
-            useDeletionRestoreStore()
+            useAccountDeletionRestoreStore()
                 .restoreAndSignIn()
                 .catch(() => undefined)
                 .then(() => {
-                    expect(useDeletionRestoreStore().pending?.challenge).toBe(
+                    expect(useAccountDeletionRestoreStore().pending?.challenge).toBe(
                         'restore-claim-check'
                     );
                     expect(useSessionStore().isAuth).toBe(false);

@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import AccountRestoreChallenge from '../views/AccountRestoreChallenge.vue';
-import { useDeletionRestoreStore } from '../stores/deletion-restore.ts';
+import { useAccountDeletionRestoreStore } from '../stores/deletion-restore.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -34,7 +34,7 @@ vi.mock('../composables/use-post-login-redirect.ts', () => ({
 /** Mounts the page with an offer open, unless `offer` is false. */
 const mountPage = (offer = true) => {
     if (offer)
-        useDeletionRestoreStore().beginOAuth({
+        useAccountDeletionRestoreStore().beginOAuth({
             purgeAt: '2026-11-23T00:00:00.000Z',
             expiresAt: '2026-10-24T10:05:00.000Z'
         });
@@ -59,7 +59,9 @@ describe('AccountRestoreChallenge', () => {
 
     it('restores through the store and lands where a plain login would', async () => {
         const wrapper = mountPage();
-        const restore = vi.spyOn(useDeletionRestoreStore(), 'restoreAndSignIn').mockResolvedValue();
+        const restore = vi
+            .spyOn(useAccountDeletionRestoreStore(), 'restoreAndSignIn')
+            .mockResolvedValue();
 
         await wrapper.get('[data-test=account-restore-challenge-restore]').trigger('click');
         await flushPromises();
@@ -70,7 +72,7 @@ describe('AccountRestoreChallenge', () => {
 
     it('shows a refused claim check in place and does not navigate', async () => {
         const wrapper = mountPage();
-        vi.spyOn(useDeletionRestoreStore(), 'restoreAndSignIn').mockRejectedValue({
+        vi.spyOn(useAccountDeletionRestoreStore(), 'restoreAndSignIn').mockRejectedValue({
             status: 401,
             errors: [{ code: 'UNAUTHORIZED', message: 'This restore attempt has expired.' }]
         });
@@ -90,7 +92,7 @@ describe('AccountRestoreChallenge', () => {
         await wrapper.get('[data-test=account-restore-challenge-leave]').trigger('click');
         await flushPromises();
 
-        expect(useDeletionRestoreStore().pending).toBeUndefined();
+        expect(useAccountDeletionRestoreStore().pending).toBeUndefined();
         expect(push).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ name: 'Home' }));
     });
 

@@ -16,13 +16,13 @@ export default {
  * page names the store call, its wording and where success lands (Home, where a live session shows
  * the banner gone).
  */
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import LinkTokenConfirmCard from '../components/LinkTokenConfirmCard.vue';
 
 /**
  * Confirms the address against the emailed token.
  */
-const { confirmEmailVerification } = useProfileStore();
+const { confirmEmailVerification } = useAccountProfileStore();
 
 /**
  * This page's translation keys.

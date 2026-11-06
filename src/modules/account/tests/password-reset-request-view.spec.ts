@@ -9,7 +9,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import PasswordResetRequest from '../views/PasswordResetRequest.vue';
-import { useAuthStore } from '../stores/auth.ts';
+import { useAccountAuthStore } from '../stores/auth.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
@@ -35,7 +35,7 @@ const router = createRouter({
  * @returns The wrapper and the spy each case configures.
  */
 const mountPage = () => {
-    const request = vi.spyOn(useAuthStore(), 'requestPasswordReset');
+    const request = vi.spyOn(useAccountAuthStore(), 'requestPasswordReset');
     const wrapper = mount(PasswordResetRequest, {
         global: {
             plugins: [router, vuetify, i18n],

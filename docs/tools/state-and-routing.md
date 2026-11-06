@@ -30,7 +30,7 @@ reached through the module's barrel (`@/modules/<name>`), never by their file pa
 // Always call useXYZStore() inside functions, not at top level
 // Avoids circular dependency issues
 const doSomething = () => {
-    const profileStore = useProfileStore();
+    const profileStore = useAccountProfileStore();
     profileStore.login({ email, password });
 };
 ```

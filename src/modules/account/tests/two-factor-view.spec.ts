@@ -2,7 +2,7 @@
  * @module
  * Mounts the real `ProfileTwoFactor.vue`/`TwoFactorEnroll.vue` pair: the "never park a secret
  * in a store" fix. The TOTP secret and the one-time backup codes must render from a component-
- * local ref fed by the setup/confirm call's own response — never from `useTwoFactorStore()`, which
+ * local ref fed by the setup/confirm call's own response — never from `useAccountTwoFactorStore()`, which
  * `two-factor-store.spec.ts` already pins as holding neither field. Every assertion reads off
  * `document.body`: Vuetify's `v-dialog` teleports its content there, same as
  * `webhook-create-view.spec.ts`'s own secret-reveal modal.

@@ -25,7 +25,7 @@ export default {
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { saveDownload } from '@/infrastructure/http/download.ts';
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { absentIs } from '@/infrastructure/utils/errors.ts';
 import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
@@ -41,7 +41,7 @@ const { t } = useI18n();
 /**
  * Reads where the export stands, and fetches the finished one.
  */
-const { downloadAccountExport, fetchAccountExport } = useProfileStore();
+const { downloadAccountExport, fetchAccountExport } = useAccountProfileStore();
 
 /**
  * Where the export stands; `undefined` once the read found none.

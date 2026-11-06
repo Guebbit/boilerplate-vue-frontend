@@ -11,10 +11,10 @@ import { createMemoryHistory, createRouter } from 'vue-router';
 import ProfileAddresses from '../components/ProfileAddresses.vue';
 import ProfileDeleteAccount from '../components/ProfileDeleteAccount.vue';
 import ProfileSessions from '../components/ProfileSessions.vue';
-import { useAddressesStore } from '../stores/addresses.ts';
-import { useAuthStore } from '../stores/auth.ts';
+import { useAccountAddressesStore } from '../stores/addresses.ts';
+import { useAccountAuthStore } from '../stores/auth.ts';
 import { useAccountSessionsStore } from '../stores/sessions.ts';
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
@@ -60,7 +60,7 @@ const pressTwice = (button: Pick<DOMWrapper<Element>, 'trigger'>) => {
 
 describe('a double press on a confirm-then-write control in the account panels', () => {
     it('removes an address once', async () => {
-        const store = useAddressesStore();
+        const store = useAccountAddressesStore();
         store.addresses = [OFFICE];
         vi.spyOn(store, 'fetchAddresses').mockResolvedValue([OFFICE]);
         const remove = vi.spyOn(store, 'removeAddress').mockResolvedValue([]);
@@ -74,7 +74,7 @@ describe('a double press on a confirm-then-write control in the account panels',
 
     it('requests the account deletion once', async () => {
         const request = vi
-            .spyOn(useProfileStore(), 'requestAccountDelete')
+            .spyOn(useAccountProfileStore(), 'requestAccountDelete')
             .mockResolvedValue(undefined);
         const wrapper = mount(ProfileDeleteAccount, {
             global: { plugins: [router, vuetify, i18n] }
@@ -88,7 +88,9 @@ describe('a double press on a confirm-then-write control in the account panels',
 
     it('logs out everywhere once', async () => {
         vi.spyOn(useAccountSessionsStore(), 'fetchSessions').mockResolvedValue([]);
-        const logout = vi.spyOn(useAuthStore(), 'logoutEverywhere').mockResolvedValue(undefined);
+        const logout = vi
+            .spyOn(useAccountAuthStore(), 'logoutEverywhere')
+            .mockResolvedValue(undefined);
         const wrapper = mount(ProfileSessions, {
             global: { plugins: [router, vuetify, i18n] }
         });

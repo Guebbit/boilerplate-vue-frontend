@@ -11,7 +11,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
-import { useAddressesStore } from '../stores/addresses.ts';
+import { useAccountAddressesStore } from '../stores/addresses.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
@@ -62,7 +62,7 @@ const requestLog = () =>
         return `${method} ${url}`;
     });
 
-describe('useAddressesStore', () => {
+describe('useAccountAddressesStore', () => {
     /** The default entry the mocked address book starts with. */
     const HOME = {
         id: 'a1',
@@ -93,12 +93,12 @@ describe('useAddressesStore', () => {
     });
 
     it('starts empty, before anything is fetched', () => {
-        expect(useAddressesStore().addresses).toEqual([]);
+        expect(useAccountAddressesStore().addresses).toEqual([]);
     });
 
     it('fetches the book and stores it', () => {
         respondWithBook([HOME, WORK]);
-        const store = useAddressesStore();
+        const store = useAccountAddressesStore();
 
         return store.fetchAddresses().then((result) => {
             expect(lastRequest()).toMatchObject({ url: '/account/addresses', method: 'GET' });
@@ -111,7 +111,7 @@ describe('useAddressesStore', () => {
     // store re-reads the book and renders THAT.
     it('posts a new entry, then reloads the book rather than trusting the one row it got back', () => {
         respondWithBook([HOME, WORK], WORK);
-        const store = useAddressesStore();
+        const store = useAccountAddressesStore();
 
         const { id: _id, default: _default, ...input } = WORK;
 
@@ -124,7 +124,7 @@ describe('useAddressesStore', () => {
     it('patches a change to one entry, addressed by id, then reloads the book', () => {
         const changed = { ...HOME, city: 'Ogdenville' };
         respondWithBook([changed], changed);
-        const store = useAddressesStore();
+        const store = useAccountAddressesStore();
 
         return store.updateAddress('a1', { city: 'Ogdenville' }).then(() => {
             expect(requestLog()).toEqual(['PATCH /account/addresses/a1', 'GET /account/addresses']);
@@ -145,7 +145,7 @@ describe('useAddressesStore', () => {
                 default: true
             }
         );
-        const store = useAddressesStore();
+        const store = useAccountAddressesStore();
 
         return store.setDefaultAddress('a2').then(() => {
             expect(requestLog()).toEqual([
@@ -160,7 +160,7 @@ describe('useAddressesStore', () => {
     });
 
     it('deletes an entry, then reloads the book to see the promoted default', () => {
-        const store = useAddressesStore();
+        const store = useAccountAddressesStore();
         respondWithBook([HOME, WORK]);
 
         return store

@@ -16,13 +16,13 @@ export default {
  * other's, but the form is the same `LinkTokenConfirmCard`.
  * Success lands on Home, where a live session shows the new address.
  */
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import LinkTokenConfirmCard from '../components/LinkTokenConfirmCard.vue';
 
 /**
  * Confirms the new address against the emailed token.
  */
-const { confirmEmailChange } = useProfileStore();
+const { confirmEmailChange } = useAccountProfileStore();
 
 /**
  * This page's translation keys.

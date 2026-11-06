@@ -24,7 +24,7 @@ import { ref, useId, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import { useAccountSessionsStore } from '../stores/sessions.ts';
 import PasswordStrengthMeter from './PasswordStrengthMeter.vue';
 import { usersPasswordSchema } from '@/modules/users';
@@ -47,7 +47,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * Changes the visitor's password.
  */
-const { changePassword } = useProfileStore();
+const { changePassword } = useAccountProfileStore();
 
 /**
  * Refetches the device-sessions list after a password change  — a live password change

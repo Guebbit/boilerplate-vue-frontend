@@ -10,7 +10,7 @@
 | ----------------------- | ------------------------------------------------------------------------------ |
 | **Subdomain**           | `supporting` — Specific to this business but not a differentiator. Kept plain. |
 | **Screens**             | 0 — a bell the app bar hosts                                                   |
-| **Store**               | `inbox`                                                                        |
+| **Store**               | `notifications-inbox`                                                          |
 | **Menu entries**        | —                                                                              |
 | **API calls**           | 4, plus the `GET /notifications/stream` event stream                           |
 | **Depends on**          | —                                                                              |
@@ -45,7 +45,7 @@ flowchart LR
 
 The toolkit's `useNotificationsStore` holds both. A **toast** lives in the page's memory and
 disappears by itself; a **notification** is a toolkit message flagged `persistent`, with the
-server's id, and it is what the bell lists. This module's own store (`inbox`) keeps no list of
+server's id, and it is what the bell lists. This module's own store (`notifications-inbox`) keeps no list of
 its own: it is the translation between a server row and a toolkit message, plus every write the
 bell makes. The server row is kept in the message's `meta`, so a language switch can rebuild the
 text and `readAt` is where the unread state lives.
@@ -180,17 +180,17 @@ AsyncAPI schemas by `createSseClient` while validation is on.
 
 ## Files
 
-| File                                   | What it is                                                                          | Explained in                          |
-| -------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------- |
-| `module.ts`                            | The manifest. No routes; contributes the bell to the `app-bar` slot.                | [read](../theory/modules.md)          |
-| `store.ts`                             | The `inbox` store: server rows to toolkit messages, and every write the bell makes. | [read](../tools/state-and-routing.md) |
-| `composables/use-inbox-lifecycle.ts`   | Starts the read and the stream for the signed-in person and ends them with them.    | [read](../theory/layers.md)           |
-| `components/NotificationsBell.vue`     | The bell, its badge and its panel.                                                  | [read](../theory/layers.md)           |
-| `composables/use-notification-link.ts` | A notice's target as a link, if it exists here and the reader may open it.          | [read](../theory/layers.md)           |
-| `notices.ts`                           | The five foundation codes as `AppModule.notices` entries: sentence and target.      | [read](../theory/modules.md)          |
-| `types.ts`                             | The row the panel renders.                                                          | [read](../theory/layers.md)           |
-| `response-schemas.ts`                  | One Zod schema per endpoint called.                                                 | [read](../api/openapi-workflow.md)    |
-| `locales/en.json` · `locales/it.json`  | The sentences, keyed by code, and the bell's labels.                                | [read](../tools/i18n.md)              |
+| File                                   | What it is                                                                                        | Explained in                          |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `module.ts`                            | The manifest. No routes; contributes the bell to the `app-bar` slot.                              | [read](../theory/modules.md)          |
+| `store.ts`                             | The `notifications-inbox` store: server rows to toolkit messages, and every write the bell makes. | [read](../tools/state-and-routing.md) |
+| `composables/use-inbox-lifecycle.ts`   | Starts the read and the stream for the signed-in person and ends them with them.                  | [read](../theory/layers.md)           |
+| `components/NotificationsBell.vue`     | The bell, its badge and its panel.                                                                | [read](../theory/layers.md)           |
+| `composables/use-notification-link.ts` | A notice's target as a link, if it exists here and the reader may open it.                        | [read](../theory/layers.md)           |
+| `notices.ts`                           | The five foundation codes as `AppModule.notices` entries: sentence and target.                    | [read](../theory/modules.md)          |
+| `types.ts`                             | The row the panel renders.                                                                        | [read](../theory/layers.md)           |
+| `response-schemas.ts`                  | One Zod schema per endpoint called.                                                               | [read](../api/openapi-workflow.md)    |
+| `locales/en.json` · `locales/it.json`  | The sentences, keyed by code, and the bell's labels.                                              | [read](../tools/i18n.md)              |
 
 ## Libraries
 

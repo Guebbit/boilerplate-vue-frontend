@@ -15,7 +15,7 @@ import { axeViolations } from '../../../../tests/support/unit/axe.ts';
 import { expectWarning } from '../../../../tests/support/unit/expect-warning.ts';
 import { VMenu } from 'vuetify/components';
 import NotificationsBell from '../components/NotificationsBell.vue';
-import { useInboxStore } from '../store';
+import { useNotificationsInboxStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { i18n, loadLocale } from '@/i18n';
@@ -287,7 +287,7 @@ describe('inside the panel', () => {
         await flushPromises();
 
         expect(requests().filter((request) => request.startsWith('DELETE'))).toHaveLength(1);
-        expect(useInboxStore().items).toHaveLength(1);
+        expect(useNotificationsInboxStore().items).toHaveLength(1);
     });
 
     it('clears all of them with one call', async () => {
@@ -300,7 +300,7 @@ describe('inside the panel', () => {
         await flushPromises();
 
         expect(requests()).toContain('DELETE /notifications');
-        expect(useInboxStore().items).toEqual([]);
+        expect(useNotificationsInboxStore().items).toEqual([]);
     });
 
     it('moves focus into the panel when it opens', async () => {
@@ -501,7 +501,7 @@ describe('the panel for a person who holds work notices', () => {
 
         expect(calls).toHaveLength(1);
         expect(calls[0]).toMatchObject({ url: '/notifications', params: { audience: 'staff' } });
-        expect(useInboxStore().items.map(({ id }) => id)).toEqual(['n1']);
+        expect(useNotificationsInboxStore().items.map(({ id }) => id)).toEqual(['n1']);
     });
 
     it('falls back to Mine, without tabs, once the last work notice is gone', async () => {
@@ -511,7 +511,7 @@ describe('the panel for a person who holds work notices', () => {
         await openPanel();
         tabButton('work')!.click();
         await flushPromises();
-        await useInboxStore().dismiss('w1');
+        await useNotificationsInboxStore().dismiss('w1');
         await flushPromises();
 
         expect(tabButton('work')).toBeNull();

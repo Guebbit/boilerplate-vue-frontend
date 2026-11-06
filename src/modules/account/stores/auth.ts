@@ -19,7 +19,7 @@ import {
 import type { MfaChallenge } from '@api';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
-import { useProfileStore } from './profile.ts';
+import { useAccountProfileStore } from './profile.ts';
 
 /**
  * What `login()` resolves with: a discriminated narrowing of the contract's own
@@ -54,11 +54,11 @@ export type LoginOutcome =
  * device, or every device).
  *
  * Deliberately NOT here: the editable record itself, once a session exists — that is
- * `stores/profile.ts`'s `useProfileStore`, which this store asks to load a profile after login
+ * `stores/profile.ts`'s `useAccountProfileStore`, which this store asks to load a profile after login
  * and to drop its cache on the way out. See `docs/theory/modules.md` for why this domain is split
  * this many ways.
  */
-export const useAuthStore = defineStore('accountAuth', () => {
+export const useAccountAuthStore = defineStore('account-auth', () => {
     /**
      * The session store, whose token and viewer this store writes.
      */
@@ -69,7 +69,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
      * through `fetchAny`.
      */
     const { fetchAny } = useStructureRestApi({
-        resourceKey: 'accountAuth',
+        resourceKey: 'account-auth',
         queryClient
     });
 
@@ -105,7 +105,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
             } as const;
 
         session.adoptSession(data, remember);
-        return useProfileStore()
+        return useAccountProfileStore()
             .fetchProfile(true, data.account)
             .then(() => ({ kind: 'session' }) as const);
     };
@@ -122,7 +122,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
      * @param remember - The "remember me" checkbox. One checkbox, one tier: thirty days is what
      *  the phrase conventionally promises, so it maps to `long`. Unchecked, the API sets a
      *  browser-session cookie (gone when the browser closes). On the 2FA path the choice rides
-     *  along to the second step — see `useTwoFactorStore().submitLoginCode`.
+     *  along to the second step — see `useAccountTwoFactorStore().submitLoginCode`.
      * @param options - Per-call axios overrides, forwarded to `orvalMutator` — `Login.vue` attaches
      *  a solved `HumanCheck` token through it on the retry after an `ANTIBOT_VERIFICATION_FAILED`
      *  refusal (rung 3 only engages once the per-identity failure budget is mostly spent).
@@ -229,7 +229,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
      * @returns A promise resolving once the avatar is stored.
      */
     const setAvatarAfterSignup = (imageUpload: File, options?: AxiosRequestConfig) => {
-        const profile = useProfileStore();
+        const profile = useAccountProfileStore();
         return session
             .restoreFromCookies()
             .then(() => profile.fetchProfile(true))
@@ -260,7 +260,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
     const confirmPasswordReset = (token: string, password: string, passwordConfirm: string) =>
         fetchAny(() =>
             apiConfirmPasswordReset({ token, password, passwordConfirm }).then(() => {
-                useProfileStore().endLocalSession();
+                useAccountProfileStore().endLocalSession();
             })
         );
 
@@ -275,7 +275,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
     const logout = () => {
         // The httpOnly jwt cookie can only be cleared server-side; isAuth is JS-accessible.
         return session.logout().then(() => {
-            useProfileStore().resetAll();
+            useAccountProfileStore().resetAll();
             // Back to the guest cookie's answer: the account's no longer applies.
             useAnalyticsConsentStore().syncTracker();
         });
@@ -288,7 +288,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
      */
     const logoutEverywhere = () => {
         return session.logoutAll().then(() => {
-            useProfileStore().resetAll();
+            useAccountProfileStore().resetAll();
             useAnalyticsConsentStore().syncTracker();
         });
     };

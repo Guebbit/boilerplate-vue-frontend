@@ -43,7 +43,7 @@ vi.mock('@/i18n/router-link.ts', () => ({
 }));
 
 vi.mock('../stores/profile.ts', () => ({
-    useProfileStore: () => profileState
+    useAccountProfileStore: () => profileState
 }));
 
 /** The composable under test, imported after the mocks above are in place. */

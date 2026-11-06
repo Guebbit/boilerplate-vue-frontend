@@ -46,7 +46,7 @@ vi.mock('pinia', async (importOriginal) => ({
 }));
 
 vi.mock('../stores/auth.ts', () => ({
-    useAuthStore: () => ({ logoutEverywhere: vi.fn() })
+    useAccountAuthStore: () => ({ logoutEverywhere: vi.fn() })
 }));
 
 /** Memory-history router with no routes: the list only needs an instance. */

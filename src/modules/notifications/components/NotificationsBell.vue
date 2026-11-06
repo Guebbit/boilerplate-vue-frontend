@@ -19,7 +19,7 @@ import { Bell, Trash2 } from 'lucide-vue-next';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useInboxLifecycle } from '../composables/use-inbox-lifecycle';
 import { useNotificationLink } from '../composables/use-notification-link';
-import { useInboxStore } from '../store';
+import { useNotificationsInboxStore } from '../store';
 
 /**
  * Translation function.
@@ -34,7 +34,7 @@ const mayRead = useInboxLifecycle();
 /**
  * The inbox store: the list, the unread count and the writes.
  */
-const inbox = useInboxStore();
+const inbox = useNotificationsInboxStore();
 
 /**
  * The list the panel renders and the count the badge wears, reactive.

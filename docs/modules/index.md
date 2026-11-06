@@ -154,8 +154,8 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 | [`tasks`](./tasks.md)                                          | `generic`    | `foundation` | 2       | `tasks`                  | 3         | 0          | 0              |
 | [`inventory`](./inventory.md)                                  | `supporting` | `shop`       | 2       | `inventory`              | 7         | 2          | 0              |
 | [`locales`](./locales.md)                                      | `generic`    | `foundation` | 4       | `locales`                | 9         | 0          | 0              |
-| [`notifications`](./notifications.md)                          | `supporting` | `foundation` | 0       | `inbox`                  | 4         | 0          | 0              |
-| [`observability`](./observability.md)                          | `generic`    | `foundation` | 3       | `realtime-observability` | 5         | 0          | 0              |
+| [`notifications`](./notifications.md)                          | `supporting` | `foundation` | 0       | `notifications-inbox`    | 4         | 0          | 0              |
+| [`observability`](./observability.md)                          | `generic`    | `foundation` | 3       | `observability-realtime` | 5         | 0          | 0              |
 | [`orders`](./orders.md)                                        | `core`       | `shop`       | 4       | `orders`                 | 11        | 4          | 0              |
 | [`payments`](./payments.md)                                    | `supporting` | `shop`       | 1       | `payments`               | 7         | 0          | 2              |
 | [`products`](./products.md)                                    | `core`       | `shop`       | 4       | `products`               | 10        | 0          | 4              |

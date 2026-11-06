@@ -16,16 +16,16 @@ A key is `<store>` plus an optional `:<action>` postfix, and the store half is t
 
 | Key                             | Set by                                                               |
 | ------------------------------- | -------------------------------------------------------------------- |
-| `accountProfile`                | any `useProfileStore` call without its own postfix                   |
-| `accountProfile:avatar-upload`  | `updateProfile` when the payload carries an `imageUpload`            |
-| `accountProfile:avatar-remove`  | `updateProfile` when the payload clears the image (`imageUrl: null`) |
-| `accountTwoFactor:confirm`      | `confirmMethod`                                                      |
+| `account-profile`               | any `useAccountProfileStore` call without its own postfix            |
+| `account-profile:avatar-upload` | `updateProfile` when the payload carries an `imageUpload`            |
+| `account-profile:avatar-remove` | `updateProfile` when the payload clears the image (`imageUrl: null`) |
+| `account-two-factor:confirm`    | `confirmMethod`                                                      |
 | `cart`, `orders`, `products`, … | the domain store of the same Pinia id                                |
 
 The store half is declared once, where the toolkit composable is created:
 
 ```ts
-useStructureRestApi<User, string>({ loadingKey: 'accountProfile', getLoading, setLoading });
+useStructureRestApi<User, string>({ loadingKey: 'account-profile', getLoading, setLoading });
 ```
 
 The action half is per call, and the toolkit appends it:
@@ -43,8 +43,8 @@ each other — the store only ever sees the 0 → 1 and 1 → 0 edges.
 flowchart TB
     subgraph Dict ["useCoreStore().loadings"]
         K1["core"]
-        K2["accountProfile"]
-        K3["accountProfile:avatar-upload"]
+        K2["account-profile"]
+        K3["account-profile:avatar-upload"]
         K4["cart"]
         K5["realtimeProbe (example: listed nowhere)"]
     end
@@ -68,7 +68,7 @@ Three levels, one dictionary:
   only thing allowed to block the screen.
 - **Corner indicator** — `useIsLoading` over every module's `loadingKeys` (declared on its manifest), one prefix per domain store. A prefix
   matches every action key under it, so a store's own postfixed calls come along for free.
-- **One control** — `getLoading('accountProfile:avatar-upload')`, exposed as a named computed by
+- **One control** — `getLoading('account-profile:avatar-upload')`, exposed as a named computed by
   the store that owns the key (`uploadingAvatar`, `sendingCode`, `mutatingWithCode`, …). Components
   bind to those rather than declaring local `ref(false)` flags, so two buttons on one store never
   spin together.

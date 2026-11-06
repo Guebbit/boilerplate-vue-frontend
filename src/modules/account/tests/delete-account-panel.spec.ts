@@ -17,7 +17,7 @@ vi.mock('@guebbit/vue-toolkit', async (importOriginal) => ({
 }));
 
 import ProfileDeleteAccount from '../components/ProfileDeleteAccount.vue';
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
@@ -38,7 +38,7 @@ const router = createRouter({ history: createMemoryHistory(), routes: [] });
 describe('requesting the account deletion when the API accepts', () => {
     it('goes Home and names the erasure date', async () => {
         vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
-        vi.spyOn(useProfileStore(), 'requestAccountDelete').mockResolvedValue({
+        vi.spyOn(useAccountProfileStore(), 'requestAccountDelete').mockResolvedValue({
             requestedAt: '2026-10-24T10:00:00.000Z',
             purgeAt: '2026-11-23T10:00:00.000Z'
         });
@@ -58,7 +58,7 @@ describe('requesting the account deletion when the API accepts', () => {
 describe('requesting the account deletion when the API refuses', () => {
     it('shows the refusal sentence in place of the success toast', async () => {
         vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
-        vi.spyOn(useProfileStore(), 'requestAccountDelete').mockRejectedValue({
+        vi.spyOn(useAccountProfileStore(), 'requestAccountDelete').mockRejectedValue({
             status: 500,
             errors: [
                 { code: 'INTERNAL_SERVER_ERROR', message: 'Something went wrong, try again later.' }

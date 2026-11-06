@@ -11,7 +11,11 @@ import { computed } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useOAuthProvidersStore, oauthStartUrl, providerLabel } from '../stores/oauth.ts';
+import {
+    useAccountOAuthProvidersStore,
+    oauthStartUrl,
+    providerLabel
+} from '../stores/oauth-providers.ts';
 import { isSameOriginPath } from '../composables/use-post-login-redirect.ts';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 
@@ -24,9 +28,9 @@ const route = useRoute();
  * Which OAuth providers to offer, fetched once — see the store's own doc for why a later mount
  * of this block is a no-op rather than a second request.
  */
-const { providers: oauthProviders } = storeToRefs(useOAuthProvidersStore());
+const { providers: oauthProviders } = storeToRefs(useAccountOAuthProvidersStore());
 // eslint-disable-next-line @typescript-eslint/no-floating-promises -- fetchProviders falls back to the providers already held
-void useOAuthProvidersStore().fetchProviders();
+void useAccountOAuthProvidersStore().fetchProviders();
 
 /**
  * The same-origin `?continue=` this page arrived with, if any — forwarded onto the OAuth start

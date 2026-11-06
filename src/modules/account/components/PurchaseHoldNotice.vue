@@ -22,7 +22,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 
 /**
  * `refreshSignal`: a counter the page raises to ask for a reload of the record (after a checkout
@@ -43,7 +43,7 @@ const router = useRouter();
 /**
  * The profile store; its `profile` carries the hold while one is in force.
  */
-const profileStore = useProfileStore();
+const profileStore = useAccountProfileStore();
 const { profile } = storeToRefs(profileStore);
 
 /**

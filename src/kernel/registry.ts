@@ -289,7 +289,7 @@ export interface AppModule {
 
     /**
      * `resourceKey` prefixes the shell's corner activity indicator answers to for this domain —
-     * `'account'` matches `accountProfile`, `accountAuth`, …. Opt-in: a module that omits it never
+     * `'account'` matches `account-profile`, `account-auth`, …. Opt-in: a module that omits it never
      * lights the indicator, which is the right default for one whose requests are background noise
      * (the observability stream) rather than something the visitor asked for.
      *

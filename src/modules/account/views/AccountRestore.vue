@@ -16,13 +16,13 @@ export default {
  * is `LinkTokenConfirmCard` in its ordinary (non-destructive) tone; restoring signs nobody in, so
  * success lands on the login page.
  */
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import LinkTokenConfirmCard from '../components/LinkTokenConfirmCard.vue';
 
 /**
  * Cancels the deletion the emailed link was sent for.
  */
-const { restoreAccount } = useProfileStore();
+const { restoreAccount } = useAccountProfileStore();
 
 /**
  * This page's translation keys.

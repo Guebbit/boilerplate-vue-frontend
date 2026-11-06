@@ -5,7 +5,11 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { useOAuthProvidersStore, oauthStartUrl, providerLabel } from '../stores/oauth.ts';
+import {
+    useAccountOAuthProvidersStore,
+    oauthStartUrl,
+    providerLabel
+} from '../stores/oauth-providers.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { instance } from '@/infrastructure/http/client.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -97,26 +101,26 @@ describe('oauthStartUrl', () => {
     });
 });
 
-describe('useOAuthProvidersStore', () => {
+describe('useAccountOAuthProvidersStore', () => {
     it('fetchProviders loads the enabled provider list', () =>
-        useOAuthProvidersStore()
+        useAccountOAuthProvidersStore()
             .fetchProviders()
             .then((providers) => {
                 expect(providers).toEqual(['google', 'github']);
-                expect(useOAuthProvidersStore().providers).toEqual(['google', 'github']);
+                expect(useAccountOAuthProvidersStore().providers).toEqual(['google', 'github']);
             }));
 
     it('a later call is a no-op, reusing the cached list', () =>
-        useOAuthProvidersStore()
+        useAccountOAuthProvidersStore()
             .fetchProviders()
-            .then(() => useOAuthProvidersStore().fetchProviders())
+            .then(() => useAccountOAuthProvidersStore().fetchProviders())
             .then(() => {
                 expect(orvalMutator).toHaveBeenCalledTimes(1);
             }));
 
     it('a failed request resolves to the empty list and stays retryable', () => {
         responses['GET /config'] = new Error('network down');
-        const store = useOAuthProvidersStore();
+        const store = useAccountOAuthProvidersStore();
 
         return store
             .fetchProviders()

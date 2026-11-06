@@ -27,7 +27,7 @@ const profile = ref<{ imageUrl?: string } | undefined>();
  * would need a transport to seed.
  */
 vi.mock('../stores/profile.ts', () => ({
-    useProfileStore: () => ({
+    useAccountProfileStore: () => ({
         profile,
         uploadingAvatar: ref(false),
         removingAvatar: ref(false),

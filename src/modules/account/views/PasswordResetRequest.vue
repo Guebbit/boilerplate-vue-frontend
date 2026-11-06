@@ -20,7 +20,7 @@ import FormCard from '@/ui/organisms/FormCard.vue';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { useAuthStore } from '../stores/auth.ts';
+import { useAccountAuthStore } from '../stores/auth.ts';
 import { usersSchema } from '@/modules/users';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -41,7 +41,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * Sends the reset email. Answers the same way whether or not the address exists.
  */
-const { requestPasswordReset } = useAuthStore();
+const { requestPasswordReset } = useAccountAuthStore();
 
 /**
  * The human-challenge widget. `POST /account/password/reset` is always guarded by `humanChallengeGate`, so

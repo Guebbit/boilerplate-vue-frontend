@@ -17,7 +17,7 @@ import { i18n } from '@/i18n';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { NOTIFICATIONS_CHANNELS } from '@types';
 import type { SseEventPayload } from '@types';
-import { useInboxStore } from '../store';
+import { useNotificationsInboxStore } from '../store';
 
 /**
  * The events `GET /notifications/stream` sends: the generated per-stream constant.
@@ -53,7 +53,7 @@ export const useInboxLifecycle = (): ComputedRef<boolean> => {
     /**
      * The inbox store the stream's frames and the first read go to.
      */
-    const inbox = useInboxStore();
+    const inbox = useNotificationsInboxStore();
 
     /**
      * Whether this session has an inbox: every signed-in account does, staff included, and a guest

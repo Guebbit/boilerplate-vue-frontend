@@ -23,7 +23,7 @@ export default {
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
@@ -49,7 +49,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * Locks the account and schedules its erasure; ends the local session on success.
  */
-const { requestAccountDelete } = useProfileStore();
+const { requestAccountDelete } = useAccountProfileStore();
 
 /**
  * This action's own blocked state — the confirmation dialog closes before the request answers,

@@ -12,7 +12,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useInboxStore } from '../store';
+import { useNotificationsInboxStore } from '../store';
 import { orvalMutator } from '@/infrastructure/http';
 import { i18n, loadLocale } from '@/i18n';
 import { registerNotices } from '@/kernel/inbox-notices';
@@ -130,7 +130,7 @@ describe('sync', () => {
     it('reads the inbox as a passive request: syncing is not the person acting', () => {
         serverHolds([]);
 
-        return useInboxStore()
+        return useNotificationsInboxStore()
             .sync()
             .then(() => {
                 const [, options] = vi
@@ -151,7 +151,7 @@ describe('sync', () => {
                 params: { subscriptionId: 's1' }
             }
         ]);
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
 
         return inbox.sync().then(() => {
             expect(inbox.items.map(({ id }) => id)).toEqual(['n2', 'n1']);
@@ -167,7 +167,7 @@ describe('sync', () => {
     it('adds what was already waiting quietly: in the bell, not thrown up as toasts', () => {
         serverHolds([row('n1')]);
 
-        return useInboxStore()
+        return useNotificationsInboxStore()
             .sync()
             .then(() => {
                 expect(toolkit().persistentMessages).toHaveLength(1);
@@ -176,7 +176,7 @@ describe('sync', () => {
     });
 
     it('updates a known row in place and leaves a shown toast shown', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         serverHolds([row('n1')]);
         return inbox
             .sync()
@@ -194,7 +194,7 @@ describe('sync', () => {
 
     it('gives a quietly added row no auto-hide timer, so a toast shown later is not closed behind the reader', () => {
         vi.useFakeTimers();
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         serverHolds([row('n1')]);
 
         return inbox.sync().then(() => {
@@ -208,7 +208,7 @@ describe('sync', () => {
     });
 
     it('does not bring back a toast the reader already closed', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         serverHolds([row('n1')]);
         return inbox
             .sync()
@@ -219,7 +219,7 @@ describe('sync', () => {
     });
 
     it('removes a row the server no longer has, without telling the server', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         serverHolds([row('n1'), row('n2')]);
         return inbox
             .sync()
@@ -234,7 +234,7 @@ describe('sync', () => {
     });
 
     it('leaves messages that are not notifications alone', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         toolkit().addMessage('Saved.', EToastType.SUCCESS);
         toolkit().addMessage('A sticky one', EToastType.PRIMARY, -1, {
             id: 'other',
@@ -250,7 +250,7 @@ describe('sync', () => {
     });
 
     it('does not take a row that arrived on the stream mid-read for one the server dropped', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         serverHolds([]);
         // The read was answered before the server wrote n9, but lands after the stream pushed it.
         answers['GET /notifications'] = () => {
@@ -264,7 +264,7 @@ describe('sync', () => {
     });
 
     it('does not mistake a row pushed mid-read for a dropped one when an older read ends first', async () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         const answerers: ((items: Notification[]) => void)[] = [];
         // Each read stays open until the case answers it, so two can overlap.
         answers['GET /notifications'] = () =>
@@ -286,7 +286,7 @@ describe('sync', () => {
     });
 
     it('reports a failed read as a toast, leaving what it had', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         serverHolds([row('n1')]);
         return inbox
             .sync()
@@ -316,7 +316,7 @@ const holdRead = (rows: Notification[]) => {
 
 describe('a read that is still out when something else happens', () => {
     it('does not lose a notification the stream pushed, even for the older of two overlapping reads', async () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         const releaseOlder = holdRead([]);
         const olderRead = inbox.sync();
         const releaseNewer = holdRead([]);
@@ -332,7 +332,7 @@ describe('a read that is still out when something else happens', () => {
     });
 
     it('does not bring back a row a deleted frame removed meanwhile', async () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         inbox.receiveCreated({ notification: row('n1') });
         const release = holdRead([row('n1')]);
         const reading = inbox.sync();
@@ -345,7 +345,7 @@ describe('a read that is still out when something else happens', () => {
     });
 
     it('does not bring back a row the owner dismissed meanwhile', async () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         inbox.receiveCreated({ notification: row('n1') });
         answers['DELETE /notifications/n1'] = {};
         const release = holdRead([row('n1')]);
@@ -359,7 +359,7 @@ describe('a read that is still out when something else happens', () => {
     });
 
     it('does not bring back anything after the whole inbox was deleted meanwhile', async () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         inbox.receiveCreated({ notification: row('n1') });
         const release = holdRead([row('n1')]);
         const reading = inbox.sync();
@@ -372,7 +372,7 @@ describe('a read that is still out when something else happens', () => {
     });
 
     it('keeps a row read meanwhile read, though the answer still says unread', async () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         inbox.receiveCreated({ notification: row('n1') });
         const release = holdRead([row('n1')]);
         const reading = inbox.sync();
@@ -385,7 +385,7 @@ describe('a read that is still out when something else happens', () => {
     });
 
     it('writes nothing for a person who is gone: the previous person’s rows never show', async () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         const release = holdRead([row('secret-of-a')]);
         const reading = inbox.sync();
 
@@ -405,7 +405,7 @@ describe('severity', () => {
         ['error', EToastType.DANGER]
     ] as const)('maps %s onto the toolkit variant %s', (severity, expected) => {
         serverHolds([row('n1', { severity })]);
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
 
         return inbox.sync().then(() => {
             expect(inbox.items[0]?.type).toBe(expected);
@@ -416,7 +416,7 @@ describe('severity', () => {
 describe('a stream frame', () => {
     it('shows a new notification as a toast, then only in the bell', () => {
         vi.useFakeTimers();
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
 
         inbox.receiveCreated({ notification: row('n1') });
 
@@ -430,7 +430,7 @@ describe('a stream frame', () => {
     });
 
     it('does not show the same notification twice when sync and stream both deliver it', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         serverHolds([row('n1')]);
         return inbox.sync().then(() => {
             inbox.receiveCreated({ notification: row('n1') });
@@ -441,7 +441,7 @@ describe('a stream frame', () => {
     });
 
     it('removes the ids a deleted frame names', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         inbox.receiveCreated({ notification: row('n1') });
         inbox.receiveCreated({ notification: row('n2') });
 
@@ -451,7 +451,7 @@ describe('a stream frame', () => {
     });
 
     it('empties the inbox on a deleted frame that says all', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         inbox.receiveCreated({ notification: row('n1') });
         inbox.receiveCreated({ notification: row('n2') });
 
@@ -461,7 +461,7 @@ describe('a stream frame', () => {
     });
 
     it('reads the unread ones on a read frame, and leaves the already read ones read', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         inbox.receiveCreated({
             notification: row('n1', { readAt: '2026-10-04T09:00:00.000Z' })
         });
@@ -475,7 +475,7 @@ describe('a stream frame', () => {
     });
 
     it('clears the badge on a read frame, keeping the messages', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         inbox.receiveCreated({ notification: row('n1') });
 
         inbox.receiveRead({ readAt: '2026-10-04T12:00:00.000Z' });
@@ -487,7 +487,7 @@ describe('a stream frame', () => {
 
 describe('markAllRead', () => {
     it('leaves a notification that arrived while the call was out unread', async () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         inbox.receiveCreated({ notification: row('n1') });
         const answer = Promise.withResolvers<undefined>();
         answers['POST /notifications/read-all'] = () =>
@@ -505,7 +505,7 @@ describe('markAllRead', () => {
     });
 
     it('tells the server and clears the badge', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         inbox.receiveCreated({ notification: row('n1') });
         inbox.receiveCreated({ notification: row('n2') });
 
@@ -517,7 +517,7 @@ describe('markAllRead', () => {
     });
 
     it('sends nothing when there is nothing unread', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         inbox.receiveCreated({ notification: row('n1', { readAt: '2026-10-04T12:00:00.000Z' }) });
 
         return inbox.markAllRead().then(() => {
@@ -526,7 +526,7 @@ describe('markAllRead', () => {
     });
 
     it('keeps the badge and toasts the error when the server refuses', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         inbox.receiveCreated({ notification: row('n1') });
         answers['POST /notifications/read-all'] = refusal(500);
 
@@ -539,7 +539,7 @@ describe('markAllRead', () => {
 
 describe('dismiss', () => {
     it('deletes on the server and removes it from the bell', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         serverHolds([row('n1'), row('n2')]);
         answers['DELETE /notifications/n1'] = undefined;
 
@@ -553,7 +553,7 @@ describe('dismiss', () => {
     });
 
     it('counts a 404 as done: it was already gone', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         serverHolds([row('n1')]);
         answers['DELETE /notifications/n1'] = refusal(404);
 
@@ -567,7 +567,7 @@ describe('dismiss', () => {
     });
 
     it('puts it back and toasts the error when the server refuses', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         serverHolds([row('n1')]);
         answers['DELETE /notifications/n1'] = refusal(500);
 
@@ -583,7 +583,7 @@ describe('dismiss', () => {
 
 describe('dismissAll', () => {
     it('empties the inbox with one call', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         serverHolds([row('n1'), row('n2')]);
 
         return inbox
@@ -598,7 +598,7 @@ describe('dismissAll', () => {
     });
 
     it('with an audience, sends it and drops only that audience', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         serverHolds([
             row('n1'),
             {
@@ -627,7 +627,7 @@ describe('dismissAll', () => {
     });
 
     it('leaves a notification that arrived while the call was out', async () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         inbox.receiveCreated({ notification: row('n1') });
         const answer = Promise.withResolvers<undefined>();
         answers['DELETE /notifications'] = () =>
@@ -642,7 +642,7 @@ describe('dismissAll', () => {
     });
 
     it('leaves everything in place and toasts the error when the server refuses', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         serverHolds([row('n1'), row('n2')]);
         answers['DELETE /notifications'] = refusal(500);
 
@@ -658,7 +658,7 @@ describe('dismissAll', () => {
 
 describe('reset', () => {
     it('drops the notifications without a word to the server, and only those', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         toolkit().addMessage('Saved.', EToastType.SUCCESS);
         inbox.receiveCreated({ notification: row('n1') });
 
@@ -672,7 +672,7 @@ describe('reset', () => {
 
 describe('retranslate', () => {
     it('rewrites each text in the new language and shows no toast again', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         serverHolds([row('n1')]);
 
         return inbox
@@ -690,7 +690,7 @@ describe('retranslate', () => {
     });
 
     it("tries the reader's language, then the shop's main one", () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         registerNotices({ [ECHO_CODE]: echoPreferred });
         serverHolds([{ ...row('n1'), code: ECHO_CODE as never }]);
 
@@ -706,7 +706,7 @@ describe('retranslate', () => {
     });
 
     it('tries only the reader’s language when the shop has no single main language', () => {
-        const inbox = useInboxStore();
+        const inbox = useNotificationsInboxStore();
         const configured = i18n.global.fallbackLocale.value;
         registerNotices({ [ECHO_CODE]: echoPreferred });
         serverHolds([{ ...row('n1'), code: ECHO_CODE as never }]);

@@ -12,7 +12,7 @@ import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import VerifyEmailConfirm from '../views/VerifyEmailConfirm.vue';
 import EmailChangeUndo from '../views/EmailChangeUndo.vue';
 import AccountRestore from '../views/AccountRestore.vue';
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
@@ -43,7 +43,7 @@ const mountPage = (
     page: typeof VerifyEmailConfirm,
     action: 'confirmEmailVerification' | 'undoEmailChange' | 'restoreAccount'
 ) => {
-    const spend = vi.spyOn(useProfileStore(), action).mockResolvedValue(undefined);
+    const spend = vi.spyOn(useAccountProfileStore(), action).mockResolvedValue(undefined);
     const wrapper = mount(page, { global: { plugins: [router, vuetify, i18n] } });
     // Spied only once mounted, so the fragment scrub (a `replace`) still runs for real; the
     // success redirect's target is the assertion, not where the test router can actually go.

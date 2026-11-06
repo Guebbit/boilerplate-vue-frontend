@@ -26,7 +26,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import QRCode from 'qrcode';
-import { useTwoFactorStore } from '../stores/two-factor.ts';
+import { useAccountTwoFactorStore } from '../stores/two-factor.ts';
 import { useExpiryCountdown, useCountdownAnnouncement } from '../composables/use-countdown.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -73,7 +73,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * The two-factor store, held whole: its actions and its `storeToRefs` slice are both read.
  */
-const twoFactor = useTwoFactorStore();
+const twoFactor = useAccountTwoFactorStore();
 
 /**
  * Enrolment state: the delivery target, the resend countdown, and a flag per in-flight call so

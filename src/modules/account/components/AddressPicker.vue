@@ -21,7 +21,7 @@ import { computed, nextTick, onMounted, ref, useId, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Plus } from 'lucide-vue-next';
-import { useAddressesStore } from '../stores/addresses.ts';
+import { useAccountAddressesStore } from '../stores/addresses.ts';
 import AddressFormDialog from './AddressFormDialog.vue';
 import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
 
@@ -99,7 +99,7 @@ const copy = computed(() =>
  * Address book store — shared with the profile page, so an address added at checkout shows up
  * there too, and vice versa.
  */
-const addressesStore = useAddressesStore();
+const addressesStore = useAccountAddressesStore();
 
 /**
  * The visitor's saved addresses, reactive.

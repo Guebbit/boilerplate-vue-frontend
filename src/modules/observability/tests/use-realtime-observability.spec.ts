@@ -55,9 +55,9 @@ const makeEvent = (timestamp: string): MetricsSnapshotEvent => ({
 const loadComposable = () => {
     vi.resetModules();
     return Promise.all([import('../use-realtime-observability'), import('../store')]).then(
-        ([{ useRealtimeObservability }, { useRealtimeObservabilityStore }]) => ({
+        ([{ useRealtimeObservability }, { useObservabilityRealtimeStore }]) => ({
             useRealtimeObservability,
-            useRealtimeObservabilityStore
+            useObservabilityRealtimeStore
         })
     );
 };
@@ -159,8 +159,8 @@ describe('useRealtimeObservability', () => {
         });
 
         it('reports connecting before the transport answers', () =>
-            loadComposable().then(({ useRealtimeObservability, useRealtimeObservabilityStore }) => {
-                const store = useRealtimeObservabilityStore();
+            loadComposable().then(({ useRealtimeObservability, useObservabilityRealtimeStore }) => {
+                const store = useObservabilityRealtimeStore();
 
                 useRealtimeObservability().connect();
 
@@ -182,8 +182,8 @@ describe('useRealtimeObservability', () => {
 
     describe('transport callbacks', () => {
         it('reports open once the stream is established', () =>
-            loadComposable().then(({ useRealtimeObservability, useRealtimeObservabilityStore }) => {
-                const store = useRealtimeObservabilityStore();
+            loadComposable().then(({ useRealtimeObservability, useObservabilityRealtimeStore }) => {
+                const store = useObservabilityRealtimeStore();
 
                 useRealtimeObservability().connect();
                 lastCallbacks().onOpen?.();
@@ -192,8 +192,8 @@ describe('useRealtimeObservability', () => {
             }));
 
         it('records both the error status and a message the dashboard can show', () =>
-            loadComposable().then(({ useRealtimeObservability, useRealtimeObservabilityStore }) => {
-                const store = useRealtimeObservabilityStore();
+            loadComposable().then(({ useRealtimeObservability, useObservabilityRealtimeStore }) => {
+                const store = useObservabilityRealtimeStore();
 
                 useRealtimeObservability().connect();
                 lastCallbacks().onError?.(new Event('error'));
@@ -205,8 +205,8 @@ describe('useRealtimeObservability', () => {
 
     describe('event routing', () => {
         it('sends a snapshot to setSnapshot and appends one snapshot entry', () =>
-            loadComposable().then(({ useRealtimeObservability, useRealtimeObservabilityStore }) => {
-                const store = useRealtimeObservabilityStore();
+            loadComposable().then(({ useRealtimeObservability, useObservabilityRealtimeStore }) => {
+                const store = useObservabilityRealtimeStore();
                 const payload = makeEvent('2026-01-01T00:00:00.000Z');
 
                 useRealtimeObservability().connect();
@@ -227,8 +227,8 @@ describe('useRealtimeObservability', () => {
             }));
 
         it('sends an update to setUpdate and appends one update entry', () =>
-            loadComposable().then(({ useRealtimeObservability, useRealtimeObservabilityStore }) => {
-                const store = useRealtimeObservabilityStore();
+            loadComposable().then(({ useRealtimeObservability, useObservabilityRealtimeStore }) => {
+                const store = useObservabilityRealtimeStore();
                 const payload = makeEvent('2026-01-01T00:01:00.000Z');
 
                 useRealtimeObservability().connect();
@@ -248,8 +248,8 @@ describe('useRealtimeObservability', () => {
             }));
 
         it('treats anything else as a heartbeat', () =>
-            loadComposable().then(({ useRealtimeObservability, useRealtimeObservabilityStore }) => {
-                const store = useRealtimeObservabilityStore();
+            loadComposable().then(({ useRealtimeObservability, useObservabilityRealtimeStore }) => {
+                const store = useObservabilityRealtimeStore();
                 const payload = makeEvent('2026-01-01T00:02:00.000Z');
 
                 useRealtimeObservability().connect();
@@ -269,8 +269,8 @@ describe('useRealtimeObservability', () => {
             }));
 
         it('keeps the feed in arrival order across event kinds', () =>
-            loadComposable().then(({ useRealtimeObservability, useRealtimeObservabilityStore }) => {
-                const store = useRealtimeObservabilityStore();
+            loadComposable().then(({ useRealtimeObservability, useObservabilityRealtimeStore }) => {
+                const store = useObservabilityRealtimeStore();
 
                 useRealtimeObservability().connect();
                 const callbacks = lastCallbacks();
@@ -297,8 +297,8 @@ describe('useRealtimeObservability', () => {
 
     describe('disconnect', () => {
         it('closes the stream and reports closed', () =>
-            loadComposable().then(({ useRealtimeObservability, useRealtimeObservabilityStore }) => {
-                const store = useRealtimeObservabilityStore();
+            loadComposable().then(({ useRealtimeObservability, useObservabilityRealtimeStore }) => {
+                const store = useObservabilityRealtimeStore();
                 const { connect, disconnect } = useRealtimeObservability();
 
                 connect();
@@ -309,8 +309,8 @@ describe('useRealtimeObservability', () => {
             }));
 
         it('is safe with no connection open, and does not close a stream twice', () =>
-            loadComposable().then(({ useRealtimeObservability, useRealtimeObservabilityStore }) => {
-                const store = useRealtimeObservabilityStore();
+            loadComposable().then(({ useRealtimeObservability, useObservabilityRealtimeStore }) => {
+                const store = useObservabilityRealtimeStore();
                 const { connect, disconnect } = useRealtimeObservability();
 
                 disconnect();
@@ -337,8 +337,8 @@ describe('useRealtimeObservability', () => {
     });
 
     it('exposes the store state alongside the controls', () =>
-        loadComposable().then(({ useRealtimeObservability, useRealtimeObservabilityStore }) => {
-            const store = useRealtimeObservabilityStore();
+        loadComposable().then(({ useRealtimeObservability, useObservabilityRealtimeStore }) => {
+            const store = useObservabilityRealtimeStore();
             const { status, latestSnapshot, latestUpdate, latestHeartbeatAt, entries, lastError } =
                 useRealtimeObservability();
 

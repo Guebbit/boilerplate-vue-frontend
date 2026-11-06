@@ -11,7 +11,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
-import { useAuthStore } from '../stores/auth.ts';
+import { useAccountAuthStore } from '../stores/auth.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
@@ -85,14 +85,14 @@ const CREDENTIALS = {
     termsAccepted: true as const
 };
 
-describe('useAuthStore.signup', () => {
+describe('useAccountAuthStore.signup', () => {
     beforeEach(() => {
         setActivePinia(createPinia());
         vi.clearAllMocks();
     });
 
     it('posts JSON when no image is attached', () =>
-        useAuthStore()
+        useAccountAuthStore()
             .signup({ email: 'ada@example.com', password: 'Hunter2!hunter2', termsAccepted: true })
             .then(() => {
                 const request = lastRequest();
@@ -108,7 +108,7 @@ describe('useAuthStore.signup', () => {
      * that built multipart would be refused by a route that mounts no multer.
      */
     it('carries every scalar field in the JSON body', () =>
-        useAuthStore()
+        useAccountAuthStore()
             .signup(CREDENTIALS)
             .then(() => {
                 expect(contractRequest(schemas.SignupBody, lastRequest().data)).toMatchObject({
@@ -120,7 +120,7 @@ describe('useAuthStore.signup', () => {
             }));
 
     it('defaults the username to the email address', () =>
-        useAuthStore()
+        useAccountAuthStore()
             .signup({ email: 'ada@example.com', password: 'Hunter2!hunter2', termsAccepted: true })
             .then(() => {
                 expect(contractRequest(schemas.SignupBody, lastRequest().data)).toMatchObject({
@@ -133,7 +133,7 @@ describe('useAuthStore.signup', () => {
      * after a token is minted and the profile loaded.
      */
     it('stores a picked avatar as a follow-up PATCH /account', () =>
-        useAuthStore()
+        useAccountAuthStore()
             .setAvatarAfterSignup(IMAGE())
             .then(() => {
                 expect(avatarFormData().get('imageUpload')).toBeInstanceOf(File);
@@ -146,7 +146,7 @@ describe('useAuthStore.signup', () => {
     it('forwards the upload progress callback on the avatar request', () => {
         const onUploadProgress = vi.fn();
 
-        return useAuthStore()
+        return useAccountAuthStore()
             .setAvatarAfterSignup(IMAGE(), { onUploadProgress })
             .then(() => {
                 expect(lastRequestTo('PATCH', '/account')[1]).toEqual(
@@ -157,7 +157,7 @@ describe('useAuthStore.signup', () => {
 
     it('keeps the store id stable', () => {
         // Pinia keys the store, devtools and any persistence plugin by this string, and every
-        // other test here reaches the store through useAuthStore() so none would notice.
-        expect(useAuthStore().$id).toBe('accountAuth');
+        // other test here reaches the store through useAccountAuthStore() so none would notice.
+        expect(useAccountAuthStore().$id).toBe('account-auth');
     });
 });

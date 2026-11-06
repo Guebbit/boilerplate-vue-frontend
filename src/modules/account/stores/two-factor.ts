@@ -25,14 +25,14 @@ import {
 import { getRetryAfter } from '@/infrastructure/http/envelope.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useCountdown } from '../composables/use-countdown.ts';
-import { useProfileStore } from './profile.ts';
-import { useDeletionRestoreStore } from './deletion-restore.ts';
+import { useAccountProfileStore } from './profile.ts';
+import { useAccountDeletionRestoreStore } from './deletion-restore.ts';
 import { ERROR_CODES } from '@api/error-codes';
 import type { TwoFactorStatus, TwoFactorDelivery, TwoFactorMethodSummary } from '@api';
 import type { LoginOutcome } from './auth.ts';
 
 /**
- * The login-time challenge, as handed off by `useAuthStore().login()`'s `mfa` branch, plus the
+ * The login-time challenge, as handed off by `useAccountAuthStore().login()`'s `mfa` branch, plus the
  * "remember me" choice the visitor made on the form it came from — an `MfaChallenge` response
  * carries no `remember` field, so the form's own choice has to survive the hop across the two
  * steps for {@link submitLoginCode} to send it on `LoginTwoFactorRequest`.
@@ -57,7 +57,7 @@ interface LoginChallenge {
  * own "send me a code" step. Follows `stores/sessions.ts` — plain refs, actions that re-read from
  * the server rather than patch state locally.
  */
-export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
+export const useAccountTwoFactorStore = defineStore('account-two-factor', () => {
     /**
      * The toolkit's REST slice for this store: the loading flag and the `fetchAny` wrapper
      * every action below goes through; `isLoading` backs the per-action computeds below.
@@ -66,7 +66,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
     // toolkit caches a keyed read for an hour, so each carries `forced: true` — without it a second
     // setup, remove or regenerate in one page load answers from the cache and never reaches the API.
     const { loading, isLoading, fetchAny } = useStructureRestApi({
-        resourceKey: 'accountTwoFactor',
+        resourceKey: 'account-two-factor',
         queryClient
     });
 
@@ -77,7 +77,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
     const status = ref<TwoFactorStatus>();
 
     /**
-     * The live login-time challenge, from `useAuthStore().login()`'s `mfa` branch. `undefined`
+     * The live login-time challenge, from `useAccountAuthStore().login()`'s `mfa` branch. `undefined`
      * outside the 2FA login step.
      */
     const challenge = ref<LoginChallenge>();
@@ -305,7 +305,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
     };
 
     /**
-     * Opens the login-time challenge, from `useAuthStore().login()`'s `mfa` branch.
+     * Opens the login-time challenge, from `useAccountAuthStore().login()`'s `mfa` branch.
      *
      * @param outcome - The `mfa` branch of a {@link LoginOutcome}.
      * @param remember - The "remember me" checkbox from the login form, carried across to
@@ -394,7 +394,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
             }).then((data) => {
                 // `in`, not a property read: `AuthTokens` carries no `deletionPending` at all.
                 if ('deletionPending' in data) {
-                    useDeletionRestoreStore().begin(
+                    useAccountDeletionRestoreStore().begin(
                         {
                             kind: 'deletion-pending',
                             challenge: data.challenge,
@@ -407,7 +407,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
                     return 'deletion-pending' as const;
                 }
                 useSessionStore().adoptSession(data, remember);
-                return useProfileStore()
+                return useAccountProfileStore()
                     .fetchProfile(true, data.account)
                     .then(() => {
                         clearChallenge();

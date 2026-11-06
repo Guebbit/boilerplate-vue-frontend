@@ -8,8 +8,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { deleteCookie, getCookie } from '@guebbit/js-toolkit';
 
-import { useProfileStore } from '../stores/profile.ts';
-import { useAuthStore } from '../stores/auth.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
+import { useAccountAuthStore } from '../stores/auth.ts';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -49,10 +49,10 @@ const patchBodies = () =>
  */
 const signInHolding = (analyticsConsent?: boolean) => {
     responses['GET /account'] = accountView({ ...USER, analyticsConsent });
-    useProfileStore();
-    return useAuthStore()
+    useAccountProfileStore();
+    return useAccountAuthStore()
         .login('ada@example.com', 'hunter2hunter2')
-        .then(() => useProfileStore().fetchProfile(true));
+        .then(() => useAccountProfileStore().fetchProfile(true));
 };
 
 beforeEach(() => {
@@ -116,7 +116,7 @@ describe('the account answer while signed in', () => {
             .then(() => {
                 expect(useAnalyticsConsentStore().effective).toBe('granted');
 
-                return useAuthStore().logout();
+                return useAccountAuthStore().logout();
             })
             .then(() => {
                 const consent = useAnalyticsConsentStore();
@@ -125,7 +125,7 @@ describe('the account answer while signed in', () => {
             }));
 
     it('a guest answer still writes the cookie and no account', () => {
-        useProfileStore();
+        useAccountProfileStore();
         useAnalyticsConsentStore().grant();
 
         expect(getCookie('analyticsConsent')).toBe('granted');

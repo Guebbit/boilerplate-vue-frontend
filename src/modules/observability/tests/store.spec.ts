@@ -5,7 +5,7 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { useRealtimeObservabilityStore } from '../store';
+import { useObservabilityRealtimeStore } from '../store';
 import type { MetricsSnapshotEvent } from '@types';
 
 // Minimal valid metrics payload used across tests
@@ -17,14 +17,14 @@ const makeSnapshot = (timestamp: string): MetricsSnapshotEvent => ({
     realtime: { sseClients: 1 }
 });
 
-describe('useRealtimeObservabilityStore', () => {
+describe('useObservabilityRealtimeStore', () => {
     beforeEach(() => {
         // Fresh Pinia instance before every test so stores don't bleed state
         setActivePinia(createPinia());
     });
 
     it('initialises with idle status and no data', () => {
-        const store = useRealtimeObservabilityStore();
+        const store = useObservabilityRealtimeStore();
 
         expect(store.status).toBe('idle');
         expect(store.latestSnapshot).toBeUndefined();
@@ -34,7 +34,7 @@ describe('useRealtimeObservabilityStore', () => {
     });
 
     it('updates status via setStatus', () => {
-        const store = useRealtimeObservabilityStore();
+        const store = useObservabilityRealtimeStore();
 
         store.setStatus('connecting');
         expect(store.status).toBe('connecting');
@@ -44,7 +44,7 @@ describe('useRealtimeObservabilityStore', () => {
     });
 
     it('stores a metrics snapshot via setSnapshot', () => {
-        const store = useRealtimeObservabilityStore();
+        const store = useObservabilityRealtimeStore();
         const snapshot = makeSnapshot('2026-01-01T00:00:00.000Z');
 
         store.setSnapshot(snapshot);
@@ -53,7 +53,7 @@ describe('useRealtimeObservabilityStore', () => {
     });
 
     it('stores a metrics update via setUpdate', () => {
-        const store = useRealtimeObservabilityStore();
+        const store = useObservabilityRealtimeStore();
         const update = makeSnapshot('2026-01-01T00:01:00.000Z');
 
         store.setUpdate(update);
@@ -62,7 +62,7 @@ describe('useRealtimeObservabilityStore', () => {
     });
 
     it('records only the timestamp from a heartbeat payload via setHeartbeat', () => {
-        const store = useRealtimeObservabilityStore();
+        const store = useObservabilityRealtimeStore();
         const heartbeat = makeSnapshot('2026-01-01T00:02:00.000Z');
 
         store.setHeartbeat(heartbeat);
@@ -74,7 +74,7 @@ describe('useRealtimeObservabilityStore', () => {
     });
 
     it('stores the latest error message via setError', () => {
-        const store = useRealtimeObservabilityStore();
+        const store = useObservabilityRealtimeStore();
 
         store.setError('connection lost');
 
@@ -82,7 +82,7 @@ describe('useRealtimeObservabilityStore', () => {
     });
 
     it('overwrites previous values when actions are called again', () => {
-        const store = useRealtimeObservabilityStore();
+        const store = useObservabilityRealtimeStore();
 
         store.setSnapshot(makeSnapshot('2026-01-01T00:00:00.000Z'));
         store.setSnapshot(makeSnapshot('2026-01-02T00:00:00.000Z'));

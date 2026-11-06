@@ -9,7 +9,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
@@ -81,7 +81,7 @@ beforeEach(() => {
 
 describe('an imageUpload switches the call to multipart', () => {
     it('carries the file, not the old imageUrl field', () => {
-        const store = useProfileStore();
+        const store = useAccountProfileStore();
         const file = new File(['pixels'], 'avatar.png', { type: 'image/png' });
 
         return store
@@ -97,7 +97,7 @@ describe('an imageUpload switches the call to multipart', () => {
     });
 
     it('sends a clear that shares the save as a second JSON PATCH, since multipart has no null', () => {
-        const store = useProfileStore();
+        const store = useAccountProfileStore();
         const file = new File(['pixels'], 'avatar.png', { type: 'image/png' });
 
         return store
@@ -114,7 +114,7 @@ describe('an imageUpload switches the call to multipart', () => {
     });
 
     it('forwards onUploadProgress through to the transport', () => {
-        const store = useProfileStore();
+        const store = useAccountProfileStore();
         const file = new File(['pixels'], 'avatar.png', { type: 'image/png' });
         const onUploadProgress = vi.fn();
 
@@ -131,7 +131,7 @@ describe('an imageUpload switches the call to multipart', () => {
     });
 
     it('refetches the profile afterward, same as every other field', () => {
-        const store = useProfileStore();
+        const store = useAccountProfileStore();
         const file = new File(['pixels'], 'avatar.png', { type: 'image/png' });
 
         return store
@@ -153,7 +153,7 @@ describe('removing the picture', () => {
      * that reads as "remove it".
      */
     it('sends imageUrl: null through the plain JSON path — not multipart, never an empty string', () => {
-        const store = useProfileStore();
+        const store = useAccountProfileStore();
 
         return store
             .fetchProfile(true)
@@ -170,7 +170,7 @@ describe('removing the picture', () => {
 
 describe('each avatar path owns its loading key', () => {
     it('flags the upload alone while the multipart call is in flight', () => {
-        const store = useProfileStore();
+        const store = useAccountProfileStore();
         const file = new File(['pixels'], 'avatar.png', { type: 'image/png' });
 
         return store.fetchProfile(true).then(() => {
@@ -192,7 +192,7 @@ describe('each avatar path owns its loading key', () => {
     });
 
     it('flags the removal alone while the remove call is in flight', () => {
-        const store = useProfileStore();
+        const store = useAccountProfileStore();
 
         return store.fetchProfile(true).then(() => {
             const release = gateNextCall();
@@ -211,7 +211,7 @@ describe('each avatar path owns its loading key', () => {
     });
 
     it('leaves both flags alone for an ordinary field save', () => {
-        const store = useProfileStore();
+        const store = useAccountProfileStore();
 
         return store.fetchProfile(true).then(() => {
             const release = gateNextCall();

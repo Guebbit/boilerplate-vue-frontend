@@ -24,7 +24,7 @@ import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { useAuthStore } from '../stores/auth.ts';
+import { useAccountAuthStore } from '../stores/auth.ts';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter.vue';
 import { usersPasswordSchema } from '@/modules/users';
 import { resetPasswordConfirmSchema } from '../schemas.ts';
@@ -67,7 +67,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * Sets the new password against the emailed token.
  */
-const { confirmPasswordReset } = useAuthStore();
+const { confirmPasswordReset } = useAccountAuthStore();
 
 /**
  * Reference to the mounted `FormCard`, read for its `<form>` element.

@@ -180,7 +180,7 @@ const deleteOnServer = (id: string): Promise<void> =>
  * Holds no list of its own: {@link items} is a view over the toolkit's persistent messages. What
  * it owns is the translation between a server row and a message, and every write the bell makes.
  */
-export const useInboxStore = defineStore('inbox', () => {
+export const useNotificationsInboxStore = defineStore('notifications-inbox', () => {
     /**
      * The toolkit's one message store: toasts and persistent messages together.
      */

@@ -13,7 +13,7 @@ export default {
  * @module
  * Login form: email/password validated against a schema built from the shared `usersSchema`. A
  * plain account redirects through `usePostLoginRedirect`; an account with two-factor armed hands
- * the challenge to `useTwoFactorStore` and pushes `TwoFactorChallenge` instead — see the store's
+ * the challenge to `useAccountTwoFactorStore` and pushes `TwoFactorChallenge` instead — see the store's
  * `LoginOutcome` for the branch this reads.
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
@@ -23,9 +23,9 @@ import { RouterLink, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Eye, EyeOff } from 'lucide-vue-next';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { useAuthStore } from '../stores/auth.ts';
-import { useTwoFactorStore } from '../stores/two-factor.ts';
-import { useDeletionRestoreStore } from '../stores/deletion-restore.ts';
+import { useAccountAuthStore } from '../stores/auth.ts';
+import { useAccountTwoFactorStore } from '../stores/two-factor.ts';
+import { useAccountDeletionRestoreStore } from '../stores/deletion-restore.ts';
 import OAuthButtons from '../components/OAuthButtons.vue';
 import { usePostLoginRedirect } from '../composables/use-post-login-redirect.ts';
 import { usersSchema } from '@/modules/users';
@@ -160,7 +160,7 @@ const requiresHumanCheck = ref(false);
 const submitForm = () => {
     clearLoginError();
     return handleSubmit(() =>
-        useAuthStore()
+        useAccountAuthStore()
             .login(
                 form.value.email,
                 form.value.password,
@@ -171,13 +171,16 @@ const submitForm = () => {
             .then((outcome) => {
                 requiresHumanCheck.value = false;
                 if (outcome.kind === 'deletion-pending') {
-                    useDeletionRestoreStore().begin(outcome, form.value.remember ?? false);
+                    useAccountDeletionRestoreStore().begin(outcome, form.value.remember ?? false);
                     return router.push(
                         routerLinkI18n({ name: 'AccountRestoreChallenge', query: route.query })
                     );
                 }
                 if (outcome.kind === 'mfa') {
-                    useTwoFactorStore().beginLoginChallenge(outcome, form.value.remember ?? false);
+                    useAccountTwoFactorStore().beginLoginChallenge(
+                        outcome,
+                        form.value.remember ?? false
+                    );
                     return router.push(
                         routerLinkI18n({ name: 'TwoFactorChallenge', query: route.query })
                     );

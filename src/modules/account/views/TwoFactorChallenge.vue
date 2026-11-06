@@ -20,7 +20,7 @@ import { useI18n } from 'vue-i18n';
 import { RouterLink, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useTwoFactorStore } from '../stores/two-factor.ts';
+import { useAccountTwoFactorStore } from '../stores/two-factor.ts';
 import { usePostLoginRedirect } from '../composables/use-post-login-redirect.ts';
 import { useExpiryCountdown, useCountdownAnnouncement } from '../composables/use-countdown.ts';
 import { useMethodLabel } from '../composables/use-method-label.ts';
@@ -52,7 +52,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * The two-factor store, held whole: its actions and its `storeToRefs` slice are both read.
  */
-const twoFactor = useTwoFactorStore();
+const twoFactor = useAccountTwoFactorStore();
 
 /**
  * The pending challenge, its delivery target, the resend countdown, and whether a call is in

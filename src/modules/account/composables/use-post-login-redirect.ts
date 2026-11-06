@@ -6,7 +6,7 @@
  */
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import { supportedLanguages } from '@/i18n';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 
@@ -24,7 +24,7 @@ const SAME_ORIGIN_PLACEHOLDER = 'http://same-origin.invalid';
  * `/\evil.example` are protocol-relative URLs a browser follows off-site, which is exactly the value an attacker crafts
  * a phishing link's `?continue=` around.
  *
- * Exported for `stores/oauth.ts`'s `oauthStartUrl`: the OAuth start redirect carries the same
+ * Exported for `stores/oauth-providers.ts`'s `oauthStartUrl`: the OAuth start redirect carries the same
  * `?continue=` value onward as its own query param, so it needs the identical guard rather than a
  * second copy of it.
  *
@@ -85,7 +85,7 @@ export const usePostLoginRedirect = () => {
             : undefined;
         if (continueTo) return router.push({ path: continueTo });
 
-        const saved = useProfileStore().profile?.locale;
+        const saved = useAccountProfileStore().profile?.locale;
         const target =
             typeof saved === 'string' &&
             saved !== locale.value &&

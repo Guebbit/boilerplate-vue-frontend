@@ -12,8 +12,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
-import { useAuthStore } from '../stores/auth.ts';
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountAuthStore } from '../stores/auth.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -76,7 +76,7 @@ beforeEach(() => {
 
 describe('login', () => {
     it('stores the token and adopts the account view the answer carries, with no further call', () =>
-        useAuthStore()
+        useAccountAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => {
                 // One call: the answer carries the account, its rules and the idle clock.
@@ -92,7 +92,7 @@ describe('login', () => {
         useSessionStore().mode = 'cookie';
         responses['POST /account/login'] = { account: accountView(USER) };
 
-        return useAuthStore()
+        return useAccountAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => {
                 const session = useSessionStore();
@@ -115,7 +115,7 @@ describe('login', () => {
 
         return useSessionStore()
             .loadSessionMode()
-            .then(() => useAuthStore().login('ada@example.com', 'hunter2hunter2'))
+            .then(() => useAccountAuthStore().login('ada@example.com', 'hunter2hunter2'))
             .then(() => {
                 expect(useSessionStore().isAuth).toBe(true);
                 // The `isAuth` hint is the backend's cookie; the frontend writes none.
@@ -124,9 +124,9 @@ describe('login', () => {
     });
 
     it('maps the remember checkbox to the long tier, and sends no tier otherwise', () =>
-        useAuthStore()
+        useAccountAuthStore()
             .login('ada@example.com', 'hunter2hunter2', true)
-            .then(() => useAuthStore().login('ada@example.com', 'hunter2hunter2'))
+            .then(() => useAccountAuthStore().login('ada@example.com', 'hunter2hunter2'))
             .then(() => {
                 const bodies = vi
                     .mocked(orvalMutator)
@@ -141,7 +141,7 @@ describe('login', () => {
             }));
 
     it('publishes the viewer the router guards read', () =>
-        useAuthStore()
+        useAccountAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => {
                 const session = useSessionStore();
@@ -177,7 +177,7 @@ describe('login', () => {
             ])
         };
 
-        return useAuthStore()
+        return useAccountAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => {
                 const session = useSessionStore();
@@ -196,7 +196,7 @@ describe('login', () => {
             account: accountView({ ...USER, role: 'admin' }, [['delete', 'Product']])
         };
 
-        return useAuthStore()
+        return useAccountAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => {
                 const session = useSessionStore();
@@ -215,7 +215,7 @@ describe('login', () => {
     it('reads GET /account when the answer carries no account view', () => {
         responses['POST /account/login'] = { token: 'jwt-token' };
 
-        return useAuthStore()
+        return useAccountAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => {
                 expect(requestedUrls()).toEqual(['/account/login', '/account']);
@@ -230,7 +230,7 @@ describe('login', () => {
         // through the keyed `responses` table.
         vi.mocked(orvalMutator).mockImplementationOnce(() => Promise.resolve({}));
 
-        return useAuthStore()
+        return useAccountAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => {
                 expect(useSessionStore().accessToken).toBeUndefined();
@@ -240,7 +240,7 @@ describe('login', () => {
 
 describe('logout', () => {
     it('ends THIS session only and clears the state the guards read', () => {
-        const auth = useAuthStore();
+        const auth = useAccountAuthStore();
 
         return auth
             .login('ada@example.com', 'hunter2hunter2')
@@ -262,7 +262,7 @@ describe('logout', () => {
     it('falls back to the guest answer, which is none', () => {
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
         vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
-        const auth = useAuthStore();
+        const auth = useAccountAuthStore();
 
         return auth
             .login('ada@example.com', 'hunter2hunter2')
@@ -275,27 +275,27 @@ describe('logout', () => {
     });
 
     it('drops the cached profile, so the next visitor is not served this one', () => {
-        const auth = useAuthStore();
+        const auth = useAccountAuthStore();
 
         return auth
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => auth.logout())
             .then(() => {
-                expect(useProfileStore().profile).toBeUndefined();
+                expect(useAccountProfileStore().profile).toBeUndefined();
             });
     });
 });
 
 describe('the password reset flow', () => {
     it('requests a token for an email', () =>
-        useAuthStore()
+        useAccountAuthStore()
             .requestPasswordReset('ada@example.com')
             .then(() => {
                 expect(requestedUrls()).toEqual(['/account/password/reset']);
             }));
 
     it('confirms with the token and the new password', () =>
-        useAuthStore()
+        useAccountAuthStore()
             .confirmPasswordReset('reset-token', 'Hunter3!hunter3', 'Hunter3!hunter3')
             .then(() => {
                 const last = vi.mocked(orvalMutator).mock.calls.at(-1)![0] as {
@@ -312,7 +312,7 @@ describe('the password reset flow', () => {
 
 describe('a reset opened in a tab that is still signed in', () => {
     it('drops this tab’s session: the server ended it with every other one', () => {
-        const auth = useAuthStore();
+        const auth = useAccountAuthStore();
 
         return auth
             .login('ada@example.com', 'hunter2hunter2')
@@ -331,7 +331,7 @@ describe('a reset opened in a tab that is still signed in', () => {
 
 describe('logoutEverywhere', () => {
     it('calls logout-all — the compromised-credentials button', () => {
-        const auth = useAuthStore();
+        const auth = useAccountAuthStore();
 
         return auth
             .login('ada@example.com', 'hunter2hunter2')

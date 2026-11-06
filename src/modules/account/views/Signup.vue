@@ -24,7 +24,7 @@ import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
-import { useAuthStore } from '../stores/auth.ts';
+import { useAccountAuthStore } from '../stores/auth.ts';
 import OAuthButtons from '../components/OAuthButtons.vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -143,7 +143,7 @@ const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 /**
  * Creates the account, then stores its avatar as the follow-up call.
  */
-const { signup, setAvatarAfterSignup } = useAuthStore();
+const { signup, setAvatarAfterSignup } = useAccountAuthStore();
 
 /**
  * The human-challenge widget — rendered only once a provider is active, and read here for its

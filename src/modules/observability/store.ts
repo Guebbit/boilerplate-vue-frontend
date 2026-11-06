@@ -13,7 +13,7 @@ import type { RealtimeConnectionStatus, RealtimeMetricsEntry } from './types.ts'
  * Holds the live state of the observability metrics stream (SSE): connection
  * status, latest payloads and a capped event feed.
  */
-export const useRealtimeObservabilityStore = defineStore('realtime-observability', () => {
+export const useObservabilityRealtimeStore = defineStore('observability-realtime', () => {
     /**
      * Lifecycle of the SSE connection: idle until `connect` is called, then connecting/open/etc.
      */

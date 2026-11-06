@@ -320,7 +320,7 @@ remembering:
    logic one level down: `modules/account/stores/auth.ts` establishes or ends a session (login,
    signup, password reset, logout), `stores/profile.ts` owns the editable record itself
    (fetch/update, role view, email verification, account deletion), and `stores/sessions.ts` /
-   `stores/addresses.ts` / `stores/oauth.ts` / `stores/two-factor.ts` each hold state scoped to the
+   `stores/addresses.ts` / `stores/oauth-providers.ts` / `stores/two-factor.ts` each hold state scoped to the
    one component that renders it. The shell knows only _someone is signed in, here is their name and
    picture, here is their role_ — the second seam divides responsibilities within the account
    domain, without moving anything across the session/account boundary. The shell's other calls

@@ -11,7 +11,7 @@ shop's own audit trail, and the realtime SSE playground over the same metrics st
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.                                                                                                                                                                         |
 | **Screens**             | 3 — `Admin`, `AuditLog`, `RealtimePlayground`                                                                                                                                                                                               |
-| **Store**               | `realtime-observability` — the playground's SSE state. The console and the audit trail hold none of their own.                                                                                                                              |
+| **Store**               | `observability-realtime` — the playground's SSE state. The console and the audit trail hold none of their own.                                                                                                                              |
 | **Menu entries**        | `RealtimePlayground` · `Admin` · `AuditLog`                                                                                                                                                                                                 |
 | **API calls**           | 5                                                                                                                                                                                                                                           |
 | **Depends on**          | _nothing_                                                                                                                                                                                                                                   |
@@ -80,7 +80,7 @@ sequenceDiagram
     participant V as RealtimePlayground.vue
     participant C as useRealtimeObservability
     participant S as createSseClient
-    participant R as realtime-observability store
+    participant R as observability-realtime store
 
     V->>C: connect()
     C->>S: open GET /observability/events
@@ -114,7 +114,7 @@ operator's tool, and the route's `meta.can` is the only place that is declared.
 
 ## State
 
-Store `realtime-observability`, from `store.ts` — the playground's only. The console and the
+Store `observability-realtime`, from `store.ts` — the playground's only. The console and the
 audit trail hold no store of their own; whatever else these screens read belongs to a module they
 depend on, or to the app-wide stores in `src/infrastructure/`.
 

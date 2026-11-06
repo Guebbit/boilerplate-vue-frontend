@@ -4,7 +4,7 @@
  * by the kernel. Each entry pairs a path with an access requirement the route guard reads;
  * `Logout` is a routeless component whose `beforeRouteEnter` does the work instead of rendering.
  */
-import { useAuthStore } from './stores/auth.ts';
+import { useAccountAuthStore } from './stores/auth.ts';
 import type { RouteRecordRaw } from 'vue-router';
 
 /**
@@ -122,7 +122,7 @@ export default [
              * @returns A promise resolving to `Home`, whether the logout call succeeds or fails.
              */
             beforeRouteEnter: (to) => {
-                const { logout } = useAuthStore();
+                const { logout } = useAccountAuthStore();
                 const locale = to.params.locale as string;
                 return logout()
                     .then(() => ({ name: 'Home', params: { locale } }))

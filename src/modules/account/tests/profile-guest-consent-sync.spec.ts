@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 import { deleteCookie } from '@guebbit/js-toolkit';
-import { useProfileStore } from '../stores/profile.ts';
+import { useAccountProfileStore } from '../stores/profile.ts';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -63,7 +63,7 @@ describe('the guest-consent sync', () => {
         vi.stubEnv('VITE_FARO_URL', '');
         useAnalyticsConsentStore().grant();
 
-        return useProfileStore()
+        return useAccountProfileStore()
             .fetchProfile(true)
             .then(() => {
                 expect(patchBodies()).toEqual([]);
@@ -75,7 +75,7 @@ describe('the guest-consent sync', () => {
         vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
         // choice defaults to 'unknown' — no cookie was ever set.
 
-        return useProfileStore()
+        return useAccountProfileStore()
             .fetchProfile(true)
             .then(() => {
                 expect(patchBodies()).toEqual([]);
@@ -91,7 +91,7 @@ describe('the guest-consent sync', () => {
             analyticsConsent: false
         });
 
-        return useProfileStore()
+        return useAccountProfileStore()
             .fetchProfile(true)
             .then(() => {
                 expect(patchBodies()).toEqual([]);
@@ -103,7 +103,7 @@ describe('the guest-consent sync', () => {
         vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
         useAnalyticsConsentStore().grant();
 
-        return useProfileStore()
+        return useAccountProfileStore()
             .fetchProfile(true)
             .then(() => {
                 expect(patchBodies()).toEqual([{ analyticsConsent: true }]);
@@ -119,7 +119,7 @@ describe('the guest-consent sync', () => {
             analyticsConsent: false
         };
 
-        return useProfileStore()
+        return useAccountProfileStore()
             .fetchProfile(true)
             .then(() => {
                 expect(patchBodies()).toEqual([{ analyticsConsent: false }]);
@@ -130,7 +130,7 @@ describe('the guest-consent sync', () => {
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
         vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
         useAnalyticsConsentStore().grant();
-        const store = useProfileStore();
+        const store = useAccountProfileStore();
 
         return store
             .fetchProfile(true)

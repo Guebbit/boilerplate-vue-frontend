@@ -22,12 +22,12 @@ export default {
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { OAUTH_CALLBACK_ERRORS, providerLabel } from '../stores/oauth.ts';
+import { OAUTH_CALLBACK_ERRORS, providerLabel } from '../stores/oauth-providers.ts';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { parseJsonSafe } from '@/infrastructure/utils/safe-storage.ts';
-import { useTwoFactorStore } from '../stores/two-factor.ts';
-import { useDeletionRestoreStore } from '../stores/deletion-restore.ts';
+import { useAccountTwoFactorStore } from '../stores/two-factor.ts';
+import { useAccountDeletionRestoreStore } from '../stores/deletion-restore.ts';
 import { usePostLoginRedirect } from '../composables/use-post-login-redirect.ts';
 import type { TwoFactorMethodSummary } from '@api';
 
@@ -136,7 +136,7 @@ onMounted(() => {
     }
 
     if (oauthDeletion.value) {
-        useDeletionRestoreStore().beginOAuth(oauthDeletion.value);
+        useAccountDeletionRestoreStore().beginOAuth(oauthDeletion.value);
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
         void router.push(
             routerLinkI18n({
@@ -148,7 +148,7 @@ onMounted(() => {
     }
 
     if (oauthChallenge.value) {
-        useTwoFactorStore().beginOAuthChallenge(oauthChallenge.value);
+        useAccountTwoFactorStore().beginOAuthChallenge(oauthChallenge.value);
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- vue-router reports a failed navigation through router.onError (app/router/index.ts)
         void router.push(
             routerLinkI18n({

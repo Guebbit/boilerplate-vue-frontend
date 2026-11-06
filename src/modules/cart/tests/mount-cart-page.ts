@@ -18,7 +18,7 @@ import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import SignedInCart from '../components/SignedInCart.vue';
 import { useCartStore } from '../store.ts';
 // eslint-disable-next-line boundaries/dependencies -- the page reads the account on mount; the account barrel publishes no store, and this spy is the only way to keep that read off the network
-import { useProfileStore } from '@/modules/account/stores/profile.ts';
+import { useAccountProfileStore } from '@/modules/account/stores/profile.ts';
 import { spyOnProductReads } from '@/modules/products/tests/products-store.ts';
 import { i18n } from '@/i18n';
 import vuetify from '@/ui/vuetify';
@@ -118,7 +118,7 @@ export const mountCartPage = (held?: CartResponse): Promise<MountedCartPage> => 
     // The hold notice on the page reads the account on mount. Left to the network, `GET /account`
     // reaches whatever listens on the dev API port (a dev server answering HTML, say), and the
     // junk answer publishes an empty viewer: the cart then resets and the page shows it empty.
-    vi.spyOn(useProfileStore(), 'fetchProfile').mockResolvedValue(undefined);
+    vi.spyOn(useAccountProfileStore(), 'fetchProfile').mockResolvedValue(undefined);
     const wrapper = mount(SignedInCart, {
         global: {
             plugins: [router, vuetify, i18n],

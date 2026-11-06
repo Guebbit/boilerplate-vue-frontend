@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import TwoFactorChallenge from '../views/TwoFactorChallenge.vue';
-import { useTwoFactorStore } from '../stores/two-factor.ts';
+import { useAccountTwoFactorStore } from '../stores/two-factor.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -54,7 +54,7 @@ afterEach(() => loadLocale('en'));
 
 describe('TwoFactorChallenge — the countdown', () => {
     it('keeps the visible ticking text out of any live region', () => {
-        useTwoFactorStore().beginLoginChallenge(
+        useAccountTwoFactorStore().beginLoginChallenge(
             challengeExpiring(new Date(Date.now() + 300_000).toISOString()),
             false
         );
@@ -71,7 +71,7 @@ describe('TwoFactorChallenge — the countdown', () => {
     });
 
     it('offers a live region distinct from the ticking text', () => {
-        useTwoFactorStore().beginLoginChallenge(
+        useAccountTwoFactorStore().beginLoginChallenge(
             challengeExpiring(new Date(Date.now() + 300_000).toISOString()),
             false
         );
@@ -84,7 +84,7 @@ describe('TwoFactorChallenge — the countdown', () => {
 
 describe('TwoFactorChallenge — an expired challenge', () => {
     it('disables submission and offers a way back to login, not only a disabled button', () => {
-        useTwoFactorStore().beginLoginChallenge(
+        useAccountTwoFactorStore().beginLoginChallenge(
             challengeExpiring(new Date(Date.now() - 1000).toISOString()),
             false
         );
@@ -101,7 +101,7 @@ describe('TwoFactorChallenge — an expired challenge', () => {
     });
 
     it('announces the expired state through the live region', () => {
-        useTwoFactorStore().beginLoginChallenge(
+        useAccountTwoFactorStore().beginLoginChallenge(
             challengeExpiring(new Date(Date.now() - 1000).toISOString()),
             false
         );
@@ -114,7 +114,7 @@ describe('TwoFactorChallenge — an expired challenge', () => {
 
 describe('TwoFactorChallenge — the way back to login', () => {
     it('is offered while the challenge is still live, not only once it has expired', () => {
-        useTwoFactorStore().beginLoginChallenge(
+        useAccountTwoFactorStore().beginLoginChallenge(
             challengeExpiring(new Date(Date.now() + 300_000).toISOString()),
             false
         );
@@ -125,7 +125,7 @@ describe('TwoFactorChallenge — the way back to login', () => {
     });
 
     it('a 429 on a guess is terminal: the challenge is dropped, the reason shown, only login offered', () => {
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         store.beginLoginChallenge(
             challengeExpiring(new Date(Date.now() + 300_000).toISOString()),
             false
@@ -155,7 +155,7 @@ describe('TwoFactorChallenge — the way back to login', () => {
     });
 
     it('a wrong code (422) is not terminal: the form stays for another try', () => {
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         store.beginLoginChallenge(
             challengeExpiring(new Date(Date.now() + 300_000).toISOString()),
             false
@@ -177,7 +177,7 @@ describe('TwoFactorChallenge — the way back to login', () => {
     });
 
     it('sends an account in its deletion grace to the restore offer, not to a session', () => {
-        const store = useTwoFactorStore();
+        const store = useAccountTwoFactorStore();
         store.beginLoginChallenge(
             challengeExpiring(new Date(Date.now() + 300_000).toISOString()),
             false
