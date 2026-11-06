@@ -5,15 +5,15 @@
  * from the delivery log.
  *
  * An endpoint that is down: each Replay is one more attempt, counted and explained on the row.
- * An endpoint the shop switched off: the replay is refused on the row, and once it is switched
- * back on, the same Replay delivers it to the receiver. The receiver is the backend's seeded
+ * An endpoint the shop switched off: the log offers no Replay and the server refuses one (409),
+ * and once it is switched back on, the same Replay delivers it to the receiver. The receiver is the backend's seeded
  * `https://` subscription, so the switch is made in its own edit form.
  *
  * Replay is synchronous and re-sends against the subscription as it stands now, so it needs no
  * broker. The dead endpoint is a path on the receiver's own origin that contains `dead`: the SSRF
  * guard exempts that origin, so it can be subscribed to, and both sinks answer such a path with 503.
  */
-import { webhooksReceived } from '../../../support/e2e/harness';
+import { loginDevice, webhooksReceived } from '../../../support/e2e/harness';
 import {
     deliveriesOf,
     deliveryNow,
@@ -24,7 +24,7 @@ import {
     sinkEndpoint,
     setEnabledOnTheDetailPage
 } from '../../../support/e2e/integrator';
-import { eventually } from '../../../support/e2e/steps';
+import { eventually, refusedWith } from '../../../support/e2e/steps';
 
 /**
  * The path of an endpoint that is down: on the demo receiver's own origin, the only address the SSRF
@@ -149,25 +149,20 @@ describe('IN4 · Replay a failed delivery', () => {
                     });
                     setEnabledOnTheDetailPage(seeded.id, seeded.url, false);
 
-                    cy.step('a Replay is refused on the row, while it is off');
+                    cy.step('while it is off the log offers no Replay, and the server refuses one');
                     openTheLogOf(seeded.id);
-                    replayInTheLog(delivery.id);
-                    replayButtonOf(delivery.id)
-                        .closest('[data-test=webhook-delivery-row]')
-                        .within(() => {
-                            cy.get('[data-test=webhook-delivery-status]').should(
-                                'have.attr',
-                                'data-status',
-                                'exhausted'
-                            );
-                            cy.contains('Subscription is disabled').should('exist');
-                        });
-
-                    cy.step('the log filters by status: exhausted shows it, succeeded does not');
-                    cy.pickOption('[data-test=webhook-delivery-filter-status]', 'Exhausted');
-                    replayButtonOf(delivery.id).should('exist');
-                    cy.pickOption('[data-test=webhook-delivery-filter-status]', 'Succeeded');
+                    cy.get('[data-test=webhook-delivery-row]').should('exist');
                     replayButtonOf(delivery.id).should('not.exist');
+                    loginDevice('admin').then((device) => {
+                        refusedWith(
+                            device,
+                            'POST',
+                            `/webhooks/deliveries/${delivery.id}/replay`,
+                            undefined,
+                            409,
+                            'WEBHOOK_SUBSCRIPTION_DISABLED'
+                        );
+                    });
 
                     cy.step('back on, the same Replay delivers it to the receiver');
                     setEnabledOnTheDetailPage(seeded.id, seeded.url, true);
