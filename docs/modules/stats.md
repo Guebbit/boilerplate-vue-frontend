@@ -138,6 +138,33 @@ canvas that needs its own accessibility story. Mermaid adds none, at the price o
 Nothing else. CSV is a forty-line helper (`domain/csv.ts`), because its only edge case is the
 formula guard and a library would not remove the need to test it.
 
+## Files
+
+| File                                | What it is                                                                                       | Explained in                          |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------- |
+| `components/ChartWithTable.vue`     | One chart block: the Mermaid picture, a table toggle and a CSV of the same data.                 | [read](../theory/layers.md)           |
+| `components/MermaidChart.vue`       | Draws Mermaid source as an inline SVG; the library loads only when a chart mounts.               | [read](../theory/layers.md)           |
+| `components/OperationsSection.vue`  | How the shop is running: payment mix, cancellation and return rates, customers, what is waiting. | [read](../theory/layers.md)           |
+| `components/ProductsSection.vue`    | Top products and sales by category, each product linking to its own page.                        | [read](../theory/layers.md)           |
+| `components/SalesSection.vue`       | The sales block, one group per currency: headline cards, series and the revenue table.           | [read](../theory/layers.md)           |
+| `components/StatsPeriodForm.vue`    | The period picker every stats page opens with; reports only a period the API accepts.            | [read](../theory/layers.md)           |
+| `domain/calendar.ts`                | Calendar days as `YYYY-MM-DD` strings and their arithmetic.                                      | [read](../theory/domain-layer.md)     |
+| `domain/chart.ts`                   | The one shape every chart, table and CSV is built from.                                          | [read](../theory/domain-layer.md)     |
+| `domain/csv.ts`                     | Client-side CSV with the spreadsheet formula guard.                                              | [read](../theory/domain-layer.md)     |
+| `domain/figures.ts`                 | Small pure rules over the figures the API returns.                                               | [read](../theory/domain-layer.md)     |
+| `domain/index.ts`                   | The domain barrel: periods, figures, charts and CSV.                                             | [read](../theory/domain-layer.md)     |
+| `domain/mermaid.ts`                 | Chart data to Mermaid text, every label reduced to a plain allow-list.                           | [read](../theory/domain-layer.md)     |
+| `domain/period.ts`                  | The period a page asks about and the rules the API enforces on it.                               | [read](../theory/domain-layer.md)     |
+| `locales/en.json · locales/it.json` | This domain's translation dictionary for one language, loaded as its own chunk.                  | [read](../tools/i18n.md)              |
+| `module.ts`                         | The manifest: routes, navigation entry, response schemas and locales.                            | [read](../theory/modules.md)          |
+| `response-schemas.ts`               | One row per endpoint this domain calls, with the Zod schema its response is validated against.   | [read](../api/openapi-workflow.md)    |
+| `routes.ts`                         | Two admin routes, lazy-loaded so the chart library downloads only when one opens.                | [read](../theory/modules.md)          |
+| `store.ts`                          | The Pinia store: the last answer of each read, with no cache across periods.                     | [read](../tools/state-and-routing.md) |
+| `tests/*.spec.ts`                   | Vitest suites: the store, routes, views, sections, period form, chart and domain rules.          | [read](../tools/unit-testing.md)      |
+| `tests/e2e/*.cy.ts`                 | Cypress: an axe sweep, the dashboard, the actions and the role gates in a browser.               | [read](../tools/component-testing.md) |
+| `views/StatsDashboard.vue`          | A routed screen: one period form over four blocks.                                               | [read](../theory/layers.md)           |
+| `views/StatsProductSales.vue`       | A routed screen: one product's sales over time.                                                  | [read](../theory/layers.md)           |
+
 ## Working on it
 
 ```bash
@@ -147,3 +174,10 @@ npm run test:unit -- stats
 # after the backend changes a stats endpoint
 npm run regenerate
 ```
+
+## Related pages
+
+- [`orders`](./orders.md) — the staff list a product's sales page links to
+- [`products`](./products.md) — the product pages the dashboard links into
+- [Domain Layer](../theory/domain-layer.md) — why the period and CSV rules are pure
+- [Sitemap & Access Control](../theory/sitemap.md) — the `read:Stats` gate on these routes

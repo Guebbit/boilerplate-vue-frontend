@@ -113,7 +113,7 @@ flowchart LR
     class S,V,D inner;
 ```
 
-A module nothing imports has no barrel at all — `account` is that case, and the absence is the
+A module nothing imports has no barrel at all — `orders` is that case, and the absence is the
 point.
 
 ## Main strategies already present in the code

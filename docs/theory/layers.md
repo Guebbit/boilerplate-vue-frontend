@@ -45,9 +45,9 @@ only after the fact. `cart` and `products` once needed each other; the product p
 now reach it as contributions to a slot (`src/kernel/slots.ts`) instead of imports, so every edge
 points one way.
 
-The modules in this build are `account`, `api-keys`, `cart`, `delivery`, `example`, `tasks`,
-`inventory`, `locales`, `observability`, `orders`, `payments`, `products`, `returns`, `stats`, `users`,
-`webhooks` and `wishlist`.
+The modules in this build are `account`, `api-keys`, `cart`, `delivery`, `example`, `inventory`,
+`locales`, `notifications`, `observability`, `orders`, `payments`, `products`, `returns`,
+`shop-tasks`, `stats`, `stock-alerts`, `tasks`, `users`, `webhooks` and `wishlist`.
 
 `example` is the odd one: it serves no business at all. It is a small note domain with its own
 screens, store, form, teaching route guard and provide/inject pair: everything that exists to show
@@ -61,23 +61,34 @@ flowchart LR
     orders --> cart
     orders --> delivery
     orders --> payments
+    orders --> returns
+    cart --> account
     cart --> delivery
+    cart --> payments
     cart --> products
     wishlist --> products
     wishlist --> cart
     inventory --> products
+    inventory --> delivery
+    stock-alerts --> products
     account --> users
 
-    admin:::leaf
-    tasks:::leaf
+    api-keys:::leaf
+    example:::leaf
     locales:::leaf
-    realtime:::leaf
+    notifications:::leaf
+    observability:::leaf
+    shop-tasks:::leaf
+    stats:::leaf
+    tasks:::leaf
+    webhooks:::leaf
 
     classDef leaf fill:#f1f5f9,stroke:#94a3b8,color:#111827;
 ```
 
 Read an arrow as "imports from, through the target's barrel". `orders → payments` because
-checkout settles a payment; `wishlist → products` because the saved lines are joined to their product records.
+checkout settles a payment; `wishlist → products` because the saved lines are joined to their product records;
+`cart → account` because the signed-in cart picks a delivery address.
 Nothing points back, which is what keeps the graph a DAG.
 
 ::: tip This list goes stale
@@ -88,8 +99,8 @@ covers the registry's validation, not this paragraph — if the two disagree, th
 ### Adding a domain
 
 One folder under `src/modules/` with a `module.ts`, plus one line in `src/modules.ts`. Add an
-`index.ts` when another domain needs something from it — `account` has none, because nothing has
-ever needed anything back from it, and an empty barrel is a promise nobody asked for.
+`index.ts` when another domain needs something from it: a barrel nobody imports is a promise nobody
+asked for.
 
 ### Removing a domain
 

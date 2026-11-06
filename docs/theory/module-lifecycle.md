@@ -165,7 +165,7 @@ you still remember why you drew the boundary.
 // src/modules.ts
 import widgets from '@/modules/widgets/module';
 
-export const enabledModules: AppModule[] = [account, admin, cart /* … */, widgets];
+export const enabledModules: AppModule[] = [account, apiKeys, cart /* … */, widgets];
 ```
 
 Keep the array alphabetical. Order only decides the sequence route records are spliced in, which
@@ -173,8 +173,9 @@ vue-router's own ranking makes irrelevant for distinct paths.
 
 ### 4 · The a11y sweep
 
-Skip this step only when the module has no `routes.ts` at all (`delivery` and `payments` are the
-two examples — reached through the cart and the order flow, never their own page).
+Skip this step only when the module has no `routes.ts` at all (`delivery`, `notifications` and
+`shop-tasks` are the examples — each is reached through another module's page or the app bar,
+or has no screen at all).
 
 Otherwise write `tests/e2e/a11y.cy.ts`: an axe run that visits every `path` the module's `routes.ts`
 declares, at whatever authentication level that route needs. `tests/cross-cutting/a11y-coverage.spec.ts`
@@ -203,8 +204,8 @@ npm run build          # vue-tsc + vite build
 npm run test:unit
 ```
 
-Add an `index.ts` barrel **only** when another domain needs something from it. `account` has none:
-it is a consumer, not a provider, and an empty barrel is a promise nobody asked for.
+Add an `index.ts` barrel **only** when another domain needs something from it. `orders` has none:
+no sibling imports it, and an empty barrel is a promise nobody asked for.
 
 ::: warning A spec that touches http or i18n must wire the modules itself
 `infrastructure` may not import `@/modules`, so `main.ts` hands the response schemas and the locale

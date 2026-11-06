@@ -40,7 +40,7 @@ flowchart LR
     form --> store["returns store"]
     panel --> store
     list["ReturnsList"] --> store
-    detail["Return"] --> store
+    detail["ReturnTarget"] --> store
     detail --> staff["ReturnStaffActions"]
     staff --> store
     store -->|"POST /returns · GET /returns · moves"| api[("backend returns")]
@@ -147,3 +147,104 @@ page says so on the line, and the product form has the switch. The refusal itsel
 
 The return address the shop asks goods to be sent to is read from `GET /delivery/methods` and named in
 the acknowledgement email; this module does not show it on the return page.
+
+## State
+
+Store `returns`, from `store.ts`. Only what the setup function returns is listed.
+
+| Kind        | Members                                                                                                                                                                                              |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **State**   | `returns` · `filters` · `pageCurrent` · `pageSize`                                                                                                                                                   |
+| **Getters** | `returnsList` · `currentReturn` · `loading` · `pageTotal` · `pageItemList`                                                                                                                           |
+| **Actions** | `fetchPaginationReturns` · `watchSearchReturns` · `fetchReturn` · `watchReturn` · `openReturn` · `fetchOrderReturns` · `fetchReturnOptions` · `approve` · `decline` · `receive` · `close` · `cancel` |
+
+## Screens
+
+| Path            | Route name     | Access | Permission    | View                     |
+| --------------- | -------------- | ------ | ------------- | ------------------------ |
+| `returns`       | `ReturnsList`  | `auth` | —             | `views/ReturnsList.vue`  |
+| `sales/returns` | `SalesReturns` | `auth` | `read Return` | `views/ReturnsList.vue`  |
+| `returns/:id`   | `ReturnTarget` | `auth` | —             | `views/ReturnTarget.vue` |
+
+Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route's own `meta.access` (the standing it needs) and **Permission** its `meta.can`.
+
+`ReturnsList` and `SalesReturns` are one view on two routes: the server decides whether the rows are
+the caller's own or everyone's.
+
+## Wiring
+
+#### Endpoints called
+
+| Call                         | Response schema            |
+| ---------------------------- | -------------------------- |
+| `GET /returns/options`       | `GetReturnOptionsResponse` |
+| `GET /returns`               | `ListReturnsResponse`      |
+| `POST /returns`              | `CreateReturnResponse`     |
+| `GET /returns/{id}`          | `GetReturnByIdResponse`    |
+| `POST /returns/{id}/approve` | `ApproveReturnResponse`    |
+| `POST /returns/{id}/decline` | `DeclineReturnResponse`    |
+| `POST /returns/{id}/receive` | `ReceiveReturnResponse`    |
+| `POST /returns/{id}/close`   | `CloseReturnResponse`      |
+| `POST /returns/{id}/cancel`  | `CancelReturnResponse`     |
+
+Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+
+#### Navigation entries
+
+| Route          | Label key                        | Section   | Order | Icon | Badge |
+| -------------- | -------------------------------- | --------- | ----- | ---- | ----- |
+| `ReturnsList`  | `navigation.label-returns`       | `account` | 92    | yes  | —     |
+| `SalesReturns` | `navigation.label-sales-returns` | `admin`   | 59    | yes  | —     |
+
+## Files
+
+| File                                             | What it is                                                                                         | Explained in                          |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `components/CancelRemainderDialog.vue`           | Cancels what has not shipped yet, behind a confirm step that shows the server's own refund.        | [read](../theory/layers.md)           |
+| `components/RecordWithdrawalDialog.vue`          | Staff recording a withdrawal the buyer stated by phone, email or letter.                           | [read](../theory/layers.md)           |
+| `components/ReturnRequestForm.vue`               | The customer's returns form: which lines come back, why, and an optional note.                     | [read](../theory/layers.md)           |
+| `components/ReturnStaffActions.vue`              | The staff's five moves on a return: approve, decline, receive, close, cancel.                      | [read](../theory/layers.md)           |
+| `components/StatedAtFields.vue`                  | The day and channel staff record for what the buyer said, shared by the three staff forms.         | [read](../theory/layers.md)           |
+| `components/WithdrawalPanel.vue`                 | The order page's returns corner: the withdrawal button and what became of earlier returns.         | [read](../theory/layers.md)           |
+| `domain/remedy.ts`                               | The remedies a faulty or wrong item can be given, so the forms offer only what the server accepts. | [read](../theory/domain-layer.md)     |
+| `domain/statement.ts`                            | The day and channel a buyer stated a request or withdrawal, converted both ways.                   | [read](../theory/domain-layer.md)     |
+| `index.ts`                                       | The public barrel: `WithdrawalPanel`, the only surface a sibling may import.                       | [read](../theory/modules.md)          |
+| `locales/en.json · locales/it.json`              | This domain's translation dictionary for one language, loaded as its own chunk.                    | [read](../tools/i18n.md)              |
+| `module.ts`                                      | The manifest: routes, navigation entries, response schemas and locales.                            | [read](../theory/modules.md)          |
+| `response-schemas.ts`                            | One row per endpoint this domain calls, with the Zod schema its response is validated against.     | [read](../api/openapi-workflow.md)    |
+| `routes.ts`                                      | The domain's route records, each carrying its own `meta.access`.                                   | [read](../theory/modules.md)          |
+| `schemas.ts`                                     | Zod field schemas for the returns forms, with length caps read from the contract.                  | [read](../theory/modules.md)          |
+| `store.ts`                                       | The Pinia store: a paginated search, a by-id read and the moves on a return.                       | [read](../tools/state-and-routing.md) |
+| `tests/*.spec.ts`                                | Vitest suites: the store, the routes, the schemas, the domain rules and each component.            | [read](../tools/unit-testing.md)      |
+| `tests/e2e/a11y.cy.ts · tests/e2e/actions.cy.ts` | Cypress: an axe sweep over the routes, and the moves in a browser.                                 | [read](../tools/component-testing.md) |
+| `views/ReturnsList.vue`                          | A routed screen: the filtered, paged list, for a customer or for staff.                            | [read](../theory/layers.md)           |
+| `views/ReturnTarget.vue`                         | A routed screen: one return, with the staff's open moves.                                          | [read](../theory/layers.md)           |
+
+## Working on it
+
+| Suite   | Files | Where                            |
+| ------- | ----- | -------------------------------- |
+| Vitest  | 9     | `src/modules/returns/tests/`     |
+| Cypress | 2     | `src/modules/returns/tests/e2e/` |
+
+```bash
+# this module's vitest suites
+npm run test:unit -- returns
+
+# this module's cypress suites
+npm run test:e2e -- --spec 'src/modules/returns/tests/e2e/*.cy.ts'
+
+# after the backend changes an endpoint this module calls
+npm run regenerate
+```
+
+## Deeper in
+
+Nothing in this domain needs a page of its own: the story above is the whole of it.
+
+## Related pages
+
+- [`orders`](./orders.md) — mounts `WithdrawalPanel` on the order page
+- [`delivery`](./delivery.md) — the return address this module does not show
+- [Domain Layer](../theory/domain-layer.md) — why `remedy.ts` and `statement.ts` are pure rules
+- [Sitemap & Access Control](../theory/sitemap.md) — the customer/staff split on these routes

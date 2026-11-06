@@ -19,6 +19,14 @@
 | **Publishes**           | —                                                                              |
 | **Backend counterpart** | `notifications` in `boilerplate-node-backend`                                  |
 
+## The map
+
+`notifications` sits on no edge of the context map: nothing imports it and it imports nothing. Other
+modules reach it through the registry instead: they declare `AppModule.notices` entries, and the
+bell asks the registry for a code's sentence and target.
+
+The context map is drawn once, in [the whole map](./index.md#the-whole-map).
+
 ## The story
 
 A notification is a message the server keeps for one person until they delete it. The foundation
@@ -150,6 +158,18 @@ session without `read:Notification`.
 | Focus           | Moves into the panel on open; Escape closes it and returns focus to the bell.                                                                                                                                                                                                                                                                                 |
 
 Staff badges: see `nav-badges-open-work`.
+
+## State
+
+Store `notifications-inbox`, from `store.ts`. Only what the setup function returns is listed.
+
+| Kind        | Members                                                                                                                           |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Getters** | `items` · `unreadCount` · `hasWork`                                                                                               |
+| **Actions** | `sync` · `receiveCreated` · `receiveDeleted` · `receiveRead` · `markAllRead` · `dismiss` · `dismissAll` · `reset` · `retranslate` |
+
+The rows live in the toolkit's message store, not here: `items` is a projection of them, newest
+first. `hasWork` is true when any row is addressed to staff, the cue that the panel splits in two tabs.
 
 ## Screens
 
