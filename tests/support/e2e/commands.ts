@@ -1178,12 +1178,49 @@ Cypress.Commands.add('freezeForVisual', (isoTime = '2026-01-01T12:00:00.000Z') =
 
 /*
  * ── Network settling ─────────────────────────────────────────────────────────────────────────
- * Counted in the spec's own closure rather than read off the page. The corner activity indicator
- * is the app's own answer, but it is ALSO invisible before the first request fires — so a check
- * that ran early enough saw a quiet page and declared it loaded. An intercept registered before
- * the visit cannot be early: it sees every request the page fires from its first tick.
+ * Counted INSIDE the page, on its own `XMLHttpRequest`, rather than from a `cy.intercept`. The
+ * intercept's "after:response" never fires for a request the page aborts (a stale search a newer
+ * one cancels, an `AbortSignal`), so its counter stuck above zero and settling timed out.
+ * `loadend` fires on success, failure AND abort, so the page's own count always comes back down.
+ * https://developer.mozilla.org/docs/Web/API/XMLHttpRequest/loadend_event
+ *
+ * Server-sent-event streams are `EventSource`, not XHR, so the notifications inbox's stream
+ * (open for every signed-in session, never finishing) is not counted.
  */
-let inFlight = 0;
+
+/** The page's running count of XHRs sent and not yet ended; absent until `trackNetwork`. */
+type CountingWindow = Cypress.AUTWindow & { __e2eInFlight?: number };
+
+/** Whether the current test asked for counting: set by `trackNetwork`, cleared before each test. */
+let tracking = false;
+
+beforeEach(() => {
+    tracking = false;
+});
+
+Cypress.on('window:before:load', (contentWindow) => {
+    const page = contentWindow as CountingWindow;
+    const { prototype } = page.XMLHttpRequest;
+    const originalSend = prototype.send;
+    // A fresh window starts at zero: whatever was in flight in the old one is gone with it.
+    page.__e2eInFlight = 0;
+    prototype.send = function patchedSend(
+        this: XMLHttpRequest,
+        body?: Document | XMLHttpRequestBodyInit | null
+    ) {
+        originalSend.call(this, body);
+        // After `send`, so a call that throws synchronously is never counted.
+        if (!tracking) return;
+        page.__e2eInFlight = (page.__e2eInFlight ?? 0) + 1;
+        this.addEventListener(
+            'loadend',
+            () => {
+                page.__e2eInFlight = (page.__e2eInFlight ?? 1) - 1;
+            },
+            { once: true }
+        );
+    };
+});
 
 /** How long one settle poll waits, how many polls it may take, and how many quiet polls count. */
 const SETTLE_POLL_MS = 100;
@@ -1195,33 +1232,29 @@ const SETTLE_MAX_POLLS = 100;
 const SETTLE_QUIET_POLLS = 2;
 
 Cypress.Commands.add('trackNetwork', () => {
-    inFlight = 0;
-    // `allowCypressEnv: false` in cypress.config.ts — the stateful API, as every other command.
-    cy.env(['apiUrl']).then(({ apiUrl }) => {
-        cy.intercept({ url: `${String(apiUrl)}/**`, middleware: true }, (request) => {
-            // A server-sent-events stream (the notifications inbox opens one for every signed-in
-            // session) never finishes by design, so counting it would keep the page "loading" forever.
-            if (String(request.headers.accept).includes('text/event-stream')) return;
-            inFlight += 1;
-            request.on('after:response', () => {
-                inFlight -= 1;
-            });
-        });
-    });
+    tracking = true;
 });
 
 /**
- * Polls until no tracked request is in flight for `SETTLE_QUIET_POLLS` polls in a row, or throws
- * after `SETTLE_MAX_POLLS` polls.
+ * Polls until the page has no counted request in flight for `SETTLE_QUIET_POLLS` polls in a row,
+ * or throws after `SETTLE_MAX_POLLS` polls.
  */
 const settle = (pollsLeft: number, quietPolls: number): void => {
     if (quietPolls >= SETTLE_QUIET_POLLS) return;
-    if (pollsLeft <= 0)
-        throw new Error(
-            `settleNetwork: ${inFlight} request(s) still in flight after ${SETTLE_MAX_POLLS * SETTLE_POLL_MS}ms`
-        );
     // eslint-disable-next-line cypress/no-unnecessary-waiting -- the pause is what makes the loop a poll rather than a spin; the condition is re-checked each time
-    cy.wait(SETTLE_POLL_MS).then(() => settle(pollsLeft - 1, inFlight === 0 ? quietPolls + 1 : 0));
+    cy.wait(SETTLE_POLL_MS);
+    cy.window({ log: false }).then((page) => {
+        const inFlight = (page as CountingWindow).__e2eInFlight ?? 0;
+        if (inFlight === 0) {
+            settle(pollsLeft - 1, quietPolls + 1);
+            return;
+        }
+        if (pollsLeft <= 1)
+            throw new Error(
+                `settleNetwork: ${inFlight} request(s) still in flight after ${SETTLE_MAX_POLLS * SETTLE_POLL_MS}ms`
+            );
+        settle(pollsLeft - 1, 0);
+    });
 };
 
 Cypress.Commands.add('settleNetwork', () => {
