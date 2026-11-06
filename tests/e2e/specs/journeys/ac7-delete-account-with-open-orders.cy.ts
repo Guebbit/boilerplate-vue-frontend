@@ -51,7 +51,7 @@ const readAsStaff = (orderId: string): Cypress.Chainable<OrderLike> =>
  */
 const availableAsStaff = (productId: string): Cypress.Chainable<number> =>
     cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).then((product) => {
-        expect(product, 'the product').not.to.equal(null);
+        expect(product, 'the product').to.have.property('available');
         return product!.available;
     });
 

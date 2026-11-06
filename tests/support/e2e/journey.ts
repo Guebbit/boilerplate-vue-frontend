@@ -142,6 +142,8 @@ Cypress.Commands.add(
                 );
             // A non-2xx already fails the test. Body: the backend's `advanceMs`, forward only.
             cy.request('POST', `${String(apiUrl)}/__test/clock`, { advanceMs: ms });
+            // A moved clock outlives the staff sessions kept for `cy.apiAs`: sign in again on next use.
+            cy.task('forgetAdminTokens');
         });
     })
 );

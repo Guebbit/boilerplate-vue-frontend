@@ -250,6 +250,8 @@ export default defineConfig({
                 // A staff login's code: the earliest step no earlier login of this secret used.
                 loginTotpCode: (request: { secret: string; apiUrl: string }) =>
                     loginTotpCodeFor(request.secret, request.apiUrl),
+                // The staff bearers kept per account: a clock move ends their sessions on the backend.
+                forgetAdminTokens,
                 forgetLoginCodes: (request: { seededAt?: number } | null) => {
                     forgetAdminTokens();
                     return forgetLoginCodes(request?.seededAt);
