@@ -18,6 +18,11 @@ interface ListCase {
     path: string;
     /** Narrows the list to something other than everything, through the page's own controls. */
     narrow: () => void;
+    /**
+     * Whether the list shows a pager on a page past the end. A list with a single page renders
+     * none, so it offers the way back through the search reset instead.
+     */
+    pagerPastEnd: boolean;
 }
 
 /**
@@ -52,28 +57,32 @@ const CASES: readonly ListCase[] = [
         path: '/en/sales/orders',
         narrow: () => {
             cy.pickOption('[data-test=filter-status]', 'Paid');
-        }
+        },
+        pagerPastEnd: true
     },
     {
         name: 'users',
         path: '/en/users',
         narrow: () => {
             cy.pickOption('[data-test=filter-active]', 'Inactive');
-        }
+        },
+        pagerPastEnd: true
     },
     {
         name: 'products',
         path: '/en/products',
         narrow: () => {
             cy.pickOption('[data-test=filter-active]', 'Inactive');
-        }
+        },
+        pagerPastEnd: true
     },
     {
         name: 'webhook subscriptions',
         path: '/en/webhooks/subscriptions',
         narrow: () => {
             cy.pickOption('[data-test=filter-enabled]', 'Paused');
-        }
+        },
+        pagerPastEnd: false
     }
 ];
 
@@ -119,8 +128,12 @@ describe('AT5 · Staff lists keep their view', () => {
             cy.visit(`${list.path}?page=999`);
             cy.get('h1').should('exist');
             cy.get('[data-test=row-view]').should('not.exist');
-            // The list says it has nothing here, and the pager still offers the way back to page 1.
-            cy.get('.v-pagination').contains('button', '1').should('exist');
+            // The list says it has nothing here, and still offers the way back to page 1.
+            if (list.pagerPastEnd) cy.get('.v-pagination').contains('button', '1').should('exist');
+            else {
+                resetSearch();
+                cy.get('[data-test=row-view]').should('exist');
+            }
         });
 });
 
