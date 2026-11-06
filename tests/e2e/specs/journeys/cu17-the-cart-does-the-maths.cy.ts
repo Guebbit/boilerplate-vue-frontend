@@ -10,9 +10,11 @@
  * quick clicks cost the API exactly one request carrying the number the customer stopped on. Money
  * is compared in cents. Nothing here pays.
  */
+import { loginDevice } from '../../../support/e2e/harness';
 import {
     addOpenProductToCart,
     cents,
+    refusedWith,
     searchAndOpenProduct,
     shouldShowCents
 } from '../../../support/e2e/steps';
@@ -127,20 +129,23 @@ describe('CU17 · The cart does the maths', () => {
                 });
 
                 cy.step(
-                    'the per-line cap: one more unit is refused, on the cart and on the product page'
+                    'the per-line cap: the cart offers no more, the server refuses one, and so does the product page'
                 );
                 const cap = 10;
                 cy.apiAs('user', 'PATCH', `/cart/items/${food.id}`, { quantity: cap });
                 cy.reload();
-                cy.intercept('PATCH', `**/cart/items/${food.id}`).as('pastTheCap');
                 cy.contains('[data-test=cart-item]', food.title)
                     .find('[data-test=cart-increase]')
-                    .click();
-                cy.wait('@pastTheCap').its('response.statusCode').should('equal', 422);
-                cy.get('[data-test=cart-line-action-error]').should(
-                    'contain.text',
-                    'This item is already at the maximum quantity allowed per order.'
-                );
+                    .should('be.disabled');
+                loginDevice('user').then((device) => {
+                    refusedWith(
+                        device,
+                        'PATCH',
+                        `/cart/items/${food.id}`,
+                        { quantity: cap + 1 },
+                        422
+                    );
+                });
                 cy.apiAs<{ items: { productId: string; quantity: number }[] }>(
                     'user',
                     'GET',
