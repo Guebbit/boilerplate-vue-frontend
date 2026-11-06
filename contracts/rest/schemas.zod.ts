@@ -3716,7 +3716,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .max(downloadAccountExportResponseOrdersItemItemsItemLocaleMax)
                         .regex(downloadAccountExportResponseOrdersItemItemsItemLocaleRegExp),
                     backorderedQuantity: zod.number().min(1).optional(),
-                    promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                    promisedAt: zod.iso.date().optional(),
                     promiseDated: zod.boolean().optional(),
                     current: zod
                         .strictObject({
@@ -4507,7 +4507,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .max(downloadAccountExportResponseNotificationsItemEightParamsMessageMax)
                         .optional(),
                     owed: zod.array(zod.string()).optional(),
-                    expectedAt: zod.iso.datetime({ offset: true }).optional()
+                    expectedAt: zod.iso.date().optional()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -4561,8 +4561,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                             downloadAccountExportResponseNotificationsItemOnezeroParamsFulfillmentOrderIdRegExp
                         ),
                     titles: zod.array(zod.string()),
-                    agreedAt: zod.iso.datetime({ offset: true }),
-                    expectedAt: zod.iso.datetime({ offset: true }).optional()
+                    agreedAt: zod.iso.date(),
+                    expectedAt: zod.iso.date().optional()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -8993,7 +8993,7 @@ export const CheckoutResponse = zod.strictObject({
                 .max(checkoutResponseItemsItemLocaleMax)
                 .regex(checkoutResponseItemsItemLocaleRegExp),
             backorderedQuantity: zod.number().min(1).optional(),
-            promisedAt: zod.iso.datetime({ offset: true }).optional(),
+            promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
             current: zod
                 .strictObject({
@@ -9577,7 +9577,7 @@ export const ListOrdersResponse = zod.strictObject({
                         .max(listOrdersResponseItemsItemItemsItemLocaleMax)
                         .regex(listOrdersResponseItemsItemItemsItemLocaleRegExp),
                     backorderedQuantity: zod.number().min(1).optional(),
-                    promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                    promisedAt: zod.iso.date().optional(),
                     promiseDated: zod.boolean().optional(),
                     current: zod
                         .strictObject({
@@ -9904,7 +9904,7 @@ export const CreateOrderResponse = zod.strictObject({
                 .max(createOrderResponseItemsItemLocaleMax)
                 .regex(createOrderResponseItemsItemLocaleRegExp),
             backorderedQuantity: zod.number().min(1).optional(),
-            promisedAt: zod.iso.datetime({ offset: true }).optional(),
+            promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
             current: zod
                 .strictObject({
@@ -10252,7 +10252,7 @@ export const SearchOrdersResponse = zod.strictObject({
                         .max(searchOrdersResponseItemsItemItemsItemLocaleMax)
                         .regex(searchOrdersResponseItemsItemItemsItemLocaleRegExp),
                     backorderedQuantity: zod.number().min(1).optional(),
-                    promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                    promisedAt: zod.iso.date().optional(),
                     promiseDated: zod.boolean().optional(),
                     current: zod
                         .strictObject({
@@ -10554,7 +10554,7 @@ export const GetOrderByIdResponse = zod.strictObject({
                 .max(getOrderByIdResponseItemsItemLocaleMax)
                 .regex(getOrderByIdResponseItemsItemLocaleRegExp),
             backorderedQuantity: zod.number().min(1).optional(),
-            promisedAt: zod.iso.datetime({ offset: true }).optional(),
+            promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
             current: zod
                 .strictObject({
@@ -10811,7 +10811,7 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                 .max(replaceOrderByIdResponseItemsItemLocaleMax)
                 .regex(replaceOrderByIdResponseItemsItemLocaleRegExp),
             backorderedQuantity: zod.number().min(1).optional(),
-            promisedAt: zod.iso.datetime({ offset: true }).optional(),
+            promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
             current: zod
                 .strictObject({
@@ -11076,7 +11076,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                 .max(updateOrderByIdResponseItemsItemLocaleMax)
                 .regex(updateOrderByIdResponseItemsItemLocaleRegExp),
             backorderedQuantity: zod.number().min(1).optional(),
-            promisedAt: zod.iso.datetime({ offset: true }).optional(),
+            promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
             current: zod
                 .strictObject({
@@ -11347,7 +11347,7 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                 .max(restoreOrderByIdResponseItemsItemLocaleMax)
                 .regex(restoreOrderByIdResponseItemsItemLocaleRegExp),
             backorderedQuantity: zod.number().min(1).optional(),
-            promisedAt: zod.iso.datetime({ offset: true }).optional(),
+            promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
             current: zod
                 .strictObject({
@@ -11623,7 +11623,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
                 .max(cancelOrderByIdResponseItemsItemLocaleMax)
                 .regex(cancelOrderByIdResponseItemsItemLocaleRegExp),
             backorderedQuantity: zod.number().min(1).optional(),
-            promisedAt: zod.iso.datetime({ offset: true }).optional(),
+            promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
             current: zod
                 .strictObject({
@@ -11887,7 +11887,7 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                 .max(overrideOrderStatusResponseItemsItemLocaleMax)
                 .regex(overrideOrderStatusResponseItemsItemLocaleRegExp),
             backorderedQuantity: zod.number().min(1).optional(),
-            promisedAt: zod.iso.datetime({ offset: true }).optional(),
+            promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
             current: zod
                 .strictObject({
@@ -12704,7 +12704,7 @@ export const ProcessOrderResponse = zod.strictObject({
                 .max(processOrderResponseItemsItemLocaleMax)
                 .regex(processOrderResponseItemsItemLocaleRegExp),
             backorderedQuantity: zod.number().min(1).optional(),
-            promisedAt: zod.iso.datetime({ offset: true }).optional(),
+            promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
             current: zod
                 .strictObject({
@@ -17959,7 +17959,7 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
                 .max(correctOrderShippingAddressResponseItemsItemLocaleMax)
                 .regex(correctOrderShippingAddressResponseItemsItemLocaleRegExp),
             backorderedQuantity: zod.number().min(1).optional(),
-            promisedAt: zod.iso.datetime({ offset: true }).optional(),
+            promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
             current: zod
                 .strictObject({
@@ -21671,7 +21671,7 @@ export const ListNotificationsResponse = zod.strictObject({
                         .max(listNotificationsResponseItemsItemEightParamsMessageMax)
                         .optional(),
                     owed: zod.array(zod.string()).optional(),
-                    expectedAt: zod.iso.datetime({ offset: true }).optional()
+                    expectedAt: zod.iso.date().optional()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -21719,8 +21719,8 @@ export const ListNotificationsResponse = zod.strictObject({
                             listNotificationsResponseItemsItemOnezeroParamsFulfillmentOrderIdRegExp
                         ),
                     titles: zod.array(zod.string()),
-                    agreedAt: zod.iso.datetime({ offset: true }),
-                    expectedAt: zod.iso.datetime({ offset: true }).optional()
+                    agreedAt: zod.iso.date(),
+                    expectedAt: zod.iso.date().optional()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -22303,7 +22303,7 @@ export const GetNotificationByIdResponse = zod.union([
             reason: zod.enum(['lost', 'damaged']),
             message: zod.string().max(getNotificationByIdResponseEightParamsMessageMax).optional(),
             owed: zod.array(zod.string()).optional(),
-            expectedAt: zod.iso.datetime({ offset: true }).optional()
+            expectedAt: zod.iso.date().optional()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -22349,8 +22349,8 @@ export const GetNotificationByIdResponse = zod.union([
                 .max(getNotificationByIdResponseOnezeroParamsFulfillmentOrderIdMax)
                 .regex(getNotificationByIdResponseOnezeroParamsFulfillmentOrderIdRegExp),
             titles: zod.array(zod.string()),
-            agreedAt: zod.iso.datetime({ offset: true }),
-            expectedAt: zod.iso.datetime({ offset: true }).optional()
+            agreedAt: zod.iso.date(),
+            expectedAt: zod.iso.date().optional()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),

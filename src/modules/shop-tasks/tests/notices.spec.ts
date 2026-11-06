@@ -28,7 +28,8 @@ const translate: NoticeContext['translate'] = (key, named) =>
 const context: NoticeContext = {
     preferred: ['en'],
     translate,
-    formatDate: (iso) => `${iso}!`
+    formatDate: (iso) => `${iso}!`,
+    formatDay: (day) => `${day}#`
 };
 
 /**
@@ -228,7 +229,7 @@ describe('a buyer notice', () => {
     describe('a late preorder', () => {
         it('says the new date when the delay has one', () => {
             expect(describeOf(delayed({ expectedAt: 'E' }))).toBe(
-                'shop-tasks.fulfillment-delayed|titles=Vinyl, Poster|agreed=A!|expected=E!'
+                'shop-tasks.fulfillment-delayed|titles=Vinyl, Poster|agreed=A#|expected=E#'
             );
         });
 
@@ -277,7 +278,7 @@ describe('a buyer notice', () => {
 
         it('adds what is owed only with its date, then the shop’s message', () => {
             expect(lost({ owed: ['Vinyl', 'Poster'], expectedAt: 'D' })).toBe(
-                'shop-tasks.shipment-lost-lost shop-tasks.shipment-lost-owed|titles=Vinyl, Poster|expected=D!'
+                'shop-tasks.shipment-lost-lost shop-tasks.shipment-lost-owed|titles=Vinyl, Poster|expected=D#'
             );
             expect(lost({ owed: ['Vinyl'] })).toBe('shop-tasks.shipment-lost-lost');
             expect(lost({ message: 'Monday.' })).toBe(

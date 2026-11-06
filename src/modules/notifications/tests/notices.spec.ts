@@ -22,7 +22,8 @@ const context: NoticeContext = {
                   .map(([name, value]) => `${name}=${String(value)}`)
                   .join('|')}`
             : key,
-    formatDate: (iso) => `${iso}!`
+    formatDate: (iso) => `${iso}!`,
+    formatDay: (day) => `${day}#`
 };
 
 /**

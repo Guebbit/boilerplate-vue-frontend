@@ -193,6 +193,10 @@ export interface NoticeContext {
      * How a date reads in the sentence.
      */
     formatDate: (iso: string) => string;
+    /**
+     * How a plain `YYYY-MM-DD` shop day reads in the sentence: a promised date, which no zone moves.
+     */
+    formatDay: (day: string) => string;
 }
 
 /**

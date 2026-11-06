@@ -549,7 +549,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                                             {{
                                                 t('order-target-page.owed-line', {
                                                     count: item.backorderedQuantity,
-                                                    date: formatDate(item.promisedAt)
+                                                    date: formatDay(item.promisedAt)
                                                 })
                                             }}
                                         </p>

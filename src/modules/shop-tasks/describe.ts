@@ -105,7 +105,7 @@ export const describeMergeRefused = (
  */
 export const describePreorder = (
     notice: ShopNotice<'shop-tasks.fulfillment-delayed'>,
-    { translate, formatDate }: NoticeContext
+    { translate, formatDay }: NoticeContext
 ): string => {
     const { params } = notice;
     return translate(
@@ -114,8 +114,8 @@ export const describePreorder = (
             : 'shop-tasks.fulfillment-delayed',
         {
             titles: params.titles.join(NAME_SEPARATOR),
-            agreed: formatDate(params.agreedAt),
-            expected: params.expectedAt === undefined ? '' : formatDate(params.expectedAt)
+            agreed: formatDay(params.agreedAt),
+            expected: params.expectedAt === undefined ? '' : formatDay(params.expectedAt)
         }
     );
 };
@@ -170,7 +170,7 @@ const LOST_KEYS = {
  */
 export const describeLost = (
     notice: ShopNotice<'shop-tasks.shipment-lost'>,
-    { translate, formatDate }: NoticeContext
+    { translate, formatDay }: NoticeContext
 ): string => {
     const { params } = notice;
     return [
@@ -178,7 +178,7 @@ export const describeLost = (
         params.owed && params.expectedAt
             ? translate(LOST_KEYS.owed, {
                   titles: params.owed.join(NAME_SEPARATOR),
-                  expected: formatDate(params.expectedAt)
+                  expected: formatDay(params.expectedAt)
               })
             : undefined,
         params.message ? translate(LOST_KEYS.message, { message: params.message }) : undefined

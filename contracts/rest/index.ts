@@ -1945,7 +1945,7 @@ export interface OrderItem {
      * @minimum 1
      */
     backorderedQuantity?: number;
-    /** When the owed units were promised: the product's `restockDate`, or the day the order was placed plus 30 days when it had none. Present with `backorderedQuantity` and frozen with it, so a later change to the catalogue moves no promise. */
+    /** The day the owed units were promised, a day on the shop's calendar (`Shop.timeZone`): the product's `restockDate`, or the day the order was placed plus 30 days when it had none. Present with `backorderedQuantity` and frozen with it, so a later change to the catalogue moves no promise. */
     promisedAt?: string;
     /** Whether `promisedAt` was a date the product named. `false` means the buyer was promised delivery "within 30 days" of the order. Present with `promisedAt`. */
     promiseDated?: boolean;
@@ -2805,6 +2805,7 @@ export interface ShipmentLostParams {
     message?: string;
     /** The titles of the products still to be restocked, as the order froze them. */
     owed?: string[];
+    /** The day the owed units are expected, a day on the shop's calendar (`Shop.timeZone`). */
     expectedAt?: string;
 }
 
@@ -2867,7 +2868,9 @@ export interface FulfillmentDelayedParams {
     fulfillmentOrderId: Id;
     /** The waiting products' titles, as the order froze them. */
     titles: string[];
+    /** The day promised, a day on the shop's calendar (`Shop.timeZone`). */
     agreedAt: string;
+    /** The day now expected, a day on the shop's calendar (`Shop.timeZone`). */
     expectedAt?: string;
 }
 

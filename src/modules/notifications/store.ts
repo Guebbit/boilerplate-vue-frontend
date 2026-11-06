@@ -33,7 +33,7 @@ import type {
 import { i18n, translate } from '@/i18n';
 import { notifyErrorMessages, rethrowUnlessAbsent } from '@/infrastructure/utils/errors.ts';
 import { createRequestTickets } from '@/infrastructure/utils/request-ticket.ts';
-import { formatDate } from '@/infrastructure/utils/formatters.ts';
+import { formatDate, formatDay } from '@/infrastructure/utils/formatters.ts';
 import { asPassive } from '@/infrastructure/http/passive.ts';
 import { noticeOf } from '@/kernel/inbox-notices.ts';
 import type { NoticeTarget } from '@/kernel/registry.ts';
@@ -149,7 +149,8 @@ const sentenceOf = (notification: Notification): string =>
     noticeOf(notification.code)?.describe(notification, {
         preferred: preferredLocales(),
         translate,
-        formatDate
+        formatDate,
+        formatDay
     }) ?? translate(UNKNOWN_CODE_KEY);
 
 /**

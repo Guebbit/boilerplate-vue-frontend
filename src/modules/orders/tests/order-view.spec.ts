@@ -619,6 +619,18 @@ describe('a preorder line', () => {
         wrapper.unmount();
     });
 
+    it('says an owed backorder line ships by the shop day it was promised, never a shifted one', () => {
+        const wrapper = mountOrder({
+            ...BASE_ORDER,
+            items: [{ ...lineWith(), backorderedQuantity: 2, promisedAt: '2027-03-15' }]
+        });
+
+        // A plain day read in the browser's own zone would be 14 March west of UTC.
+        expect(wrapper.get('[data-test=order-item-owed]').text()).toMatch(/2 of these.*15.*2027/);
+
+        wrapper.unmount();
+    });
+
     it('carries no note on a line sold from the shelf', () => {
         const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith()] });
 

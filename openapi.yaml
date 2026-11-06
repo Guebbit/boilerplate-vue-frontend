@@ -18117,8 +18117,8 @@ components:
           description: How many of `quantity` were owed rather than on the shelf when the order was placed. Absent when the shelf covered the whole line.
         promisedAt:
           type: string
-          format: date-time
-          description: "When the owed units were promised: the product's `restockDate`, or the day the order was placed plus 30 days when it had none. Present with `backorderedQuantity` and frozen with it, so a later change to the catalogue moves no promise."
+          format: date
+          description: "The day the owed units were promised, a day on the shop's calendar (`Shop.timeZone`): the product's `restockDate`, or the day the order was placed plus 30 days when it had none. Present with `backorderedQuantity` and frozen with it, so a later change to the catalogue moves no promise."
         promiseDated:
           type: boolean
           description: Whether `promisedAt` was a date the product named. `false` means the buyer was promised delivery "within 30 days" of the order. Present with `promisedAt`.
@@ -24710,10 +24710,12 @@ components:
             type: string
         agreedAt:
           type: string
-          format: date-time
+          format: date
+          description: The day promised, a day on the shop's calendar (`Shop.timeZone`).
         expectedAt:
           type: string
-          format: date-time
+          format: date
+          description: The day now expected, a day on the shop's calendar (`Shop.timeZone`).
     ShipmentLostParams:
       type: object
       additionalProperties: false
@@ -24742,7 +24744,8 @@ components:
             type: string
         expectedAt:
           type: string
-          format: date-time
+          format: date
+          description: The day the owed units are expected, a day on the shop's calendar (`Shop.timeZone`).
     FulfillmentHeldParams:
       type: object
       additionalProperties: false
