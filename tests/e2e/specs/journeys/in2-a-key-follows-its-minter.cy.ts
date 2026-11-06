@@ -66,9 +66,9 @@ describe('IN2 · A key follows its minter', () => {
                     loginDevice('moderator').then((device) => {
                         refusedWith(
                             device,
-                            'PATCH',
-                            `/users/${minterId}`,
-                            { active: false },
+                            'POST',
+                            `/users/${minterId}/deactivate`,
+                            undefined,
                             403,
                             'ROLE_MANAGEMENT_REQUIRED'
                         );
@@ -80,7 +80,7 @@ describe('IN2 · A key follows its minter', () => {
                     cy.step('the root administrator bans the minter through the access dialog');
                     cy.switchUser('admin');
                     cy.visit(`/en/users/${minterId}`);
-                    cy.intercept('PATCH', '**/users/*').as('ban');
+                    cy.intercept('POST', '**/users/*/deactivate').as('ban');
                     cy.get('[data-test=user-manage-access]').click();
                     cy.get('[data-test=user-access-active] input').uncheck({ force: true });
                     cy.get('[data-test=user-access-continue]').click();
@@ -93,7 +93,7 @@ describe('IN2 · A key follows its minter', () => {
                         .should('equal', 401);
 
                     cy.step('lifting the ban brings the key back');
-                    cy.apiAs('admin', 'PATCH', `/users/${minterId}`, { active: true });
+                    cy.apiAs('admin', 'POST', `/users/${minterId}/activate`);
                     requestWithKey(secret, 'GET', '/webhooks/subscriptions')
                         .its('status')
                         .should('equal', 200);

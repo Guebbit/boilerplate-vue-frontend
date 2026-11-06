@@ -82,7 +82,7 @@ describe('OP28 · Demoted while at work', () => {
                     adminMenuLinks().should('include', '/en/inventory');
 
                     cy.step('a ban ends the session, and a fresh sign-in is refused');
-                    cy.apiAs('admin', 'PATCH', `/users/${warehouseId}`, { active: false });
+                    cy.apiAs('admin', 'POST', `/users/${warehouseId}/deactivate`);
                     cy.visit('/en/inventory');
                     cy.get('#login-page').should('exist');
                     cy.env(['apiUrl']).then(({ apiUrl }) => {
@@ -97,7 +97,7 @@ describe('OP28 · Demoted while at work', () => {
                     });
 
                     cy.step('lifting the ban lets them in again');
-                    cy.apiAs('admin', 'PATCH', `/users/${warehouseId}`, { active: true });
+                    cy.apiAs('admin', 'POST', `/users/${warehouseId}/activate`);
                     cy.loginAs('warehouse');
                     adminMenuLinks().should('include', '/en/inventory');
                 });

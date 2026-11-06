@@ -189,9 +189,9 @@ describe('OP19 · Nobody hands out more than they hold', () => {
                     loginDevice('moderator').then((device) => {
                         refusedWith(
                             device,
-                            'PATCH',
-                            `/users/${warehouseId}`,
-                            { active: false },
+                            'POST',
+                            `/users/${warehouseId}/deactivate`,
+                            undefined,
                             403,
                             'ROLE_MANAGEMENT_REQUIRED'
                         );
