@@ -41,9 +41,10 @@ describe('AT5 · Webhooks list filter', () => {
                             submitSearch();
                             listedIds().should('deep.equal', [off.id]);
 
-                            cy.step('reset: everything is back');
+                            cy.step('reset: both subscriptions are listed again');
                             resetSearch();
-                            listedIds().should('deep.equal', all);
+                            // Membership, not equality: the pager decides how many fit one page.
+                            listedIds().should('include.members', [on.id, off.id]);
                         });
                     });
                 });
