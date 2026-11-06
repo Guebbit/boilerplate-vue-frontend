@@ -3,12 +3,12 @@
  * @module
  * AC18 · A bot-shaped login meets the human check. A visitor who keeps typing the wrong password is
  * not yet a bot: the first misses are answered as misses. Once the account's failure budget is
- * half spent, the next try carries a human check; the widget appears on the login page, the visitor
- * solves it and the right password signs in. Password reset and signup, which a script farms the
+ * half spent (three misses), the next try carries a human check; the widget appears on the login
+ * page, the visitor solves it and the right password signs in. Password reset and signup, which a script farms the
  * most, ask for the check from the start and refuse a send without its token.
  *
  * Runs in the antibot shard only. That backend pins the per-account login budget at 6
- * (`scripts/e2e/antibot-backend.ts`), so the check is three wrong passwords away. The account is
+ * (`scripts/e2e/antibot-backend.ts`), so the check comes with the fourth try, after three wrong passwords. The account is
  * the seeded second-shopper customer, which no other antibot journey signs in as: its failures are
  * counted per address, and a shared account would carry them into the other tests in the run. An
  * admin can no longer create an account with a password, so there is no made-for-the-story one.
@@ -57,9 +57,11 @@ describe('AC18 · A bot-shaped login meets the human check', () => {
         cy.get('[data-test=login-error]').should('be.visible');
         attemptLogin(`${OWNER.password}-wrong`);
         cy.get('[data-test=login-error]').should('be.visible');
+        attemptLogin(`${OWNER.password}-wrong`);
+        cy.get('[data-test=login-error]').should('be.visible');
         cy.get('[data-test=human-check-altcha]').should('not.exist');
 
-        cy.step('the third wrong password is the one that is asked to prove itself');
+        cy.step('the fourth wrong password is the one that is asked to prove itself');
         attemptLogin(`${OWNER.password}-wrong`);
         cy.get('[data-test=human-check-altcha]').should('exist');
         cy.location('pathname').should('equal', '/en/login');

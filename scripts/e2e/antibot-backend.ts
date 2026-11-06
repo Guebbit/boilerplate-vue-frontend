@@ -21,8 +21,8 @@ export const ANTIBOT_BACKEND_ENV: Readonly<Record<string, string>> = {
     NODE_ANTIBOT_ALTCHA_SECRET: 'e2e-not-a-secret-altcha-key',
     // PBKDF2 iterations a solver works through: far below the 100000 default, so a spec solves in milliseconds.
     NODE_ANTIBOT_ALTCHA_COST: '1000',
-    // Failed logins one account may spend per window. The login check engages at the half (the
-    // third wrong password), and `AC18` leaves the account at it. The other runs raise this far
+    // Failed logins one account may spend per window. The login check engages once half is spent
+    // (three failures: the fourth try carries it), and `AC18` leaves the account there. The other runs raise this far
     // past reach, so the live workflow falls back to its own value for them.
     NODE_AUTH_RATE_LIMIT_MAX: '6'
 };
