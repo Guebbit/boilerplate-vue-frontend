@@ -13,6 +13,9 @@ import {
 /** The period an empty answer reports: a day with nothing in it. */
 const EMPTY_PERIOD = { from: '2026-01-01', to: '2026-01-01', interval: 'day', timeZone: 'UTC' };
 
+/** The range caps every stats answer states beside its period. */
+const LIMITS = { maxRangeDays: 731, maxBuckets: 400 };
+
 actionTable('stats', [
     {
         name: 'a dashboard whose sales cannot be read shows one alert and recovers on reload',
@@ -40,7 +43,7 @@ actionTable('stats', [
         route: '/en/sales/stats',
         intercept: { method: 'GET', url: '**/stats/sales*', operation: '/stats/sales' },
         kind: 'empty',
-        emptyBody: { period: EMPTY_PERIOD, currencies: [] },
+        emptyBody: { period: EMPTY_PERIOD, limits: LIMITS, currencies: [] },
         emptySchema: GetSalesStatsResponse,
         empty: { copy: '[data-test=sales-empty]', rows: '[data-test=sales-currency]' }
     },
@@ -50,7 +53,7 @@ actionTable('stats', [
         route: '/en/sales/stats',
         intercept: { method: 'GET', url: '**/stats/products*', operation: '/stats/products' },
         kind: 'empty',
-        emptyBody: { period: EMPTY_PERIOD, products: [] },
+        emptyBody: { period: EMPTY_PERIOD, limits: LIMITS, products: [] },
         emptySchema: GetProductStatsResponse,
         empty: { copy: '[data-test=products-empty]', rows: '[data-test=products-table]' }
     }

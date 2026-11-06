@@ -8,7 +8,9 @@
  * reservations, and the screens show it nothing it would be refused.
  *
  * Setup the story does not care about goes through the API: the digital order is bought by the
- * customer and paid by the admin, and the return request is approved by support first.
+ * customer and paid by the admin, and the customer withdraws from a delivered order (a withdrawal
+ * is born approved, and is the one return the warehouse may keep a deduction from: a faulty item
+ * is judged under the guarantee, which takes none).
  */
 import {
     adminMenuLinks,
@@ -66,11 +68,13 @@ describe('OP17 · A warehouse shift', () => {
     });
 
     it('receives, ships, delivers, fulfills and takes a return back, and is shown only the warehouse', () => {
-        cy.step('background: a paid digital order, and a return support has approved');
+        cy.step('background: a paid digital order, and a withdrawal from a delivered one');
         aPaidDigitalOrder().as('digitalId');
-        cy.subjectId('return.requested').as('returnId');
-        cy.get<string>('@returnId').then((returnId) => {
-            cy.apiAs('support', 'POST', `/returns/${returnId}/approve`);
+        cy.subjectId('order.deliveredRecent').then((orderId) => {
+            cy.apiAs<{ id: string }>('user', 'POST', '/returns', {
+                orderId,
+                reason: 'withdrawal'
+            }).then((opened) => cy.wrap(String(opened?.id)).as('returnId'));
         });
 
         cy.step('the warehouse’s menu is the stock room, and the other staff pages turn it back');

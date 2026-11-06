@@ -28,6 +28,9 @@ export interface AdminApiRequest {
 /** Headers every JSON request here sends. */
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
+/** A parsed answer: the payload, or the `title`/`detail`/`errors` a refusal carries. */
+type Payload<T> = T & { title?: string; detail?: string; errors?: unknown };
+
 /**
  * The envelope both paired backends answer with; `data` is the payload the caller wants.
  *
@@ -35,17 +38,22 @@ const jsonHeaders = { 'Content-Type': 'application/json' };
  * whether a URL, a cap or a field was refused, and a run that fails once cannot be asked again.
  */
 const unwrap = <T>(response: Response, context: string): Promise<T> =>
-    // A 204 has no body to parse; the resource itself is the payload of every other success.
-    (response.status === 204 ? Promise.resolve(undefined) : response.json()).then(
-        (payload: (T & { title?: string; detail?: string; errors?: unknown }) | undefined) => {
+    // A body-less answer (204, or the 202 `POST /tasks` gives) has nothing to parse; the resource
+    // itself is the payload of every other success.
+    response
+        .text()
+        .then((text): Payload<T> | undefined =>
+            // Narrowed from `any` to what the envelope can carry: nothing else reads this body.
+            text === '' ? undefined : (JSON.parse(text) as Payload<T>)
+        )
+        .then((payload) => {
             if (!response.ok)
                 throw new Error(
                     `adminApi: ${context} answered ${String(response.status)} — ${payload?.title ?? 'no title'}: ${payload?.detail ?? 'no detail'}` +
                         (payload?.errors === undefined ? '' : ` ${JSON.stringify(payload.errors)}`)
                 );
             return payload as T;
-        }
-    );
+        });
 
 /** What a finished login answers with: a bearer, or a session id in cookie mode. */
 interface LoginTokens {

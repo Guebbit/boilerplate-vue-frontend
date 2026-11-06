@@ -25,7 +25,7 @@ describe('AT10 · The last administrator removes itself', () => {
         cy.accountInRole('admin').then(({ id: adminId }) => {
             cy.loginAs('admin');
             cy.visit(`/en/users/${adminId}`);
-            cy.intercept('PATCH', '**/users/*').as('saveAccess');
+            cy.intercept({ method: 'POST', url: /\/users\/[^/]+\/deactivate$/ }).as('saveAccess');
             cy.get('[data-test=user-manage-access]').click();
             cy.get('[data-test=user-access-active] input').uncheck({ force: true });
             cy.get('[data-test=user-access-continue]').click();

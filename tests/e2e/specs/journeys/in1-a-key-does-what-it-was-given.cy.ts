@@ -120,7 +120,8 @@ describe('IN1 · A key can do exactly what it was given', () => {
                         'data-status',
                         'revoked'
                     );
-                    cy.get('[data-test=row-revoke]').should('be.disabled');
+                    // A revoked key has nothing left to revoke: the row offers no button.
+                    cy.get('[data-test=row-revoke]').should('not.exist');
                 });
                 requestWithKey(secret, 'GET', '/webhooks/subscriptions')
                     .its('status')

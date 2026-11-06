@@ -13,10 +13,10 @@
  */
 import { UPLOAD_PATH } from '../../../support/e2e/images';
 
-/** One order line as the API serves it: `current` is the live product, `null` once it is gone. */
+/** One order line as the API serves it: `current` is the live product, absent once it is gone. */
 interface OrderLine {
     product: { id: string; title: string };
-    current: { imageUrl?: string } | null;
+    current?: { imageUrl?: string };
 }
 
 /** What happened to a line's product after it was bought. */
@@ -29,7 +29,7 @@ type Fate = 'untouched' | 'replaced' | 'deleted';
  * @param line - an order line as the API serves it
  */
 const fateOf = (line: OrderLine): Fate => {
-    if (line.current === null) return 'deleted';
+    if (line.current === undefined) return 'deleted';
     return UPLOAD_PATH.test(line.current.imageUrl ?? '') ? 'replaced' : 'untouched';
 };
 

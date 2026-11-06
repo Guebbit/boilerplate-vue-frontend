@@ -52,7 +52,7 @@ describe('AC4 · My laptop was stolen', () => {
             cy.step('the owner logs out everywhere from their own device');
             requestAsDevice(owner, 'DELETE', '/account/sessions')
                 .its('status')
-                .should('equal', 200);
+                .should('equal', 204);
 
             cy.step('the tab’s session is already dead: its next click is refused');
             cy.intercept('POST', '**/account/refresh').as('refresh');

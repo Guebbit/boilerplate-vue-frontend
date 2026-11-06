@@ -62,8 +62,25 @@ const roleIs = (userId: string, role: string | undefined): void => {
 };
 
 /**
- * A caller without role management: the picker offers no role to grant, and the server refuses one
- * asked for by hand with a `403` (`ROLE_MANAGEMENT_REQUIRED`, whatever the name), the account staying as it was.
+ * The server refuses a role asked for by hand with a `403` (`ROLE_MANAGEMENT_REQUIRED`), the
+ * account staying as it was.
+ *
+ * @param userId - whose role
+ * @param role - the role asked for
+ * @param as - the seeded account making the request
+ */
+const roleRefusedByHand = (userId: string, role: string, as: E2ERole): void => {
+    loginDevice(as).then((device) => {
+        requestAsDevice(device, 'PATCH', `/users/${userId}`, { role })
+            .its('status')
+            .should('equal', 403);
+    });
+    roleIs(userId, undefined);
+};
+
+/**
+ * A caller who may ban but not manage roles (the moderator): the access dialog opens for the
+ * active switch, its role picker disabled, and a role asked for by hand is refused.
  *
  * @param userId - whose role
  * @param role - the role asked for
@@ -74,12 +91,22 @@ const noRoleOffered = (userId: string, role: string, as: E2ERole): void => {
     cy.get('[data-test=user-manage-access]').click();
     cy.get('[data-test=user-access-role]').should('have.class', 'v-input--disabled');
     cy.get('[data-test=user-access-cancel]').click();
-    loginDevice(as).then((device) => {
-        requestAsDevice(device, 'PATCH', `/users/${userId}`, { role })
-            .its('status')
-            .should('equal', 403);
-    });
-    roleIs(userId, undefined);
+    roleRefusedByHand(userId, role, as);
+};
+
+/**
+ * A caller who may neither ban nor manage roles (support): the page shows no access door at all,
+ * and a role asked for by hand is refused.
+ *
+ * @param userId - whose role
+ * @param role - the role asked for
+ * @param as - the seeded account making the request
+ */
+const noDoorOffered = (userId: string, role: string, as: E2ERole): void => {
+    cy.visit(`/en/users/${userId}`);
+    cy.get('[data-test=user-go-to-edit]').should('exist');
+    cy.get('[data-test=user-manage-access]').should('not.exist');
+    roleRefusedByHand(userId, role, as);
 };
 
 describe('OP19 · Nobody hands out more than they hold', () => {
@@ -98,7 +125,7 @@ describe('OP19 · Nobody hands out more than they hold', () => {
 
             cy.step('support is refused the same, the account staying a customer');
             cy.switchUser('support');
-            noRoleOffered(targetId, 'moderator', 'support');
+            noDoorOffered(targetId, 'moderator', 'support');
 
             cy.step('the administrator promotes the same account to the warehouse');
             cy.switchUser('admin');

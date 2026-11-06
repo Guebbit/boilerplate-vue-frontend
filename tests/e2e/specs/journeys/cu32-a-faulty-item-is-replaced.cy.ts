@@ -126,12 +126,7 @@ describe('CU32 · A faulty item is replaced', () => {
                         `/orders/${orderId}/shipments`
                     ).then((shipments) => {
                         const out = shipments?.items.find(({ status }) => status === 'shipped');
-                        cy.apiAs(
-                            'admin',
-                            'POST',
-                            `/delivery/shipments/${out?.id ?? ''}/deliver`,
-                            {}
-                        );
+                        cy.apiAs('admin', 'POST', `/delivery/shipments/${out?.id ?? ''}/deliver`);
                     });
                     eventually(
                         () => cy.apiAs<OrderLike>('admin', 'GET', `/orders/${orderId}`),

@@ -2,21 +2,19 @@
 /**
  * @module
  * OP14 · The audit trail follows the action. An admin changes an order's email and cancels it,
- * ships a parcel and forces its delivery with a reason, corrects a status by hand,
+ * ships a parcel and delivers it, corrects a status by hand,
  * and then opens "history" on the order: the shop's audit page, narrowed to that one order.
  * The same button on a user's page narrows it to that user.
  *
  * What the page shows is the ACTION, the actor's role and the outcome — `AdminAuditTab` has no
  * column for the reason. A status-only override keeps its reason in the audit row's `metadata`,
- * read off `GET /audit?target=` beside the page. A forced delivery writes only
- * `admin.order.delivered {forced}` to the audit trail; its reason goes to the order's timeline
- * (`GET /orders/{id}/timeline`).
+ * read off `GET /audit?target=` beside the page. A delivery takes no reason: it writes
+ * `admin.order.delivered` with the shipment it closed.
  *
  * An override can never leave `pending` (only the offline-payment door does), so the parcel's
- * subject is the paid `order.paidExpress`: a paid order is started and shipped the ordinary way
- * (no force toggle is offered), and only the delivery is forced. The status-only override
- * (OrderEdit) and the forced delivery door both carry `stepUp: critical`: the admin signs in
- * seconds before, so no re-auth dialog is expected.
+ * subject is the paid `order.paidExpress`: a paid order is started, shipped and delivered the
+ * ordinary way. The status-only override (OrderEdit) carries `stepUp: critical`: the admin signs
+ * in seconds before, so no re-auth dialog is expected.
  */
 import { eventually } from '../../../support/e2e/steps';
 
@@ -26,14 +24,7 @@ interface AuditRowLike {
     outcome: string;
     actorRole: string;
     targetId?: string;
-    metadata?: { reason?: string; mode?: string; from?: string; to?: string; forced?: boolean };
-}
-
-/** One row of an order's timeline, as far as this story reads it. */
-interface TimelineRowLike {
-    type: string;
-    text?: string;
-    data: { mode?: string; from?: string; to?: string };
+    metadata?: { reason?: string; mode?: string; from?: string; to?: string };
 }
 
 /** A page of the shop's audit trail. */
@@ -43,7 +34,6 @@ interface AuditListLike {
 
 /** The reasons the admin types, chosen here so the audit rows can be searched for them. */
 const REASONS = {
-    deliver: 'The customer confirmed the parcel arrived',
     status: 'Fixing a status the warehouse keyed in wrong'
 };
 
@@ -78,7 +68,7 @@ describe('OP14 · The audit trail follows the action', () => {
 
     it('an order and a user each have a history, filtered to them, with the reasons on record', () => {
         cy.subjectId('order.awaitingTransfer').then((editedId) => {
-            cy.subjectId('order.paidExpress').then((forcedId) => {
+            cy.subjectId('order.paidExpress').then((deliveredId) => {
                 cy.subjectId('order.paid').then((correctedId) => {
                     cy.loginAs('admin');
 
@@ -114,8 +104,8 @@ describe('OP14 · The audit trail follows the action', () => {
                     cy.get('[data-test=list-row]').should('contain.text', 'order.canceled');
                     cy.get('[data-test=list-row]').should('contain.text', 'order.updated');
 
-                    cy.step('a paid order is started and shipped the ordinary way, with no force');
-                    cy.visit(`/en/orders/${forcedId}`);
+                    cy.step('a paid order is started and shipped the ordinary way');
+                    cy.visit(`/en/orders/${deliveredId}`);
                     cy.get('[data-test=mark-started]').click();
                     cy.get('[data-test=open-ship]').first().click();
                     cy.get('[data-test=ship-force-toggle]').should('not.exist');
@@ -123,14 +113,11 @@ describe('OP14 · The audit trail follows the action', () => {
                     cy.get('[data-test=ship-submit]').should('not.be.disabled').click();
                     cy.get('[data-test=shipment-tracking]').should('contain.text', 'TRK-E2E-OP14');
 
-                    cy.step('a forced delivery needs a reason, which the order timeline keeps');
-                    cy.get('[data-test=force-deliver-toggle] input').check();
-                    cy.get('[data-test=mark-delivered]').should('be.disabled');
-                    cy.get('[data-test=force-deliver-reason] textarea').type(REASONS.deliver);
-                    cy.get('[data-test=mark-delivered]').should('not.be.disabled').click();
+                    cy.step('the parcel is delivered with one click, and the trail names the act');
+                    cy.get('[data-test=mark-delivered]').click();
                     cy.get('[data-test=mark-delivered]').should('not.exist');
                     eventually(
-                        () => auditRowsFor(forcedId),
+                        () => auditRowsFor(deliveredId),
                         (rows) => rows.some((row) => row.action === 'admin.order.delivered')
                     ).should((rows) => {
                         expect(rows.map((row) => row.action)).to.include.members([
@@ -140,21 +127,7 @@ describe('OP14 · The audit trail follows the action', () => {
                         const delivered = rows.find(
                             (row) => row.action === 'admin.order.delivered'
                         );
-                        expect(delivered?.metadata?.forced).to.equal(true);
                         expect(delivered?.actorRole).to.equal('admin');
-                    });
-                    cy.apiAs<TimelineRowLike[]>(
-                        'admin',
-                        'GET',
-                        `/orders/${forcedId}/timeline`
-                    ).should((rows) => {
-                        const forced = (rows ?? []).find(
-                            (row) =>
-                                row.type === 'status_overridden' &&
-                                row.data.mode === 'forced' &&
-                                row.data.to === 'delivered'
-                        );
-                        expect(forced?.text).to.equal(REASONS.deliver);
                     });
 
                     cy.step('the status-only override offers only later states and needs a reason');

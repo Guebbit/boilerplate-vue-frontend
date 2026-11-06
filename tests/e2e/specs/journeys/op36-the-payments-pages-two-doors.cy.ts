@@ -15,6 +15,9 @@ interface PaymentLike {
     amountRefunded: string;
 }
 
+/** An untouched payment's refunded amount: decimal text at the currency's two places. */
+const NOTHING_REFUNDED = '0.00';
+
 describe('OP36 · The payments page’s two doors', () => {
     beforeEach(() => {
         cy.visit('/en');
@@ -60,7 +63,7 @@ describe('OP36 · The payments page’s two doors', () => {
             cy.get('[data-test=app-dialog-cancel]').click();
             paymentOfOrder<PaymentLike>('moderator', cardId)
                 .its('amountRefunded')
-                .should('equal', 0);
+                .should('equal', NOTHING_REFUNDED);
 
             cy.step('answering Yes refunds what is left, and the drawer closes');
             cy.get('[data-test=drawer-refund]').click();
@@ -74,6 +77,7 @@ describe('OP36 · The payments page’s two doors', () => {
             cy.get('[data-test=refund-order-link]').should('have.length', 1);
             paymentOfOrder<PaymentLike>('user', cardId)
                 .its('amountRefunded')
+                .then(Number)
                 .should('be.greaterThan', 0);
             cy.apiAs<{ items: unknown[] }>('user', 'GET', `/orders/${cardId}/credit-notes`)
                 .its('items.length')

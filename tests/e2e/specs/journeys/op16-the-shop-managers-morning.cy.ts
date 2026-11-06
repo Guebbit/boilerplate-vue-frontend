@@ -32,18 +32,25 @@ describe('OP16 · The shop manager’s morning', () => {
                 '/inventory',
                 '/tasks',
                 '/webhooks/subscriptions',
-                '/webhooks/deliveries',
-                '/audit'
+                '/webhooks/deliveries'
             ]) {
                 expect(links, page).to.include(`/en${page}`);
             }
             // No Users entry: running the shop does not need the accounts, so the manager holds no
-            // `read:User` (the role-by-role pass), and the page turns them back.
-            for (const page of ['/users', '/api-keys', '/admin', '/playground/realtime']) {
+            // `read:User` (the role-by-role pass), and the page turns them back. The audit trail is
+            // the administrator's alone.
+            for (const page of [
+                '/users',
+                '/audit',
+                '/api-keys',
+                '/admin',
+                '/playground/realtime'
+            ]) {
                 expect(links, page).to.not.include(`/en${page}`);
             }
         });
         isTurnedBack('/en/users');
+        isTurnedBack('/en/audit');
         isTurnedBack('/en/api-keys');
         isTurnedBack('/en/admin');
 

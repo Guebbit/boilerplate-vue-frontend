@@ -26,6 +26,9 @@ const INTO_WARNING_MS = 90_000;
 /** The toast the page shows when it ends a session for inactivity. */
 const ENDED = 'Your session ended after a period of inactivity. Please sign in again.';
 
+/** The two sign-in answers: the password step, and the code step a staff account adds. */
+const SIGN_IN = /\/account\/login(\/2fa)?$/;
+
 /** The prompt itself. */
 const DIALOG = '[data-test=idle-session-dialog]';
 
@@ -38,13 +41,13 @@ describe('AT11 · A staff member walks away', () => {
     });
 
     it('a shopper is never asked: the session does not idle out', () => {
-        cy.step('the touch tells a shopper no idle limit');
-        cy.intercept('POST', '**/account/sessions/current/touch').as('touch');
+        cy.step('the sign-in tells a shopper no idle limit');
+        cy.intercept('POST', SIGN_IN).as('signIn');
         cy.loginAs('user');
-        cy.wait('@touch')
-            .its('response.body')
-            .should((body: { idleTimeoutSeconds?: number }) => {
-                expect(body.idleTimeoutSeconds).to.equal(undefined);
+        cy.wait('@signIn')
+            .its('response.body.account.activity')
+            .should((activity: { idleTimeoutSeconds?: number }) => {
+                expect(activity.idleTimeoutSeconds).to.equal(undefined);
             });
 
         cy.step('half an hour passes: no prompt, and the orders page still loads');
@@ -56,13 +59,15 @@ describe('AT11 · A staff member walks away', () => {
     });
 
     it('a staff member is asked, can stay, and is signed out when they ignore it', () => {
-        cy.step('the touch gives a staff member the 30-minute limit');
-        cy.intercept('POST', '**/account/sessions/current/touch').as('touch');
+        cy.step('the sign-in gives a staff member the 30-minute limit');
+        cy.intercept('POST', SIGN_IN).as('signIn');
         cy.loginAs('warehouse');
-        cy.wait('@touch')
-            .its('response.body')
-            .should((body: { idleTimeoutSeconds?: number }) => {
-                expect(body.idleTimeoutSeconds).to.equal(1800);
+        // The first answer is the code challenge; the second, from the code, opens the session.
+        cy.wait('@signIn');
+        cy.wait('@signIn')
+            .its('response.body.account.activity')
+            .should((activity: { idleTimeoutSeconds?: number }) => {
+                expect(activity.idleTimeoutSeconds).to.equal(1800);
             });
 
         cy.step('right after signing in there is no prompt; close to the limit there is');

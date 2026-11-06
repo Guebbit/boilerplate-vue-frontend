@@ -70,12 +70,12 @@ describe('OP13 · Each role sees what it may, and nothing more', { tags: '@smoke
         isTurnedBack('/en/inventory');
 
         cy.step(
-            'the moderator has users, audit and every order, shops like any customer, and has no product editing'
+            'the moderator has users and every order, shops like any customer, and has no audit trail or product editing'
         );
         cy.switchUser('moderator');
         adminMenuLinks().should((links) => {
             expect(links).to.include('/en/users');
-            expect(links).to.include('/en/audit');
+            expect(links).to.not.include('/en/audit');
             expect(links).to.not.include('/en/locales');
         });
         cy.visit('/en/users');
@@ -98,6 +98,7 @@ describe('OP13 · Each role sees what it may, and nothing more', { tags: '@smoke
             cy.get('[data-test=button-refund-only]').should('exist');
         });
         isTurnedBack('/en/locales');
+        isTurnedBack('/en/audit');
 
         cy.step(
             'the customer has no administration menu and no Edit button, even on their own order'

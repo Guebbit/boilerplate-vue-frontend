@@ -2,10 +2,10 @@
 /**
  * @module
  * OP20 · Staff prove it is still them. The actions that cannot be taken back (money out, a status
- * forced by hand, a parcel forced to delivered, a returned parcel opening a refund, an account erased)
- * ask for the password again once the sign-in is older than five minutes. The dialog opens in the
- * middle of the action: a wrong password keeps it open, cancel writes nothing, and the right
- * password carries on with the same action, once. An ordinary start or ship never asks.
+ * forced by hand, a returned parcel opening a refund, an account erased) ask for the password
+ * again once the sign-in is older than five minutes. The dialog opens in the middle of the action:
+ * a wrong password keeps it open, cancel writes nothing, and the right password carries on with
+ * the same action, once. An ordinary start, ship or delivery never asks.
  *
  * Time passes by moving the demo backend's clock, so this is a demo-only journey. The window is
  * `NODE_REAUTH_TIME_CRITICAL` (300 s); each jump is past it and inside the access token's life.
@@ -16,7 +16,7 @@ import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
 /** Past the critical window (300 s), inside the access token's own life (600 s). */
 const PAST_CRITICAL_MS = 400_000;
 
-/** The reason the admin types for each forced move. */
+/** The reason the admin types for the forced status. */
 const REASON = 'OP20 the courier confirmed it by phone';
 
 /** The slice of an order this story reads. */
@@ -75,7 +75,7 @@ describe('OP20 · Staff prove it’s still them', () => {
         cy.visit('/en');
     });
 
-    it('money, forced moves, a received return and an erasure each ask, and carry on once the password is right', () => {
+    it('money, a forced status, a received return and an erasure each ask, and carry on once the password is right', () => {
         cy.skipUnlessDemo();
 
         cy.step('the admin signs in, and the sign-in grows stale');
@@ -140,20 +140,16 @@ describe('OP20 · Staff prove it’s still them', () => {
                 .should('equal', 'delivered');
         });
 
-        cy.step('a parcel forced to delivered asks too');
+        cy.step('an ordinary delivery never asks, however old the sign-in');
         cy.travel(PAST_CRITICAL_MS);
         cy.subjectId('order.paid').then((orderId) => {
             // Started above; an override can never leave `pending`, so it is shipped the ordinary
-            // way (which never asks) and only the forced delivery is the step under test.
+            // way and then delivered the ordinary way: neither asks.
             cy.visit(`/en/orders/${orderId}`);
             shipTheOpenGroup('TRK-E2E-OP20');
             cy.get('[data-test=shipment-tracking]').should('contain.text', 'TRK-E2E-OP20');
+            cy.get('[data-test=mark-delivered]').click();
             cy.get('[data-test=reauth-dialog]').should('not.exist');
-            cy.get('[data-test=force-deliver-toggle] input').check();
-            cy.get('[data-test=force-deliver-reason] textarea').type(REASON);
-            cy.get('[data-test=mark-delivered]').should('not.be.disabled').click();
-            cy.get('[data-test=reauth-dialog]').should('be.visible');
-            answerAs('admin');
             eventually(
                 () => cy.apiAs<OrderLike>('admin', 'GET', `/orders/${orderId}`),
                 (order) => order?.status === 'delivered'

@@ -61,7 +61,8 @@ describe('API keys', () => {
             cy.get('[data-test=app-dialog-confirm]').click();
 
             cy.contains('[data-test=list-row]', name).within(() => {
-                cy.get('[data-test=row-revoke]').should('be.disabled');
+                // A revoked credential has nothing left to revoke: the row offers no button.
+                cy.get('[data-test=row-revoke]').should('not.exist');
             });
         });
     });

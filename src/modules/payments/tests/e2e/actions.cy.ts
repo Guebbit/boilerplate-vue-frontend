@@ -55,7 +55,7 @@ actionTable('payments', [
             operation: '/payments/attention'
         },
         kind: 'empty',
-        emptyBody: { ...emptyPage, items: [] },
+        emptyBody: { items: [] },
         emptySchema: ListPaymentAttentionResponse,
         empty: { copy: '.v-empty-state', rows: '[data-test=list-row]' }
     }

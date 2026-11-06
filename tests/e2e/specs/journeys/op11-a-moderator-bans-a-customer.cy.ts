@@ -22,7 +22,7 @@ import { answerChallengePage } from '../../../support/e2e/login-challenge';
  */
 const setAccessActive = (userId: string, active: boolean): void => {
     cy.visit(`/en/users/${userId}`);
-    cy.intercept('PATCH', '**/users/*').as('saveAccess');
+    cy.intercept({ method: 'POST', url: /\/users\/[^/]+\/(de)?activate$/ }).as('saveAccess');
     cy.get('[data-test=user-manage-access]').click();
     if (active) cy.get('[data-test=user-access-active] input').check({ force: true });
     else cy.get('[data-test=user-access-active] input').uncheck({ force: true });
