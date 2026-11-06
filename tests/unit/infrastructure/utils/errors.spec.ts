@@ -154,7 +154,7 @@ describe('isTransportFailure', () => {
 });
 
 /**
- * The "nothing there" test. `GET /payments/by-order/:id` answering 404 means "no intent yet";
+ * The "nothing there" test. `GET /account/export` answering 404 means "no export to download";
  * every other status is a failure the caller must not render as absence.
  */
 describe('absentIs', () => {

@@ -84,8 +84,9 @@ export const isTransportFailure = (error: unknown): boolean =>
 /**
  * Whether a rejected API call failed with one of the statuses the caller treats as an ANSWER.
  *
- * `GET /payments/by-order/:id` answering 404 means "no intent yet"; `GET /cart/summary` answering
- * 401 means "no cart". Every other status is a failure the caller must not render as absence.
+ * `GET /account/export` answering 404 means "no export to download" (never asked for, deleted or
+ * past its retention); a detail read answering 404 means "no such record, or none this caller may see".
+ * Every other status is a failure the caller must not render as absence.
  *
  * @param error - Unknown rejected value, normally the envelope from `onResponseReject`.
  * @param statuses - The statuses that mean "nothing there", e.g. `404`.
