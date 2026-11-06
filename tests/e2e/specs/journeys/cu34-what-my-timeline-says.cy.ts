@@ -44,14 +44,14 @@ describe('CU34 · What my timeline says', () => {
             cy.get('[data-test=order-timeline-actor]').should('not.exist');
 
             cy.step('the API says the same: no staff-only type, and no actor on any row');
-            cy.apiAs<EntryLike[]>('user', 'GET', `/orders/${orderId}/timeline`).should(
-                (entries) => {
-                    expect(entries?.length, 'the buyer reads a timeline').to.be.greaterThan(0);
-                    expect(entries?.map(({ type }) => type)).to.not.include.members(STAFF_ONLY);
-                    for (const entry of entries ?? [])
+            cy.apiAs<{ items: EntryLike[] }>('user', 'GET', `/orders/${orderId}/timeline`)
+                .its('items')
+                .should((entries: EntryLike[]) => {
+                    expect(entries.length, 'the buyer reads a timeline').to.be.greaterThan(0);
+                    expect(entries.map(({ type }) => type)).to.not.include.members(STAFF_ONLY);
+                    for (const entry of entries)
                         expect(entry, 'no actor for the buyer').to.not.have.property('actor');
-                }
-            );
+                });
 
             cy.step('the admin reads the same page: the hold is there, marked, with who did it');
             cy.switchUser('admin');
