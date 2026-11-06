@@ -1,3 +1,13 @@
+<script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
+export default {
+    name: 'RealtimePlaygroundPage'
+};
+</script>
+
 <script setup lang="ts">
 /**
  * @module
