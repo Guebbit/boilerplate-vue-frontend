@@ -6,11 +6,6 @@
  * each narrow the inbox to the tasks that match; reset brings all three back.
  */
 
-/** The slice of a task the write answers with. */
-interface TaskLike {
-    id: string;
-}
-
 /**
  * Writes one task through the public contact door.
  *
@@ -19,12 +14,22 @@ interface TaskLike {
  * @param extra - further body fields, e.g. the honeypot
  */
 const contact = (email: string, subject: string, extra: Record<string, unknown> = {}) =>
-    cy.apiAs<TaskLike>('admin', 'POST', '/tasks', {
+    cy.apiAs('admin', 'POST', '/tasks', {
         email,
         subject,
         message: `Body of ${subject}`,
         ...extra
     });
+
+/**
+ * Finds a task's id by its subject, since the write answers with no body.
+ *
+ * @param subject - the subject the task was filed with
+ */
+const idOf = (subject: string) =>
+    cy
+        .apiAs<{ items: { id: string }[] }>('admin', 'POST', '/tasks/search', { text: subject })
+        .then((found) => String(found?.items[0]?.id));
 
 /** Presses search and waits for the inbox to answer. */
 const search = (): void => {
@@ -40,8 +45,9 @@ describe('AT5 · Tasks page filters', () => {
 
     it('text, email and status each narrow the inbox, and reset brings every task back', () => {
         contact('ann@example.com', 'Kennel question');
-        contact('bob@example.com', 'Invoice question').then((task) => {
-            cy.apiAs('admin', 'POST', `/tasks/${String(task?.id)}/resolve`);
+        contact('bob@example.com', 'Invoice question');
+        idOf('Invoice question').then((id) => {
+            cy.apiAs('admin', 'POST', `/tasks/${id}/resolve`);
         });
         contact('bot@example.com', 'Buy now', { website: 'https://spam.example' });
 

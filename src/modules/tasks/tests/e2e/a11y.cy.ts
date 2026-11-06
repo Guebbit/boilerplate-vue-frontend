@@ -17,15 +17,21 @@ sweepA11y(
         ['tasks page', '/en/tasks'],
         {
             name: 'task detail',
-            // No seeded task: file one through the public door and open it.
+            // No seeded task: file one through the public door, then find it by subject (the
+            // write answers with no body) and open it.
             route: () =>
                 cy
-                    .apiAs<{ id: string }>('admin', 'POST', '/tasks', {
+                    .apiAs('admin', 'POST', '/tasks', {
                         email: 'a11y@example.com',
                         subject: 'A11y sweep task',
                         message: 'Filed so the detail page has something to render.'
                     })
-                    .then((task) => `/en/tasks/${String(task?.id)}`)
+                    .then(() =>
+                        cy.apiAs<{ items: { id: string }[] }>('admin', 'POST', '/tasks/search', {
+                            text: 'A11y sweep task'
+                        })
+                    )
+                    .then((found) => `/en/tasks/${String(found?.items[0]?.id)}`)
         }
     ],
     'admin'
