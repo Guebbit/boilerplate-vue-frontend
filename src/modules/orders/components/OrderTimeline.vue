@@ -18,7 +18,8 @@ export default {
  * line is `describeTimelineEntry`'s, built from the row's ids and codes. A row done by the order's
  * own buyer carries an "own order" chip for staff, so a review sees a staff member handling their own
  * order's money at a glance. Holders of `update:Order` also get a box to leave a staff note, which
- * the server keeps staff-only and encrypted; the history reads again once it is saved.
+ * the server keeps staff-only and encrypted; the history reads again once it is saved. The same
+ * holders can remove the text of a note that still has some: the row stays, without it.
  */
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -114,6 +115,20 @@ const savingNote = ref(false);
 const { message: noteError, report: reportNoteError, clear: clearNoteError } = useBlockingError();
 
 /**
+ * The blocked state of a note's text removal, shown beside the row it failed on.
+ */
+const {
+    message: removeError,
+    report: reportRemoveError,
+    clear: clearRemoveError
+} = useBlockingError();
+
+/**
+ * The row whose text removal is on its way, or the one {@link removeError} belongs to.
+ */
+const removingNoteId = ref<string>();
+
+/**
  * Each row with its line, rebuilt when the rows or the language change. `text` is read here
  * because only a variant that carries it has the key (`in` narrows the union to it).
  */
@@ -180,6 +195,25 @@ const saveNote = () => {
         .finally(() => {
             savingNote.value = false;
         });
+};
+
+/**
+ * Withdraws the text of one note, then reads the history again so the row shows without it.
+ *
+ * @param eventId - the `note_added` row
+ * @returns A promise settling once the call finished; a refusal stays beside the row.
+ */
+const removeNoteText = (eventId: string) => {
+    clearRemoveError();
+    removingNoteId.value = eventId;
+    return useOrdersStore()
+        .deleteNote(props.orderId, eventId)
+        .then(() => {
+            removingNoteId.value = undefined;
+            addMessage(t('order-timeline.note-removed'));
+            return load();
+        })
+        .catch((error: unknown) => reportRemoveError(error));
 };
 
 /**
@@ -275,6 +309,28 @@ watch(() => [props.orderId, props.refreshKey], load, { immediate: true });
                 <span v-if="text" class="text-sm italic" data-test="order-timeline-text">
                     {{ t('order-timeline.label-text', { text }) }}
                 </span>
+                <div
+                    v-if="entry.type === 'note_added' && text && session.can('update', 'Order')"
+                    class="flex flex-col gap-1"
+                >
+                    <div>
+                        <v-btn
+                            size="x-small"
+                            variant="text"
+                            :loading="removingNoteId === entry.id && !removeError"
+                            :disabled="removingNoteId === entry.id && !removeError"
+                            data-test="order-timeline-note-remove"
+                            @click="removeNoteText(entry.id)"
+                        >
+                            {{ t('order-timeline.note-remove') }}
+                        </v-btn>
+                    </div>
+                    <InlineErrorAlert
+                        v-if="removingNoteId === entry.id"
+                        :message="removeError"
+                        data-test="order-timeline-note-remove-error"
+                    />
+                </div>
                 <span class="text-xs opacity-75">
                     <time :datetime="entry.at" data-test="order-timeline-at">{{
                         formatDateTime(entry.at)

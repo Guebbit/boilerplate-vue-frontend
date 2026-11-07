@@ -2,7 +2,7 @@
  * @module
  * Pinia store built on `useStructureCrudApi` for orders CRUD and paginated
  * search, plus hand-written actions (`cancelOrder`, `fetchInvoice`, `fetchCreditNotes`,
- * `fetchCreditNote`, `fetchTimeline`, `addNote`, `exportOrdersCsv`)
+ * `fetchCreditNote`, `fetchTimeline`, `addNote`, `deleteNote`, `exportOrdersCsv`)
  * for endpoints that don't fit the toolkit's record-shaped primitives.
  */
 import { defineStore } from 'pinia';
@@ -25,6 +25,7 @@ import {
     getOrderCreditNote,
     getOrderTimeline,
     addOrderNote,
+    deleteOrderNote,
     exportOrders,
     overrideOrderStatus,
     correctOrderShippingAddress,
@@ -119,6 +120,18 @@ const fetchTimeline = (orderId: string): Promise<OrderTimelineEntry[]> =>
  */
 const addNote = (orderId: string, text: string): Promise<OrderTimelineEntry> =>
     addOrderNote(orderId, { text });
+
+/**
+ * Withdraws the text of a staff note — `DELETE /orders/{id}/timeline/notes/{eventId}` (`update:Order`).
+ * The row stays in the timeline without its text. Outside `fetchAny` for the same reason as
+ * {@link addNote}.
+ *
+ * @param orderId - Identifier of the order.
+ * @param eventId - Identifier of the `note_added` row.
+ * @returns A promise resolving once the server has unset the text.
+ */
+const deleteNote = (orderId: string, eventId: string): Promise<void> =>
+    deleteOrderNote(orderId, eventId);
 
 /**
  * Lists the credit notes of an order, oldest first — one per settled refund, `[]` for an order
@@ -366,6 +379,7 @@ export const useOrdersStore = defineStore('orders', () => {
         fetchCreditNotes: listCreditNotes,
         fetchTimeline,
         addNote,
+        deleteNote,
         exportOrdersCsv,
         fetchCreditNote
     };

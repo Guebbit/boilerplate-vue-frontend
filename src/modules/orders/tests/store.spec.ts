@@ -26,6 +26,7 @@ import {
     getOrderCreditNote,
     getOrderTimeline,
     addOrderNote,
+    deleteOrderNote,
     exportOrders
 } from '@api';
 import * as schemas from '@api/schemas';
@@ -96,6 +97,7 @@ vi.mock('@api', () => ({
     getOrderCreditNote: vi.fn(() => Promise.resolve(INVOICE)),
     getOrderTimeline: vi.fn(() => Promise.resolve({ items: TIMELINE })),
     addOrderNote: vi.fn(() => Promise.resolve(TIMELINE[0])),
+    deleteOrderNote: vi.fn(() => Promise.resolve()),
     exportOrders: vi.fn(() =>
         Promise.resolve(
             new File(['createdAt,orderNumber\n'], 'orders-2026-10-27.csv', { type: 'text/csv' })
@@ -255,6 +257,15 @@ describe('useOrdersStore', () => {
                         text: 'Called the buyer'
                     });
                     expect(entry).toEqual(TIMELINE[0]);
+                }));
+    });
+
+    describe('deleteNote', () => {
+        it('asks the server to unset the text of that note row', () =>
+            useOrdersStore()
+                .deleteNote('o1', 'e9')
+                .then(() => {
+                    expect(deleteOrderNote).toHaveBeenCalledExactlyOnceWith('o1', 'e9');
                 }));
     });
 

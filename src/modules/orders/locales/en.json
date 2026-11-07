@@ -196,6 +196,8 @@
         "note-hint": "Customers don't see this on their order, but it is included if they request their data. Don't write phone numbers, addresses or health details.",
         "note-submit": "Add note",
         "note-saved": "Note added.",
+        "note-remove": "Remove text",
+        "note-removed": "Note text removed.",
         "detail-method": "Paid by {value}",
         "detail-withdraw-until": "Right of withdrawal until the end of {value}",
         "detail-by": "Cancelled by {value}",

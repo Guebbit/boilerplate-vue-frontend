@@ -196,6 +196,8 @@
         "note-hint": "I clienti non la vedono sul loro ordine, ma è inclusa se richiedono i propri dati. Non scrivere numeri di telefono, indirizzi o dati sulla salute.",
         "note-submit": "Aggiungi nota",
         "note-saved": "Nota aggiunta.",
+        "note-remove": "Rimuovi il testo",
+        "note-removed": "Testo della nota rimosso.",
         "detail-method": "Pagato con {value}",
         "detail-withdraw-until": "Diritto di recesso fino a tutto il {value}",
         "detail-by": "Annullato da {value}",
