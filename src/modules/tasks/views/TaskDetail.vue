@@ -92,6 +92,13 @@ const recordLink = computed(() => {
 });
 
 /**
+ * Whether someone other than the viewer holds the task: the take button then reads "take over".
+ */
+const heldByOther = computed(
+    () => Boolean(task.value?.assigneeId) && task.value?.assigneeId !== session.viewer?.id
+);
+
+/**
  * The draft of the next note.
  */
 const draft = ref('');
@@ -183,7 +190,7 @@ const handleNote = () =>
                         )
                     "
                 >
-                    {{ t('tasks-page.button-take') }}
+                    {{ t(heldByOther ? 'tasks-page.button-take-over' : 'tasks-page.button-take') }}
                 </v-btn>
                 <v-btn
                     v-if="task.actions.unassign"

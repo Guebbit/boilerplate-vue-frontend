@@ -62,6 +62,7 @@
         "label-overdue": "Overdue since {date}",
         "label-assignee": "Assigned to {name}",
         "button-take": "Take",
+        "button-take-over": "Take over",
         "button-resolve": "Resolve",
         "button-resolve-named": "Resolve \"{subject}\"",
         "button-spam": "Mark as spam",

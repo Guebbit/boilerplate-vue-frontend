@@ -98,6 +98,23 @@ describe('TaskDetail take', () => {
             }));
 });
 
+describe('TaskDetail take label', () => {
+    it("reads 'Take over' on a task another user holds", () =>
+        openDetail(aTask({ assigneeId: 'staff-2', assigneeName: 'Ann' })).then((wrapper) => {
+            expect(wrapper.get('[data-test=task-take]').text()).toBe('Take over');
+        }));
+
+    it("reads 'Take' on an unassigned task", () =>
+        openDetail(aTask()).then((wrapper) => {
+            expect(wrapper.get('[data-test=task-take]').text()).toBe('Take');
+        }));
+
+    it("offers no take button on the viewer's own task", () =>
+        openDetail(aTask({ assigneeId: 'staff-1', assigneeName: 'Sam' })).then((wrapper) => {
+            expect(wrapper.find('[data-test=task-take]').exists()).toBe(false);
+        }));
+});
+
 describe('TaskDetail notes', () => {
     it('appends the trimmed draft, shows it, and empties the composer', () =>
         openDetail(aTask())

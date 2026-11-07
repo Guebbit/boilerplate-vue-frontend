@@ -62,6 +62,7 @@
         "label-overdue": "In ritardo dal {date}",
         "label-assignee": "Assegnato a {name}",
         "button-take": "Prendi in carico",
+        "button-take-over": "Riassegna a me",
         "button-resolve": "Risolvi",
         "button-resolve-named": "Risolvi \"{subject}\"",
         "button-spam": "Segna come spam",
