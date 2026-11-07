@@ -1,14 +1,9 @@
 /**
  * @module
- * The registry edits a module removal makes, shared by `demo-remove.ts` (which applies them to
- * this checkout) and `measure-demo-strip.ts` (which applies them to a scratch copy and asks
- * whether what is left still builds).
+ * The registry edits a module removal makes, applied by `demo-remove.ts` to this checkout.
  *
- * Both read the same code on purpose: a measure that deleted folders alone would only report the
- * edits `demo:remove` makes for you, and stay red whatever the repo's real coupling is.
- *
- * Every function takes the checkout root as an argument, so neither caller can reach into the
- * other's tree by accident.
+ * Every function takes the checkout root as an argument, so a caller can never reach into a tree
+ * it was not handed by accident.
  */
 
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';

@@ -10,7 +10,6 @@
         "preview": "vite preview",
         "backend:demo": "tsx scripts/demo/run-backend.ts",
         "demo:remove": "tsx scripts/demo/demo-remove.ts",
-        "measure:demo-strip": "tsx scripts/demo/measure-demo-strip.ts",
         "build-only": "vite build",
         "build:e2e": "cross-env VITE_VALIDATE_RESPONSES=true VITE_VALIDATE_REQUESTS=true VITE_CONTRACT_THROW=true VITE_TEST_CARDS=true vite build --outDir dist-e2e",
         "type-check-only": "vue-tsc --build --force",

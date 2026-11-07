@@ -9,9 +9,7 @@
  * The cross-module specs under `tests/e2e/` go too: each names the modules it walks on a
  * `// requires-module:` line (`./demo-remove-tests`), the way the backend's specs do.
  *
- * RUNS AGAINST THIS CHECKOUT, not a scratch copy — see the backend's `scripts/ops/demo-remove.ts`
- * for the report-only MEASURE script this pairs with (`npm run measure:demo-strip`, this repo's
- * own copy). A module-owned spec under `src/modules/<name>/tests/` goes with its folder
+ * RUNS AGAINST THIS CHECKOUT, not a scratch copy. A module-owned spec under `src/modules/<name>/tests/` goes with its folder
  * automatically; the SYSTEM-level specs that walk the shop on purpose
  * (`docs/theory/module-lifecycle.md`, backend repo) are deleted by their `requires-module` header.
  * What the report still lists is a grep for an import this script did not recognise — the residue

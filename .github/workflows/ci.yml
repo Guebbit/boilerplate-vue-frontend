@@ -15,7 +15,6 @@ name: CI
 #                     current, and the paired backend still agrees with it
 #   - correctness     typecheck, build, test-unit, test-e2e
 #   - supply chain    audit — report-only: it is not in the `ci` job's `needs:`
-#   - adoption        demo-strip-measure — report-only: it is not in the `ci` job's `needs:`
 #
 # The slow and non-hermetic suites live in their own workflows: e2e-live.yml (against a real
 # backend; this file calls it as the `test-e2e-live` job and it also runs nightly) and
@@ -315,31 +314,6 @@ jobs:
 
             - name: Audit production dependencies
               run: npm audit --omit=dev --audit-level=moderate
-
-    demo-strip-measure:
-        # The backend has a twin of this job: how far "the demo shop is removable" actually is,
-        # measured rather than assumed. Applies `demo:remove`'s own edits (module folders, the
-        # registry, the coupling graph, the cross-module specs) to a scratch copy and runs
-        # type-check-only, lint and build-only against what's left.
-        #
-        # Deliberately NOT in the `ci` gate's `needs:` below: it is an adoption signal, not a
-        # merge condition. It is expected to be GREEN; a red square means a new coupling from the
-        # foundation into a demo module, which is worth a look but not a blocked PR.
-        runs-on: ubuntu-latest
-        timeout-minutes: 15
-        permissions:
-            contents: read
-        steps:
-            - name: Checkout
-              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-              with:
-                  persist-credentials: false # no step after the checkout needs the token on disk
-
-            - name: Setup Node and install
-              uses: ./.github/actions/setup-node-and-install
-
-            - name: Measure the demo-shop strip
-              run: npm run measure:demo-strip
 
     api-freshness:
         # Verify the committed generated API client is up-to-date with openapi.yaml.
@@ -716,8 +690,7 @@ jobs:
             - test-e2e
             - test-e2e-live
             - spec-identity
-            # `audit` and `demo-strip-measure` are deliberately excluded — see their own comments
-            # above.
+            # `audit` is deliberately excluded — see its own comment above.
         runs-on: ubuntu-latest
         timeout-minutes: 5
         steps:
