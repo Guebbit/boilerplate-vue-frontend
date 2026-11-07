@@ -84,6 +84,12 @@ interface Scenario {
     protectedForbidden: boolean;
     /** Whether `GET /account` (the read that carries the abilities) itself answers `403`. */
     abilitiesForbidden: boolean;
+    /** Whether the idle answer is only for a request that carries a token, as the server's is. */
+    idleNeedsToken: boolean;
+    /** Makes `/orders` a public page: any `Authorization` header is refused 401, none is a 200. */
+    publicPage: boolean;
+    /** Answer the refresh with a `500`: a failure that says nothing about the session itself. */
+    refreshServerError: boolean;
 }
 
 /** @returns The scenario every case starts from: one refresh available, nothing accepted yet. */
@@ -93,7 +99,10 @@ const defaultScenario = (): Scenario => ({
     protectedAccepts: false,
     protectedIdle: false,
     protectedForbidden: false,
-    abilitiesForbidden: false
+    abilitiesForbidden: false,
+    idleNeedsToken: false,
+    publicPage: false,
+    refreshServerError: false
 });
 
 /** Requests seen by the server, in arrival order. Cleared before every case. */
@@ -123,6 +132,7 @@ const handlers = [
             authorization: request.headers.get('authorization') ?? undefined
         });
 
+        if (scenario.refreshServerError) return new HttpResponse(null, { status: 500 });
         if (scenario.refreshBudget <= 0) return unauthorized('Unauthorized');
         scenario.refreshBudget -= 1;
 
@@ -148,12 +158,14 @@ const handlers = [
         const authorization = request.headers.get('authorization') ?? undefined;
         requestLog.push({ route: 'GET /orders', authorization });
 
+        if (scenario.publicPage && !authorization) return HttpResponse.json({ items: [] });
+
         if (scenario.protectedForbidden)
             return HttpResponse.json(aProblem(403, [{ code: 'FORBIDDEN', message: 'Forbidden' }]), {
                 status: 403
             });
 
-        if (scenario.protectedIdle)
+        if (scenario.protectedIdle && (authorization || !scenario.idleNeedsToken))
             return HttpResponse.json(
                 aProblem(401, [{ code: 'SESSION_IDLE', message: 'Your session ended.' }]),
                 { status: 401 }
@@ -282,6 +294,101 @@ const signIn = async () => {
     session.viewer = { id: '1', email: 'a@b.c', role: 'customer' };
     return session;
 };
+
+describe('a session that ended under a request that carried its token', () => {
+    it('replays an idle 401 once as a guest: the public page still answers, one idle notice', () => {
+        scenario.publicPage = true;
+        scenario.protectedIdle = true;
+
+        return loadHttp()
+            .then(signIn)
+            .then(() => import('@/infrastructure/http'))
+            .then(({ orvalMutator }) =>
+                orvalMutator<{ items: unknown[] }>({ url: '/orders', method: 'GET' })
+            )
+            .then((result) => {
+                expect(result.items).toEqual([]);
+                expect(routes()).toEqual(['GET /orders', 'GET /orders']);
+                expect(requestLog[0]?.authorization).toBe('Bearer token');
+                expect(requestLog[1]?.authorization).toBeUndefined();
+                expect(useSessionStore().idleSignal).toBe(1);
+                expect(useSessionStore().expiredSignal).toBe(0);
+            });
+    });
+
+    it('replays once as a guest when the refresh is refused for good, with one expired notice', () => {
+        scenario.publicPage = true;
+        scenario.refreshBudget = 0;
+
+        return loadHttp()
+            .then(signIn)
+            .then(() => import('@/infrastructure/http'))
+            .then(({ orvalMutator }) =>
+                orvalMutator<{ items: unknown[] }>({ url: '/orders', method: 'GET' })
+            )
+            .then((result) => {
+                expect(result.items).toEqual([]);
+                expect(routes()).toEqual(['GET /orders', 'POST /account/refresh', 'GET /orders']);
+                expect(requestLog.at(-1)?.authorization).toBeUndefined();
+                expect(useSessionStore().expiredSignal).toBe(1);
+            });
+    });
+
+    it('shares one refresh and one notice between parallel requests, and replays each as a guest', () => {
+        scenario.publicPage = true;
+        scenario.refreshBudget = 0;
+
+        return loadHttp()
+            .then(signIn)
+            .then(() => import('@/infrastructure/http'))
+            .then(({ orvalMutator }) =>
+                Promise.all([
+                    orvalMutator({ url: '/orders', method: 'GET' }),
+                    orvalMutator({ url: '/orders', method: 'GET' })
+                ])
+            )
+            .then(() => {
+                expect(timesRequested('POST /account/refresh')).toBe(1);
+                expect(timesRequested('GET /orders')).toBe(4);
+                expect(useSessionStore().expiredSignal).toBe(1);
+            });
+    });
+
+    it('does not replay when the refresh failed in passing, and the session stays', () => {
+        scenario.publicPage = true;
+        scenario.refreshServerError = true;
+
+        return loadHttp()
+            .then(signIn)
+            .then(() => import('@/infrastructure/http'))
+            .then(({ orvalMutator }) =>
+                expect(orvalMutator({ url: '/orders', method: 'GET' })).rejects.toMatchObject({
+                    status: 401
+                })
+            )
+            .then(() => {
+                expect(routes()).toEqual(['GET /orders', 'POST /account/refresh']);
+                expect(useSessionStore().expiredSignal).toBe(0);
+                expect(useSessionStore().hasSession).toBe(true);
+            });
+    });
+
+    it('replays a private route once only: its second 401 is the answer, nothing loops', () => {
+        scenario.protectedIdle = true;
+        scenario.idleNeedsToken = true;
+
+        return loadHttp()
+            .then(signIn)
+            .then(() => import('@/infrastructure/http'))
+            .then(({ orvalMutator }) =>
+                orvalMutator({ url: '/orders', method: 'GET' }).catch(() => undefined)
+            )
+            .then(() => {
+                expect(routes()).toEqual(['GET /orders', 'GET /orders']);
+                expect(useSessionStore().idleSignal).toBe(1);
+            });
+    });
+});
 
 describe('a 403 on a signed-in request', () => {
     it('re-reads the abilities once, without refreshing the token', () => {

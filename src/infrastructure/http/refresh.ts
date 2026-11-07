@@ -6,6 +6,12 @@
  * In `cookie` mode there is nothing to renew (`POST /account/refresh` is a 404 there): a 401 means
  * the session cookie is gone, so the session ends at once and the request is not replayed.
  *
+ * When the session itself has ended (a staff session idle past its limit, or a refresh the server
+ * refused for good), a request that carried the dead token is replayed ONCE without it. The
+ * backend refuses a bad bearer even on a public page (RFC 6750 §3.1), so without the replay a
+ * product page would show an error to someone who is now just a guest. The notice — "session
+ * expired" or "session ended for inactivity" — is the session store's, shown once per ending.
+ *
  * The refresh attempt itself belongs to `infrastructure/session.ts`'s `refreshToken` — single
  * flight, epoch-guarded against a stale result landing after a `clearSession`, and the one place
  * that ends the session outright on a definitive 401/403 from the refresh endpoint. This module
@@ -19,7 +25,7 @@ import { instance } from './client.ts';
 import { getFirstApiError } from './envelope.ts';
 import { onResponseReject } from './interceptors.ts';
 import { toPathname } from './url.ts';
-import type { AxiosError } from 'axios';
+import { AxiosHeaders, type AxiosError } from 'axios';
 import type {
     AxiosRequestConfigWithRetry,
     AxiosResponseErrorBody,
@@ -69,6 +75,35 @@ const isIdleRefusal = (
     error.response?.status === 401 && getFirstApiError(body)?.code === ERROR_CODES.SESSION_IDLE;
 
 /**
+ * Replays a request once as a guest, after the session it was sent under has ended.
+ *
+ * The copied config still holds the old `Authorization` header, and clearing the session does not
+ * remove it from there, so it is deleted explicitly. A request that carried no token is not
+ * replayed: being a guest was never what it was refused for. `_refreshed` keeps the replay from
+ * being refreshed or replayed again.
+ *
+ * @param error - The 401 that triggered the interceptor.
+ * @param originalRequest - The failed request's config.
+ * @returns The replay's response, or the normalized rejection from {@link onResponseReject}.
+ */
+const replayAsGuest = (
+    error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>,
+    originalRequest: AxiosRequestConfigWithRetry | undefined
+) => {
+    // Narrowing cast: the config's header type adds per-name hints, the value is an AxiosHeaders.
+    // AxiosHeaders.from copies it: https://axios-http.com/docs/req_config
+    const headers = AxiosHeaders.from(originalRequest?.headers as AxiosHeaders | undefined);
+    if (!originalRequest || originalRequest._refreshed || !headers.has('Authorization'))
+        return onResponseReject(error);
+    headers.delete('Authorization');
+    return instance.request({
+        ...originalRequest,
+        headers,
+        _refreshed: true
+    } as AxiosRequestConfigWithRetry);
+};
+
+/**
  * A 401 in `cookie` mode: the cookie no longer names a live session. A visitor who held one is
  * told it expired; a guest's 401 is just a refusal.
  *
@@ -97,10 +132,10 @@ export const onResponseRejectWithRefresh = (
     const session = useSessionStore();
     const originalRequest = error.config as AxiosRequestConfigWithRetry | undefined;
     // A staff session that sat idle too long: refreshing would only mint a token for a session the
-    // server has already ended, so say why and stop.
+    // server has already ended, so say why and carry on as a guest.
     if (isIdleRefusal(error, body)) {
         session.signalIdle();
-        return onResponseReject(error);
+        return replayAsGuest(error, originalRequest);
     }
     // `_refreshed` is the loop guard: a 401 on the refresh call itself, or on a request already
     // replayed once, must not trigger another refresh. It does NOT also block a step-up —
@@ -115,6 +150,9 @@ export const onResponseRejectWithRefresh = (
         return session.refreshToken().then((token) => {
             // A failed or tokenless refresh is a failed refresh. `refreshToken` already stored it
             // (or didn't, on a stale/failed attempt) — this interceptor only decides the replay.
+            // A refresh that ended the session (a definitive 401/403) leaves none: replay as a
+            // guest. One that failed in passing (network, 5xx) keeps the session, so no replay.
+            if (!token && !session.hasSession) return replayAsGuest(error, originalRequest);
             if (!token || !originalRequest) return onResponseReject(error);
             return instance.request({
                 ...originalRequest,

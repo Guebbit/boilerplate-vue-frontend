@@ -10559,7 +10559,7 @@ export const searchUsers = (
 };
 
 /**
- * Creates a contact task and notifies the support mailbox by email. Open to anyone. A valid session bearer token, when one is sent, records the sender's account on the task (`subjectId`), so the account's data export and erasure include it; an absent or expired token files it as anonymous.
+ * Creates a contact task and notifies the support mailbox by email. Open to anyone. A valid session bearer token, when one is sent, records the sender's account on the task (`subjectId`), so the account's data export and erasure include it. No token files it as anonymous; a token that names no live session is refused `401`, so the client refreshes and sends it again as the person.
  * @summary Submit contact request
  */
 export const createContactTask = (

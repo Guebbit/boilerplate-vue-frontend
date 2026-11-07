@@ -79,16 +79,41 @@ flowchart TD
     class K error;
 ```
 
+### A session that ended under a public page
+
+The backend refuses a stale bearer with `401` on a public page too (a product, a search), so that
+a signed-in editor who only browses is seen as active and refreshed, not silently served as a
+guest. The SPA has two ways a session really ends on such a request, and both fall back to a guest
+by themselves:
+
+```mermaid
+flowchart TD
+    R["request with a bearer"] --> F{"401?"}
+    F -- "SESSION_IDLE" --> I["signalIdle: idle notice"]
+    F -- "other" --> RF["POST /account/refresh"]
+    RF -- "token" --> Again["replay with the new token"]
+    RF -- "refused for good" --> X["signalExpired: expired notice"]
+    RF -- "network or 5xx" --> Keep["session kept, error shown"]
+    I --> G["replay once without Authorization"]
+    X --> G
+```
+
+- The replay deletes `Authorization` from the copied request (clearing the session does not), and
+  runs once (`_refreshed`): a private route's second `401` is its answer, and nothing loops.
+- A request that carried no token is never replayed: being a guest was not what it was refused for.
+- The notice is the session store's own, one per ending (the refresh is single-flight), and is
+  not repeated per request. A refresh that failed in passing keeps the session and replays nothing.
+
 ## Where token logic lives
 
-| Concern                            | File                                                                                                                                       |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Token storage + session state      | `src/infrastructure/session.ts` — the mode, the token or cookie session, a `{ id, email, role, … }` projection, and the caller's own rules |
-| The visitor's own account record   | `src/modules/account/stores/profile.ts`                                                                                                    |
-| Attaching Bearer token to requests | `src/infrastructure/http/index.ts` (request interceptor)                                                                                   |
-| Handling `401` responses           | `src/infrastructure/http/refresh.ts` (refresh and replay in `jwt` mode, end the session in `cookie` mode)                                  |
-| Restoring auth on page reload      | `src/app/guards/authentications.ts` → `tryRestoreAuth`                                                                                     |
-| Route guards                       | `src/app/guards/authentications.ts` → `canAccess`, `enforceRouteAccess`                                                                    |
+| Concern                            | File                                                                                                                                                  |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Token storage + session state      | `src/infrastructure/session.ts` — the mode, the token or cookie session, a `{ id, email, role, … }` projection, and the caller's own rules            |
+| The visitor's own account record   | `src/modules/account/stores/profile.ts`                                                                                                               |
+| Attaching Bearer token to requests | `src/infrastructure/http/index.ts` (request interceptor)                                                                                              |
+| Handling `401` responses           | `src/infrastructure/http/refresh.ts` (refresh and replay in `jwt` mode, end the session in `cookie` mode; a replay as a guest once the session ended) |
+| Restoring auth on page reload      | `src/app/guards/authentications.ts` → `tryRestoreAuth`                                                                                                |
+| Route guards                       | `src/app/guards/authentications.ts` → `canAccess`, `enforceRouteAccess`                                                                               |
 
 ## Route guards
 
