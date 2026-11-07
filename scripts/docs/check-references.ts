@@ -107,6 +107,10 @@ const ALLOWED: { prefix: string; reason: string }[] = [
     { prefix: 'tests/e2e/downloads/', reason: 'Cypress artefacts, written by a run' },
     { prefix: 'tests_output/', reason: 'written by a test run' },
     { prefix: '.env', reason: 'a deployment writes it; only .env-example is tracked' },
+    {
+        prefix: 'boilerplate-node-backend/asyncapi',
+        reason: "the backend's AsyncAPI bundles, built on its install and gitignored there"
+    },
     { prefix: 'docs/.vitepress/dist/', reason: 'the built site, written by docs:build' },
     { prefix: 'docs/.vitepress/cache/', reason: "vitepress's own scratch space" },
     {
