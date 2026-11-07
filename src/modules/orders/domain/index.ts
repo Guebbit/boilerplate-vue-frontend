@@ -7,6 +7,6 @@
 export { reorderOutcome } from './reorder';
 export type { ReorderedOrderLine, ReorderOutcome } from './reorder';
 export { describeTimelineEntry } from './timeline';
-export type { TimelineLine, TimelineTools } from './timeline';
+export type { OrderTimelineType, TimelineLine, TimelineTools } from './timeline';
 export { exportRefusalOf } from './export-refusal';
 export type { ExportRefusal } from './export-refusal';

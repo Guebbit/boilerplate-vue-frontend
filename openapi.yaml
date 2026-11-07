@@ -18379,51 +18379,12 @@ components:
         deletedAt:
           type: string
           format: date-time
-    OrderTimelineType:
-      type: string
-      enum:
-        - created
-        - paid
-        - processing
-        - shipped
-        - delivered
-        - canceled
-        - status_overridden
-        - payment_declined
-        - refund_issued
-        - refund_settled
-        - refund_failed
-        - refund_canceled
-        - refund_reversed
-        - dispute_opened
-        - dispute_closed
-        - shipment_shipped
-        - shipment_delivered
-        - shipment_lost
-        - fulfillment_held
-        - fulfillment_released
-        - remainder_canceled
-        - return_requested
-        - return_approved
-        - return_declined
-        - return_received
-        - return_closed
-        - return_canceled
-        - invoice_issued
-        - credit_note_issued
-        - release_date_moved
-        - delay_notice_sent
-        - address_corrected
-      description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `canceled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`, `dispute_opened`, `dispute_closed`. Shipments: `shipment_shipped`, `shipment_delivered`, `shipment_lost`, `fulfillment_held`, `fulfillment_released`, `remainder_canceled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Which of these a buyer sees is the row's own `audience` (`buyer` or `staff`), set per type by the server."
-    OrderTimelineExportEntry:
+    OrderTimelineExportEntryBase:
       type: object
-      additionalProperties: false
       required:
         - id
         - at
-        - type
         - audience
-        - data
         - orderId
       properties:
         orderId:
@@ -18433,8 +18394,6 @@ components:
         at:
           type: string
           format: date-time
-        type:
-          $ref: "#/components/schemas/OrderTimelineType"
         audience:
           type: string
           enum:
@@ -18445,13 +18404,780 @@ components:
           allOf:
             - $ref: "#/components/schemas/Id"
           description: The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id.
-        text:
+    OrderTimelineDataNone:
+      type: object
+      additionalProperties: false
+      description: "No data: the type says everything. Closed and empty."
+    OrderTimelineExportEntryPlain:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - created
+                - processing
+                - shipped
+                - address_corrected
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataNone"
+    OrderTimelineDataStatusOverridden:
+      type: object
+      additionalProperties: false
+      required:
+        - mode
+        - from
+        - to
+      description: A staff member moved the status by hand. `text` (on the entry) is their reason.
+      properties:
+        mode:
           type: string
-          description: Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays.
-        data:
-          type: object
-          additionalProperties: true
-          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `canceled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
+          enum:
+            - status
+          description: What was overridden. Only the status today.
+        from:
+          $ref: "#/components/schemas/OrderStatus"
+        to:
+          $ref: "#/components/schemas/OrderStatus"
+    OrderTimelineExportEntryStatusOverridden:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - status_overridden
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataStatusOverridden"
+            text:
+              type: string
+              description: "Free text staff wrote with the change: the override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays."
+    OrderTimelineDataPaid:
+      type: object
+      additionalProperties: false
+      description: The order was paid.
+      properties:
+        method:
+          type: string
+          description: How it was paid, as the payment row records it (`PaymentMethod` in `payments`, or an offline method). Absent when unknown.
+    OrderTimelineExportEntryPaid:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - paid
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataPaid"
+    OrderTimelineDataDelivered:
+      type: object
+      additionalProperties: false
+      required:
+        - withdrawUntil
+      description: The last shipment arrived.
+      properties:
+        withdrawUntil:
+          type: string
+          format: date-time
+          description: When the withdrawal window closes; frozen at the first delivery.
+    OrderTimelineExportEntryDelivered:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - delivered
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataDelivered"
+    OrderTimelineDataCanceled:
+      type: object
+      additionalProperties: false
+      required:
+        - by
+        - cause
+        - refund
+      description: The order was canceled.
+      properties:
+        by:
+          type: string
+          enum:
+            - customer
+            - admin
+            - withdrawal
+            - system
+          description: "Who: the buyer, a staff member, a withdrawal, or the system (`reservation_expired`, `erasure`, `payment_mismatch`, `lost`)."
+        cause:
+          type: string
+          enum:
+            - customer
+            - operator
+            - withdrawal
+            - reservation_expired
+            - erasure
+            - payment_mismatch
+            - lost
+          description: "Why. `lost`: a lost parcel refunded with nothing ever delivered."
+        refund:
+          type: boolean
+          description: Whether the cancel returned the money.
+    OrderTimelineExportEntryCanceled:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - canceled
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataCanceled"
+    OrderTimelineDataPaymentDeclined:
+      type: object
+      additionalProperties: false
+      required:
+        - paymentId
+      description: The provider declined a payment. The provider's wording is never copied.
+      properties:
+        paymentId:
+          $ref: "#/components/schemas/Id"
+    OrderTimelineExportEntryPaymentDeclined:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - payment_declined
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataPaymentDeclined"
+    OrderTimelineDataRefund:
+      type: object
+      additionalProperties: false
+      required:
+        - refundId
+        - amount
+        - currency
+        - reason
+      description: A refund opened, settled or voided.
+      properties:
+        refundId:
+          $ref: "#/components/schemas/Id"
+        amount:
+          $ref: "#/components/schemas/DecimalAmount"
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+        reason:
+          type: string
+          description: The refund's closed reason code (`RefundReason` in `payments`).
+    OrderTimelineExportEntryRefund:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - refund_issued
+                - refund_settled
+                - refund_canceled
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataRefund"
+    OrderTimelineDataRefundFailure:
+      type: object
+      additionalProperties: false
+      required:
+        - refundId
+        - amount
+        - currency
+        - reason
+        - failureReason
+      description: A refund the provider refused, or took back after it settled.
+      properties:
+        refundId:
+          $ref: "#/components/schemas/Id"
+        amount:
+          $ref: "#/components/schemas/DecimalAmount"
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+        reason:
+          type: string
+          description: The refund's closed reason code (`RefundReason` in `payments`).
+        failureReason:
+          type: string
+          description: Why the provider refused (`RefundFailureReason` in `payments`).
+    OrderTimelineExportEntryRefundFailure:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - refund_failed
+                - refund_reversed
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataRefundFailure"
+    OrderTimelineDataDispute:
+      type: object
+      additionalProperties: false
+      required:
+        - disputeId
+        - kind
+        - status
+        - reason
+        - amount
+        - currency
+      description: A payment dispute opened or reached a closed status.
+      properties:
+        disputeId:
+          type: string
+          description: The provider's reference for the dispute.
+        kind:
+          type: string
+          description: "`DisputeKind` in `payments`."
+        status:
+          type: string
+          description: "`DisputeStatus` in `payments`."
+        reason:
+          type: string
+          description: "`DisputeReason` in `payments`."
+        amount:
+          $ref: "#/components/schemas/DecimalAmount"
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+    OrderTimelineExportEntryDispute:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - dispute_opened
+                - dispute_closed
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataDispute"
+    OrderTimelineDataShipmentShipped:
+      type: object
+      additionalProperties: false
+      required:
+        - shipmentId
+        - fulfillmentOrderId
+        - number
+      description: A shipment left.
+      properties:
+        shipmentId:
+          $ref: "#/components/schemas/Id"
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: integer
+          minimum: 1
+          description: The shipment's 1-based position within the order.
+        trackingCode:
+          type: string
+          description: Absent when none was given.
+    OrderTimelineExportEntryShipmentShipped:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - shipment_shipped
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataShipmentShipped"
+    OrderTimelineDataShipmentDelivered:
+      type: object
+      additionalProperties: false
+      required:
+        - shipmentId
+        - fulfillmentOrderId
+        - number
+      description: A shipment arrived.
+      properties:
+        shipmentId:
+          $ref: "#/components/schemas/Id"
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: integer
+          minimum: 1
+          description: The shipment's 1-based position within the order.
+    OrderTimelineExportEntryShipmentDelivered:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - shipment_delivered
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataShipmentDelivered"
+    OrderTimelineDataShipmentLost:
+      type: object
+      additionalProperties: false
+      required:
+        - shipmentId
+        - fulfillmentOrderId
+        - number
+        - reason
+      description: A shipment will not arrive.
+      properties:
+        shipmentId:
+          $ref: "#/components/schemas/Id"
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: integer
+          minimum: 1
+          description: The shipment's 1-based position within the order.
+        reason:
+          type: string
+          description: "`ShipmentLostReason` in `delivery`."
+    OrderTimelineExportEntryShipmentLost:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - shipment_lost
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataShipmentLost"
+    OrderTimelineDataFulfillmentHeld:
+      type: object
+      additionalProperties: false
+      required:
+        - reason
+      description: A fulfillment order was put on hold.
+      properties:
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+        reason:
+          type: string
+          description: "`FulfillmentHoldReason` in `delivery`."
+    OrderTimelineExportEntryFulfillmentHeld:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - fulfillment_held
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataFulfillmentHeld"
+    OrderTimelineDataFulfillmentOrderRef:
+      type: object
+      additionalProperties: false
+      required:
+        - fulfillmentOrderId
+      description: What the row is about is one fulfillment order.
+      properties:
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+    OrderTimelineExportEntryFulfillmentOrderRef:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - fulfillment_released
+                - remainder_canceled
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataFulfillmentOrderRef"
+    OrderTimelineDataReturnRequested:
+      type: object
+      additionalProperties: false
+      required:
+        - returnId
+        - reason
+      description: A return was opened.
+      properties:
+        returnId:
+          $ref: "#/components/schemas/Id"
+        reason:
+          type: string
+          description: "`ReturnReason` in `returns`."
+    OrderTimelineExportEntryReturnRequested:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - return_requested
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataReturnRequested"
+    OrderTimelineDataReturnApproved:
+      type: object
+      additionalProperties: false
+      required:
+        - returnId
+      description: A return was approved.
+      properties:
+        returnId:
+          $ref: "#/components/schemas/Id"
+        reason:
+          type: string
+          description: "`ReturnReason` in `returns`. Present when the return was opened already approved (a withdrawal, or one staff opened)."
+    OrderTimelineExportEntryReturnApproved:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - return_approved
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataReturnApproved"
+    OrderTimelineDataReturnRef:
+      type: object
+      additionalProperties: false
+      required:
+        - returnId
+      description: What the row is about is one return.
+      properties:
+        returnId:
+          $ref: "#/components/schemas/Id"
+    OrderTimelineExportEntryReturnRef:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - return_declined
+                - return_canceled
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataReturnRef"
+    OrderTimelineDataReturnReceived:
+      type: object
+      additionalProperties: false
+      required:
+        - returnId
+        - refundAmount
+      description: The returned goods were checked in.
+      properties:
+        returnId:
+          $ref: "#/components/schemas/Id"
+        refundAmount:
+          $ref: "#/components/schemas/DecimalAmount"
+    OrderTimelineExportEntryReturnReceived:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - return_received
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataReturnReceived"
+    OrderTimelineDataReturnClosed:
+      type: object
+      additionalProperties: false
+      required:
+        - returnId
+        - refundAmount
+        - currency
+      description: A return was closed, refunded or settled.
+      properties:
+        returnId:
+          $ref: "#/components/schemas/Id"
+        refundAmount:
+          $ref: "#/components/schemas/DecimalAmount"
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+        remedy:
+          type: string
+          description: "`ReturnRemedy` in `returns`. Absent when none was chosen."
+    OrderTimelineExportEntryReturnClosed:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - return_closed
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataReturnClosed"
+    OrderTimelineDataInvoiceIssued:
+      type: object
+      additionalProperties: false
+      required:
+        - invoiceId
+        - number
+      description: The order's invoice was issued.
+      properties:
+        invoiceId:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: string
+          description: The invoice number.
+    OrderTimelineExportEntryInvoiceIssued:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - invoice_issued
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataInvoiceIssued"
+    OrderTimelineDataCreditNoteIssued:
+      type: object
+      additionalProperties: false
+      required:
+        - creditNoteId
+        - number
+        - refundId
+      description: A credit note corrected the invoice for a refund.
+      properties:
+        creditNoteId:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: string
+          description: The credit note number.
+        refundId:
+          $ref: "#/components/schemas/Id"
+    OrderTimelineExportEntryCreditNoteIssued:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - credit_note_issued
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataCreditNoteIssued"
+    OrderTimelineDataReleaseDateMoved:
+      type: object
+      additionalProperties: false
+      required:
+        - fulfillmentOrderId
+      description: A preorder's release date moved.
+      properties:
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+        from:
+          type: string
+          format: date
+          description: The shop's day expected before. Absent when there was no date.
+        to:
+          type: string
+          format: date
+          description: The shop's day expected now. Absent when the date was removed.
+    OrderTimelineExportEntryReleaseDateMoved:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - release_date_moved
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataReleaseDateMoved"
+    OrderTimelineDataDelayNoticeSent:
+      type: object
+      additionalProperties: false
+      required:
+        - fulfillmentOrderId
+        - reason
+      description: The buyer was told a preorder is late.
+      properties:
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+        reason:
+          type: string
+          description: "Why the notice went out: `moved` or `due` (`FulfillmentOrderDelayed` in `delivery`)."
+        expectedAt:
+          type: string
+          format: date
+          description: The shop's day now expected. Absent when there is no date yet.
+    OrderTimelineExportEntryDelayNoticeSent:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - delay_notice_sent
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataDelayNoticeSent"
+    OrderTimelineExportEntry:
+      oneOf:
+        - $ref: "#/components/schemas/OrderTimelineExportEntryPlain"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryStatusOverridden"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryPaid"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryDelivered"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryCanceled"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryPaymentDeclined"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryRefund"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryRefundFailure"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryDispute"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryShipmentShipped"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryShipmentDelivered"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryShipmentLost"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryFulfillmentHeld"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryFulfillmentOrderRef"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryReturnRequested"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryReturnApproved"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryReturnRef"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryReturnReceived"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryReturnClosed"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryInvoiceIssued"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryCreditNoteIssued"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryReleaseDateMoved"
+        - $ref: "#/components/schemas/OrderTimelineExportEntryDelayNoticeSent"
+      discriminator:
+        propertyName: type
+        mapping:
+          created: "#/components/schemas/OrderTimelineExportEntryPlain"
+          processing: "#/components/schemas/OrderTimelineExportEntryPlain"
+          shipped: "#/components/schemas/OrderTimelineExportEntryPlain"
+          address_corrected: "#/components/schemas/OrderTimelineExportEntryPlain"
+          status_overridden: "#/components/schemas/OrderTimelineExportEntryStatusOverridden"
+          paid: "#/components/schemas/OrderTimelineExportEntryPaid"
+          delivered: "#/components/schemas/OrderTimelineExportEntryDelivered"
+          canceled: "#/components/schemas/OrderTimelineExportEntryCanceled"
+          payment_declined: "#/components/schemas/OrderTimelineExportEntryPaymentDeclined"
+          refund_issued: "#/components/schemas/OrderTimelineExportEntryRefund"
+          refund_settled: "#/components/schemas/OrderTimelineExportEntryRefund"
+          refund_canceled: "#/components/schemas/OrderTimelineExportEntryRefund"
+          refund_failed: "#/components/schemas/OrderTimelineExportEntryRefundFailure"
+          refund_reversed: "#/components/schemas/OrderTimelineExportEntryRefundFailure"
+          dispute_opened: "#/components/schemas/OrderTimelineExportEntryDispute"
+          dispute_closed: "#/components/schemas/OrderTimelineExportEntryDispute"
+          shipment_shipped: "#/components/schemas/OrderTimelineExportEntryShipmentShipped"
+          shipment_delivered: "#/components/schemas/OrderTimelineExportEntryShipmentDelivered"
+          shipment_lost: "#/components/schemas/OrderTimelineExportEntryShipmentLost"
+          fulfillment_held: "#/components/schemas/OrderTimelineExportEntryFulfillmentHeld"
+          fulfillment_released: "#/components/schemas/OrderTimelineExportEntryFulfillmentOrderRef"
+          remainder_canceled: "#/components/schemas/OrderTimelineExportEntryFulfillmentOrderRef"
+          return_requested: "#/components/schemas/OrderTimelineExportEntryReturnRequested"
+          return_approved: "#/components/schemas/OrderTimelineExportEntryReturnApproved"
+          return_declined: "#/components/schemas/OrderTimelineExportEntryReturnRef"
+          return_canceled: "#/components/schemas/OrderTimelineExportEntryReturnRef"
+          return_received: "#/components/schemas/OrderTimelineExportEntryReturnReceived"
+          return_closed: "#/components/schemas/OrderTimelineExportEntryReturnClosed"
+          invoice_issued: "#/components/schemas/OrderTimelineExportEntryInvoiceIssued"
+          credit_note_issued: "#/components/schemas/OrderTimelineExportEntryCreditNoteIssued"
+          release_date_moved: "#/components/schemas/OrderTimelineExportEntryReleaseDateMoved"
+          delay_notice_sent: "#/components/schemas/OrderTimelineExportEntryDelayNoticeSent"
     RefundStatus:
       type: string
       enum:
@@ -23629,23 +24355,18 @@ components:
           description: One result per submitted line, in request order.
           items:
             $ref: "#/components/schemas/MergeLineResult"
-    OrderTimelineEntry:
+    OrderTimelineEntryBase:
       type: object
-      additionalProperties: false
       required:
         - id
         - at
-        - type
         - audience
-        - data
       properties:
         id:
           $ref: "#/components/schemas/Id"
         at:
           type: string
           format: date-time
-        type:
-          $ref: "#/components/schemas/OrderTimelineType"
         audience:
           type: string
           enum:
@@ -23656,13 +24377,423 @@ components:
           allOf:
             - $ref: "#/components/schemas/Id"
           description: The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id.
-        text:
-          type: string
-          description: Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays.
-        data:
-          type: object
-          additionalProperties: true
-          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `canceled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
+    OrderTimelineEntryPlain:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - created
+                - processing
+                - shipped
+                - address_corrected
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataNone"
+    OrderTimelineEntryStatusOverridden:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - status_overridden
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataStatusOverridden"
+            text:
+              type: string
+              description: "Free text staff wrote with the change: the override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays."
+    OrderTimelineEntryPaid:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - paid
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataPaid"
+    OrderTimelineEntryDelivered:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - delivered
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataDelivered"
+    OrderTimelineEntryCanceled:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - canceled
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataCanceled"
+    OrderTimelineEntryPaymentDeclined:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - payment_declined
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataPaymentDeclined"
+    OrderTimelineEntryRefund:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - refund_issued
+                - refund_settled
+                - refund_canceled
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataRefund"
+    OrderTimelineEntryRefundFailure:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - refund_failed
+                - refund_reversed
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataRefundFailure"
+    OrderTimelineEntryDispute:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - dispute_opened
+                - dispute_closed
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataDispute"
+    OrderTimelineEntryShipmentShipped:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - shipment_shipped
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataShipmentShipped"
+    OrderTimelineEntryShipmentDelivered:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - shipment_delivered
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataShipmentDelivered"
+    OrderTimelineEntryShipmentLost:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - shipment_lost
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataShipmentLost"
+    OrderTimelineEntryFulfillmentHeld:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - fulfillment_held
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataFulfillmentHeld"
+    OrderTimelineEntryFulfillmentOrderRef:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - fulfillment_released
+                - remainder_canceled
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataFulfillmentOrderRef"
+    OrderTimelineEntryReturnRequested:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - return_requested
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataReturnRequested"
+    OrderTimelineEntryReturnApproved:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - return_approved
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataReturnApproved"
+    OrderTimelineEntryReturnRef:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - return_declined
+                - return_canceled
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataReturnRef"
+    OrderTimelineEntryReturnReceived:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - return_received
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataReturnReceived"
+    OrderTimelineEntryReturnClosed:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - return_closed
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataReturnClosed"
+    OrderTimelineEntryInvoiceIssued:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - invoice_issued
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataInvoiceIssued"
+    OrderTimelineEntryCreditNoteIssued:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - credit_note_issued
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataCreditNoteIssued"
+    OrderTimelineEntryReleaseDateMoved:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - release_date_moved
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataReleaseDateMoved"
+    OrderTimelineEntryDelayNoticeSent:
+      unevaluatedProperties: false
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryBase"
+        - type: object
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              enum:
+                - delay_notice_sent
+            data:
+              $ref: "#/components/schemas/OrderTimelineDataDelayNoticeSent"
+    OrderTimelineEntry:
+      oneOf:
+        - $ref: "#/components/schemas/OrderTimelineEntryPlain"
+        - $ref: "#/components/schemas/OrderTimelineEntryStatusOverridden"
+        - $ref: "#/components/schemas/OrderTimelineEntryPaid"
+        - $ref: "#/components/schemas/OrderTimelineEntryDelivered"
+        - $ref: "#/components/schemas/OrderTimelineEntryCanceled"
+        - $ref: "#/components/schemas/OrderTimelineEntryPaymentDeclined"
+        - $ref: "#/components/schemas/OrderTimelineEntryRefund"
+        - $ref: "#/components/schemas/OrderTimelineEntryRefundFailure"
+        - $ref: "#/components/schemas/OrderTimelineEntryDispute"
+        - $ref: "#/components/schemas/OrderTimelineEntryShipmentShipped"
+        - $ref: "#/components/schemas/OrderTimelineEntryShipmentDelivered"
+        - $ref: "#/components/schemas/OrderTimelineEntryShipmentLost"
+        - $ref: "#/components/schemas/OrderTimelineEntryFulfillmentHeld"
+        - $ref: "#/components/schemas/OrderTimelineEntryFulfillmentOrderRef"
+        - $ref: "#/components/schemas/OrderTimelineEntryReturnRequested"
+        - $ref: "#/components/schemas/OrderTimelineEntryReturnApproved"
+        - $ref: "#/components/schemas/OrderTimelineEntryReturnRef"
+        - $ref: "#/components/schemas/OrderTimelineEntryReturnReceived"
+        - $ref: "#/components/schemas/OrderTimelineEntryReturnClosed"
+        - $ref: "#/components/schemas/OrderTimelineEntryInvoiceIssued"
+        - $ref: "#/components/schemas/OrderTimelineEntryCreditNoteIssued"
+        - $ref: "#/components/schemas/OrderTimelineEntryReleaseDateMoved"
+        - $ref: "#/components/schemas/OrderTimelineEntryDelayNoticeSent"
+      discriminator:
+        propertyName: type
+        mapping:
+          created: "#/components/schemas/OrderTimelineEntryPlain"
+          processing: "#/components/schemas/OrderTimelineEntryPlain"
+          shipped: "#/components/schemas/OrderTimelineEntryPlain"
+          address_corrected: "#/components/schemas/OrderTimelineEntryPlain"
+          status_overridden: "#/components/schemas/OrderTimelineEntryStatusOverridden"
+          paid: "#/components/schemas/OrderTimelineEntryPaid"
+          delivered: "#/components/schemas/OrderTimelineEntryDelivered"
+          canceled: "#/components/schemas/OrderTimelineEntryCanceled"
+          payment_declined: "#/components/schemas/OrderTimelineEntryPaymentDeclined"
+          refund_issued: "#/components/schemas/OrderTimelineEntryRefund"
+          refund_settled: "#/components/schemas/OrderTimelineEntryRefund"
+          refund_canceled: "#/components/schemas/OrderTimelineEntryRefund"
+          refund_failed: "#/components/schemas/OrderTimelineEntryRefundFailure"
+          refund_reversed: "#/components/schemas/OrderTimelineEntryRefundFailure"
+          dispute_opened: "#/components/schemas/OrderTimelineEntryDispute"
+          dispute_closed: "#/components/schemas/OrderTimelineEntryDispute"
+          shipment_shipped: "#/components/schemas/OrderTimelineEntryShipmentShipped"
+          shipment_delivered: "#/components/schemas/OrderTimelineEntryShipmentDelivered"
+          shipment_lost: "#/components/schemas/OrderTimelineEntryShipmentLost"
+          fulfillment_held: "#/components/schemas/OrderTimelineEntryFulfillmentHeld"
+          fulfillment_released: "#/components/schemas/OrderTimelineEntryFulfillmentOrderRef"
+          remainder_canceled: "#/components/schemas/OrderTimelineEntryFulfillmentOrderRef"
+          return_requested: "#/components/schemas/OrderTimelineEntryReturnRequested"
+          return_approved: "#/components/schemas/OrderTimelineEntryReturnApproved"
+          return_declined: "#/components/schemas/OrderTimelineEntryReturnRef"
+          return_canceled: "#/components/schemas/OrderTimelineEntryReturnRef"
+          return_received: "#/components/schemas/OrderTimelineEntryReturnReceived"
+          return_closed: "#/components/schemas/OrderTimelineEntryReturnClosed"
+          invoice_issued: "#/components/schemas/OrderTimelineEntryInvoiceIssued"
+          credit_note_issued: "#/components/schemas/OrderTimelineEntryCreditNoteIssued"
+          release_date_moved: "#/components/schemas/OrderTimelineEntryReleaseDateMoved"
+          delay_notice_sent: "#/components/schemas/OrderTimelineEntryDelayNoticeSent"
     OrderTimelineResponse:
       type: object
       additionalProperties: false

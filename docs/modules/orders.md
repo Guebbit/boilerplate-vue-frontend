@@ -118,6 +118,11 @@ codes (an amount, a parcel number, a reason code through its own dictionary). A 
 does not know is shown raw, so a newer API never leaves a blank. The page re-reads the timeline when
 the order's status, payment, fulfilment or return state changes.
 
+A row is a union keyed by `type` (`OrderTimelineEntry`), so each type's detail reads the `data` shape
+the contract gives that type: the table of details is a mapped type over the types, and a field
+renamed in the contract fails to compile there. `text` exists only on the variant that carries it
+(`status_overridden` today).
+
 ```mermaid
 flowchart LR
     page[OrderTarget.vue] -- orderId + refreshKey --> tl[OrderTimeline]

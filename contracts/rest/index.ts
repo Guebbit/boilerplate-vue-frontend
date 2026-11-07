@@ -2095,75 +2095,612 @@ export interface ExportOrder {
 }
 
 /**
- * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `canceled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`, `refund_canceled`, `refund_reversed`, `dispute_opened`, `dispute_closed`. Shipments: `shipment_shipped`, `shipment_delivered`, `shipment_lost`, `fulfillment_held`, `fulfillment_released`, `remainder_canceled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`, `return_canceled`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Which of these a buyer sees is the row's own `audience` (`buyer` or `staff`), set per type by the server.
- */
-export type OrderTimelineType = (typeof OrderTimelineType)[keyof typeof OrderTimelineType];
-
-export const OrderTimelineType = {
-    created: 'created',
-    paid: 'paid',
-    processing: 'processing',
-    shipped: 'shipped',
-    delivered: 'delivered',
-    canceled: 'canceled',
-    status_overridden: 'status_overridden',
-    payment_declined: 'payment_declined',
-    refund_issued: 'refund_issued',
-    refund_settled: 'refund_settled',
-    refund_failed: 'refund_failed',
-    refund_canceled: 'refund_canceled',
-    refund_reversed: 'refund_reversed',
-    dispute_opened: 'dispute_opened',
-    dispute_closed: 'dispute_closed',
-    shipment_shipped: 'shipment_shipped',
-    shipment_delivered: 'shipment_delivered',
-    shipment_lost: 'shipment_lost',
-    fulfillment_held: 'fulfillment_held',
-    fulfillment_released: 'fulfillment_released',
-    remainder_canceled: 'remainder_canceled',
-    return_requested: 'return_requested',
-    return_approved: 'return_approved',
-    return_declined: 'return_declined',
-    return_received: 'return_received',
-    return_closed: 'return_closed',
-    return_canceled: 'return_canceled',
-    invoice_issued: 'invoice_issued',
-    credit_note_issued: 'credit_note_issued',
-    release_date_moved: 'release_date_moved',
-    delay_notice_sent: 'delay_notice_sent',
-    address_corrected: 'address_corrected'
-} as const;
-
-/**
  * Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both.
  */
-export type OrderTimelineExportEntryAudience =
-    (typeof OrderTimelineExportEntryAudience)[keyof typeof OrderTimelineExportEntryAudience];
+export type OrderTimelineExportEntryBaseAudience =
+    (typeof OrderTimelineExportEntryBaseAudience)[keyof typeof OrderTimelineExportEntryBaseAudience];
 
-export const OrderTimelineExportEntryAudience = {
+export const OrderTimelineExportEntryBaseAudience = {
     buyer: 'buyer',
     staff: 'staff'
 } as const;
 
-/**
- * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `canceled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
- */
-export type OrderTimelineExportEntryData = { [key: string]: unknown };
-
-export interface OrderTimelineExportEntry {
+export interface OrderTimelineExportEntryBase {
     orderId: Id;
     id: Id;
     at: string;
-    type: OrderTimelineType;
     /** Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both. */
-    audience: OrderTimelineExportEntryAudience;
+    audience: OrderTimelineExportEntryBaseAudience;
     /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
     actor?: Id;
-    /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
-    text?: string;
-    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `canceled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
-    data: OrderTimelineExportEntryData;
 }
+
+/**
+ * No data: the type says everything. Closed and empty.
+ */
+export interface OrderTimelineDataNone {
+    [key: string]: unknown;
+}
+
+export type OrderTimelineExportEntryPlainType =
+    (typeof OrderTimelineExportEntryPlainType)[keyof typeof OrderTimelineExportEntryPlainType];
+
+export const OrderTimelineExportEntryPlainType = {
+    created: 'created',
+    processing: 'processing',
+    shipped: 'shipped',
+    address_corrected: 'address_corrected'
+} as const;
+
+export type OrderTimelineExportEntryPlain = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryPlainType;
+    data: OrderTimelineDataNone;
+};
+
+/**
+ * What was overridden. Only the status today.
+ */
+export type OrderTimelineDataStatusOverriddenMode =
+    (typeof OrderTimelineDataStatusOverriddenMode)[keyof typeof OrderTimelineDataStatusOverriddenMode];
+
+export const OrderTimelineDataStatusOverriddenMode = {
+    status: 'status'
+} as const;
+
+/**
+ * A staff member moved the status by hand. `text` (on the entry) is their reason.
+ */
+export interface OrderTimelineDataStatusOverridden {
+    /** What was overridden. Only the status today. */
+    mode: OrderTimelineDataStatusOverriddenMode;
+    from: OrderStatus;
+    to: OrderStatus;
+}
+
+export type OrderTimelineExportEntryStatusOverriddenType =
+    (typeof OrderTimelineExportEntryStatusOverriddenType)[keyof typeof OrderTimelineExportEntryStatusOverriddenType];
+
+export const OrderTimelineExportEntryStatusOverriddenType = {
+    status_overridden: 'status_overridden'
+} as const;
+
+export type OrderTimelineExportEntryStatusOverridden = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryStatusOverriddenType;
+    data: OrderTimelineDataStatusOverridden;
+    /** Free text staff wrote with the change: the override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
+    text?: string;
+};
+
+/**
+ * The order was paid.
+ */
+export interface OrderTimelineDataPaid {
+    /** How it was paid, as the payment row records it (`PaymentMethod` in `payments`, or an offline method). Absent when unknown. */
+    method?: string;
+}
+
+export type OrderTimelineExportEntryPaidType =
+    (typeof OrderTimelineExportEntryPaidType)[keyof typeof OrderTimelineExportEntryPaidType];
+
+export const OrderTimelineExportEntryPaidType = {
+    paid: 'paid'
+} as const;
+
+export type OrderTimelineExportEntryPaid = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryPaidType;
+    data: OrderTimelineDataPaid;
+};
+
+/**
+ * The last shipment arrived.
+ */
+export interface OrderTimelineDataDelivered {
+    /** When the withdrawal window closes; frozen at the first delivery. */
+    withdrawUntil: string;
+}
+
+export type OrderTimelineExportEntryDeliveredType =
+    (typeof OrderTimelineExportEntryDeliveredType)[keyof typeof OrderTimelineExportEntryDeliveredType];
+
+export const OrderTimelineExportEntryDeliveredType = {
+    delivered: 'delivered'
+} as const;
+
+export type OrderTimelineExportEntryDelivered = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryDeliveredType;
+    data: OrderTimelineDataDelivered;
+};
+
+/**
+ * Who: the buyer, a staff member, a withdrawal, or the system (`reservation_expired`, `erasure`, `payment_mismatch`, `lost`).
+ */
+export type OrderTimelineDataCanceledBy =
+    (typeof OrderTimelineDataCanceledBy)[keyof typeof OrderTimelineDataCanceledBy];
+
+export const OrderTimelineDataCanceledBy = {
+    customer: 'customer',
+    admin: 'admin',
+    withdrawal: 'withdrawal',
+    system: 'system'
+} as const;
+
+/**
+ * Why. `lost`: a lost parcel refunded with nothing ever delivered.
+ */
+export type OrderTimelineDataCanceledCause =
+    (typeof OrderTimelineDataCanceledCause)[keyof typeof OrderTimelineDataCanceledCause];
+
+export const OrderTimelineDataCanceledCause = {
+    customer: 'customer',
+    operator: 'operator',
+    withdrawal: 'withdrawal',
+    reservation_expired: 'reservation_expired',
+    erasure: 'erasure',
+    payment_mismatch: 'payment_mismatch',
+    lost: 'lost'
+} as const;
+
+/**
+ * The order was canceled.
+ */
+export interface OrderTimelineDataCanceled {
+    /** Who: the buyer, a staff member, a withdrawal, or the system (`reservation_expired`, `erasure`, `payment_mismatch`, `lost`). */
+    by: OrderTimelineDataCanceledBy;
+    /** Why. `lost`: a lost parcel refunded with nothing ever delivered. */
+    cause: OrderTimelineDataCanceledCause;
+    /** Whether the cancel returned the money. */
+    refund: boolean;
+}
+
+export type OrderTimelineExportEntryCanceledType =
+    (typeof OrderTimelineExportEntryCanceledType)[keyof typeof OrderTimelineExportEntryCanceledType];
+
+export const OrderTimelineExportEntryCanceledType = {
+    canceled: 'canceled'
+} as const;
+
+export type OrderTimelineExportEntryCanceled = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryCanceledType;
+    data: OrderTimelineDataCanceled;
+};
+
+/**
+ * The provider declined a payment. The provider's wording is never copied.
+ */
+export interface OrderTimelineDataPaymentDeclined {
+    paymentId: Id;
+}
+
+export type OrderTimelineExportEntryPaymentDeclinedType =
+    (typeof OrderTimelineExportEntryPaymentDeclinedType)[keyof typeof OrderTimelineExportEntryPaymentDeclinedType];
+
+export const OrderTimelineExportEntryPaymentDeclinedType = {
+    payment_declined: 'payment_declined'
+} as const;
+
+export type OrderTimelineExportEntryPaymentDeclined = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryPaymentDeclinedType;
+    data: OrderTimelineDataPaymentDeclined;
+};
+
+/**
+ * A refund opened, settled or voided.
+ */
+export interface OrderTimelineDataRefund {
+    refundId: Id;
+    amount: DecimalAmount;
+    currency: CurrencyCode;
+    /** The refund's closed reason code (`RefundReason` in `payments`). */
+    reason: string;
+}
+
+export type OrderTimelineExportEntryRefundType =
+    (typeof OrderTimelineExportEntryRefundType)[keyof typeof OrderTimelineExportEntryRefundType];
+
+export const OrderTimelineExportEntryRefundType = {
+    refund_issued: 'refund_issued',
+    refund_settled: 'refund_settled',
+    refund_canceled: 'refund_canceled'
+} as const;
+
+export type OrderTimelineExportEntryRefund = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryRefundType;
+    data: OrderTimelineDataRefund;
+};
+
+/**
+ * A refund the provider refused, or took back after it settled.
+ */
+export interface OrderTimelineDataRefundFailure {
+    refundId: Id;
+    amount: DecimalAmount;
+    currency: CurrencyCode;
+    /** The refund's closed reason code (`RefundReason` in `payments`). */
+    reason: string;
+    /** Why the provider refused (`RefundFailureReason` in `payments`). */
+    failureReason: string;
+}
+
+export type OrderTimelineExportEntryRefundFailureType =
+    (typeof OrderTimelineExportEntryRefundFailureType)[keyof typeof OrderTimelineExportEntryRefundFailureType];
+
+export const OrderTimelineExportEntryRefundFailureType = {
+    refund_failed: 'refund_failed',
+    refund_reversed: 'refund_reversed'
+} as const;
+
+export type OrderTimelineExportEntryRefundFailure = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryRefundFailureType;
+    data: OrderTimelineDataRefundFailure;
+};
+
+/**
+ * A payment dispute opened or reached a closed status.
+ */
+export interface OrderTimelineDataDispute {
+    /** The provider's reference for the dispute. */
+    disputeId: string;
+    /** `DisputeKind` in `payments`. */
+    kind: string;
+    /** `DisputeStatus` in `payments`. */
+    status: string;
+    /** `DisputeReason` in `payments`. */
+    reason: string;
+    amount: DecimalAmount;
+    currency: CurrencyCode;
+}
+
+export type OrderTimelineExportEntryDisputeType =
+    (typeof OrderTimelineExportEntryDisputeType)[keyof typeof OrderTimelineExportEntryDisputeType];
+
+export const OrderTimelineExportEntryDisputeType = {
+    dispute_opened: 'dispute_opened',
+    dispute_closed: 'dispute_closed'
+} as const;
+
+export type OrderTimelineExportEntryDispute = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryDisputeType;
+    data: OrderTimelineDataDispute;
+};
+
+/**
+ * A shipment left.
+ */
+export interface OrderTimelineDataShipmentShipped {
+    shipmentId: Id;
+    fulfillmentOrderId: Id;
+    /**
+     * The shipment's 1-based position within the order.
+     * @minimum 1
+     */
+    number: number;
+    /** Absent when none was given. */
+    trackingCode?: string;
+}
+
+export type OrderTimelineExportEntryShipmentShippedType =
+    (typeof OrderTimelineExportEntryShipmentShippedType)[keyof typeof OrderTimelineExportEntryShipmentShippedType];
+
+export const OrderTimelineExportEntryShipmentShippedType = {
+    shipment_shipped: 'shipment_shipped'
+} as const;
+
+export type OrderTimelineExportEntryShipmentShipped = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryShipmentShippedType;
+    data: OrderTimelineDataShipmentShipped;
+};
+
+/**
+ * A shipment arrived.
+ */
+export interface OrderTimelineDataShipmentDelivered {
+    shipmentId: Id;
+    fulfillmentOrderId: Id;
+    /**
+     * The shipment's 1-based position within the order.
+     * @minimum 1
+     */
+    number: number;
+}
+
+export type OrderTimelineExportEntryShipmentDeliveredType =
+    (typeof OrderTimelineExportEntryShipmentDeliveredType)[keyof typeof OrderTimelineExportEntryShipmentDeliveredType];
+
+export const OrderTimelineExportEntryShipmentDeliveredType = {
+    shipment_delivered: 'shipment_delivered'
+} as const;
+
+export type OrderTimelineExportEntryShipmentDelivered = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryShipmentDeliveredType;
+    data: OrderTimelineDataShipmentDelivered;
+};
+
+/**
+ * A shipment will not arrive.
+ */
+export interface OrderTimelineDataShipmentLost {
+    shipmentId: Id;
+    fulfillmentOrderId: Id;
+    /**
+     * The shipment's 1-based position within the order.
+     * @minimum 1
+     */
+    number: number;
+    /** `ShipmentLostReason` in `delivery`. */
+    reason: string;
+}
+
+export type OrderTimelineExportEntryShipmentLostType =
+    (typeof OrderTimelineExportEntryShipmentLostType)[keyof typeof OrderTimelineExportEntryShipmentLostType];
+
+export const OrderTimelineExportEntryShipmentLostType = {
+    shipment_lost: 'shipment_lost'
+} as const;
+
+export type OrderTimelineExportEntryShipmentLost = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryShipmentLostType;
+    data: OrderTimelineDataShipmentLost;
+};
+
+/**
+ * A fulfillment order was put on hold.
+ */
+export interface OrderTimelineDataFulfillmentHeld {
+    fulfillmentOrderId?: Id;
+    /** `FulfillmentHoldReason` in `delivery`. */
+    reason: string;
+}
+
+export type OrderTimelineExportEntryFulfillmentHeldType =
+    (typeof OrderTimelineExportEntryFulfillmentHeldType)[keyof typeof OrderTimelineExportEntryFulfillmentHeldType];
+
+export const OrderTimelineExportEntryFulfillmentHeldType = {
+    fulfillment_held: 'fulfillment_held'
+} as const;
+
+export type OrderTimelineExportEntryFulfillmentHeld = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryFulfillmentHeldType;
+    data: OrderTimelineDataFulfillmentHeld;
+};
+
+/**
+ * What the row is about is one fulfillment order.
+ */
+export interface OrderTimelineDataFulfillmentOrderRef {
+    fulfillmentOrderId: Id;
+}
+
+export type OrderTimelineExportEntryFulfillmentOrderRefType =
+    (typeof OrderTimelineExportEntryFulfillmentOrderRefType)[keyof typeof OrderTimelineExportEntryFulfillmentOrderRefType];
+
+export const OrderTimelineExportEntryFulfillmentOrderRefType = {
+    fulfillment_released: 'fulfillment_released',
+    remainder_canceled: 'remainder_canceled'
+} as const;
+
+export type OrderTimelineExportEntryFulfillmentOrderRef = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryFulfillmentOrderRefType;
+    data: OrderTimelineDataFulfillmentOrderRef;
+};
+
+/**
+ * A return was opened.
+ */
+export interface OrderTimelineDataReturnRequested {
+    returnId: Id;
+    /** `ReturnReason` in `returns`. */
+    reason: string;
+}
+
+export type OrderTimelineExportEntryReturnRequestedType =
+    (typeof OrderTimelineExportEntryReturnRequestedType)[keyof typeof OrderTimelineExportEntryReturnRequestedType];
+
+export const OrderTimelineExportEntryReturnRequestedType = {
+    return_requested: 'return_requested'
+} as const;
+
+export type OrderTimelineExportEntryReturnRequested = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryReturnRequestedType;
+    data: OrderTimelineDataReturnRequested;
+};
+
+/**
+ * A return was approved.
+ */
+export interface OrderTimelineDataReturnApproved {
+    returnId: Id;
+    /** `ReturnReason` in `returns`. Present when the return was opened already approved (a withdrawal, or one staff opened). */
+    reason?: string;
+}
+
+export type OrderTimelineExportEntryReturnApprovedType =
+    (typeof OrderTimelineExportEntryReturnApprovedType)[keyof typeof OrderTimelineExportEntryReturnApprovedType];
+
+export const OrderTimelineExportEntryReturnApprovedType = {
+    return_approved: 'return_approved'
+} as const;
+
+export type OrderTimelineExportEntryReturnApproved = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryReturnApprovedType;
+    data: OrderTimelineDataReturnApproved;
+};
+
+/**
+ * What the row is about is one return.
+ */
+export interface OrderTimelineDataReturnRef {
+    returnId: Id;
+}
+
+export type OrderTimelineExportEntryReturnRefType =
+    (typeof OrderTimelineExportEntryReturnRefType)[keyof typeof OrderTimelineExportEntryReturnRefType];
+
+export const OrderTimelineExportEntryReturnRefType = {
+    return_declined: 'return_declined',
+    return_canceled: 'return_canceled'
+} as const;
+
+export type OrderTimelineExportEntryReturnRef = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryReturnRefType;
+    data: OrderTimelineDataReturnRef;
+};
+
+/**
+ * The returned goods were checked in.
+ */
+export interface OrderTimelineDataReturnReceived {
+    returnId: Id;
+    refundAmount: DecimalAmount;
+}
+
+export type OrderTimelineExportEntryReturnReceivedType =
+    (typeof OrderTimelineExportEntryReturnReceivedType)[keyof typeof OrderTimelineExportEntryReturnReceivedType];
+
+export const OrderTimelineExportEntryReturnReceivedType = {
+    return_received: 'return_received'
+} as const;
+
+export type OrderTimelineExportEntryReturnReceived = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryReturnReceivedType;
+    data: OrderTimelineDataReturnReceived;
+};
+
+/**
+ * A return was closed, refunded or settled.
+ */
+export interface OrderTimelineDataReturnClosed {
+    returnId: Id;
+    refundAmount: DecimalAmount;
+    currency: CurrencyCode;
+    /** `ReturnRemedy` in `returns`. Absent when none was chosen. */
+    remedy?: string;
+}
+
+export type OrderTimelineExportEntryReturnClosedType =
+    (typeof OrderTimelineExportEntryReturnClosedType)[keyof typeof OrderTimelineExportEntryReturnClosedType];
+
+export const OrderTimelineExportEntryReturnClosedType = {
+    return_closed: 'return_closed'
+} as const;
+
+export type OrderTimelineExportEntryReturnClosed = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryReturnClosedType;
+    data: OrderTimelineDataReturnClosed;
+};
+
+/**
+ * The order's invoice was issued.
+ */
+export interface OrderTimelineDataInvoiceIssued {
+    invoiceId: Id;
+    /** The invoice number. */
+    number: string;
+}
+
+export type OrderTimelineExportEntryInvoiceIssuedType =
+    (typeof OrderTimelineExportEntryInvoiceIssuedType)[keyof typeof OrderTimelineExportEntryInvoiceIssuedType];
+
+export const OrderTimelineExportEntryInvoiceIssuedType = {
+    invoice_issued: 'invoice_issued'
+} as const;
+
+export type OrderTimelineExportEntryInvoiceIssued = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryInvoiceIssuedType;
+    data: OrderTimelineDataInvoiceIssued;
+};
+
+/**
+ * A credit note corrected the invoice for a refund.
+ */
+export interface OrderTimelineDataCreditNoteIssued {
+    creditNoteId: Id;
+    /** The credit note number. */
+    number: string;
+    refundId: Id;
+}
+
+export type OrderTimelineExportEntryCreditNoteIssuedType =
+    (typeof OrderTimelineExportEntryCreditNoteIssuedType)[keyof typeof OrderTimelineExportEntryCreditNoteIssuedType];
+
+export const OrderTimelineExportEntryCreditNoteIssuedType = {
+    credit_note_issued: 'credit_note_issued'
+} as const;
+
+export type OrderTimelineExportEntryCreditNoteIssued = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryCreditNoteIssuedType;
+    data: OrderTimelineDataCreditNoteIssued;
+};
+
+/**
+ * A preorder's release date moved.
+ */
+export interface OrderTimelineDataReleaseDateMoved {
+    fulfillmentOrderId: Id;
+    /** The shop's day expected before. Absent when there was no date. */
+    from?: string;
+    /** The shop's day expected now. Absent when the date was removed. */
+    to?: string;
+}
+
+export type OrderTimelineExportEntryReleaseDateMovedType =
+    (typeof OrderTimelineExportEntryReleaseDateMovedType)[keyof typeof OrderTimelineExportEntryReleaseDateMovedType];
+
+export const OrderTimelineExportEntryReleaseDateMovedType = {
+    release_date_moved: 'release_date_moved'
+} as const;
+
+export type OrderTimelineExportEntryReleaseDateMoved = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryReleaseDateMovedType;
+    data: OrderTimelineDataReleaseDateMoved;
+};
+
+/**
+ * The buyer was told a preorder is late.
+ */
+export interface OrderTimelineDataDelayNoticeSent {
+    fulfillmentOrderId: Id;
+    /** Why the notice went out: `moved` or `due` (`FulfillmentOrderDelayed` in `delivery`). */
+    reason: string;
+    /** The shop's day now expected. Absent when there is no date yet. */
+    expectedAt?: string;
+}
+
+export type OrderTimelineExportEntryDelayNoticeSentType =
+    (typeof OrderTimelineExportEntryDelayNoticeSentType)[keyof typeof OrderTimelineExportEntryDelayNoticeSentType];
+
+export const OrderTimelineExportEntryDelayNoticeSentType = {
+    delay_notice_sent: 'delay_notice_sent'
+} as const;
+
+export type OrderTimelineExportEntryDelayNoticeSent = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryDelayNoticeSentType;
+    data: OrderTimelineDataDelayNoticeSent;
+};
+
+export type OrderTimelineExportEntry =
+    | OrderTimelineExportEntryPlain
+    | OrderTimelineExportEntryStatusOverridden
+    | OrderTimelineExportEntryPaid
+    | OrderTimelineExportEntryDelivered
+    | OrderTimelineExportEntryCanceled
+    | OrderTimelineExportEntryPaymentDeclined
+    | OrderTimelineExportEntryRefund
+    | OrderTimelineExportEntryRefundFailure
+    | OrderTimelineExportEntryDispute
+    | OrderTimelineExportEntryShipmentShipped
+    | OrderTimelineExportEntryShipmentDelivered
+    | OrderTimelineExportEntryShipmentLost
+    | OrderTimelineExportEntryFulfillmentHeld
+    | OrderTimelineExportEntryFulfillmentOrderRef
+    | OrderTimelineExportEntryReturnRequested
+    | OrderTimelineExportEntryReturnApproved
+    | OrderTimelineExportEntryReturnRef
+    | OrderTimelineExportEntryReturnReceived
+    | OrderTimelineExportEntryReturnClosed
+    | OrderTimelineExportEntryInvoiceIssued
+    | OrderTimelineExportEntryCreditNoteIssued
+    | OrderTimelineExportEntryReleaseDateMoved
+    | OrderTimelineExportEntryDelayNoticeSent;
 
 export type RefundStatus = (typeof RefundStatus)[keyof typeof RefundStatus];
 
@@ -6066,32 +6603,334 @@ export interface MergeCartResponse {
 /**
  * Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both.
  */
-export type OrderTimelineEntryAudience =
-    (typeof OrderTimelineEntryAudience)[keyof typeof OrderTimelineEntryAudience];
+export type OrderTimelineEntryBaseAudience =
+    (typeof OrderTimelineEntryBaseAudience)[keyof typeof OrderTimelineEntryBaseAudience];
 
-export const OrderTimelineEntryAudience = {
+export const OrderTimelineEntryBaseAudience = {
     buyer: 'buyer',
     staff: 'staff'
 } as const;
 
-/**
- * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `canceled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
- */
-export type OrderTimelineEntryData = { [key: string]: unknown };
-
-export interface OrderTimelineEntry {
+export interface OrderTimelineEntryBase {
     id: Id;
     at: string;
-    type: OrderTimelineType;
     /** Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both. */
-    audience: OrderTimelineEntryAudience;
+    audience: OrderTimelineEntryBaseAudience;
     /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
     actor?: Id;
-    /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
-    text?: string;
-    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status`), `from`, `to`. `paid`: `method` (absent when unknown). `delivered`: `withdrawUntil`. `canceled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `lost`: a lost parcel refunded with nothing ever delivered; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
-    data: OrderTimelineEntryData;
 }
+
+export type OrderTimelineEntryPlainType =
+    (typeof OrderTimelineEntryPlainType)[keyof typeof OrderTimelineEntryPlainType];
+
+export const OrderTimelineEntryPlainType = {
+    created: 'created',
+    processing: 'processing',
+    shipped: 'shipped',
+    address_corrected: 'address_corrected'
+} as const;
+
+export type OrderTimelineEntryPlain = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryPlainType;
+    data: OrderTimelineDataNone;
+};
+
+export type OrderTimelineEntryStatusOverriddenType =
+    (typeof OrderTimelineEntryStatusOverriddenType)[keyof typeof OrderTimelineEntryStatusOverriddenType];
+
+export const OrderTimelineEntryStatusOverriddenType = {
+    status_overridden: 'status_overridden'
+} as const;
+
+export type OrderTimelineEntryStatusOverridden = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryStatusOverriddenType;
+    data: OrderTimelineDataStatusOverridden;
+    /** Free text staff wrote with the change: the override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
+    text?: string;
+};
+
+export type OrderTimelineEntryPaidType =
+    (typeof OrderTimelineEntryPaidType)[keyof typeof OrderTimelineEntryPaidType];
+
+export const OrderTimelineEntryPaidType = {
+    paid: 'paid'
+} as const;
+
+export type OrderTimelineEntryPaid = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryPaidType;
+    data: OrderTimelineDataPaid;
+};
+
+export type OrderTimelineEntryDeliveredType =
+    (typeof OrderTimelineEntryDeliveredType)[keyof typeof OrderTimelineEntryDeliveredType];
+
+export const OrderTimelineEntryDeliveredType = {
+    delivered: 'delivered'
+} as const;
+
+export type OrderTimelineEntryDelivered = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryDeliveredType;
+    data: OrderTimelineDataDelivered;
+};
+
+export type OrderTimelineEntryCanceledType =
+    (typeof OrderTimelineEntryCanceledType)[keyof typeof OrderTimelineEntryCanceledType];
+
+export const OrderTimelineEntryCanceledType = {
+    canceled: 'canceled'
+} as const;
+
+export type OrderTimelineEntryCanceled = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryCanceledType;
+    data: OrderTimelineDataCanceled;
+};
+
+export type OrderTimelineEntryPaymentDeclinedType =
+    (typeof OrderTimelineEntryPaymentDeclinedType)[keyof typeof OrderTimelineEntryPaymentDeclinedType];
+
+export const OrderTimelineEntryPaymentDeclinedType = {
+    payment_declined: 'payment_declined'
+} as const;
+
+export type OrderTimelineEntryPaymentDeclined = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryPaymentDeclinedType;
+    data: OrderTimelineDataPaymentDeclined;
+};
+
+export type OrderTimelineEntryRefundType =
+    (typeof OrderTimelineEntryRefundType)[keyof typeof OrderTimelineEntryRefundType];
+
+export const OrderTimelineEntryRefundType = {
+    refund_issued: 'refund_issued',
+    refund_settled: 'refund_settled',
+    refund_canceled: 'refund_canceled'
+} as const;
+
+export type OrderTimelineEntryRefund = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryRefundType;
+    data: OrderTimelineDataRefund;
+};
+
+export type OrderTimelineEntryRefundFailureType =
+    (typeof OrderTimelineEntryRefundFailureType)[keyof typeof OrderTimelineEntryRefundFailureType];
+
+export const OrderTimelineEntryRefundFailureType = {
+    refund_failed: 'refund_failed',
+    refund_reversed: 'refund_reversed'
+} as const;
+
+export type OrderTimelineEntryRefundFailure = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryRefundFailureType;
+    data: OrderTimelineDataRefundFailure;
+};
+
+export type OrderTimelineEntryDisputeType =
+    (typeof OrderTimelineEntryDisputeType)[keyof typeof OrderTimelineEntryDisputeType];
+
+export const OrderTimelineEntryDisputeType = {
+    dispute_opened: 'dispute_opened',
+    dispute_closed: 'dispute_closed'
+} as const;
+
+export type OrderTimelineEntryDispute = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryDisputeType;
+    data: OrderTimelineDataDispute;
+};
+
+export type OrderTimelineEntryShipmentShippedType =
+    (typeof OrderTimelineEntryShipmentShippedType)[keyof typeof OrderTimelineEntryShipmentShippedType];
+
+export const OrderTimelineEntryShipmentShippedType = {
+    shipment_shipped: 'shipment_shipped'
+} as const;
+
+export type OrderTimelineEntryShipmentShipped = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryShipmentShippedType;
+    data: OrderTimelineDataShipmentShipped;
+};
+
+export type OrderTimelineEntryShipmentDeliveredType =
+    (typeof OrderTimelineEntryShipmentDeliveredType)[keyof typeof OrderTimelineEntryShipmentDeliveredType];
+
+export const OrderTimelineEntryShipmentDeliveredType = {
+    shipment_delivered: 'shipment_delivered'
+} as const;
+
+export type OrderTimelineEntryShipmentDelivered = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryShipmentDeliveredType;
+    data: OrderTimelineDataShipmentDelivered;
+};
+
+export type OrderTimelineEntryShipmentLostType =
+    (typeof OrderTimelineEntryShipmentLostType)[keyof typeof OrderTimelineEntryShipmentLostType];
+
+export const OrderTimelineEntryShipmentLostType = {
+    shipment_lost: 'shipment_lost'
+} as const;
+
+export type OrderTimelineEntryShipmentLost = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryShipmentLostType;
+    data: OrderTimelineDataShipmentLost;
+};
+
+export type OrderTimelineEntryFulfillmentHeldType =
+    (typeof OrderTimelineEntryFulfillmentHeldType)[keyof typeof OrderTimelineEntryFulfillmentHeldType];
+
+export const OrderTimelineEntryFulfillmentHeldType = {
+    fulfillment_held: 'fulfillment_held'
+} as const;
+
+export type OrderTimelineEntryFulfillmentHeld = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryFulfillmentHeldType;
+    data: OrderTimelineDataFulfillmentHeld;
+};
+
+export type OrderTimelineEntryFulfillmentOrderRefType =
+    (typeof OrderTimelineEntryFulfillmentOrderRefType)[keyof typeof OrderTimelineEntryFulfillmentOrderRefType];
+
+export const OrderTimelineEntryFulfillmentOrderRefType = {
+    fulfillment_released: 'fulfillment_released',
+    remainder_canceled: 'remainder_canceled'
+} as const;
+
+export type OrderTimelineEntryFulfillmentOrderRef = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryFulfillmentOrderRefType;
+    data: OrderTimelineDataFulfillmentOrderRef;
+};
+
+export type OrderTimelineEntryReturnRequestedType =
+    (typeof OrderTimelineEntryReturnRequestedType)[keyof typeof OrderTimelineEntryReturnRequestedType];
+
+export const OrderTimelineEntryReturnRequestedType = {
+    return_requested: 'return_requested'
+} as const;
+
+export type OrderTimelineEntryReturnRequested = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryReturnRequestedType;
+    data: OrderTimelineDataReturnRequested;
+};
+
+export type OrderTimelineEntryReturnApprovedType =
+    (typeof OrderTimelineEntryReturnApprovedType)[keyof typeof OrderTimelineEntryReturnApprovedType];
+
+export const OrderTimelineEntryReturnApprovedType = {
+    return_approved: 'return_approved'
+} as const;
+
+export type OrderTimelineEntryReturnApproved = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryReturnApprovedType;
+    data: OrderTimelineDataReturnApproved;
+};
+
+export type OrderTimelineEntryReturnRefType =
+    (typeof OrderTimelineEntryReturnRefType)[keyof typeof OrderTimelineEntryReturnRefType];
+
+export const OrderTimelineEntryReturnRefType = {
+    return_declined: 'return_declined',
+    return_canceled: 'return_canceled'
+} as const;
+
+export type OrderTimelineEntryReturnRef = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryReturnRefType;
+    data: OrderTimelineDataReturnRef;
+};
+
+export type OrderTimelineEntryReturnReceivedType =
+    (typeof OrderTimelineEntryReturnReceivedType)[keyof typeof OrderTimelineEntryReturnReceivedType];
+
+export const OrderTimelineEntryReturnReceivedType = {
+    return_received: 'return_received'
+} as const;
+
+export type OrderTimelineEntryReturnReceived = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryReturnReceivedType;
+    data: OrderTimelineDataReturnReceived;
+};
+
+export type OrderTimelineEntryReturnClosedType =
+    (typeof OrderTimelineEntryReturnClosedType)[keyof typeof OrderTimelineEntryReturnClosedType];
+
+export const OrderTimelineEntryReturnClosedType = {
+    return_closed: 'return_closed'
+} as const;
+
+export type OrderTimelineEntryReturnClosed = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryReturnClosedType;
+    data: OrderTimelineDataReturnClosed;
+};
+
+export type OrderTimelineEntryInvoiceIssuedType =
+    (typeof OrderTimelineEntryInvoiceIssuedType)[keyof typeof OrderTimelineEntryInvoiceIssuedType];
+
+export const OrderTimelineEntryInvoiceIssuedType = {
+    invoice_issued: 'invoice_issued'
+} as const;
+
+export type OrderTimelineEntryInvoiceIssued = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryInvoiceIssuedType;
+    data: OrderTimelineDataInvoiceIssued;
+};
+
+export type OrderTimelineEntryCreditNoteIssuedType =
+    (typeof OrderTimelineEntryCreditNoteIssuedType)[keyof typeof OrderTimelineEntryCreditNoteIssuedType];
+
+export const OrderTimelineEntryCreditNoteIssuedType = {
+    credit_note_issued: 'credit_note_issued'
+} as const;
+
+export type OrderTimelineEntryCreditNoteIssued = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryCreditNoteIssuedType;
+    data: OrderTimelineDataCreditNoteIssued;
+};
+
+export type OrderTimelineEntryReleaseDateMovedType =
+    (typeof OrderTimelineEntryReleaseDateMovedType)[keyof typeof OrderTimelineEntryReleaseDateMovedType];
+
+export const OrderTimelineEntryReleaseDateMovedType = {
+    release_date_moved: 'release_date_moved'
+} as const;
+
+export type OrderTimelineEntryReleaseDateMoved = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryReleaseDateMovedType;
+    data: OrderTimelineDataReleaseDateMoved;
+};
+
+export type OrderTimelineEntryDelayNoticeSentType =
+    (typeof OrderTimelineEntryDelayNoticeSentType)[keyof typeof OrderTimelineEntryDelayNoticeSentType];
+
+export const OrderTimelineEntryDelayNoticeSentType = {
+    delay_notice_sent: 'delay_notice_sent'
+} as const;
+
+export type OrderTimelineEntryDelayNoticeSent = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryDelayNoticeSentType;
+    data: OrderTimelineDataDelayNoticeSent;
+};
+
+export type OrderTimelineEntry =
+    | OrderTimelineEntryPlain
+    | OrderTimelineEntryStatusOverridden
+    | OrderTimelineEntryPaid
+    | OrderTimelineEntryDelivered
+    | OrderTimelineEntryCanceled
+    | OrderTimelineEntryPaymentDeclined
+    | OrderTimelineEntryRefund
+    | OrderTimelineEntryRefundFailure
+    | OrderTimelineEntryDispute
+    | OrderTimelineEntryShipmentShipped
+    | OrderTimelineEntryShipmentDelivered
+    | OrderTimelineEntryShipmentLost
+    | OrderTimelineEntryFulfillmentHeld
+    | OrderTimelineEntryFulfillmentOrderRef
+    | OrderTimelineEntryReturnRequested
+    | OrderTimelineEntryReturnApproved
+    | OrderTimelineEntryReturnRef
+    | OrderTimelineEntryReturnReceived
+    | OrderTimelineEntryReturnClosed
+    | OrderTimelineEntryInvoiceIssued
+    | OrderTimelineEntryCreditNoteIssued
+    | OrderTimelineEntryReleaseDateMoved
+    | OrderTimelineEntryDelayNoticeSent;
 
 export interface OrderTimelineResponse {
     items: OrderTimelineEntry[];

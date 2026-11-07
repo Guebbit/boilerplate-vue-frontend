@@ -92,10 +92,15 @@ const tools: TimelineTools = {
 };
 
 /**
- * Each row with its line, rebuilt when the rows or the language change.
+ * Each row with its line, rebuilt when the rows or the language change. `text` is read here
+ * because only a variant that carries it has the key (`in` narrows the union to it).
  */
 const lines = computed(() =>
-    (entries.value ?? []).map((entry) => ({ entry, line: describeTimelineEntry(entry, tools) }))
+    (entries.value ?? []).map((entry) => ({
+        entry,
+        line: describeTimelineEntry(entry, tools),
+        text: 'text' in entry ? entry.text : undefined
+    }))
 );
 
 /**
@@ -160,7 +165,7 @@ watch(() => [props.orderId, props.refreshKey], load, { immediate: true });
         </p>
         <ol v-else class="m-0 flex list-none flex-col gap-3 p-0">
             <li
-                v-for="{ entry, line } in lines"
+                v-for="{ entry, line, text } in lines"
                 :key="entry.id"
                 class="flex flex-col gap-1 border-l-2 pl-3"
                 data-test="order-timeline-entry"
@@ -191,8 +196,8 @@ watch(() => [props.orderId, props.refreshKey], load, { immediate: true });
                 <span v-if="line.detail" class="text-sm" data-test="order-timeline-detail">
                     {{ line.detail }}
                 </span>
-                <span v-if="entry.text" class="text-sm italic" data-test="order-timeline-text">
-                    {{ t('order-timeline.label-text', { text: entry.text }) }}
+                <span v-if="text" class="text-sm italic" data-test="order-timeline-text">
+                    {{ t('order-timeline.label-text', { text }) }}
                 </span>
                 <span class="text-xs opacity-75">
                     <time :datetime="entry.at" data-test="order-timeline-at">{{
