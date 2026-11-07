@@ -74,6 +74,13 @@ beforeEach(() => {
     return loadLocale('en');
 });
 
+describe('TaskDetail reference', () => {
+    it('shows the last eight characters of the id, as the mail subject does', () =>
+        openDetail(aTask({ id: '65dc8a99604c307b702aaaaa' })).then((wrapper) => {
+            expect(wrapper.get('[data-test=task-ref]').text()).toBe('#702aaaaa');
+        }));
+});
+
 describe('TaskDetail take', () => {
     it('assigns the task to the viewer and then shows the assignee', () =>
         openDetail(aTask())

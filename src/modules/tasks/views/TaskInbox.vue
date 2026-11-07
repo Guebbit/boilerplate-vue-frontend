@@ -22,6 +22,7 @@ import { storeToRefs } from 'pinia';
 import { Inbox } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useTasksStore } from '../store.ts';
+import { taskRef } from '../task-ref.ts';
 import { useRowActions } from '@/ui/composables/use-row-actions.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
@@ -421,6 +422,7 @@ const handleDelete = (requestId: string, subject: string) =>
                         <p class="text-sm opacity-muted">
                             {{ request.name || t('tasks-page.anonymous') }} —
                             {{ request.email ?? t(`task-kind.${request.kind}`) }} ·
+                            <span data-test="task-ref">#{{ taskRef(request.id) }}</span> ·
                             {{ formatDateTime(request.createdAt) }}
                         </p>
                         <p

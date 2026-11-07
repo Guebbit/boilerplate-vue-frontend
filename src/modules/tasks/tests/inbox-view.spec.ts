@@ -94,6 +94,25 @@ describe('TaskInbox filters', () => {
             }));
 });
 
+describe('TaskInbox reference', () => {
+    it('shows the same short reference as the mail subject on each row', () => {
+        server.use(
+            http.post('*/tasks/search', () =>
+                HttpResponse.json({
+                    items: [aTask({ id: '65dc8a99604c307b702aaaaa' })],
+                    meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 }
+                })
+            )
+        );
+
+        return openInbox('/en/tasks').then((wrapper) => {
+            expect(wrapper.get('[data-test=task-item] [data-test=task-ref]').text()).toBe(
+                '#702aaaaa'
+            );
+        });
+    });
+});
+
 describe('TaskInbox take', () => {
     it('assigns the task to the signed-in viewer', () => {
         useSessionStore().viewer = { id: 'staff-1', email: 'sam@example.com' };
