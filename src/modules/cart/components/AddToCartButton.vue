@@ -18,7 +18,7 @@ import type { Product } from '@types';
 import { shelfStateOf } from '@/modules/products';
 import { formatDay } from '@/infrastructure/utils/formatters.ts';
 import { useCartStore } from '../store';
-import { backorderPromiseDays } from '@/infrastructure/shop.ts';
+import { backorderPromiseDays } from '@/modules/shop';
 
 /**
  * The product the button adds a unit of.

@@ -9,7 +9,7 @@ import { useI18n } from 'vue-i18n';
 import { formatDay } from '@/infrastructure/utils/formatters.ts';
 import type { LineAvailability, Product } from '@types';
 import { useProductsStore } from '../store';
-import { backorderPromiseDays } from '@/infrastructure/shop.ts';
+import { backorderPromiseDays } from '@/modules/shop';
 
 /**
  * What {@link useProductLines} hands a view.

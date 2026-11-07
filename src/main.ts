@@ -29,7 +29,6 @@ import '@fontsource/roboto/700.css';
 import '@/styles/main.css';
 import vuetify from '@/ui/vuetify/index.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
-import { loadShop } from '@/infrastructure/shop.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { loadResponseSchemas } from '@/infrastructure/http/response-schema-map.ts';
 import { shouldValidateResponses } from '@/infrastructure/http/validate.ts';
@@ -38,7 +37,8 @@ import {
     collectModuleLocales,
     collectModuleNotices,
     collectModuleResponseSchemas,
-    collectModuleSlots
+    collectModuleSlots,
+    runModuleSetups
 } from '@/kernel/registry.ts';
 import { registerNotices } from '@/kernel/inbox-notices.ts';
 import { SLOTS_KEY } from '@/kernel/slots.ts';
@@ -145,13 +145,12 @@ const bootstrapApplication = () =>
                 );
             }
 
-            // The shop's currency, for every price label and input; fire-and-forget, and never
-            // rejects (a failure is logged and the next reader retries).
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises -- loadShop never rejects (it logs and leaves the shop empty)
-            void loadShop();
+            // Each module's own boot work (the shop's settings: currency for every price label and
+            // input); fire-and-forget, and never rejects.
+            runModuleSetups(enabledModules);
 
             // The public config (`GET /config`: session mode, OAuth providers, human check), read
-            // once at boot beside `GET /shop`. A sign-in on a fresh tab adopts its session by the
+            // once at boot with the module boot work above. A sign-in on a fresh tab adopts its session by the
             // mode, and no `isAuth` cookie exists yet to trigger the read in the restore guard.
             // Every other reader shares this one request; never rejects.
             // eslint-disable-next-line @typescript-eslint/no-floating-promises -- loadSessionMode never rejects (a failed read is dropped and retried)

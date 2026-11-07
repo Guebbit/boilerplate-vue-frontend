@@ -4,3 +4,4 @@ dependsOn:
     - payments
     - account
     - products
+    - shop

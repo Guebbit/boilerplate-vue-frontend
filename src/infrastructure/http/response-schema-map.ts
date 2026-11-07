@@ -76,7 +76,6 @@ const UNCLAIMED_BACKEND_MODULES: ReadonlySet<string> = new Set([
     'analytics',
     'antibot',
     'audit-logs',
-    'shop',
     'sitemap'
 ]);
 

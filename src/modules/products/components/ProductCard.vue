@@ -17,7 +17,7 @@ import type { ThemeColor } from '@/ui/types.ts';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import type { Product } from '@types';
 import { shelfStateOf, type ShelfState } from '../domain';
-import { backorderPromiseDays } from '@/infrastructure/shop.ts';
+import { backorderPromiseDays } from '@/modules/shop';
 
 /**
  * The product to show.

@@ -13,7 +13,7 @@ export default {
  * @module
  * Dedicated privacy-policy page, its own component rather than a shared paragraph renderer — real policy copy
  * needs its own structure (headings, lists, data-category tables) that the shared paragraph
- * renderer does not support. Opens with a placeholder the operator replaces before going live (this
+ * renderer does not support. Opens with the operator's identity (the controller, GDPR Art. 13(1)(a)), then a placeholder the operator replaces before going live (this
  * repository ships no legal wording), then the one statement that describes what this app itself
  * does: the analytics tracker and its consent. Then the cookies and storage table, which is real
  * content generated from code (`BrowserStorageTable`), so it stays when the placeholder is
@@ -22,6 +22,7 @@ export default {
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BrowserStorageTable from '@/app/components/BrowserStorageTable.vue';
+import OperatorIdentityBlock from '@/app/components/OperatorIdentityBlock.vue';
 import LegalPlaceholder from '@/app/components/LegalPlaceholder.vue';
 import StaticPageLinks from '@/app/components/StaticPageLinks.vue';
 import { staticPageParagraphs } from '@/app/utils/static-pages.ts';
@@ -42,6 +43,8 @@ const paragraphs = computed(() => staticPageParagraphs(tm, rt, 'static-pages.pri
 <template>
     <div id="static-page-privacy">
         <v-card class="mx-auto mt-10 w-full max-w-4xl p-8">
+            <OperatorIdentityBlock />
+
             <LegalPlaceholder page="privacy" />
 
             <p v-for="(paragraph, index) in paragraphs" :key="'p-' + index" class="mb-4">

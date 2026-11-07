@@ -1,7 +1,8 @@
 /**
  * @module
  * The shop itself, read once from `GET /shop` and held in module-level refs: the currency, the
- * countries it ships to, the seller's identity, and where returns go.
+ * countries it ships to, the time zone and the backorder promise. Who runs the site is not here:
+ * that is `GET /config` (`operator`), which the core reads.
  *
  * A shop setting, not a product field (Shopify's `Shop`): the currency is what a price input is
  * sized from before any resource exists to carry its own `currency`, and what stands in for a
@@ -22,8 +23,7 @@ const shop = ref<Shop>();
 let loading: Promise<Shop | undefined> | undefined;
 
 /**
- * Read-only view of the whole record; `undefined` until {@link loadShop} has resolved. The Terms
- * page reads the seller's identity from it.
+ * Read-only view of the whole record; `undefined` until {@link loadShop} has resolved.
  */
 export const shopRecord = readonly(shop);
 

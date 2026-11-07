@@ -5,8 +5,9 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getShop } from '@api';
-import { loadShop, resetShop, shipToCountries, shopCurrency } from '@/infrastructure/shop.ts';
-import { aShop } from '../../support/unit/fixtures.ts';
+import { loadShop, resetShop, shipToCountries, shopCurrency } from '../shop';
+import shopModule from '../module';
+import { aShop } from '../../../../tests/support/unit/fixtures.ts';
 
 vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<object>()),
@@ -56,5 +57,15 @@ describe('the shop store', () => {
 
         vi.mocked(getShop).mockResolvedValue(answering({ currency: 'USD' }));
         await expect(loadShop()).resolves.toMatchObject({ currency: 'USD' });
+    });
+
+    it('loads the shop when the module sets itself up at boot', async () => {
+        vi.mocked(getShop).mockResolvedValue(answering({ currency: 'CHF' }));
+
+        shopModule.setup();
+        await loadShop();
+
+        expect(getShop).toHaveBeenCalledOnce();
+        expect(shopCurrency.value).toBe('CHF');
     });
 });

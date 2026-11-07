@@ -392,26 +392,18 @@ export const aShipment = (overrides: Partial<Shipment> = {}): Shipment =>
     });
 
 /**
- * A valid shop as `GET /shop` answers it — an Italian seller trading in euros, shipping to Italy.
+ * A valid shop as `GET /shop` answers it — an Italian shop trading in euros, shipping to Italy.
  *
  * @param overrides - the fields a case actually cares about
  * @returns a `Shop` that parses against the generated schema
  */
 export const aShop = (overrides: Partial<Shop> = {}): Shop =>
     contractBody<Shop>(GetShopResponse, {
-        legalName: 'Guebbit Demo Shop Srl',
-        street: 'Via Roma 1',
-        city: 'Milano',
-        zip: '20100',
-        country: 'IT',
-        email: 'shop@example.com',
-        phone: '+39 02 1234567',
         currency: 'EUR',
         minorUnits: 2,
         shipToCountries: ['IT'],
         returnAddress: { street: 'Via Roma 1', city: 'Milano', zip: '20100', country: 'IT' },
         returnPostagePayer: 'consumer',
-        termsVersion: '1',
         backorderPromiseDays: 30,
         timeZone: 'Europe/Rome',
         ...overrides

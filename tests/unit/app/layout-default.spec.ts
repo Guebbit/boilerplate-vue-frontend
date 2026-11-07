@@ -17,14 +17,26 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { STATIC_PAGES, staticPageRouteName } from '@/app/utils/static-pages.ts';
-import { getShop } from '@api';
-import { loadShop, resetShop } from '@/infrastructure/shop.ts';
-import { aShop } from '../../support/unit/fixtures.ts';
+import type { Ref } from 'vue';
+import { publicConfig } from '@/infrastructure/config.ts';
+import { configAnswer } from '../../support/unit/config-answer.ts';
 
-vi.mock('@api', async (importOriginal) => ({
-    ...(await importOriginal<object>()),
-    getShop: vi.fn()
-}));
+vi.mock('@/infrastructure/config.ts', async () => {
+    const { ref } = await import('vue');
+    return {
+        publicConfig: ref(),
+        loadConfig: vi.fn(() => Promise.resolve()),
+        resetConfig: vi.fn()
+    };
+});
+
+/**
+ * Makes `GET /config` read as this answer. `publicConfig` is a plain ref under the mock above, and
+ * the real one is a readonly view of the same shape; the single cast bridges that.
+ */
+const answerConfig = (answer: ReturnType<typeof configAnswer> | undefined): void => {
+    (publicConfig as Ref<unknown>).value = answer;
+};
 
 /** A trivial leaf component, so `<RouterView />` has something real to render. */
 const leaf = (text: string) => ({ template: `<p>${text}</p>` });
@@ -156,38 +168,44 @@ describe('LayoutDefault — a session that died on its own', () => {
         }));
 });
 
-/** Mounts the layout once `GET /shop` has answered with these fields. */
-const mountWithShop = (overrides: Parameters<typeof aShop>[0]) => {
-    vi.mocked(getShop).mockResolvedValue(aShop(overrides));
+/** The identity the footer line prints. */
+const OPERATOR = {
+    legalName: 'Guebbit Demo Shop Srl',
+    street: 'Via Roma 1',
+    city: 'Milano',
+    zip: '20100',
+    country: 'IT',
+    email: 'shop@example.com'
+};
+
+/** Mounts the layout once `GET /config` has answered with this operator. */
+const mountWithOperator = (operator: Record<string, unknown>) => {
+    answerConfig(configAnswer({ operator }));
     return router.push('/plain').then(() => {
         const wrapper = mountLayout();
-        return loadShop()
-            .then(() => flushPromises())
-            .then(() => wrapper);
+        return flushPromises().then(() => wrapper);
     });
 };
 
-describe('LayoutDefault — the seller line', () => {
-    beforeEach(() => resetShop());
+describe('LayoutDefault — the operator line', () => {
+    beforeEach(() => answerConfig(undefined));
 
-    it('is not drawn until the shop has loaded', () => {
-        vi.mocked(getShop).mockReturnValue(new Promise(() => undefined));
-
+    it('is not drawn until the config has loaded', () => {
         return router.push('/plain').then(() => {
-            expect(mountLayout().find('[data-test="footer-seller"]').exists()).toBe(false);
+            expect(mountLayout().find('[data-test="footer-operator"]').exists()).toBe(false);
         });
     });
 
     it('prints the legal name and the VAT number on every page', () =>
-        mountWithShop({ vatNumber: 'IT12345678901' }).then((wrapper) => {
-            expect(wrapper.get('[data-test="footer-seller"]').text()).toBe(
+        mountWithOperator({ ...OPERATOR, vatNumber: 'IT12345678901' }).then((wrapper) => {
+            expect(wrapper.get('[data-test="footer-operator"]').text()).toBe(
                 '© Guebbit Demo Shop Srl · VAT IT12345678901'
             );
         }));
 
-    it('prints the name alone for a shop with no VAT number', () =>
-        mountWithShop({}).then((wrapper) => {
-            expect(wrapper.get('[data-test="footer-seller"]').text()).toBe(
+    it('prints the name alone for an operator with no VAT number', () =>
+        mountWithOperator(OPERATOR).then((wrapper) => {
+            expect(wrapper.get('[data-test="footer-operator"]').text()).toBe(
                 '© Guebbit Demo Shop Srl'
             );
         }));

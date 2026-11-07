@@ -73,8 +73,8 @@
         "message": "Il tuo ruolo di staff è disattivato finché non configuri un'app di autenticazione. Puoi comunque acquistare come cliente.",
         "button": "Configura ora"
     },
-    "seller-identity": {
-        "legal-name": "Venditore",
+    "operator-identity": {
+        "legal-name": "Gestore",
         "address": "Indirizzo",
         "email": "Email",
         "phone": "Telefono",
@@ -83,8 +83,8 @@
         "registration-number": "Numero di iscrizione"
     },
     "footer": {
-        "seller": "© {legalName} · P.IVA {vatNumber}",
-        "seller-no-vat": "© {legalName}"
+        "operator": "© {legalName} · P.IVA {vatNumber}",
+        "operator-no-vat": "© {legalName}"
     },
     "analytics-consent": {
         "banner-label": "Consenso analitico",

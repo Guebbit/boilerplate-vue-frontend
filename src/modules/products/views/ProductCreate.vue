@@ -40,12 +40,7 @@ import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progre
 import { toCreateTranslations } from '../translations-body.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { normalizeAmount, padDecimal } from '@/infrastructure/utils/money.ts';
-import {
-    backorderPromiseDays,
-    loadShop,
-    shopCurrency,
-    shopMinorUnits
-} from '@/infrastructure/shop.ts';
+import { backorderPromiseDays, loadShop, shopCurrency, shopMinorUnits } from '@/modules/shop';
 import type { ProductTranslationsWrite, TaxClass } from '@types';
 
 /**

@@ -55,7 +55,7 @@ import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
-import { backorderPromiseDays } from '@/infrastructure/shop.ts';
+import { backorderPromiseDays } from '@/modules/shop';
 import { toPatchTranslations } from '../translations-body.ts';
 import { dayChange } from '../release-date.ts';
 import { useReleaseDateConfirm } from '../composables/use-release-date-confirm.ts';

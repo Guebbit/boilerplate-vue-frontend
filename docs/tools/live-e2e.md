@@ -204,11 +204,11 @@ export NODE_FRONTEND_URL=http://localhost:8085
 export NODE_WEBHOOK_DEMO_SINK_URL=https://127.0.0.1:3070   # the TLS door; the literal IP: the SSRF guard's DNS lookup skips /etc/hosts
 export NODE_PAYMENT_WEBHOOK_SECRET=any-throwaway-secret   # a spec signs a payment-provider delivery with it: export the same value as E2E_PAYMENT_WEBHOOK_SECRET in the frontend shell
 
-# The shop's identity, printed on invoices and in every order mail's withdrawal notice. Boot refuses without it.
-export NODE_SHOP_LEGAL_NAME='Guebbit Demo Shop Srl' NODE_SHOP_STREET='Via Roma 1' NODE_SHOP_CITY=Milano \
-       NODE_SHOP_ZIP=20100 NODE_SUPPORT_EMAIL=support@example.com NODE_SHOP_PHONE='+39 02 1234567'
-# Its country and clock, and the VAT pair (`orders` and `products` refuse to boot without them too).
-export NODE_SHOP_COUNTRY=IT NODE_SHOP_TIMEZONE=Europe/Rome NODE_VAT_RATE_DEFAULT=0.22 NODE_VAT_RATE_REDUCED=0.10
+# The operator's legal identity, printed on invoices, in every order mail's withdrawal notice and on the Terms, Legal and Privacy pages. Boot refuses without it (the phone too, while the shop is present).
+export NODE_LEGAL_NAME='Guebbit Demo Shop Srl' NODE_LEGAL_STREET='Via Roma 1' NODE_LEGAL_CITY=Milano \
+       NODE_LEGAL_ZIP=20100 NODE_SUPPORT_EMAIL=support@example.com NODE_LEGAL_PHONE='+39 02 1234567'
+# Its country, the shop's clock, and the VAT pair (`orders` and `products` refuse to boot without them too).
+export NODE_LEGAL_COUNTRY=IT NODE_SHOP_TIMEZONE=Europe/Rome NODE_VAT_RATE_DEFAULT=0.22 NODE_VAT_RATE_REDUCED=0.10
 
 # Mail into Mailpit. `e2e:serve` refuses any SMTP host but localhost, 127.0.0.1, ::1 or mailpit,
 # so a live run cannot send real mail. NODE_MAIL_TRANSPORT=log sends nothing at all, but then

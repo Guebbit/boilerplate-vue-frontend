@@ -169,6 +169,7 @@ export interface AppModule {
     navigation?: AppNavigationEntry[];
     responseSchemas?: ResponseSchemaRoute[];
     locales?: Record<string, () => Promise<TranslationDictionaries>>;
+    setup?: () => void;
 }
 ```
 
@@ -192,7 +193,10 @@ stores in with `loadingKeys` (their `resourceKey` prefixes), and `LayoutDefault.
 A module that omits the field is invisible to the indicator, which is the right default for one
 whose requests are background noise. `slots` lets a module contribute components to a place another
 module owns (`src/kernel/slots.ts`) — the product page's cart and wishlist buttons, and the app
-bar's notifications bell — so the owner never imports its contributors.
+bar's notifications bell — so the owner never imports its contributors. `setup` is boot work a
+module owns (the `shop` module loads its settings there), run once after mount: the core never
+loads, or reads, what a removable module owns. Who runs the site (`operator`, the Terms version)
+is `GET /config`, so the footer, Terms, Legal and Privacy pages keep working with the shop removed.
 
 Which siblings a module may reach at all is enforced separately, by a generated ESLint rule rather
 than a manifest field: each module's `module.yaml` `dependsOn` names which siblings it

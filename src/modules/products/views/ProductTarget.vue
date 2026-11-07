@@ -39,7 +39,7 @@ import {
     formatCurrency,
     formatFlag
 } from '@/infrastructure/utils/formatters.ts';
-import { backorderPromiseDays } from '@/infrastructure/shop.ts';
+import { backorderPromiseDays } from '@/modules/shop';
 
 /**
  * Localized dictionary helper.

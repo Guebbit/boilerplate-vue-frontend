@@ -6,7 +6,7 @@ For the backend auth architecture (JWT signing, bcrypt, refresh token DB storage
 
 ## Two session modes
 
-The backend keeps people signed in one of two ways, chosen per deployment by `NODE_SESSION_MODE`. The SPA has no switch of its own: `useSessionStore().loadSessionMode()` reads `GET /config` once per tab and every code path adapts. `src/infrastructure/config.ts` makes that one request and shares it with the OAuth buttons and the human check, which read their own members of the same answer; `GET /shop` stays a separate call, started in parallel.
+The backend keeps people signed in one of two ways, chosen per deployment by `NODE_SESSION_MODE`. The SPA has no switch of its own: `useSessionStore().loadSessionMode()` reads `GET /config` once per tab and every code path adapts. `src/infrastructure/config.ts` makes that one request and shares it with the OAuth buttons and the human check, which read their own members of the same answer. `GET /shop` is the `shop` module's own call, so the core reads nothing the removable shop owns.
 
 | Mode            | What the SPA holds                                     | On a `401`                                       | After a reload                                                       |
 | --------------- | ------------------------------------------------------ | ------------------------------------------------ | -------------------------------------------------------------------- |

@@ -10,7 +10,7 @@ import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import ProductCreate from '../views/ProductCreate.vue';
 import { orvalMutator } from '@/infrastructure/http';
 import { i18n, loadLocale } from '@/i18n';
-import { resetShop } from '@/infrastructure/shop.ts';
+import { resetShop } from '../../../../tests/support/unit/reset-shop.ts';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';

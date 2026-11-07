@@ -2,12 +2,13 @@
  * @module
  * What the backend publishes before anyone has signed in, read once from `GET /config` and held in
  * a module-level ref: how sessions are kept (`session`), which OAuth providers exist
- * (`oauthProviders`) and which human challenge a form asks for (`antibot`).
+ * (`oauthProviders`), which human challenge a form asks for (`antibot`), who runs the site
+ * (`operator`) and which Terms are in force (`termsVersion`).
  *
  * One call instead of three, shared by every reader: the session store (`loadSessionMode`), the
  * OAuth buttons, the human check and the cookie table all go through {@link loadConfig}, so the
- * request is made once per tab however many of them ask. `GET /shop` stays its own call (the shop
- * is removable); the app starts both in parallel.
+ * request is made once per tab however many of them ask. The core reads nothing the removable shop
+ * owns: `GET /shop` is the `shop` module's own call.
  */
 import { readonly, ref } from 'vue';
 import { getConfig } from '@api';

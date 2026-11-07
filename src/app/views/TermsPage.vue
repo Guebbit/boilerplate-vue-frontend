@@ -13,13 +13,13 @@ export default {
  * @module
  * Dedicated terms-of-service page, its own component rather than a shared paragraph renderer — real legal copy
  * needs its own structure (headings, lists, numbered clauses) that the shared paragraph
- * renderer does not support. Opens with the seller's identity, read from `GET /shop`, then a
+ * renderer does not support. Opens with the operator's identity, read from `GET /config`, then a
  * placeholder the operator replaces before going live: this repository ships no legal wording.
  */
 import { useI18n } from 'vue-i18n';
-import { shopRecord } from '@/infrastructure/shop.ts';
+import { publicConfig } from '@/infrastructure/config.ts';
 import LegalPlaceholder from '@/app/components/LegalPlaceholder.vue';
-import SellerIdentityBlock from '@/app/components/SellerIdentityBlock.vue';
+import OperatorIdentityBlock from '@/app/components/OperatorIdentityBlock.vue';
 import StaticPageLinks from '@/app/components/StaticPageLinks.vue';
 
 /**
@@ -31,10 +31,10 @@ const { t } = useI18n();
 <template>
     <div id="static-page-terms">
         <v-card class="mx-auto mt-10 w-full max-w-2xl p-8">
-            <SellerIdentityBlock />
+            <OperatorIdentityBlock />
 
-            <p v-if="shopRecord" class="mb-4 text-sm opacity-75" data-test="terms-version">
-                {{ t('static-pages.terms.version', { version: shopRecord.termsVersion }) }}
+            <p v-if="publicConfig" class="mb-4 text-sm opacity-75" data-test="terms-version">
+                {{ t('static-pages.terms.version', { version: publicConfig.termsVersion }) }}
             </p>
 
             <LegalPlaceholder page="terms" />

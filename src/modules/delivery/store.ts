@@ -15,7 +15,7 @@ import {
     type IdempotencyKeyKeeper
 } from '@/infrastructure/http/idempotency.ts';
 import { keepsIdempotencyKey } from '@/infrastructure/utils/errors.ts';
-import { loadShop, shipToCountries as shipToCountriesOfShop } from '@/infrastructure/shop.ts';
+import { loadShop, shipToCountries as shipToCountriesOfShop } from '@/modules/shop';
 import {
     listShippingMethods,
     listOrderFulfillmentOrders,

@@ -50,17 +50,22 @@ export const GetHealthResponse = zod.strictObject({
     status: zod.enum(['ok'])
 });
 /**
- * One public answer for the three things a client reads before anyone has signed in:
- * how the deployment keeps people signed in (`session`), which "Continue with..."
- * buttons to render (`oauthProviders`) and which human challenge a protected form
- * asks for (`antibot`). Each piece is owned by its own module and composed here, so
- * a client makes one call at start instead of three.
+ * One public answer for what a client reads before anyone has signed in: how the
+ * deployment keeps people signed in (`session`), which "Continue with..." buttons to
+ * render (`oauthProviders`), which human challenge a protected form asks for
+ * (`antibot`), the support address, who runs the site (`operator`, the legal identity
+ * its footer, Terms, Legal notice and Privacy page print) and the version of the Terms
+ * in force (`termsVersion`). Each piece is owned by its own module and composed here,
+ * so a client makes one call at start instead of several.
  *
  * None of it is secret and none of it changes while the process runs, so it is
  * cached for a short while. `GET /shop` stays its own call: the shop is removable and
- * this answer must exist without it.
+ * this answer must exist without it, which is why the legal identity is here.
  * @summary What a client needs to boot, before it has a session
  */
+export const getConfigResponseOperatorCountryOneMax = 2;
+export const getConfigResponseOperatorCountryOneRegExp = new RegExp('^[A-Z]{2}$');
+export const getConfigResponseOperatorEmailOneMax = 254;
 export const GetConfigResponse = zod.strictObject({
     session: zod.strictObject({
         mode: zod.enum(['jwt', 'cookie']),
@@ -80,7 +85,23 @@ export const GetConfigResponse = zod.strictObject({
             emailPolicy: zod.enum(['off', 'disposable', 'mx'])
         })
     }),
-    supportEmail: zod.email()
+    supportEmail: zod.email(),
+    operator: zod.strictObject({
+        legalName: zod.string(),
+        vatNumber: zod.string().optional(),
+        tradeRegister: zod.string().optional(),
+        registrationNumber: zod.string().optional(),
+        street: zod.string(),
+        city: zod.string(),
+        zip: zod.string(),
+        country: zod
+            .string()
+            .max(getConfigResponseOperatorCountryOneMax)
+            .regex(getConfigResponseOperatorCountryOneRegExp),
+        email: zod.email().max(getConfigResponseOperatorEmailOneMax),
+        phone: zod.string().optional()
+    }),
+    termsVersion: zod.string()
 });
 /**
  * Is the process up. For an orchestrator (Kubernetes' own `/livez` + `/readyz`
@@ -25501,12 +25522,9 @@ export const DeleteNotificationByIdParams = zod.strictObject({
 });
 export const DeleteNotificationByIdResponse = zod.void();
 /**
- * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, where returned goods go, the version of the Terms in force and the backorder promise in days. Public and cheap to read; it never changes without a redeploy. The shop's time zone (an IANA name) is published so a screen can name the calendar a promised day belongs to. Not published: the bank-transfer details, which travel on each order.
- * @summary The shop's identity, currency, ship-to countries and return address
+ * The shop's commerce settings: the one currency every price is quoted in, the countries the shop ships to, where returned goods go, who pays the postage and the backorder promise in days. The shop's time zone (an IANA name) is published so a screen can name the calendar a promised day belongs to. Who runs the site (the legal identity) and the Terms version are on `GET /config`. Public and cheap to read; it never changes without a redeploy. Not published: the bank-transfer details, which travel on each order.
+ * @summary The shop's commerce settings (currency, ship-to countries, return address)
  */
-export const getShopResponseCountryMax = 2;
-export const getShopResponseCountryRegExp = new RegExp('^[A-Z]{2}$');
-export const getShopResponseEmailMax = 254;
 export const getShopResponseCurrencyOneMin = 3;
 export const getShopResponseCurrencyOneMax = 3;
 export const getShopResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
@@ -25517,16 +25535,6 @@ export const getShopResponseShipToCountriesItemRegExp = new RegExp('^[A-Z]{2}$')
 export const getShopResponseReturnAddressCountryMax = 2;
 export const getShopResponseReturnAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const GetShopResponse = zod.strictObject({
-    legalName: zod.string(),
-    vatNumber: zod.string().optional(),
-    tradeRegister: zod.string().optional(),
-    registrationNumber: zod.string().optional(),
-    street: zod.string(),
-    city: zod.string(),
-    zip: zod.string(),
-    country: zod.string().max(getShopResponseCountryMax).regex(getShopResponseCountryRegExp),
-    email: zod.email().max(getShopResponseEmailMax),
-    phone: zod.string(),
     currency: zod
         .string()
         .min(getShopResponseCurrencyOneMin)
@@ -25550,7 +25558,6 @@ export const GetShopResponse = zod.strictObject({
             .regex(getShopResponseReturnAddressCountryRegExp)
     }),
     returnPostagePayer: zod.enum(['consumer', 'shop']),
-    termsVersion: zod.string(),
     backorderPromiseDays: zod.number().min(1),
     timeZone: zod.string()
 });

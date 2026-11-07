@@ -11,12 +11,12 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * The Legal notice: who the seller is, in full. The identity comes from `GET /shop`, so a
- * deployment sets it once in `NODE_SHOP_*` and every page that shows it stays in step. The page
+ * The Legal notice: who the operator is, in full. The identity comes from `GET /config`, so a
+ * deployment sets it once in `NODE_LEGAL_*` and every page that shows it stays in step. The page
  * carries no prose of its own beyond a one-line introduction.
  */
 import { useI18n } from 'vue-i18n';
-import SellerIdentityBlock from '@/app/components/SellerIdentityBlock.vue';
+import OperatorIdentityBlock from '@/app/components/OperatorIdentityBlock.vue';
 import StaticPageLinks from '@/app/components/StaticPageLinks.vue';
 
 /**
@@ -30,7 +30,7 @@ const { t } = useI18n();
         <v-card class="mx-auto mt-10 w-full max-w-2xl p-8">
             <p class="mb-4">{{ t('static-pages.legal.intro') }}</p>
 
-            <SellerIdentityBlock />
+            <OperatorIdentityBlock />
 
             <StaticPageLinks current="legal" />
         </v-card>

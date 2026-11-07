@@ -23,6 +23,6 @@ describe('fixture factories', () => {
     });
 
     it('build every default fixture without an override', () => {
-        expect(aShop().legalName).toBeTruthy();
+        expect(aShop().currency).toBeTruthy();
     });
 });

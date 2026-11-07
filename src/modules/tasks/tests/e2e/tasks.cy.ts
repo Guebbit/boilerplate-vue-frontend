@@ -212,12 +212,13 @@ describe('Static pages', () => {
 
         cy.contains('a', 'Legal notice').click();
         cy.get('#static-page-legal').should('exist');
-        // The seller's name is the deployment's own (`NODE_SHOP_LEGAL_NAME`): read it from the shop.
+        // The operator's name is the deployment's own (`NODE_LEGAL_NAME`): read it from the config.
         cy.env(['apiUrl'])
-            .then(({ apiUrl }) => cy.request(`${String(apiUrl)}/shop`))
+            .then(({ apiUrl }) => cy.request(`${String(apiUrl)}/config`))
             .then((response) => {
-                const { legalName } = response.body as { legalName: string };
-                cy.get('[data-test=seller-identity]').should('contain.text', legalName);
+                const { legalName } = (response.body as { operator: { legalName: string } })
+                    .operator;
+                cy.get('[data-test=operator-identity]').should('contain.text', legalName);
             });
     });
 });

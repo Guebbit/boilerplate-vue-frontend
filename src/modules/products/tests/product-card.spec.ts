@@ -23,10 +23,10 @@ import { aProduct } from '../../../../tests/support/unit/fixtures.ts';
 import type { Product } from '@types';
 
 // The shop states the backorder promise; these cases are about the wording around it.
-vi.mock('@/infrastructure/shop.ts', async (importOriginal) => {
+vi.mock('@/modules/shop', async (importOriginal) => {
     const { ref } = await import('vue');
     return {
-        ...(await importOriginal<typeof import('@/infrastructure/shop.ts')>()),
+        ...(await importOriginal<typeof import('@/modules/shop')>()),
         backorderPromiseDays: ref(30)
     };
 });

@@ -315,6 +315,12 @@ export interface AppModule {
      * visitor downloads one language, for the enabled domains only.
      */
     locales?: Record<string, () => Promise<TranslationDictionaries>>;
+
+    /**
+     * Boot work this domain owns, run once after the app is mounted (the shop loads its settings
+     * here). Fire-and-forget: it must never throw, and the app does not wait for it.
+     */
+    setup?: () => void;
 }
 
 /**
@@ -510,6 +516,16 @@ export const collectModuleSlots = (appModules: AppModule[]): Slots => {
             // `Object.entries` widens the key to `string`; every key of a `Slots` is a `SlotName`.
             merged[name as SlotName] = [...(merged[name as SlotName] ?? []), ...components];
     return merged;
+};
+
+/**
+ * Runs every enabled module's boot work ({@link AppModule.setup}), once each. A module that is not
+ * in the list is never called: deleting a module folder removes its boot work with it.
+ *
+ * @param appModules - the enabled module list
+ */
+export const runModuleSetups = (appModules: AppModule[]): void => {
+    for (const appModule of appModules) appModule.setup?.();
 };
 
 /**

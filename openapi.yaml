@@ -176,15 +176,17 @@ paths:
         - System
       summary: What a client needs to boot, before it has a session
       description: |
-        One public answer for the three things a client reads before anyone has signed in:
-        how the deployment keeps people signed in (`session`), which "Continue with..."
-        buttons to render (`oauthProviders`) and which human challenge a protected form
-        asks for (`antibot`). Each piece is owned by its own module and composed here, so
-        a client makes one call at start instead of three.
+        One public answer for what a client reads before anyone has signed in: how the
+        deployment keeps people signed in (`session`), which "Continue with..." buttons to
+        render (`oauthProviders`), which human challenge a protected form asks for
+        (`antibot`), the support address, who runs the site (`operator`, the legal identity
+        its footer, Terms, Legal notice and Privacy page print) and the version of the Terms
+        in force (`termsVersion`). Each piece is owned by its own module and composed here,
+        so a client makes one call at start instead of several.
 
         None of it is secret and none of it changes while the process runs, so it is
         cached for a short while. `GET /shop` stays its own call: the shop is removable and
-        this answer must exist without it.
+        this answer must exist without it, which is why the legal identity is here.
       operationId: getConfig
       security: []
       responses:
@@ -14594,8 +14596,8 @@ paths:
     get:
       tags:
         - Shop
-      summary: The shop's identity, currency, ship-to countries and return address
-      description: "Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, where returned goods go, the version of the Terms in force and the backorder promise in days. Public and cheap to read; it never changes without a redeploy. The shop's time zone (an IANA name) is published so a screen can name the calendar a promised day belongs to. Not published: the bank-transfer details, which travel on each order."
+      summary: The shop's commerce settings (currency, ship-to countries, return address)
+      description: "The shop's commerce settings: the one currency every price is quoted in, the countries the shop ships to, where returned goods go, who pays the postage and the backorder promise in days. The shop's time zone (an IANA name) is published so a screen can name the calendar a promised day belongs to. Who runs the site (the legal identity) and the Terms version are on `GET /config`. Public and cheap to read; it never changes without a redeploy. Not published: the bank-transfer details, which travel on each order."
       operationId: getShop
       security: []
       responses:
@@ -15769,6 +15771,8 @@ components:
         - oauthProviders
         - antibot
         - supportEmail
+        - operator
+        - termsVersion
       properties:
         session:
           $ref: "#/components/schemas/SessionConfig"
@@ -15783,6 +15787,11 @@ components:
           type: string
           format: email
           description: The one customer-facing support address (`NODE_SUPPORT_EMAIL`). The contact form's mail goes there and customers' replies come back to it; show it as "write to us at".
+        operator:
+          $ref: "#/components/schemas/Operator"
+        termsVersion:
+          type: string
+          description: Which text of the Terms is in force (`NODE_TERMS_VERSION`, `1` by default). An account stores the version it accepted beside the date (`User.termsVersion`).
     AccountView:
       type: object
       additionalProperties: false
@@ -16071,6 +16080,50 @@ components:
             What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.
         rungs:
           $ref: "#/components/schemas/AntibotRungs"
+    Operator:
+      type: object
+      additionalProperties: false
+      required:
+        - legalName
+        - street
+        - city
+        - zip
+        - country
+        - email
+      description: "Who runs the site: the provider identity a visitor is entitled to before any sale or signup (e-Commerce Directive Art. 5(1), GDPR Art. 13(1)(a)). Set once by the deployment in `NODE_LEGAL_*`; the footer, the Terms, the Legal notice and the Privacy page print it."
+      properties:
+        legalName:
+          type: string
+          description: The operator's name, as registered (`NODE_LEGAL_NAME`).
+        vatNumber:
+          type: string
+          description: VAT identification number (`NODE_LEGAL_VAT_NUMBER`); absent below the registration threshold.
+        tradeRegister:
+          type: string
+          description: The commercial register the operator is entered in (`NODE_LEGAL_TRADE_REGISTER`); absent for an operator in none.
+        registrationNumber:
+          type: string
+          description: The operator's number in that register (`NODE_LEGAL_REGISTRATION_NUMBER`); absent when there is no register.
+        street:
+          type: string
+          description: Street and number of the postal address (`NODE_LEGAL_STREET`).
+        city:
+          type: string
+          description: City of the postal address (`NODE_LEGAL_CITY`).
+        zip:
+          type: string
+          description: Postal code of the postal address (`NODE_LEGAL_ZIP`).
+        country:
+          allOf:
+            - $ref: "#/components/schemas/CountryCode"
+          description: Country of the postal address, ISO-3166 alpha-2 (`NODE_LEGAL_COUNTRY`). Also the shop's VAT jurisdiction.
+        email:
+          allOf:
+            - $ref: "#/components/schemas/Email"
+          description: Where a visitor writes to (`NODE_LEGAL_EMAIL`, or the support address when unset).
+        phone:
+          type: string
+          description: Telephone number (`NODE_LEGAL_PHONE`); absent when none is set. A deployment with the shop always sets it.
     LocaleDirection:
       type: string
       enum:
@@ -25878,7 +25931,7 @@ components:
         - city
         - zip
         - country
-      description: "Where returned goods are sent: the configured return address (`NODE_RETURN_ADDRESS_*`), or the shop's legal address when none is fully set."
+      description: "Where returned goods are sent: the configured return address (`NODE_RETURN_ADDRESS_*`), or the operator's postal address when none is fully set."
       properties:
         name:
           type: string
@@ -25895,46 +25948,14 @@ components:
       type: object
       additionalProperties: false
       required:
-        - legalName
-        - street
-        - city
-        - zip
-        - country
-        - email
-        - phone
         - currency
         - minorUnits
         - shipToCountries
         - returnAddress
         - returnPostagePayer
-        - termsVersion
         - backorderPromiseDays
         - timeZone
       properties:
-        legalName:
-          type: string
-          description: The seller's name, as registered.
-        vatNumber:
-          type: string
-          description: VAT identification number; absent for a shop below the registration threshold.
-        tradeRegister:
-          type: string
-          description: The commercial register the seller is entered in (`NODE_SHOP_TRADE_REGISTER`); absent for a seller in none.
-        registrationNumber:
-          type: string
-          description: The seller's number in that register (`NODE_SHOP_REGISTRATION_NUMBER`); absent when there is no register.
-        street:
-          type: string
-        city:
-          type: string
-        zip:
-          type: string
-        country:
-          $ref: "#/components/schemas/CountryCode"
-        email:
-          $ref: "#/components/schemas/Email"
-        phone:
-          type: string
         currency:
           allOf:
             - $ref: "#/components/schemas/CurrencyCode"
@@ -25953,9 +25974,6 @@ components:
           $ref: "#/components/schemas/ShopAddress"
         returnPostagePayer:
           $ref: "#/components/schemas/ReturnPostagePayer"
-        termsVersion:
-          type: string
-          description: Which text of the Terms is in force (`NODE_TERMS_VERSION`, `1` by default). An account stores the version it accepted beside the date (`User.termsVersion`).
         backorderPromiseDays:
           type: integer
           minimum: 1

@@ -152,18 +152,18 @@ env:
     NODE_AUTH_RATE_LIMIT_ADDRESS_MAX: '1000'
     NODE_SIGNUP_RATE_LIMIT_MAX: '1000'
     NODE_RESET_RATE_LIMIT_MAX: '1000'
-    # The shop's identity and its VAT pair: `orders` and `products` refuse to boot without them
+    # The operator's legal identity, the shop's clock and its VAT pair: boot refuses without them
     # (the seed step, the running backend and every `cy.restore()` reseed all boot the app). The
     # demo profile's own values (scenarios/run-server.ts REQUIRED_DEFAULTS in the backend),
     # throwaway like everything above.
-    NODE_SHOP_COUNTRY: IT
+    NODE_LEGAL_COUNTRY: IT
     NODE_SHOP_TIMEZONE: Europe/Rome
-    NODE_SHOP_LEGAL_NAME: Guebbit Demo Shop Srl
-    NODE_SHOP_STREET: Via Roma 1
-    NODE_SHOP_CITY: Milano
-    NODE_SHOP_ZIP: '20100'
+    NODE_LEGAL_NAME: Guebbit Demo Shop Srl
+    NODE_LEGAL_STREET: Via Roma 1
+    NODE_LEGAL_CITY: Milano
+    NODE_LEGAL_ZIP: '20100'
     NODE_SUPPORT_EMAIL: support@example.com
-    NODE_SHOP_PHONE: '+39 02 1234567'
+    NODE_LEGAL_PHONE: '+39 02 1234567'
     NODE_VAT_RATE_DEFAULT: '0.22'
     NODE_VAT_RATE_REDUCED: '0.10'
     # Throwaway, NOT A SECRET (32-byte hex, like the keys above).

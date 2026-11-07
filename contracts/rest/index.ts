@@ -326,6 +326,32 @@ export interface AntibotConfig {
     rungs: AntibotRungs;
 }
 
+/**
+ * Who runs the site: the provider identity a visitor is entitled to before any sale or signup (e-Commerce Directive Art. 5(1), GDPR Art. 13(1)(a)). Set once by the deployment in `NODE_LEGAL_*`; the footer, the Terms, the Legal notice and the Privacy page print it.
+ */
+export interface Operator {
+    /** The operator's name, as registered (`NODE_LEGAL_NAME`). */
+    legalName: string;
+    /** VAT identification number (`NODE_LEGAL_VAT_NUMBER`); absent below the registration threshold. */
+    vatNumber?: string;
+    /** The commercial register the operator is entered in (`NODE_LEGAL_TRADE_REGISTER`); absent for an operator in none. */
+    tradeRegister?: string;
+    /** The operator's number in that register (`NODE_LEGAL_REGISTRATION_NUMBER`); absent when there is no register. */
+    registrationNumber?: string;
+    /** Street and number of the postal address (`NODE_LEGAL_STREET`). */
+    street: string;
+    /** City of the postal address (`NODE_LEGAL_CITY`). */
+    city: string;
+    /** Postal code of the postal address (`NODE_LEGAL_ZIP`). */
+    zip: string;
+    /** Country of the postal address, ISO-3166 alpha-2 (`NODE_LEGAL_COUNTRY`). Also the shop's VAT jurisdiction. */
+    country: CountryCode;
+    /** Where a visitor writes to (`NODE_LEGAL_EMAIL`, or the support address when unset). */
+    email: Email;
+    /** Telephone number (`NODE_LEGAL_PHONE`); absent when none is set. A deployment with the shop always sets it. */
+    phone?: string;
+}
+
 export interface Config {
     session: SessionConfig;
     /** Registry names this deployment holds OAuth credentials for, e.g. `["google", "github"]`. Empty when none are configured. */
@@ -333,6 +359,9 @@ export interface Config {
     antibot: AntibotConfig;
     /** The one customer-facing support address (`NODE_SUPPORT_EMAIL`). The contact form's mail goes there and customers' replies come back to it; show it as "write to us at". */
     supportEmail: string;
+    operator: Operator;
+    /** Which text of the Terms is in force (`NODE_TERMS_VERSION`, `1` by default). An account stores the version it accepted beside the date (`User.termsVersion`). */
+    termsVersion: string;
 }
 
 export type PackedRulesItemItem = string | 0 | 1 | { [key: string]: unknown };
@@ -7531,7 +7560,7 @@ export interface NotificationsResponse {
 }
 
 /**
- * Where returned goods are sent: the configured return address (`NODE_RETURN_ADDRESS_*`), or the shop's legal address when none is fully set.
+ * Where returned goods are sent: the configured return address (`NODE_RETURN_ADDRESS_*`), or the operator's postal address when none is fully set.
  */
 export interface ShopAddress {
     /** Who the parcel is addressed to. */
@@ -7543,20 +7572,6 @@ export interface ShopAddress {
 }
 
 export interface Shop {
-    /** The seller's name, as registered. */
-    legalName: string;
-    /** VAT identification number; absent for a shop below the registration threshold. */
-    vatNumber?: string;
-    /** The commercial register the seller is entered in (`NODE_SHOP_TRADE_REGISTER`); absent for a seller in none. */
-    tradeRegister?: string;
-    /** The seller's number in that register (`NODE_SHOP_REGISTRATION_NUMBER`); absent when there is no register. */
-    registrationNumber?: string;
-    street: string;
-    city: string;
-    zip: string;
-    country: CountryCode;
-    email: Email;
-    phone: string;
     /** ISO-4217 currency code (e.g. EUR) — the shop's one currency, the same one `Product.currency` reports. */
     currency: CurrencyCode;
     /**
@@ -7569,8 +7584,6 @@ export interface Shop {
     shipToCountries: CountryCode[];
     returnAddress: ShopAddress;
     returnPostagePayer: ReturnPostagePayer;
-    /** Which text of the Terms is in force (`NODE_TERMS_VERSION`, `1` by default). An account stores the version it accepted beside the date (`User.termsVersion`). */
-    termsVersion: string;
     /**
      * Days a buyer is promised when a backorder names no restock date: "ships within N days". A legal value the server fixes (CRD Art. 18(1)), not a setting.
      * @minimum 1
@@ -8617,15 +8630,17 @@ export const getHealth = (options?: SecondParameter<typeof orvalMutator<HealthPi
 };
 
 /**
- * One public answer for the three things a client reads before anyone has signed in:
- * how the deployment keeps people signed in (`session`), which "Continue with..."
- * buttons to render (`oauthProviders`) and which human challenge a protected form
- * asks for (`antibot`). Each piece is owned by its own module and composed here, so
- * a client makes one call at start instead of three.
+ * One public answer for what a client reads before anyone has signed in: how the
+ * deployment keeps people signed in (`session`), which "Continue with..." buttons to
+ * render (`oauthProviders`), which human challenge a protected form asks for
+ * (`antibot`), the support address, who runs the site (`operator`, the legal identity
+ * its footer, Terms, Legal notice and Privacy page print) and the version of the Terms
+ * in force (`termsVersion`). Each piece is owned by its own module and composed here,
+ * so a client makes one call at start instead of several.
  *
  * None of it is secret and none of it changes while the process runs, so it is
  * cached for a short while. `GET /shop` stays its own call: the shop is removable and
- * this answer must exist without it.
+ * this answer must exist without it, which is why the legal identity is here.
  * @summary What a client needs to boot, before it has a session
  */
 export const getConfig = (options?: SecondParameter<typeof orvalMutator<Config>>) => {
@@ -13396,8 +13411,8 @@ export const deleteNotificationById = (
 };
 
 /**
- * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, where returned goods go, the version of the Terms in force and the backorder promise in days. Public and cheap to read; it never changes without a redeploy. The shop's time zone (an IANA name) is published so a screen can name the calendar a promised day belongs to. Not published: the bank-transfer details, which travel on each order.
- * @summary The shop's identity, currency, ship-to countries and return address
+ * The shop's commerce settings: the one currency every price is quoted in, the countries the shop ships to, where returned goods go, who pays the postage and the backorder promise in days. The shop's time zone (an IANA name) is published so a screen can name the calendar a promised day belongs to. Who runs the site (the legal identity) and the Terms version are on `GET /config`. Public and cheap to read; it never changes without a redeploy. Not published: the bank-transfer details, which travel on each order.
+ * @summary The shop's commerce settings (currency, ship-to countries, return address)
  */
 export const getShop = (options?: SecondParameter<typeof orvalMutator<Shop>>) => {
     return orvalMutator<Shop>({ url: `/shop`, method: 'GET' }, options);

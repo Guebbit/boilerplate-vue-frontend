@@ -14,7 +14,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
-import { shopCurrency } from '@/infrastructure/shop.ts';
+import { shopCurrency } from '@/modules/shop';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useDialogStore } from '@/ui/dialog.ts';

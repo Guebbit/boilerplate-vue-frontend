@@ -2,3 +2,4 @@ group: shop
 dependsOn:
     - locales
     - delivery
+    - shop

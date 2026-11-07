@@ -18,10 +18,10 @@ import { asStub } from '../../../../tests/support/stub';
 import { contractResponse } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 
 // The shop states the backorder promise; these cases are about the wording around it.
-vi.mock('@/infrastructure/shop.ts', async (importOriginal) => {
+vi.mock('@/modules/shop', async (importOriginal) => {
     const { ref } = await import('vue');
     return {
-        ...(await importOriginal<typeof import('@/infrastructure/shop.ts')>()),
+        ...(await importOriginal<typeof import('@/modules/shop')>()),
         backorderPromiseDays: ref(30)
     };
 });

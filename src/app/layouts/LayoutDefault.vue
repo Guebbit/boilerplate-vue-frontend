@@ -36,7 +36,7 @@ import { useCoreStore, useIsLoading, useNotificationsStore } from '@guebbit/vue-
 import { MAIN_CONTENT } from '@/app/router/announcer.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { shopRecord } from '@/infrastructure/shop.ts';
+import { publicConfig } from '@/infrastructure/config.ts';
 import { enforceRouteAccess } from '@/app/guards/authentications.ts';
 import { collectModuleLoadingKeys } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
@@ -181,16 +181,16 @@ const analyticsConsentEnabled = isAnalyticsConsentEnabled();
 const analyticsConsent = useAnalyticsConsentStore();
 
 /**
- * The footer's seller line: "© legal name · VAT number", or the name alone for a shop with no VAT
- * number. Empty until the shop has loaded, and then the line is not drawn.
+ * The footer's operator line: "© legal name · VAT number", or the name alone for an operator with no VAT
+ * number. Empty until the config has loaded, and then the line is not drawn.
  */
-const sellerLine = computed(() =>
-    shopRecord.value?.vatNumber
-        ? t('footer.seller', {
-              legalName: shopRecord.value.legalName,
-              vatNumber: shopRecord.value.vatNumber
+const operatorLine = computed(() =>
+    publicConfig.value?.operator.vatNumber
+        ? t('footer.operator', {
+              legalName: publicConfig.value.operator.legalName,
+              vatNumber: publicConfig.value.operator.vatNumber
           })
-        : t('footer.seller-no-vat', { legalName: shopRecord.value?.legalName ?? '' })
+        : t('footer.operator-no-vat', { legalName: publicConfig.value?.operator.legalName ?? '' })
 );
 
 /**
@@ -324,7 +324,7 @@ watch(abilitiesSignal, () => {
 
         <!--
             Minimal footer, so every page has a `contentinfo` landmark to jump to. The links are
-            the same five prose pages the About page cross-links, plus the seller line; nothing else belongs here.
+            the same five prose pages the About page cross-links, plus the operator line; nothing else belongs here.
         -->
         <v-footer tag="footer" border="t" class="flex-col justify-center gap-2 py-4 text-sm">
             <nav
@@ -350,9 +350,13 @@ watch(abilitiesSignal, () => {
                     {{ t('analytics-consent.privacy-choices') }}
                 </button>
             </nav>
-            <!-- The seller, on every page (e-Commerce Directive Art. 5; Italy also wants the VAT number in view). -->
-            <p v-if="shopRecord" class="w-full text-center opacity-80" data-test="footer-seller">
-                {{ sellerLine }}
+            <!-- The operator, on every page (e-Commerce Directive Art. 5; Italy also wants the VAT number in view). -->
+            <p
+                v-if="publicConfig"
+                class="w-full text-center opacity-80"
+                data-test="footer-operator"
+            >
+                {{ operatorLine }}
             </p>
         </v-footer>
 
