@@ -271,3 +271,77 @@ describe('OrderTimeline — leaving a staff note', () => {
         expect(addNote).not.toHaveBeenCalled();
     });
 });
+
+describe('OrderTimeline — withdrawing a note’s text', () => {
+    /**
+     * A history with one note that still has its text and one already withdrawn.
+     */
+    const NOTE_ROWS: OrderTimelineEntry[] = [
+        {
+            id: 'n1',
+            at: '2026-10-03T09:00:00.000Z',
+            type: 'note_added',
+            audience: 'staff',
+            actor: 'u9',
+            text: 'Called the buyer',
+            data: {}
+        },
+        {
+            id: 'n2',
+            at: '2026-10-03T10:00:00.000Z',
+            type: 'note_added',
+            audience: 'staff',
+            actor: 'u9',
+            data: {}
+        }
+    ];
+
+    it('offers the button only on a note that still has text, to a holder of update:Order', async () => {
+        signIn(true, true);
+
+        const { wrapper } = await mountTimeline([...STAFF_ROWS, ...NOTE_ROWS]);
+
+        const rows = wrapper.findAll('[data-test="order-timeline-entry"]');
+        expect(
+            rows.map((row) => row.find('[data-test="order-timeline-note-remove"]').exists())
+        ).toEqual([false, false, false, true, false]);
+    });
+
+    it('offers no button to staff who can only read', async () => {
+        signIn(true);
+
+        const { wrapper } = await mountTimeline(NOTE_ROWS);
+
+        expect(wrapper.find('[data-test="order-timeline-note-remove"]').exists()).toBe(false);
+    });
+
+    it('removes that note’s text and reads the history again', async () => {
+        signIn(true, true);
+        const deleteNote = vi.spyOn(useOrdersStore(), 'deleteNote').mockResolvedValue();
+        const { wrapper, fetchTimeline } = await mountTimeline(NOTE_ROWS);
+
+        await wrapper.get('[data-test="order-timeline-note-remove"]').trigger('click');
+        await flushPromises();
+
+        expect(deleteNote).toHaveBeenCalledExactlyOnceWith('o1', 'n1');
+        expect(fetchTimeline).toHaveBeenCalledTimes(2);
+    });
+
+    it('shows the refusal beside the row and does not read again when the call fails', async () => {
+        signIn(true, true);
+        vi.spyOn(useOrdersStore(), 'deleteNote').mockRejectedValue({
+            status: 429,
+            errors: [{ message: 'Too many requests' }]
+        });
+        const { wrapper, fetchTimeline } = await mountTimeline(NOTE_ROWS);
+
+        await wrapper.get('[data-test="order-timeline-note-remove"]').trigger('click');
+        await flushPromises();
+
+        const row = wrapper.get('[data-test="order-timeline-entry"]');
+        expect(row.get('[data-test="order-timeline-note-remove-error"]').text()).toContain(
+            'Too many requests'
+        );
+        expect(fetchTimeline).toHaveBeenCalledTimes(1);
+    });
+});

@@ -128,8 +128,13 @@ renamed in the contract fails to compile there. `text` exists only on the varian
 it: customers do not see the note on their order, but it is included if they request their data, so
 no phone numbers, addresses or health details. On success the box clears and the history reads
 again; a refusal (a 429, say) shows beside the box and keeps the text. The row comes back as
-`note_added`, flagged for staff like any other staff-only row. Withdrawing a note
-(`DELETE .../notes/{entryId}`) has no screen yet.
+`note_added`, flagged for staff like any other staff-only row.
+
+**Withdrawing a note.** A `note_added` row that still has text shows a "Remove text" button to the
+same holders (`DELETE .../notes/{eventId}`, `useOrdersStore().deleteNote`). The server unsets the
+text and keeps the row, so the history still shows that a note was written and withdrawn; the
+history reads again and the row shows without its text and without the button. A refusal shows
+beside that row.
 
 ```mermaid
 flowchart LR
