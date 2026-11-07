@@ -54,13 +54,17 @@ const BUYER_ROWS: OrderTimelineEntry[] = STAFF_ROWS.slice(0, 2).map(
  * Signs in with one read rule on orders: the staff `display` makes a viewer staff, the pinned `read` a buyer.
  *
  * @param staff - whether the rule is `display:Order`
+ * @param canWrite - whether the caller also holds `update:Order`
  */
-const signIn = (staff: boolean) => {
+const signIn = (staff: boolean, canWrite = false) => {
     const session = useSessionStore();
     session.accessToken = 'test-token';
     session.viewer = { id: 'u1', email: 'a@example.com', role: 'owner' };
     session.setAbilities({
-        tenant: [staff ? ['display', 'Order', {}] : ['read', 'Order', { userId: 'u1' }]],
+        tenant: [
+            staff ? ['display', 'Order', {}] : ['read', 'Order', { userId: 'u1' }],
+            ...(canWrite ? [['update', 'Order', {}] as [string, string, object]] : [])
+        ],
         platform: []
     });
 };
@@ -189,5 +193,81 @@ describe('OrderTimeline — reading', () => {
             'Order not found'
         );
         expect(wrapper.find('[data-test="order-timeline-empty"]').exists()).toBe(false);
+    });
+});
+
+describe('OrderTimeline — leaving a staff note', () => {
+    it('shows the box, with the privacy warning, to a holder of update:Order', async () => {
+        signIn(true, true);
+
+        const { wrapper } = await mountTimeline(STAFF_ROWS);
+
+        expect(wrapper.find('[data-test="order-timeline-note-form"]').exists()).toBe(true);
+        expect(wrapper.text()).toContain(
+            "Customers don't see this on their order, but it is included if they request their data."
+        );
+    });
+
+    it.each([
+        ['staff who can only read', true],
+        ['a buyer', false]
+    ])('shows no box to %s', async (_who, staff) => {
+        signIn(staff);
+
+        const { wrapper } = await mountTimeline(staff ? STAFF_ROWS : BUYER_ROWS);
+
+        expect(wrapper.find('[data-test="order-timeline-note-form"]').exists()).toBe(false);
+    });
+
+    it('sends the trimmed text, clears the box and reads the history again', async () => {
+        signIn(true, true);
+        const addNote = vi
+            .spyOn(useOrdersStore(), 'addNote')
+            .mockResolvedValue({ ...STAFF_ROWS[2], id: 'e4', type: 'note_added', data: {} });
+        const { wrapper, fetchTimeline } = await mountTimeline(STAFF_ROWS);
+
+        await wrapper.get('[data-test="order-timeline-note-text"] textarea').setValue('  Called  ');
+        await wrapper.get('[data-test="order-timeline-note-form"]').trigger('submit');
+        await flushPromises();
+
+        expect(addNote).toHaveBeenCalledExactlyOnceWith('o1', 'Called');
+        expect(fetchTimeline).toHaveBeenCalledTimes(2);
+        const box = wrapper.get<HTMLTextAreaElement>(
+            '[data-test="order-timeline-note-text"] textarea'
+        );
+        expect(box.element.value).toBe('');
+    });
+
+    it('keeps the text and shows the refusal beside the box when the write fails', async () => {
+        signIn(true, true);
+        vi.spyOn(useOrdersStore(), 'addNote').mockRejectedValue({
+            status: 429,
+            errors: [{ message: 'Too many requests' }]
+        });
+        const { wrapper, fetchTimeline } = await mountTimeline(STAFF_ROWS);
+
+        await wrapper.get('[data-test="order-timeline-note-text"] textarea').setValue('Called');
+        await wrapper.get('[data-test="order-timeline-note-form"]').trigger('submit');
+        await flushPromises();
+
+        expect(wrapper.get('[data-test="order-timeline-note-error"]').text()).toContain(
+            'Too many requests'
+        );
+        expect(fetchTimeline).toHaveBeenCalledTimes(1);
+        const box = wrapper.get<HTMLTextAreaElement>(
+            '[data-test="order-timeline-note-text"] textarea'
+        );
+        expect(box.element.value).toBe('Called');
+    });
+
+    it('does not send an empty note', async () => {
+        signIn(true, true);
+        const addNote = vi.spyOn(useOrdersStore(), 'addNote');
+        const { wrapper } = await mountTimeline(STAFF_ROWS);
+
+        await wrapper.get('[data-test="order-timeline-note-text"] textarea').setValue('   ');
+        await wrapper.get('[data-test="order-timeline-note-form"]').trigger('submit');
+
+        expect(addNote).not.toHaveBeenCalled();
     });
 });

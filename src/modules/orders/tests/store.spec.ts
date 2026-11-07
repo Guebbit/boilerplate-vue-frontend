@@ -25,6 +25,7 @@ import {
     listOrderCreditNotes,
     getOrderCreditNote,
     getOrderTimeline,
+    addOrderNote,
     exportOrders
 } from '@api';
 import * as schemas from '@api/schemas';
@@ -94,6 +95,7 @@ vi.mock('@api', () => ({
     listOrderCreditNotes: vi.fn(() => Promise.resolve({ items: CREDIT_NOTES })),
     getOrderCreditNote: vi.fn(() => Promise.resolve(INVOICE)),
     getOrderTimeline: vi.fn(() => Promise.resolve({ items: TIMELINE })),
+    addOrderNote: vi.fn(() => Promise.resolve(TIMELINE[0])),
     exportOrders: vi.fn(() =>
         Promise.resolve(
             new File(['createdAt,orderNumber\n'], 'orders-2026-10-27.csv', { type: 'text/csv' })
@@ -241,6 +243,18 @@ describe('useOrdersStore', () => {
                 .then((result) => {
                     expect(getOrderTimeline).toHaveBeenCalledExactlyOnceWith('o1');
                     expect(result).toEqual(TIMELINE);
+                }));
+    });
+
+    describe('addNote', () => {
+        it('posts the text to the order and answers the new entry', () =>
+            useOrdersStore()
+                .addNote('o1', 'Called the buyer')
+                .then((entry) => {
+                    expect(addOrderNote).toHaveBeenCalledExactlyOnceWith('o1', {
+                        text: 'Called the buyer'
+                    });
+                    expect(entry).toEqual(TIMELINE[0]);
                 }));
     });
 

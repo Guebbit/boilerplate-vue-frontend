@@ -2,7 +2,7 @@
  * @module
  * Pinia store built on `useStructureCrudApi` for orders CRUD and paginated
  * search, plus hand-written actions (`cancelOrder`, `fetchInvoice`, `fetchCreditNotes`,
- * `fetchCreditNote`, `fetchTimeline`, `exportOrdersCsv`)
+ * `fetchCreditNote`, `fetchTimeline`, `addNote`, `exportOrdersCsv`)
  * for endpoints that don't fit the toolkit's record-shaped primitives.
  */
 import { defineStore } from 'pinia';
@@ -24,6 +24,7 @@ import {
     listOrderCreditNotes,
     getOrderCreditNote,
     getOrderTimeline,
+    addOrderNote,
     exportOrders,
     overrideOrderStatus,
     correctOrderShippingAddress,
@@ -106,6 +107,18 @@ const criteriaOf = (filters: OrdersFilters) => ({
  */
 const fetchTimeline = (orderId: string): Promise<OrderTimelineEntry[]> =>
     getOrderTimeline(orderId).then((response) => response.items);
+
+/**
+ * Leaves a staff note on an order's timeline — `POST /orders/{id}/timeline/notes` (`update:Order`).
+ * Outside `fetchAny` like {@link fetchTimeline}: the timeline reads again afterwards, and the page's
+ * shared `loading` must not disable its buttons for a note.
+ *
+ * @param orderId - Identifier of the order.
+ * @param text - What staff wrote, 1 to 2000 characters.
+ * @returns A promise resolving with the new `note_added` entry.
+ */
+const addNote = (orderId: string, text: string): Promise<OrderTimelineEntry> =>
+    addOrderNote(orderId, { text });
 
 /**
  * Lists the credit notes of an order, oldest first — one per settled refund, `[]` for an order
@@ -352,6 +365,7 @@ export const useOrdersStore = defineStore('orders', () => {
         fetchInvoice,
         fetchCreditNotes: listCreditNotes,
         fetchTimeline,
+        addNote,
         exportOrdersCsv,
         fetchCreditNote
     };

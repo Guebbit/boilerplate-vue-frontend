@@ -2171,6 +2171,20 @@ export type OrderTimelineExportEntryStatusOverridden = OrderTimelineExportEntryB
     text?: string;
 };
 
+export type OrderTimelineExportEntryNoteAddedType =
+    (typeof OrderTimelineExportEntryNoteAddedType)[keyof typeof OrderTimelineExportEntryNoteAddedType];
+
+export const OrderTimelineExportEntryNoteAddedType = {
+    note_added: 'note_added'
+} as const;
+
+export type OrderTimelineExportEntryNoteAdded = OrderTimelineExportEntryBase & {
+    type: OrderTimelineExportEntryNoteAddedType;
+    data: OrderTimelineDataNone;
+    /** What staff wrote. Absent once it was deleted, the order's personal data was erased, or `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS` passed; the row stays. */
+    text?: string;
+};
+
 /**
  * The order was paid.
  */
@@ -2680,6 +2694,7 @@ export type OrderTimelineExportEntryDelayNoticeSent = OrderTimelineExportEntryBa
 export type OrderTimelineExportEntry =
     | OrderTimelineExportEntryPlain
     | OrderTimelineExportEntryStatusOverridden
+    | OrderTimelineExportEntryNoteAdded
     | OrderTimelineExportEntryPaid
     | OrderTimelineExportEntryDelivered
     | OrderTimelineExportEntryCanceled
@@ -6649,6 +6664,20 @@ export type OrderTimelineEntryStatusOverridden = OrderTimelineEntryBase & {
     text?: string;
 };
 
+export type OrderTimelineEntryNoteAddedType =
+    (typeof OrderTimelineEntryNoteAddedType)[keyof typeof OrderTimelineEntryNoteAddedType];
+
+export const OrderTimelineEntryNoteAddedType = {
+    note_added: 'note_added'
+} as const;
+
+export type OrderTimelineEntryNoteAdded = OrderTimelineEntryBase & {
+    type: OrderTimelineEntryNoteAddedType;
+    data: OrderTimelineDataNone;
+    /** What staff wrote. Absent once it was deleted, the order's personal data was erased, or `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS` passed; the row stays. */
+    text?: string;
+};
+
 export type OrderTimelineEntryPaidType =
     (typeof OrderTimelineEntryPaidType)[keyof typeof OrderTimelineEntryPaidType];
 
@@ -6910,6 +6939,7 @@ export type OrderTimelineEntryDelayNoticeSent = OrderTimelineEntryBase & {
 export type OrderTimelineEntry =
     | OrderTimelineEntryPlain
     | OrderTimelineEntryStatusOverridden
+    | OrderTimelineEntryNoteAdded
     | OrderTimelineEntryPaid
     | OrderTimelineEntryDelivered
     | OrderTimelineEntryCanceled
@@ -6934,6 +6964,15 @@ export type OrderTimelineEntry =
 
 export interface OrderTimelineResponse {
     items: OrderTimelineEntry[];
+}
+
+export interface CreateOrderNoteRequest {
+    /**
+     * What staff want recorded. Customers do not see it on their order, but it is included if they request their data: no phone numbers, addresses or health details.
+     * @minLength 1
+     * @maxLength 2000
+     */
+    text: string;
 }
 
 /**
@@ -12585,6 +12624,41 @@ export const getOrderTimeline = (
 };
 
 /**
+ * Appends a `note_added` row to the order's timeline: a call, an agreement, anything staff want the next person to know. Needs `update:Order`. The row is staff-only (`audience: staff`): the buyer's timeline never shows it, but it is the buyer's data and so it is in their `POST /account/export`. The text is stored encrypted, unset when the order's personal data is erased and after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`, and never written to the audit log (only its length is). Answers the entry, with the `Location` of its `DELETE`.
+ * @summary Leave a staff note on an order
+ */
+export const addOrderNote = (
+    id: string,
+    createOrderNoteRequest: CreateOrderNoteRequest,
+    options?: SecondParameter<typeof orvalMutator<OrderTimelineEntry>>
+) => {
+    return orvalMutator<OrderTimelineEntry>(
+        {
+            url: `/orders/${id}/timeline/notes`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createOrderNoteRequest
+        },
+        options
+    );
+};
+
+/**
+ * Unsets the text of one `note_added` row: the row stays in the timeline, without its text, so the history still shows that a note was written and withdrawn (GDPR Art. 16 and 17). Needs `update:Order`. An id that is not a note of this order is a 404. Writes an audit row with the note's length, never its text. A second call on the same note is a 404.
+ * @summary Remove the text of a wrong staff note
+ */
+export const deleteOrderNote = (
+    id: string,
+    eventId: Id,
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
+) => {
+    return orvalMutator<NoContentResponse>(
+        { url: `/orders/${id}/timeline/notes/${eventId}`, method: 'DELETE' },
+        options
+    );
+};
+
+/**
  * Replaces the order's shipping address, as staff do when a fulfillment order was held for `incorrect_address` and the buyer wrote back. Needs `update:Order`. Allowed while units remain to send (held and awaiting-stock ones included) and the order has a shipping address at all (`409 ORDER_ADDRESS_LOCKED` otherwise). A parcel already cut keeps the address it went to: each shipment stores its own `destination`. The country must be on the shop's ship-to list (`422 ORDER_SHIP_TO_COUNTRY_NOT_SUPPORTED`). Leaves a staff-only timeline row, `address_corrected`, and an audit row naming who changed it, never what it says. `OrderActions.correctAddress` says whether this would be accepted.
  * @summary Correct where an unshipped order ships (staff)
  */
@@ -13790,6 +13864,8 @@ export type DeactivateUserByIdResult = NonNullable<Awaited<ReturnType<typeof dea
 export type MergeCartResult = NonNullable<Awaited<ReturnType<typeof mergeCart>>>;
 export type ExportOrdersResult = NonNullable<Awaited<ReturnType<typeof exportOrders>>>;
 export type GetOrderTimelineResult = NonNullable<Awaited<ReturnType<typeof getOrderTimeline>>>;
+export type AddOrderNoteResult = NonNullable<Awaited<ReturnType<typeof addOrderNote>>>;
+export type DeleteOrderNoteResult = NonNullable<Awaited<ReturnType<typeof deleteOrderNote>>>;
 export type CorrectOrderShippingAddressResult = NonNullable<
     Awaited<ReturnType<typeof correctOrderShippingAddress>>
 >;

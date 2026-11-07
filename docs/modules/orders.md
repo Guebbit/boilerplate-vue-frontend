@@ -120,8 +120,16 @@ the order's status, payment, fulfilment or return state changes.
 
 A row is a union keyed by `type` (`OrderTimelineEntry`), so each type's detail reads the `data` shape
 the contract gives that type: the table of details is a mapped type over the types, and a field
-renamed in the contract fails to compile there. `text` exists only on the variant that carries it
-(`status_overridden` today).
+renamed in the contract fails to compile there. `text` exists only on the variants that carry it
+(`status_overridden` and `note_added`).
+
+**Staff notes.** A holder of `update:Order` also gets a box above the history to leave a note
+(`POST /orders/{id}/timeline/notes`, `useOrdersStore().addNote`). It says what the server does with
+it: customers do not see the note on their order, but it is included if they request their data, so
+no phone numbers, addresses or health details. On success the box clears and the history reads
+again; a refusal (a 429, say) shows beside the box and keeps the text. The row comes back as
+`note_added`, flagged for staff like any other staff-only row. Withdrawing a note
+(`DELETE .../notes/{entryId}`) has no screen yet.
 
 ```mermaid
 flowchart LR
@@ -182,24 +190,26 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 #### Endpoints called
 
-| Call                                | Response schema                |
-| ----------------------------------- | ------------------------------ |
-| `DELETE /orders`                    | `DeleteOrderResponse`          |
-| `GET /orders`                       | `ListOrdersResponse`           |
-| `POST /orders`                      | `CreateOrderResponse`          |
-| `DELETE /orders/{id}`               | `DeleteOrderByIdResponse`      |
-| `GET /orders/{id}`                  | `GetOrderByIdResponse`         |
-| `PUT /orders/{id}`                  | `ReplaceOrderByIdResponse`     |
-| `PATCH /orders/{id}`                | `UpdateOrderByIdResponse`      |
-| `POST /orders/{id}/cancel`          | `CancelOrderByIdResponse`      |
-| `POST /orders/{id}/restore`         | `RestoreOrderByIdResponse`     |
-| `POST /orders/{id}/status-override` | `OverrideOrderStatusResponse`  |
-| `DELETE /orders/{id}/hard`          | `HardDeleteOrderByIdResponse`  |
-| `GET /orders/{id}/invoice`          | `GetOrderInvoiceResponse`      |
-| `GET /orders/{id}/credit-notes`     | `ListOrderCreditNotesResponse` |
-| `POST /orders/search`               | `SearchOrdersResponse`         |
-| `GET /orders/export`                | `ExportOrdersResponse`         |
-| `GET /orders/{id}/timeline`         | `GetOrderTimelineResponse`     |
+| Call                                           | Response schema                |
+| ---------------------------------------------- | ------------------------------ |
+| `DELETE /orders`                               | `DeleteOrderResponse`          |
+| `GET /orders`                                  | `ListOrdersResponse`           |
+| `POST /orders`                                 | `CreateOrderResponse`          |
+| `DELETE /orders/{id}`                          | `DeleteOrderByIdResponse`      |
+| `GET /orders/{id}`                             | `GetOrderByIdResponse`         |
+| `PUT /orders/{id}`                             | `ReplaceOrderByIdResponse`     |
+| `PATCH /orders/{id}`                           | `UpdateOrderByIdResponse`      |
+| `POST /orders/{id}/cancel`                     | `CancelOrderByIdResponse`      |
+| `POST /orders/{id}/restore`                    | `RestoreOrderByIdResponse`     |
+| `POST /orders/{id}/status-override`            | `OverrideOrderStatusResponse`  |
+| `DELETE /orders/{id}/hard`                     | `HardDeleteOrderByIdResponse`  |
+| `GET /orders/{id}/invoice`                     | `GetOrderInvoiceResponse`      |
+| `GET /orders/{id}/credit-notes`                | `ListOrderCreditNotesResponse` |
+| `POST /orders/search`                          | `SearchOrdersResponse`         |
+| `GET /orders/export`                           | `ExportOrdersResponse`         |
+| `GET /orders/{id}/timeline`                    | `GetOrderTimelineResponse`     |
+| `POST /orders/{id}/timeline/notes`             | `AddOrderNoteResponse`         |
+| `DELETE /orders/{id}/timeline/notes/{eventId}` | `DeleteOrderNoteResponse`      |
 
 Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 

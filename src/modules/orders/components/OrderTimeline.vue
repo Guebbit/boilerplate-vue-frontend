@@ -17,11 +17,13 @@ export default {
  * (`display:Order`) additionally get a badge on the rows the buyer cannot see. The text of each
  * line is `describeTimelineEntry`'s, built from the row's ids and codes. A row done by the order's
  * own buyer carries an "own order" chip for staff, so a review sees a staff member handling their own
- * order's money at a glance.
+ * order's money at a glance. Holders of `update:Order` also get a box to leave a staff note, which
+ * the server keeps staff-only and encrypted; the history reads again once it is saved.
  */
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { EyeOff } from 'lucide-vue-next';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import {
@@ -92,6 +94,26 @@ const tools: TimelineTools = {
 };
 
 /**
+ * Toast dispatcher, used to confirm a saved note.
+ */
+const { addMessage } = useNotificationsStore();
+
+/**
+ * The note being typed.
+ */
+const noteText = ref('');
+
+/**
+ * Whether the note is on its way to the server.
+ */
+const savingNote = ref(false);
+
+/**
+ * The note box's own blocked state: a refusal (too long, rate limit) shows beside the box.
+ */
+const { message: noteError, report: reportNoteError, clear: clearNoteError } = useBlockingError();
+
+/**
  * Each row with its line, rebuilt when the rows or the language change. `text` is read here
  * because only a variant that carries it has the key (`in` narrows the union to it).
  */
@@ -138,6 +160,29 @@ const load = () => {
 };
 
 /**
+ * Saves the typed note, then reads the history again so the new row appears.
+ *
+ * @returns A promise settling once the call finished; a refusal stays beside the box.
+ */
+const saveNote = () => {
+    const text = noteText.value.trim();
+    if (!text) return Promise.resolve();
+    clearNoteError();
+    savingNote.value = true;
+    return useOrdersStore()
+        .addNote(props.orderId, text)
+        .then(() => {
+            noteText.value = '';
+            addMessage(t('order-timeline.note-saved'));
+            return load();
+        })
+        .catch((error: unknown) => reportNoteError(error))
+        .finally(() => {
+            savingNote.value = false;
+        });
+};
+
+/**
  * Reads on mount and whenever the order, or the order's state, changes.
  */
 watch(() => [props.orderId, props.refreshKey], load, { immediate: true });
@@ -152,6 +197,37 @@ watch(() => [props.orderId, props.refreshKey], load, { immediate: true });
         <h2 :id="`${orderId}-timeline-title`" class="m-0 text-lg">
             {{ t('order-timeline.title') }}
         </h2>
+        <form
+            v-if="session.can('update', 'Order')"
+            class="flex flex-col gap-2"
+            novalidate
+            data-test="order-timeline-note-form"
+            @submit.prevent="saveNote"
+        >
+            <v-textarea
+                v-model="noteText"
+                :label="t('order-timeline.note-label')"
+                :hint="t('order-timeline.note-hint')"
+                persistent-hint
+                rows="2"
+                maxlength="2000"
+                counter
+                density="compact"
+                data-test="order-timeline-note-text"
+            />
+            <InlineErrorAlert :message="noteError" data-test="order-timeline-note-error" />
+            <div class="flex justify-end">
+                <v-btn
+                    type="submit"
+                    variant="tonal"
+                    :loading="savingNote"
+                    :disabled="savingNote || !noteText.trim()"
+                    data-test="order-timeline-note-submit"
+                >
+                    {{ t('order-timeline.note-submit') }}
+                </v-btn>
+            </div>
+        </form>
         <InlineErrorAlert :message="readError" data-test="order-timeline-error" />
         <p v-if="loading" class="m-0 opacity-75" data-test="order-timeline-loading">
             {{ t('order-timeline.loading') }}

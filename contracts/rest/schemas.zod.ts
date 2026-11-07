@@ -3206,10 +3206,6 @@ export const downloadAccountExportResponseOrderTimelineItemSixOneActorOneMax = 6
 export const downloadAccountExportResponseOrderTimelineItemSixOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseOrderTimelineItemSixTwoDataPaymentIdMax = 64;
-export const downloadAccountExportResponseOrderTimelineItemSixTwoDataPaymentIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
 export const downloadAccountExportResponseOrderTimelineItemSevenOneOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemSevenOneOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -3222,18 +3218,9 @@ export const downloadAccountExportResponseOrderTimelineItemSevenOneActorOneMax =
 export const downloadAccountExportResponseOrderTimelineItemSevenOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseOrderTimelineItemSevenTwoDataRefundIdMax = 64;
-export const downloadAccountExportResponseOrderTimelineItemSevenTwoDataRefundIdRegExp = new RegExp(
+export const downloadAccountExportResponseOrderTimelineItemSevenTwoDataPaymentIdMax = 64;
+export const downloadAccountExportResponseOrderTimelineItemSevenTwoDataPaymentIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
-);
-export const downloadAccountExportResponseOrderTimelineItemSevenTwoDataAmountRegExp = new RegExp(
-    '^-?\\d+(\\.\\d+)?$'
-);
-export const downloadAccountExportResponseOrderTimelineItemSevenTwoDataAmountMax = 32;
-export const downloadAccountExportResponseOrderTimelineItemSevenTwoDataCurrencyMin = 3;
-export const downloadAccountExportResponseOrderTimelineItemSevenTwoDataCurrencyMax = 3;
-export const downloadAccountExportResponseOrderTimelineItemSevenTwoDataCurrencyRegExp = new RegExp(
-    '^[A-Z]{3}$'
 );
 export const downloadAccountExportResponseOrderTimelineItemEightOneOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemEightOneOrderIdRegExp = new RegExp(
@@ -3272,6 +3259,10 @@ export const downloadAccountExportResponseOrderTimelineItemNineOneActorOneMax = 
 export const downloadAccountExportResponseOrderTimelineItemNineOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const downloadAccountExportResponseOrderTimelineItemNineTwoDataRefundIdMax = 64;
+export const downloadAccountExportResponseOrderTimelineItemNineTwoDataRefundIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const downloadAccountExportResponseOrderTimelineItemNineTwoDataAmountRegExp = new RegExp(
     '^-?\\d+(\\.\\d+)?$'
 );
@@ -3293,12 +3284,14 @@ export const downloadAccountExportResponseOrderTimelineItemOnezeroOneActorOneMax
 export const downloadAccountExportResponseOrderTimelineItemOnezeroOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataShipmentIdMax = 64;
-export const downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataShipmentIdRegExp =
-    new RegExp('^[0-9A-Za-z_-]+$');
-export const downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataFulfillmentOrderIdMax = 64;
-export const downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataFulfillmentOrderIdRegExp =
-    new RegExp('^[0-9A-Za-z_-]+$');
+export const downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataAmountRegExp = new RegExp(
+    '^-?\\d+(\\.\\d+)?$'
+);
+export const downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataAmountMax = 32;
+export const downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataCurrencyMin = 3;
+export const downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataCurrencyMax = 3;
+export const downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataCurrencyRegExp =
+    new RegExp('^[A-Z]{3}$');
 export const downloadAccountExportResponseOrderTimelineItemOneoneOneOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemOneoneOneOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -3347,6 +3340,9 @@ export const downloadAccountExportResponseOrderTimelineItemOnethreeOneActorOneMa
 export const downloadAccountExportResponseOrderTimelineItemOnethreeOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const downloadAccountExportResponseOrderTimelineItemOnethreeTwoDataShipmentIdMax = 64;
+export const downloadAccountExportResponseOrderTimelineItemOnethreeTwoDataShipmentIdRegExp =
+    new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseOrderTimelineItemOnethreeTwoDataFulfillmentOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemOnethreeTwoDataFulfillmentOrderIdRegExp =
     new RegExp('^[0-9A-Za-z_-]+$');
@@ -3377,8 +3373,8 @@ export const downloadAccountExportResponseOrderTimelineItemOnefiveOneActorOneMax
 export const downloadAccountExportResponseOrderTimelineItemOnefiveOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseOrderTimelineItemOnefiveTwoDataReturnIdMax = 64;
-export const downloadAccountExportResponseOrderTimelineItemOnefiveTwoDataReturnIdRegExp =
+export const downloadAccountExportResponseOrderTimelineItemOnefiveTwoDataFulfillmentOrderIdMax = 64;
+export const downloadAccountExportResponseOrderTimelineItemOnefiveTwoDataFulfillmentOrderIdRegExp =
     new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseOrderTimelineItemOnesixOneOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemOnesixOneOrderIdRegExp = new RegExp(
@@ -3426,9 +3422,6 @@ export const downloadAccountExportResponseOrderTimelineItemOneeightOneActorOneRe
 export const downloadAccountExportResponseOrderTimelineItemOneeightTwoDataReturnIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemOneeightTwoDataReturnIdRegExp =
     new RegExp('^[0-9A-Za-z_-]+$');
-export const downloadAccountExportResponseOrderTimelineItemOneeightTwoDataRefundAmountRegExp =
-    new RegExp('^-?\\d+(\\.\\d+)?$');
-export const downloadAccountExportResponseOrderTimelineItemOneeightTwoDataRefundAmountMax = 32;
 export const downloadAccountExportResponseOrderTimelineItemOnenineOneOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemOnenineOneOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -3447,10 +3440,6 @@ export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataReturnI
 export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataRefundAmountRegExp =
     new RegExp('^-?\\d+(\\.\\d+)?$');
 export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataRefundAmountMax = 32;
-export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyMin = 3;
-export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyMax = 3;
-export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyRegExp =
-    new RegExp('^[A-Z]{3}$');
 export const downloadAccountExportResponseOrderTimelineItemTwozeroOneOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemTwozeroOneOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -3463,9 +3452,16 @@ export const downloadAccountExportResponseOrderTimelineItemTwozeroOneActorOneMax
 export const downloadAccountExportResponseOrderTimelineItemTwozeroOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataInvoiceIdMax = 64;
-export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataInvoiceIdRegExp =
+export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataReturnIdMax = 64;
+export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataReturnIdRegExp =
     new RegExp('^[0-9A-Za-z_-]+$');
+export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataRefundAmountRegExp =
+    new RegExp('^-?\\d+(\\.\\d+)?$');
+export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataRefundAmountMax = 32;
+export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataCurrencyMin = 3;
+export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataCurrencyMax = 3;
+export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataCurrencyRegExp =
+    new RegExp('^[A-Z]{3}$');
 export const downloadAccountExportResponseOrderTimelineItemTwooneOneOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemTwooneOneOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -3478,13 +3474,9 @@ export const downloadAccountExportResponseOrderTimelineItemTwooneOneActorOneMax 
 export const downloadAccountExportResponseOrderTimelineItemTwooneOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseOrderTimelineItemTwooneTwoDataCreditNoteIdMax = 64;
-export const downloadAccountExportResponseOrderTimelineItemTwooneTwoDataCreditNoteIdRegExp =
+export const downloadAccountExportResponseOrderTimelineItemTwooneTwoDataInvoiceIdMax = 64;
+export const downloadAccountExportResponseOrderTimelineItemTwooneTwoDataInvoiceIdRegExp =
     new RegExp('^[0-9A-Za-z_-]+$');
-export const downloadAccountExportResponseOrderTimelineItemTwooneTwoDataRefundIdMax = 64;
-export const downloadAccountExportResponseOrderTimelineItemTwooneTwoDataRefundIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
 export const downloadAccountExportResponseOrderTimelineItemTwotwoOneOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemTwotwoOneOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -3497,9 +3489,13 @@ export const downloadAccountExportResponseOrderTimelineItemTwotwoOneActorOneMax 
 export const downloadAccountExportResponseOrderTimelineItemTwotwoOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseOrderTimelineItemTwotwoTwoDataFulfillmentOrderIdMax = 64;
-export const downloadAccountExportResponseOrderTimelineItemTwotwoTwoDataFulfillmentOrderIdRegExp =
+export const downloadAccountExportResponseOrderTimelineItemTwotwoTwoDataCreditNoteIdMax = 64;
+export const downloadAccountExportResponseOrderTimelineItemTwotwoTwoDataCreditNoteIdRegExp =
     new RegExp('^[0-9A-Za-z_-]+$');
+export const downloadAccountExportResponseOrderTimelineItemTwotwoTwoDataRefundIdMax = 64;
+export const downloadAccountExportResponseOrderTimelineItemTwotwoTwoDataRefundIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const downloadAccountExportResponseOrderTimelineItemTwothreeOneOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemTwothreeOneOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -3514,6 +3510,21 @@ export const downloadAccountExportResponseOrderTimelineItemTwothreeOneActorOneRe
 );
 export const downloadAccountExportResponseOrderTimelineItemTwothreeTwoDataFulfillmentOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemTwothreeTwoDataFulfillmentOrderIdRegExp =
+    new RegExp('^[0-9A-Za-z_-]+$');
+export const downloadAccountExportResponseOrderTimelineItemTwofourOneOrderIdMax = 64;
+export const downloadAccountExportResponseOrderTimelineItemTwofourOneOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseOrderTimelineItemTwofourOneIdMax = 64;
+export const downloadAccountExportResponseOrderTimelineItemTwofourOneIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseOrderTimelineItemTwofourOneActorOneMax = 64;
+export const downloadAccountExportResponseOrderTimelineItemTwofourOneActorOneRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseOrderTimelineItemTwofourTwoDataFulfillmentOrderIdMax = 64;
+export const downloadAccountExportResponseOrderTimelineItemTwofourTwoDataFulfillmentOrderIdRegExp =
     new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponsePaymentsItemIdMax = 64;
 export const downloadAccountExportResponsePaymentsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -4337,10 +4348,9 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemThreeOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemThreeOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['paid']),
-                data: zod.strictObject({
-                    method: zod.string().optional()
-                })
+                type: zod.enum(['note_added']),
+                data: zod.strictObject({}),
+                text: zod.string().optional()
             }),
             zod.strictObject({
                 orderId: zod
@@ -4361,9 +4371,9 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemFourOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemFourOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['delivered']),
+                type: zod.enum(['paid']),
                 data: zod.strictObject({
-                    withdrawUntil: zod.iso.datetime({ offset: true })
+                    method: zod.string().optional()
                 })
             }),
             zod.strictObject({
@@ -4385,19 +4395,9 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemFiveOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemFiveOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['canceled']),
+                type: zod.enum(['delivered']),
                 data: zod.strictObject({
-                    by: zod.enum(['customer', 'admin', 'withdrawal', 'system']),
-                    cause: zod.enum([
-                        'customer',
-                        'operator',
-                        'withdrawal',
-                        'reservation_expired',
-                        'erasure',
-                        'payment_mismatch',
-                        'lost'
-                    ]),
-                    refund: zod.boolean()
+                    withdrawUntil: zod.iso.datetime({ offset: true })
                 })
             }),
             zod.strictObject({
@@ -4419,15 +4419,19 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemSixOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemSixOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['payment_declined']),
+                type: zod.enum(['canceled']),
                 data: zod.strictObject({
-                    paymentId: zod
-                        .string()
-                        .min(1)
-                        .max(downloadAccountExportResponseOrderTimelineItemSixTwoDataPaymentIdMax)
-                        .regex(
-                            downloadAccountExportResponseOrderTimelineItemSixTwoDataPaymentIdRegExp
-                        )
+                    by: zod.enum(['customer', 'admin', 'withdrawal', 'system']),
+                    cause: zod.enum([
+                        'customer',
+                        'operator',
+                        'withdrawal',
+                        'reservation_expired',
+                        'erasure',
+                        'payment_mismatch',
+                        'lost'
+                    ]),
+                    refund: zod.boolean()
                 })
             }),
             zod.strictObject({
@@ -4449,29 +4453,15 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemSevenOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemSevenOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['refund_issued', 'refund_settled', 'refund_canceled']),
+                type: zod.enum(['payment_declined']),
                 data: zod.strictObject({
-                    refundId: zod
+                    paymentId: zod
                         .string()
                         .min(1)
-                        .max(downloadAccountExportResponseOrderTimelineItemSevenTwoDataRefundIdMax)
+                        .max(downloadAccountExportResponseOrderTimelineItemSevenTwoDataPaymentIdMax)
                         .regex(
-                            downloadAccountExportResponseOrderTimelineItemSevenTwoDataRefundIdRegExp
-                        ),
-                    amount: zod
-                        .stringFormat(
-                            'decimal',
-                            downloadAccountExportResponseOrderTimelineItemSevenTwoDataAmountRegExp
+                            downloadAccountExportResponseOrderTimelineItemSevenTwoDataPaymentIdRegExp
                         )
-                        .max(downloadAccountExportResponseOrderTimelineItemSevenTwoDataAmountMax),
-                    currency: zod
-                        .string()
-                        .min(downloadAccountExportResponseOrderTimelineItemSevenTwoDataCurrencyMin)
-                        .max(downloadAccountExportResponseOrderTimelineItemSevenTwoDataCurrencyMax)
-                        .regex(
-                            downloadAccountExportResponseOrderTimelineItemSevenTwoDataCurrencyRegExp
-                        ),
-                    reason: zod.string()
                 })
             }),
             zod.strictObject({
@@ -4493,7 +4483,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemEightOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemEightOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['refund_failed', 'refund_reversed']),
+                type: zod.enum(['refund_issued', 'refund_settled', 'refund_canceled']),
                 data: zod.strictObject({
                     refundId: zod
                         .string()
@@ -4515,8 +4505,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .regex(
                             downloadAccountExportResponseOrderTimelineItemEightTwoDataCurrencyRegExp
                         ),
-                    reason: zod.string(),
-                    failureReason: zod.string()
+                    reason: zod.string()
                 })
             }),
             zod.strictObject({
@@ -4538,12 +4527,15 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemNineOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemNineOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['dispute_opened', 'dispute_closed']),
+                type: zod.enum(['refund_failed', 'refund_reversed']),
                 data: zod.strictObject({
-                    disputeId: zod.string(),
-                    kind: zod.string(),
-                    status: zod.string(),
-                    reason: zod.string(),
+                    refundId: zod
+                        .string()
+                        .min(1)
+                        .max(downloadAccountExportResponseOrderTimelineItemNineTwoDataRefundIdMax)
+                        .regex(
+                            downloadAccountExportResponseOrderTimelineItemNineTwoDataRefundIdRegExp
+                        ),
                     amount: zod
                         .stringFormat(
                             'decimal',
@@ -4556,7 +4548,9 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .max(downloadAccountExportResponseOrderTimelineItemNineTwoDataCurrencyMax)
                         .regex(
                             downloadAccountExportResponseOrderTimelineItemNineTwoDataCurrencyRegExp
-                        )
+                        ),
+                    reason: zod.string(),
+                    failureReason: zod.string()
                 })
             }),
             zod.strictObject({
@@ -4578,28 +4572,29 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemOnezeroOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemOnezeroOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['shipment_shipped']),
+                type: zod.enum(['dispute_opened', 'dispute_closed']),
                 data: zod.strictObject({
-                    shipmentId: zod
+                    disputeId: zod.string(),
+                    kind: zod.string(),
+                    status: zod.string(),
+                    reason: zod.string(),
+                    amount: zod
+                        .stringFormat(
+                            'decimal',
+                            downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataAmountRegExp
+                        )
+                        .max(downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataAmountMax),
+                    currency: zod
                         .string()
-                        .min(1)
+                        .min(
+                            downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataCurrencyMin
+                        )
                         .max(
-                            downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataShipmentIdMax
+                            downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataCurrencyMax
                         )
                         .regex(
-                            downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataShipmentIdRegExp
-                        ),
-                    fulfillmentOrderId: zod
-                        .string()
-                        .min(1)
-                        .max(
-                            downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataFulfillmentOrderIdMax
+                            downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataCurrencyRegExp
                         )
-                        .regex(
-                            downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataFulfillmentOrderIdRegExp
-                        ),
-                    number: zod.number().min(1),
-                    trackingCode: zod.string().optional()
                 })
             }),
             zod.strictObject({
@@ -4621,7 +4616,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemOneoneOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemOneoneOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['shipment_delivered']),
+                type: zod.enum(['shipment_shipped']),
                 data: zod.strictObject({
                     shipmentId: zod
                         .string()
@@ -4641,7 +4636,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .regex(
                             downloadAccountExportResponseOrderTimelineItemOneoneTwoDataFulfillmentOrderIdRegExp
                         ),
-                    number: zod.number().min(1)
+                    number: zod.number().min(1),
+                    trackingCode: zod.string().optional()
                 })
             }),
             zod.strictObject({
@@ -4663,7 +4659,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemOnetwoOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemOnetwoOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['shipment_lost']),
+                type: zod.enum(['shipment_delivered']),
                 data: zod.strictObject({
                     shipmentId: zod
                         .string()
@@ -4683,8 +4679,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .regex(
                             downloadAccountExportResponseOrderTimelineItemOnetwoTwoDataFulfillmentOrderIdRegExp
                         ),
-                    number: zod.number().min(1),
-                    reason: zod.string()
+                    number: zod.number().min(1)
                 })
             }),
             zod.strictObject({
@@ -4706,8 +4701,17 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemOnethreeOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemOnethreeOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['fulfillment_held']),
+                type: zod.enum(['shipment_lost']),
                 data: zod.strictObject({
+                    shipmentId: zod
+                        .string()
+                        .min(1)
+                        .max(
+                            downloadAccountExportResponseOrderTimelineItemOnethreeTwoDataShipmentIdMax
+                        )
+                        .regex(
+                            downloadAccountExportResponseOrderTimelineItemOnethreeTwoDataShipmentIdRegExp
+                        ),
                     fulfillmentOrderId: zod
                         .string()
                         .min(1)
@@ -4716,8 +4720,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         )
                         .regex(
                             downloadAccountExportResponseOrderTimelineItemOnethreeTwoDataFulfillmentOrderIdRegExp
-                        )
-                        .optional(),
+                        ),
+                    number: zod.number().min(1),
                     reason: zod.string()
                 })
             }),
@@ -4740,7 +4744,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemOnefourOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemOnefourOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['fulfillment_released', 'remainder_canceled']),
+                type: zod.enum(['fulfillment_held']),
                 data: zod.strictObject({
                     fulfillmentOrderId: zod
                         .string()
@@ -4751,6 +4755,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .regex(
                             downloadAccountExportResponseOrderTimelineItemOnefourTwoDataFulfillmentOrderIdRegExp
                         )
+                        .optional(),
+                    reason: zod.string()
                 })
             }),
             zod.strictObject({
@@ -4772,18 +4778,17 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemOnefiveOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemOnefiveOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['return_requested']),
+                type: zod.enum(['fulfillment_released', 'remainder_canceled']),
                 data: zod.strictObject({
-                    returnId: zod
+                    fulfillmentOrderId: zod
                         .string()
                         .min(1)
                         .max(
-                            downloadAccountExportResponseOrderTimelineItemOnefiveTwoDataReturnIdMax
+                            downloadAccountExportResponseOrderTimelineItemOnefiveTwoDataFulfillmentOrderIdMax
                         )
                         .regex(
-                            downloadAccountExportResponseOrderTimelineItemOnefiveTwoDataReturnIdRegExp
-                        ),
-                    reason: zod.string()
+                            downloadAccountExportResponseOrderTimelineItemOnefiveTwoDataFulfillmentOrderIdRegExp
+                        )
                 })
             }),
             zod.strictObject({
@@ -4805,7 +4810,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemOnesixOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemOnesixOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['return_approved']),
+                type: zod.enum(['return_requested']),
                 data: zod.strictObject({
                     returnId: zod
                         .string()
@@ -4814,7 +4819,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .regex(
                             downloadAccountExportResponseOrderTimelineItemOnesixTwoDataReturnIdRegExp
                         ),
-                    reason: zod.string().optional()
+                    reason: zod.string()
                 })
             }),
             zod.strictObject({
@@ -4836,7 +4841,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemOnesevenOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemOnesevenOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['return_declined', 'return_canceled']),
+                type: zod.enum(['return_approved']),
                 data: zod.strictObject({
                     returnId: zod
                         .string()
@@ -4846,7 +4851,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         )
                         .regex(
                             downloadAccountExportResponseOrderTimelineItemOnesevenTwoDataReturnIdRegExp
-                        )
+                        ),
+                    reason: zod.string().optional()
                 })
             }),
             zod.strictObject({
@@ -4868,7 +4874,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemOneeightOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemOneeightOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['return_received']),
+                type: zod.enum(['return_declined', 'return_canceled']),
                 data: zod.strictObject({
                     returnId: zod
                         .string()
@@ -4878,14 +4884,6 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         )
                         .regex(
                             downloadAccountExportResponseOrderTimelineItemOneeightTwoDataReturnIdRegExp
-                        ),
-                    refundAmount: zod
-                        .stringFormat(
-                            'decimal',
-                            downloadAccountExportResponseOrderTimelineItemOneeightTwoDataRefundAmountRegExp
-                        )
-                        .max(
-                            downloadAccountExportResponseOrderTimelineItemOneeightTwoDataRefundAmountMax
                         )
                 })
             }),
@@ -4908,7 +4906,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemOnenineOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemOnenineOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['return_closed']),
+                type: zod.enum(['return_received']),
                 data: zod.strictObject({
                     returnId: zod
                         .string()
@@ -4926,19 +4924,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         )
                         .max(
                             downloadAccountExportResponseOrderTimelineItemOnenineTwoDataRefundAmountMax
-                        ),
-                    currency: zod
-                        .string()
-                        .min(
-                            downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyMin
                         )
-                        .max(
-                            downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyMax
-                        )
-                        .regex(
-                            downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyRegExp
-                        ),
-                    remedy: zod.string().optional()
                 })
             }),
             zod.strictObject({
@@ -4960,18 +4946,37 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemTwozeroOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemTwozeroOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['invoice_issued']),
+                type: zod.enum(['return_closed']),
                 data: zod.strictObject({
-                    invoiceId: zod
+                    returnId: zod
                         .string()
                         .min(1)
                         .max(
-                            downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataInvoiceIdMax
+                            downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataReturnIdMax
                         )
                         .regex(
-                            downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataInvoiceIdRegExp
+                            downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataReturnIdRegExp
                         ),
-                    number: zod.string()
+                    refundAmount: zod
+                        .stringFormat(
+                            'decimal',
+                            downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataRefundAmountRegExp
+                        )
+                        .max(
+                            downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataRefundAmountMax
+                        ),
+                    currency: zod
+                        .string()
+                        .min(
+                            downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataCurrencyMin
+                        )
+                        .max(
+                            downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataCurrencyMax
+                        )
+                        .regex(
+                            downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataCurrencyRegExp
+                        ),
+                    remedy: zod.string().optional()
                 })
             }),
             zod.strictObject({
@@ -4993,25 +4998,18 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemTwooneOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemTwooneOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['credit_note_issued']),
+                type: zod.enum(['invoice_issued']),
                 data: zod.strictObject({
-                    creditNoteId: zod
+                    invoiceId: zod
                         .string()
                         .min(1)
                         .max(
-                            downloadAccountExportResponseOrderTimelineItemTwooneTwoDataCreditNoteIdMax
+                            downloadAccountExportResponseOrderTimelineItemTwooneTwoDataInvoiceIdMax
                         )
                         .regex(
-                            downloadAccountExportResponseOrderTimelineItemTwooneTwoDataCreditNoteIdRegExp
+                            downloadAccountExportResponseOrderTimelineItemTwooneTwoDataInvoiceIdRegExp
                         ),
-                    number: zod.string(),
-                    refundId: zod
-                        .string()
-                        .min(1)
-                        .max(downloadAccountExportResponseOrderTimelineItemTwooneTwoDataRefundIdMax)
-                        .regex(
-                            downloadAccountExportResponseOrderTimelineItemTwooneTwoDataRefundIdRegExp
-                        )
+                    number: zod.string()
                 })
             }),
             zod.strictObject({
@@ -5033,19 +5031,25 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemTwotwoOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemTwotwoOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['release_date_moved']),
+                type: zod.enum(['credit_note_issued']),
                 data: zod.strictObject({
-                    fulfillmentOrderId: zod
+                    creditNoteId: zod
                         .string()
                         .min(1)
                         .max(
-                            downloadAccountExportResponseOrderTimelineItemTwotwoTwoDataFulfillmentOrderIdMax
+                            downloadAccountExportResponseOrderTimelineItemTwotwoTwoDataCreditNoteIdMax
                         )
                         .regex(
-                            downloadAccountExportResponseOrderTimelineItemTwotwoTwoDataFulfillmentOrderIdRegExp
+                            downloadAccountExportResponseOrderTimelineItemTwotwoTwoDataCreditNoteIdRegExp
                         ),
-                    from: zod.iso.date().optional(),
-                    to: zod.iso.date().optional()
+                    number: zod.string(),
+                    refundId: zod
+                        .string()
+                        .min(1)
+                        .max(downloadAccountExportResponseOrderTimelineItemTwotwoTwoDataRefundIdMax)
+                        .regex(
+                            downloadAccountExportResponseOrderTimelineItemTwotwoTwoDataRefundIdRegExp
+                        )
                 })
             }),
             zod.strictObject({
@@ -5067,7 +5071,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemTwothreeOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemTwothreeOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['delay_notice_sent']),
+                type: zod.enum(['release_date_moved']),
                 data: zod.strictObject({
                     fulfillmentOrderId: zod
                         .string()
@@ -5077,6 +5081,40 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         )
                         .regex(
                             downloadAccountExportResponseOrderTimelineItemTwothreeTwoDataFulfillmentOrderIdRegExp
+                        ),
+                    from: zod.iso.date().optional(),
+                    to: zod.iso.date().optional()
+                })
+            }),
+            zod.strictObject({
+                orderId: zod
+                    .string()
+                    .min(1)
+                    .max(downloadAccountExportResponseOrderTimelineItemTwofourOneOrderIdMax)
+                    .regex(downloadAccountExportResponseOrderTimelineItemTwofourOneOrderIdRegExp),
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(downloadAccountExportResponseOrderTimelineItemTwofourOneIdMax)
+                    .regex(downloadAccountExportResponseOrderTimelineItemTwofourOneIdRegExp),
+                at: zod.iso.datetime({ offset: true }),
+                audience: zod.enum(['buyer', 'staff']),
+                actor: zod
+                    .string()
+                    .min(1)
+                    .max(downloadAccountExportResponseOrderTimelineItemTwofourOneActorOneMax)
+                    .regex(downloadAccountExportResponseOrderTimelineItemTwofourOneActorOneRegExp)
+                    .optional(),
+                type: zod.enum(['delay_notice_sent']),
+                data: zod.strictObject({
+                    fulfillmentOrderId: zod
+                        .string()
+                        .min(1)
+                        .max(
+                            downloadAccountExportResponseOrderTimelineItemTwofourTwoDataFulfillmentOrderIdMax
+                        )
+                        .regex(
+                            downloadAccountExportResponseOrderTimelineItemTwofourTwoDataFulfillmentOrderIdRegExp
                         ),
                     reason: zod.string(),
                     expectedAt: zod.iso.date().optional()
@@ -18896,27 +18934,16 @@ export const getOrderTimelineResponseItemsItemSixOneIdMax = 64;
 export const getOrderTimelineResponseItemsItemSixOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getOrderTimelineResponseItemsItemSixOneActorOneMax = 64;
 export const getOrderTimelineResponseItemsItemSixOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getOrderTimelineResponseItemsItemSixTwoDataPaymentIdMax = 64;
-export const getOrderTimelineResponseItemsItemSixTwoDataPaymentIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
 export const getOrderTimelineResponseItemsItemSevenOneIdMax = 64;
 export const getOrderTimelineResponseItemsItemSevenOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getOrderTimelineResponseItemsItemSevenOneActorOneMax = 64;
 export const getOrderTimelineResponseItemsItemSevenOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const getOrderTimelineResponseItemsItemSevenTwoDataRefundIdMax = 64;
-export const getOrderTimelineResponseItemsItemSevenTwoDataRefundIdRegExp = new RegExp(
+export const getOrderTimelineResponseItemsItemSevenTwoDataPaymentIdMax = 64;
+export const getOrderTimelineResponseItemsItemSevenTwoDataPaymentIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const getOrderTimelineResponseItemsItemSevenTwoDataAmountRegExp = new RegExp(
-    '^-?\\d+(\\.\\d+)?$'
-);
-export const getOrderTimelineResponseItemsItemSevenTwoDataAmountMax = 32;
-export const getOrderTimelineResponseItemsItemSevenTwoDataCurrencyMin = 3;
-export const getOrderTimelineResponseItemsItemSevenTwoDataCurrencyMax = 3;
-export const getOrderTimelineResponseItemsItemSevenTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getOrderTimelineResponseItemsItemEightOneIdMax = 64;
 export const getOrderTimelineResponseItemsItemEightOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getOrderTimelineResponseItemsItemEightOneActorOneMax = 64;
@@ -18940,6 +18967,10 @@ export const getOrderTimelineResponseItemsItemNineOneActorOneMax = 64;
 export const getOrderTimelineResponseItemsItemNineOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const getOrderTimelineResponseItemsItemNineTwoDataRefundIdMax = 64;
+export const getOrderTimelineResponseItemsItemNineTwoDataRefundIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const getOrderTimelineResponseItemsItemNineTwoDataAmountRegExp = new RegExp(
     '^-?\\d+(\\.\\d+)?$'
 );
@@ -18953,13 +18984,14 @@ export const getOrderTimelineResponseItemsItemOnezeroOneActorOneMax = 64;
 export const getOrderTimelineResponseItemsItemOnezeroOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const getOrderTimelineResponseItemsItemOnezeroTwoDataShipmentIdMax = 64;
-export const getOrderTimelineResponseItemsItemOnezeroTwoDataShipmentIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
+export const getOrderTimelineResponseItemsItemOnezeroTwoDataAmountRegExp = new RegExp(
+    '^-?\\d+(\\.\\d+)?$'
 );
-export const getOrderTimelineResponseItemsItemOnezeroTwoDataFulfillmentOrderIdMax = 64;
-export const getOrderTimelineResponseItemsItemOnezeroTwoDataFulfillmentOrderIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
+export const getOrderTimelineResponseItemsItemOnezeroTwoDataAmountMax = 32;
+export const getOrderTimelineResponseItemsItemOnezeroTwoDataCurrencyMin = 3;
+export const getOrderTimelineResponseItemsItemOnezeroTwoDataCurrencyMax = 3;
+export const getOrderTimelineResponseItemsItemOnezeroTwoDataCurrencyRegExp = new RegExp(
+    '^[A-Z]{3}$'
 );
 export const getOrderTimelineResponseItemsItemOneoneOneIdMax = 64;
 export const getOrderTimelineResponseItemsItemOneoneOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -18995,6 +19027,10 @@ export const getOrderTimelineResponseItemsItemOnethreeOneActorOneMax = 64;
 export const getOrderTimelineResponseItemsItemOnethreeOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const getOrderTimelineResponseItemsItemOnethreeTwoDataShipmentIdMax = 64;
+export const getOrderTimelineResponseItemsItemOnethreeTwoDataShipmentIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const getOrderTimelineResponseItemsItemOnethreeTwoDataFulfillmentOrderIdMax = 64;
 export const getOrderTimelineResponseItemsItemOnethreeTwoDataFulfillmentOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -19015,8 +19051,8 @@ export const getOrderTimelineResponseItemsItemOnefiveOneActorOneMax = 64;
 export const getOrderTimelineResponseItemsItemOnefiveOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const getOrderTimelineResponseItemsItemOnefiveTwoDataReturnIdMax = 64;
-export const getOrderTimelineResponseItemsItemOnefiveTwoDataReturnIdRegExp = new RegExp(
+export const getOrderTimelineResponseItemsItemOnefiveTwoDataFulfillmentOrderIdMax = 64;
+export const getOrderTimelineResponseItemsItemOnefiveTwoDataFulfillmentOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const getOrderTimelineResponseItemsItemOnesixOneIdMax = 64;
@@ -19049,10 +19085,6 @@ export const getOrderTimelineResponseItemsItemOneeightTwoDataReturnIdMax = 64;
 export const getOrderTimelineResponseItemsItemOneeightTwoDataReturnIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const getOrderTimelineResponseItemsItemOneeightTwoDataRefundAmountRegExp = new RegExp(
-    '^-?\\d+(\\.\\d+)?$'
-);
-export const getOrderTimelineResponseItemsItemOneeightTwoDataRefundAmountMax = 32;
 export const getOrderTimelineResponseItemsItemOnenineOneIdMax = 64;
 export const getOrderTimelineResponseItemsItemOnenineOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getOrderTimelineResponseItemsItemOnenineOneActorOneMax = 64;
@@ -19067,20 +19099,24 @@ export const getOrderTimelineResponseItemsItemOnenineTwoDataRefundAmountRegExp =
     '^-?\\d+(\\.\\d+)?$'
 );
 export const getOrderTimelineResponseItemsItemOnenineTwoDataRefundAmountMax = 32;
-export const getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyMin = 3;
-export const getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyMax = 3;
-export const getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyRegExp = new RegExp(
-    '^[A-Z]{3}$'
-);
 export const getOrderTimelineResponseItemsItemTwozeroOneIdMax = 64;
 export const getOrderTimelineResponseItemsItemTwozeroOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getOrderTimelineResponseItemsItemTwozeroOneActorOneMax = 64;
 export const getOrderTimelineResponseItemsItemTwozeroOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const getOrderTimelineResponseItemsItemTwozeroTwoDataInvoiceIdMax = 64;
-export const getOrderTimelineResponseItemsItemTwozeroTwoDataInvoiceIdRegExp = new RegExp(
+export const getOrderTimelineResponseItemsItemTwozeroTwoDataReturnIdMax = 64;
+export const getOrderTimelineResponseItemsItemTwozeroTwoDataReturnIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
+);
+export const getOrderTimelineResponseItemsItemTwozeroTwoDataRefundAmountRegExp = new RegExp(
+    '^-?\\d+(\\.\\d+)?$'
+);
+export const getOrderTimelineResponseItemsItemTwozeroTwoDataRefundAmountMax = 32;
+export const getOrderTimelineResponseItemsItemTwozeroTwoDataCurrencyMin = 3;
+export const getOrderTimelineResponseItemsItemTwozeroTwoDataCurrencyMax = 3;
+export const getOrderTimelineResponseItemsItemTwozeroTwoDataCurrencyRegExp = new RegExp(
+    '^[A-Z]{3}$'
 );
 export const getOrderTimelineResponseItemsItemTwooneOneIdMax = 64;
 export const getOrderTimelineResponseItemsItemTwooneOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -19088,12 +19124,8 @@ export const getOrderTimelineResponseItemsItemTwooneOneActorOneMax = 64;
 export const getOrderTimelineResponseItemsItemTwooneOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const getOrderTimelineResponseItemsItemTwooneTwoDataCreditNoteIdMax = 64;
-export const getOrderTimelineResponseItemsItemTwooneTwoDataCreditNoteIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const getOrderTimelineResponseItemsItemTwooneTwoDataRefundIdMax = 64;
-export const getOrderTimelineResponseItemsItemTwooneTwoDataRefundIdRegExp = new RegExp(
+export const getOrderTimelineResponseItemsItemTwooneTwoDataInvoiceIdMax = 64;
+export const getOrderTimelineResponseItemsItemTwooneTwoDataInvoiceIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const getOrderTimelineResponseItemsItemTwotwoOneIdMax = 64;
@@ -19102,8 +19134,12 @@ export const getOrderTimelineResponseItemsItemTwotwoOneActorOneMax = 64;
 export const getOrderTimelineResponseItemsItemTwotwoOneActorOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const getOrderTimelineResponseItemsItemTwotwoTwoDataFulfillmentOrderIdMax = 64;
-export const getOrderTimelineResponseItemsItemTwotwoTwoDataFulfillmentOrderIdRegExp = new RegExp(
+export const getOrderTimelineResponseItemsItemTwotwoTwoDataCreditNoteIdMax = 64;
+export const getOrderTimelineResponseItemsItemTwotwoTwoDataCreditNoteIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getOrderTimelineResponseItemsItemTwotwoTwoDataRefundIdMax = 64;
+export const getOrderTimelineResponseItemsItemTwotwoTwoDataRefundIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const getOrderTimelineResponseItemsItemTwothreeOneIdMax = 64;
@@ -19114,6 +19150,16 @@ export const getOrderTimelineResponseItemsItemTwothreeOneActorOneRegExp = new Re
 );
 export const getOrderTimelineResponseItemsItemTwothreeTwoDataFulfillmentOrderIdMax = 64;
 export const getOrderTimelineResponseItemsItemTwothreeTwoDataFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getOrderTimelineResponseItemsItemTwofourOneIdMax = 64;
+export const getOrderTimelineResponseItemsItemTwofourOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getOrderTimelineResponseItemsItemTwofourOneActorOneMax = 64;
+export const getOrderTimelineResponseItemsItemTwofourOneActorOneRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getOrderTimelineResponseItemsItemTwofourTwoDataFulfillmentOrderIdMax = 64;
+export const getOrderTimelineResponseItemsItemTwofourTwoDataFulfillmentOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const GetOrderTimelineResponse = zod.strictObject({
@@ -19186,10 +19232,9 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemThreeOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemThreeOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['paid']),
-                data: zod.strictObject({
-                    method: zod.string().optional()
-                })
+                type: zod.enum(['note_added']),
+                data: zod.strictObject({}),
+                text: zod.string().optional()
             }),
             zod.strictObject({
                 id: zod
@@ -19205,9 +19250,9 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemFourOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemFourOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['delivered']),
+                type: zod.enum(['paid']),
                 data: zod.strictObject({
-                    withdrawUntil: zod.iso.datetime({ offset: true })
+                    method: zod.string().optional()
                 })
             }),
             zod.strictObject({
@@ -19223,6 +19268,25 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .min(1)
                     .max(getOrderTimelineResponseItemsItemFiveOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemFiveOneActorOneRegExp)
+                    .optional(),
+                type: zod.enum(['delivered']),
+                data: zod.strictObject({
+                    withdrawUntil: zod.iso.datetime({ offset: true })
+                })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(getOrderTimelineResponseItemsItemSixOneIdMax)
+                    .regex(getOrderTimelineResponseItemsItemSixOneIdRegExp),
+                at: zod.iso.datetime({ offset: true }),
+                audience: zod.enum(['buyer', 'staff']),
+                actor: zod
+                    .string()
+                    .min(1)
+                    .max(getOrderTimelineResponseItemsItemSixOneActorOneMax)
+                    .regex(getOrderTimelineResponseItemsItemSixOneActorOneRegExp)
                     .optional(),
                 type: zod.enum(['canceled']),
                 data: zod.strictObject({
@@ -19243,29 +19307,6 @@ export const GetOrderTimelineResponse = zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(getOrderTimelineResponseItemsItemSixOneIdMax)
-                    .regex(getOrderTimelineResponseItemsItemSixOneIdRegExp),
-                at: zod.iso.datetime({ offset: true }),
-                audience: zod.enum(['buyer', 'staff']),
-                actor: zod
-                    .string()
-                    .min(1)
-                    .max(getOrderTimelineResponseItemsItemSixOneActorOneMax)
-                    .regex(getOrderTimelineResponseItemsItemSixOneActorOneRegExp)
-                    .optional(),
-                type: zod.enum(['payment_declined']),
-                data: zod.strictObject({
-                    paymentId: zod
-                        .string()
-                        .min(1)
-                        .max(getOrderTimelineResponseItemsItemSixTwoDataPaymentIdMax)
-                        .regex(getOrderTimelineResponseItemsItemSixTwoDataPaymentIdRegExp)
-                })
-            }),
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
                     .max(getOrderTimelineResponseItemsItemSevenOneIdMax)
                     .regex(getOrderTimelineResponseItemsItemSevenOneIdRegExp),
                 at: zod.iso.datetime({ offset: true }),
@@ -19276,25 +19317,13 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemSevenOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemSevenOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['refund_issued', 'refund_settled', 'refund_canceled']),
+                type: zod.enum(['payment_declined']),
                 data: zod.strictObject({
-                    refundId: zod
+                    paymentId: zod
                         .string()
                         .min(1)
-                        .max(getOrderTimelineResponseItemsItemSevenTwoDataRefundIdMax)
-                        .regex(getOrderTimelineResponseItemsItemSevenTwoDataRefundIdRegExp),
-                    amount: zod
-                        .stringFormat(
-                            'decimal',
-                            getOrderTimelineResponseItemsItemSevenTwoDataAmountRegExp
-                        )
-                        .max(getOrderTimelineResponseItemsItemSevenTwoDataAmountMax),
-                    currency: zod
-                        .string()
-                        .min(getOrderTimelineResponseItemsItemSevenTwoDataCurrencyMin)
-                        .max(getOrderTimelineResponseItemsItemSevenTwoDataCurrencyMax)
-                        .regex(getOrderTimelineResponseItemsItemSevenTwoDataCurrencyRegExp),
-                    reason: zod.string()
+                        .max(getOrderTimelineResponseItemsItemSevenTwoDataPaymentIdMax)
+                        .regex(getOrderTimelineResponseItemsItemSevenTwoDataPaymentIdRegExp)
                 })
             }),
             zod.strictObject({
@@ -19311,7 +19340,7 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemEightOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemEightOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['refund_failed', 'refund_reversed']),
+                type: zod.enum(['refund_issued', 'refund_settled', 'refund_canceled']),
                 data: zod.strictObject({
                     refundId: zod
                         .string()
@@ -19329,8 +19358,7 @@ export const GetOrderTimelineResponse = zod.strictObject({
                         .min(getOrderTimelineResponseItemsItemEightTwoDataCurrencyMin)
                         .max(getOrderTimelineResponseItemsItemEightTwoDataCurrencyMax)
                         .regex(getOrderTimelineResponseItemsItemEightTwoDataCurrencyRegExp),
-                    reason: zod.string(),
-                    failureReason: zod.string()
+                    reason: zod.string()
                 })
             }),
             zod.strictObject({
@@ -19347,12 +19375,13 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemNineOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemNineOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['dispute_opened', 'dispute_closed']),
+                type: zod.enum(['refund_failed', 'refund_reversed']),
                 data: zod.strictObject({
-                    disputeId: zod.string(),
-                    kind: zod.string(),
-                    status: zod.string(),
-                    reason: zod.string(),
+                    refundId: zod
+                        .string()
+                        .min(1)
+                        .max(getOrderTimelineResponseItemsItemNineTwoDataRefundIdMax)
+                        .regex(getOrderTimelineResponseItemsItemNineTwoDataRefundIdRegExp),
                     amount: zod
                         .stringFormat(
                             'decimal',
@@ -19363,7 +19392,9 @@ export const GetOrderTimelineResponse = zod.strictObject({
                         .string()
                         .min(getOrderTimelineResponseItemsItemNineTwoDataCurrencyMin)
                         .max(getOrderTimelineResponseItemsItemNineTwoDataCurrencyMax)
-                        .regex(getOrderTimelineResponseItemsItemNineTwoDataCurrencyRegExp)
+                        .regex(getOrderTimelineResponseItemsItemNineTwoDataCurrencyRegExp),
+                    reason: zod.string(),
+                    failureReason: zod.string()
                 })
             }),
             zod.strictObject({
@@ -19380,22 +19411,23 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemOnezeroOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemOnezeroOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['shipment_shipped']),
+                type: zod.enum(['dispute_opened', 'dispute_closed']),
                 data: zod.strictObject({
-                    shipmentId: zod
+                    disputeId: zod.string(),
+                    kind: zod.string(),
+                    status: zod.string(),
+                    reason: zod.string(),
+                    amount: zod
+                        .stringFormat(
+                            'decimal',
+                            getOrderTimelineResponseItemsItemOnezeroTwoDataAmountRegExp
+                        )
+                        .max(getOrderTimelineResponseItemsItemOnezeroTwoDataAmountMax),
+                    currency: zod
                         .string()
-                        .min(1)
-                        .max(getOrderTimelineResponseItemsItemOnezeroTwoDataShipmentIdMax)
-                        .regex(getOrderTimelineResponseItemsItemOnezeroTwoDataShipmentIdRegExp),
-                    fulfillmentOrderId: zod
-                        .string()
-                        .min(1)
-                        .max(getOrderTimelineResponseItemsItemOnezeroTwoDataFulfillmentOrderIdMax)
-                        .regex(
-                            getOrderTimelineResponseItemsItemOnezeroTwoDataFulfillmentOrderIdRegExp
-                        ),
-                    number: zod.number().min(1),
-                    trackingCode: zod.string().optional()
+                        .min(getOrderTimelineResponseItemsItemOnezeroTwoDataCurrencyMin)
+                        .max(getOrderTimelineResponseItemsItemOnezeroTwoDataCurrencyMax)
+                        .regex(getOrderTimelineResponseItemsItemOnezeroTwoDataCurrencyRegExp)
                 })
             }),
             zod.strictObject({
@@ -19412,7 +19444,7 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemOneoneOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemOneoneOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['shipment_delivered']),
+                type: zod.enum(['shipment_shipped']),
                 data: zod.strictObject({
                     shipmentId: zod
                         .string()
@@ -19426,7 +19458,8 @@ export const GetOrderTimelineResponse = zod.strictObject({
                         .regex(
                             getOrderTimelineResponseItemsItemOneoneTwoDataFulfillmentOrderIdRegExp
                         ),
-                    number: zod.number().min(1)
+                    number: zod.number().min(1),
+                    trackingCode: zod.string().optional()
                 })
             }),
             zod.strictObject({
@@ -19443,7 +19476,7 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemOnetwoOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemOnetwoOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['shipment_lost']),
+                type: zod.enum(['shipment_delivered']),
                 data: zod.strictObject({
                     shipmentId: zod
                         .string()
@@ -19457,8 +19490,7 @@ export const GetOrderTimelineResponse = zod.strictObject({
                         .regex(
                             getOrderTimelineResponseItemsItemOnetwoTwoDataFulfillmentOrderIdRegExp
                         ),
-                    number: zod.number().min(1),
-                    reason: zod.string()
+                    number: zod.number().min(1)
                 })
             }),
             zod.strictObject({
@@ -19475,16 +19507,21 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemOnethreeOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemOnethreeOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['fulfillment_held']),
+                type: zod.enum(['shipment_lost']),
                 data: zod.strictObject({
+                    shipmentId: zod
+                        .string()
+                        .min(1)
+                        .max(getOrderTimelineResponseItemsItemOnethreeTwoDataShipmentIdMax)
+                        .regex(getOrderTimelineResponseItemsItemOnethreeTwoDataShipmentIdRegExp),
                     fulfillmentOrderId: zod
                         .string()
                         .min(1)
                         .max(getOrderTimelineResponseItemsItemOnethreeTwoDataFulfillmentOrderIdMax)
                         .regex(
                             getOrderTimelineResponseItemsItemOnethreeTwoDataFulfillmentOrderIdRegExp
-                        )
-                        .optional(),
+                        ),
+                    number: zod.number().min(1),
                     reason: zod.string()
                 })
             }),
@@ -19502,7 +19539,7 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemOnefourOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemOnefourOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['fulfillment_released', 'remainder_canceled']),
+                type: zod.enum(['fulfillment_held']),
                 data: zod.strictObject({
                     fulfillmentOrderId: zod
                         .string()
@@ -19511,6 +19548,8 @@ export const GetOrderTimelineResponse = zod.strictObject({
                         .regex(
                             getOrderTimelineResponseItemsItemOnefourTwoDataFulfillmentOrderIdRegExp
                         )
+                        .optional(),
+                    reason: zod.string()
                 })
             }),
             zod.strictObject({
@@ -19527,14 +19566,15 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemOnefiveOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemOnefiveOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['return_requested']),
+                type: zod.enum(['fulfillment_released', 'remainder_canceled']),
                 data: zod.strictObject({
-                    returnId: zod
+                    fulfillmentOrderId: zod
                         .string()
                         .min(1)
-                        .max(getOrderTimelineResponseItemsItemOnefiveTwoDataReturnIdMax)
-                        .regex(getOrderTimelineResponseItemsItemOnefiveTwoDataReturnIdRegExp),
-                    reason: zod.string()
+                        .max(getOrderTimelineResponseItemsItemOnefiveTwoDataFulfillmentOrderIdMax)
+                        .regex(
+                            getOrderTimelineResponseItemsItemOnefiveTwoDataFulfillmentOrderIdRegExp
+                        )
                 })
             }),
             zod.strictObject({
@@ -19551,14 +19591,14 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemOnesixOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemOnesixOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['return_approved']),
+                type: zod.enum(['return_requested']),
                 data: zod.strictObject({
                     returnId: zod
                         .string()
                         .min(1)
                         .max(getOrderTimelineResponseItemsItemOnesixTwoDataReturnIdMax)
                         .regex(getOrderTimelineResponseItemsItemOnesixTwoDataReturnIdRegExp),
-                    reason: zod.string().optional()
+                    reason: zod.string()
                 })
             }),
             zod.strictObject({
@@ -19575,13 +19615,14 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemOnesevenOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemOnesevenOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['return_declined', 'return_canceled']),
+                type: zod.enum(['return_approved']),
                 data: zod.strictObject({
                     returnId: zod
                         .string()
                         .min(1)
                         .max(getOrderTimelineResponseItemsItemOnesevenTwoDataReturnIdMax)
-                        .regex(getOrderTimelineResponseItemsItemOnesevenTwoDataReturnIdRegExp)
+                        .regex(getOrderTimelineResponseItemsItemOnesevenTwoDataReturnIdRegExp),
+                    reason: zod.string().optional()
                 })
             }),
             zod.strictObject({
@@ -19598,19 +19639,13 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemOneeightOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemOneeightOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['return_received']),
+                type: zod.enum(['return_declined', 'return_canceled']),
                 data: zod.strictObject({
                     returnId: zod
                         .string()
                         .min(1)
                         .max(getOrderTimelineResponseItemsItemOneeightTwoDataReturnIdMax)
-                        .regex(getOrderTimelineResponseItemsItemOneeightTwoDataReturnIdRegExp),
-                    refundAmount: zod
-                        .stringFormat(
-                            'decimal',
-                            getOrderTimelineResponseItemsItemOneeightTwoDataRefundAmountRegExp
-                        )
-                        .max(getOrderTimelineResponseItemsItemOneeightTwoDataRefundAmountMax)
+                        .regex(getOrderTimelineResponseItemsItemOneeightTwoDataReturnIdRegExp)
                 })
             }),
             zod.strictObject({
@@ -19627,7 +19662,7 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemOnenineOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemOnenineOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['return_closed']),
+                type: zod.enum(['return_received']),
                 data: zod.strictObject({
                     returnId: zod
                         .string()
@@ -19639,13 +19674,7 @@ export const GetOrderTimelineResponse = zod.strictObject({
                             'decimal',
                             getOrderTimelineResponseItemsItemOnenineTwoDataRefundAmountRegExp
                         )
-                        .max(getOrderTimelineResponseItemsItemOnenineTwoDataRefundAmountMax),
-                    currency: zod
-                        .string()
-                        .min(getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyMin)
-                        .max(getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyMax)
-                        .regex(getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyRegExp),
-                    remedy: zod.string().optional()
+                        .max(getOrderTimelineResponseItemsItemOnenineTwoDataRefundAmountMax)
                 })
             }),
             zod.strictObject({
@@ -19662,14 +19691,25 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemTwozeroOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemTwozeroOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['invoice_issued']),
+                type: zod.enum(['return_closed']),
                 data: zod.strictObject({
-                    invoiceId: zod
+                    returnId: zod
                         .string()
                         .min(1)
-                        .max(getOrderTimelineResponseItemsItemTwozeroTwoDataInvoiceIdMax)
-                        .regex(getOrderTimelineResponseItemsItemTwozeroTwoDataInvoiceIdRegExp),
-                    number: zod.string()
+                        .max(getOrderTimelineResponseItemsItemTwozeroTwoDataReturnIdMax)
+                        .regex(getOrderTimelineResponseItemsItemTwozeroTwoDataReturnIdRegExp),
+                    refundAmount: zod
+                        .stringFormat(
+                            'decimal',
+                            getOrderTimelineResponseItemsItemTwozeroTwoDataRefundAmountRegExp
+                        )
+                        .max(getOrderTimelineResponseItemsItemTwozeroTwoDataRefundAmountMax),
+                    currency: zod
+                        .string()
+                        .min(getOrderTimelineResponseItemsItemTwozeroTwoDataCurrencyMin)
+                        .max(getOrderTimelineResponseItemsItemTwozeroTwoDataCurrencyMax)
+                        .regex(getOrderTimelineResponseItemsItemTwozeroTwoDataCurrencyRegExp),
+                    remedy: zod.string().optional()
                 })
             }),
             zod.strictObject({
@@ -19686,19 +19726,14 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemTwooneOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemTwooneOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['credit_note_issued']),
+                type: zod.enum(['invoice_issued']),
                 data: zod.strictObject({
-                    creditNoteId: zod
+                    invoiceId: zod
                         .string()
                         .min(1)
-                        .max(getOrderTimelineResponseItemsItemTwooneTwoDataCreditNoteIdMax)
-                        .regex(getOrderTimelineResponseItemsItemTwooneTwoDataCreditNoteIdRegExp),
-                    number: zod.string(),
-                    refundId: zod
-                        .string()
-                        .min(1)
-                        .max(getOrderTimelineResponseItemsItemTwooneTwoDataRefundIdMax)
-                        .regex(getOrderTimelineResponseItemsItemTwooneTwoDataRefundIdRegExp)
+                        .max(getOrderTimelineResponseItemsItemTwooneTwoDataInvoiceIdMax)
+                        .regex(getOrderTimelineResponseItemsItemTwooneTwoDataInvoiceIdRegExp),
+                    number: zod.string()
                 })
             }),
             zod.strictObject({
@@ -19715,17 +19750,19 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemTwotwoOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemTwotwoOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['release_date_moved']),
+                type: zod.enum(['credit_note_issued']),
                 data: zod.strictObject({
-                    fulfillmentOrderId: zod
+                    creditNoteId: zod
                         .string()
                         .min(1)
-                        .max(getOrderTimelineResponseItemsItemTwotwoTwoDataFulfillmentOrderIdMax)
-                        .regex(
-                            getOrderTimelineResponseItemsItemTwotwoTwoDataFulfillmentOrderIdRegExp
-                        ),
-                    from: zod.iso.date().optional(),
-                    to: zod.iso.date().optional()
+                        .max(getOrderTimelineResponseItemsItemTwotwoTwoDataCreditNoteIdMax)
+                        .regex(getOrderTimelineResponseItemsItemTwotwoTwoDataCreditNoteIdRegExp),
+                    number: zod.string(),
+                    refundId: zod
+                        .string()
+                        .min(1)
+                        .max(getOrderTimelineResponseItemsItemTwotwoTwoDataRefundIdMax)
+                        .regex(getOrderTimelineResponseItemsItemTwotwoTwoDataRefundIdRegExp)
                 })
             }),
             zod.strictObject({
@@ -19742,7 +19779,7 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemTwothreeOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemTwothreeOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['delay_notice_sent']),
+                type: zod.enum(['release_date_moved']),
                 data: zod.strictObject({
                     fulfillmentOrderId: zod
                         .string()
@@ -19751,6 +19788,33 @@ export const GetOrderTimelineResponse = zod.strictObject({
                         .regex(
                             getOrderTimelineResponseItemsItemTwothreeTwoDataFulfillmentOrderIdRegExp
                         ),
+                    from: zod.iso.date().optional(),
+                    to: zod.iso.date().optional()
+                })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(getOrderTimelineResponseItemsItemTwofourOneIdMax)
+                    .regex(getOrderTimelineResponseItemsItemTwofourOneIdRegExp),
+                at: zod.iso.datetime({ offset: true }),
+                audience: zod.enum(['buyer', 'staff']),
+                actor: zod
+                    .string()
+                    .min(1)
+                    .max(getOrderTimelineResponseItemsItemTwofourOneActorOneMax)
+                    .regex(getOrderTimelineResponseItemsItemTwofourOneActorOneRegExp)
+                    .optional(),
+                type: zod.enum(['delay_notice_sent']),
+                data: zod.strictObject({
+                    fulfillmentOrderId: zod
+                        .string()
+                        .min(1)
+                        .max(getOrderTimelineResponseItemsItemTwofourTwoDataFulfillmentOrderIdMax)
+                        .regex(
+                            getOrderTimelineResponseItemsItemTwofourTwoDataFulfillmentOrderIdRegExp
+                        ),
                     reason: zod.string(),
                     expectedAt: zod.iso.date().optional()
                 })
@@ -19758,6 +19822,827 @@ export const GetOrderTimelineResponse = zod.strictObject({
         ])
     )
 });
+/**
+ * Appends a `note_added` row to the order's timeline: a call, an agreement, anything staff want the next person to know. Needs `update:Order`. The row is staff-only (`audience: staff`): the buyer's timeline never shows it, but it is the buyer's data and so it is in their `POST /account/export`. The text is stored encrypted, unset when the order's personal data is erased and after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`, and never written to the audit log (only its length is). Answers the entry, with the `Location` of its `DELETE`.
+ * @summary Leave a staff note on an order
+ */
+export const addOrderNotePathIdMax = 64;
+export const addOrderNotePathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const AddOrderNoteParams = zod.strictObject({
+    id: zod.string().min(1).max(addOrderNotePathIdMax).regex(addOrderNotePathIdRegExp)
+});
+export const addOrderNoteBodyTextMax = 2000;
+export const AddOrderNoteBody = zod.strictObject({
+    text: zod.string().min(1).max(addOrderNoteBodyTextMax)
+});
+export const addOrderNoteResponseOneOneIdMax = 64;
+export const addOrderNoteResponseOneOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOneOneActorOneMax = 64;
+export const addOrderNoteResponseOneOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseTwoOneIdMax = 64;
+export const addOrderNoteResponseTwoOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseTwoOneActorOneMax = 64;
+export const addOrderNoteResponseTwoOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseThreeOneIdMax = 64;
+export const addOrderNoteResponseThreeOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseThreeOneActorOneMax = 64;
+export const addOrderNoteResponseThreeOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseFourOneIdMax = 64;
+export const addOrderNoteResponseFourOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseFourOneActorOneMax = 64;
+export const addOrderNoteResponseFourOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseFiveOneIdMax = 64;
+export const addOrderNoteResponseFiveOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseFiveOneActorOneMax = 64;
+export const addOrderNoteResponseFiveOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseSixOneIdMax = 64;
+export const addOrderNoteResponseSixOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseSixOneActorOneMax = 64;
+export const addOrderNoteResponseSixOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseSevenOneIdMax = 64;
+export const addOrderNoteResponseSevenOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseSevenOneActorOneMax = 64;
+export const addOrderNoteResponseSevenOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseSevenTwoDataPaymentIdMax = 64;
+export const addOrderNoteResponseSevenTwoDataPaymentIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseEightOneIdMax = 64;
+export const addOrderNoteResponseEightOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseEightOneActorOneMax = 64;
+export const addOrderNoteResponseEightOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseEightTwoDataRefundIdMax = 64;
+export const addOrderNoteResponseEightTwoDataRefundIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseEightTwoDataAmountRegExp = new RegExp('^-?\\d+(\\.\\d+)?$');
+export const addOrderNoteResponseEightTwoDataAmountMax = 32;
+export const addOrderNoteResponseEightTwoDataCurrencyMin = 3;
+export const addOrderNoteResponseEightTwoDataCurrencyMax = 3;
+export const addOrderNoteResponseEightTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+export const addOrderNoteResponseNineOneIdMax = 64;
+export const addOrderNoteResponseNineOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseNineOneActorOneMax = 64;
+export const addOrderNoteResponseNineOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseNineTwoDataRefundIdMax = 64;
+export const addOrderNoteResponseNineTwoDataRefundIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseNineTwoDataAmountRegExp = new RegExp('^-?\\d+(\\.\\d+)?$');
+export const addOrderNoteResponseNineTwoDataAmountMax = 32;
+export const addOrderNoteResponseNineTwoDataCurrencyMin = 3;
+export const addOrderNoteResponseNineTwoDataCurrencyMax = 3;
+export const addOrderNoteResponseNineTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+export const addOrderNoteResponseOnezeroOneIdMax = 64;
+export const addOrderNoteResponseOnezeroOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnezeroOneActorOneMax = 64;
+export const addOrderNoteResponseOnezeroOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnezeroTwoDataAmountRegExp = new RegExp('^-?\\d+(\\.\\d+)?$');
+export const addOrderNoteResponseOnezeroTwoDataAmountMax = 32;
+export const addOrderNoteResponseOnezeroTwoDataCurrencyMin = 3;
+export const addOrderNoteResponseOnezeroTwoDataCurrencyMax = 3;
+export const addOrderNoteResponseOnezeroTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+export const addOrderNoteResponseOneoneOneIdMax = 64;
+export const addOrderNoteResponseOneoneOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOneoneOneActorOneMax = 64;
+export const addOrderNoteResponseOneoneOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOneoneTwoDataShipmentIdMax = 64;
+export const addOrderNoteResponseOneoneTwoDataShipmentIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOneoneTwoDataFulfillmentOrderIdMax = 64;
+export const addOrderNoteResponseOneoneTwoDataFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const addOrderNoteResponseOnetwoOneIdMax = 64;
+export const addOrderNoteResponseOnetwoOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnetwoOneActorOneMax = 64;
+export const addOrderNoteResponseOnetwoOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnetwoTwoDataShipmentIdMax = 64;
+export const addOrderNoteResponseOnetwoTwoDataShipmentIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnetwoTwoDataFulfillmentOrderIdMax = 64;
+export const addOrderNoteResponseOnetwoTwoDataFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const addOrderNoteResponseOnethreeOneIdMax = 64;
+export const addOrderNoteResponseOnethreeOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnethreeOneActorOneMax = 64;
+export const addOrderNoteResponseOnethreeOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnethreeTwoDataShipmentIdMax = 64;
+export const addOrderNoteResponseOnethreeTwoDataShipmentIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnethreeTwoDataFulfillmentOrderIdMax = 64;
+export const addOrderNoteResponseOnethreeTwoDataFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const addOrderNoteResponseOnefourOneIdMax = 64;
+export const addOrderNoteResponseOnefourOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnefourOneActorOneMax = 64;
+export const addOrderNoteResponseOnefourOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnefourTwoDataFulfillmentOrderIdMax = 64;
+export const addOrderNoteResponseOnefourTwoDataFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const addOrderNoteResponseOnefiveOneIdMax = 64;
+export const addOrderNoteResponseOnefiveOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnefiveOneActorOneMax = 64;
+export const addOrderNoteResponseOnefiveOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnefiveTwoDataFulfillmentOrderIdMax = 64;
+export const addOrderNoteResponseOnefiveTwoDataFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const addOrderNoteResponseOnesixOneIdMax = 64;
+export const addOrderNoteResponseOnesixOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnesixOneActorOneMax = 64;
+export const addOrderNoteResponseOnesixOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnesixTwoDataReturnIdMax = 64;
+export const addOrderNoteResponseOnesixTwoDataReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnesevenOneIdMax = 64;
+export const addOrderNoteResponseOnesevenOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnesevenOneActorOneMax = 64;
+export const addOrderNoteResponseOnesevenOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnesevenTwoDataReturnIdMax = 64;
+export const addOrderNoteResponseOnesevenTwoDataReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOneeightOneIdMax = 64;
+export const addOrderNoteResponseOneeightOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOneeightOneActorOneMax = 64;
+export const addOrderNoteResponseOneeightOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOneeightTwoDataReturnIdMax = 64;
+export const addOrderNoteResponseOneeightTwoDataReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnenineOneIdMax = 64;
+export const addOrderNoteResponseOnenineOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnenineOneActorOneMax = 64;
+export const addOrderNoteResponseOnenineOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnenineTwoDataReturnIdMax = 64;
+export const addOrderNoteResponseOnenineTwoDataReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseOnenineTwoDataRefundAmountRegExp = new RegExp(
+    '^-?\\d+(\\.\\d+)?$'
+);
+export const addOrderNoteResponseOnenineTwoDataRefundAmountMax = 32;
+export const addOrderNoteResponseTwozeroOneIdMax = 64;
+export const addOrderNoteResponseTwozeroOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseTwozeroOneActorOneMax = 64;
+export const addOrderNoteResponseTwozeroOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseTwozeroTwoDataReturnIdMax = 64;
+export const addOrderNoteResponseTwozeroTwoDataReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseTwozeroTwoDataRefundAmountRegExp = new RegExp(
+    '^-?\\d+(\\.\\d+)?$'
+);
+export const addOrderNoteResponseTwozeroTwoDataRefundAmountMax = 32;
+export const addOrderNoteResponseTwozeroTwoDataCurrencyMin = 3;
+export const addOrderNoteResponseTwozeroTwoDataCurrencyMax = 3;
+export const addOrderNoteResponseTwozeroTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+export const addOrderNoteResponseTwooneOneIdMax = 64;
+export const addOrderNoteResponseTwooneOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseTwooneOneActorOneMax = 64;
+export const addOrderNoteResponseTwooneOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseTwooneTwoDataInvoiceIdMax = 64;
+export const addOrderNoteResponseTwooneTwoDataInvoiceIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseTwotwoOneIdMax = 64;
+export const addOrderNoteResponseTwotwoOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseTwotwoOneActorOneMax = 64;
+export const addOrderNoteResponseTwotwoOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseTwotwoTwoDataCreditNoteIdMax = 64;
+export const addOrderNoteResponseTwotwoTwoDataCreditNoteIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseTwotwoTwoDataRefundIdMax = 64;
+export const addOrderNoteResponseTwotwoTwoDataRefundIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseTwothreeOneIdMax = 64;
+export const addOrderNoteResponseTwothreeOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseTwothreeOneActorOneMax = 64;
+export const addOrderNoteResponseTwothreeOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseTwothreeTwoDataFulfillmentOrderIdMax = 64;
+export const addOrderNoteResponseTwothreeTwoDataFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const addOrderNoteResponseTwofourOneIdMax = 64;
+export const addOrderNoteResponseTwofourOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseTwofourOneActorOneMax = 64;
+export const addOrderNoteResponseTwofourOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const addOrderNoteResponseTwofourTwoDataFulfillmentOrderIdMax = 64;
+export const addOrderNoteResponseTwofourTwoDataFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const AddOrderNoteResponse = zod.union([
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOneOneIdMax)
+            .regex(addOrderNoteResponseOneOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOneOneActorOneMax)
+            .regex(addOrderNoteResponseOneOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['created', 'processing', 'shipped', 'address_corrected']),
+        data: zod.strictObject({})
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseTwoOneIdMax)
+            .regex(addOrderNoteResponseTwoOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseTwoOneActorOneMax)
+            .regex(addOrderNoteResponseTwoOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['status_overridden']),
+        data: zod.strictObject({
+            mode: zod.enum(['status']),
+            from: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
+            to: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
+        }),
+        text: zod.string().optional()
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseThreeOneIdMax)
+            .regex(addOrderNoteResponseThreeOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseThreeOneActorOneMax)
+            .regex(addOrderNoteResponseThreeOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['note_added']),
+        data: zod.strictObject({}),
+        text: zod.string().optional()
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseFourOneIdMax)
+            .regex(addOrderNoteResponseFourOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseFourOneActorOneMax)
+            .regex(addOrderNoteResponseFourOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['paid']),
+        data: zod.strictObject({
+            method: zod.string().optional()
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseFiveOneIdMax)
+            .regex(addOrderNoteResponseFiveOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseFiveOneActorOneMax)
+            .regex(addOrderNoteResponseFiveOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['delivered']),
+        data: zod.strictObject({
+            withdrawUntil: zod.iso.datetime({ offset: true })
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseSixOneIdMax)
+            .regex(addOrderNoteResponseSixOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseSixOneActorOneMax)
+            .regex(addOrderNoteResponseSixOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['canceled']),
+        data: zod.strictObject({
+            by: zod.enum(['customer', 'admin', 'withdrawal', 'system']),
+            cause: zod.enum([
+                'customer',
+                'operator',
+                'withdrawal',
+                'reservation_expired',
+                'erasure',
+                'payment_mismatch',
+                'lost'
+            ]),
+            refund: zod.boolean()
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseSevenOneIdMax)
+            .regex(addOrderNoteResponseSevenOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseSevenOneActorOneMax)
+            .regex(addOrderNoteResponseSevenOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['payment_declined']),
+        data: zod.strictObject({
+            paymentId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseSevenTwoDataPaymentIdMax)
+                .regex(addOrderNoteResponseSevenTwoDataPaymentIdRegExp)
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseEightOneIdMax)
+            .regex(addOrderNoteResponseEightOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseEightOneActorOneMax)
+            .regex(addOrderNoteResponseEightOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['refund_issued', 'refund_settled', 'refund_canceled']),
+        data: zod.strictObject({
+            refundId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseEightTwoDataRefundIdMax)
+                .regex(addOrderNoteResponseEightTwoDataRefundIdRegExp),
+            amount: zod
+                .stringFormat('decimal', addOrderNoteResponseEightTwoDataAmountRegExp)
+                .max(addOrderNoteResponseEightTwoDataAmountMax),
+            currency: zod
+                .string()
+                .min(addOrderNoteResponseEightTwoDataCurrencyMin)
+                .max(addOrderNoteResponseEightTwoDataCurrencyMax)
+                .regex(addOrderNoteResponseEightTwoDataCurrencyRegExp),
+            reason: zod.string()
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseNineOneIdMax)
+            .regex(addOrderNoteResponseNineOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseNineOneActorOneMax)
+            .regex(addOrderNoteResponseNineOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['refund_failed', 'refund_reversed']),
+        data: zod.strictObject({
+            refundId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseNineTwoDataRefundIdMax)
+                .regex(addOrderNoteResponseNineTwoDataRefundIdRegExp),
+            amount: zod
+                .stringFormat('decimal', addOrderNoteResponseNineTwoDataAmountRegExp)
+                .max(addOrderNoteResponseNineTwoDataAmountMax),
+            currency: zod
+                .string()
+                .min(addOrderNoteResponseNineTwoDataCurrencyMin)
+                .max(addOrderNoteResponseNineTwoDataCurrencyMax)
+                .regex(addOrderNoteResponseNineTwoDataCurrencyRegExp),
+            reason: zod.string(),
+            failureReason: zod.string()
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOnezeroOneIdMax)
+            .regex(addOrderNoteResponseOnezeroOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOnezeroOneActorOneMax)
+            .regex(addOrderNoteResponseOnezeroOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['dispute_opened', 'dispute_closed']),
+        data: zod.strictObject({
+            disputeId: zod.string(),
+            kind: zod.string(),
+            status: zod.string(),
+            reason: zod.string(),
+            amount: zod
+                .stringFormat('decimal', addOrderNoteResponseOnezeroTwoDataAmountRegExp)
+                .max(addOrderNoteResponseOnezeroTwoDataAmountMax),
+            currency: zod
+                .string()
+                .min(addOrderNoteResponseOnezeroTwoDataCurrencyMin)
+                .max(addOrderNoteResponseOnezeroTwoDataCurrencyMax)
+                .regex(addOrderNoteResponseOnezeroTwoDataCurrencyRegExp)
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOneoneOneIdMax)
+            .regex(addOrderNoteResponseOneoneOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOneoneOneActorOneMax)
+            .regex(addOrderNoteResponseOneoneOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['shipment_shipped']),
+        data: zod.strictObject({
+            shipmentId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseOneoneTwoDataShipmentIdMax)
+                .regex(addOrderNoteResponseOneoneTwoDataShipmentIdRegExp),
+            fulfillmentOrderId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseOneoneTwoDataFulfillmentOrderIdMax)
+                .regex(addOrderNoteResponseOneoneTwoDataFulfillmentOrderIdRegExp),
+            number: zod.number().min(1),
+            trackingCode: zod.string().optional()
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOnetwoOneIdMax)
+            .regex(addOrderNoteResponseOnetwoOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOnetwoOneActorOneMax)
+            .regex(addOrderNoteResponseOnetwoOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['shipment_delivered']),
+        data: zod.strictObject({
+            shipmentId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseOnetwoTwoDataShipmentIdMax)
+                .regex(addOrderNoteResponseOnetwoTwoDataShipmentIdRegExp),
+            fulfillmentOrderId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseOnetwoTwoDataFulfillmentOrderIdMax)
+                .regex(addOrderNoteResponseOnetwoTwoDataFulfillmentOrderIdRegExp),
+            number: zod.number().min(1)
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOnethreeOneIdMax)
+            .regex(addOrderNoteResponseOnethreeOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOnethreeOneActorOneMax)
+            .regex(addOrderNoteResponseOnethreeOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['shipment_lost']),
+        data: zod.strictObject({
+            shipmentId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseOnethreeTwoDataShipmentIdMax)
+                .regex(addOrderNoteResponseOnethreeTwoDataShipmentIdRegExp),
+            fulfillmentOrderId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseOnethreeTwoDataFulfillmentOrderIdMax)
+                .regex(addOrderNoteResponseOnethreeTwoDataFulfillmentOrderIdRegExp),
+            number: zod.number().min(1),
+            reason: zod.string()
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOnefourOneIdMax)
+            .regex(addOrderNoteResponseOnefourOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOnefourOneActorOneMax)
+            .regex(addOrderNoteResponseOnefourOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['fulfillment_held']),
+        data: zod.strictObject({
+            fulfillmentOrderId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseOnefourTwoDataFulfillmentOrderIdMax)
+                .regex(addOrderNoteResponseOnefourTwoDataFulfillmentOrderIdRegExp)
+                .optional(),
+            reason: zod.string()
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOnefiveOneIdMax)
+            .regex(addOrderNoteResponseOnefiveOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOnefiveOneActorOneMax)
+            .regex(addOrderNoteResponseOnefiveOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['fulfillment_released', 'remainder_canceled']),
+        data: zod.strictObject({
+            fulfillmentOrderId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseOnefiveTwoDataFulfillmentOrderIdMax)
+                .regex(addOrderNoteResponseOnefiveTwoDataFulfillmentOrderIdRegExp)
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOnesixOneIdMax)
+            .regex(addOrderNoteResponseOnesixOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOnesixOneActorOneMax)
+            .regex(addOrderNoteResponseOnesixOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['return_requested']),
+        data: zod.strictObject({
+            returnId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseOnesixTwoDataReturnIdMax)
+                .regex(addOrderNoteResponseOnesixTwoDataReturnIdRegExp),
+            reason: zod.string()
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOnesevenOneIdMax)
+            .regex(addOrderNoteResponseOnesevenOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOnesevenOneActorOneMax)
+            .regex(addOrderNoteResponseOnesevenOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['return_approved']),
+        data: zod.strictObject({
+            returnId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseOnesevenTwoDataReturnIdMax)
+                .regex(addOrderNoteResponseOnesevenTwoDataReturnIdRegExp),
+            reason: zod.string().optional()
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOneeightOneIdMax)
+            .regex(addOrderNoteResponseOneeightOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOneeightOneActorOneMax)
+            .regex(addOrderNoteResponseOneeightOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['return_declined', 'return_canceled']),
+        data: zod.strictObject({
+            returnId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseOneeightTwoDataReturnIdMax)
+                .regex(addOrderNoteResponseOneeightTwoDataReturnIdRegExp)
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOnenineOneIdMax)
+            .regex(addOrderNoteResponseOnenineOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseOnenineOneActorOneMax)
+            .regex(addOrderNoteResponseOnenineOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['return_received']),
+        data: zod.strictObject({
+            returnId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseOnenineTwoDataReturnIdMax)
+                .regex(addOrderNoteResponseOnenineTwoDataReturnIdRegExp),
+            refundAmount: zod
+                .stringFormat('decimal', addOrderNoteResponseOnenineTwoDataRefundAmountRegExp)
+                .max(addOrderNoteResponseOnenineTwoDataRefundAmountMax)
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseTwozeroOneIdMax)
+            .regex(addOrderNoteResponseTwozeroOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseTwozeroOneActorOneMax)
+            .regex(addOrderNoteResponseTwozeroOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['return_closed']),
+        data: zod.strictObject({
+            returnId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseTwozeroTwoDataReturnIdMax)
+                .regex(addOrderNoteResponseTwozeroTwoDataReturnIdRegExp),
+            refundAmount: zod
+                .stringFormat('decimal', addOrderNoteResponseTwozeroTwoDataRefundAmountRegExp)
+                .max(addOrderNoteResponseTwozeroTwoDataRefundAmountMax),
+            currency: zod
+                .string()
+                .min(addOrderNoteResponseTwozeroTwoDataCurrencyMin)
+                .max(addOrderNoteResponseTwozeroTwoDataCurrencyMax)
+                .regex(addOrderNoteResponseTwozeroTwoDataCurrencyRegExp),
+            remedy: zod.string().optional()
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseTwooneOneIdMax)
+            .regex(addOrderNoteResponseTwooneOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseTwooneOneActorOneMax)
+            .regex(addOrderNoteResponseTwooneOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['invoice_issued']),
+        data: zod.strictObject({
+            invoiceId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseTwooneTwoDataInvoiceIdMax)
+                .regex(addOrderNoteResponseTwooneTwoDataInvoiceIdRegExp),
+            number: zod.string()
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseTwotwoOneIdMax)
+            .regex(addOrderNoteResponseTwotwoOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseTwotwoOneActorOneMax)
+            .regex(addOrderNoteResponseTwotwoOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['credit_note_issued']),
+        data: zod.strictObject({
+            creditNoteId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseTwotwoTwoDataCreditNoteIdMax)
+                .regex(addOrderNoteResponseTwotwoTwoDataCreditNoteIdRegExp),
+            number: zod.string(),
+            refundId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseTwotwoTwoDataRefundIdMax)
+                .regex(addOrderNoteResponseTwotwoTwoDataRefundIdRegExp)
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseTwothreeOneIdMax)
+            .regex(addOrderNoteResponseTwothreeOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseTwothreeOneActorOneMax)
+            .regex(addOrderNoteResponseTwothreeOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['release_date_moved']),
+        data: zod.strictObject({
+            fulfillmentOrderId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseTwothreeTwoDataFulfillmentOrderIdMax)
+                .regex(addOrderNoteResponseTwothreeTwoDataFulfillmentOrderIdRegExp),
+            from: zod.iso.date().optional(),
+            to: zod.iso.date().optional()
+        })
+    }),
+    zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseTwofourOneIdMax)
+            .regex(addOrderNoteResponseTwofourOneIdRegExp),
+        at: zod.iso.datetime({ offset: true }),
+        audience: zod.enum(['buyer', 'staff']),
+        actor: zod
+            .string()
+            .min(1)
+            .max(addOrderNoteResponseTwofourOneActorOneMax)
+            .regex(addOrderNoteResponseTwofourOneActorOneRegExp)
+            .optional(),
+        type: zod.enum(['delay_notice_sent']),
+        data: zod.strictObject({
+            fulfillmentOrderId: zod
+                .string()
+                .min(1)
+                .max(addOrderNoteResponseTwofourTwoDataFulfillmentOrderIdMax)
+                .regex(addOrderNoteResponseTwofourTwoDataFulfillmentOrderIdRegExp),
+            reason: zod.string(),
+            expectedAt: zod.iso.date().optional()
+        })
+    })
+]);
+/**
+ * Unsets the text of one `note_added` row: the row stays in the timeline, without its text, so the history still shows that a note was written and withdrawn (GDPR Art. 16 and 17). Needs `update:Order`. An id that is not a note of this order is a 404. Writes an audit row with the note's length, never its text. A second call on the same note is a 404.
+ * @summary Remove the text of a wrong staff note
+ */
+export const deleteOrderNotePathIdMax = 64;
+export const deleteOrderNotePathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const deleteOrderNotePathEventIdMax = 64;
+export const deleteOrderNotePathEventIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const DeleteOrderNoteParams = zod.strictObject({
+    id: zod.string().min(1).max(deleteOrderNotePathIdMax).regex(deleteOrderNotePathIdRegExp),
+    eventId: zod
+        .string()
+        .min(1)
+        .max(deleteOrderNotePathEventIdMax)
+        .regex(deleteOrderNotePathEventIdRegExp)
+});
+export const DeleteOrderNoteResponse = zod.void();
 /**
  * Replaces the order's shipping address, as staff do when a fulfillment order was held for `incorrect_address` and the buyer wrote back. Needs `update:Order`. Allowed while units remain to send (held and awaiting-stock ones included) and the order has a shipping address at all (`409 ORDER_ADDRESS_LOCKED` otherwise). A parcel already cut keeps the address it went to: each shipment stores its own `destination`. The country must be on the shop's ship-to list (`422 ORDER_SHIP_TO_COUNTRY_NOT_SUPPORTED`). Leaves a staff-only timeline row, `address_corrected`, and an audit row naming who changed it, never what it says. `OrderActions.correctAddress` says whether this would be accepted.
  * @summary Correct where an unshipped order ships (staff)
