@@ -210,7 +210,14 @@ export const aReturn = (overrides: Partial<Return> = {}): Return =>
         openedBy: 'buyer',
         policyExceptions: [],
         createdAt: '2026-09-01T10:00:00.000Z',
-        actions: { approve: false, decline: false, receive: false, close: false, cancel: false },
+        actions: {
+            approve: false,
+            decline: false,
+            receive: false,
+            recordProof: false,
+            close: false,
+            cancel: false
+        },
         ...overrides
     });
 

@@ -6,7 +6,7 @@
             "transfers-due": "{n} bank transfers are due soon. Open the orders to chase them.",
             "preorders-late": "{n} preorders are past their expected date with units still owed.",
             "delivery-holds-open": "{n} orders have been held for too long. Fix the reason or release them.",
-            "withdrawals-awaiting-goods": "{n} withdrawals are waiting for their goods to come back.",
+            "returns-awaiting-goods": "{n} returns are overdue for their goods: ask the buyer once for proof of posting, and keep the refund on hold.",
             "returns-undecided": "{n} return requests still need a decision.",
             "low-stock": "{n} products are low on stock.",
             "unshipped": "{n} paid orders have not shipped yet.",

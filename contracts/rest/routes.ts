@@ -228,6 +228,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "POST", pattern: /^\/returns\/[^/]+\/cancel$/, schemaName: "CancelReturnResponse", bodySchemaName: "CancelReturnBody", module: "returns", noRefresh: false },
     { method: "POST", pattern: /^\/returns\/[^/]+\/close$/, schemaName: "CloseReturnResponse", bodySchemaName: "CloseReturnBody", module: "returns", noRefresh: false },
     { method: "POST", pattern: /^\/returns\/[^/]+\/decline$/, schemaName: "DeclineReturnResponse", bodySchemaName: "DeclineReturnBody", module: "returns", noRefresh: false },
+    { method: "POST", pattern: /^\/returns\/[^/]+\/proof-of-sending$/, schemaName: "RecordProofOfSendingResponse", bodySchemaName: "RecordProofOfSendingBody", module: "returns", noRefresh: false },
     { method: "POST", pattern: /^\/returns\/[^/]+\/receive$/, schemaName: "ReceiveReturnResponse", bodySchemaName: "ReceiveReturnBody", module: "returns", noRefresh: false },
     { method: "GET", pattern: /^\/returns\/[^/]+$/, schemaName: "GetReturnByIdResponse", bodySchemaName: undefined, module: "returns", noRefresh: false },
     { method: "GET", pattern: /^\/sitemap\/products-[^/]+\.xml$/, schemaName: "GetSitemapProductsResponse", bodySchemaName: undefined, module: "sitemap", noRefresh: false },

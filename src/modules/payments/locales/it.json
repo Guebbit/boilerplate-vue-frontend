@@ -142,6 +142,8 @@
         "attention-exceeds-by": "Eccedenza di {amount}",
         "attention-kind-manual_refund_owed": "Denaro da restituire fuori dal sistema",
         "attention-deadline-left": "Ultimo giorno per restituire il denaro | Resta {count} giorno per restituire il denaro | Restano {count} giorni per restituire il denaro",
+        "attention-rule-withdrawal": "Scadenza legale del rimborso (recesso): {date}",
+        "attention-rule-faulty": "Scadenza legale del rimborso (articolo difettoso): rimborsa subito",
         "attention-deadline-over": "Scadenza per restituire il denaro superata da {count} giorno | Scadenza per restituire il denaro superata da {count} giorni",
         "attention-hint": "Solo i problemi ancora registrati su un pagamento o un ordine. Uno risolto sparisce alla lettura successiva.",
         "button-reload": "Ricarica",

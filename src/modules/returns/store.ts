@@ -2,7 +2,7 @@
  * @module
  * Pinia store for the returns module: a paginated search and a by-id read on
  * `useStructureCrudApi`, plus hand-written actions for the endpoints that are moves rather than
- * record edits — open (the withdrawal button), approve, decline, receive, close, cancel.
+ * record edits — open (the withdrawal button), approve, decline, receive, record proof, close, cancel.
  */
 import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
@@ -17,7 +17,8 @@ import {
     getReturnById,
     getReturnOptions,
     listReturns,
-    receiveReturn
+    receiveReturn,
+    recordProofOfSending
 } from '@api';
 import type {
     CreateReturnRequest,
@@ -25,6 +26,7 @@ import type {
     Return,
     ReturnOptions,
     ReceiveReturnRequest,
+    RecordProofOfSendingRequest,
     ReturnDeclineReason
 } from '@types';
 
@@ -201,6 +203,17 @@ export const useReturnsStore = defineStore('returns', () => {
     };
 
     /**
+     * Records the carrier's proof of sending for an approved return, once. On a withdrawal it opens
+     * the refund and sends it, so it is step-up gated like the receipt.
+     *
+     * @param returnId - Which return.
+     * @param body - The date on the document, the carrier and the reference.
+     * @returns A promise resolving with the return, still approved, carrying its proof.
+     */
+    const recordProof = (returnId: string, body: RecordProofOfSendingRequest) =>
+        updateTarget(() => recordProofOfSending(returnId, body), {}, returnId);
+
+    /**
      * Staff finish a received return by hand, when its money will not follow the usual way (the
      * refund was canceled, or paid outside the app). No money or stock moves. Step-up gated, like
      * the receipt it ends.
@@ -245,6 +258,7 @@ export const useReturnsStore = defineStore('returns', () => {
         approve,
         decline,
         receive,
+        recordProof,
         close,
         cancel
     };

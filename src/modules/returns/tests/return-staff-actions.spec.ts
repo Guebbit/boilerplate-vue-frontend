@@ -31,6 +31,7 @@ const mountActions = (item: Return) => {
     vi.spyOn(store, 'approve').mockResolvedValue(aReturn());
     vi.spyOn(store, 'decline').mockResolvedValue(aReturn());
     vi.spyOn(store, 'receive').mockResolvedValue(aReturn());
+    vi.spyOn(store, 'recordProof').mockResolvedValue(aReturn());
     vi.spyOn(store, 'close').mockResolvedValue(aReturn());
     vi.spyOn(store, 'cancel').mockResolvedValue(aReturn());
     const wrapper = mount(ReturnStaffActions, {
@@ -62,6 +63,7 @@ describe('ReturnStaffActions', () => {
                     approve: true,
                     decline: true,
                     receive: false,
+                    recordProof: false,
                     close: false,
                     cancel: false
                 }
@@ -83,6 +85,7 @@ describe('ReturnStaffActions', () => {
                     approve: true,
                     decline: true,
                     receive: false,
+                    recordProof: false,
                     close: false,
                     cancel: false
                 }
@@ -103,6 +106,7 @@ describe('ReturnStaffActions', () => {
                     approve: true,
                     decline: true,
                     receive: false,
+                    recordProof: false,
                     close: false,
                     cancel: false
                 }
@@ -124,6 +128,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: false,
                     receive: true,
+                    recordProof: false,
                     close: false,
                     cancel: false
                 }
@@ -143,6 +148,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: false,
                     receive: true,
+                    recordProof: false,
                     close: false,
                     cancel: false
                 }
@@ -164,6 +170,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: false,
                     receive: true,
+                    recordProof: false,
                     close: false,
                     cancel: false
                 }
@@ -182,6 +189,7 @@ describe('ReturnStaffActions', () => {
             approve: false,
             decline: false,
             receive: true,
+            recordProof: false,
             close: false,
             cancel: false
         };
@@ -237,6 +245,7 @@ describe('ReturnStaffActions', () => {
                     approve: true,
                     decline: false,
                     receive: false,
+                    recordProof: false,
                     close: false,
                     cancel: false
                 }
@@ -259,6 +268,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: true,
                     receive: false,
+                    recordProof: false,
                     close: false,
                     cancel: false
                 }
@@ -282,6 +292,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: false,
                     receive: true,
+                    recordProof: false,
                     close: false,
                     cancel: false
                 }
@@ -302,6 +313,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: false,
                     receive: true,
+                    recordProof: false,
                     close: false,
                     cancel: false
                 }
@@ -337,6 +349,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: false,
                     receive: false,
+                    recordProof: false,
                     close: true,
                     cancel: false
                 }
@@ -355,6 +368,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: false,
                     receive: false,
+                    recordProof: false,
                     close: true,
                     cancel: false
                 }
@@ -376,6 +390,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: false,
                     receive: false,
+                    recordProof: false,
                     close: true,
                     cancel: false
                 }
@@ -397,6 +412,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: false,
                     receive: false,
+                    recordProof: false,
                     close: true,
                     cancel: false
                 }
@@ -422,6 +438,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: false,
                     receive: false,
+                    recordProof: false,
                     close: false,
                     cancel: true
                 }
@@ -440,6 +457,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: false,
                     receive: false,
+                    recordProof: false,
                     close: false,
                     cancel: true
                 }
@@ -461,6 +479,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: false,
                     receive: false,
+                    recordProof: false,
                     close: false,
                     cancel: true
                 }
@@ -482,6 +501,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: false,
                     receive: false,
+                    recordProof: false,
                     close: false,
                     cancel: true
                 }
@@ -505,6 +525,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: false,
                     receive: true,
+                    recordProof: false,
                     close: false,
                     cancel: false
                 }
@@ -531,6 +552,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: false,
                     receive: true,
+                    recordProof: false,
                     close: false,
                     cancel: false
                 }
@@ -559,6 +581,7 @@ describe('ReturnStaffActions', () => {
                     approve: false,
                     decline: false,
                     receive: true,
+                    recordProof: false,
                     close: false,
                     cancel: false
                 }
@@ -604,6 +627,7 @@ describe('ReturnStaffActions', () => {
                     approve: true,
                     decline: true,
                     receive: false,
+                    recordProof: false,
                     close: false,
                     cancel: false
                 }
@@ -628,6 +652,7 @@ describe('ReturnStaffActions', () => {
                     approve: true,
                     decline: true,
                     receive: false,
+                    recordProof: false,
                     close: false,
                     cancel: false
                 }
@@ -642,5 +667,90 @@ describe('ReturnStaffActions', () => {
         expect(wrapper.get('[data-test=return-decline-form]').text()).toContain(
             'Write a message to the buyer'
         );
+    });
+});
+
+/**
+ * Fills the proof form's three fields.
+ *
+ * @param wrapper - the mounted component
+ * @param values - the date, carrier and reference to type
+ */
+const fillProof = async (
+    wrapper: ReturnType<typeof mountActions>['wrapper'],
+    values: { sentAt: string; carrier: string; reference: string }
+) => {
+    await wrapper.get('[data-test=return-proof-sent-at] input').setValue(values.sentAt);
+    await wrapper.get('[data-test=return-proof-carrier] input').setValue(values.carrier);
+    await wrapper.get('[data-test=return-proof-reference] input').setValue(values.reference);
+    await wrapper.get('[data-test=return-proof-form]').trigger('submit');
+    await flushPromises();
+};
+
+describe('the proof of sending', () => {
+    const proofActions = {
+        approve: false,
+        decline: false,
+        receive: true,
+        recordProof: true,
+        close: false,
+        cancel: false
+    };
+
+    it('is not offered when the server says no', () => {
+        const { wrapper } = mountActions(aReturn());
+
+        expect(wrapper.find('[data-test=return-proof-form]').exists()).toBe(false);
+    });
+
+    it('says "Record proof and refund" on a withdrawal, which the proof opens the refund of', () => {
+        const { wrapper } = mountActions(aReturn({ reason: 'withdrawal', actions: proofActions }));
+
+        expect(wrapper.get('[data-test=return-proof]').text()).toBe('Record proof and refund');
+    });
+
+    it('says only "Record proof" on a faulty item, which it does not refund', () => {
+        const { wrapper } = mountActions(aReturn({ reason: 'defective', actions: proofActions }));
+
+        expect(wrapper.get('[data-test=return-proof]').text()).toBe('Record proof');
+    });
+
+    it('sends the date, carrier and reference, and tells the page', async () => {
+        const { wrapper, store } = mountActions(aReturn({ actions: proofActions }));
+
+        await fillProof(wrapper, {
+            sentAt: '2026-03-02',
+            carrier: ' Poste Italiane ',
+            reference: 'RR1IT'
+        });
+
+        expect(store.recordProof).toHaveBeenCalledWith('r1', {
+            sentAt: new Date('2026-03-02T00:00:00').toISOString(),
+            carrier: 'Poste Italiane',
+            reference: 'RR1IT'
+        });
+        expect(wrapper.emitted('changed')).toHaveLength(1);
+    });
+
+    it('refuses a date in the future, and a missing carrier, without calling the server', async () => {
+        const { wrapper, store } = mountActions(aReturn({ actions: proofActions }));
+
+        await fillProof(wrapper, { sentAt: '2999-01-01', carrier: '', reference: 'RR1IT' });
+
+        expect(store.recordProof).not.toHaveBeenCalled();
+    });
+
+    it('shows the proof once it is recorded', () => {
+        const { wrapper } = mountActions(
+            aReturn({
+                proofOfSendingAt: '2026-03-02T00:00:00.000Z',
+                proofCarrier: 'Poste Italiane',
+                proofReference: 'RR1IT'
+            })
+        );
+
+        const text = wrapper.get('[data-test=return-proof-recorded]').text();
+        expect(text).toContain('Poste Italiane');
+        expect(text).toContain('RR1IT');
     });
 });

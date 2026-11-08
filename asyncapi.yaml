@@ -2473,8 +2473,8 @@ components:
                     type: string
                     format: date-time
             additionalProperties: false
-        NotificationStaffWithdrawalsAwaitingGoodsPayload:
-            title: NotificationStaffWithdrawalsAwaitingGoodsPayload
+        NotificationStaffReturnsAwaitingGoodsPayload:
+            title: NotificationStaffReturnsAwaitingGoodsPayload
             type: object
             required:
                 - id
@@ -2495,7 +2495,7 @@ components:
                 code:
                     type: string
                     enum:
-                        - shop-tasks.staff.withdrawals-awaiting-goods
+                        - shop-tasks.staff.returns-awaiting-goods
                 params:
                     $ref: '#/components/schemas/WorkCountParamsPayload'
                 severity:
@@ -2774,7 +2774,7 @@ components:
                 - $ref: '#/components/schemas/NotificationStaffTransfersDuePayload'
                 - $ref: '#/components/schemas/NotificationStaffPreordersLatePayload'
                 - $ref: '#/components/schemas/NotificationStaffDeliveryHoldsOpenPayload'
-                - $ref: '#/components/schemas/NotificationStaffWithdrawalsAwaitingGoodsPayload'
+                - $ref: '#/components/schemas/NotificationStaffReturnsAwaitingGoodsPayload'
                 - $ref: '#/components/schemas/NotificationStaffReturnsUndecidedPayload'
                 - $ref: '#/components/schemas/NotificationStaffLowStockPayload'
                 - $ref: '#/components/schemas/NotificationStaffUnshippedPayload'

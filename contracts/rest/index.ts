@@ -2580,7 +2580,8 @@ export type OrderTimelineExportEntryReturnRefType =
 
 export const OrderTimelineExportEntryReturnRefType = {
     return_declined: 'return_declined',
-    return_canceled: 'return_canceled'
+    return_canceled: 'return_canceled',
+    proof_of_sending_recorded: 'proof_of_sending_recorded'
 } as const;
 
 export type OrderTimelineExportEntryReturnRef = OrderTimelineExportEntryBase & {
@@ -3676,20 +3677,20 @@ export interface NotificationStaffDeliveryHoldsOpen {
     createdAt: string;
 }
 
-export type NotificationStaffWithdrawalsAwaitingGoodsCode =
-    (typeof NotificationStaffWithdrawalsAwaitingGoodsCode)[keyof typeof NotificationStaffWithdrawalsAwaitingGoodsCode];
+export type NotificationStaffReturnsAwaitingGoodsCode =
+    (typeof NotificationStaffReturnsAwaitingGoodsCode)[keyof typeof NotificationStaffReturnsAwaitingGoodsCode];
 
-export const NotificationStaffWithdrawalsAwaitingGoodsCode = {
-    'shop-tasksstaffwithdrawals-awaiting-goods': 'shop-tasks.staff.withdrawals-awaiting-goods'
+export const NotificationStaffReturnsAwaitingGoodsCode = {
+    'shop-tasksstaffreturns-awaiting-goods': 'shop-tasks.staff.returns-awaiting-goods'
 } as const;
 
 /**
- * Withdrawals after dispatch whose goods have not been received back.
+ * Approved returns, withdrawals and faulty or wrong items, still with neither goods nor proof of sending long after the buyer's days to send them ran out.
  */
-export interface NotificationStaffWithdrawalsAwaitingGoods {
+export interface NotificationStaffReturnsAwaitingGoods {
     id: Id;
     audience: NotificationAudience;
-    code: NotificationStaffWithdrawalsAwaitingGoodsCode;
+    code: NotificationStaffReturnsAwaitingGoodsCode;
     params: WorkCountParams;
     severity: NotificationSeverity;
     /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
@@ -3842,7 +3843,7 @@ export type Notification =
     | NotificationStaffTransfersDue
     | NotificationStaffPreordersLate
     | NotificationStaffDeliveryHoldsOpen
-    | NotificationStaffWithdrawalsAwaitingGoods
+    | NotificationStaffReturnsAwaitingGoods
     | NotificationStaffReturnsUndecided
     | NotificationStaffLowStock
     | NotificationStaffUnshipped
@@ -5945,6 +5946,8 @@ export interface ReturnActions {
     decline: boolean;
     /** Whether `POST /returns/{id}/receive` would be accepted. */
     receive: boolean;
+    /** Whether `POST /returns/{id}/proof-of-sending` would be accepted. */
+    recordProof: boolean;
     /** Whether `POST /returns/{id}/close` would be accepted. */
     close: boolean;
     /** Whether `POST /returns/{id}/cancel` would be accepted. */
@@ -5993,8 +5996,20 @@ export interface Return {
     remedy?: ReturnRemedy;
     /** An amount kept back from the refund for handling damage (Art. 14(2)), entered when the goods were received. Absent when nothing was kept. */
     handlingDeduction?: NonNegativeDecimalAmount;
-    /** What the customer is owed for this return, fixed when the goods were received. */
+    /** What the customer is owed for this return, fixed when the goods were received, or when the proof of sending opened the refund of a withdrawal. */
     refundAmount?: NonNegativeDecimalAmount;
+    /** The date on the carrier's proof of sending, as staff recorded it. Absent until a proof is recorded. */
+    proofOfSendingAt?: string;
+    /**
+     * The carrier named on the proof of sending. Present with `proofOfSendingAt`.
+     * @maxLength 200
+     */
+    proofCarrier?: string;
+    /**
+     * The carrier document's reference (a tracking or receipt number). Present with `proofOfSendingAt`.
+     * @maxLength 200
+     */
+    proofReference?: string;
     /** When the money went back and the return finished. */
     closedAt?: string;
     /** When staff canceled the return. Present only on a `canceled` return. */
@@ -6885,7 +6900,8 @@ export type OrderTimelineEntryReturnRefType =
 
 export const OrderTimelineEntryReturnRefType = {
     return_declined: 'return_declined',
-    return_canceled: 'return_canceled'
+    return_canceled: 'return_canceled',
+    proof_of_sending_recorded: 'proof_of_sending_recorded'
 } as const;
 
 export type OrderTimelineEntryReturnRef = OrderTimelineEntryBase & {
@@ -7107,6 +7123,16 @@ export const PaymentAttentionKind = {
     dispute_needs_response: 'dispute_needs_response'
 } as const;
 
+/**
+ * Why a refund has a legal deadline. `withdrawal` — the 14 days after the shop was told of a withdrawal (Directive 2011/83/EU Art. 13(1)); `faulty` — a defective or wrong item, refunded once the goods or the proof of sending are in (Directive 2019/771 Art. 16(3)(b)).
+ */
+export type RefundDueRule = (typeof RefundDueRule)[keyof typeof RefundDueRule];
+
+export const RefundDueRule = {
+    withdrawal: 'withdrawal',
+    faulty: 'faulty'
+} as const;
+
 export interface PaymentAttentionItem {
     kind: PaymentAttentionKind;
     orderId: Id;
@@ -7129,8 +7155,10 @@ export interface PaymentAttentionItem {
     since: string;
     /** On a `refund_exceeds_remaining` row, by how much this open refund overshoots what the provider can still give back, in the payment's currency. */
     exceedsBy?: NonNegativeDecimalAmount;
-    /** The legal deadline to give the money back, on a `refused_refund` that pays for a withdrawal or a return: the refund's creation plus 14 days (Consumer Rights Directive Art. 13). Absent for any other refund, which shows its age only. The client shows the days left; a past date means the deadline has gone. */
+    /** The legal deadline to give the money back, stamped on the refund when it opened, on a `refused_refund` that pays for a withdrawal or a return. For a withdrawal it is the end of the shop's day, 14 days after the shop was told (Consumer Rights Directive Art. 13(1)), unless the goods or the proof of sending came later, which makes it due the moment they did; for a faulty or wrong item it is the moment the goods or the proof came. Absent for any other refund, which shows its age only. The client shows the days left; a past date means the deadline has gone. */
     refundDueBy?: string;
+    /** Which rule `refundDueBy` follows. Present exactly when `refundDueBy` is. */
+    refundDueRule?: RefundDueRule;
 }
 
 export interface PaymentAttentionResponse {
@@ -7189,6 +7217,23 @@ export interface CancelReturnRequest {
      * @maxLength 500
      */
     note?: string;
+}
+
+export interface RecordProofOfSendingRequest {
+    /** The date on the carrier's document, when the buyer handed the parcel over. Not in the future (422 `RETURN_PROOF_DATE_INVALID`). */
+    sentAt: string;
+    /**
+     * The carrier or postal provider named on the document. Plain text.
+     * @minLength 1
+     * @maxLength 200
+     */
+    carrier: string;
+    /**
+     * The document's reference, a tracking or receipt number. Plain text.
+     * @minLength 1
+     * @maxLength 200
+     */
+    reference: string;
 }
 
 /**
@@ -12073,7 +12118,7 @@ export const declineReturn = (
 
 /**
  * The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409.
- * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). Which of the returned units go back on sale is staff's call, per line: `lines[].restock` (absent means all of them). A broken unit set to 0 never reaches the shelf, so it is never handed to a backorder buyer, and the refund does not change: restocking is about the goods, not the money. A defect or a wrong item has a ladder of remedies (Directive 2019/771 Art. 13): `remedy` says which one staff give — `refund` (the default, as above), `replace` (the same product is sent again on the SAME order through the ordinary shipping door; the return closes with no money moving) or `repair` (the goods are repaired and posted back by staff; the return closes with no money moving and the guarantee is extended by 12 months, once per order, Directive 2024/1799). Staff may pick a remedy other than the buyer's `preferredRemedy`. A withdrawal and a goodwill return always refund (`RETURN_REMEDY_INVALID` otherwise), and a defect or a wrong item never takes a `handlingDeduction`. A replacement the order cannot send again answers 409 `DELIVERY_NOT_REOPENABLE`. A parcel lost on its way back is received with 0 on every line: the shop bears that risk, so the refund is owed, and nothing goes on sale. The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed (its refund record is already on the payment, follow it there and on `GET /payments/attention`), `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
+ * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). Which of the returned units go back on sale is staff's call, per line: `lines[].restock` (absent means all of them). A broken unit set to 0 never reaches the shelf, so it is never handed to a backorder buyer, and the refund does not change: restocking is about the goods, not the money. A defect or a wrong item has a ladder of remedies (Directive 2019/771 Art. 13): `remedy` says which one staff give — `refund` (the default, as above), `replace` (the same product is sent again on the SAME order through the ordinary shipping door; the return closes with no money moving) or `repair` (the goods are repaired and posted back by staff; the return closes with no money moving and the guarantee is extended by 12 months, once per order, Directive 2024/1799). Staff may pick a remedy other than the buyer's `preferredRemedy`. A withdrawal and a goodwill return always refund (`RETURN_REMEDY_INVALID` otherwise), and a defect or a wrong item never takes a `handlingDeduction`. A replacement the order cannot send again answers 409 `DELIVERY_NOT_REOPENABLE`. On a withdrawal whose proof of sending was recorded the refund was opened then (`POST /returns/{id}/proof-of-sending`), so receiving the goods opens no second one and a `handlingDeduction` above 0 answers 409 `RETURN_REFUND_OPENED_ON_PROOF` (Art. 13(3): the shop can no longer withhold it); the return closes in this step when that refund already settled, and otherwise when it does. A parcel lost on its way back is received with 0 on every line: this shop's policy is to bear that risk and refund on proof of sending (the EU leaves the final risk to national law), so the refund is owed, and nothing goes on sale. The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed (its refund record is already on the payment, follow it there and on `GET /payments/attention`), `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
  * @summary Record that the returned goods arrived
  */
 export const receiveReturn = (
@@ -12909,8 +12954,8 @@ export const closeReturn = (
 
 /**
  * Staff end an `approved` return whose goods will never arrive: the buyer never sent them, or changed their mind. The return becomes `canceled`, a final state that is not `closed`: it holds no units (the same lines can be returned again) and counts as no goods back, so the order's return status leaves `in_progress` and the delivery refund is not taken by it. A withdrawal, born `approved`, can be canceled too.
- * Bookkeeping only. No money moves, no stock moves, no event is published and the customer is not mailed. The order's timeline and the audit row `admin.return.canceled` say so, with the note in the audit row only. A return that is not `approved` answers 409 `RETURN_NOT_CANCELABLE`: a `requested` one is declined, a `received` one is closed.
- * A parcel lost on its way back is NOT canceled: the shop bears that risk, so the refund may be owed. Receive it with a restock count of 0 instead. Needs `update:Return`; no fresh session, since nothing moves.
+ * Bookkeeping only. No money moves, no stock moves, no event is published and the customer is not mailed. The order's timeline and the audit row `admin.return.canceled` say so, with the note in the audit row only. A return that is not `approved` answers 409 `RETURN_NOT_CANCELABLE`: a `requested` one is declined, a `received` one is closed. A withdrawal whose proof of sending already opened its refund answers 409 `RETURN_REFUND_OPEN`: that refund is owed, so the return is received instead.
+ * A parcel lost on its way back is NOT canceled: this shop's policy is to bear the risk of a return lost in transit and to refund on proof of sending (the EU leaves the final risk to national law), so the refund may be owed. Receive it with a restock count of 0 instead. Needs `update:Return`; no fresh session, since nothing moves.
  * @summary Cancel an approved return whose goods never came
  */
 export const cancelReturn = (
@@ -12924,6 +12969,27 @@ export const cancelReturn = (
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: cancelReturnRequest
+        },
+        options
+    );
+};
+
+/**
+ * Staff note the carrier document the buyer showed for the parcel they sent back: the date it was handed over, the carrier and the reference. Requires an `approved` return (409 `RETURN_NOT_RECEIVABLE` otherwise) and is one-time: a second call answers 409 `RETURN_PROOF_ALREADY_RECORDED`. A `sentAt` in the future answers 422 `RETURN_PROOF_DATE_INVALID`.
+ * On a `withdrawal` the proof opens the refund then, as receiving the goods would (the shop may wait for the goods or the proof, whichever comes first, Directive 2011/83/EU Art. 13(3)), so the money can go back before the parcel arrives: the amount is quoted now, with no handling deduction. A later `POST /returns/{id}/receive` restocks as usual and opens no second refund. On a `defective` or `wrong_item` return the remedy is only decided at receipt, so the proof is recorded and nothing is refunded; if receipt then refunds, that refund is due the moment the goods or the proof came, whichever is earlier. This shop's policy is to refund on proof of sending, so a parcel lost on its way back is still refunded (the EU leaves the final risk to national law). Needs `receive:Return`, which carries a fresh-session requirement.
+ * @summary Record the buyer's proof of sending
+ */
+export const recordProofOfSending = (
+    id: string,
+    recordProofOfSendingRequest: RecordProofOfSendingRequest,
+    options?: SecondParameter<typeof orvalMutator<Return>>
+) => {
+    return orvalMutator<Return>(
+        {
+            url: `/returns/${id}/proof-of-sending`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: recordProofOfSendingRequest
         },
         options
     );
@@ -13905,6 +13971,9 @@ export type GetFulfillmentOrderResult = NonNullable<
 export type MarkShipmentLostResult = NonNullable<Awaited<ReturnType<typeof markShipmentLost>>>;
 export type CloseReturnResult = NonNullable<Awaited<ReturnType<typeof closeReturn>>>;
 export type CancelReturnResult = NonNullable<Awaited<ReturnType<typeof cancelReturn>>>;
+export type RecordProofOfSendingResult = NonNullable<
+    Awaited<ReturnType<typeof recordProofOfSending>>
+>;
 export type GetSalesStatsResult = NonNullable<Awaited<ReturnType<typeof getSalesStats>>>;
 export type GetProductStatsResult = NonNullable<Awaited<ReturnType<typeof getProductStats>>>;
 export type GetProductSalesSeriesResult = NonNullable<

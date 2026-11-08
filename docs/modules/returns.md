@@ -105,8 +105,8 @@ product can be returned again until nothing is left. The server re-checks all of
 excluded line, a closed window) and its message shows in the form. Staff then approve or decline the
 return like any other.
 
-**Staff moves come from `Return.actions`.** `ReturnStaffActions` renders approve, decline (a reason picked from a list, plus a message to the buyer that "Other" requires), receive (with a restock count per line and an optional handling deduction), close and cancel (each with an
-optional note) from the five booleans, and re-implements none of the lifecycle. Receiving and
+**Staff moves come from `Return.actions`.** `ReturnStaffActions` renders approve, decline (a reason picked from a list, plus a message to the buyer that "Other" requires), the proof of sending (the carrier's date, name and reference, recorded once; the button says "Record proof and refund" on a withdrawal, whose refund it opens, and "Record proof" on a faulty item, and the recorded proof is shown under the form), receive (with a restock count per line and an optional handling deduction), close and cancel (each with an
+optional note) from the six booleans, and re-implements none of the lifecycle. Receiving and
 closing are step-up gated: the http layer prompts for the password when the server answers
 `REAUTH_REQUIRED`. Close is for a received return whose refund was canceled or paid outside the app:
 it moves no money and no stock, and the customer is not told their money is back. The receive form lists every
@@ -203,7 +203,7 @@ Each row registers one Zod schema through the manifest, so enabling the domain t
 | `components/CancelRemainderDialog.vue`           | Cancels what has not shipped yet, behind a confirm step that shows the server's own refund.        | [read](../theory/layers.md)           |
 | `components/RecordWithdrawalDialog.vue`          | Staff recording a withdrawal the buyer stated by phone, email or letter.                           | [read](../theory/layers.md)           |
 | `components/ReturnRequestForm.vue`               | The customer's returns form: which lines come back, why, and an optional note.                     | [read](../theory/layers.md)           |
-| `components/ReturnStaffActions.vue`              | The staff's five moves on a return: approve, decline, receive, close, cancel.                      | [read](../theory/layers.md)           |
+| `components/ReturnStaffActions.vue`              | The staff's six moves on a return: approve, decline, proof of sending, receive, close, cancel.     | [read](../theory/layers.md)           |
 | `components/StatedAtFields.vue`                  | The day and channel staff record for what the buyer said, shared by the three staff forms.         | [read](../theory/layers.md)           |
 | `components/WithdrawalPanel.vue`                 | The order page's returns corner: the withdrawal button and what became of earlier returns.         | [read](../theory/layers.md)           |
 | `domain/remedy.ts`                               | The remedies a faulty or wrong item can be given, so the forms offer only what the server accepts. | [read](../theory/domain-layer.md)     |

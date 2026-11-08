@@ -172,6 +172,33 @@ describe('the staff moves', () => {
     });
 });
 
+describe('recordProof', () => {
+    it('posts the carrier document and mirrors the return with its proof', () => {
+        responses['POST /returns/r1/proof-of-sending'] = aReturn({
+            proofOfSendingAt: '2026-03-02T00:00:00.000Z',
+            proofCarrier: 'Poste Italiane',
+            proofReference: 'RR1IT'
+        });
+        const store = useReturnsStore();
+
+        return store
+            .recordProof('r1', {
+                sentAt: '2026-03-02T00:00:00.000Z',
+                carrier: 'Poste Italiane',
+                reference: 'RR1IT'
+            })
+            .then(() => {
+                expect(sent[0].url).toBe('/returns/r1/proof-of-sending');
+                expect(contractRequest(schemas.RecordProofOfSendingBody, sent[0].data)).toEqual({
+                    sentAt: '2026-03-02T00:00:00.000Z',
+                    carrier: 'Poste Italiane',
+                    reference: 'RR1IT'
+                });
+                expect(store.returns.r1?.proofCarrier).toBe('Poste Italiane');
+            });
+    });
+});
+
 describe('close', () => {
     it('posts the note and mirrors the closed return', () => {
         responses['POST /returns/r1/close'] = aReturn({ status: 'closed' });

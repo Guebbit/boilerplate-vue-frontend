@@ -230,6 +230,14 @@ export const ERROR_CODES = {
     RETURN_NOT_RECEIVABLE: 'RETURN_NOT_RECEIVABLE',
     /** 409 — The order is not in a state a return can be opened on — canceled, or (for a reason other than withdrawal) still in the shop's hands. */
     RETURN_ORDER_NOT_RETURNABLE: 'RETURN_ORDER_NOT_RETURNABLE',
+    /** 409 — A proof of sending is already on this return; it is recorded once. */
+    RETURN_PROOF_ALREADY_RECORDED: 'RETURN_PROOF_ALREADY_RECORDED',
+    /** 422 — The date on the proof of sending is in the future. */
+    RETURN_PROOF_DATE_INVALID: 'RETURN_PROOF_DATE_INVALID',
+    /** 409 — The return cannot be canceled: the proof of sending already opened its refund, which is owed and open, so a canceled return would no longer add up. Receive the goods (with 0 on every line if the parcel was lost) instead. */
+    RETURN_REFUND_OPEN: 'RETURN_REFUND_OPEN',
+    /** 409 — The refund was opened when the proof of sending was recorded, so a handling deduction can no longer come out of it (Directive 2011/83/EU Art. 13(3)); claim it from the buyer separately. */
+    RETURN_REFUND_OPENED_ON_PROOF: 'RETURN_REFUND_OPENED_ON_PROOF',
     /** 422 — A remedy other than a refund is named for a reason that has no guarantee behind it (only a `defective` or `wrong_item` return can be repaired or replaced), or a preferred remedy is named for such a reason. */
     RETURN_REMEDY_INVALID: 'RETURN_REMEDY_INVALID',
     /** 422 — A restock count names a product that is not on the return, names one twice, or is more than the line holds. */

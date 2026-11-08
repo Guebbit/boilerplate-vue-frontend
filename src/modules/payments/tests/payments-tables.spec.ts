@@ -571,6 +571,20 @@ describe('AttentionList', () => {
         expect(rows[1]?.find('[data-test="attention-deadline"]').exists()).toBe(false);
     });
 
+    it('says which rule the legal deadline follows, with its day', async () => {
+        const inThreeDays = new Date(Date.now() + 3 * 86_400_000).toISOString();
+        answerAttentionWith([
+            { ...ITEMS[1], refundDueBy: inThreeDays, refundDueRule: 'withdrawal' },
+            { ...ITEMS[0], refundDueBy: inThreeDays, refundDueRule: 'faulty' }
+        ]);
+        const wrapper = mount(AttentionList, { global: GLOBAL });
+        await flushPromises();
+
+        const rules = wrapper.findAll('[data-test="attention-rule"]');
+        expect(rules[0]?.text()).toContain('Legal refund deadline (withdrawal):');
+        expect(rules[1]?.text()).toBe('Legal refund deadline (faulty item): refund now');
+    });
+
     it('says how late a refund is once the deadline has gone', async () => {
         const twoDaysAgo = new Date(Date.now() - 2 * 86_400_000 - 3_600_000).toISOString();
         answerAttentionWith([{ ...ITEMS[1], refundDueBy: twoDaysAgo }]);

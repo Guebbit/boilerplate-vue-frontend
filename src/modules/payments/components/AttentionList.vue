@@ -238,6 +238,17 @@ const auditLink = computed(() => {
                 >
                     {{ deadlineOf(item)?.text }}
                 </p>
+                <p
+                    v-if="item.refundDueRule && item.refundDueBy"
+                    class="mt-1 text-xs"
+                    data-test="attention-rule"
+                >
+                    {{
+                        t(`payments-list-page.attention-rule-${item.refundDueRule}`, {
+                            date: formatDateTime(item.refundDueBy)
+                        })
+                    }}
+                </p>
             </template>
             <template v-slot:[`item.amount`]="{ item }">
                 {{ formatCurrency(item.amount, item.currency) }}

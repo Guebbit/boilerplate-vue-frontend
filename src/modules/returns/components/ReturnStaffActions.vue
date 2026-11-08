@@ -11,8 +11,8 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * The staff's five moves on a return — approve, decline (with the reason the customer is told),
- * receive (with a restock count per line, the remedy for a faulty or wrong item and an optional
+ * The staff's six moves on a return — approve, decline (with the reason the customer is told),
+ * record the carrier's proof of sending (once; on a withdrawal it opens the refund), receive (with a restock count per line, the remedy for a faulty or wrong item and an optional
  * handling deduction), close by hand (with an optional note, when the
  * money will not follow the usual way), cancel (with an optional note, when the goods never came). Which of them is open is the server's
  * `Return.actions`; this component renders that answer and re-implements none of the lifecycle.
@@ -30,6 +30,7 @@ import {
     normalizeAmount,
     padDecimal
 } from '@/infrastructure/utils/money.ts';
+import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -76,9 +77,9 @@ const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * The five moves.
+ * The six moves.
  */
-const { approve, decline, receive, close, cancel } = useReturnsStore();
+const { approve, decline, receive, recordProof, close, cancel } = useReturnsStore();
 
 /**
  * True while any move is in flight; disables every button so two cannot race from one screen.
@@ -261,6 +262,54 @@ const setRestock = (productId: string, value: string) => {
 };
 
 /**
+ * The proof-of-sending form's element.
+ */
+const proofElement = ref<HTMLFormElement>();
+
+/**
+ * Whether the proof opens the refund: only a withdrawal's does, so only its button says "refund".
+ * A faulty or wrong item records the proof and the remedy is chosen at receipt.
+ */
+const proofOpensRefund = computed(() => props.item.reason === 'withdrawal');
+
+/**
+ * The proof is the carrier's document: its date (not in the future), the carrier and the
+ * reference, each required plain text.
+ */
+const proofSchema = z.object({
+    sentAt: z
+        .string()
+        .refine((value) => value !== '' && new Date(`${value}T00:00:00`) <= new Date(), {
+            error: () => t('return-staff-actions.error-proof-date-invalid')
+        }),
+    carrier: z
+        .string()
+        .trim()
+        .min(1, { error: () => t('return-staff-actions.error-proof-text-required') })
+        .max(200),
+    reference: z
+        .string()
+        .trim()
+        .min(1, { error: () => t('return-staff-actions.error-proof-text-required') })
+        .max(200)
+});
+
+/**
+ * The proof form's state, errors and submit gating.
+ */
+const {
+    form: proofForm,
+    formErrors: proofErrors,
+    showFormErrors: showProofErrors,
+    handleSubmit: handleProofSubmit,
+    applyServerErrors: applyProofErrors
+} = useStructureFormValidation({ sentAt: '', carrier: '', reference: '' }, proofSchema, {
+    formElement: proofElement,
+    revalidateOn: locale,
+    onInvalid: () => addMessage(t('generic.fix-errors'))
+});
+
+/**
  * The close form's element.
  */
 const closeElement = ref<HTMLFormElement>();
@@ -419,6 +468,28 @@ const submitReceive = () =>
     });
 
 /**
+ * Validates the carrier's document, then records the proof. The date is the start of that day in the
+ * staff member's own zone, so today's date is never read as the future.
+ *
+ * @returns A promise settling once the move finished.
+ */
+const submitProof = () =>
+    handleProofSubmit(({ sentAt, carrier, reference }) =>
+        run(
+            () =>
+                recordProof(props.item.id, {
+                    sentAt: new Date(`${sentAt}T00:00:00`).toISOString(),
+                    carrier: carrier.trim(),
+                    reference: reference.trim()
+                }),
+            proofOpensRefund.value
+                ? 'return-staff-actions.success-proof-refund'
+                : 'return-staff-actions.success-proof',
+            applyProofErrors
+        )
+    );
+
+/**
  * Validates the optional note, then closes the return by hand.
  *
  * @returns A promise settling once the move finished.
@@ -498,6 +569,56 @@ const submitCancel = () =>
                 :disabled="loading"
             >
                 {{ t('return-staff-actions.button-decline') }}
+            </v-btn>
+        </form>
+
+        <form
+            v-if="item.actions?.recordProof"
+            ref="proofElement"
+            novalidate
+            class="flex flex-wrap items-start gap-3"
+            data-test="return-proof-form"
+            @submit.prevent="submitProof"
+        >
+            <fieldset class="m-0 flex w-full flex-col gap-2 border-0 p-0">
+                <legend class="mb-1 text-sm font-semibold">
+                    {{ t('return-staff-actions.label-proof-title') }}
+                </legend>
+                <p class="m-0 text-sm opacity-75">{{ t('return-staff-actions.hint-proof') }}</p>
+                <v-text-field
+                    v-model="proofForm.sentAt"
+                    type="date"
+                    :label="t('return-staff-actions.label-proof-sent-at')"
+                    v-bind="fieldErrorProps(showProofErrors ? (proofErrors.sentAt ?? []) : [])"
+                    class="max-w-72"
+                    hide-details="auto"
+                    data-test="return-proof-sent-at"
+                />
+                <v-text-field
+                    v-model="proofForm.carrier"
+                    :label="t('return-staff-actions.label-proof-carrier')"
+                    maxlength="200"
+                    v-bind="fieldErrorProps(showProofErrors ? (proofErrors.carrier ?? []) : [])"
+                    class="max-w-72"
+                    hide-details="auto"
+                    data-test="return-proof-carrier"
+                />
+                <v-text-field
+                    v-model="proofForm.reference"
+                    :label="t('return-staff-actions.label-proof-reference')"
+                    maxlength="200"
+                    v-bind="fieldErrorProps(showProofErrors ? (proofErrors.reference ?? []) : [])"
+                    class="max-w-72"
+                    hide-details="auto"
+                    data-test="return-proof-reference"
+                />
+            </fieldset>
+            <v-btn type="submit" color="primary" data-test="return-proof" :disabled="loading">
+                {{
+                    proofOpensRefund
+                        ? t('return-staff-actions.button-proof-refund')
+                        : t('return-staff-actions.button-proof')
+                }}
             </v-btn>
         </form>
 
@@ -633,6 +754,16 @@ const submitCancel = () =>
                 {{ t('return-staff-actions.button-cancel') }}
             </v-btn>
         </form>
+
+        <p v-if="item.proofOfSendingAt" class="m-0 text-sm" data-test="return-proof-recorded">
+            {{
+                t('return-staff-actions.proof-recorded', {
+                    date: formatDateTime(item.proofOfSendingAt),
+                    carrier: item.proofCarrier ?? '',
+                    reference: item.proofReference ?? ''
+                })
+            }}
+        </p>
 
         <ul
             v-if="showRestocked"

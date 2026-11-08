@@ -6,7 +6,7 @@
             "transfers-due": "{n} bonifici sono in scadenza. Apri gli ordini per sollecitarli.",
             "preorders-late": "{n} preordini hanno superato la data prevista con unità ancora dovute.",
             "delivery-holds-open": "{n} ordini sono trattenuti da troppo tempo. Risolvi il motivo o sbloccali.",
-            "withdrawals-awaiting-goods": "{n} recessi attendono il ritorno della merce.",
+            "returns-awaiting-goods": "{n} resi sono in ritardo con la merce: chiedi una sola volta la prova di spedizione e tieni il rimborso in sospeso.",
             "returns-undecided": "{n} richieste di reso attendono ancora una decisione.",
             "low-stock": "{n} prodotti hanno scorte basse.",
             "unshipped": "{n} ordini pagati non sono ancora stati spediti.",

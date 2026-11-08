@@ -4895,7 +4895,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseOrderTimelineItemOneeightOneActorOneMax)
                     .regex(downloadAccountExportResponseOrderTimelineItemOneeightOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['return_declined', 'return_canceled']),
+                type: zod.enum(['return_declined', 'return_canceled', 'proof_of_sending_recorded']),
                 data: zod.strictObject({
                     returnId: zod
                         .string()
@@ -5947,7 +5947,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .max(downloadAccountExportResponseNotificationsItemOnenineIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemOnenineIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.withdrawals-awaiting-goods']),
+                code: zod.enum(['shop-tasks.staff.returns-awaiting-goods']),
                 params: zod.strictObject({
                     count: zod.number().min(1),
                     work: zod.string()
@@ -16117,6 +16117,8 @@ export const listReturnsResponseItemsItemHandlingDeductionRegExp = new RegExp('^
 export const listReturnsResponseItemsItemHandlingDeductionMax = 32;
 export const listReturnsResponseItemsItemRefundAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const listReturnsResponseItemsItemRefundAmountMax = 32;
+export const listReturnsResponseItemsItemProofCarrierMax = 200;
+export const listReturnsResponseItemsItemProofReferenceMax = 200;
 export const listReturnsResponseMetaPageDefault = 1;
 export const listReturnsResponseMetaPageMax = 10000;
 export const listReturnsResponseMetaPageSizeDefault = 10;
@@ -16204,12 +16206,19 @@ export const ListReturnsResponse = zod.strictObject({
                 .stringFormat('decimal', listReturnsResponseItemsItemRefundAmountRegExp)
                 .max(listReturnsResponseItemsItemRefundAmountMax)
                 .optional(),
+            proofOfSendingAt: zod.iso.datetime({ offset: true }).optional(),
+            proofCarrier: zod.string().max(listReturnsResponseItemsItemProofCarrierMax).optional(),
+            proofReference: zod
+                .string()
+                .max(listReturnsResponseItemsItemProofReferenceMax)
+                .optional(),
             closedAt: zod.iso.datetime({ offset: true }).optional(),
             canceledAt: zod.iso.datetime({ offset: true }).optional(),
             actions: zod.strictObject({
                 approve: zod.boolean(),
                 decline: zod.boolean(),
                 receive: zod.boolean(),
+                recordProof: zod.boolean(),
                 close: zod.boolean(),
                 cancel: zod.boolean()
             }),
@@ -16309,6 +16318,8 @@ export const createReturnResponseHandlingDeductionRegExp = new RegExp('^\\d+(\\.
 export const createReturnResponseHandlingDeductionMax = 32;
 export const createReturnResponseRefundAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const createReturnResponseRefundAmountMax = 32;
+export const createReturnResponseProofCarrierMax = 200;
+export const createReturnResponseProofReferenceMax = 200;
 export const CreateReturnResponse = zod.strictObject({
     id: zod.string().min(1).max(createReturnResponseIdMax).regex(createReturnResponseIdRegExp),
     orderId: zod
@@ -16368,12 +16379,16 @@ export const CreateReturnResponse = zod.strictObject({
         .stringFormat('decimal', createReturnResponseRefundAmountRegExp)
         .max(createReturnResponseRefundAmountMax)
         .optional(),
+    proofOfSendingAt: zod.iso.datetime({ offset: true }).optional(),
+    proofCarrier: zod.string().max(createReturnResponseProofCarrierMax).optional(),
+    proofReference: zod.string().max(createReturnResponseProofReferenceMax).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
     canceledAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
         approve: zod.boolean(),
         decline: zod.boolean(),
         receive: zod.boolean(),
+        recordProof: zod.boolean(),
         close: zod.boolean(),
         cancel: zod.boolean()
     }),
@@ -16499,6 +16514,8 @@ export const getReturnByIdResponseHandlingDeductionRegExp = new RegExp('^\\d+(\\
 export const getReturnByIdResponseHandlingDeductionMax = 32;
 export const getReturnByIdResponseRefundAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const getReturnByIdResponseRefundAmountMax = 32;
+export const getReturnByIdResponseProofCarrierMax = 200;
+export const getReturnByIdResponseProofReferenceMax = 200;
 export const GetReturnByIdResponse = zod.strictObject({
     id: zod.string().min(1).max(getReturnByIdResponseIdMax).regex(getReturnByIdResponseIdRegExp),
     orderId: zod
@@ -16558,12 +16575,16 @@ export const GetReturnByIdResponse = zod.strictObject({
         .stringFormat('decimal', getReturnByIdResponseRefundAmountRegExp)
         .max(getReturnByIdResponseRefundAmountMax)
         .optional(),
+    proofOfSendingAt: zod.iso.datetime({ offset: true }).optional(),
+    proofCarrier: zod.string().max(getReturnByIdResponseProofCarrierMax).optional(),
+    proofReference: zod.string().max(getReturnByIdResponseProofReferenceMax).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
     canceledAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
         approve: zod.boolean(),
         decline: zod.boolean(),
         receive: zod.boolean(),
+        recordProof: zod.boolean(),
         close: zod.boolean(),
         cancel: zod.boolean()
     }),
@@ -16599,6 +16620,8 @@ export const approveReturnResponseHandlingDeductionRegExp = new RegExp('^\\d+(\\
 export const approveReturnResponseHandlingDeductionMax = 32;
 export const approveReturnResponseRefundAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const approveReturnResponseRefundAmountMax = 32;
+export const approveReturnResponseProofCarrierMax = 200;
+export const approveReturnResponseProofReferenceMax = 200;
 export const ApproveReturnResponse = zod.strictObject({
     id: zod.string().min(1).max(approveReturnResponseIdMax).regex(approveReturnResponseIdRegExp),
     orderId: zod
@@ -16658,12 +16681,16 @@ export const ApproveReturnResponse = zod.strictObject({
         .stringFormat('decimal', approveReturnResponseRefundAmountRegExp)
         .max(approveReturnResponseRefundAmountMax)
         .optional(),
+    proofOfSendingAt: zod.iso.datetime({ offset: true }).optional(),
+    proofCarrier: zod.string().max(approveReturnResponseProofCarrierMax).optional(),
+    proofReference: zod.string().max(approveReturnResponseProofReferenceMax).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
     canceledAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
         approve: zod.boolean(),
         decline: zod.boolean(),
         receive: zod.boolean(),
+        recordProof: zod.boolean(),
         close: zod.boolean(),
         cancel: zod.boolean()
     }),
@@ -16704,6 +16731,8 @@ export const declineReturnResponseHandlingDeductionRegExp = new RegExp('^\\d+(\\
 export const declineReturnResponseHandlingDeductionMax = 32;
 export const declineReturnResponseRefundAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const declineReturnResponseRefundAmountMax = 32;
+export const declineReturnResponseProofCarrierMax = 200;
+export const declineReturnResponseProofReferenceMax = 200;
 export const DeclineReturnResponse = zod.strictObject({
     id: zod.string().min(1).max(declineReturnResponseIdMax).regex(declineReturnResponseIdRegExp),
     orderId: zod
@@ -16763,12 +16792,16 @@ export const DeclineReturnResponse = zod.strictObject({
         .stringFormat('decimal', declineReturnResponseRefundAmountRegExp)
         .max(declineReturnResponseRefundAmountMax)
         .optional(),
+    proofOfSendingAt: zod.iso.datetime({ offset: true }).optional(),
+    proofCarrier: zod.string().max(declineReturnResponseProofCarrierMax).optional(),
+    proofReference: zod.string().max(declineReturnResponseProofReferenceMax).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
     canceledAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
         approve: zod.boolean(),
         decline: zod.boolean(),
         receive: zod.boolean(),
+        recordProof: zod.boolean(),
         close: zod.boolean(),
         cancel: zod.boolean()
     }),
@@ -16777,7 +16810,7 @@ export const DeclineReturnResponse = zod.strictObject({
 });
 /**
  * The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409.
- * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). Which of the returned units go back on sale is staff's call, per line: `lines[].restock` (absent means all of them). A broken unit set to 0 never reaches the shelf, so it is never handed to a backorder buyer, and the refund does not change: restocking is about the goods, not the money. A defect or a wrong item has a ladder of remedies (Directive 2019/771 Art. 13): `remedy` says which one staff give — `refund` (the default, as above), `replace` (the same product is sent again on the SAME order through the ordinary shipping door; the return closes with no money moving) or `repair` (the goods are repaired and posted back by staff; the return closes with no money moving and the guarantee is extended by 12 months, once per order, Directive 2024/1799). Staff may pick a remedy other than the buyer's `preferredRemedy`. A withdrawal and a goodwill return always refund (`RETURN_REMEDY_INVALID` otherwise), and a defect or a wrong item never takes a `handlingDeduction`. A replacement the order cannot send again answers 409 `DELIVERY_NOT_REOPENABLE`. A parcel lost on its way back is received with 0 on every line: the shop bears that risk, so the refund is owed, and nothing goes on sale. The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed (its refund record is already on the payment, follow it there and on `GET /payments/attention`), `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
+ * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). Which of the returned units go back on sale is staff's call, per line: `lines[].restock` (absent means all of them). A broken unit set to 0 never reaches the shelf, so it is never handed to a backorder buyer, and the refund does not change: restocking is about the goods, not the money. A defect or a wrong item has a ladder of remedies (Directive 2019/771 Art. 13): `remedy` says which one staff give — `refund` (the default, as above), `replace` (the same product is sent again on the SAME order through the ordinary shipping door; the return closes with no money moving) or `repair` (the goods are repaired and posted back by staff; the return closes with no money moving and the guarantee is extended by 12 months, once per order, Directive 2024/1799). Staff may pick a remedy other than the buyer's `preferredRemedy`. A withdrawal and a goodwill return always refund (`RETURN_REMEDY_INVALID` otherwise), and a defect or a wrong item never takes a `handlingDeduction`. A replacement the order cannot send again answers 409 `DELIVERY_NOT_REOPENABLE`. On a withdrawal whose proof of sending was recorded the refund was opened then (`POST /returns/{id}/proof-of-sending`), so receiving the goods opens no second one and a `handlingDeduction` above 0 answers 409 `RETURN_REFUND_OPENED_ON_PROOF` (Art. 13(3): the shop can no longer withhold it); the return closes in this step when that refund already settled, and otherwise when it does. A parcel lost on its way back is received with 0 on every line: this shop's policy is to bear that risk and refund on proof of sending (the EU leaves the final risk to national law), so the refund is owed, and nothing goes on sale. The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed (its refund record is already on the payment, follow it there and on `GET /payments/attention`), `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
  * @summary Record that the returned goods arrived
  */
 export const receiveReturnPathIdMax = 64;
@@ -16839,6 +16872,8 @@ export const receiveReturnResponseHandlingDeductionRegExp = new RegExp('^\\d+(\\
 export const receiveReturnResponseHandlingDeductionMax = 32;
 export const receiveReturnResponseRefundAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const receiveReturnResponseRefundAmountMax = 32;
+export const receiveReturnResponseProofCarrierMax = 200;
+export const receiveReturnResponseProofReferenceMax = 200;
 export const ReceiveReturnResponse = zod.strictObject({
     id: zod.string().min(1).max(receiveReturnResponseIdMax).regex(receiveReturnResponseIdRegExp),
     orderId: zod
@@ -16898,12 +16933,16 @@ export const ReceiveReturnResponse = zod.strictObject({
         .stringFormat('decimal', receiveReturnResponseRefundAmountRegExp)
         .max(receiveReturnResponseRefundAmountMax)
         .optional(),
+    proofOfSendingAt: zod.iso.datetime({ offset: true }).optional(),
+    proofCarrier: zod.string().max(receiveReturnResponseProofCarrierMax).optional(),
+    proofReference: zod.string().max(receiveReturnResponseProofReferenceMax).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
     canceledAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
         approve: zod.boolean(),
         decline: zod.boolean(),
         receive: zod.boolean(),
+        recordProof: zod.boolean(),
         close: zod.boolean(),
         cancel: zod.boolean()
     }),
@@ -19660,7 +19699,7 @@ export const GetOrderTimelineResponse = zod.strictObject({
                     .max(getOrderTimelineResponseItemsItemOneeightOneActorOneMax)
                     .regex(getOrderTimelineResponseItemsItemOneeightOneActorOneRegExp)
                     .optional(),
-                type: zod.enum(['return_declined', 'return_canceled']),
+                type: zod.enum(['return_declined', 'return_canceled', 'proof_of_sending_recorded']),
                 data: zod.strictObject({
                     returnId: zod
                         .string()
@@ -20476,7 +20515,7 @@ export const AddOrderNoteResponse = zod.union([
             .max(addOrderNoteResponseOneeightOneActorOneMax)
             .regex(addOrderNoteResponseOneeightOneActorOneRegExp)
             .optional(),
-        type: zod.enum(['return_declined', 'return_canceled']),
+        type: zod.enum(['return_declined', 'return_canceled', 'proof_of_sending_recorded']),
         data: zod.strictObject({
             returnId: zod
                 .string()
@@ -22062,7 +22101,8 @@ export const ListPaymentAttentionResponse = zod.strictObject({
                 .stringFormat('decimal', listPaymentAttentionResponseItemsItemExceedsByRegExp)
                 .max(listPaymentAttentionResponseItemsItemExceedsByMax)
                 .optional(),
-            refundDueBy: zod.iso.datetime({ offset: true }).optional()
+            refundDueBy: zod.iso.datetime({ offset: true }).optional(),
+            refundDueRule: zod.enum(['withdrawal', 'faulty']).optional()
         })
     )
 });
@@ -22470,6 +22510,8 @@ export const closeReturnResponseHandlingDeductionRegExp = new RegExp('^\\d+(\\.\
 export const closeReturnResponseHandlingDeductionMax = 32;
 export const closeReturnResponseRefundAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const closeReturnResponseRefundAmountMax = 32;
+export const closeReturnResponseProofCarrierMax = 200;
+export const closeReturnResponseProofReferenceMax = 200;
 export const CloseReturnResponse = zod.strictObject({
     id: zod.string().min(1).max(closeReturnResponseIdMax).regex(closeReturnResponseIdRegExp),
     orderId: zod
@@ -22529,12 +22571,16 @@ export const CloseReturnResponse = zod.strictObject({
         .stringFormat('decimal', closeReturnResponseRefundAmountRegExp)
         .max(closeReturnResponseRefundAmountMax)
         .optional(),
+    proofOfSendingAt: zod.iso.datetime({ offset: true }).optional(),
+    proofCarrier: zod.string().max(closeReturnResponseProofCarrierMax).optional(),
+    proofReference: zod.string().max(closeReturnResponseProofReferenceMax).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
     canceledAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
         approve: zod.boolean(),
         decline: zod.boolean(),
         receive: zod.boolean(),
+        recordProof: zod.boolean(),
         close: zod.boolean(),
         cancel: zod.boolean()
     }),
@@ -22543,8 +22589,8 @@ export const CloseReturnResponse = zod.strictObject({
 });
 /**
  * Staff end an `approved` return whose goods will never arrive: the buyer never sent them, or changed their mind. The return becomes `canceled`, a final state that is not `closed`: it holds no units (the same lines can be returned again) and counts as no goods back, so the order's return status leaves `in_progress` and the delivery refund is not taken by it. A withdrawal, born `approved`, can be canceled too.
- * Bookkeeping only. No money moves, no stock moves, no event is published and the customer is not mailed. The order's timeline and the audit row `admin.return.canceled` say so, with the note in the audit row only. A return that is not `approved` answers 409 `RETURN_NOT_CANCELABLE`: a `requested` one is declined, a `received` one is closed.
- * A parcel lost on its way back is NOT canceled: the shop bears that risk, so the refund may be owed. Receive it with a restock count of 0 instead. Needs `update:Return`; no fresh session, since nothing moves.
+ * Bookkeeping only. No money moves, no stock moves, no event is published and the customer is not mailed. The order's timeline and the audit row `admin.return.canceled` say so, with the note in the audit row only. A return that is not `approved` answers 409 `RETURN_NOT_CANCELABLE`: a `requested` one is declined, a `received` one is closed. A withdrawal whose proof of sending already opened its refund answers 409 `RETURN_REFUND_OPEN`: that refund is owed, so the return is received instead.
+ * A parcel lost on its way back is NOT canceled: this shop's policy is to bear the risk of a return lost in transit and to refund on proof of sending (the EU leaves the final risk to national law), so the refund may be owed. Receive it with a restock count of 0 instead. Needs `update:Return`; no fresh session, since nothing moves.
  * @summary Cancel an approved return whose goods never came
  */
 export const cancelReturnPathIdMax = 64;
@@ -22576,6 +22622,8 @@ export const cancelReturnResponseHandlingDeductionRegExp = new RegExp('^\\d+(\\.
 export const cancelReturnResponseHandlingDeductionMax = 32;
 export const cancelReturnResponseRefundAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const cancelReturnResponseRefundAmountMax = 32;
+export const cancelReturnResponseProofCarrierMax = 200;
+export const cancelReturnResponseProofReferenceMax = 200;
 export const CancelReturnResponse = zod.strictObject({
     id: zod.string().min(1).max(cancelReturnResponseIdMax).regex(cancelReturnResponseIdRegExp),
     orderId: zod
@@ -22635,12 +22683,141 @@ export const CancelReturnResponse = zod.strictObject({
         .stringFormat('decimal', cancelReturnResponseRefundAmountRegExp)
         .max(cancelReturnResponseRefundAmountMax)
         .optional(),
+    proofOfSendingAt: zod.iso.datetime({ offset: true }).optional(),
+    proofCarrier: zod.string().max(cancelReturnResponseProofCarrierMax).optional(),
+    proofReference: zod.string().max(cancelReturnResponseProofReferenceMax).optional(),
     closedAt: zod.iso.datetime({ offset: true }).optional(),
     canceledAt: zod.iso.datetime({ offset: true }).optional(),
     actions: zod.strictObject({
         approve: zod.boolean(),
         decline: zod.boolean(),
         receive: zod.boolean(),
+        recordProof: zod.boolean(),
+        close: zod.boolean(),
+        cancel: zod.boolean()
+    }),
+    createdAt: zod.iso.datetime({ offset: true }),
+    updatedAt: zod.iso.datetime({ offset: true }).optional()
+});
+/**
+ * Staff note the carrier document the buyer showed for the parcel they sent back: the date it was handed over, the carrier and the reference. Requires an `approved` return (409 `RETURN_NOT_RECEIVABLE` otherwise) and is one-time: a second call answers 409 `RETURN_PROOF_ALREADY_RECORDED`. A `sentAt` in the future answers 422 `RETURN_PROOF_DATE_INVALID`.
+ * On a `withdrawal` the proof opens the refund then, as receiving the goods would (the shop may wait for the goods or the proof, whichever comes first, Directive 2011/83/EU Art. 13(3)), so the money can go back before the parcel arrives: the amount is quoted now, with no handling deduction. A later `POST /returns/{id}/receive` restocks as usual and opens no second refund. On a `defective` or `wrong_item` return the remedy is only decided at receipt, so the proof is recorded and nothing is refunded; if receipt then refunds, that refund is due the moment the goods or the proof came, whichever is earlier. This shop's policy is to refund on proof of sending, so a parcel lost on its way back is still refunded (the EU leaves the final risk to national law). Needs `receive:Return`, which carries a fresh-session requirement.
+ * @summary Record the buyer's proof of sending
+ */
+export const recordProofOfSendingPathIdMax = 64;
+export const recordProofOfSendingPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const RecordProofOfSendingParams = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(recordProofOfSendingPathIdMax)
+        .regex(recordProofOfSendingPathIdRegExp)
+});
+export const recordProofOfSendingBodyCarrierMax = 200;
+export const recordProofOfSendingBodyReferenceMax = 200;
+export const RecordProofOfSendingBody = zod.strictObject({
+    sentAt: zod.iso.datetime({ offset: true }),
+    carrier: zod.string().min(1).max(recordProofOfSendingBodyCarrierMax),
+    reference: zod.string().min(1).max(recordProofOfSendingBodyReferenceMax)
+});
+export const recordProofOfSendingResponseIdMax = 64;
+export const recordProofOfSendingResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const recordProofOfSendingResponseOrderIdMax = 64;
+export const recordProofOfSendingResponseOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const recordProofOfSendingResponseCurrencyOneMin = 3;
+export const recordProofOfSendingResponseCurrencyOneMax = 3;
+export const recordProofOfSendingResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
+export const recordProofOfSendingResponseFulfillmentOrderIdMax = 64;
+export const recordProofOfSendingResponseFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const recordProofOfSendingResponseNoteMax = 1000;
+export const recordProofOfSendingResponseLinesItemProductIdMax = 64;
+export const recordProofOfSendingResponseLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const recordProofOfSendingResponseLinesItemUnitPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
+export const recordProofOfSendingResponseLinesItemUnitPriceMax = 32;
+export const recordProofOfSendingResponseLinesItemRestockedMin = 0;
+export const recordProofOfSendingResponseDeclineMessageMax = 500;
+export const recordProofOfSendingResponseHandlingDeductionRegExp = new RegExp('^\\d+(\\.\\d+)?$');
+export const recordProofOfSendingResponseHandlingDeductionMax = 32;
+export const recordProofOfSendingResponseRefundAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
+export const recordProofOfSendingResponseRefundAmountMax = 32;
+export const recordProofOfSendingResponseProofCarrierMax = 200;
+export const recordProofOfSendingResponseProofReferenceMax = 200;
+export const RecordProofOfSendingResponse = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(recordProofOfSendingResponseIdMax)
+        .regex(recordProofOfSendingResponseIdRegExp),
+    orderId: zod
+        .string()
+        .min(1)
+        .max(recordProofOfSendingResponseOrderIdMax)
+        .regex(recordProofOfSendingResponseOrderIdRegExp),
+    orderNumber: zod.string(),
+    currency: zod
+        .string()
+        .min(recordProofOfSendingResponseCurrencyOneMin)
+        .max(recordProofOfSendingResponseCurrencyOneMax)
+        .regex(recordProofOfSendingResponseCurrencyOneRegExp),
+    status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled']),
+    reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
+    kind: zod.enum(['return', 'cancellation']),
+    fulfillmentOrderId: zod
+        .string()
+        .min(1)
+        .max(recordProofOfSendingResponseFulfillmentOrderIdMax)
+        .regex(recordProofOfSendingResponseFulfillmentOrderIdRegExp)
+        .optional(),
+    note: zod.string().max(recordProofOfSendingResponseNoteMax).optional(),
+    lines: zod.array(
+        zod.strictObject({
+            productId: zod
+                .string()
+                .min(1)
+                .max(recordProofOfSendingResponseLinesItemProductIdMax)
+                .regex(recordProofOfSendingResponseLinesItemProductIdRegExp),
+            quantity: zod.number().min(1),
+            title: zod.string(),
+            unitPrice: zod
+                .stringFormat('decimal', recordProofOfSendingResponseLinesItemUnitPriceRegExp)
+                .max(recordProofOfSendingResponseLinesItemUnitPriceMax),
+            restocked: zod
+                .number()
+                .min(recordProofOfSendingResponseLinesItemRestockedMin)
+                .optional()
+        })
+    ),
+    returnPostage: zod.enum(['consumer', 'shop']),
+    requestedAt: zod.iso.datetime({ offset: true }),
+    statedVia: zod.enum(['online', 'phone', 'email', 'letter', 'other']).optional(),
+    openedBy: zod.enum(['buyer', 'staff']),
+    policyExceptions: zod.array(zod.enum(['window_closed', 'excluded_goods'])),
+    declineReason: zod
+        .enum(['return_period_ended', 'not_returnable', 'no_defect_found', 'other'])
+        .optional(),
+    declineMessage: zod.string().max(recordProofOfSendingResponseDeclineMessageMax).optional(),
+    decidedAt: zod.iso.datetime({ offset: true }).optional(),
+    preferredRemedy: zod.enum(['refund', 'replace', 'repair']).optional(),
+    receivedAt: zod.iso.datetime({ offset: true }).optional(),
+    remedy: zod.enum(['refund', 'replace', 'repair']).optional(),
+    handlingDeduction: zod
+        .stringFormat('decimal', recordProofOfSendingResponseHandlingDeductionRegExp)
+        .max(recordProofOfSendingResponseHandlingDeductionMax)
+        .optional(),
+    refundAmount: zod
+        .stringFormat('decimal', recordProofOfSendingResponseRefundAmountRegExp)
+        .max(recordProofOfSendingResponseRefundAmountMax)
+        .optional(),
+    proofOfSendingAt: zod.iso.datetime({ offset: true }).optional(),
+    proofCarrier: zod.string().max(recordProofOfSendingResponseProofCarrierMax).optional(),
+    proofReference: zod.string().max(recordProofOfSendingResponseProofReferenceMax).optional(),
+    closedAt: zod.iso.datetime({ offset: true }).optional(),
+    canceledAt: zod.iso.datetime({ offset: true }).optional(),
+    actions: zod.strictObject({
+        approve: zod.boolean(),
+        decline: zod.boolean(),
+        receive: zod.boolean(),
+        recordProof: zod.boolean(),
         close: zod.boolean(),
         cancel: zod.boolean()
     }),
@@ -24775,7 +24952,7 @@ export const ListNotificationsResponse = zod.strictObject({
                     .max(listNotificationsResponseItemsItemOnenineIdMax)
                     .regex(listNotificationsResponseItemsItemOnenineIdRegExp),
                 audience: zod.enum(['own', 'staff']),
-                code: zod.enum(['shop-tasks.staff.withdrawals-awaiting-goods']),
+                code: zod.enum(['shop-tasks.staff.returns-awaiting-goods']),
                 params: zod.strictObject({
                     count: zod.number().min(1),
                     work: zod.string()
@@ -25401,7 +25578,7 @@ export const GetNotificationByIdResponse = zod.union([
             .max(getNotificationByIdResponseOnenineIdMax)
             .regex(getNotificationByIdResponseOnenineIdRegExp),
         audience: zod.enum(['own', 'staff']),
-        code: zod.enum(['shop-tasks.staff.withdrawals-awaiting-goods']),
+        code: zod.enum(['shop-tasks.staff.returns-awaiting-goods']),
         params: zod.strictObject({
             count: zod.number().min(1),
             work: zod.string()

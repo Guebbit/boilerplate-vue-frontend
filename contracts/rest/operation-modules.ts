@@ -189,6 +189,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     receiveReturn: 'returns',
     receiveStock: 'inventory',
     recordOrderPayment: 'payments',
+    recordProofOfSending: 'returns',
     refreshToken: 'account',
     regenerateBackupCodes: 'account',
     releaseFulfillmentOrder: 'delivery',

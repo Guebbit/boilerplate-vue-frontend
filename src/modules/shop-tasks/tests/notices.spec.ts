@@ -336,7 +336,7 @@ describe('a digest summary for staff', () => {
         'shop-tasks.staff.transfers-due',
         'shop-tasks.staff.preorders-late',
         'shop-tasks.staff.delivery-holds-open',
-        'shop-tasks.staff.withdrawals-awaiting-goods',
+        'shop-tasks.staff.returns-awaiting-goods',
         'shop-tasks.staff.returns-undecided',
         'shop-tasks.staff.low-stock',
         'shop-tasks.staff.unshipped',

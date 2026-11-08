@@ -142,6 +142,8 @@
         "attention-exceeds-by": "Over by {amount}",
         "attention-kind-manual_refund_owed": "Money to hand back outside the system",
         "attention-deadline-left": "Last day to pay this back | {count} day left to pay this back | {count} days left to pay this back",
+        "attention-rule-withdrawal": "Legal refund deadline (withdrawal): {date}",
+        "attention-rule-faulty": "Legal refund deadline (faulty item): refund now",
         "attention-deadline-over": "Pay-back deadline passed {count} day ago | Pay-back deadline passed {count} days ago",
         "attention-hint": "Only problems still recorded on a payment or an order. A fixed one disappears on the next read.",
         "button-reload": "Reload",
