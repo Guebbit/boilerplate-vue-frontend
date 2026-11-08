@@ -12168,7 +12168,7 @@ export const listPreorderLevels = (
 };
 
 /**
- * A page of the ledger, newest first — one row per counter change, with both deltas and the reason attached. Every row was written by the same call that moved the counter, so the ledger cannot have gaps. Paged rather than capped, and `meta.totalItems` counts everything matching the filters — this is the record an audit works through, and a read that returned only the newest rows would misreport history as complete.
+ * A page of the ledger, newest first — one row per counter change, with every counter delta and the reason attached. Every row was written by the same call that moved the counter, so the ledger cannot have gaps. Paged rather than capped, and `meta.totalItems` counts everything matching the filters — this is the record an audit works through, and a read that returned only the newest rows would misreport history as complete.
  * @summary List stock movements
  */
 export const listStockMovements = (
