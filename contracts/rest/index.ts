@@ -98,9 +98,9 @@ export type NonNegativeDecimalAmount = string;
 export type Email = string;
 
 /**
- * BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET /locales`.
+ * BCP 47 language tag, e.g. `en` or `pt-BR`. Any casing is accepted and compared case-blind; the API stores and returns the canonical spelling (`pt-BR`, `zh-Hant-TW`). Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET /locales`.
  * @maxLength 35
- * @pattern ^[a-z]{2}(-[A-Za-z0-9]+)*$
+ * @pattern ^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$
  */
 export type Locale = string;
 
@@ -615,9 +615,9 @@ export interface Language {
     id?: Id;
     tag: Locale;
     /**
-     * The ISO 639-1 code at the front of `tag` — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.
+     * The ISO 639 language code at the front of `tag` (two or three letters, lower-case) — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.
      * Derived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.
-     * @pattern ^[a-z]{2}$
+     * @pattern ^[a-z]{2,3}$
      */
     baseLanguage: string;
     /** English name, for an admin list. */

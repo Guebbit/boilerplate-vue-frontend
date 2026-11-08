@@ -226,6 +226,35 @@ describe('localeChoice', () => {
         });
     });
 
+    it('redirects a supported tag in another casing to its canonical spelling, not to the default', () => {
+        i18nState.supportedLanguages = ['en', 'pt-BR'];
+        i18nState.defaultLocale = 'en';
+        return localeChoice(
+            routeTo({
+                name: 'products',
+                params: { locale: 'pt-br', id: '42' },
+                query: { page: '2' }
+            })
+        ).then((result) => {
+            expect(result).toEqual({
+                name: 'products',
+                params: { locale: 'pt-BR', id: '42' },
+                query: { page: '2' }
+            });
+            // The redirect is the only effect: the language is activated on the canonical visit.
+            expect(changeLanguageMock).not.toHaveBeenCalled();
+        });
+    });
+
+    it('lets the canonical spelling through, so the redirect cannot loop', () => {
+        i18nState.supportedLanguages = ['en', 'pt-BR'];
+        i18nState.loadedLanguages = ['pt-BR'];
+        i18nState.currentLocale = 'pt-BR';
+        return localeChoice(routeTo({ params: { locale: 'pt-BR' } })).then((result) => {
+            expect(result).toBe(true);
+        });
+    });
+
     it('redirects when the route carries no locale at all', () => {
         i18nState.defaultLocale = 'it';
         return localeChoice(routeTo({ name: 'home', params: {} })).then((result) => {

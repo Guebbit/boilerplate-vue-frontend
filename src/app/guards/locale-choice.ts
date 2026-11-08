@@ -2,7 +2,8 @@
  * @module
  * Router guard that keeps the active i18n locale in sync with the `:locale` route param —
  * loading the bundled dictionary plus any remote overrides on first use of a locale, and
- * redirecting to the default locale when the param is missing or unsupported. A cache that holds
+ * redirecting when the param is missing, unsupported, or a supported tag in another casing (the
+ * canonical spelling is the one URL: `/pt-br/` goes to `/pt-BR/`). A cache that holds
  * server text is keyed on the active locale (`dependsOn` in the store), so a switch here needs no
  * cleanup step of its own.
  */
@@ -57,6 +58,37 @@ export const fetchLanguageApi = (locale: string): Promise<[string, TranslationDi
 };
 
 /**
+ * The canonical BCP 47 spelling of a tag (`pt-br` -> `pt-BR`), or the tag as written when it is
+ * malformed. The backend canonicalises with the same `Intl` call, so both sides agree on the one
+ * spelling a language has.
+ *
+ * @param tag - a tag in any casing
+ */
+const canonicalTag = (tag: string): string => {
+    // Intl.getCanonicalLocales throws a RangeError on a malformed tag and has no non-throwing
+    // form; the tag as written is exactly as good as a pre-check would have produced.
+    // https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Intl/getCanonicalLocales
+    // eslint-disable-next-line no-restricted-syntax -- see above, no non-throwing check exists
+    try {
+        return Intl.getCanonicalLocales(tag).at(0) ?? tag;
+    } catch {
+        return tag;
+    }
+};
+
+/**
+ * The supported language a URL segment names, in the spelling the list holds it in. Case-blind:
+ * BCP 47 tags compare that way, and only the canonical spelling is the address.
+ *
+ * @param tag - the `:locale` segment as the visitor typed it
+ * @returns the supported spelling, or `undefined` when no supported language matches
+ */
+const supportedSpellingOf = (tag: string): string | undefined => {
+    const wanted = canonicalTag(tag);
+    return supportedLanguages.find((candidate) => canonicalTag(candidate) === wanted);
+};
+
+/**
  * The most recently REQUESTED locale, across every call to this guard.
  *
  * Two navigations close together (e.g. a user double-clicking two language options) each start
@@ -78,20 +110,37 @@ const activateIfLatest = (locale: string): Promise<unknown> =>
     latestRequestedLocale === locale ? changeLanguage(locale) : Promise.resolve();
 
 /**
+ * The same route and query under another locale.
+ *
+ * @param to - the route being navigated to
+ * @param locale - the locale the address should carry
+ */
+const redirectTo = (to: RouteLocationNormalized, locale: string): RouteLocationRaw => ({
+    name: to.name as string,
+    params: { ...to.params, locale },
+    query: to.query
+});
+
+/**
  * Router guard (registered on `beforeResolve`) that keeps the active i18n
  * language in sync with the `:locale` route param.
  *
  * Returns a value the router acts on (Vue Router 4 style) instead of calling
  * `next`:
  * - `true`  → allow the navigation to proceed
- * - a route location → redirect (used to inject the default locale)
+ * - a route location → redirect (used to inject the default locale, or the canonical casing)
  *
  * @param to - the target route being navigated to
- * @returns `true` to proceed, or a redirect location to force the default locale
+ * @returns `true` to proceed, or a redirect location to the default or the canonical locale
  */
 export const localeChoice = (to: RouteLocationNormalized): Promise<true | RouteLocationRaw> => {
     // Locale segment coming from the URL (may be undefined on locale-less routes)
-    const locale = to.params.locale as string;
+    const requested = to.params.locale as string;
+
+    // A supported tag in another casing (`/pt-br/`) is the same language at the wrong address:
+    // send it to the canonical one rather than to the default language.
+    const locale = supportedSpellingOf(requested) ?? requested;
+    if (locale !== requested) return Promise.resolve(redirectTo(to, locale));
 
     // Recorded before any async work starts, so a slower CONCURRENT chain for an earlier
     // navigation can tell it has been superseded — see `activateIfLatest`.
@@ -118,12 +167,5 @@ export const localeChoice = (to: RouteLocationNormalized): Promise<true | RouteL
     // browser/default locale injected into the params.
     //
     // `Promise.resolve` rather than a bare object: the guard is declared to return a promise.
-    return Promise.resolve({
-        name: to.name as string,
-        params: {
-            ...to.params,
-            locale: getDefaultLocale()
-        },
-        query: to.query
-    });
+    return Promise.resolve(redirectTo(to, getDefaultLocale()));
 };

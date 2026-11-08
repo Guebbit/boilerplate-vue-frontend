@@ -165,16 +165,18 @@ export const GetSecurityTxtResponse = zod.string();
 export const listLocalesResponseLocalesItemIdMax = 64;
 export const listLocalesResponseLocalesItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listLocalesResponseLocalesItemTagMax = 35;
-export const listLocalesResponseLocalesItemTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const listLocalesResponseLocalesItemBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const listLocalesResponseLocalesItemTagRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
+export const listLocalesResponseLocalesItemBaseLanguageRegExp = new RegExp('^[a-z]{2,3}$');
 export const listLocalesResponseLocalesItemAppsItemMax = 64;
 export const listLocalesResponseLocalesItemAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const listLocalesResponseLocalesItemEntryCountMin = 0;
 export const listLocalesResponseLocalesItemRevisionMin = 0;
 export const listLocalesResponseDefaultMax = 35;
-export const listLocalesResponseDefaultRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const listLocalesResponseDefaultRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const listLocalesResponseFallbackMax = 35;
-export const listLocalesResponseFallbackRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const listLocalesResponseFallbackRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const ListLocalesResponse = zod.strictObject({
     locales: zod.array(
         zod.strictObject({
@@ -235,7 +237,7 @@ export const ListLocalesResponse = zod.strictObject({
  * @summary Add a language
  */
 export const createLocaleBodyTagMax = 35;
-export const createLocaleBodyTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const createLocaleBodyTagRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const createLocaleBodyNameMax = 100;
 export const createLocaleBodyNativeNameMax = 100;
 export const createLocaleBodyActiveDefault = true;
@@ -249,8 +251,8 @@ export const CreateLocaleBody = zod.strictObject({
 export const createLocaleResponseIdMax = 64;
 export const createLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createLocaleResponseTagMax = 35;
-export const createLocaleResponseTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const createLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const createLocaleResponseTagRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const createLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2,3}$');
 export const createLocaleResponseAppsItemMax = 64;
 export const createLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const createLocaleResponseEntryCountMin = 0;
@@ -334,15 +336,15 @@ export const ListLocaleAppsResponse = zod.strictObject({
  * @summary Read a language
  */
 export const getLocalePathLocaleMax = 35;
-export const getLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getLocalePathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const GetLocaleParams = zod.strictObject({
     locale: zod.string().max(getLocalePathLocaleMax).regex(getLocalePathLocaleRegExp)
 });
 export const getLocaleResponseIdMax = 64;
 export const getLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getLocaleResponseTagMax = 35;
-export const getLocaleResponseTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const getLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const getLocaleResponseTagRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const getLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2,3}$');
 export const getLocaleResponseAppsItemMax = 64;
 export const getLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const getLocaleResponseEntryCountMin = 0;
@@ -388,7 +390,7 @@ export const GetLocaleResponse = zod.strictObject({
  * @summary Replace a language
  */
 export const replaceLocalePathLocaleMax = 35;
-export const replaceLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceLocalePathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const ReplaceLocaleParams = zod.strictObject({
     locale: zod.string().max(replaceLocalePathLocaleMax).regex(replaceLocalePathLocaleRegExp)
 });
@@ -402,8 +404,8 @@ export const ReplaceLocaleBody = zod.strictObject({
 export const replaceLocaleResponseIdMax = 64;
 export const replaceLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const replaceLocaleResponseTagMax = 35;
-export const replaceLocaleResponseTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const replaceLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const replaceLocaleResponseTagRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const replaceLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2,3}$');
 export const replaceLocaleResponseAppsItemMax = 64;
 export const replaceLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const replaceLocaleResponseEntryCountMin = 0;
@@ -454,7 +456,7 @@ export const ReplaceLocaleResponse = zod.strictObject({
  * @summary Edit a language
  */
 export const updateLocalePathLocaleMax = 35;
-export const updateLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateLocalePathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const UpdateLocaleParams = zod.strictObject({
     locale: zod.string().max(updateLocalePathLocaleMax).regex(updateLocalePathLocaleRegExp)
 });
@@ -468,8 +470,8 @@ export const UpdateLocaleBody = zod.strictObject({
 export const updateLocaleResponseIdMax = 64;
 export const updateLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const updateLocaleResponseTagMax = 35;
-export const updateLocaleResponseTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const updateLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const updateLocaleResponseTagRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const updateLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2,3}$');
 export const updateLocaleResponseAppsItemMax = 64;
 export const updateLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const updateLocaleResponseEntryCountMin = 0;
@@ -519,7 +521,7 @@ export const UpdateLocaleResponse = zod.strictObject({
  * @summary Remove a language
  */
 export const deleteLocalePathLocaleMax = 35;
-export const deleteLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const deleteLocalePathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const DeleteLocaleParams = zod.strictObject({
     locale: zod.string().max(deleteLocalePathLocaleMax).regex(deleteLocalePathLocaleRegExp)
 });
@@ -536,7 +538,9 @@ export const DeleteLocaleResponse = zod.void();
  * @summary API message dictionary
  */
 export const getLocaleDictionaryPathLocaleMax = 35;
-export const getLocaleDictionaryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getLocaleDictionaryPathLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const GetLocaleDictionaryParams = zod.strictObject({
     locale: zod
         .string()
@@ -544,7 +548,9 @@ export const GetLocaleDictionaryParams = zod.strictObject({
         .regex(getLocaleDictionaryPathLocaleRegExp)
 });
 export const getLocaleDictionaryResponseLocaleMax = 35;
-export const getLocaleDictionaryResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getLocaleDictionaryResponseLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const GetLocaleDictionaryResponse = zod.strictObject({
     locale: zod
         .string()
@@ -581,7 +587,7 @@ export const GetLocaleDictionaryResponse = zod.strictObject({
  * @summary Client message dictionary
  */
 export const getLocaleMessagesPathLocaleMax = 35;
-export const getLocaleMessagesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getLocaleMessagesPathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const GetLocaleMessagesParams = zod.strictObject({
     locale: zod
         .string()
@@ -599,7 +605,9 @@ export const GetLocaleMessagesQueryParams = zod.strictObject({
         .optional()
 });
 export const getLocaleMessagesResponseLocaleMax = 35;
-export const getLocaleMessagesResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getLocaleMessagesResponseLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const getLocaleMessagesResponseRevisionMin = 0;
 export const GetLocaleMessagesResponse = zod.strictObject({
     locale: zod
@@ -620,7 +628,7 @@ export const GetLocaleMessagesResponse = zod.strictObject({
  * @summary List translation entries
  */
 export const listLocaleEntriesPathLocaleMax = 35;
-export const listLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const listLocaleEntriesPathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const ListLocaleEntriesParams = zod.strictObject({
     locale: zod
         .string()
@@ -649,7 +657,7 @@ export const listLocaleEntriesResponseItemsItemIdMax = 64;
 export const listLocaleEntriesResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listLocaleEntriesResponseItemsItemLocaleMax = 35;
 export const listLocaleEntriesResponseItemsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const listLocaleEntriesResponseItemsItemAppMax = 64;
 export const listLocaleEntriesResponseItemsItemAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
@@ -708,7 +716,9 @@ export const ListLocaleEntriesResponse = zod.strictObject({
  * @summary List one app's translation entries
  */
 export const listAppLocaleEntriesPathLocaleMax = 35;
-export const listAppLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const listAppLocaleEntriesPathLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const listAppLocaleEntriesPathAppMax = 64;
 export const listAppLocaleEntriesPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const ListAppLocaleEntriesParams = zod.strictObject({
@@ -744,7 +754,7 @@ export const listAppLocaleEntriesResponseItemsItemIdMax = 64;
 export const listAppLocaleEntriesResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listAppLocaleEntriesResponseItemsItemLocaleMax = 35;
 export const listAppLocaleEntriesResponseItemsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const listAppLocaleEntriesResponseItemsItemAppMax = 64;
 export const listAppLocaleEntriesResponseItemsItemAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
@@ -799,7 +809,7 @@ export const ListAppLocaleEntriesResponse = zod.strictObject({
  * @summary Add one translation entry
  */
 export const createLocaleEntryPathLocaleMax = 35;
-export const createLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const createLocaleEntryPathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const createLocaleEntryPathAppMax = 64;
 export const createLocaleEntryPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const CreateLocaleEntryParams = zod.strictObject({
@@ -818,7 +828,9 @@ export const CreateLocaleEntryBody = zod.strictObject({
 export const createLocaleEntryResponseIdMax = 64;
 export const createLocaleEntryResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createLocaleEntryResponseLocaleMax = 35;
-export const createLocaleEntryResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const createLocaleEntryResponseLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const createLocaleEntryResponseAppMax = 64;
 export const createLocaleEntryResponseAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const CreateLocaleEntryResponse = zod.strictObject({
@@ -857,7 +869,9 @@ export const CreateLocaleEntryResponse = zod.strictObject({
  * @summary Replace every entry
  */
 export const replaceLocaleEntriesPathLocaleMax = 35;
-export const replaceLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceLocaleEntriesPathLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const replaceLocaleEntriesPathAppMax = 64;
 export const replaceLocaleEntriesPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const ReplaceLocaleEntriesParams = zod.strictObject({
@@ -895,7 +909,9 @@ export const ReplaceLocaleEntriesResponse = zod.strictObject({
  * @summary Merge entries
  */
 export const updateLocaleEntriesPathLocaleMax = 35;
-export const updateLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateLocaleEntriesPathLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const updateLocaleEntriesPathAppMax = 64;
 export const updateLocaleEntriesPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const UpdateLocaleEntriesParams = zod.strictObject({
@@ -934,7 +950,7 @@ export const UpdateLocaleEntriesResponse = zod.strictObject({
  * @summary Get one translation entry
  */
 export const getLocaleEntryPathLocaleMax = 35;
-export const getLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getLocaleEntryPathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const getLocaleEntryPathAppMax = 64;
 export const getLocaleEntryPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const getLocaleEntryPathEntryIdMax = 64;
@@ -951,7 +967,7 @@ export const GetLocaleEntryParams = zod.strictObject({
 export const getLocaleEntryResponseIdMax = 64;
 export const getLocaleEntryResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getLocaleEntryResponseLocaleMax = 35;
-export const getLocaleEntryResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getLocaleEntryResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const getLocaleEntryResponseAppMax = 64;
 export const getLocaleEntryResponseAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const GetLocaleEntryResponse = zod.strictObject({
@@ -977,7 +993,7 @@ export const GetLocaleEntryResponse = zod.strictObject({
  * @summary Edit one translation entry
  */
 export const replaceLocaleEntryPathLocaleMax = 35;
-export const replaceLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceLocaleEntryPathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const replaceLocaleEntryPathAppMax = 64;
 export const replaceLocaleEntryPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const replaceLocaleEntryPathEntryIdMax = 64;
@@ -1005,7 +1021,9 @@ export const ReplaceLocaleEntryBody = zod.strictObject({
 export const replaceLocaleEntryResponseIdMax = 64;
 export const replaceLocaleEntryResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const replaceLocaleEntryResponseLocaleMax = 35;
-export const replaceLocaleEntryResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceLocaleEntryResponseLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const replaceLocaleEntryResponseAppMax = 64;
 export const replaceLocaleEntryResponseAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const ReplaceLocaleEntryResponse = zod.strictObject({
@@ -1033,7 +1051,7 @@ export const ReplaceLocaleEntryResponse = zod.strictObject({
  * @summary Remove one translation entry
  */
 export const deleteLocaleEntryPathLocaleMax = 35;
-export const deleteLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const deleteLocaleEntryPathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const deleteLocaleEntryPathAppMax = 64;
 export const deleteLocaleEntryPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const deleteLocaleEntryPathEntryIdMax = 64;
@@ -1080,7 +1098,7 @@ export const getEntityTranslationsResponseTranslationsItemEntityIdRegExp = new R
 );
 export const getEntityTranslationsResponseTranslationsItemLocaleMax = 35;
 export const getEntityTranslationsResponseTranslationsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const getEntityTranslationsResponseTranslationsItemTranslatedByOneMax = 64;
 export const getEntityTranslationsResponseTranslationsItemTranslatedByOneRegExp = new RegExp(
@@ -1189,7 +1207,7 @@ export const replaceEntityTranslationsResponseTranslationsItemEntityIdRegExp = n
 );
 export const replaceEntityTranslationsResponseTranslationsItemLocaleMax = 35;
 export const replaceEntityTranslationsResponseTranslationsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const replaceEntityTranslationsResponseTranslationsItemTranslatedByOneMax = 64;
 export const replaceEntityTranslationsResponseTranslationsItemTranslatedByOneRegExp = new RegExp(
@@ -1304,7 +1322,7 @@ export const updateEntityTranslationsResponseTranslationsItemEntityIdRegExp = ne
 );
 export const updateEntityTranslationsResponseTranslationsItemLocaleMax = 35;
 export const updateEntityTranslationsResponseTranslationsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const updateEntityTranslationsResponseTranslationsItemTranslatedByOneMax = 64;
 export const updateEntityTranslationsResponseTranslationsItemTranslatedByOneRegExp = new RegExp(
@@ -1794,7 +1812,7 @@ export const getAccountResponseIdMax = 64;
 export const getAccountResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getAccountResponseEmailMax = 254;
 export const getAccountResponseLocaleMax = 35;
-export const getAccountResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getAccountResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const getAccountResponsePurchaseHoldNoteMax = 500;
 export const GetAccountResponse = zod.strictObject({
     id: zod.string().min(1).max(getAccountResponseIdMax).regex(getAccountResponseIdRegExp),
@@ -1870,7 +1888,7 @@ export const replaceAccountBodyEmailMax = 254;
 export const replaceAccountBodyUsernameMin = 3;
 export const replaceAccountBodyUsernameMax = 50;
 export const replaceAccountBodyLocaleOneMax = 35;
-export const replaceAccountBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceAccountBodyLocaleOneRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const replaceAccountBodyPhoneMax = 32;
 export const replaceAccountBodyWebsiteMax = 2048;
 export const ReplaceAccountBody = zod.strictObject({
@@ -1894,7 +1912,7 @@ export const replaceAccountResponseIdMax = 64;
 export const replaceAccountResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const replaceAccountResponseEmailMax = 254;
 export const replaceAccountResponseLocaleMax = 35;
-export const replaceAccountResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceAccountResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const replaceAccountResponsePurchaseHoldNoteMax = 500;
 export const ReplaceAccountResponse = zod.strictObject({
     id: zod.string().min(1).max(replaceAccountResponseIdMax).regex(replaceAccountResponseIdRegExp),
@@ -1942,7 +1960,7 @@ export const updateAccountBodyEmailMax = 254;
 export const updateAccountBodyUsernameMin = 3;
 export const updateAccountBodyUsernameMax = 50;
 export const updateAccountBodyLocaleOneMax = 35;
-export const updateAccountBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateAccountBodyLocaleOneRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const updateAccountBodyPhoneMax = 32;
 export const updateAccountBodyWebsiteMax = 2048;
 export const UpdateAccountBody = zod.strictObject({
@@ -1967,7 +1985,7 @@ export const updateAccountResponseIdMax = 64;
 export const updateAccountResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const updateAccountResponseEmailMax = 254;
 export const updateAccountResponseLocaleMax = 35;
-export const updateAccountResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateAccountResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const updateAccountResponsePurchaseHoldNoteMax = 500;
 export const UpdateAccountResponse = zod.strictObject({
     id: zod.string().min(1).max(updateAccountResponseIdMax).regex(updateAccountResponseIdRegExp),
@@ -2049,7 +2067,9 @@ export const changePasswordResponseAccountIdMax = 64;
 export const changePasswordResponseAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const changePasswordResponseAccountEmailMax = 254;
 export const changePasswordResponseAccountLocaleMax = 35;
-export const changePasswordResponseAccountLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const changePasswordResponseAccountLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const changePasswordResponseAccountPurchaseHoldNoteMax = 500;
 export const ChangePasswordResponse = zod.strictObject({
     token: zod.string().optional(),
@@ -2171,7 +2191,7 @@ export const reauthResponseAccountIdMax = 64;
 export const reauthResponseAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const reauthResponseAccountEmailMax = 254;
 export const reauthResponseAccountLocaleMax = 35;
-export const reauthResponseAccountLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const reauthResponseAccountLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const reauthResponseAccountPurchaseHoldNoteMax = 500;
 export const ReauthResponse = zod.strictObject({
     token: zod.string().optional(),
@@ -2654,7 +2674,9 @@ export const loginResponseOneAccountIdMax = 64;
 export const loginResponseOneAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const loginResponseOneAccountEmailMax = 254;
 export const loginResponseOneAccountLocaleMax = 35;
-export const loginResponseOneAccountLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const loginResponseOneAccountLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const loginResponseOneAccountPurchaseHoldNoteMax = 500;
 export const loginResponseTwoMethodsItemResendAfterMin = 0;
 export const LoginResponse = zod.union([
@@ -2771,7 +2793,9 @@ export const loginRestoreResponseAccountIdMax = 64;
 export const loginRestoreResponseAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const loginRestoreResponseAccountEmailMax = 254;
 export const loginRestoreResponseAccountLocaleMax = 35;
-export const loginRestoreResponseAccountLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const loginRestoreResponseAccountLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const loginRestoreResponseAccountPurchaseHoldNoteMax = 500;
 export const LoginRestoreResponse = zod.strictObject({
     token: zod.string().optional(),
@@ -2886,7 +2910,7 @@ export const signupResponseIdMax = 64;
 export const signupResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const signupResponseEmailMax = 254;
 export const signupResponseLocaleMax = 35;
-export const signupResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const signupResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const signupResponsePurchaseHoldNoteMax = 500;
 export const SignupResponse = zod.strictObject({
     id: zod.string().min(1).max(signupResponseIdMax).regex(signupResponseIdRegExp),
@@ -3040,7 +3064,7 @@ export const downloadAccountExportResponseProfileIdRegExp = new RegExp('^[0-9A-Z
 export const downloadAccountExportResponseProfileEmailMax = 254;
 export const downloadAccountExportResponseProfileLocaleMax = 35;
 export const downloadAccountExportResponseProfileLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const downloadAccountExportResponseProfilePurchaseHoldNoteMax = 500;
 export const downloadAccountExportResponseAuditLogItemActionRegExp = new RegExp(
@@ -3089,7 +3113,7 @@ export const downloadAccountExportResponseOrdersItemItemsItemProductTaxRateMin =
 export const downloadAccountExportResponseOrdersItemItemsItemProductTaxRateMax = 1;
 export const downloadAccountExportResponseOrdersItemItemsItemLocaleMax = 35;
 export const downloadAccountExportResponseOrdersItemItemsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const downloadAccountExportResponseOrdersItemItemsItemTaxAmountRegExp = new RegExp(
     '^\\d+(\\.\\d+)?$'
@@ -6089,7 +6113,7 @@ export const loginTwoFactorResponseOneAccountIdRegExp = new RegExp('^[0-9A-Za-z_
 export const loginTwoFactorResponseOneAccountEmailMax = 254;
 export const loginTwoFactorResponseOneAccountLocaleMax = 35;
 export const loginTwoFactorResponseOneAccountLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const loginTwoFactorResponseOneAccountPurchaseHoldNoteMax = 500;
 export const LoginTwoFactorResponse = zod.union([
@@ -6299,7 +6323,9 @@ export const disableTwoFactorResponseAccountIdMax = 64;
 export const disableTwoFactorResponseAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const disableTwoFactorResponseAccountEmailMax = 254;
 export const disableTwoFactorResponseAccountLocaleMax = 35;
-export const disableTwoFactorResponseAccountLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const disableTwoFactorResponseAccountLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const disableTwoFactorResponseAccountPurchaseHoldNoteMax = 500;
 export const DisableTwoFactorResponse = zod.strictObject({
     token: zod.string().optional(),
@@ -6393,7 +6419,7 @@ export const removeTwoFactorMethodResponseAccountIdRegExp = new RegExp('^[0-9A-Z
 export const removeTwoFactorMethodResponseAccountEmailMax = 254;
 export const removeTwoFactorMethodResponseAccountLocaleMax = 35;
 export const removeTwoFactorMethodResponseAccountLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const removeTwoFactorMethodResponseAccountPurchaseHoldNoteMax = 500;
 export const RemoveTwoFactorMethodResponse = zod.strictObject({
@@ -6606,7 +6632,9 @@ export const listUsersResponseItemsItemIdMax = 64;
 export const listUsersResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listUsersResponseItemsItemEmailMax = 254;
 export const listUsersResponseItemsItemLocaleMax = 35;
-export const listUsersResponseItemsItemLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const listUsersResponseItemsItemLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const listUsersResponseItemsItemPurchaseHoldNoteMax = 500;
 export const listUsersResponseMetaPageDefault = 1;
 export const listUsersResponseMetaPageMax = 10000;
@@ -6696,7 +6724,7 @@ export const createUserBodyUsernameMax = 50;
 export const createUserBodyRoleMax = 64;
 export const createUserBodyActiveDefault = true;
 export const createUserBodyLocaleMax = 35;
-export const createUserBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const createUserBodyLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const CreateUserBody = zod.strictObject({
     email: zod.email().max(createUserBodyEmailMax),
     username: zod.string().min(createUserBodyUsernameMin).max(createUserBodyUsernameMax),
@@ -6708,7 +6736,7 @@ export const createUserResponseIdMax = 64;
 export const createUserResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createUserResponseEmailMax = 254;
 export const createUserResponseLocaleMax = 35;
-export const createUserResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const createUserResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const createUserResponsePurchaseHoldNoteMax = 500;
 export const CreateUserResponse = zod.strictObject({
     id: zod.string().min(1).max(createUserResponseIdMax).regex(createUserResponseIdRegExp),
@@ -6770,7 +6798,7 @@ export const getUserByIdResponseIdMax = 64;
 export const getUserByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getUserByIdResponseEmailMax = 254;
 export const getUserByIdResponseLocaleMax = 35;
-export const getUserByIdResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getUserByIdResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const getUserByIdResponsePurchaseHoldNoteMax = 500;
 export const GetUserByIdResponse = zod.strictObject({
     id: zod.string().min(1).max(getUserByIdResponseIdMax).regex(getUserByIdResponseIdRegExp),
@@ -6836,7 +6864,7 @@ export const replaceUserByIdBodyUsernameMin = 3;
 export const replaceUserByIdBodyUsernameMax = 50;
 export const replaceUserByIdBodyRoleMax = 64;
 export const replaceUserByIdBodyLocaleOneMax = 35;
-export const replaceUserByIdBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceUserByIdBodyLocaleOneRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const replaceUserByIdBodyPhoneMax = 32;
 export const replaceUserByIdBodyWebsiteMax = 2048;
 export const ReplaceUserByIdBody = zod.strictObject({
@@ -6859,7 +6887,9 @@ export const replaceUserByIdResponseIdMax = 64;
 export const replaceUserByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const replaceUserByIdResponseEmailMax = 254;
 export const replaceUserByIdResponseLocaleMax = 35;
-export const replaceUserByIdResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceUserByIdResponseLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const replaceUserByIdResponsePurchaseHoldNoteMax = 500;
 export const ReplaceUserByIdResponse = zod.strictObject({
     id: zod
@@ -6929,7 +6959,7 @@ export const updateUserByIdBodyUsernameMin = 3;
 export const updateUserByIdBodyUsernameMax = 50;
 export const updateUserByIdBodyRoleMax = 64;
 export const updateUserByIdBodyLocaleOneMax = 35;
-export const updateUserByIdBodyLocaleOneRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateUserByIdBodyLocaleOneRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const updateUserByIdBodyPhoneMax = 32;
 export const updateUserByIdBodyWebsiteMax = 2048;
 export const UpdateUserByIdBody = zod.strictObject({
@@ -6956,7 +6986,7 @@ export const updateUserByIdResponseIdMax = 64;
 export const updateUserByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const updateUserByIdResponseEmailMax = 254;
 export const updateUserByIdResponseLocaleMax = 35;
-export const updateUserByIdResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateUserByIdResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const updateUserByIdResponsePurchaseHoldNoteMax = 500;
 export const UpdateUserByIdResponse = zod.strictObject({
     id: zod.string().min(1).max(updateUserByIdResponseIdMax).regex(updateUserByIdResponseIdRegExp),
@@ -7036,7 +7066,9 @@ export const restoreUserByIdResponseIdMax = 64;
 export const restoreUserByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const restoreUserByIdResponseEmailMax = 254;
 export const restoreUserByIdResponseLocaleMax = 35;
-export const restoreUserByIdResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const restoreUserByIdResponseLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const restoreUserByIdResponsePurchaseHoldNoteMax = 500;
 export const RestoreUserByIdResponse = zod.strictObject({
     id: zod
@@ -7147,7 +7179,9 @@ export const searchUsersResponseItemsItemIdMax = 64;
 export const searchUsersResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const searchUsersResponseItemsItemEmailMax = 254;
 export const searchUsersResponseItemsItemLocaleMax = 35;
-export const searchUsersResponseItemsItemLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const searchUsersResponseItemsItemLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const searchUsersResponseItemsItemPurchaseHoldNoteMax = 500;
 export const searchUsersResponseMetaPageDefault = 1;
 export const searchUsersResponseMetaPageMax = 10000;
@@ -10104,7 +10138,9 @@ export const checkoutResponseItemsItemProductWeightMin = 0;
 export const checkoutResponseItemsItemProductTaxRateMin = 0;
 export const checkoutResponseItemsItemProductTaxRateMax = 1;
 export const checkoutResponseItemsItemLocaleMax = 35;
-export const checkoutResponseItemsItemLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const checkoutResponseItemsItemLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const checkoutResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const checkoutResponseItemsItemTaxAmountMax = 32;
 export const checkoutResponseItemsItemNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -10657,7 +10693,7 @@ export const listOrdersResponseItemsItemItemsItemProductTaxRateMin = 0;
 export const listOrdersResponseItemsItemItemsItemProductTaxRateMax = 1;
 export const listOrdersResponseItemsItemItemsItemLocaleMax = 35;
 export const listOrdersResponseItemsItemItemsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const listOrdersResponseItemsItemItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const listOrdersResponseItemsItemItemsItemTaxAmountMax = 32;
@@ -11015,7 +11051,9 @@ export const createOrderResponseItemsItemProductWeightMin = 0;
 export const createOrderResponseItemsItemProductTaxRateMin = 0;
 export const createOrderResponseItemsItemProductTaxRateMax = 1;
 export const createOrderResponseItemsItemLocaleMax = 35;
-export const createOrderResponseItemsItemLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const createOrderResponseItemsItemLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const createOrderResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const createOrderResponseItemsItemTaxAmountMax = 32;
 export const createOrderResponseItemsItemNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -11332,7 +11370,7 @@ export const searchOrdersResponseItemsItemItemsItemProductTaxRateMin = 0;
 export const searchOrdersResponseItemsItemItemsItemProductTaxRateMax = 1;
 export const searchOrdersResponseItemsItemItemsItemLocaleMax = 35;
 export const searchOrdersResponseItemsItemItemsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const searchOrdersResponseItemsItemItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const searchOrdersResponseItemsItemItemsItemTaxAmountMax = 32;
@@ -11665,7 +11703,9 @@ export const getOrderByIdResponseItemsItemProductWeightMin = 0;
 export const getOrderByIdResponseItemsItemProductTaxRateMin = 0;
 export const getOrderByIdResponseItemsItemProductTaxRateMax = 1;
 export const getOrderByIdResponseItemsItemLocaleMax = 35;
-export const getOrderByIdResponseItemsItemLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getOrderByIdResponseItemsItemLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const getOrderByIdResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const getOrderByIdResponseItemsItemTaxAmountMax = 32;
 export const getOrderByIdResponseItemsItemNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -11908,7 +11948,7 @@ export const replaceOrderByIdResponseItemsItemProductTaxRateMin = 0;
 export const replaceOrderByIdResponseItemsItemProductTaxRateMax = 1;
 export const replaceOrderByIdResponseItemsItemLocaleMax = 35;
 export const replaceOrderByIdResponseItemsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const replaceOrderByIdResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const replaceOrderByIdResponseItemsItemTaxAmountMax = 32;
@@ -12173,7 +12213,7 @@ export const updateOrderByIdResponseItemsItemProductTaxRateMin = 0;
 export const updateOrderByIdResponseItemsItemProductTaxRateMax = 1;
 export const updateOrderByIdResponseItemsItemLocaleMax = 35;
 export const updateOrderByIdResponseItemsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const updateOrderByIdResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const updateOrderByIdResponseItemsItemTaxAmountMax = 32;
@@ -12444,7 +12484,7 @@ export const restoreOrderByIdResponseItemsItemProductTaxRateMin = 0;
 export const restoreOrderByIdResponseItemsItemProductTaxRateMax = 1;
 export const restoreOrderByIdResponseItemsItemLocaleMax = 35;
 export const restoreOrderByIdResponseItemsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const restoreOrderByIdResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const restoreOrderByIdResponseItemsItemTaxAmountMax = 32;
@@ -12720,7 +12760,7 @@ export const cancelOrderByIdResponseItemsItemProductTaxRateMin = 0;
 export const cancelOrderByIdResponseItemsItemProductTaxRateMax = 1;
 export const cancelOrderByIdResponseItemsItemLocaleMax = 35;
 export const cancelOrderByIdResponseItemsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const cancelOrderByIdResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const cancelOrderByIdResponseItemsItemTaxAmountMax = 32;
@@ -12980,7 +13020,7 @@ export const overrideOrderStatusResponseItemsItemProductTaxRateMin = 0;
 export const overrideOrderStatusResponseItemsItemProductTaxRateMax = 1;
 export const overrideOrderStatusResponseItemsItemLocaleMax = 35;
 export const overrideOrderStatusResponseItemsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const overrideOrderStatusResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const overrideOrderStatusResponseItemsItemTaxAmountMax = 32;
@@ -13815,7 +13855,9 @@ export const processOrderResponseItemsItemProductWeightMin = 0;
 export const processOrderResponseItemsItemProductTaxRateMin = 0;
 export const processOrderResponseItemsItemProductTaxRateMax = 1;
 export const processOrderResponseItemsItemLocaleMax = 35;
-export const processOrderResponseItemsItemLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const processOrderResponseItemsItemLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const processOrderResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const processOrderResponseItemsItemTaxAmountMax = 32;
 export const processOrderResponseItemsItemNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -18326,15 +18368,15 @@ export const RevokeApiKeyResponse = zod.void();
  * @summary Switch a language on
  */
 export const activateLocalePathLocaleMax = 35;
-export const activateLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const activateLocalePathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const ActivateLocaleParams = zod.strictObject({
     locale: zod.string().max(activateLocalePathLocaleMax).regex(activateLocalePathLocaleRegExp)
 });
 export const activateLocaleResponseIdMax = 64;
 export const activateLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const activateLocaleResponseTagMax = 35;
-export const activateLocaleResponseTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const activateLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const activateLocaleResponseTagRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const activateLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2,3}$');
 export const activateLocaleResponseAppsItemMax = 64;
 export const activateLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const activateLocaleResponseEntryCountMin = 0;
@@ -18387,15 +18429,15 @@ export const ActivateLocaleResponse = zod.strictObject({
  * @summary Switch a language off
  */
 export const deactivateLocalePathLocaleMax = 35;
-export const deactivateLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const deactivateLocalePathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const DeactivateLocaleParams = zod.strictObject({
     locale: zod.string().max(deactivateLocalePathLocaleMax).regex(deactivateLocalePathLocaleRegExp)
 });
 export const deactivateLocaleResponseIdMax = 64;
 export const deactivateLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const deactivateLocaleResponseTagMax = 35;
-export const deactivateLocaleResponseTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const deactivateLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const deactivateLocaleResponseTagRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const deactivateLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2,3}$');
 export const deactivateLocaleResponseAppsItemMax = 64;
 export const deactivateLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const deactivateLocaleResponseEntryCountMin = 0;
@@ -18475,7 +18517,9 @@ export const setUserPurchaseHoldResponseIdMax = 64;
 export const setUserPurchaseHoldResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const setUserPurchaseHoldResponseEmailMax = 254;
 export const setUserPurchaseHoldResponseLocaleMax = 35;
-export const setUserPurchaseHoldResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const setUserPurchaseHoldResponseLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const setUserPurchaseHoldResponsePurchaseHoldNoteMax = 500;
 export const SetUserPurchaseHoldResponse = zod.strictObject({
     id: zod
@@ -18545,7 +18589,9 @@ export const liftUserPurchaseHoldResponseIdMax = 64;
 export const liftUserPurchaseHoldResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const liftUserPurchaseHoldResponseEmailMax = 254;
 export const liftUserPurchaseHoldResponseLocaleMax = 35;
-export const liftUserPurchaseHoldResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const liftUserPurchaseHoldResponseLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const liftUserPurchaseHoldResponsePurchaseHoldNoteMax = 500;
 export const LiftUserPurchaseHoldResponse = zod.strictObject({
     id: zod
@@ -18611,7 +18657,9 @@ export const activateUserByIdResponseIdMax = 64;
 export const activateUserByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const activateUserByIdResponseEmailMax = 254;
 export const activateUserByIdResponseLocaleMax = 35;
-export const activateUserByIdResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const activateUserByIdResponseLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const activateUserByIdResponsePurchaseHoldNoteMax = 500;
 export const ActivateUserByIdResponse = zod.strictObject({
     id: zod
@@ -18677,7 +18725,9 @@ export const deactivateUserByIdResponseIdMax = 64;
 export const deactivateUserByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const deactivateUserByIdResponseEmailMax = 254;
 export const deactivateUserByIdResponseLocaleMax = 35;
-export const deactivateUserByIdResponseLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const deactivateUserByIdResponseLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
 export const deactivateUserByIdResponsePurchaseHoldNoteMax = 500;
 export const DeactivateUserByIdResponse = zod.strictObject({
     id: zod
@@ -20754,7 +20804,7 @@ export const correctOrderShippingAddressResponseItemsItemProductTaxRateMin = 0;
 export const correctOrderShippingAddressResponseItemsItemProductTaxRateMax = 1;
 export const correctOrderShippingAddressResponseItemsItemLocaleMax = 35;
 export const correctOrderShippingAddressResponseItemsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
 export const correctOrderShippingAddressResponseItemsItemTaxAmountRegExp = new RegExp(
     '^\\d+(\\.\\d+)?$'

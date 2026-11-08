@@ -26,14 +26,18 @@ describe('localesLanguageSchema', () => {
     });
 
     /**
-     * The contract's own pattern, not a narrower copy: the API accepts script and numeric subtags
-     * and lowercases the tag it stores, so `zh-Hans`, `es-419` and `pt-br` are all valid.
+     * The contract's own pattern, not a narrower copy: the API accepts any casing, script and numeric
+     * subtags and three-letter languages, and stores the canonical spelling, so `zh-Hans`,
+     * `es-419`, `PT-BR` and `fil` are all valid.
      */
-    it.each(['zh-Hans', 'es-419', 'sr-Latn-RS', 'pt-br'])('accepts %o as a language tag', (tag) => {
-        expect(localesLanguageSchema.safeParse({ ...validLanguage, tag }).success).toBe(true);
-    });
+    it.each(['zh-Hans', 'es-419', 'sr-Latn-RS', 'pt-br', 'PT-BR', 'Pt-BR', 'fil'])(
+        'accepts %o as a language tag',
+        (tag) => {
+            expect(localesLanguageSchema.safeParse({ ...validLanguage, tag }).success).toBe(true);
+        }
+    );
 
-    it.each(['PT-BR', 'Pt-BR', 'por', 'p', 'pt_BR', 'pt-', '', `pt-${'a'.repeat(33)}`])(
+    it.each(['p', 'abcd', 'pt_BR', 'pt-', '', `pt-${'a'.repeat(33)}`])(
         'rejects %o as a language tag',
         (tag) => {
             expect(localesLanguageSchema.safeParse({ ...validLanguage, tag }).success).toBe(false);

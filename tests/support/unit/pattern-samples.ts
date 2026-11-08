@@ -15,7 +15,7 @@
  */
 const PATTERN_SAMPLES: Record<string, string> = {
     // Locale — BCP 47 language tag.
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$': 'it',
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$': 'it',
     // CountryCode — ISO 3166-1 alpha-2.
     '^[A-Z]{2}$': 'IT',
     // CurrencyCode — ISO 4217 alphabetic; the shop's own currency, so a payload also passes the
