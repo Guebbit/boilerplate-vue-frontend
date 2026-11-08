@@ -6,7 +6,7 @@
  * screens, and a direct address they have no business at — and each is let through, or turned
  * back to Home with a notice, exactly as their role says.
  *
- * What each role holds is `shared/authorization-roles.yaml` in the backend; this story proves the
+ * What each role holds is `shared/rules/authorization-roles.yaml` in the backend; this story proves the
  * UI honours it. The editor is the surprise worth pinning: Orders and Returns sit in the account
  * menu for everyone signed in, and show an editor only their own (none, here).
  */

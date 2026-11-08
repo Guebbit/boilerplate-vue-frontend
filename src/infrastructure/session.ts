@@ -94,7 +94,7 @@ type SessionAbility = MongoAbility<[PermissionAction, PermissionSubject]>;
 
 /**
  * The concrete actions a screen may ask about — generated from `actions:` in the backend's
- * `shared/authorization-keys.yaml`, which `sync:frontend` hands over. `manage` is deliberately
+ * `shared/authorization-keys.generated.yaml`, which `sync:frontend` hands over. `manage` is deliberately
  * absent: no key declares it and there is no wildcard to expand into one, so asking for it always
  * answers no. A screen asks for the action it actually performs.
  */
@@ -326,7 +326,7 @@ export const useSessionStore = defineStore('session', () => {
      * "what an admin can do", which is the duplicate this whole mechanism exists to delete.
      *
      * Asks BOTH abilities rather than picking one by subject: a subject is declared in exactly one
-     * scope (`shared/authorization-keys.yaml`), so at most one of them can ever answer yes, and
+     * scope (`shared/authorization-keys.generated.yaml`), so at most one of them can ever answer yes, and
      * the alternative is a hand-maintained subject-to-scope table in this repo that would drift
      * from the one in that file. The two rule sets stay separate objects — this asks them in turn,
      * it does not merge them, which is what keeps a tenant rule from satisfying a platform key.

@@ -7,7 +7,7 @@
  * storefront, and a product's German text, drafted while it was off, shows on the product page.
  * Last, the fallback `en` refuses to be deleted and the new language deletes.
  *
- * The editor holds every `locales.any.*` key (`shared/authorization-roles.yaml`), so this is
+ * The editor holds every `locales.any.*` key (`shared/rules/authorization-roles.yaml`), so this is
  * their story, not the admin's. An editor also READS inactive languages, which is why the
  * "not offered yet" check is made as a guest, not from the editor's own switcher.
  */
