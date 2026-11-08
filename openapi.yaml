@@ -9102,6 +9102,7 @@ paths:
           - IDEMPOTENCY_IN_FLIGHT
           - ORDER_NOT_PROCESSING
         "422":
+          - DELIVERY_LINES_INVALID
           - IDEMPOTENCY_KEY_MISMATCH
       security:
         - bearerAuth: []
