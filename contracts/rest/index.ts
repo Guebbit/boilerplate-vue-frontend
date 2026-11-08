@@ -12093,7 +12093,7 @@ export const receiveReturn = (
 };
 
 /**
- * The stock board — every product with its two counters and the availability derived from them. Admin; a customer sees `available` on the product itself. Answers the question a catalogue listing cannot, which is WHY something is unbuyable — nothing on the shelf, or everything on it already spoken for.
+ * The stock board — every product with its three counters and the availability derived from them. Admin; a customer sees `available` on the product itself. Answers the question a catalogue listing cannot, which is WHY something is unbuyable — nothing on the shelf, or everything on it already spoken for.
  * @summary Stock levels
  */
 export const listInventoryLevels = (
