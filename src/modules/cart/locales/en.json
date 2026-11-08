@@ -59,6 +59,7 @@
         "merge-reason-summed": "Your cart already held some of it, so the two were added together.",
         "merge-reason-capped": "That is the most one line can hold.",
         "merge-reason-removed": "It is no longer available, so it was not added.",
+        "merge-reason-cart_full": "Your cart is full, so it was not added. Remove a product to make room.",
         "stock-short-marker": "Not enough in stock",
         "merge-short-advice": "Lower the quantity before checkout.",
         "merge-off-sale-advice": "It is not available right now. Remove it, or wait until it is back on sale: you cannot check out with it in the cart.",

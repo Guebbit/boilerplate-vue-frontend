@@ -59,6 +59,7 @@
         "merge-reason-summed": "Il tuo carrello ne conteneva già alcuni, quindi le due quantità sono state sommate.",
         "merge-reason-capped": "È il massimo che una riga può contenere.",
         "merge-reason-removed": "Non è più disponibile, quindi non è stato aggiunto.",
+        "merge-reason-cart_full": "Il carrello è pieno, quindi non è stato aggiunto. Rimuovi un prodotto per fare spazio.",
         "stock-short-marker": "Disponibilità insufficiente",
         "merge-short-advice": "Riduci la quantità prima del pagamento.",
         "merge-off-sale-advice": "Non è disponibile al momento. Rimuovilo, o aspetta che torni in vendita: con lui nel carrello non puoi completare l'acquisto.",

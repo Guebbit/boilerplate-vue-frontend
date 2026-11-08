@@ -37,7 +37,8 @@ export interface MergeReportLine {
 
 /**
  * What kind of news a report line is. `gone` outranks the rest: a product that cannot be added at
- * all has no stock question left to ask. `off-sale` is listed but not buyable, `short` is a stock
+ * all (removed from the catalogue, or no line left for it in a full cart) has no stock question
+ * left to ask. `off-sale` is listed but not buyable, `short` is a stock
  * matter (fewer left, or none).
  */
 export type MergeReportKind = 'gone' | 'off-sale' | 'short' | 'changed';
@@ -73,12 +74,12 @@ export const changedMergeLines = (lines: readonly MergeLineResult[]): MergeRepor
  * Sorts a report line into the kind of sentence it needs.
  *
  * @param line - A line of the report.
- * @returns `gone` for a product that could not be added, `off-sale` for one taken off sale,
+ * @returns `gone` for a product that could not be added (`removed` or `cart_full`), `off-sale` for one taken off sale,
  *  `short` for one the stock does not cover, `changed` for one whose quantity only differs from
  *  what was asked.
  */
 export const mergeReportKind = ({ reason, availability }: MergeReportLine): MergeReportKind => {
-    if (reason === 'removed') return 'gone';
+    if (reason === 'removed' || reason === 'cart_full') return 'gone';
     if (availability === 'unavailable') return 'off-sale';
     return availability === 'insufficient_stock' || availability === 'out_of_stock'
         ? 'short'

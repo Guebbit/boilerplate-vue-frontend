@@ -89,6 +89,11 @@ describe('mergeReportKind', () => {
     it.each([
         ['a removed product', 'gone', { reason: 'removed', availability: 'in_stock' }],
         [
+            'a product the full cart refused',
+            'gone',
+            { reason: 'cart_full', availability: 'in_stock' }
+        ],
+        [
             'a gone product also flagged short',
             'gone',
             { reason: 'removed', availability: 'insufficient_stock' }

@@ -119,7 +119,8 @@ describe('what it shows', () => {
     it.each([
         ['summed', 'already held some of it'],
         ['capped', 'the most one line can hold'],
-        ['removed', 'no longer available']
+        ['removed', 'no longer available'],
+        ['cart_full', 'cart is full']
     ] as const)('says why in plain words for a line that is %s', async (reason, words) => {
         await mountAlert([aLine({ productId: 'p1', requested: 3, resulting: 3, reason })]);
 

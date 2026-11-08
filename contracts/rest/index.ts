@@ -3528,12 +3528,12 @@ export type CartMergeRefusedParamsLinesItem = {
 };
 
 export interface CartMergeRefusedParams {
-    /** The guest-cart lines `POST /cart/merge` could not add at all. */
+    /** The guest-cart lines `POST /cart/merge` could not add at all (`removed` or `cart_full`). */
     lines: CartMergeRefusedParamsLinesItem[];
 }
 
 /**
- * Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available.
+ * Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available or the cart was full.
  */
 export interface NotificationCartMergeRefused {
     id: Id;
@@ -4863,7 +4863,7 @@ export interface CartResponseItem {
     /** @minimum 1 */
     quantity: number;
     availability: LineAvailability;
-    /** Whether the line can hold one more unit: `quantity` is below the shop's per-line ceiling (`NODE_CART_LINE_MAX`). Stock plays no part, as for `POST /cart/items`. A client disables its "+" on `false` instead of copying the ceiling. */
+    /** Whether the line can hold one more unit: `quantity` is below the shop's per-line ceiling (`NODE_CART_LINE_MAX_QUANTITY`). Stock plays no part, as for `POST /cart/items`. A client disables its "+" on `false` instead of copying the ceiling. */
     canIncrease: boolean;
 }
 
@@ -5076,7 +5076,9 @@ export interface ReorderRequest {
 
 /**
  * Why a merged guest line or a reordered order line did not land exactly as asked. Absent when it did.
- * - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX`); `resulting` is the cap. - `removed`: the product is not publicly visible any more (deleted or hidden);
+ * - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX_QUANTITY`); `resulting` is the cap. - `cart_full`: the product is new to the cart and the cart already holds
+ *   `NODE_CART_MAX_LINES` lines; nothing was added, `resulting` is 0.
+ * - `removed`: the product is not publicly visible any more (deleted or hidden);
  *   nothing was added, `resulting` is what the cart already held (often 0). A product
  *   that is merely sold out, or taken off sale, is NOT removed: it is added and
  *   flagged through `availability`.
@@ -5086,6 +5088,7 @@ export type MergeLineReason = (typeof MergeLineReason)[keyof typeof MergeLineRea
 export const MergeLineReason = {
     summed: 'summed',
     capped: 'capped',
+    cart_full: 'cart_full',
     removed: 'removed'
 } as const;
 
@@ -11199,7 +11202,7 @@ export const searchProducts = (
 };
 
 /**
- * Returns all items currently in the authenticated user's cart along with a computed summary
+ * Returns all items currently in the authenticated user's cart along with a computed summary. Never paginated, a cart holds at most `NODE_CART_MAX_LINES` lines (100 by default), so the read stays small.
  * @summary Get cart
  */
 export const getCart = (options?: SecondParameter<typeof orvalMutator<CartResponse>>) => {
@@ -11207,7 +11210,7 @@ export const getCart = (options?: SecondParameter<typeof orvalMutator<CartRespon
 };
 
 /**
- * "Add to cart": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). A line is written through its parent, so the answer is always 200 with the whole cart: no `Location`, no read of a line. The line may not pass the per-line cap (422). A retry after a lost answer carries the SAME `Idempotency-Key` and gets the first answer back; a deliberate second click is a new intent with a new key, and adds again. To SET a quantity, `PATCH /cart/items/{productId}`.
+ * "Add to cart": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). A line is written through its parent, so the answer is always 200 with the whole cart: no `Location`, no read of a line. The line may not pass the per-line cap (422), and a NEW product is refused (409 `CART_LINE_LIMIT_REACHED`) once the cart holds `NODE_CART_MAX_LINES` lines. A retry after a lost answer carries the SAME `Idempotency-Key` and gets the first answer back; a deliberate second click is a new intent with a new key, and adds again. To SET a quantity, `PATCH /cart/items/{productId}`.
  * @summary Add to cart
  */
 export const addCartItem = (
@@ -11336,7 +11339,7 @@ export const checkout = (
 };
 
 /**
- * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the answer holds the cart as it now stands and ONE RESULT PER ORDER LINE, in the order's own order, by the same rule and in the same shape as `POST /cart/merge` (`requested`, `resulting`, `reason`, `availability`). A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX`) is clamped to what room is left (`capped`), and adds nothing once there is none; an unavailable product is `removed`. Neither is a failure. Any signed-in account, staff included, reorders only its own orders — the cart being filled is the caller's.
+ * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the answer holds the cart as it now stands and ONE RESULT PER ORDER LINE, in the order's own order, by the same rule and in the same shape as `POST /cart/merge` (`requested`, `resulting`, `reason`, `availability`). A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX_QUANTITY`) is clamped to what room is left (`capped`), and adds nothing once there is none; an unavailable product is `removed`. Neither is a failure. Any signed-in account, staff included, reorders only its own orders — the cart being filled is the caller's.
  * @summary Reorder (refill cart from a past order)
  */
 export const reorder = (
@@ -11355,7 +11358,7 @@ export const reorder = (
 };
 
 /**
- * Returns the authenticated user's saved products — ids only, like the cart's lines; clients render them from their own product store. Absence and emptiness are the same state, so this never answers 404.
+ * Returns the authenticated user's saved products — ids only, like the cart's lines; clients render them from their own product store. Absence and emptiness are the same state, so this never answers 404. Never paginated, a wishlist holds at most `NODE_WISHLIST_MAX` products (250 by default).
  * @summary Get wishlist
  */
 export const getWishlist = (options?: SecondParameter<typeof orvalMutator<WishlistResponse>>) => {
@@ -11363,7 +11366,7 @@ export const getWishlist = (options?: SecondParameter<typeof orvalMutator<Wishli
 };
 
 /**
- * Saves the product named in the body to the authenticated user's wishlist. A saved product is a line of the wishlist, written through its parent: the answer is 200 with the whole wishlist, no `Location`, and no read of a line. Saving what is already saved answers the same 200 and fires nothing a second time, because a double-clicked heart icon is not an error. The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other.
+ * Saves the product named in the body to the authenticated user's wishlist. A saved product is a line of the wishlist, written through its parent: the answer is 200 with the whole wishlist, no `Location`, and no read of a line. Saving what is already saved answers the same 200 and fires nothing a second time, because a double-clicked heart icon is not an error. The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other. A NEW product is refused (409 `WISHLIST_LIMIT_REACHED`) once the list holds `NODE_WISHLIST_MAX` products.
  * @summary Save a product
  */
 export const createWishlistItem = (
@@ -12624,7 +12627,7 @@ export const deactivateUserById = (
 };
 
 /**
- * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart/items`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`shop-tasks.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
+ * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart/items`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden; `cart_full`: no line is left for it) are also written as ONE notification (`shop-tasks.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
  * @summary Merge a guest cart into the cart
  */
 export const mergeCart = (
@@ -13530,7 +13533,7 @@ export const getSitemapProducts = (
 };
 
 /**
- * Returns the authenticated user's open requests, newest first. A request is used once: when it is answered it is deleted, so an answered one never appears here. Absence and emptiness are the same state, so this never answers 404.
+ * Returns the authenticated user's open requests, newest first. A request is used once: when it is answered it is deleted, so an answered one never appears here. Absence and emptiness are the same state, so this never answers 404. Never paginated: an account holds at most `NODE_STOCK_ALERTS_MAX` requests (100 by default).
  * @summary List my back-in-stock requests
  */
 export const listStockAlerts = (
@@ -13540,7 +13543,7 @@ export const listStockAlerts = (
 };
 
 /**
- * Records that the authenticated user wants one mail, and one inbox message, when the product named in the body can be ordered again (shelf units, an open backorder, a preorder with allowance left, or back on sale). The click is the consent for that single mail, so nothing else is ever sent on it and the request is deleted when it is answered. Asking twice is the same request and answers the same 200; the answer is always the whole list (the list is the parent, a request has no URL of its own). Refused with `409 STOCK_ALERT_PRODUCT_BUYABLE` while the product can be ordered now; a hidden or deleted product answers 404.
+ * Records that the authenticated user wants one mail, and one inbox message, when the product named in the body can be ordered again (shelf units, an open backorder, a preorder with allowance left, or back on sale). The click is the consent for that single mail, so nothing else is ever sent on it and the request is deleted when it is answered. Asking twice is the same request and answers the same 200; the answer is always the whole list (the list is the parent, a request has no URL of its own). Refused with `409 STOCK_ALERT_PRODUCT_BUYABLE` while the product can be ordered now, and with `409 STOCK_ALERT_LIMIT_REACHED` once the account already holds `NODE_STOCK_ALERTS_MAX` requests for other products; a hidden or deleted product answers 404.
  * @summary Ask to be told when a product is back
  */
 export const createStockAlert = (

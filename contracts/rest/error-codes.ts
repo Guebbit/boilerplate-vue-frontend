@@ -28,6 +28,8 @@ export const ERROR_CODES = {
     CART_EMPTY: 'CART_EMPTY',
     /** 409 — One or more lines cannot be bought as they stand — see `errors[].details.lines`, one entry per refused line with its `productId`, `title`, the `requested` quantity and its `availability` (`insufficient_stock`, `out_of_stock` or `unavailable`, so the client picks the message). The number left is not part of the answer: exact stock is for callers who read it (`read:StockLevel`). */
     CART_INSUFFICIENT_STOCK: 'CART_INSUFFICIENT_STOCK',
+    /** 409 — The cart already holds `NODE_CART_MAX_LINES` lines (100 by default), so a NEW product cannot be added — remove one first. Raising a line already there is never refused. */
+    CART_LINE_LIMIT_REACHED: 'CART_LINE_LIMIT_REACHED',
     /** 409 — The account already holds `NODE_MAX_OPEN_UNPAID_ORDERS_PER_ACCOUNT` unpaid orders, whatever their payment method — each holds stock. `errors[].details.orderIds` names them: pay one (`POST /payments`) or cancel one (`POST /orders/{id}/cancel`), then check out again. */
     CART_OPEN_ORDER_LIMIT_REACHED: 'CART_OPEN_ORDER_LIMIT_REACHED',
     /** 409 — The chosen payment method is not enabled for this deployment or this cart. */
@@ -254,6 +256,8 @@ export const ERROR_CODES = {
     SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
     /** 401 — A staff or admin session saw no real request for longer than `NODE_SESSION_IDLE_TIME_STAFF`, and ended. Sign in again. A shopper never gets this. */
     SESSION_IDLE: 'SESSION_IDLE',
+    /** 409 — The account already waits for `NODE_STOCK_ALERTS_MAX` products (100 by default) — cancel one request before adding another. Asking again for a product already waited for is never refused. */
+    STOCK_ALERT_LIMIT_REACHED: 'STOCK_ALERT_LIMIT_REACHED',
     /** 409 — The product can be ordered now, so there is nothing to wait for. The button is only offered while it cannot. */
     STOCK_ALERT_PRODUCT_BUYABLE: 'STOCK_ALERT_PRODUCT_BUYABLE',
     /** 409 — The task is already open (new or in progress), so there is nothing to reopen. */
@@ -307,7 +311,9 @@ export const ERROR_CODES = {
     /** 409 — The delivery belongs to a subscription that is disabled, so nothing can be sent until it is enabled. */
     WEBHOOK_SUBSCRIPTION_DISABLED: 'WEBHOOK_SUBSCRIPTION_DISABLED',
     /** 409 — This shop already holds the most webhook subscriptions it may; delete one first. */
-    WEBHOOK_SUBSCRIPTION_LIMIT_REACHED: 'WEBHOOK_SUBSCRIPTION_LIMIT_REACHED'
+    WEBHOOK_SUBSCRIPTION_LIMIT_REACHED: 'WEBHOOK_SUBSCRIPTION_LIMIT_REACHED',
+    /** 409 — The wishlist already holds `NODE_WISHLIST_MAX` products (250 by default) — remove one before saving another. Saving a product already there is never refused. */
+    WISHLIST_LIMIT_REACHED: 'WISHLIST_LIMIT_REACHED'
 } as const;
 
 /** Any code `errors[].code` may carry. NOT exhaustive at the type level — the contract's own `enum`-free `code: string` is the reason this exists. */
