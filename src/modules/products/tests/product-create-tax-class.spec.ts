@@ -2,6 +2,7 @@
  * @module
  * A create form has nothing to clear yet, so leaving `taxClass` untouched must OMIT the
  * key entirely (unlike the edit form's explicit `null`) — and the field itself must be on screen.
+ * The create also travels under an `Idempotency-Key`, so a retry never makes a second product.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
@@ -109,6 +110,31 @@ describe('ProductCreate — taxClass', () => {
                 // (`weight`, `categories`) — JSON serialization is what actually drops the key
                 // on the wire; this asserts the value that makes that happen.
                 expect(lastPost().data.taxClass).toBeUndefined();
+            });
+    });
+});
+
+describe('ProductCreate — idempotency key', () => {
+    it('sends the create with an Idempotency-Key header', () => {
+        const wrapper = mountCreate();
+        return flushPromises()
+            .then(flushPromises)
+            .then(flushPromises)
+            .then(() =>
+                wrapper
+                    .get('[data-test=translation-title-field] input')
+                    .setValue('New')
+                    .then(() => wrapper.get('form').trigger('submit'))
+            )
+            .then(flushPromises)
+            .then(flushPromises)
+            .then(() => {
+                const post = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.findLast(
+                        ([config]) => (config as { method?: string }).method === 'POST'
+                    );
+                expect(post?.[1]?.headers).toHaveProperty('Idempotency-Key');
             });
     });
 });

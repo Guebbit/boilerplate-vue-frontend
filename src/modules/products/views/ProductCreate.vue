@@ -18,6 +18,7 @@ export default {
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { ref } from 'vue';
+import type { AxiosRequestConfig } from 'axios';
 import { useRouter } from 'vue-router';
 import { getCurrentLocale } from '@/i18n';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -36,6 +37,7 @@ import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
+import { sendKeyed, useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { toCreateTranslations } from '../translations-body.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
@@ -201,6 +203,34 @@ void loadShop();
 const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 
 /**
+ * `Idempotency-Key`s for the create, one per body and image: a lost response resends the SAME key,
+ * so a retry never puts a second live product in the shop; any answer mints a fresh one. The image
+ * is part of the subject because the server's fingerprint does not see it.
+ */
+const createIdempotencyKeys = useIdempotencyKeys();
+
+/**
+ * Creates the product under the key of this exact body and image.
+ *
+ * @param body - The JSON write body.
+ * @param imageUpload - The optional image the form attached.
+ * @param options - Axios options carrying the upload progress hook.
+ * @returns A promise resolving with the created product.
+ */
+const createKeyed = (
+    body: Omit<Parameters<typeof createProduct>[0], 'imageUpload'>,
+    imageUpload: File | undefined,
+    options?: AxiosRequestConfig
+) =>
+    sendKeyed(
+        createIdempotencyKeys.forSubject(
+            `${JSON.stringify(body)}\n${imageUpload?.name ?? ''}\n${imageUpload?.size ?? ''}`
+        ),
+        (keyed) => createProduct({ ...body, imageUpload }, { requestOptions: keyed }),
+        options
+    );
+
+/**
  * Validates the form and creates the product.
  *
  * @returns A promise resolving once the flow settles: on success a toast is
@@ -230,9 +260,7 @@ const submitForm = () => {
             imageUpload: undefined
         })
             .then((body) =>
-                trackUpload(imageUpload, (options) =>
-                    createProduct({ ...body, imageUpload }, { requestOptions: options })
-                )
+                trackUpload(imageUpload, (options) => createKeyed(body, imageUpload, options))
             )
             .then((newProduct) => {
                 if (!newProduct) return;

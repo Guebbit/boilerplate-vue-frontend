@@ -98,13 +98,15 @@ export const useIdempotencyKeys = (): IdempotencyKeysBySubject => {
  *
  * @param keeper - The intent's keeper, from {@link useIdempotencyKey} or `forSubject`.
  * @param call - The write, given the axios options that carry the header.
+ * @param options - Per-call axios options the header is merged into, such as an upload progress hook.
  * @returns The call's own promise, settled the same way it would be without the keeper.
  */
 export const sendKeyed = <T>(
     keeper: IdempotencyKeyKeeper,
-    call: (options: AxiosRequestConfig) => Promise<T>
+    call: (options: AxiosRequestConfig) => Promise<T>,
+    options?: AxiosRequestConfig
 ): Promise<T> =>
-    call(keeper.withKey()).then(
+    call(keeper.withKey(options)).then(
         (response) => {
             keeper.settle();
             return response;
