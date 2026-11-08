@@ -8,6 +8,7 @@ import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { EToastType, useNotificationsStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import { sendKeyed, useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
 import { decimalScale, zeroDecimal } from '@/infrastructure/utils/money.ts';
 import { translate } from '@/i18n';
 import {
@@ -348,6 +349,18 @@ export const useCartStore = defineStore('cart', () => {
     };
 
     /**
+     * `Idempotency-Key`s for `addCartItem`, one per product and quantity: a lost response resends
+     * the SAME key, so a retry never grows the line twice; any answer mints a fresh one, so a second
+     * click is a new intent and adds again.
+     */
+    const addIdempotencyKeys = useIdempotencyKeys();
+
+    /**
+     * `Idempotency-Key`s for `reorder`, one per order, kept and settled the same way.
+     */
+    const reorderIdempotencyKeys = useIdempotencyKeys();
+
+    /**
      * "Add to cart": a product with no line gets one, a line already there GROWS by `quantity` —
      * the server does the arithmetic, so the caller never reads the cart first to increment it.
      * `updateCartItem` is the door that sets an exact quantity.
@@ -357,7 +370,11 @@ export const useCartStore = defineStore('cart', () => {
      * @returns A promise resolving with the updated cart response.
      */
     const addCartItemAction = (productId: string, quantity: number) =>
-        replaceCart(() => addCartItem({ productId, quantity }));
+        replaceCart(() =>
+            sendKeyed(addIdempotencyKeys.forSubject(`${productId}\n${quantity}`), (options) =>
+                addCartItem({ productId, quantity }, options)
+            )
+        );
 
     /**
      * Sets the exact quantity of an item already in the cart.
@@ -502,7 +519,10 @@ export const useCartStore = defineStore('cart', () => {
      */
     const reorder = (orderId: string) =>
         replaceCartFrom(
-            () => apiReorder({ orderId }),
+            () =>
+                sendKeyed(reorderIdempotencyKeys.forSubject(orderId), (options) =>
+                    apiReorder({ orderId }, options)
+                ),
             ({ cart: updated }) => updated,
             true
         );

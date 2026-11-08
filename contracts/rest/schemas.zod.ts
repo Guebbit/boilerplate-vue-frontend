@@ -8805,6 +8805,18 @@ export const ListProductsResponse = zod.strictObject({
  * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/levels/{productId}/receive`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it.
  * @summary Create product
  */
+export const createProductHeaderIdempotencyKeyMax = 202;
+export const createProductHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
+export const CreateProductHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(createProductHeaderIdempotencyKeyMax)
+        .regex(createProductHeaderIdempotencyKeyRegExp)
+        .optional()
+});
 export const createProductBodyTranslationsTitleMin = 5;
 export const createProductBodyTranslationsTitleMax = 200;
 export const createProductBodyTranslationsDescriptionMax = 10000;
@@ -9624,9 +9636,21 @@ export const GetCartResponse = zod.strictObject({
     checkoutable: zod.boolean()
 });
 /**
- * "Add to cart": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). A line is written through its parent, so the answer is always 200 with the whole cart: no `Location`, no read of a line. The line may not pass the per-line cap (422). To SET a quantity, `PATCH /cart/items/{productId}`.
+ * "Add to cart": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). A line is written through its parent, so the answer is always 200 with the whole cart: no `Location`, no read of a line. The line may not pass the per-line cap (422). A retry after a lost answer carries the SAME `Idempotency-Key` and gets the first answer back; a deliberate second click is a new intent with a new key, and adds again. To SET a quantity, `PATCH /cart/items/{productId}`.
  * @summary Add to cart
  */
+export const addCartItemHeaderIdempotencyKeyMax = 202;
+export const addCartItemHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
+export const AddCartItemHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(addCartItemHeaderIdempotencyKeyMax)
+        .regex(addCartItemHeaderIdempotencyKeyRegExp)
+        .optional()
+});
 export const addCartItemBodyProductIdMax = 64;
 export const addCartItemBodyProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const addCartItemBodyQuantityMax = 999;
@@ -10384,6 +10408,18 @@ export const CheckoutResponse = zod.strictObject({
  * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the answer holds the cart as it now stands and ONE RESULT PER ORDER LINE, in the order's own order, by the same rule and in the same shape as `POST /cart/merge` (`requested`, `resulting`, `reason`, `availability`). A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX`) is clamped to what room is left (`capped`), and adds nothing once there is none; an unavailable product is `removed`. Neither is a failure. Any signed-in account, staff included, reorders only its own orders — the cart being filled is the caller's.
  * @summary Reorder (refill cart from a past order)
  */
+export const reorderHeaderIdempotencyKeyMax = 202;
+export const reorderHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
+export const ReorderHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(reorderHeaderIdempotencyKeyMax)
+        .regex(reorderHeaderIdempotencyKeyRegExp)
+        .optional()
+});
 export const reorderBodyOrderIdMax = 64;
 export const reorderBodyOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const ReorderBody = zod.strictObject({

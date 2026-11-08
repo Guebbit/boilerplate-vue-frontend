@@ -6080,10 +6080,17 @@ paths:
       summary: Create product
       description: "Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/levels/{productId}/receive`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it."
       operationId: createProduct
+      x-error-codes:
+        "409":
+          - IDEMPOTENCY_IN_FLIGHT
+        "422":
+          - IDEMPOTENCY_KEY_MISMATCH
       security:
         - bearerAuth: []
         - apiKeyAuth: []
         - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
         required: true
         content:
@@ -6116,6 +6123,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
           content:
             application/json:
               schema:
@@ -6652,11 +6661,18 @@ paths:
       tags:
         - Cart
       summary: Add to cart
-      description: "\"Add to cart\": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). A line is written through its parent, so the answer is always 200 with the whole cart: no `Location`, no read of a line. The line may not pass the per-line cap (422). To SET a quantity, `PATCH /cart/items/{productId}`."
+      description: "\"Add to cart\": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). A line is written through its parent, so the answer is always 200 with the whole cart: no `Location`, no read of a line. The line may not pass the per-line cap (422). A retry after a lost answer carries the SAME `Idempotency-Key` and gets the first answer back; a deliberate second click is a new intent with a new key, and adds again. To SET a quantity, `PATCH /cart/items/{productId}`."
       operationId: addCartItem
+      x-error-codes:
+        "409":
+          - IDEMPOTENCY_IN_FLIGHT
+        "422":
+          - IDEMPOTENCY_KEY_MISMATCH
       security:
         - bearerAuth: []
         - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
         required: true
         content:
@@ -6685,6 +6701,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6693,6 +6711,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -7067,10 +7087,15 @@ paths:
       operationId: reorder
       x-error-codes:
         "409":
+          - IDEMPOTENCY_IN_FLIGHT
           - REORDER_UNAVAILABLE
+        "422":
+          - IDEMPOTENCY_KEY_MISMATCH
       security:
         - bearerAuth: []
         - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
         required: true
         content:
@@ -7099,6 +7124,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
