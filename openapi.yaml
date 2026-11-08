@@ -19253,12 +19253,15 @@ components:
       required:
         - returnId
         - refundAmount
+        - currency
       description: The returned goods were checked in.
       properties:
         returnId:
           $ref: "#/components/schemas/Id"
         refundAmount:
           $ref: "#/components/schemas/DecimalAmount"
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
     OrderTimelineExportEntryReturnReceived:
       unevaluatedProperties: false
       allOf:

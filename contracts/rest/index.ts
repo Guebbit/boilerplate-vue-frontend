@@ -2595,6 +2595,7 @@ export type OrderTimelineExportEntryReturnRef = OrderTimelineExportEntryBase & {
 export interface OrderTimelineDataReturnReceived {
     returnId: Id;
     refundAmount: DecimalAmount;
+    currency: CurrencyCode;
 }
 
 export type OrderTimelineExportEntryReturnReceivedType =

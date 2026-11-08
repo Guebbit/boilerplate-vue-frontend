@@ -3499,6 +3499,10 @@ export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataReturnI
 export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataRefundAmountRegExp =
     new RegExp('^-?\\d+(\\.\\d+)?$');
 export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataRefundAmountMax = 32;
+export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyMin = 3;
+export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyMax = 3;
+export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyRegExp =
+    new RegExp('^[A-Z]{3}$');
 export const downloadAccountExportResponseOrderTimelineItemTwozeroOneOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemTwozeroOneOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -4983,6 +4987,17 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         )
                         .max(
                             downloadAccountExportResponseOrderTimelineItemOnenineTwoDataRefundAmountMax
+                        ),
+                    currency: zod
+                        .string()
+                        .min(
+                            downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyMin
+                        )
+                        .max(
+                            downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyMax
+                        )
+                        .regex(
+                            downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyRegExp
                         )
                 })
             }),
@@ -19297,6 +19312,11 @@ export const getOrderTimelineResponseItemsItemOnenineTwoDataRefundAmountRegExp =
     '^-?\\d+(\\.\\d+)?$'
 );
 export const getOrderTimelineResponseItemsItemOnenineTwoDataRefundAmountMax = 32;
+export const getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyMin = 3;
+export const getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyMax = 3;
+export const getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyRegExp = new RegExp(
+    '^[A-Z]{3}$'
+);
 export const getOrderTimelineResponseItemsItemTwozeroOneIdMax = 64;
 export const getOrderTimelineResponseItemsItemTwozeroOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getOrderTimelineResponseItemsItemTwozeroOneActorOneMax = 64;
@@ -19872,7 +19892,12 @@ export const GetOrderTimelineResponse = zod.strictObject({
                             'decimal',
                             getOrderTimelineResponseItemsItemOnenineTwoDataRefundAmountRegExp
                         )
-                        .max(getOrderTimelineResponseItemsItemOnenineTwoDataRefundAmountMax)
+                        .max(getOrderTimelineResponseItemsItemOnenineTwoDataRefundAmountMax),
+                    currency: zod
+                        .string()
+                        .min(getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyMin)
+                        .max(getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyMax)
+                        .regex(getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyRegExp)
                 })
             }),
             zod.strictObject({
@@ -20180,6 +20205,9 @@ export const addOrderNoteResponseOnenineTwoDataRefundAmountRegExp = new RegExp(
     '^-?\\d+(\\.\\d+)?$'
 );
 export const addOrderNoteResponseOnenineTwoDataRefundAmountMax = 32;
+export const addOrderNoteResponseOnenineTwoDataCurrencyMin = 3;
+export const addOrderNoteResponseOnenineTwoDataCurrencyMax = 3;
+export const addOrderNoteResponseOnenineTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const addOrderNoteResponseTwozeroOneIdMax = 64;
 export const addOrderNoteResponseTwozeroOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const addOrderNoteResponseTwozeroOneActorOneMax = 64;
@@ -20697,7 +20725,12 @@ export const AddOrderNoteResponse = zod.union([
                 .regex(addOrderNoteResponseOnenineTwoDataReturnIdRegExp),
             refundAmount: zod
                 .stringFormat('decimal', addOrderNoteResponseOnenineTwoDataRefundAmountRegExp)
-                .max(addOrderNoteResponseOnenineTwoDataRefundAmountMax)
+                .max(addOrderNoteResponseOnenineTwoDataRefundAmountMax),
+            currency: zod
+                .string()
+                .min(addOrderNoteResponseOnenineTwoDataCurrencyMin)
+                .max(addOrderNoteResponseOnenineTwoDataCurrencyMax)
+                .regex(addOrderNoteResponseOnenineTwoDataCurrencyRegExp)
         })
     }),
     zod.strictObject({
