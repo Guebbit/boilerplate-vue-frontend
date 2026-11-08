@@ -2877,8 +2877,10 @@ export const LoginRestoreResponse = zod.strictObject({
  * @summary Signup
  */
 export const signupHeaderAntibotChallengeTokenMax = 4096;
-export const signupHeaderIdempotencyKeyMax = 200;
-export const signupHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const signupHeaderIdempotencyKeyMax = 202;
+export const signupHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const SignupHeader = zod.strictObject({
     'Antibot-Challenge-Token': zod.string().max(signupHeaderAntibotChallengeTokenMax).optional(),
     'Idempotency-Key': zod
@@ -7266,8 +7268,10 @@ export const SearchUsersResponse = zod.strictObject({
  * @summary Submit contact request
  */
 export const createContactTaskHeaderAntibotChallengeTokenMax = 4096;
-export const createContactTaskHeaderIdempotencyKeyMax = 200;
-export const createContactTaskHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const createContactTaskHeaderIdempotencyKeyMax = 202;
+export const createContactTaskHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const CreateContactTaskHeader = zod.strictObject({
     'Antibot-Challenge-Token': zod
         .string()
@@ -10076,8 +10080,10 @@ export const GetCartSummaryResponse = zod.strictObject({
  * Converts the authenticated user's current cart into a new order. Needs a critically fresh session (`401 REAUTH_REQUIRED`), asked after the verified-address key, so a caller who can never pass is refused first. The cart is cleared upon success. The request names the total the buyer was shown (`expectedTotal`); a checkout that would charge anything else is refused with 409 `CART_TOTAL_CHANGED` and the new total, before any stock is held. Optional order notes can be supplied in the request body. Answers 201 with the created order itself as the body — the same shape `POST /orders` answers — and its `Location`. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
  * @summary Checkout (place order from cart)
  */
-export const checkoutHeaderIdempotencyKeyMax = 200;
-export const checkoutHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const checkoutHeaderIdempotencyKeyMax = 202;
+export const checkoutHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const CheckoutHeader = zod.strictObject({
     'Idempotency-Key': zod
         .string()
@@ -11002,8 +11008,10 @@ export const ListOrdersResponse = zod.strictObject({
  * A body is bounded twice. The schema caps it at 1000 lines of at most 999999 units (what the contract promises); a deployment may set a lower limit in `NODE_ADMIN_ORDER_MAX_LINES` and `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`, and a body over it answers `422` with `ORDER_LINE_LIMIT_EXCEEDED`.
  * @summary Create order
  */
-export const createOrderHeaderIdempotencyKeyMax = 200;
-export const createOrderHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const createOrderHeaderIdempotencyKeyMax = 202;
+export const createOrderHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const CreateOrderHeader = zod.strictObject({
     'Idempotency-Key': zod
         .string()
@@ -13600,8 +13608,10 @@ export const recordOrderPaymentPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const RecordOrderPaymentParams = zod.strictObject({
     id: zod.string().min(1).max(recordOrderPaymentPathIdMax).regex(recordOrderPaymentPathIdRegExp)
 });
-export const recordOrderPaymentHeaderIdempotencyKeyMax = 200;
-export const recordOrderPaymentHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const recordOrderPaymentHeaderIdempotencyKeyMax = 202;
+export const recordOrderPaymentHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const RecordOrderPaymentHeader = zod.strictObject({
     'Idempotency-Key': zod
         .string()
@@ -14303,8 +14313,10 @@ export const createRefundPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const CreateRefundParams = zod.strictObject({
     id: zod.string().min(1).max(createRefundPathIdMax).regex(createRefundPathIdRegExp)
 });
-export const createRefundHeaderIdempotencyKeyMax = 200;
-export const createRefundHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const createRefundHeaderIdempotencyKeyMax = 202;
+export const createRefundHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const CreateRefundHeader = zod.strictObject({
     'Idempotency-Key': zod
         .string()
@@ -14660,8 +14672,10 @@ export const confirmPaymentPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const ConfirmPaymentParams = zod.strictObject({
     id: zod.string().min(1).max(confirmPaymentPathIdMax).regex(confirmPaymentPathIdRegExp)
 });
-export const confirmPaymentHeaderIdempotencyKeyMax = 200;
-export const confirmPaymentHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const confirmPaymentHeaderIdempotencyKeyMax = 202;
+export const confirmPaymentHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const ConfirmPaymentHeader = zod.strictObject({
     'Idempotency-Key': zod
         .string()
@@ -15478,8 +15492,10 @@ export const ShipFulfillmentOrderParams = zod.strictObject({
         .max(shipFulfillmentOrderPathIdMax)
         .regex(shipFulfillmentOrderPathIdRegExp)
 });
-export const shipFulfillmentOrderHeaderIdempotencyKeyMax = 200;
-export const shipFulfillmentOrderHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const shipFulfillmentOrderHeaderIdempotencyKeyMax = 202;
+export const shipFulfillmentOrderHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const ShipFulfillmentOrderHeader = zod.strictObject({
     'Idempotency-Key': zod
         .string()
@@ -15600,8 +15616,10 @@ export const FulfillFulfillmentOrderParams = zod.strictObject({
         .max(fulfillFulfillmentOrderPathIdMax)
         .regex(fulfillFulfillmentOrderPathIdRegExp)
 });
-export const fulfillFulfillmentOrderHeaderIdempotencyKeyMax = 200;
-export const fulfillFulfillmentOrderHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const fulfillFulfillmentOrderHeaderIdempotencyKeyMax = 202;
+export const fulfillFulfillmentOrderHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const FulfillFulfillmentOrderHeader = zod.strictObject({
     'Idempotency-Key': zod
         .string()
@@ -16291,8 +16309,10 @@ export const ListReturnsResponse = zod.strictObject({
  * Staff can also record a withdrawal the buyer stated outside the shop: `reason: withdrawal` with `requestedAt` (when the buyer sent it, Art. 11(2)) and `statedVia` (`phone`, `email`, `letter`, `other`), both required. The withdrawal keeps its legal window, judged on `requestedAt`, and its Art. 16 exclusion. It does everything the buyer's own withdrawal does, and the customer is told when they stated it and when the shop recorded it. Shipped goods need `update:Return`; before dispatch the order is canceled and refunded, which needs `create:Refund` (money out) and `update:Order` (the cancel); a remainder cancel needs `create:Refund`. Any request carrying `statedVia` asks a fresh session: the record is a legal act, and the check fails closed. The buyer sends neither `requestedAt` nor `statedVia` (422): the server sets them. Sending `Idempotency-Key` makes a retry safe.
  * @summary Open a return, or withdraw from the contract
  */
-export const createReturnHeaderIdempotencyKeyMax = 200;
-export const createReturnHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const createReturnHeaderIdempotencyKeyMax = 202;
+export const createReturnHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const CreateReturnHeader = zod.strictObject({
     'Idempotency-Key': zod
         .string()
@@ -16860,8 +16880,10 @@ export const receiveReturnPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const ReceiveReturnParams = zod.strictObject({
     id: zod.string().min(1).max(receiveReturnPathIdMax).regex(receiveReturnPathIdRegExp)
 });
-export const receiveReturnHeaderIdempotencyKeyMax = 200;
-export const receiveReturnHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const receiveReturnHeaderIdempotencyKeyMax = 202;
+export const receiveReturnHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const ReceiveReturnHeader = zod.strictObject({
     'Idempotency-Key': zod
         .string()
@@ -17246,8 +17268,10 @@ export const ReceiveStockParams = zod.strictObject({
         .max(receiveStockPathProductIdMax)
         .regex(receiveStockPathProductIdRegExp)
 });
-export const receiveStockHeaderIdempotencyKeyMax = 200;
-export const receiveStockHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const receiveStockHeaderIdempotencyKeyMax = 202;
+export const receiveStockHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const ReceiveStockHeader = zod.strictObject({
     'Idempotency-Key': zod
         .string()
@@ -17294,8 +17318,10 @@ export const AdjustStockParams = zod.strictObject({
         .max(adjustStockPathProductIdMax)
         .regex(adjustStockPathProductIdRegExp)
 });
-export const adjustStockHeaderIdempotencyKeyMax = 200;
-export const adjustStockHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const adjustStockHeaderIdempotencyKeyMax = 202;
+export const adjustStockHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const AdjustStockHeader = zod.strictObject({
     'Idempotency-Key': zod
         .string()
@@ -18784,8 +18810,10 @@ export const DeactivateUserByIdResponse = zod.strictObject({
  * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart/items`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`shop-tasks.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
  * @summary Merge a guest cart into the cart
  */
-export const mergeCartHeaderIdempotencyKeyMax = 200;
-export const mergeCartHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const mergeCartHeaderIdempotencyKeyMax = 202;
+export const mergeCartHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const MergeCartHeader = zod.strictObject({
     'Idempotency-Key': zod
         .string()
@@ -22173,8 +22201,10 @@ export const SettleRefundByHandParams = zod.strictObject({
         .max(settleRefundByHandPathRefundIdMax)
         .regex(settleRefundByHandPathRefundIdRegExp)
 });
-export const settleRefundByHandHeaderIdempotencyKeyMax = 200;
-export const settleRefundByHandHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const settleRefundByHandHeaderIdempotencyKeyMax = 202;
+export const settleRefundByHandHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const SettleRefundByHandHeader = zod.strictObject({
     'Idempotency-Key': zod
         .string()
@@ -22251,8 +22281,10 @@ export const CancelRefundParams = zod.strictObject({
         .max(cancelRefundPathRefundIdMax)
         .regex(cancelRefundPathRefundIdRegExp)
 });
-export const cancelRefundHeaderIdempotencyKeyMax = 200;
-export const cancelRefundHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const cancelRefundHeaderIdempotencyKeyMax = 202;
+export const cancelRefundHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const CancelRefundHeader = zod.strictObject({
     'Idempotency-Key': zod
         .string()
@@ -24034,8 +24066,10 @@ export const ListExamplesResponse = zod.strictObject({
  * Creates a draft example owned by the caller. Sending `Idempotency-Key` makes a retry safe, since the same key replays the first answer.
  * @summary Create an example
  */
-export const createExampleHeaderIdempotencyKeyMax = 200;
-export const createExampleHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const createExampleHeaderIdempotencyKeyMax = 202;
+export const createExampleHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
 export const CreateExampleHeader = zod.strictObject({
     'Idempotency-Key': zod
         .string()
