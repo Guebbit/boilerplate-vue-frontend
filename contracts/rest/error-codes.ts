@@ -174,7 +174,7 @@ export const ERROR_CODES = {
     ORDER_NOT_PAID: 'ORDER_NOT_PAID',
     /** 409 — The order is not in a state this delivery action can run from. */
     ORDER_NOT_PROCESSING: 'ORDER_NOT_PROCESSING',
-    /** 409 — The order still has units awaiting stock; overriding it forward would ship goods the stock ledger never counted out. */
+    /** 409 — The order still has units awaiting stock; overriding it forward to `shipped` or `delivered` would ship goods the stock ledger never counted out. */
     ORDER_OVERRIDE_AWAITING_STOCK: 'ORDER_OVERRIDE_AWAITING_STOCK',
     /** 409 — This status transition is not on the admin override's allowed list. */
     ORDER_OVERRIDE_NOT_ALLOWED: 'ORDER_OVERRIDE_NOT_ALLOWED',

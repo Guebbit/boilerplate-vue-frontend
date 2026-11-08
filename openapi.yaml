@@ -7959,7 +7959,7 @@ paths:
       tags:
         - Orders
       summary: Force-correct an order's status by hand
-      description: "Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `canceled` (`POST /orders/{id}/cancel` is that door). Requires `override:Order`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does."
+      description: "Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. A forward move to `shipped` or `delivered` is refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`); a move to `processing` ships nothing and is allowed. Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `canceled` (`POST /orders/{id}/cancel` is that door). Requires `override:Order`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does."
       operationId: overrideOrderStatus
       x-error-codes:
         "409":
@@ -27154,7 +27154,7 @@ x-error-codes:
     description: The order is not in a state this delivery action can run from.
   ORDER_OVERRIDE_AWAITING_STOCK:
     status: 409
-    description: The order still has units awaiting stock; overriding it forward would ship goods the stock ledger never counted out.
+    description: The order still has units awaiting stock; overriding it forward to `shipped` or `delivered` would ship goods the stock ledger never counted out.
   ORDER_OVERRIDE_NOT_ALLOWED:
     status: 409
     description: This status transition is not on the admin override's allowed list.
