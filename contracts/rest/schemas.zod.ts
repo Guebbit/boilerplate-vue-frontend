@@ -14672,7 +14672,7 @@ export const ConfirmPaymentHeader = zod.strictObject({
 });
 export const confirmPaymentBodyPaymentMethodRefMin = 3;
 export const confirmPaymentBodyPaymentMethodRefMax = 255;
-export const confirmPaymentBodyPaymentMethodRefRegExp = new RegExp('^[\\w-]+$');
+export const confirmPaymentBodyPaymentMethodRefRegExp = new RegExp('^[\\d_-]*[A-Za-z][\\w-]*$');
 export const ConfirmPaymentBody = zod.strictObject({
     paymentMethodRef: zod
         .string()

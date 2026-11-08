@@ -5603,10 +5603,10 @@ export interface RefundPaymentRequest {
 
 export interface ConfirmPaymentRequest {
     /**
-     * The provider's opaque handle for the payment method, produced in the BROWSER by the provider's own widget. Never a card number — a card number reaching this API would put the whole deployment in the heavyweight PCI bracket, which is the reason this field is shaped the way it is.
+     * The provider's opaque handle for the payment method, produced in the BROWSER by the provider's own widget. Never a card number — a card number reaching this API would put the whole deployment in the heavyweight PCI bracket, which is the reason this field is shaped the way it is. Must contain a letter, so a card number (digits, with or without dashes) is a 422, never forwarded.
      * @minLength 3
      * @maxLength 255
-     * @pattern ^[\w-]+$
+     * @pattern ^[\d_-]*[A-Za-z][\w-]*$
      */
     paymentMethodRef: string;
 }
