@@ -609,7 +609,7 @@ export interface LanguageActions {
 
 /**
  * One language, as `GET /locales` lists it, `GET /locales/{locale}` reads it and every write on that URL answers it: a merge of whatever the two tiers each know about the tag. A tag present in both appears once, carrying both apps.
- * A language that exists only as a deployed file has no row, hence no `id` and no timestamps, and every `actions` flag is `false`. Its existence means entries can be translated into it and a client can download the result — whether the API can answer a request in it is decided by a deployed file and nothing else.
+ * A language that exists only as a deployed file has no row, hence no `id` and no timestamps, and every `actions` flag is `false`. Its existence means entries can be translated into it and a client can download the result. A language with a row that is switched on is served too: a request in it is answered in it.
  */
 export interface Language {
     id?: Id;
@@ -4969,7 +4969,7 @@ export interface CheckoutRequest {
     addressId?: Id;
     /** Which of the caller's saved addresses the order is INVOICED to (the order's `billingAddress`). Omitted, it is "same as the shipping address" when one was resolved, otherwise the default address; with neither the checkout refuses with 422, `errors[].code` `CART_BILLING_ADDRESS_REQUIRED`. An all-digital checkout asks for this one only. An id that matches none of the caller's addresses refuses with 404, `CART_ADDRESS_NOT_FOUND`. Unlike the shipping address, billing is not held to `NODE_SHIP_TO_COUNTRIES`. */
     billingAddressId?: Id;
-    /** How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`. That includes the default: a request that names no method asks for `card`, so a deployment with no card provider refuses it the same way. */
+    /** How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the payment's `nextAction` carries the transfer instructions. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`. That includes the default: a request that names no method asks for `card`, so a deployment with no card provider refuses it the same way. */
     paymentMethod?: PaymentMethodId;
 }
 
@@ -9265,8 +9265,8 @@ export const replaceEntityTranslations = (
  * on the fallback locale is a 422: deleting it would leave the entity with nothing to
  * fall back to.
  *
- * 422 equally when a named locale does not exist or is not `active` in the `locales`
- * collection, and when `fields` names a key the `translatables` registry does not
+ * 422 equally when a named locale does not exist in the `locales` collection (an
+ * inactive one is accepted: that is where a draft is written), and when `fields` names a key the `translatables` registry does not
  * declare for this `entityType` — the pointer names the locale, e.g.
  * `translations.it.title`, so an editor with several tabs open can tell which one
  * failed.
@@ -9310,8 +9310,8 @@ export const updateEntityTranslations = (
  * on the fallback locale is a 422: deleting it would leave the entity with nothing to
  * fall back to.
  *
- * 422 equally when a named locale does not exist or is not `active` in the `locales`
- * collection, and when `fields` names a key the `translatables` registry does not
+ * 422 equally when a named locale does not exist in the `locales` collection (an
+ * inactive one is accepted: that is where a draft is written), and when `fields` names a key the `translatables` registry does not
  * declare for this `entityType` — the pointer names the locale, e.g.
  * `translations.it.title`, so an editor with several tabs open can tell which one
  * failed.
@@ -9350,10 +9350,10 @@ export const getObservabilityEvents = (options?: SecondParameter<typeof orvalMut
  *
  * This is NOT the liveness probe the container HEALTHCHECK calls (`GET /livez`) or
  * the readiness probe a load balancer calls (`GET /readyz`) — this is the detailed,
- * authenticated view for a dashboard. Nothing here performs I/O; every dependency is read from the connection
- * state its adapter already maintains.
+ * authenticated view for a dashboard. `dependencies` performs no I/O: each is read from the connection state its adapter
+ * already maintains. `jobs` and `queues` read live.
  *
- * Requires admin role.
+ * Requires the operator role (`read:ObservabilitySnapshot`).
  * @summary Health snapshot
  */
 export const getObservabilityHealth = (
@@ -9378,7 +9378,7 @@ export const getObservabilityMetrics = (options?: SecondParameter<typeof orvalMu
 /**
  * Key operational metrics derived from Prometheus counters/histograms,
  * returned as structured JSON for dashboard KPI cards and charts.
- * Requires admin role.
+ * Requires the operator role (`read:ObservabilitySnapshot`).
  * @summary Metrics overview (JSON)
  */
 export const getObservabilityMetricsOverview = (
@@ -9717,7 +9717,7 @@ export const reauth = (
 };
 
 /**
- * Logs out the CURRENT session only — deletes the session the `__Host-session` cookie (or, in `cookie` mode, a `ses_…` bearer) names, and clears the authentication cookies. Refused with 403 when the request names an `Origin` that is not an allowed frontend origin. Other devices stay signed in; `DELETE /account/sessions` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
+ * Logs out the CURRENT session only — deletes the session the `__Host-session` cookie (or, in `cookie` mode, a `ses_…` bearer) names, and clears the authentication cookies. Refused with 403 when the request names an `Origin` that is not an allowed frontend origin. Other devices stay signed in; `DELETE /account/sessions` is the one that revokes everything. Answers 204 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
  * @summary Logout this session
  */
 export const logout = (options?: SecondParameter<typeof orvalMutator<NoContentResponse>>) => {
@@ -10890,8 +10890,8 @@ export const getProductById = (
 /**
  * Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
  * writable scalar field is required, since none of them but `taxClass`/`rateType`/
- * `sku`/`weight`/`releaseDate` has a legal "cleared" state, and an omitted one of
- * those five is cleared, not left alone. The image is outside the representation: it is set by an
+ * `sku`/`weight`/`releaseDate`/`restockDate` has a legal "cleared" state, and an omitted one of
+ * those six is cleared, not left alone. The image is outside the representation: it is set by an
  * upload, cleared by an explicit `imageUrl: null`, and kept when a PUT never mentions
  * it — a client cannot send the current path back. `translations` is the whole set as well: it must
  * name the fallback locale, and every stored locale it leaves out is deleted. To
@@ -10917,8 +10917,8 @@ export const replaceProductById = (
 /**
  * Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
  * writable scalar field is required, since none of them but `taxClass`/`rateType`/
- * `sku`/`weight`/`releaseDate` has a legal "cleared" state, and an omitted one of
- * those five is cleared, not left alone. The image is outside the representation: it is set by an
+ * `sku`/`weight`/`releaseDate`/`restockDate` has a legal "cleared" state, and an omitted one of
+ * those six is cleared, not left alone. The image is outside the representation: it is set by an
  * upload, cleared by an explicit `imageUrl: null`, and kept when a PUT never mentions
  * it — a client cannot send the current path back. `translations` is the whole set as well: it must
  * name the fallback locale, and every stored locale it leaves out is deleted. To
@@ -11395,7 +11395,7 @@ export const deleteWishlistItem = (
 };
 
 /**
- * The wishlist's exit — the saved line becomes one cart line (quantity 1, incremented if the cart already holds the product) and leaves the wishlist. The cart is written before the wishlist line is removed, so a failure part-way leaves the product SAVED rather than lost. Needs a basket, so it is a shopper's step: staff and administrators are refused with `403`. Returns the updated wishlist; read the cart for its own new state.
+ * The wishlist's exit — the saved line becomes one cart line (quantity 1, incremented if the cart already holds the product) and leaves the wishlist. The cart is written before the wishlist line is removed, so a failure part-way leaves the product SAVED rather than lost. Any signed-in account may move it, staff included. Returns the updated wishlist; read the cart for its own new state.
  * @summary Move a saved product into the cart
  */
 export const moveWishlistItemToCart = (
@@ -12525,8 +12525,8 @@ export const activateLocale = (
 /**
  * Switches a registered language off: it becomes invisible to every public route
  * (never picked for a request, 404 on its dictionary, its entity text not served)
- * while staff holding `display:Locale` still see it. This is the state a language
- * must be put into before it can be deleted.
+ * while staff holding `display:Locale` still see it. A language need not be switched
+ * off to be deleted: an active one deletes directly.
  *
  * Refuses with 409 `LOCALE_LANGUAGE_IS_FALLBACK` for the deployment's fallback
  * language (every translatable row's source lives there), and with 409
@@ -13505,7 +13505,7 @@ export const getSitemapIndex = (
 };
 
 /**
- * The static pages (home, about, FAQ, terms, privacy, contact, the catalogue), one `url` per active language, each with `xhtml:link` alternates for every language and `x-default`. No `lastmod`: nothing dates a prose page.
+ * The static pages (`staticPages` in `shared/rules/frontend-links.yaml`), one `url` per active language, each with `xhtml:link` alternates for every language and `x-default`. No `lastmod`: nothing dates a prose page.
  * @summary Sitemap of the shop pages
  */
 export const getSitemapPages = (

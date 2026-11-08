@@ -210,7 +210,7 @@ export const ERROR_CODES = {
     RATE_LIMITED: 'RATE_LIMITED',
     /** 401 — This action requires a session fresher than the caller's current one — see `POST /account/reauth`. `details.maxAge` is the freshness asked for; `details.methods`, when present, lists what the re-authentication must also prove (`otp`: a code from an armed second factor). */
     REAUTH_REQUIRED: 'REAUTH_REQUIRED',
-    /** 409 — The past order named for reorder no longer has any purchasable lines. */
+    /** 409 — The past order named for reorder has no line left to add: every one was removed from the catalogue. An order with lines merely off sale answers 200, by the merge rule. */
     REORDER_UNAVAILABLE: 'REORDER_UNAVAILABLE',
     /** 422 — A cancellation names no fulfillment order of this order, or sends `lines` (the remainder is its lines), or a return names a fulfillment order. Also the reason does not fit the caller: the order's buyer cancels only as a `withdrawal`. */
     RETURN_CANCELLATION_INVALID: 'RETURN_CANCELLATION_INVALID',
