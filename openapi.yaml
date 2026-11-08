@@ -3576,8 +3576,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
           content:
             application/json:
               schema:
@@ -5297,8 +5297,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7012,8 +7012,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
           content:
             application/json:
               schema:
@@ -7470,8 +7470,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
           content:
             application/json:
               schema:
@@ -8283,8 +8283,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
         "201":
           description: The payment, `succeeded`, with the order now `paid`
           headers:
@@ -8304,8 +8304,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
           content:
             application/json:
               schema:
@@ -8573,8 +8573,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
           content:
             application/json:
               schema:
@@ -8749,8 +8749,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -9136,8 +9136,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
           content:
             application/json:
               schema:
@@ -9205,8 +9205,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
           content:
             application/json:
               schema:
@@ -9653,8 +9653,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
           content:
             application/json:
               schema:
@@ -9957,8 +9957,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -10203,8 +10203,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -10280,8 +10280,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -11667,8 +11667,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -12473,8 +12473,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -12553,8 +12553,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -13920,8 +13920,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
-            Idempotent-Replay:
-              $ref: "#/components/headers/Idempotent-Replay"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
           content:
             application/json:
               schema:
@@ -15083,7 +15083,7 @@ components:
         maxLength: 202
         pattern: ^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$
       description: |
-        An opaque, client-generated value (a UUID by convention) that makes a retried write safe, and that this route REQUIRES: a request without it answers 400 (`IDEMPOTENCY_KEY_REQUIRED`) and nothing is written. Repeating the request with the SAME key and the SAME body replays the first response (`Idempotent-Replay: true`, no repeated write); the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409.
+        An opaque, client-generated value (a UUID by convention) that makes a retried write safe, and that this route REQUIRES: a request without it answers 400 (`IDEMPOTENCY_KEY_REQUIRED`) and nothing is written. Repeating the request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write); the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409.
     IdempotencyKeyHeader:
       name: Idempotency-Key
       in: header
@@ -15094,7 +15094,7 @@ components:
         maxLength: 202
         pattern: ^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$
       description: |
-        An opaque, client-generated value (a UUID by convention) that makes a retried write safe. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replay: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.
+        An opaque, client-generated value (a UUID by convention) that makes a retried write safe. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.
     IfMatchHeader:
       name: If-Match
       in: header
@@ -15274,7 +15274,7 @@ components:
       description: "The request headers the answer depends on (RFC 9110 section 12.5.5), so a cache keeps one copy per value: always `Origin`, plus `Accept-Language` where the locale picks the body."
       schema:
         type: string
-    Idempotent-Replay:
+    Idempotent-Replayed:
       required: false
       description: "`true` when this answer is the stored first answer replayed for a repeated `Idempotency-Key`, not a fresh run: nothing was written a second time. Absent on a first run. Sent on a replay only."
       schema:
