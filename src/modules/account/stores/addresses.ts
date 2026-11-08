@@ -7,6 +7,7 @@
  */
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
+import { sendKeyed, useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import {
@@ -73,6 +74,13 @@ export const useAccountAddressesStore = defineStore('account-addresses', () => {
     const reloadBook = () => apiListAddresses().then((data) => readAddressesResponse(data));
 
     /**
+     * `Idempotency-Key`s for `addAddress`, one per entry's fields: a lost response resends the SAME
+     * key, so a retry never writes a duplicate that burns a slot of the cap; any answer mints a
+     * fresh one.
+     */
+    const addressIdempotencyKeys = useIdempotencyKeys();
+
+    /**
      * Adds an entry, then reloads the book. The first one becomes the default server-side, and
      * `default: true` demotes the previous holder — a different row from the created one the API
      * answers with.
@@ -81,7 +89,11 @@ export const useAccountAddressesStore = defineStore('account-addresses', () => {
      * @returns A promise resolving with the updated book.
      */
     const addAddress = (address: CreateAddressRequest) =>
-        fetchAny(() => apiCreateAddress(address).then(() => reloadBook()));
+        fetchAny(() =>
+            sendKeyed(addressIdempotencyKeys.forSubject(JSON.stringify(address)), (options) =>
+                apiCreateAddress(address, options)
+            ).then(() => reloadBook())
+        );
 
     /**
      * Updates one entry through PATCH, then reloads the book. The default is

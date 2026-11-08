@@ -2373,6 +2373,18 @@ export const ListAddressesResponse = zod.strictObject({
  * Adds an entry to the authenticated user's address book and answers the entry it created, with its `Location`. The first entry becomes the default automatically; a later entry claims the default slot only by sending `default true`, which demotes the previous holder — a different row, so a client showing the book refetches it.
  * @summary Add an address
  */
+export const createAddressHeaderIdempotencyKeyMax = 202;
+export const createAddressHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
+export const CreateAddressHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(createAddressHeaderIdempotencyKeyMax)
+        .regex(createAddressHeaderIdempotencyKeyRegExp)
+        .optional()
+});
 export const createAddressBodyLabelMax = 50;
 export const createAddressBodyFullNameMax = 100;
 export const createAddressBodyStreetMax = 200;
@@ -8509,6 +8521,18 @@ export const createTaskNotePathIdMax = 64;
 export const createTaskNotePathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const CreateTaskNoteParams = zod.strictObject({
     id: zod.string().min(1).max(createTaskNotePathIdMax).regex(createTaskNotePathIdRegExp)
+});
+export const createTaskNoteHeaderIdempotencyKeyMax = 202;
+export const createTaskNoteHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
+export const CreateTaskNoteHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(createTaskNoteHeaderIdempotencyKeyMax)
+        .regex(createTaskNoteHeaderIdempotencyKeyRegExp)
+        .optional()
 });
 export const createTaskNoteBodyBodyMax = 5000;
 export const CreateTaskNoteBody = zod.strictObject({
@@ -19968,6 +19992,18 @@ export const addOrderNotePathIdMax = 64;
 export const addOrderNotePathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const AddOrderNoteParams = zod.strictObject({
     id: zod.string().min(1).max(addOrderNotePathIdMax).regex(addOrderNotePathIdRegExp)
+});
+export const addOrderNoteHeaderIdempotencyKeyMax = 202;
+export const addOrderNoteHeaderIdempotencyKeyRegExp = new RegExp(
+    '^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$'
+);
+export const AddOrderNoteHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(addOrderNoteHeaderIdempotencyKeyMax)
+        .regex(addOrderNoteHeaderIdempotencyKeyRegExp)
+        .optional()
 });
 export const addOrderNoteBodyTextMax = 2000;
 export const AddOrderNoteBody = zod.strictObject({

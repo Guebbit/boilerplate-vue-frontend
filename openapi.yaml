@@ -2909,10 +2909,15 @@ paths:
       operationId: createAddress
       x-error-codes:
         "409":
+          - IDEMPOTENCY_IN_FLIGHT
           - ADDRESS_BOOK_LIMIT_REACHED
+        "422":
+          - IDEMPOTENCY_KEY_MISMATCH
       security:
         - bearerAuth: []
         - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
         required: true
         content:
@@ -2939,6 +2944,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
           content:
             application/json:
               schema:
@@ -5899,12 +5906,18 @@ paths:
       description: |
         Appends a note to the staff thread: append-only, with its author and time. Notes are written and read by staff, and the data subject's export carries them without the author. Write each one as if the customer will read it.
       operationId: createTaskNote
+      x-error-codes:
+        "409":
+          - IDEMPOTENCY_IN_FLIGHT
+        "422":
+          - IDEMPOTENCY_KEY_MISMATCH
       security:
         - bearerAuth: []
         - apiKeyAuth: []
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
         required: true
         content:
@@ -5933,6 +5946,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5941,6 +5956,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -11875,11 +11892,17 @@ paths:
       summary: Leave a staff note on an order
       description: "Appends a `note_added` row to the order's timeline: a call, an agreement, anything staff want the next person to know. Needs `update:Order`. The row is staff-only (`audience: staff`): the buyer's timeline never shows it, but it is the buyer's data and so it is in their `POST /account/export`. The text is stored encrypted, unset when the order's personal data is erased and after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`, and never written to the audit log (only its length is). Answers the entry, with the `Location` of its `DELETE`."
       operationId: addOrderNote
+      x-error-codes:
+        "409":
+          - IDEMPOTENCY_IN_FLIGHT
+        "422":
+          - IDEMPOTENCY_KEY_MISMATCH
       security:
         - bearerAuth: []
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
         required: true
         content:
@@ -11906,6 +11929,8 @@ paths:
               $ref: "#/components/headers/RateLimit"
             ETag:
               $ref: "#/components/headers/EntityTag"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
           content:
             application/json:
               schema:
@@ -11918,6 +11943,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
