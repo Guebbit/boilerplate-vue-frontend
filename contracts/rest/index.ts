@@ -7155,7 +7155,7 @@ export interface PaymentAttentionItem {
     since: string;
     /** On a `refund_exceeds_remaining` row, by how much this open refund overshoots what the provider can still give back, in the payment's currency. */
     exceedsBy?: NonNegativeDecimalAmount;
-    /** The legal deadline to give the money back, stamped on the refund when it opened, on a `refused_refund` that pays for a withdrawal or a return. For a withdrawal it is the end of the shop's day, 14 days after the shop was told (Consumer Rights Directive Art. 13(1)), unless the goods or the proof of sending came later, which makes it due the moment they did; for a faulty or wrong item it is the moment the goods or the proof came. Absent for any other refund, which shows its age only. The client shows the days left; a past date means the deadline has gone. */
+    /** The legal deadline to give the money back, stamped on the refund when it opened, on any row backed by a refund that pays for a withdrawal or a return. For a withdrawal it is the end of the shop's day, 14 days after the shop was told (Consumer Rights Directive Art. 13(1)), unless the goods or the proof of sending came later, which makes it due the moment they did; for a faulty or wrong item it is the moment the goods or the proof came. Absent for any other refund, which shows its age only. The client shows the days left; a past date means the deadline has gone. */
     refundDueBy?: string;
     /** Which rule `refundDueBy` follows. Present exactly when `refundDueBy` is. */
     refundDueRule?: RefundDueRule;
