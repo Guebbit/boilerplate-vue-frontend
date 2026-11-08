@@ -90,3 +90,29 @@ export const useIdempotencyKeys = (): IdempotencyKeysBySubject => {
         }
     };
 };
+
+/**
+ * Runs one keyed call and settles its key: kept when the attempt may still be running or never
+ * arrived, fresh after any answer. The one place the "send, then settle" pairing lives, for the
+ * writes that take an optional key (notes, address create, add to cart, reorder).
+ *
+ * @param keeper - The intent's keeper, from {@link useIdempotencyKey} or `forSubject`.
+ * @param call - The write, given the axios options that carry the header.
+ * @param options - Per-call axios options the header is merged into, such as an upload progress hook.
+ * @returns The call's own promise, settled the same way it would be without the keeper.
+ */
+export const sendKeyed = <T>(
+    keeper: IdempotencyKeyKeeper,
+    call: (options: AxiosRequestConfig) => Promise<T>,
+    options?: AxiosRequestConfig
+): Promise<T> =>
+    call(keeper.withKey(options)).then(
+        (response) => {
+            keeper.settle();
+            return response;
+        },
+        (error: unknown) => {
+            keeper.settle(error);
+            throw error;
+        }
+    );

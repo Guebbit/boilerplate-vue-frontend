@@ -163,7 +163,7 @@ describe('CU27 · I filled a cart before I had signed in', () => {
                 cy.get('[data-test=notifications-panel]').should('contain.text', title);
                 cy.get('[data-test=notifications-panel]').should(
                     'contain.text',
-                    'no longer available and were not added'
+                    'could not be added, because they are no longer available'
                 );
 
                 cy.step('a reload takes the alert away: the bell message is what remembers');

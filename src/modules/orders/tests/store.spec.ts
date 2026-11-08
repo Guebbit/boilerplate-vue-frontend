@@ -253,9 +253,10 @@ describe('useOrdersStore', () => {
             useOrdersStore()
                 .addNote('o1', 'Called the buyer')
                 .then((entry) => {
-                    expect(addOrderNote).toHaveBeenCalledExactlyOnceWith('o1', {
-                        text: 'Called the buyer'
-                    });
+                    expect(addOrderNote).toHaveBeenCalledTimes(1);
+                    const [orderId, body, options] = vi.mocked(addOrderNote).mock.calls[0];
+                    expect([orderId, body]).toEqual(['o1', { text: 'Called the buyer' }]);
+                    expect(options?.headers).toHaveProperty('Idempotency-Key');
                     expect(entry).toEqual(TIMELINE[0]);
                 }));
     });

@@ -257,7 +257,10 @@ describe('useCartStore', () => {
             const store = useCartStore();
 
             return store.addCartItem('p1', 2).then(() => {
-                expect(addCartItem).toHaveBeenCalledWith({ productId: 'p1', quantity: 2 });
+                expect(vi.mocked(addCartItem).mock.calls[0]?.[0]).toEqual({
+                    productId: 'p1',
+                    quantity: 2
+                });
                 expect(store.cartItems).toEqual(CART.items);
             });
         });
@@ -631,7 +634,7 @@ describe('useCartStore', () => {
             const store = useCartStore();
 
             return store.reorder('o1').then((result) => {
-                expect(apiReorder).toHaveBeenCalledWith({ orderId: 'o1' });
+                expect(vi.mocked(apiReorder).mock.calls[0]?.[0]).toEqual({ orderId: 'o1' });
                 expect(store.cart).toEqual(CART);
                 expect(store.cartSummary?.itemsCount).toBe(1);
                 expect(result?.lines).toEqual([

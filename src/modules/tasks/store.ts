@@ -8,7 +8,11 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
-import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
+import {
+    sendKeyed,
+    useIdempotencyKey,
+    useIdempotencyKeys
+} from '@/infrastructure/http/idempotency.ts';
 import { asPassive } from '@/infrastructure/http/passive.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
@@ -141,7 +145,16 @@ export const useTasksStore = defineStore('tasks', () => {
     const reopen = (id: string) => reopenTask(id).then(keep);
     const assign = (id: string, userId: string) => assignTask(id, { userId }).then(keep);
     const unassign = (id: string) => unassignTask(id).then(keep);
-    const addNote = (id: string, body: string) => createTaskNote(id, { body }).then(keep);
+    const addNote = (id: string, body: string) =>
+        sendKeyed(noteIdempotencyKeys.forSubject(`${id}\n${body}`), (options) =>
+            createTaskNote(id, { body }, options)
+        ).then(keep);
+
+    /**
+     * `Idempotency-Key`s for `addNote`, one per task and text: a task note has no delete door, so a
+     * lost response resends the SAME key and never appends twice; any answer mints a fresh one.
+     */
+    const noteIdempotencyKeys = useIdempotencyKeys();
 
     /**
      * `Idempotency-Key` for `submitContact` — a network error or a 5xx resends the SAME

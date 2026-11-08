@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import type { AxiosRequestConfig } from 'axios';
 import {
     IDEMPOTENCY_KEY_HEADER,
+    sendKeyed,
     useIdempotencyKey,
     useIdempotencyKeys
 } from '@/infrastructure/http/idempotency.ts';
@@ -111,5 +112,37 @@ describe('useIdempotencyKeys', () => {
 
         expect(keyOf(keys.forSubject('order-1').withKey())).toBe(first);
         expect(keyOf(keys.forSubject('order-2').withKey())).not.toBe(first);
+    });
+});
+
+describe('sendKeyed', () => {
+    it('hands the call the key, and mints a fresh one after the answer', async () => {
+        const keeper = useIdempotencyKey();
+        const sent: string[] = [];
+        const call = (options: AxiosRequestConfig) => {
+            sent.push(keyOf(options));
+            return Promise.resolve('ok');
+        };
+
+        await sendKeyed(keeper, call);
+        await sendKeyed(keeper, call);
+
+        expect(sent).toHaveLength(2);
+        expect(sent[1]).not.toBe(sent[0]);
+    });
+
+    it('resends the SAME key after a transport failure, and rethrows it', async () => {
+        const keeper = useIdempotencyKey();
+        const sent: string[] = [];
+        const call = (options: AxiosRequestConfig) => {
+            sent.push(keyOf(options));
+            // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the toolkit rejects with the plain `{ status }` shape `keepsIdempotencyKey` reads, not an Error
+            return Promise.reject(TRANSPORT_FAILURE);
+        };
+
+        await expect(sendKeyed(keeper, call)).rejects.toBe(TRANSPORT_FAILURE);
+        await expect(sendKeyed(keeper, call)).rejects.toBe(TRANSPORT_FAILURE);
+
+        expect(sent[1]).toBe(sent[0]);
     });
 });

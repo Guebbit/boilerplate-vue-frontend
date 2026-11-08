@@ -45,6 +45,7 @@ const { loadProducts, productOf, availabilityLabel } = useProductLines();
 const REASON_KEYS: Record<MergeLineReason, string> = {
     summed: 'cart-page.merge-reason-summed',
     capped: 'cart-page.merge-reason-capped',
+    cart_full: 'cart-page.merge-reason-cart_full',
     removed: 'cart-page.merge-reason-removed'
 };
 

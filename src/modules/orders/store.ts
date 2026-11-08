@@ -6,6 +6,7 @@
  * for endpoints that don't fit the toolkit's record-shaped primitives.
  */
 import { defineStore } from 'pinia';
+import { sendKeyed, useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { getCurrentLocale } from '@/i18n';
@@ -110,6 +111,13 @@ const fetchTimeline = (orderId: string): Promise<OrderTimelineEntry[]> =>
     getOrderTimeline(orderId).then((response) => response.items);
 
 /**
+ * `Idempotency-Key`s for `addNote`, one per order and text: a lost response resends the SAME key,
+ * so a retry never leaves the note twice; any answer mints a fresh one, so a second click on the
+ * same words is a new note.
+ */
+const noteIdempotencyKeys = useIdempotencyKeys();
+
+/**
  * Leaves a staff note on an order's timeline — `POST /orders/{id}/timeline/notes` (`update:Order`).
  * Outside `fetchAny` like {@link fetchTimeline}: the timeline reads again afterwards, and the page's
  * shared `loading` must not disable its buttons for a note.
@@ -119,7 +127,9 @@ const fetchTimeline = (orderId: string): Promise<OrderTimelineEntry[]> =>
  * @returns A promise resolving with the new `note_added` entry.
  */
 const addNote = (orderId: string, text: string): Promise<OrderTimelineEntry> =>
-    addOrderNote(orderId, { text });
+    sendKeyed(noteIdempotencyKeys.forSubject(`${orderId}\n${text}`), (options) =>
+        addOrderNote(orderId, { text }, options)
+    );
 
 /**
  * Withdraws the text of a staff note — `DELETE /orders/{id}/timeline/notes/{eventId}` (`update:Order`).
