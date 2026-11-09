@@ -337,9 +337,10 @@ const sendProductUpdate = (
     );
 
 /**
- * After a save. The API answered with the stored `imageUrl` and the merged translations; the
- * admin record is the only place both live, so it is reloaded rather than patched by hand — the
- * store's own optimistic patch skips `translations` for the same reason (see `products/store.ts`).
+ * After a save. The API answered with the product as a GET by this caller reads it: the stored
+ * `imageUrl` and, for a holder of `read:Translation`, the merged translations. The admin record is
+ * the one place both live, so it is reloaded rather than patched by hand — the store's own
+ * optimistic patch skips `translations` for the same reason (see `products/store.ts`).
  *
  * @param productId - The saved product.
  * @returns A promise resolving `void` once the admin record is reloaded (`handleSubmit`'s
