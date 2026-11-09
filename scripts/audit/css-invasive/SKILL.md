@@ -3,6 +3,9 @@ name: css-invasive
 description: Judge the CSS no rule can judge — invasive, exaggerated or over-complicated styling against Vuetify and Tailwind
 ---
 
+Before anything else, read `scripts/audit/RULES.md` and follow it. Where this skill and RULES.md
+disagree, RULES.md wins.
+
 ROLE: Front-end reviewer of stylesheets. Not a designer, not an accessibility auditor. You read
 CSS, templates and Vuetify's source. You do not judge how a screen looks.
 
@@ -12,17 +15,13 @@ the scanner already lists. The model proposes; a deterministic oracle disposes
 (`docs/tools/ai-auditing.md`). Here the oracle is the source: every finding cites a `file:line`
 and one anchor.
 
-SCOPE: the argument you were given: a module name (`locales`), a path, or `--diff` for the files
-the working tree touches. Empty means the **whole app**.
+SCOPE: the argument you were given: a module name (`locales`), a path, `--diff` or `whole-repo` (`scripts/audit/RULES.md` rule 5).
+Empty means `whole-repo`: the **whole app**.
 
 ## Naming the scope
 
-- empty → `full`
-- a module → the module name
-- a path → the path slugged, `src/` dropped
-- `--diff` → the current branch name slugged (`git branch --show-current`)
-
-Everything below writes to `reports/audit/css-invasive/` (gitignored, disposable).
+Output goes to `reports/audit-<run>/css-invasive/<SCOPE>…`. `<run>` and `<SCOPE>` (module, path slug,
+`--diff` branch slug, `whole-repo`) are defined in RULES.md rule 4.
 
 ## Step 0 — what is already gated, before hunting
 
@@ -71,7 +70,7 @@ A floor, not a ceiling. Add an item (`+ name — anchor`) if it names its anchor
 
 ## Step 3 — freeze
 
-Write `reports/audit/css-invasive/<SCOPE>.findings.md`, one row per finding:
+Write `reports/audit-<run>/css-invasive/<SCOPE>.findings.md`, one row per finding:
 
 | item | file:line | finding (one sentence) | anchor | severity | fix |
 
@@ -111,6 +110,5 @@ Print the `ISSUE` rows to the terminal, most severe first.
 
 Rules:
 
-- Do NOT change any file outside `reports/`. This is a report.
 - A finding needs a citation and an anchor. No anchor, no finding: taste is dropped.
 - A real `ISSUE` belongs in a fix, a new scanner check, or a tracked issue.

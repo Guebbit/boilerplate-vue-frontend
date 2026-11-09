@@ -3,6 +3,9 @@ name: unused-locale-keys
 description: List locale keys nothing in the app reads — a report-only scan, then judge each candidate
 ---
 
+Before anything else, read `scripts/audit/RULES.md` and follow it. Where this skill and RULES.md
+disagree, RULES.md wins.
+
 ROLE: Reviewer of translation dictionaries. You read; you edit nothing.
 
 GOAL: Find dead or misplaced locale keys. A locale file has no compiler, so a stale entry sits
@@ -21,6 +24,6 @@ The scan is a net, not an evaluator. Before calling a key dead, grep for it:
 
 ## Report
 
-Write `reports/audit/unused-locale-keys/<date>.md` (gitignored): one line per confirmed-dead key
+Write `reports/audit-<run>/unused-locale-keys/<date>.md` (gitignored): one line per confirmed-dead key
 with `file:line`, and one per false positive with the reason. A finding without a `file:line` is
 not a finding. Never delete a key yourself.
