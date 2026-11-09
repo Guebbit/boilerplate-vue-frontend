@@ -1264,7 +1264,6 @@ paths:
           - LOCALE_ENTRY_KEY_COLLISION
         "422":
           - LOCALE_APP_UNKNOWN
-          - LOCALE_ENTRIES_EMPTY
           - LOCALE_ENTRY_KEY_INVALID
       security:
         - bearerAuth: []
