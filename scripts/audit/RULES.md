@@ -71,6 +71,7 @@ The backend keeps its own copy, the same text except the report root (`tmp/repor
 
 ## 8. Evidence and the previous run
 
+- The report starts with the HEAD sha of every repo the audit read, and whether each tree was clean.
 - A name, title or comment is a claim; what the code calls is the evidence.
 - Re-open every cited `file:line` before writing it: the range exists, and it shows what the row
   says.
