@@ -16,7 +16,7 @@ export default {
  * shared create/edit dialog.
  */
 import ListEmptyState from '@/ui/molecules/ListEmptyState.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { BookOpenText, Languages, Plus } from 'lucide-vue-next';
@@ -24,6 +24,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useLocalesStore } from '../store.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
 import LanguageFormDialog from '../components/LanguageFormDialog.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -92,7 +93,12 @@ const editing = ref<Language | undefined>();
  * The create/edit dialog's own blocked state — the form already validated clean, so anything here
  * is a save failure the dialog stays open for, rendered through its `error` slot.
  */
-const { message: saveError, report: reportSaveError, clear: clearSaveError } = useBlockingError();
+const {
+    message: saveError,
+    report: reportSaveError,
+    warn: warnSaveError,
+    clear: clearSaveError
+} = useBlockingError();
 
 /**
  * Columns of the languages board.
@@ -121,13 +127,37 @@ const openCreate = () => {
 };
 
 /**
- * Opens the dialog against one row.
+ * Opens the dialog against one row, and reads that language by its own URL: the list is not the
+ * item read, and only that read hands the transport the `ETag` the save sends as `If-Match`.
  */
 const openEdit = (language: Language) => {
     editing.value = language;
     formOpen.value = true;
     clearSaveError();
+    localesStore.fetchLanguage(language.tag).catch(onAmbientError);
 };
+
+/**
+ * The save came back 412: the language changed since it was read (switched off, or renamed by a
+ * peer). "Reload latest" re-reads it and reopens the dialog on the fresh copy, which also
+ * refreshes the `ETag` the next save sends.
+ */
+const {
+    isStale,
+    handle: handleStaleSave,
+    reloadLatest
+} = useStaleRecord({ warn: warnSaveError, clear: clearSaveError }, () =>
+    editing.value
+        ? localesStore.fetchLanguage(editing.value.tag).then((fresh) => {
+              formOpen.value = false;
+              // Closed for a tick so the dialog refills its form from the fresh row on reopening.
+              return nextTick().then(() => {
+                  editing.value = fresh;
+                  formOpen.value = true;
+              });
+          })
+        : Promise.resolve()
+);
 
 /**
  * Saves the dialog: a create when nothing was being edited, an edit otherwise.
@@ -159,6 +189,7 @@ const handleSave = (fields: {
             formOpen.value = false;
         })
         .catch((error: unknown) => {
+            if (handleStaleSave(error)) return;
             // A duplicate tag names its field; anything else blocks the dialog.
             if (languageDialog.value)
                 languageDialog.value.applyServerErrors(error, {
@@ -469,7 +500,20 @@ onMounted(() => {
             @save="handleSave"
         >
             <template #error>
-                <InlineErrorAlert :message="saveError" data-test="language-form-error" />
+                <InlineErrorAlert
+                    :message="saveError"
+                    :type="isStale ? 'warning' : 'error'"
+                    data-test="language-form-error"
+                />
+                <v-btn
+                    v-if="isStale"
+                    variant="tonal"
+                    color="warning"
+                    data-test="language-reload-latest"
+                    @click="reloadLatest"
+                >
+                    {{ t('generic.action-reload-latest') }}
+                </v-btn>
             </template>
         </LanguageFormDialog>
     </div>

@@ -33,6 +33,7 @@ import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
 import { useTranslationTabOrder } from '@/ui/composables/use-translation-tab-order.ts';
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -225,7 +226,23 @@ const handleRemoveLocale = (tag: string) => {
  * until it succeeds, so a failure blocks it in place rather than joining the toast queue. The
  * page's own load stays a toast (ambient) — see docs/theory/request-flow.md.
  */
-const { message: saveError, report: reportSaveError, clear: clearSaveError } = useBlockingError();
+const {
+    message: saveError,
+    report: reportSaveError,
+    warn: warnSaveError,
+    clear: clearSaveError
+} = useBlockingError();
+
+/**
+ * The save came back 412: the entity (a product, say) was edited since this screen loaded. "Reload
+ * latest" discards the drafts for the server's rows, which also refreshes the `ETag` the next save
+ * sends.
+ */
+const {
+    isStale,
+    handle: handleStaleSave,
+    reloadLatest
+} = useStaleRecord({ warn: warnSaveError, clear: clearSaveError }, () => load());
 
 /**
  * Saves every open and removed locale in one merging write. A blank field goes out as `null`
@@ -245,7 +262,10 @@ const handleSave = () => {
             addMessage(t('entity-translations-page.success-save'));
             return load();
         })
-        .catch((error: unknown) => reportSaveError(error));
+        .catch((error: unknown) => {
+            if (handleStaleSave(error)) return;
+            reportSaveError(error);
+        });
 };
 </script>
 
@@ -324,9 +344,21 @@ const handleSave = () => {
 
             <InlineErrorAlert
                 :message="saveError"
+                :type="isStale ? 'warning' : 'error'"
                 class="mt-3"
                 data-test="entity-translations-save-error"
             />
+            <v-btn
+                v-if="isStale"
+                variant="tonal"
+                color="warning"
+                class="mt-3"
+                data-test="entity-translations-reload-latest"
+                :loading="loading"
+                @click="reloadLatest"
+            >
+                {{ t('generic.action-reload-latest') }}
+            </v-btn>
         </v-card>
     </div>
 </template>

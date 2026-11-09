@@ -164,6 +164,8 @@ export const GetSecurityTxtResponse = zod.string();
  * caller who holds `display:Locale` is answered outside the shared cache, so only
  * such a caller gets a flag set to `true`; everyone else's answer is the cached one,
  * with every flag `false`.
+ *
+ * Unpaged: one row per language this deployment offers.
  * @summary Supported languages
  */
 export const listLocalesResponseLocalesItemIdMax = 64;
@@ -307,6 +309,8 @@ export const CreateLocaleResponse = zod.strictObject({
  * `GET /locales/{locale}/messages?app=`.
  *
  * Public and cacheable, like every other locale read.
+ *
+ * Unpaged: the apps come from the API's configuration.
  * @summary Translation apps
  */
 export const listLocaleAppsResponseAppsItemIdMax = 64;
@@ -398,6 +402,10 @@ export const replaceLocalePathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z
 export const ReplaceLocaleParams = zod.strictObject({
     locale: zod.string().max(replaceLocalePathLocaleMax).regex(replaceLocalePathLocaleRegExp)
 });
+export const replaceLocaleHeaderIfMatchMax = 200;
+export const ReplaceLocaleHeader = zod.strictObject({
+    'If-Match': zod.string().max(replaceLocaleHeaderIfMatchMax).optional()
+});
 export const replaceLocaleBodyNameMax = 100;
 export const replaceLocaleBodyNativeNameMax = 100;
 export const ReplaceLocaleBody = zod.strictObject({
@@ -463,6 +471,10 @@ export const updateLocalePathLocaleMax = 35;
 export const updateLocalePathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const UpdateLocaleParams = zod.strictObject({
     locale: zod.string().max(updateLocalePathLocaleMax).regex(updateLocalePathLocaleRegExp)
+});
+export const updateLocaleHeaderIfMatchMax = 200;
+export const UpdateLocaleHeader = zod.strictObject({
+    'If-Match': zod.string().max(updateLocaleHeaderIfMatchMax).optional()
 });
 export const updateLocaleBodyNameMax = 100;
 export const updateLocaleBodyNativeNameMax = 100;
@@ -1180,6 +1192,10 @@ export const ReplaceEntityTranslationsParams = zod.strictObject({
         .max(replaceEntityTranslationsPathIdMax)
         .regex(replaceEntityTranslationsPathIdRegExp)
 });
+export const replaceEntityTranslationsHeaderIfMatchMax = 200;
+export const ReplaceEntityTranslationsHeader = zod.strictObject({
+    'If-Match': zod.string().max(replaceEntityTranslationsHeaderIfMatchMax).optional()
+});
 export const replaceEntityTranslationsBodyOneFieldsMaxOne = 10000;
 export const replaceEntityTranslationsBodyOneOriginDefault = `human`;
 export const ReplaceEntityTranslationsBody = zod.record(
@@ -1297,6 +1313,10 @@ export const UpdateEntityTranslationsParams = zod.strictObject({
         .min(1)
         .max(updateEntityTranslationsPathIdMax)
         .regex(updateEntityTranslationsPathIdRegExp)
+});
+export const updateEntityTranslationsHeaderIfMatchMax = 200;
+export const UpdateEntityTranslationsHeader = zod.strictObject({
+    'If-Match': zod.string().max(updateEntityTranslationsHeaderIfMatchMax).optional()
 });
 export const updateEntityTranslationsBodyOneFieldsMaxOne = 10000;
 export const UpdateEntityTranslationsBody = zod.record(
@@ -2327,6 +2347,7 @@ export const ReauthResponse = zod.strictObject({
 export const LogoutResponse = zod.void();
 /**
  * Lists the authenticated user's live sessions, one per sign-in, newest first. Each carries an id that stays the same for as long as the sign-in lasts (a `jwt` refresh or a `cookie` re-proof does not change it), when the sign-in happened, when it ends, and a `current` marker; never a credential. The session the caller's own cookie (or `ses_…` bearer) belongs to is flagged `current`. In `cookie` mode each also carries a coarse `device` label such as "Firefox on Linux", read from the User-Agent at the sign-in. A staff session that has idled out is not listed: it no longer signs anyone in.
+ * Unpaged: only live sign-ins are listed, and each ends when it expires.
  * @summary List active sessions
  */
 export const listSessionsResponseSessionsItemIdMax = 64;
@@ -2390,7 +2411,7 @@ export const RevokeSessionParams = zod.strictObject({
 });
 export const RevokeSessionResponse = zod.void();
 /**
- * The authenticated user's address book. Whenever it is non-empty, exactly one entry carries `default` — the one checkout ships to when no `addressId` is named.
+ * The authenticated user's address book. Whenever it is non-empty, exactly one entry carries `default` — the one checkout ships to when no `addressId` is named. Unpaged: the book holds at most `NODE_ADDRESS_BOOK_MAX` entries.
  * @summary List saved addresses
  */
 export const listAddressesResponseAddressesItemIdMax = 64;
@@ -6596,7 +6617,7 @@ export const RegenerateBackupCodesResponse = zod.strictObject({
     backupCodesRemaining: zod.number().min(regenerateBackupCodesResponseBackupCodesRemainingMin)
 });
 /**
- * The sign-in providers linked to the authenticated account (Google, GitHub), with when each was connected. Never carries a provider's own identifier. An empty list means the account signs in with a password alone.
+ * The sign-in providers linked to the authenticated account (Google, GitHub), with when each was connected. Never carries a provider's own identifier. An empty list means the account signs in with a password alone. Unpaged: at most one per provider.
  * @summary List the caller's connected accounts
  */
 export const ListOAuthLinksResponse = zod.strictObject({
@@ -13465,6 +13486,7 @@ export const GetOrderInvoiceParams = zod.strictObject({
 export const GetOrderInvoiceResponse = zod.unknown();
 /**
  * One entry per refund that has settled on this order's payment, oldest first — a full refund and each part of a partial one each have their own credit note. Empty for an order never refunded, with no invoice to reverse, or whose money the caller may not read: the buyer sees their own, and staff need the payments staff read (`display:Payment`), so the warehouse that packs the order sees none. `id` is what `GET /orders/{id}/credit-notes/{creditNoteId}` downloads.
+ * Unpaged: one per settled refund of this order.
  * @summary List the order's credit notes
  */
 export const listOrderCreditNotesPathIdMax = 64;
@@ -14472,7 +14494,7 @@ export const ListOrderShipmentsResponse = zod.strictObject({
     )
 });
 /**
- * Which methods this deployment offers, so the frontend hard-codes none. `card` is present only when a card payment provider is configured; `bank_transfer` only once its beneficiary and IBAN are configured. With neither the list is empty, and checkout is off until a method is configured. Public — like `GET /delivery/methods`, this is pre-purchase information.
+ * Which methods this deployment offers, so the frontend hard-codes none. `card` is present only when a card payment provider is configured; `bank_transfer` only once its beneficiary and IBAN are configured. With neither the list is empty, and checkout is off until a method is configured. Public — like `GET /delivery/methods`, this is pre-purchase information. Unpaged: at most one per payment method kind.
  * @summary List payment methods
  */
 export const listPaymentMethodsResponseMethodsItemHoldHoursMin = 0;
@@ -15380,7 +15402,7 @@ export const ReceivePaymentWebhookBody = zod.strictObject({
 });
 export const ReceivePaymentWebhookResponse = zod.void();
 /**
- * Every shipping method this shop offers — flat rates and free-above thresholds, unfiltered. Public, because what shipping costs is pre-purchase information; the authoritative pricing and weight-fit check happen server-side, against the caller's real basket, at `PUT /cart/shipping-method` and again at checkout — this list is a catalogue, not a quote.
+ * Every shipping method this shop offers — flat rates and free-above thresholds, unfiltered. Public, because what shipping costs is pre-purchase information; the authoritative pricing and weight-fit check happen server-side, against the caller's real basket, at `PUT /cart/shipping-method` and again at checkout — this list is a catalogue, not a quote. Unpaged: the shop's configured catalogue.
  * @summary List shipping methods
  */
 export const listShippingMethodsResponseMethodsItemPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -17870,6 +17892,10 @@ export const ReplaceWebhookSubscriptionParams = zod.strictObject({
         .max(replaceWebhookSubscriptionPathIdMax)
         .regex(replaceWebhookSubscriptionPathIdRegExp)
 });
+export const replaceWebhookSubscriptionHeaderIfMatchMax = 200;
+export const ReplaceWebhookSubscriptionHeader = zod.strictObject({
+    'If-Match': zod.string().max(replaceWebhookSubscriptionHeaderIfMatchMax).optional()
+});
 export const replaceWebhookSubscriptionBodyUrlMax = 2048;
 export const replaceWebhookSubscriptionBodyUrlRegExp = new RegExp('(?:^https://)');
 export const replaceWebhookSubscriptionBodyDescriptionMax = 500;
@@ -17983,6 +18009,10 @@ export const UpdateWebhookSubscriptionParams = zod.strictObject({
         .max(updateWebhookSubscriptionPathIdMax)
         .regex(updateWebhookSubscriptionPathIdRegExp)
 });
+export const updateWebhookSubscriptionHeaderIfMatchMax = 200;
+export const UpdateWebhookSubscriptionHeader = zod.strictObject({
+    'If-Match': zod.string().max(updateWebhookSubscriptionHeaderIfMatchMax).optional()
+});
 export const updateWebhookSubscriptionBodyUrlMax = 2048;
 export const updateWebhookSubscriptionBodyUrlRegExp = new RegExp('(?:^https://)');
 export const updateWebhookSubscriptionBodyDescriptionMax = 500;
@@ -18095,6 +18125,10 @@ export const DeleteWebhookSubscriptionParams = zod.strictObject({
         .min(1)
         .max(deleteWebhookSubscriptionPathIdMax)
         .regex(deleteWebhookSubscriptionPathIdRegExp)
+});
+export const deleteWebhookSubscriptionHeaderIfMatchMax = 200;
+export const DeleteWebhookSubscriptionHeader = zod.strictObject({
+    'If-Match': zod.string().max(deleteWebhookSubscriptionHeaderIfMatchMax).optional()
 });
 export const DeleteWebhookSubscriptionResponse = zod.void();
 /**
@@ -18384,6 +18418,8 @@ export const ReplayWebhookDeliveryResponse = zod.strictObject({
  * `asyncapi.webhooks.yaml` — the same files `asyncapi.public.yaml` is generated from —
  * so this list and what can actually fire can never drift apart. A module that is
  * not deployed lists nothing. See `docs/api/asyncapi-workflow.md`.
+ *
+ * Unpaged: the event catalogue of the deployed modules.
  * @summary The public event catalogue
  */
 export const ListWebhookEventsResponse = zod.strictObject({

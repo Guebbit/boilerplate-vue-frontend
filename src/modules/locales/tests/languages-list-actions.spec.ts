@@ -16,6 +16,7 @@ import { enabledModules } from '@/modules';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { LanguageActions, Language } from '@types';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -143,5 +144,30 @@ describe('deleting a live language', () => {
         expect(request?.message).toContain('is live');
         expect(request?.confirmLabel).toBe('Delete language');
         expect(remove).toHaveBeenCalledExactlyOnceWith('es');
+    });
+});
+
+describe('editing a language', () => {
+    it('reads the language by its own URL on open, says it moved on a 412, and re-reads on request', async () => {
+        const row = language('es', true, { update: true, deactivate: true });
+        const { wrapper, store } = await mountBoard([row]);
+        const fetch = vi.spyOn(store, 'fetchLanguage').mockResolvedValue(row);
+        vi.spyOn(store, 'editLanguage').mockRejectedValue(
+            aProblem(412, [{ code: 'PRECONDITION_FAILED', message: 'Precondition failed' }])
+        );
+
+        await control(wrapper, 'es', 'row-edit').trigger('click');
+        await flushPromises();
+        expect(fetch).toHaveBeenCalledWith('es');
+
+        const form = document.querySelector<HTMLFormElement>('[data-test=language-form] form');
+        form?.dispatchEvent(new Event('submit', { cancelable: true }));
+        await flushPromises();
+        const reload = document.querySelector<HTMLElement>('[data-test=language-reload-latest]');
+        reload?.click();
+        await flushPromises();
+
+        expect(reload).not.toBeNull();
+        expect(fetch).toHaveBeenCalledTimes(2);
     });
 });

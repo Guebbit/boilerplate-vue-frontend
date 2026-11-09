@@ -130,8 +130,6 @@ export const ERROR_CODES = {
     LOCALE_ENTITY_NOT_FOUND: 'LOCALE_ENTITY_NOT_FOUND',
     /** 404 — The entity type is not a registered translatable. */
     LOCALE_ENTITY_TYPE_UNKNOWN: 'LOCALE_ENTITY_TYPE_UNKNOWN',
-    /** 422 — A merge patch named no entry at all. */
-    LOCALE_ENTRIES_EMPTY: 'LOCALE_ENTRIES_EMPTY',
     /** 409 — The key is a strict dotted prefix of another key, or has one as a prefix: no dictionary tree can hold both. */
     LOCALE_ENTRY_KEY_COLLISION: 'LOCALE_ENTRY_KEY_COLLISION',
     /** 409 — The key is already translated in this language and app, or a batch names it twice. */

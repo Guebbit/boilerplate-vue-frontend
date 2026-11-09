@@ -23,9 +23,10 @@ const tags = new Map<string, string>();
 const VIEW_SUFFIX = /\/hard$/;
 
 /**
- * Methods that answer with the row's new state and its new tag.
+ * Methods whose answer carries the row's tag. A PUT answers none (RFC 9110 §9.3.4), so the tag
+ * held for it is dropped and the next conditional write re-reads first.
  */
-const TAGGING_METHODS = new Set(['get', 'put', 'patch']);
+const TAGGING_METHODS = new Set(['get', 'patch']);
 
 /**
  * Methods that take an `If-Match`.
