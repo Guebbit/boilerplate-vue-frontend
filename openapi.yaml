@@ -172,6 +172,7 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
   /config:
     get:
+      x-cache: "max-age: 60"
       tags:
         - System
       summary: What a client needs to boot, before it has a session
@@ -194,7 +195,7 @@ paths:
           description: The deployment's public configuration
           headers:
             Cache-Control:
-              description: A short public lifetime; the values only change with a restart.
+              description: "`public, max-age=60`. The values change only with a restart."
               schema:
                 type: string
             x-request-id:
@@ -213,6 +214,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Config"
+        "304":
+          $ref: "#/components/responses/NotModified"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -15550,7 +15553,7 @@ components:
         type: string
     Vary:
       required: false
-      description: "The request headers the answer depends on (RFC 9110 section 12.5.5), so a cache keeps one copy per value: always `Origin`, plus `Accept-Language` where the locale picks the body."
+      description: "The request headers the answer depends on (RFC 9110 section 12.5.5), so a cache keeps one copy per value: always `Origin`, plus `Accept-Language` where the locale picks the body, plus `Authorization` on every cached or private read, plus `Cookie` there in cookie mode."
       schema:
         type: string
     Idempotent-Replayed:
