@@ -200,7 +200,8 @@ is `GET /config`, so the footer, Terms, Legal and Privacy pages keep working wit
 
 Which siblings a module may reach at all is enforced separately, by a generated ESLint rule rather
 than a manifest field: each module's `module.yaml` `dependsOn` names which siblings it
-may import (`eslint.config.ts` reads it), and a reach outside that list fails `npm run lint` at the offending line.
+may import (`eslint.config.ts` reads it) and the backend modules whose API it calls
+(`tests/cross-cutting/module-coupling.spec.ts` checks the second), and a reach outside that list fails `npm run lint` at the offending line.
 
 ### Why three fields are lazy
 

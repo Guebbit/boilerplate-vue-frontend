@@ -2,7 +2,7 @@
 
 ::: tip At a glance
 **Owns** — the catalogue screens: the list (storefront grid for shoppers, table for staff) and detail, admin create and edit.
-**Depends on** — nothing but its own locales. [`cart`](./cart.md) and [`wishlist`](./wishlist.md) depend on it, and put their buttons on the product page through the `product-actions` slot.
+**Depends on** — the backend modules whose API it calls: [`locales`](./locales.md), [`delivery`](./delivery.md) and [`shop`](./shop.md) (`module.yaml` `dependsOn`). [`cart`](./cart.md) and [`wishlist`](./wishlist.md) depend on it, and put their buttons on the product page through the `product-actions` slot.
 **Breaks if you change** — the shape of `useProductLines`, `shelfStateOf` or `invalidateProductsCache`. [`cart`](./cart.md), [`wishlist`](./wishlist.md), [`inventory`](./inventory.md) and [`stock-alerts`](./stock-alerts.md) call them.
 :::
 

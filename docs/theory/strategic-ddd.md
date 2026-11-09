@@ -120,11 +120,11 @@ the store or component each entry describes. The glossary sits beside the meanin
 DDD's own advice is the part most often skipped: tactical patterns belong in the **core** domain,
 and everything else should use the simplest thing that works.
 
-| Subdomain    | Meaning                                                         | Here                                                                                                 |
-| ------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `core`       | the reason the product exists — worth client-side rules         | `products`, `cart`, `orders`                                                                         |
-| `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `inventory`, `notifications`, `payments`, `returns`, `stats`, `stock-alerts`, `wishlist` |
-| `generic`    | a solved problem, interchangeable with something bought         | `account`, `api-keys`, `tasks`, `locales`, `observability`, `users`, `webhooks`                      |
+| Subdomain    | Meaning                                                         | Here                                                                                                                       |
+| ------------ | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `core`       | the reason the product exists — worth client-side rules         | `products`, `cart`, `orders`                                                                                               |
+| `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `inventory`, `notifications`, `payments`, `returns`, `shop`, `shop-tasks`, `stats`, `stock-alerts`, `wishlist` |
+| `generic`    | a solved problem, interchangeable with something bought         | `account`, `api-keys`, `tasks`, `locales`, `observability`, `users`, `webhooks`                                            |
 
 `example` is not classified: it is the template a new domain is copied from. Its `domain/` holds
 one reading rule, `publicationOf`, the smallest case of a client rule that reads an answer and
@@ -133,9 +133,10 @@ case: the moves, Edit and Delete all come from `Example.actions`.
 
 The same split is drawn as a map in [Modules](../modules/index.md#the-whole-map).
 
-The rule of thumb that follows: **a `generic` module should not carry a `domain/` folder.** A
-pure-rules layer inside authentication or i18n is effort spent on the part of the client that should
-stay replaceable.
+The rule of thumb that follows: **a `generic` module's `domain/` is a smell, not a ban.** Expect it
+to be small (`locales` and `webhooks` each keep one file); a large one says the label is wrong. The
+reasoning is the backend's:
+[Strategic DDD](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/strategic-ddd.md).
 
 There is no `subdomain` field on the manifest, and no spec holding it. Nothing would read it at runtime, and the one check it enables — refusing `domain/` inside a `generic` module — would be a test acting on a label nothing else consults. The table above is guidance for a reader deciding where a rule goes; no test proves it, the same as `core`.
 
