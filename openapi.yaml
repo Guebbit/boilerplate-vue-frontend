@@ -27634,18 +27634,9 @@ x-error-codes:
   USER_ERASURE_DUE:
     status: 409
     description: The account owner asked for its deletion and the grace has run out, so it is erased by the next purge run and can no longer be restored.
-  USER_ERASURE_NOT_DUE:
-    status: 409
-    description: The account's erasure was claimed by another run, or is not due yet, so this run did nothing.
   USER_NOT_DELETED:
     status: 409
     description: The account is not soft-deleted, so there is nothing to restore.
-  USER_NOT_REAPER_DELETED:
-    status: 409
-    description: The reaper may only erase an account it soft-deleted itself. Raised by the reaper, never by a route.
-  USER_NOT_WARNED:
-    status: 409
-    description: The inactivity reaper tried to delete an account that was never warned first. Raised by the reaper, never by a route.
   USER_PURCHASE_HOLD_ALREADY_SET:
     status: 409
     description: The account already holds a staff purchase hold with this end date and note, so placing it again changes nothing.
@@ -27658,9 +27649,6 @@ x-error-codes:
   USER_ROLE_NOT_ASSIGNED:
     status: 409
     description: The account holds no staff role, so `POST /users/{id}/revoke-role` has nothing to take away.
-  USER_STAFF_NOT_REAPABLE:
-    status: 409
-    description: The inactivity reaper met an account holding a staff role and left it alone. Raised by the reaper, never by a route.
   VALIDATION_ERROR:
     status: 422
     description: One or more fields failed schema validation — see `errors[].details.field`.
