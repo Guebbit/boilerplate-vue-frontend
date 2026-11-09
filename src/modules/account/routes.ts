@@ -55,6 +55,15 @@ export default [
         component: () => import('./views/PasswordResetConfirm.vue')
     },
     {
+        // The first password of an account staff created: the same page and token as a reset, in
+        // setup mode, which always asks for the Terms tick. Public for the same reason.
+        path: 'account-setup',
+        name: 'AccountSetup',
+        meta: { title: 'account-setup-page.page-title' },
+        props: { mode: 'setup' },
+        component: () => import('./views/PasswordResetConfirm.vue')
+    },
+    {
         // Public deliberately: the restore link arrives by email, and the visitor following it is
         // by definition not logged in (the deletion ended every session) — the token is the
         // credential.

@@ -19,6 +19,7 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`account`](../modules/account.md)                     | `login/restore`                        | `AccountRestoreChallenge` | `guest`  | —                            | `views/AccountRestoreChallenge.vue` |
 | [`account`](../modules/account.md)                     | `password-reset`                       | `PasswordResetRequest`    | `guest`  | —                            | `views/PasswordResetRequest.vue`    |
 | [`account`](../modules/account.md)                     | `password-reset/confirm`               | `PasswordResetConfirm`    | `public` | —                            | `views/PasswordResetConfirm.vue`    |
+| [`account`](../modules/account.md)                     | `account-setup`                        | `AccountSetup`            | `public` | —                            | `views/PasswordResetConfirm.vue`    |
 | [`account`](../modules/account.md)                     | `account-restore`                      | `AccountRestore`          | `public` | —                            | `views/AccountRestore.vue`          |
 | [`account`](../modules/account.md)                     | `verify-email/confirm`                 | `VerifyEmailConfirm`      | `public` | —                            | `views/VerifyEmailConfirm.vue`      |
 | [`account`](../modules/account.md)                     | `email-change/confirm`                 | `EmailChangeConfirm`      | `public` | —                            | `views/EmailChangeConfirm.vue`      |
@@ -73,7 +74,7 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`webhooks`](../modules/webhooks.md)                   | `webhooks/deliveries`                  | `WebhookDeliveries`       | `auth`   | `read WebhookSubscription`   | `views/WebhookDeliveries.vue`       |
 | [`wishlist`](../modules/wishlist.md)                   | `wishlist`                             | `Wishlist`                | `auth`   | —                            | `views/Wishlist.vue`                |
 
-59 screens across 17 modules.
+60 screens across 17 modules.
 
 <!-- sitemap:end -->
 

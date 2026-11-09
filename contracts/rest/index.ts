@@ -1721,6 +1721,8 @@ export interface PasswordResetConfirmRequest {
     token: string;
     password: PasswordNew;
     passwordConfirm: Password;
+    /** Required when the account holds no Terms record, as an account an administrator created does not. Ignored otherwise. */
+    termsAccepted?: true;
 }
 
 export interface RefreshTokenResponse {

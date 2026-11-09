@@ -13,6 +13,7 @@
         "label-email": "Email",
         "label-password": "Password",
         "text-terms": "I accept the {terms} and have read the {privacy}",
+        "error-terms-required": "You must accept the Terms of Service and confirm you have read the Privacy Policy.",
         "text-analytics-consent": "Share usage statistics, crash reports and page-speed measurements to help us improve the product",
         "button-submit": "Register now",
         "success-email-code-sent": "Welcome! We sent a link to confirm your email address — you can look around in the meantime.",
@@ -181,6 +182,10 @@
         "button-submit": "Update password",
         "button-go-to-login": "Back to login",
         "success": "Password updated successfully. You can now log in."
+    },
+    "account-setup-page": {
+        "page-title": "Set up your account",
+        "button-submit": "Set my password"
     },
     "account-restore-challenge-page": {
         "page-title": "Restore your account",

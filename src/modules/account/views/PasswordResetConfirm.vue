@@ -16,16 +16,22 @@ export default {
  * called. The breach check (`usePasswordBreachCheck`) is advisory only — it never blocks this
  * submit, and works unauthenticated same as this page itself. Not on `LinkTokenConfirmCard`: a
  * multi-field form with a cross-field rule and server field errors.
+ *
+ * Two modes, one token and one endpoint. `setup` (the `account-setup` route, from the mail staff
+ * trigger when they create an account) always shows the unticked Terms box. `reset` shows it only
+ * once the API answers 422 naming `termsAccepted`: an account that never accepted (staff created
+ * it) and asked for a reset instead. The tick is sent only when the box is shown.
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import FormCard from '@/ui/organisms/FormCard.vue';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAccountAuthStore } from '../stores/auth.ts';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter.vue';
+import TermsAcceptanceCheckbox from '../components/TermsAcceptanceCheckbox.vue';
 import { usersPasswordSchema } from '@/modules/users';
 import { resetPasswordConfirmSchema } from '../schemas.ts';
 import { usePasswordBreachCheck } from '../composables/use-password-breach-check.ts';
@@ -42,7 +48,14 @@ interface PasswordResetConfirmForm {
     token?: string;
     password?: string;
     passwordConfirm?: string;
+    termsAccepted?: boolean;
 }
+
+/**
+ * Which door the visitor came through: the plain reset link, or the setup link of a staff-created
+ * account.
+ */
+const { mode = 'reset' } = defineProps<{ mode?: 'reset' | 'setup' }>();
 
 /**
  * Translation function, and the currently active locale code.
@@ -70,6 +83,27 @@ const { addMessage } = useNotificationsStore();
 const { confirmPasswordReset } = useAccountAuthStore();
 
 /**
+ * Whether the API said this account holds no Terms record, so a reset needs the tick too.
+ */
+const termsRequired = ref(false);
+
+/**
+ * Whether the Terms box is on screen: always on the setup page, on the reset page once asked for.
+ */
+const showTerms = computed(() => mode === 'setup' || termsRequired.value);
+
+/**
+ * Whether a rejection is the 422 that names `termsAccepted`.
+ *
+ * @param error - the rejected value, as caught
+ */
+const namesTerms = (error: unknown): boolean =>
+    // A single `as`: the rejection is the API's problem body, which only narrows by shape here.
+    ((error as { errors?: { field?: string }[] } | null)?.errors ?? []).some(
+        ({ field }) => field === 'termsAccepted'
+    );
+
+/**
  * Reference to the mounted `FormCard`, read for its `<form>` element.
  */
 const card = ref<InstanceType<typeof FormCard>>();
@@ -88,7 +122,8 @@ const {
     {
         token: readLinkToken(route),
         password: '',
-        passwordConfirm: ''
+        passwordConfirm: '',
+        termsAccepted: false
     },
     z
         .object({
@@ -96,11 +131,17 @@ const {
                 .string()
                 .min(1, { error: () => t('password-reset-confirm-page.token-required') }),
             password: usersPasswordSchema,
-            passwordConfirm: resetPasswordConfirmSchema
+            passwordConfirm: resetPasswordConfirmSchema,
+            termsAccepted: z.boolean()
         })
         .refine((data) => data.password === data.passwordConfirm, {
             error: () => t('users-form.password-dont-match'),
             path: ['passwordConfirm']
+        })
+        // Only while the box is shown: otherwise the field is not on the form and cannot be ticked.
+        .refine((data) => !showTerms.value || data.termsAccepted, {
+            error: () => t('signup-page.error-terms-required'),
+            path: ['termsAccepted']
         }),
     {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
@@ -147,7 +188,12 @@ const {
 const submitForm = () => {
     clearConfirmError();
     return handleSubmit(() =>
-        confirmPasswordReset(form.value.token!, form.value.password!, form.value.passwordConfirm!)
+        confirmPasswordReset(
+            form.value.token!,
+            form.value.password!,
+            form.value.passwordConfirm!,
+            showTerms.value ? true : undefined
+        )
             .then(() => {
                 addMessage(t('password-reset-confirm-page.success'));
                 return router.push(routerLinkI18n({ name: 'Login' }));
@@ -157,6 +203,7 @@ const submitForm = () => {
             // the router's own `onError` to report rather than this form's.
             .then(() => undefined)
     ).catch((error) => {
+        if (namesTerms(error)) termsRequired.value = true;
         applyServerErrors(error, { onUnmapped: () => reportConfirmError(error) });
     });
 };
@@ -167,7 +214,11 @@ const submitForm = () => {
         <FormCard
             ref="card"
             size="md"
-            :submit-label="t('password-reset-confirm-page.button-submit')"
+            :submit-label="
+                mode === 'setup'
+                    ? t('account-setup-page.button-submit')
+                    : t('password-reset-confirm-page.button-submit')
+            "
             :loading="isSubmitting"
             :back-to="routerLinkI18n({ name: 'Login' })"
             :back-label="t('password-reset-confirm-page.button-go-to-login')"
@@ -206,6 +257,12 @@ const submitForm = () => {
                 autocomplete="new-password"
                 :label="t('password-reset-confirm-page.label-password-confirm')"
                 v-bind="fieldErrorProps(showErrors ? formErrors.passwordConfirm : [])"
+            />
+            <TermsAcceptanceCheckbox
+                v-if="showTerms"
+                v-model="form.termsAccepted"
+                data-test="password-reset-terms-accepted"
+                v-bind="fieldErrorProps(showErrors ? formErrors.termsAccepted : [])"
             />
             <template #after-submit>
                 <InlineErrorAlert

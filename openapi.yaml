@@ -18071,6 +18071,11 @@ components:
           $ref: "#/components/schemas/PasswordNew"
         passwordConfirm:
           $ref: "#/components/schemas/Password"
+        termsAccepted:
+          type: boolean
+          enum:
+            - true
+          description: Required when the account holds no Terms record, as an account an administrator created does not. Ignored otherwise.
     RefreshTokenResponse:
       type: object
       additionalProperties: false

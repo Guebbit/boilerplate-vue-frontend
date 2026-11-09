@@ -49,13 +49,18 @@ const followAndConfirm = (link: string, submit: string): void => {
  * On the reset/setup page already open, types a new password twice and submits.
  *
  * @param password - the password to set
+ * @param acceptTerms - tick the Terms box first, as the setup page of a staff-created account asks
  */
-const setPasswordFromLink = (password: string): void => {
+const setPasswordFromLink = (password: string, acceptTerms = false): void => {
     cy.get('#password-reset-confirm-page [type=password]')
         .eq(0)
         .should('not.be.disabled')
         .type(password);
     cy.get('#password-reset-confirm-page [type=password]').eq(1).type(password);
+    if (acceptTerms)
+        cy.get('[data-test=password-reset-terms-accepted] input[type=checkbox]')
+            .should('not.be.checked')
+            .check();
     cy.get('#password-reset-confirm-page button[type=submit]').click();
 };
 
@@ -172,7 +177,7 @@ describe('AC20 · The link in my mail went stale', () => {
             expectMailTemplate(mail, 'account.setup-request');
             cy.visit(mailedLinkUrl(mail));
         });
-        setPasswordFromLink(INVITEE_PASSWORD);
+        setPasswordFromLink(INVITEE_PASSWORD, true);
         cy.get('#login-page').should('exist');
         signInWith(INVITEE_EMAIL, INVITEE_PASSWORD);
     });

@@ -26,8 +26,7 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { useAccountAuthStore } from '../stores/auth.ts';
 import OAuthButtons from '../components/OAuthButtons.vue';
-import { RouterLink } from 'vue-router';
-import { routerLinkI18n } from '@/i18n/router-link.ts';
+import TermsAcceptanceCheckbox from '../components/TermsAcceptanceCheckbox.vue';
 import { usePostLoginRedirect } from '../composables/use-post-login-redirect.ts';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter.vue';
@@ -80,7 +79,7 @@ const signupSchema = usersSchema
         // The only required checkbox — the contract's own `enum: [true]` on `termsAccepted`
         // enforces this server-side too, so a client that skipped this refine would still 422.
         termsAccepted: z.boolean().refine((value) => value, {
-            error: () => t('users-form.terms-required')
+            error: () => t('signup-page.error-terms-required')
         }),
         // Optional, unlike `termsAccepted`: nothing to refine, unchecked is a legal answer.
         analyticsConsent: z.boolean(),
@@ -274,37 +273,11 @@ const submitForm = () => {
                 :disabled="isSubmitting"
                 class="mt-2"
             />
-            <v-checkbox
+            <TermsAcceptanceCheckbox
                 v-model="form.termsAccepted"
                 data-test="signup-terms-accepted"
                 v-bind="fieldErrorProps(showErrors ? formErrors.termsAccepted : [])"
-            >
-                <!-- `i18n-t` interpolates the two links into the translated sentence; `@click.stop`
-                         keeps a link click from also toggling the checkbox, since Vuetify makes the
-                         whole label clickable. -->
-                <template #label>
-                    <i18n-t keypath="signup-page.text-terms" tag="span">
-                        <template #terms>
-                            <RouterLink
-                                :to="routerLinkI18n({ name: 'StaticTerms' })"
-                                class="underline"
-                                @click.stop
-                            >
-                                {{ t('static-pages.terms.title') }}
-                            </RouterLink>
-                        </template>
-                        <template #privacy>
-                            <RouterLink
-                                :to="routerLinkI18n({ name: 'StaticPrivacy' })"
-                                class="underline"
-                                @click.stop
-                            >
-                                {{ t('static-pages.privacy.title') }}
-                            </RouterLink>
-                        </template>
-                    </i18n-t>
-                </template>
-            </v-checkbox>
+            />
             <!-- Opt-in, unlike the checkbox above: unchecked is a fully valid submission, so
                      there is no error-messages binding — `analyticsConsent` cannot fail validation. -->
             <v-checkbox
