@@ -14,7 +14,8 @@ export default {
  * What stands on the Terms and Privacy pages until the operator writes the real text: a warning
  * that the text is missing, and a headings-only checklist of what it must cover. It carries no
  * legal wording on purpose — a demo that can become any shop must not ship words a shop could
- * mistake for its own. Admins replace the copy at runtime (locale tier 2).
+ * mistake for its own. The operator replaces this component in the view before going live; legal
+ * text never goes through the runtime dictionary, so it ships with its `NODE_TERMS_VERSION`.
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
