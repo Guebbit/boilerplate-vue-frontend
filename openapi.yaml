@@ -15492,15 +15492,15 @@ components:
         type: string
     RateLimit:
       required: false
-      description: 'What is left of each budget in `RateLimit-Policy`, same names and order: `"login";r=3;t=600` is 3 requests remaining, and the window resets in 600 seconds. Back off before `r` reaches 0. Any response may carry it.'
+      description: 'What is left of each budget in `RateLimit-Policy`, same names and order: `"login";r=3;t=600` is 3 requests remaining, and the window resets in 600 seconds. Back off before `r` reaches 0. Any response may carry it. On a `429`, the budget that refused is always listed with `r=0` and `t` equal to `Retry-After`, even one with no `RateLimit-Policy` item. It is never listed on a success.'
       schema:
         type: string
     Retry-After:
       required: false
-      description: How long to wait before trying again, in whole seconds (RFC 9110 §10.2.3). A `503` always carries a rough hint, not a promise. A `429` carries the time until the budget resets where the refusal knows it; one that does not (a spent per-account allowance) sends none, and the wait is then in the error `details`.
+      description: "How long to wait before trying again, in whole seconds (RFC 9110 §10.2.3). A `429` always carries it: the seconds (at least 1) until the refusal that answered ends (a budget's window, a cooldown, the 2FA lock); the same number is in the error's `details.retryAfter`. A `503` carries a rough hint."
       schema:
         type: integer
-        minimum: 0
+        minimum: 1
     WWW-Authenticate:
       required: true
       description: "The challenge a 401 carries (RFC 9110 §11.6.1, §15.5.2; RFC 6750 §3): which scheme the API takes (`Bearer realm=\"api\"`), or, where a guard knows more, why the credential was refused (`error=\"invalid_token\"`, or `error=\"insufficient_user_authentication\"` with a `max_age` for a step-up). A generic HTTP client reads this; this app's own clients read `errors[].code` and never the header."
@@ -15743,7 +15743,7 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
     TooManyRequests:
-      description: The caller has spent a rate-limit budget and must wait. The wait is in the standard `RateLimit`/`Retry-After` headers, and — where the endpoint has a budget of its own to report, like a resend cooldown — in the error `details` too.
+      description: The caller has spent a rate-limit budget, or hit a cooldown or the 2FA lock, and must wait. The wait is in `Retry-After` and in the error's `details.retryAfter` (the same seconds). A budget that refused is also named in `details.policy` and listed in `RateLimit` with `r=0`.
       headers:
         Cache-Control:
           $ref: "#/components/headers/CacheControlNoStore"
@@ -15943,7 +15943,7 @@ components:
         details:
           type: object
           additionalProperties: true
-          description: "Optional structured metadata for programmatic handling. Any refusal about one request field names it in `details.field`, whatever its `code`: a dotted path into the body (`shippingAddress.zip`), so a client can show the message under that input."
+          description: "Optional structured metadata for programmatic handling. Any refusal about one request field names it in `details.field`, whatever its `code`: a dotted path into the body (`shippingAddress.zip`), so a client can show the message under that input. A 429 names its wait in `details.retryAfter` (whole seconds, the `Retry-After` value) and, when a budget refused, that budget's name in `details.policy`."
     Problem:
       type: object
       additionalProperties: false
@@ -27442,7 +27442,7 @@ x-error-codes:
     description: A restore named a product that is not soft-deleted, so there is nothing to undo.
   RATE_LIMITED:
     status: 429
-    description: "The caller spent a rate-limit budget: a request limiter, a mailbox's send budget, or an account's wrong-code budget (the 2FA lock). Carries `Retry-After` when the wait is known."
+    description: "The caller spent a rate-limit budget: a request limiter, a mailbox's send budget, or an account's wrong-code budget (the 2FA lock). Carries `Retry-After`, and `details.retryAfter` with the same seconds; `details.policy` names the budget when there is one."
   REAUTH_REQUIRED:
     status: 401
     description: "This action requires a session fresher than the caller's current one — see `POST /account/reauth`. `details.maxAge` is the freshness asked for; `details.methods`, when present, lists what the re-authentication must also prove (`otp`: a code from an armed second factor)."

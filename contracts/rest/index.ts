@@ -170,7 +170,7 @@ export interface PaginationMeta {
 }
 
 /**
- * Optional structured metadata for programmatic handling. Any refusal about one request field names it in `details.field`, whatever its `code`: a dotted path into the body (`shippingAddress.zip`), so a client can show the message under that input.
+ * Optional structured metadata for programmatic handling. Any refusal about one request field names it in `details.field`, whatever its `code`: a dotted path into the body (`shippingAddress.zip`), so a client can show the message under that input. A 429 names its wait in `details.retryAfter` (whole seconds, the `Retry-After` value) and, when a budget refused, that budget's name in `details.policy`.
  */
 export type ErrorItemDetails = { [key: string]: unknown };
 
@@ -179,7 +179,7 @@ export interface ErrorItem {
     code: string;
     /** Human-readable error detail */
     message: string;
-    /** Optional structured metadata for programmatic handling. Any refusal about one request field names it in `details.field`, whatever its `code`: a dotted path into the body (`shippingAddress.zip`), so a client can show the message under that input. */
+    /** Optional structured metadata for programmatic handling. Any refusal about one request field names it in `details.field`, whatever its `code`: a dotted path into the body (`shippingAddress.zip`), so a client can show the message under that input. A 429 names its wait in `details.retryAfter` (whole seconds, the `Retry-After` value) and, when a budget refused, that budget's name in `details.policy`. */
     details?: ErrorItemDetails;
 }
 
@@ -7749,7 +7749,7 @@ export type PayloadTooLargeResponse = Problem;
 export type UnsupportedMediaTypeResponse = Problem;
 
 /**
- * The caller has spent a rate-limit budget and must wait. The wait is in the standard `RateLimit`/`Retry-After` headers, and — where the endpoint has a budget of its own to report, like a resend cooldown — in the error `details` too.
+ * The caller has spent a rate-limit budget, or hit a cooldown or the 2FA lock, and must wait. The wait is in `Retry-After` and in the error's `details.retryAfter` (the same seconds). A budget that refused is also named in `details.policy` and listed in `RateLimit` with `r=0`.
  */
 export type TooManyRequestsResponse = Problem;
 
