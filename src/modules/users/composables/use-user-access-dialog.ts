@@ -41,7 +41,8 @@ export interface UserAccessDialogRequestOptions {
 
 /**
  * The admin's decision — each field present only when it differs from the target's loaded value.
- * The store's `applyAccessChange` turns it into a `PATCH` (role) and an activate / deactivate call.
+ * The store's `applyAccessChange` turns it into the `assign-role` / `revoke-role` door (role) and an
+ * activate / deactivate call.
  */
 export interface UserAccessDialogResult {
     /** The new role; `null` removes the staff role (the dialog's "none" option). */

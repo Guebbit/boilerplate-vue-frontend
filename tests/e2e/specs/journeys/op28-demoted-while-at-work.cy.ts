@@ -42,7 +42,7 @@ describe('OP28 · Demoted while at work', () => {
                     adminMenuLinks().should('include', '/en/inventory');
 
                     cy.step('the administrator takes the role away');
-                    cy.apiAs('admin', 'PATCH', `/users/${warehouseId}`, { role: null });
+                    cy.apiAs('admin', 'POST', `/users/${warehouseId}/revoke-role`);
 
                     cy.step('a receipt is refused by the server, and the ledger is unchanged');
                     cy.apiAs<MovementsLike>(
@@ -77,7 +77,9 @@ describe('OP28 · Demoted while at work', () => {
                     cy.get('#orders-list-page').should('exist');
 
                     cy.step('a re-granted role shows on the next load, not before');
-                    cy.apiAs('admin', 'PATCH', `/users/${warehouseId}`, { role: 'warehouse' });
+                    cy.apiAs('admin', 'POST', `/users/${warehouseId}/assign-role`, {
+                        role: 'warehouse'
+                    });
                     cy.reload();
                     adminMenuLinks().should('include', '/en/inventory');
 

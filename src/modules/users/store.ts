@@ -4,8 +4,9 @@
  * search, with a multipart branch for create/update when an avatar is
  * attached, plus two hand-written actions: `hardDeleteUser` for the
  * irreversible delete and `restoreUser` for undoing a soft one, and the two purchase-hold
- * writes (`setPurchaseHold`, `liftPurchaseHold`), `activateUser` / `deactivateUser`, and
- * `applyAccessChange`, which turns a confirmed role/status choice into the right calls.
+ * writes (`setPurchaseHold`, `liftPurchaseHold`), `activateUser` / `deactivateUser`, the role door
+ * (`assignRole`, `revokeRole`), and `applyAccessChange`, which turns a confirmed role/status choice
+ * into the right calls.
  */
 import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
@@ -25,6 +26,8 @@ import {
     restoreUserById,
     activateUserById,
     deactivateUserById,
+    assignUserRole,
+    revokeUserRole,
     placeUserPurchaseHold,
     liftUserPurchaseHold,
     UserSortItem
@@ -136,7 +139,7 @@ export const useUsersStore = defineStore('users', () => {
 
             // PATCH, not PUT: `UserEdit.vue` sends only the fields its form actually holds
             // (the profile fields, an upload) — a PUT's every omitted field would be cleared
-            // instead (RFC 9110 §9.3.4), wiping `role`/`active`/etc. on every save.
+            // instead (RFC 9110 §9.3.4), wiping `locale`/`phone`/etc. on every save.
             //
             // A save that uploads AND clears goes as two requests (`uploadThenClear`): a multipart
             // part cannot carry `null`, so the clears follow as a JSON PATCH.
@@ -163,19 +166,16 @@ export const useUsersStore = defineStore('users', () => {
             // `locale`/`phone`/`website`/`imageUrl` accept `null` on the wire (clears the field)
             // but the LOCAL `User` never does; `null` reads as "leave the optimistic guess alone"
             // here, since the real clear only takes visible effect once the response `update:`
-            // above already waits for lands. `role: null` is the exception: no staff role is a
-            // plain customer, which the local `User` spells as an absent `role`.
+            // above already waits for lands.
             optimisticPatch: ({
                 imageUpload: _uploaded,
                 locale,
                 phone,
                 website,
                 imageUrl,
-                role,
                 ...userData
             } = {}) => ({
                 ...userData,
-                ...(role === undefined ? {} : { role: role ?? undefined }),
                 ...omitNulls({ locale, phone, website, imageUrl }, [
                     'locale',
                     'phone',
@@ -246,9 +246,41 @@ export const useUsersStore = defineStore('users', () => {
         );
 
     /**
-     * Applies what `UserAccessDialog` confirmed: a role change is a `PATCH`, a status change is
-     * the `activate` / `deactivate` action. Each goes only when it is in `change`, so an unchanged
-     * role never re-runs the backend's grant check.
+     * Gives an account a staff role — `POST /users/{id}/assign-role`. It replaces the role held;
+     * naming the one already held is a 409 `USER_ROLE_ALREADY_ASSIGNED`. The answered user replaces
+     * the cached one.
+     *
+     * @param userId - Identifier of the account.
+     * @param role - The role to give, a name from the session's `grantableRoles`.
+     * @returns A promise resolving with the user.
+     */
+    const assignRole = (userId: string, role: string) =>
+        fetchAny(() =>
+            assignUserRole(userId, { role }).then((response) => {
+                addUser(response);
+                return response;
+            })
+        );
+
+    /**
+     * Takes an account's staff role away — `POST /users/{id}/revoke-role`. A 409
+     * `USER_ROLE_NOT_ASSIGNED` when it holds none. The answered user replaces the cached one.
+     *
+     * @param userId - Identifier of the account.
+     * @returns A promise resolving with the user.
+     */
+    const revokeRole = (userId: string) =>
+        fetchAny(() =>
+            revokeUserRole(userId).then((response) => {
+                addUser(response);
+                return response;
+            })
+        );
+
+    /**
+     * Applies what `UserAccessDialog` confirmed: a role change is the `assign-role` / `revoke-role`
+     * door (`null` takes the role away), a status change is the `activate` / `deactivate` action.
+     * Each goes only when it is in `change`, so an unchanged role never reaches the door.
      *
      * @param userId - Identifier of the account.
      * @param change - The confirmed fields: a new `role`, a new `active` state, or both.
@@ -260,7 +292,9 @@ export const useUsersStore = defineStore('users', () => {
     ) =>
         (change.role === undefined
             ? Promise.resolve()
-            : updateUser(userId, { role: change.role })
+            : change.role === null
+              ? revokeRole(userId)
+              : assignRole(userId, change.role)
         ).then(() => {
             if (change.active === undefined) return;
             return change.active ? activateUser(userId) : deactivateUser(userId);
@@ -325,6 +359,8 @@ export const useUsersStore = defineStore('users', () => {
         restoreUser,
         activateUser,
         deactivateUser,
+        assignRole,
+        revokeRole,
         applyAccessChange,
         setPurchaseHold,
         liftPurchaseHold

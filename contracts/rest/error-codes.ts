@@ -304,6 +304,10 @@ export const ERROR_CODES = {
     USER_PURCHASE_HOLD_ALREADY_SET: 'USER_PURCHASE_HOLD_ALREADY_SET',
     /** 409 — The account has no purchase hold and no review flag, so there is nothing to lift. */
     USER_PURCHASE_HOLD_NOT_SET: 'USER_PURCHASE_HOLD_NOT_SET',
+    /** 409 — The account already holds the role named, so `POST /users/{id}/assign-role` has nothing to do. */
+    USER_ROLE_ALREADY_ASSIGNED: 'USER_ROLE_ALREADY_ASSIGNED',
+    /** 409 — The account holds no staff role, so `POST /users/{id}/revoke-role` has nothing to take away. */
+    USER_ROLE_NOT_ASSIGNED: 'USER_ROLE_NOT_ASSIGNED',
     /** 409 — The inactivity reaper met an account holding a staff role and left it alone. Raised by the reaper, never by a route. */
     USER_STAFF_NOT_REAPABLE: 'USER_STAFF_NOT_REAPABLE',
     /** 422 — One or more fields failed schema validation — see `errors[].details.field`. */

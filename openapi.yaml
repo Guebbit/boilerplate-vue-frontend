@@ -5078,7 +5078,7 @@ paths:
       tags:
         - Users
       summary: Delete user
-      description: Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`. Functionally equivalent to `DELETE /users`.
+      description: Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`.
       operationId: deleteUserById
       security:
         - bearerAuth: []
@@ -11458,6 +11458,130 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
+  /users/{id}/assign-role:
+    post:
+      tags:
+        - Users
+      summary: Assign a staff role to a user
+      description: "Gives the account the staff role named, replacing the one it holds (an account holds at most one). Naming the role it holds already answers 409 `USER_ROLE_ALREADY_ASSIGNED` and writes and audits nothing; two callers naming different roles both succeed, the last write wins. The only way a role is handed to an existing account. Needs `assign:Role`, with a critically fresh session, and only a session: an API key is refused 401. A name nobody can be given is a 422 naming `role`. Audited as `access.role.assigned`."
+      operationId: assignUserRole
+      x-error-codes:
+        "403":
+          - ROLE_MANAGEMENT_REQUIRED
+        "409":
+          - USER_ROLE_ALREADY_ASSIGNED
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignUserRoleRequest"
+      responses:
+        "200":
+          description: The user, now holding the role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            Content-Language:
+              $ref: "#/components/headers/ContentLanguage"
+            Vary:
+              $ref: "#/components/headers/Vary"
+            RateLimit-Policy:
+              $ref: "#/components/headers/RateLimit-Policy"
+            RateLimit:
+              $ref: "#/components/headers/RateLimit"
+            ETag:
+              $ref: "#/components/headers/EntityTag"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
+  /users/{id}/revoke-role:
+    post:
+      tags:
+        - Users
+      summary: Take a user's staff role away
+      description: "Takes the account's staff role away, leaving a plain customer. An account that holds none answers 409 `USER_ROLE_NOT_ASSIGNED`. Needs `assign:Role`, with a critically fresh session, and only a session: an API key is refused 401. Audited as `access.role.revoked`."
+      operationId: revokeUserRole
+      x-error-codes:
+        "403":
+          - ROLE_MANAGEMENT_REQUIRED
+        "409":
+          - USER_ROLE_NOT_ASSIGNED
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: The user, now holding no staff role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            Content-Language:
+              $ref: "#/components/headers/ContentLanguage"
+            Vary:
+              $ref: "#/components/headers/Vary"
+            RateLimit-Policy:
+              $ref: "#/components/headers/RateLimit-Policy"
+            RateLimit:
+              $ref: "#/components/headers/RateLimit"
+            ETag:
+              $ref: "#/components/headers/EntityTag"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
   /users/{id}/place-purchase-hold:
     post:
       tags:
@@ -16111,6 +16235,7 @@ components:
       required:
         - update
         - assignRole
+        - revokeRole
         - delete
         - hardDelete
         - restore
@@ -16125,7 +16250,10 @@ components:
           description: "Whether `PUT`/`PATCH /users/{id}` would be accepted for the profile fields — `update:User`, and the account is not a staff account the caller may not manage. Never covers a credential: no caller changes another person's email, password or second factor."
         assignRole:
           type: boolean
-          description: Whether the `role` field of `PUT`/`PATCH /users/{id}` would be accepted — `update` AND the caller holds `assign:Role`. The caller's own account is judged like any other.
+          description: "Whether `POST /users/{id}/assign-role` would be accepted — the caller holds `assign:Role` and the account is not deleted. The role already held is the client's to hide: naming it answers 409. The caller's own account is judged like any other."
+        revokeRole:
+          type: boolean
+          description: Whether `POST /users/{id}/revoke-role` would be accepted — the caller holds `assign:Role`, the account is not deleted, and it holds a staff role to take away.
         delete:
           type: boolean
           description: Whether `DELETE /users/{id}` would soft-delete the account — `delete:User`, the account is not a staff account the caller may not manage, and it is not deleted already.
@@ -20826,18 +20954,11 @@ components:
       additionalProperties: false
       required:
         - username
-        - role
       properties:
         username:
           type: string
           minLength: 3
           maxLength: 50
-        role:
-          type:
-            - string
-            - "null"
-          maxLength: 64
-          minLength: 1
         imageUrl:
           $ref: "#/components/schemas/ImageRemoval"
         locale:
@@ -20861,16 +20982,11 @@ components:
       additionalProperties: false
       required:
         - username
-        - role
       properties:
         username:
           type: string
           minLength: 3
           maxLength: 50
-        role:
-          type: string
-          maxLength: 64
-          minLength: 1
         imageUpload:
           type: string
           format: binary
@@ -20895,12 +21011,6 @@ components:
           type: string
           minLength: 3
           maxLength: 50
-        role:
-          type:
-            - string
-            - "null"
-          maxLength: 64
-          minLength: 1
         imageUrl:
           $ref: "#/components/schemas/ImageRemoval"
         locale:
@@ -20927,10 +21037,6 @@ components:
           type: string
           minLength: 3
           maxLength: 50
-        role:
-          type: string
-          maxLength: 64
-          minLength: 1
         imageUpload:
           type: string
           format: binary
@@ -24680,6 +24786,16 @@ components:
         secret:
           type: string
           description: The newly minted credential, in plaintext — `sk_<prefix>_<secret>`. Shown here once, on creation, and never again.
+    AssignUserRoleRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - role
+      properties:
+        role:
+          type: string
+          maxLength: 64
+          minLength: 1
     PlacePurchaseHoldRequest:
       type: object
       additionalProperties: false
@@ -27437,6 +27553,12 @@ x-error-codes:
   USER_PURCHASE_HOLD_NOT_SET:
     status: 409
     description: The account has no purchase hold and no review flag, so there is nothing to lift.
+  USER_ROLE_ALREADY_ASSIGNED:
+    status: 409
+    description: The account already holds the role named, so `POST /users/{id}/assign-role` has nothing to do.
+  USER_ROLE_NOT_ASSIGNED:
+    status: 409
+    description: The account holds no staff role, so `POST /users/{id}/revoke-role` has nothing to take away.
   USER_STAFF_NOT_REAPABLE:
     status: 409
     description: The inactivity reaper met an account holding a staff role and left it alone. Raised by the reaper, never by a route.

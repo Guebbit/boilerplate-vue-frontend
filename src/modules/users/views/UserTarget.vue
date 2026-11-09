@@ -146,7 +146,7 @@ const {
 /**
  * Opens `UserAccessDialog` for the currently loaded user and, once confirmed, sends only the
  * fields that actually changed — see `UserAccessDialog.vue`'s own note on why an unchanged `role`
- * must never ride along in the same `PATCH`.
+ * must never reach the role door.
  *
  * @returns A promise settling once the dialog closes and, if accepted, the update has finished; a
  *  failure blocks this action in place ({@link accessError}).

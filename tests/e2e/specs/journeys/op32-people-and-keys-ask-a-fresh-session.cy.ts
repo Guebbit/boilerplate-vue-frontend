@@ -3,9 +3,9 @@
  * @module
  * OP32 · People and keys ask a fresh session. Handing out a role, creating an
  * account with a role and minting an API key all ask the administrator for the password once the
- * sign-in is older than five minutes (the critical window), and so does taking a role away (the
- * route reads any body that names `role`, `null` included). Editing a phone and revoking a key do
- * not. The dialog opens in the middle of the action: a wrong password keeps it up, the right one
+ * sign-in is older than five minutes (the critical window), and so does taking a role away (each
+ * role door call asks, a repeat or a no-op included). Editing a phone and revoking a key do not.
+ * The dialog opens in the middle of the action: a wrong password keeps it up, the right one
  * carries on with the same action once.
  *
  * Time passes by moving the demo backend's clock, so this is a demo-only journey. Each jump is

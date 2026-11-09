@@ -1,8 +1,8 @@
 /**
  * @module
- * Mounts the real admin user-edit page against a real, memory-history router: the trap this form
- * exists to avoid — an unchanged `role` riding along in the `PATCH` and re-running the backend's
- * grant check — and the confirm gate a role change or a deactivation goes through first. `UserAccessDialog`
+ * Mounts the real admin user-edit page against a real, memory-history router: the role is never a
+ * field of the `PATCH` (it goes to its own door once confirmed, and an unchanged one goes nowhere),
+ * and the confirm gate a role change or a deactivation goes through first. `UserAccessDialog`
  * itself is stubbed; its own picker/confirm behaviour is `user-access-dialog.spec.ts`'s job.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
@@ -80,7 +80,8 @@ const mockTransport = () => {
             parseOrvalFixture(
                 config.method,
                 config.url,
-                config.method === 'GET' ? loadedUser : undefined
+                // A role door answers with the user, as every GET does.
+                config.method === 'GET' || config.url?.endsWith('-role') ? loadedUser : undefined
             )
         )
     );
@@ -207,7 +208,7 @@ describe('UserEdit', () => {
             });
     });
 
-    it('opens the confirm dialog on a role change, and omits it from the body until confirmed', () => {
+    it('opens the confirm dialog on a role change, and sends nothing until confirmed', () => {
         const wrapper = mountPage();
 
         return flushPromises()
@@ -236,10 +237,40 @@ describe('UserEdit', () => {
             })
             .then(flushPromises)
             .then(() => {
-                // The critical trap: `role` rides along ONLY because it actually changed, not as
-                // part of a blanket "send everything" body.
-                expect(contractRequest(schemas.UpdateUserByIdBody, lastPatchBody())).toEqual({
+                // A role-only save has no profile change: no PATCH at all, just the door.
+                expect(lastPatchBody()).toBeUndefined();
+                const doors = callsTo('POST', '/users/u1/assign-role');
+                expect(doors).toHaveLength(1);
+                expect(contractRequest(schemas.AssignUserRoleBody, doors[0]?.[0].data)).toEqual({
                     role: 'manager'
+                });
+            });
+    });
+
+    it('saves the profile first, without the role, and then calls the role door', () => {
+        const wrapper = mountPage();
+
+        return flushPromises()
+            .then(() => wrapper.get('[data-test=user-edit-username] input').setValue('ada2'))
+            .then(() => {
+                const roleSelect = wrapper
+                    .findAllComponents(VSelect)
+                    .find((select) => select.attributes('data-test') === 'user-edit-role');
+                if (roleSelect) emitOn(roleSelect, 'update:modelValue', '');
+                return nextRenderTick(wrapper);
+            })
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => emitOn(wrapper.findComponent(UserAccessDialog), 'confirm', { role: null }))
+            .then(flushPromises)
+            .then(() => {
+                const sent = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.map(([config]) => `${config.method} ${config.url}`)
+                    .filter((call) => call !== 'GET /users/u1');
+                expect(sent).toEqual(['PATCH /users/u1', 'POST /users/u1/revoke-role']);
+                expect(contractRequest(schemas.UpdateUserByIdBody, lastPatchBody())).toEqual({
+                    username: 'ada2'
                 });
             });
     });

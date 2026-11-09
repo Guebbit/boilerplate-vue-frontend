@@ -55,7 +55,7 @@ describe('AT10 · The last administrator removes itself', () => {
             cy.step('and it cannot hand the administrator role out again');
             cy.accountInRole('user').then(({ id: customerId }) => {
                 loginDevice('moderator').then((device) => {
-                    requestAsDevice(device, 'PATCH', `/users/${customerId}`, {
+                    requestAsDevice(device, 'POST', `/users/${customerId}/assign-role`, {
                         role: 'admin'
                     })
                         .its('status')

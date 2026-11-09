@@ -36,7 +36,7 @@ describe('IN2 · A key follows its minter', () => {
     it('is refused while the minter is banned or demoted, and works again when they are back', () => {
         cy.accountInRole('secondShopper').then(({ id: minterId }) => {
             cy.step('a shopper is promoted to administrator and mints a read key');
-            cy.apiAs('admin', 'PATCH', `/users/${minterId}`, { role: 'admin' });
+            cy.apiAs('admin', 'POST', `/users/${minterId}/assign-role`, { role: 'admin' });
             cy.loginAs('secondShopper');
             // A staff role grants nothing until an authenticator app is armed, and a key lends only
             // what its minter holds.
@@ -99,11 +99,11 @@ describe('IN2 · A key follows its minter', () => {
                         .should('equal', 200);
 
                     cy.step('a demoted minter’s key floors to the customer rules they hold now');
-                    cy.apiAs('admin', 'PATCH', `/users/${minterId}`, { role: null });
+                    cy.apiAs('admin', 'POST', `/users/${minterId}/revoke-role`);
                     requestWithKey(secret, 'GET', '/webhooks/subscriptions')
                         .its('status')
                         .should('equal', 403);
-                    cy.apiAs('admin', 'PATCH', `/users/${minterId}`, { role: 'admin' });
+                    cy.apiAs('admin', 'POST', `/users/${minterId}/assign-role`, { role: 'admin' });
                     requestWithKey(secret, 'GET', '/webhooks/subscriptions')
                         .its('status')
                         .should('equal', 200);

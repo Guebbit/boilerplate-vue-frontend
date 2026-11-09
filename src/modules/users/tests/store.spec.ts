@@ -150,15 +150,38 @@ describe('useUsersStore', () => {
     });
 
     describe('applyAccessChange', () => {
-        it('patches a null role when the staff role is removed', () =>
+        it('posts the role to the assign-role door', () =>
+            useUsersStore()
+                .applyAccessChange('u1', { role: 'support' })
+                .then(() => {
+                    const request = lastRequest();
+                    expect(request).toMatchObject({
+                        url: '/users/u1/assign-role',
+                        method: 'POST'
+                    });
+                    expect(contractRequest(schemas.AssignUserRoleBody, request.data)).toEqual({
+                        role: 'support'
+                    });
+                }));
+
+        it('posts to the revoke-role door when the staff role is removed', () =>
             useUsersStore()
                 .applyAccessChange('u1', { role: null })
                 .then(() => {
-                    const request = lastRequest();
-                    expect(request).toMatchObject({ url: '/users/u1', method: 'PATCH' });
-                    expect(contractRequest(schemas.UpdateUserByIdBody, request.data)).toMatchObject(
-                        { role: null }
-                    );
+                    expect(lastRequest()).toMatchObject({
+                        url: '/users/u1/revoke-role',
+                        method: 'POST'
+                    });
+                }));
+
+        it('calls no role door when only the status changes', () =>
+            useUsersStore()
+                .applyAccessChange('u1', { active: false })
+                .then(() => {
+                    expect(lastRequest()).toMatchObject({ url: '/users/u1/deactivate' });
+                    expect(
+                        vi.mocked(orvalMutator).mock.calls.map(([config]) => config.url)
+                    ).not.toContain('/users/u1/assign-role');
                 }));
     });
 

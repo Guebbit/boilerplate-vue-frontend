@@ -482,8 +482,10 @@ export interface AccountView {
 export interface UserActions {
     /** Whether `PUT`/`PATCH /users/{id}` would be accepted for the profile fields — `update:User`, and the account is not a staff account the caller may not manage. Never covers a credential: no caller changes another person's email, password or second factor. */
     update: boolean;
-    /** Whether the `role` field of `PUT`/`PATCH /users/{id}` would be accepted — `update` AND the caller holds `assign:Role`. The caller's own account is judged like any other. */
+    /** Whether `POST /users/{id}/assign-role` would be accepted — the caller holds `assign:Role` and the account is not deleted. The role already held is the client's to hide: naming it answers 409. The caller's own account is judged like any other. */
     assignRole: boolean;
+    /** Whether `POST /users/{id}/revoke-role` would be accepted — the caller holds `assign:Role`, the account is not deleted, and it holds a staff role to take away. */
+    revokeRole: boolean;
     /** Whether `DELETE /users/{id}` would soft-delete the account — `delete:User`, the account is not a staff account the caller may not manage, and it is not deleted already. */
     delete: boolean;
     /** Whether `DELETE /users/{id}/hard` would erase the account for good — `delete:User`, and the account is not a staff account the caller may not manage. A soft-deleted account can be erased. */
@@ -4130,12 +4132,6 @@ export interface ReplaceUserByIdRequest {
      * @maxLength 50
      */
     username: string;
-    /**
-     * @minLength 1
-     * @maxLength 64
-     * @nullable
-     */
-    role: string | null;
     imageUrl?: ImageRemoval;
     locale?: Locale | null;
     /**
@@ -4158,11 +4154,6 @@ export interface ReplaceUserByIdRequestMultipart {
      * @maxLength 50
      */
     username: string;
-    /**
-     * @minLength 1
-     * @maxLength 64
-     */
-    role: string;
     /** Optional user profile image */
     imageUpload?: Blob;
     locale?: string;
@@ -4184,12 +4175,6 @@ export interface UpdateUserByIdRequest {
      * @maxLength 50
      */
     username?: string;
-    /**
-     * @minLength 1
-     * @maxLength 64
-     * @nullable
-     */
-    role?: string | null;
     imageUrl?: ImageRemoval;
     locale?: Locale | null;
     /**
@@ -4212,11 +4197,6 @@ export interface UpdateUserByIdRequestMultipart {
      * @maxLength 50
      */
     username?: string;
-    /**
-     * @minLength 1
-     * @maxLength 64
-     */
-    role?: string;
     /** Optional user profile image */
     imageUpload?: Blob;
     locale?: string;
@@ -6637,6 +6617,14 @@ export interface ApiKeyCreated {
     updatedAt: string;
     /** The newly minted credential, in plaintext — `sk_<prefix>_<secret>`. Shown here once, on creation, and never again. */
     secret: string;
+}
+
+export interface AssignUserRoleRequest {
+    /**
+     * @minLength 1
+     * @maxLength 64
+     */
+    role: string;
 }
 
 export interface PlacePurchaseHoldRequest {
@@ -10464,7 +10452,6 @@ export const replaceUserByIdWithMultipart = (
 ) => {
     const formData = new FormData();
     formData.append(`username`, replaceUserByIdRequestMultipart.username);
-    formData.append(`role`, replaceUserByIdRequestMultipart.role);
     if (replaceUserByIdRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, replaceUserByIdRequestMultipart.imageUpload);
     }
@@ -10542,9 +10529,6 @@ export const updateUserByIdWithMultipart = (
     if (updateUserByIdRequestMultipart.username !== undefined) {
         formData.append(`username`, updateUserByIdRequestMultipart.username);
     }
-    if (updateUserByIdRequestMultipart.role !== undefined) {
-        formData.append(`role`, updateUserByIdRequestMultipart.role);
-    }
     if (updateUserByIdRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, updateUserByIdRequestMultipart.imageUpload);
     }
@@ -10570,7 +10554,7 @@ export const updateUserByIdWithMultipart = (
 };
 
 /**
- * Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`. Functionally equivalent to `DELETE /users`.
+ * Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`.
  * @summary Delete user
  */
 export const deleteUserById = (
@@ -12577,6 +12561,37 @@ export const touchSession = (options?: SecondParameter<typeof orvalMutator<Sessi
 };
 
 /**
+ * Gives the account the staff role named, replacing the one it holds (an account holds at most one). Naming the role it holds already answers 409 `USER_ROLE_ALREADY_ASSIGNED` and writes and audits nothing; two callers naming different roles both succeed, the last write wins. The only way a role is handed to an existing account. Needs `assign:Role`, with a critically fresh session, and only a session: an API key is refused 401. A name nobody can be given is a 422 naming `role`. Audited as `access.role.assigned`.
+ * @summary Assign a staff role to a user
+ */
+export const assignUserRole = (
+    id: string,
+    assignUserRoleRequest: AssignUserRoleRequest,
+    options?: SecondParameter<typeof orvalMutator<User>>
+) => {
+    return orvalMutator<User>(
+        {
+            url: `/users/${id}/assign-role`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: assignUserRoleRequest
+        },
+        options
+    );
+};
+
+/**
+ * Takes the account's staff role away, leaving a plain customer. An account that holds none answers 409 `USER_ROLE_NOT_ASSIGNED`. Needs `assign:Role`, with a critically fresh session, and only a session: an API key is refused 401. Audited as `access.role.revoked`.
+ * @summary Take a user's staff role away
+ */
+export const revokeUserRole = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<User>>
+) => {
+    return orvalMutator<User>({ url: `/users/${id}/revoke-role`, method: 'POST' }, options);
+};
+
+/**
  * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `lift-purchase-hold` ends it. Clears the account's review flag: placing a hold is acting on it. Placing the staff hold already in force, with the same `until` and the same `note`, answers 409 `USER_PURCHASE_HOLD_ALREADY_SET` and writes, mails and audits nothing; any other body replaces the hold. Audited as `admin.user.purchase_hold_set`.
  * @summary Place a purchase hold on a user
  */
@@ -13941,6 +13956,8 @@ export type ActivateLocaleResult = NonNullable<Awaited<ReturnType<typeof activat
 export type DeactivateLocaleResult = NonNullable<Awaited<ReturnType<typeof deactivateLocale>>>;
 export type SendReauthCodeResult = NonNullable<Awaited<ReturnType<typeof sendReauthCode>>>;
 export type TouchSessionResult = NonNullable<Awaited<ReturnType<typeof touchSession>>>;
+export type AssignUserRoleResult = NonNullable<Awaited<ReturnType<typeof assignUserRole>>>;
+export type RevokeUserRoleResult = NonNullable<Awaited<ReturnType<typeof revokeUserRole>>>;
 export type PlaceUserPurchaseHoldResult = NonNullable<
     Awaited<ReturnType<typeof placeUserPurchaseHold>>
 >;

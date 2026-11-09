@@ -6718,6 +6718,7 @@ export const ListUsersResponse = zod.strictObject({
             actions: zod.strictObject({
                 update: zod.boolean(),
                 assignRole: zod.boolean(),
+                revokeRole: zod.boolean(),
                 delete: zod.boolean(),
                 hardDelete: zod.boolean(),
                 restore: zod.boolean(),
@@ -6805,6 +6806,7 @@ export const CreateUserResponse = zod.strictObject({
     actions: zod.strictObject({
         update: zod.boolean(),
         assignRole: zod.boolean(),
+        revokeRole: zod.boolean(),
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
@@ -6867,6 +6869,7 @@ export const GetUserByIdResponse = zod.strictObject({
     actions: zod.strictObject({
         update: zod.boolean(),
         assignRole: zod.boolean(),
+        revokeRole: zod.boolean(),
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
@@ -6893,14 +6896,12 @@ export const ReplaceUserByIdHeader = zod.strictObject({
 });
 export const replaceUserByIdBodyUsernameMin = 3;
 export const replaceUserByIdBodyUsernameMax = 50;
-export const replaceUserByIdBodyRoleMax = 64;
 export const replaceUserByIdBodyLocaleOneMax = 35;
 export const replaceUserByIdBodyLocaleOneRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const replaceUserByIdBodyPhoneMax = 32;
 export const replaceUserByIdBodyWebsiteMax = 2048;
 export const ReplaceUserByIdBody = zod.strictObject({
     username: zod.string().min(replaceUserByIdBodyUsernameMin).max(replaceUserByIdBodyUsernameMax),
-    role: zod.string().min(1).max(replaceUserByIdBodyRoleMax).nullable(),
     imageUrl: zod.null().optional(),
     locale: zod
         .union([
@@ -6962,6 +6963,7 @@ export const ReplaceUserByIdResponse = zod.strictObject({
     actions: zod.strictObject({
         update: zod.boolean(),
         assignRole: zod.boolean(),
+        revokeRole: zod.boolean(),
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
@@ -6988,7 +6990,6 @@ export const UpdateUserByIdHeader = zod.strictObject({
 });
 export const updateUserByIdBodyUsernameMin = 3;
 export const updateUserByIdBodyUsernameMax = 50;
-export const updateUserByIdBodyRoleMax = 64;
 export const updateUserByIdBodyLocaleOneMax = 35;
 export const updateUserByIdBodyLocaleOneRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const updateUserByIdBodyPhoneMax = 32;
@@ -6999,7 +7000,6 @@ export const UpdateUserByIdBody = zod.strictObject({
         .min(updateUserByIdBodyUsernameMin)
         .max(updateUserByIdBodyUsernameMax)
         .optional(),
-    role: zod.string().min(1).max(updateUserByIdBodyRoleMax).nullish(),
     imageUrl: zod.null().optional(),
     locale: zod
         .union([
@@ -7055,6 +7055,7 @@ export const UpdateUserByIdResponse = zod.strictObject({
     actions: zod.strictObject({
         update: zod.boolean(),
         assignRole: zod.boolean(),
+        revokeRole: zod.boolean(),
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
@@ -7067,7 +7068,7 @@ export const UpdateUserByIdResponse = zod.strictObject({
     purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`. Functionally equivalent to `DELETE /users`.
+ * Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`.
  * @summary Delete user
  */
 export const deleteUserByIdPathIdMax = 64;
@@ -7141,6 +7142,7 @@ export const RestoreUserByIdResponse = zod.strictObject({
     actions: zod.strictObject({
         update: zod.boolean(),
         assignRole: zod.boolean(),
+        revokeRole: zod.boolean(),
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
@@ -7265,6 +7267,7 @@ export const SearchUsersResponse = zod.strictObject({
             actions: zod.strictObject({
                 update: zod.boolean(),
                 assignRole: zod.boolean(),
+                revokeRole: zod.boolean(),
                 delete: zod.boolean(),
                 hardDelete: zod.boolean(),
                 restore: zod.boolean(),
@@ -18603,6 +18606,136 @@ export const TouchSessionResponse = zod.strictObject({
     idleTimeoutSeconds: zod.number().min(1).optional()
 });
 /**
+ * Gives the account the staff role named, replacing the one it holds (an account holds at most one). Naming the role it holds already answers 409 `USER_ROLE_ALREADY_ASSIGNED` and writes and audits nothing; two callers naming different roles both succeed, the last write wins. The only way a role is handed to an existing account. Needs `assign:Role`, with a critically fresh session, and only a session: an API key is refused 401. A name nobody can be given is a 422 naming `role`. Audited as `access.role.assigned`.
+ * @summary Assign a staff role to a user
+ */
+export const assignUserRolePathIdMax = 64;
+export const assignUserRolePathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const AssignUserRoleParams = zod.strictObject({
+    id: zod.string().min(1).max(assignUserRolePathIdMax).regex(assignUserRolePathIdRegExp)
+});
+export const assignUserRoleBodyRoleMax = 64;
+export const AssignUserRoleBody = zod.strictObject({
+    role: zod.string().min(1).max(assignUserRoleBodyRoleMax)
+});
+export const assignUserRoleResponseIdMax = 64;
+export const assignUserRoleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const assignUserRoleResponseEmailMax = 254;
+export const assignUserRoleResponseLocaleMax = 35;
+export const assignUserRoleResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const assignUserRoleResponsePurchaseHoldNoteMax = 500;
+export const AssignUserRoleResponse = zod.strictObject({
+    id: zod.string().min(1).max(assignUserRoleResponseIdMax).regex(assignUserRoleResponseIdRegExp),
+    email: zod.email().max(assignUserRoleResponseEmailMax),
+    username: zod.string(),
+    role: zod.string().optional(),
+    active: zod.boolean().optional(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
+    pendingEmail: zod.email().optional(),
+    imageUrl: zod.string().min(1).optional(),
+    thumbnailUrl: zod.string().optional(),
+    locale: zod
+        .string()
+        .max(assignUserRoleResponseLocaleMax)
+        .regex(assignUserRoleResponseLocaleRegExp)
+        .optional(),
+    phone: zod.string().optional(),
+    website: zod.string().optional(),
+    analyticsConsent: zod.boolean().optional(),
+    analyticsConsentAt: zod.iso.datetime({ offset: true }).optional(),
+    termsAcceptedAt: zod.iso.datetime({ offset: true }).optional(),
+    termsVersion: zod.string().optional(),
+    twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+    createdAt: zod.iso.datetime({ offset: true }).optional(),
+    updatedAt: zod.iso.datetime({ offset: true }).optional(),
+    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+    purchaseHold: zod
+        .strictObject({
+            until: zod.iso.datetime({ offset: true }),
+            reason: zod.enum(['repeated_cancellations', 'staff']),
+            note: zod.string().max(assignUserRoleResponsePurchaseHoldNoteMax).optional(),
+            setAt: zod.iso.datetime({ offset: true })
+        })
+        .optional(),
+    actions: zod.strictObject({
+        update: zod.boolean(),
+        assignRole: zod.boolean(),
+        revokeRole: zod.boolean(),
+        delete: zod.boolean(),
+        hardDelete: zod.boolean(),
+        restore: zod.boolean(),
+        placePurchaseHold: zod.boolean(),
+        liftPurchaseHold: zod.boolean(),
+        activate: zod.boolean(),
+        deactivate: zod.boolean()
+    }),
+    purgeAt: zod.iso.datetime({ offset: true }).optional(),
+    purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
+});
+/**
+ * Takes the account's staff role away, leaving a plain customer. An account that holds none answers 409 `USER_ROLE_NOT_ASSIGNED`. Needs `assign:Role`, with a critically fresh session, and only a session: an API key is refused 401. Audited as `access.role.revoked`.
+ * @summary Take a user's staff role away
+ */
+export const revokeUserRolePathIdMax = 64;
+export const revokeUserRolePathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const RevokeUserRoleParams = zod.strictObject({
+    id: zod.string().min(1).max(revokeUserRolePathIdMax).regex(revokeUserRolePathIdRegExp)
+});
+export const revokeUserRoleResponseIdMax = 64;
+export const revokeUserRoleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const revokeUserRoleResponseEmailMax = 254;
+export const revokeUserRoleResponseLocaleMax = 35;
+export const revokeUserRoleResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const revokeUserRoleResponsePurchaseHoldNoteMax = 500;
+export const RevokeUserRoleResponse = zod.strictObject({
+    id: zod.string().min(1).max(revokeUserRoleResponseIdMax).regex(revokeUserRoleResponseIdRegExp),
+    email: zod.email().max(revokeUserRoleResponseEmailMax),
+    username: zod.string(),
+    role: zod.string().optional(),
+    active: zod.boolean().optional(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
+    pendingEmail: zod.email().optional(),
+    imageUrl: zod.string().min(1).optional(),
+    thumbnailUrl: zod.string().optional(),
+    locale: zod
+        .string()
+        .max(revokeUserRoleResponseLocaleMax)
+        .regex(revokeUserRoleResponseLocaleRegExp)
+        .optional(),
+    phone: zod.string().optional(),
+    website: zod.string().optional(),
+    analyticsConsent: zod.boolean().optional(),
+    analyticsConsentAt: zod.iso.datetime({ offset: true }).optional(),
+    termsAcceptedAt: zod.iso.datetime({ offset: true }).optional(),
+    termsVersion: zod.string().optional(),
+    twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+    createdAt: zod.iso.datetime({ offset: true }).optional(),
+    updatedAt: zod.iso.datetime({ offset: true }).optional(),
+    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+    purchaseHold: zod
+        .strictObject({
+            until: zod.iso.datetime({ offset: true }),
+            reason: zod.enum(['repeated_cancellations', 'staff']),
+            note: zod.string().max(revokeUserRoleResponsePurchaseHoldNoteMax).optional(),
+            setAt: zod.iso.datetime({ offset: true })
+        })
+        .optional(),
+    actions: zod.strictObject({
+        update: zod.boolean(),
+        assignRole: zod.boolean(),
+        revokeRole: zod.boolean(),
+        delete: zod.boolean(),
+        hardDelete: zod.boolean(),
+        restore: zod.boolean(),
+        placePurchaseHold: zod.boolean(),
+        liftPurchaseHold: zod.boolean(),
+        activate: zod.boolean(),
+        deactivate: zod.boolean()
+    }),
+    purgeAt: zod.iso.datetime({ offset: true }).optional(),
+    purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
+});
+/**
  * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `lift-purchase-hold` ends it. Clears the account's review flag: placing a hold is acting on it. Placing the staff hold already in force, with the same `until` and the same `note`, answers 409 `USER_PURCHASE_HOLD_ALREADY_SET` and writes, mails and audits nothing; any other body replaces the hold. Audited as `admin.user.purchase_hold_set`.
  * @summary Place a purchase hold on a user
  */
@@ -18668,6 +18801,7 @@ export const PlaceUserPurchaseHoldResponse = zod.strictObject({
     actions: zod.strictObject({
         update: zod.boolean(),
         assignRole: zod.boolean(),
+        revokeRole: zod.boolean(),
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
@@ -18740,6 +18874,7 @@ export const LiftUserPurchaseHoldResponse = zod.strictObject({
     actions: zod.strictObject({
         update: zod.boolean(),
         assignRole: zod.boolean(),
+        revokeRole: zod.boolean(),
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
@@ -18808,6 +18943,7 @@ export const ActivateUserByIdResponse = zod.strictObject({
     actions: zod.strictObject({
         update: zod.boolean(),
         assignRole: zod.boolean(),
+        revokeRole: zod.boolean(),
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
@@ -18876,6 +19012,7 @@ export const DeactivateUserByIdResponse = zod.strictObject({
     actions: zod.strictObject({
         update: zod.boolean(),
         assignRole: zod.boolean(),
+        revokeRole: zod.boolean(),
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),

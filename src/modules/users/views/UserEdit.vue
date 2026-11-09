@@ -22,9 +22,9 @@ export default {
  * accept the move. Status is an action, not a field of the `PATCH`.
  *
  * A role change gets one more gate than the rest: `UserAccessDialog`'s confirm step, opened on
- * Save whenever it differs from the loaded record, before the `PATCH` is sent at all — see
- * `submitForm`'s own note on why an unchanged `role` must never ride along regardless. Deactivating
- * goes through the same dialog, since it logs the account out everywhere.
+ * Save whenever it differs from the loaded record, before anything is sent. The role is not a
+ * field of the `PATCH`: it goes to its own door after the profile has saved (`submitForm`).
+ * Deactivating goes through the same dialog, since it logs the account out everywhere.
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
@@ -80,7 +80,8 @@ const { id } = defineProps<{
 /**
  * User store APIs and references.
  */
-const { watchUser, updateUser, fetchUser, activateUser, deactivateUser } = useUsersStore();
+const { watchUser, updateUser, fetchUser, activateUser, deactivateUser, applyAccessChange } =
+    useUsersStore();
 
 /**
  * The user being edited, and whether a call is in flight.
@@ -282,10 +283,9 @@ const onUserSaved = () => {
  *
  * A `role` that differs from the loaded record goes through `UserAccessDialog`'s confirm step
  * first — cancelling it leaves the form exactly as it was, still editable, nothing sent.
- * Confirmed or not, the `PATCH` body below only ever includes `role` when it actually changed: the
- * backend's grant check (`assertCanGrant`) runs on any `PATCH` naming a role at all, so
- * re-sending the loaded value would fail an editor with no admin-grant keys for a "change" that
- * isn't one.
+ * Confirmed, the profile `PATCH` goes first (skipped when no profile field or image changed), then
+ * the role door: `assign-role`, or `revoke-role` for the empty "no staff role" choice. An unchanged
+ * role never reaches the door, so an editor who may not assign roles can still save the profile.
  *
  * @returns A promise resolving once the flow settles: a success toast, or the
  *  revealed validation errors when the input is invalid. API failures block the form in place
@@ -318,12 +318,15 @@ const submitForm = () => {
             if (!wasAccepted) return;
             // The loaded record is the baseline: only what the admin changed is sent, and an
             // emptied locale/phone/website becomes `null` (clear) rather than a 422-bound `''`.
-            return toRequestBody(
-                'UpdateUserByIdBody',
-                { username, role, locale, phone, website },
-                target
-            )
-                .then((body) => sendUserUpdate(id, body, imageUpload))
+            return toRequestBody('UpdateUserByIdBody', { username, locale, phone, website }, target)
+                .then((body) =>
+                    Object.keys(body).length === 0 && !imageUpload
+                        ? undefined
+                        : sendUserUpdate(id, body, imageUpload)
+                )
+                .then(() =>
+                    roleChanged ? applyAccessChange(id, { role: role || null }) : undefined
+                )
                 .then(onUserSaved);
         });
     }).catch((error) => {

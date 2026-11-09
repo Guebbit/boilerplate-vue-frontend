@@ -140,6 +140,7 @@ export const anAccount = (overrides: Partial<Account> = {}): Account =>
 export const NO_USER_ACTIONS: UserActions = {
     update: false,
     assignRole: false,
+    revokeRole: false,
     delete: false,
     hardDelete: false,
     restore: false,
@@ -153,6 +154,7 @@ export const NO_USER_ACTIONS: UserActions = {
 export const ALL_USER_ACTIONS: UserActions = {
     update: true,
     assignRole: true,
+    revokeRole: true,
     delete: true,
     hardDelete: true,
     restore: true,

@@ -64,7 +64,9 @@ const queueGetResponses = (...users: ReturnType<typeof aUser>[]) => {
             call += 1;
             return Promise.resolve(parseOrvalFixture(config.method, config.url, user));
         }
-        return Promise.resolve(parseOrvalFixture(config.method, config.url, undefined));
+        // A role door answers with the user, which the store caches.
+        const answer = config.url?.endsWith('-role') ? users[0] : undefined;
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, answer));
     });
 };
 
@@ -191,10 +193,11 @@ describe('User (detail page)', () => {
             .then(flushPromises)
             .then(() => {
                 const calls = vi.mocked(orvalMutator).mock.calls.map(([config]) => config);
-                const patch = calls.find((config) => config.method === 'PATCH');
-                expect(patch).toMatchObject({ url: '/users/u1', method: 'PATCH' });
-                // The status is never part of the PATCH: it is its own endpoint.
-                expect(contractRequest(schemas.UpdateUserByIdBody, patch?.data)).toEqual({
+                // Neither the role nor the status is a field of the PATCH: each has its own endpoint.
+                expect(calls.some((config) => config.method === 'PATCH')).toBe(false);
+                const door = calls.find((config) => config.url === '/users/u1/assign-role');
+                expect(door).toMatchObject({ method: 'POST' });
+                expect(contractRequest(schemas.AssignUserRoleBody, door?.data)).toEqual({
                     role: 'manager'
                 });
                 expect(calls).toContainEqual(

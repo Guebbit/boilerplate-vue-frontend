@@ -167,9 +167,9 @@ const goToConfirm = () => {
 };
 
 /**
- * Emits the confirmed change — only the fields that actually differ from the loaded values, ready
- * to spread straight into a `PATCH /users/{id}` body without re-sending an unchanged role (the
- * trap this dialog exists to avoid: an unchanged `role` still re-runs the backend's grant check).
+ * Emits the confirmed change — only the fields that actually differ from the loaded values, so
+ * the role door is never called with the role the account already holds (a 409
+ * `USER_ROLE_ALREADY_ASSIGNED`).
  */
 const handleConfirm = () => {
     emit('confirm', {

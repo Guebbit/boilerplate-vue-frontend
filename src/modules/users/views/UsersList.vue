@@ -334,7 +334,7 @@ const handleRestore = (item: User) =>
 /**
  * Opens `UserAccessDialog` for one row and, once the admin confirms a role or active-status
  * change, sends only the fields that actually changed — see `UserAccessDialog.vue`'s own note on
- * why an unchanged `role` must never ride along in the same `PATCH`.
+ * why an unchanged `role` must never reach the role door.
  *
  * @param item - The row's user, read for its id, display name and loaded role/active.
  * @returns A promise settling once the dialog closes and, if accepted, the update has finished; a

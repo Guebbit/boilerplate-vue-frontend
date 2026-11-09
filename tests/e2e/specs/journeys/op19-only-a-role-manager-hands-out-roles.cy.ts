@@ -40,7 +40,7 @@ interface AuditRowLike {
  */
 const grantRole = (userId: string, role: string): void => {
     cy.visit(`/en/users/${userId}`);
-    cy.intercept('PATCH', '**/users/*').as('grant');
+    cy.intercept('POST', '**/users/*/assign-role').as('grant');
     cy.get('[data-test=user-manage-access]').click();
     cy.pickOption('[data-test=user-access-role]', role);
     cy.get('[data-test=user-access-continue]').click();
@@ -71,7 +71,7 @@ const roleIs = (userId: string, role: string | undefined): void => {
  */
 const roleRefusedByHand = (userId: string, role: string, as: E2ERole): void => {
     loginDevice(as).then((device) => {
-        requestAsDevice(device, 'PATCH', `/users/${userId}`, { role })
+        requestAsDevice(device, 'POST', `/users/${userId}/assign-role`, { role })
             .its('status')
             .should('equal', 403);
     });
@@ -174,7 +174,7 @@ describe('OP19 · Nobody hands out more than they hold', () => {
 
             cy.step('and the server refuses the demotion, the role staying as it was');
             loginDevice('moderator').then((device) => {
-                requestAsDevice(device, 'PATCH', `/users/${adminId}`, { role: null })
+                requestAsDevice(device, 'POST', `/users/${adminId}/revoke-role`)
                     .its('status')
                     .should('equal', 403);
             });

@@ -3,7 +3,7 @@
  * Mounts `UserAccessDialog.vue` directly, stubbing Vuetify's `v-dialog` shell so its content
  * renders regardless of open state — same technique as `entries-import-dialog.spec.ts`. Covers the
  * picker → confirm flow, the skip-picker entry `UserEdit.vue` uses, the self-deactivation warning,
- * and the payload shape: only the fields that actually changed, ready for a `PATCH` body.
+ * and the payload shape: only the fields that actually changed.
  */
 import { describe, expect, it, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
