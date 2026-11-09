@@ -17866,6 +17866,10 @@ export const ReplaceWebhookSubscriptionParams = zod.strictObject({
         .max(replaceWebhookSubscriptionPathIdMax)
         .regex(replaceWebhookSubscriptionPathIdRegExp)
 });
+export const replaceWebhookSubscriptionHeaderIfMatchMax = 200;
+export const ReplaceWebhookSubscriptionHeader = zod.strictObject({
+    'If-Match': zod.string().max(replaceWebhookSubscriptionHeaderIfMatchMax).optional()
+});
 export const replaceWebhookSubscriptionBodyUrlMax = 2048;
 export const replaceWebhookSubscriptionBodyUrlRegExp = new RegExp('(?:^https://)');
 export const replaceWebhookSubscriptionBodyDescriptionMax = 500;
@@ -17979,6 +17983,10 @@ export const UpdateWebhookSubscriptionParams = zod.strictObject({
         .max(updateWebhookSubscriptionPathIdMax)
         .regex(updateWebhookSubscriptionPathIdRegExp)
 });
+export const updateWebhookSubscriptionHeaderIfMatchMax = 200;
+export const UpdateWebhookSubscriptionHeader = zod.strictObject({
+    'If-Match': zod.string().max(updateWebhookSubscriptionHeaderIfMatchMax).optional()
+});
 export const updateWebhookSubscriptionBodyUrlMax = 2048;
 export const updateWebhookSubscriptionBodyUrlRegExp = new RegExp('(?:^https://)');
 export const updateWebhookSubscriptionBodyDescriptionMax = 500;
@@ -18091,6 +18099,10 @@ export const DeleteWebhookSubscriptionParams = zod.strictObject({
         .min(1)
         .max(deleteWebhookSubscriptionPathIdMax)
         .regex(deleteWebhookSubscriptionPathIdRegExp)
+});
+export const deleteWebhookSubscriptionHeaderIfMatchMax = 200;
+export const DeleteWebhookSubscriptionHeader = zod.strictObject({
+    'If-Match': zod.string().max(deleteWebhookSubscriptionHeaderIfMatchMax).optional()
 });
 export const DeleteWebhookSubscriptionResponse = zod.void();
 /**

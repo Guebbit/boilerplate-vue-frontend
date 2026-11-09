@@ -10639,6 +10639,11 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: webhooks
   /webhooks/subscriptions/{id}:
+    x-versioned:
+      - get
+      - put
+      - patch
+      - delete
     get:
       tags:
         - Webhooks
@@ -10661,6 +10666,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/WebhookSubscription"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -10673,8 +10680,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -10703,6 +10708,7 @@ paths:
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: true
         content:
@@ -10717,6 +10723,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/WebhookSubscription"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -10729,8 +10737,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -10739,6 +10745,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -10767,6 +10775,7 @@ paths:
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: true
         content:
@@ -10784,6 +10793,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/WebhookSubscription"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -10796,8 +10807,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -10806,6 +10815,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -10831,6 +10842,7 @@ paths:
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       responses:
         "204":
           $ref: "#/components/responses/NoContent"
@@ -10840,6 +10852,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "415":
           $ref: "#/components/responses/UnsupportedMediaType"
         "429":

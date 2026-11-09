@@ -96,6 +96,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         pageItemList: subscriptionPageItemList,
 
         fetchList: fetchAllSubscriptions,
+        fetchOne: fetchSubscription,
         watchOne: watchSubscription,
         watchList: watchSubscriptionsSearch,
         updateOne: updateSubscription,
@@ -331,6 +332,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
 
         fetchAllSubscriptions,
         watchSubscriptionsSearch,
+        fetchSubscription,
         watchSubscription,
         createSubscription,
         updateSubscription,
