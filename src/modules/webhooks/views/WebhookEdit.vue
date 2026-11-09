@@ -39,6 +39,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { formatText, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
 
 /**
  * Generic i18n/notifications helpers.
@@ -60,7 +61,8 @@ const { id } = defineProps<{
 /**
  * Webhooks store actions and event catalogue for the `eventTypes` multiselect.
  */
-const { watchSubscription, updateSubscription, fetchEventCatalog } = useWebhooksStore();
+const { watchSubscription, updateSubscription, fetchEventCatalog, fetchSubscription } =
+    useWebhooksStore();
 
 /** Reactive current subscription, event catalogue and the two loading flags. */
 const { currentSubscription, eventCatalog, loadingEventCatalog, loadingSubscriptions } =
@@ -148,7 +150,25 @@ const heroDescription = computed(() => formatText(currentSubscription.value?.des
  * This form's own blocked state — a failed save blocks this specific form, separate from the
  * secret-ring and delete actions on the detail page.
  */
-const { message: formError, report: reportFormError, clear: clearFormError } = useBlockingError();
+const {
+    message: formError,
+    report: reportFormError,
+    warn: warnFormError,
+    clear: clearFormError
+} = useBlockingError();
+
+/**
+ * The save came back 412: the subscription changed since it was loaded (a peer edited its events,
+ * say). "Reload latest" re-reads it past the cache, which re-hydrates the form and refreshes the
+ * `ETag` the next save sends.
+ */
+const {
+    isStale,
+    handle: handleStaleSave,
+    reloadLatest
+} = useStaleRecord({ warn: warnFormError, clear: clearFormError }, () =>
+    id ? fetchSubscription(id, { forced: true }) : Promise.resolve()
+);
 
 /**
  * Validates the form and persists the subscription changes.
@@ -175,7 +195,8 @@ const submitForm = () => {
                 markSaved();
                 addMessage(t('webhook-edit-page.success-update'));
             });
-    }).catch((error) => {
+    }).catch((error: unknown) => {
+        if (handleStaleSave(error)) return;
         applyServerErrors(error, { onUnmapped: () => reportFormError(error) });
     });
 };
@@ -266,8 +287,19 @@ const asideFields = computed<DetailFieldRow[]>(() => [
 
                         <InlineErrorAlert
                             :message="formError"
+                            :type="isStale ? 'warning' : 'error'"
                             data-test="webhook-edit-form-error"
                         />
+                        <v-btn
+                            v-if="isStale"
+                            variant="tonal"
+                            color="warning"
+                            data-test="webhook-reload-latest"
+                            :loading="loadingSubscriptions"
+                            @click="reloadLatest"
+                        >
+                            {{ t('generic.action-reload-latest') }}
+                        </v-btn>
                     </fieldset>
                 </form>
             </CardDetail>
