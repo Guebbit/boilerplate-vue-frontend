@@ -11,7 +11,8 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * The order page's history: one line per thing that happened, oldest first. The server decides
+ * The order page's history: one line per thing that happened, newest first, a page at a time with
+ * a "show older" button for the rest. The server decides
  * which rows the caller may read — staff get every one with the actor and any text they wrote, the
  * buyer only the buyer-visible ones and never an actor — so this component filters nothing. Staff
  * (`display:Order`) additionally get a badge on the rows the buyer cannot see. The text of each
@@ -37,7 +38,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { describeTimelineEntry } from '../domain';
 import type { TimelineTools } from '../domain';
 import { useOrdersStore } from '../store.ts';
-import type { OrderTimelineEntry } from '@types';
+import type { OrderTimelineEntry, PaginationMeta } from '@types';
 
 /**
  * The order whose history this is, and a value that changes whenever the order moves (the owning
@@ -67,10 +68,36 @@ const { t } = i18n;
 const session = useSessionStore();
 
 /**
- * The rows, oldest first, as the server filtered them for this caller. Absent until the first read
- * lands.
+ * The rows loaded so far, newest first, as the server filtered them for this caller. Absent until
+ * the first read lands.
  */
 const entries = ref<OrderTimelineEntry[]>();
+
+/**
+ * The newest page the server answered: which page it was and how many there are in all.
+ */
+const meta = ref<PaginationMeta>();
+
+/**
+ * Whether older rows are still on the server: the last page loaded is not the last page there is.
+ */
+const hasOlder = computed(
+    () => meta.value !== undefined && meta.value.page < meta.value.totalPages
+);
+
+/**
+ * Whether the older page is on its way.
+ */
+const loadingOlder = ref(false);
+
+/**
+ * The "show older" button's own blocked state: a failure shows beside the button and keeps the rows.
+ */
+const {
+    message: olderError,
+    report: reportOlderError,
+    clear: clearOlderError
+} = useBlockingError();
 
 /**
  * The read's own blocked state: a failure shows in place of the list, not as a toast.
@@ -157,20 +184,53 @@ const isByBuyer = (entry: OrderTimelineEntry): boolean =>
 let latestRead = 0;
 
 /**
- * Reads the history.
+ * Reads the newest page, replacing whatever was loaded: the history may have grown at its head,
+ * so older pages loaded before are dropped rather than kept beside a moved boundary.
  *
  * @returns A promise resolving once the rows (or the failure) are on screen.
  */
 const load = () => {
     const read = ++latestRead;
     clearReadError();
+    clearOlderError();
     return useOrdersStore()
         .fetchTimeline(props.orderId)
-        .then((rows) => {
-            if (read === latestRead) entries.value = rows;
+        .then((page) => {
+            if (read !== latestRead) return;
+            entries.value = page.items;
+            meta.value = page.meta;
         })
         .catch((error: unknown) => {
             if (read === latestRead) reportReadError(error);
+        });
+};
+
+/**
+ * Loads the next older page and appends it below the rows on screen. Rows already shown are
+ * skipped by id: offset paging on a list that grows at its head can repeat a row on the next page.
+ *
+ * @returns A promise settling once the page is appended; a failure stays beside the button.
+ */
+const showOlder = () => {
+    if (!meta.value || !hasOlder.value || loadingOlder.value) return Promise.resolve();
+    const read = latestRead;
+    clearOlderError();
+    loadingOlder.value = true;
+    return useOrdersStore()
+        .fetchTimeline(props.orderId, meta.value.page + 1)
+        .then((page) => {
+            // A reset (the order moved) started meanwhile: its first page already replaced these rows.
+            if (read !== latestRead) return;
+            const shown = new Set((entries.value ?? []).map(({ id }) => id));
+            entries.value = [
+                ...(entries.value ?? []),
+                ...page.items.filter(({ id }) => !shown.has(id))
+            ];
+            meta.value = page.meta;
+        })
+        .catch((error: unknown) => reportOlderError(error))
+        .finally(() => {
+            loadingOlder.value = false;
         });
 };
 
@@ -344,5 +404,17 @@ watch(() => [props.orderId, props.refreshKey], load, { immediate: true });
                 </span>
             </li>
         </ol>
+        <InlineErrorAlert :message="olderError" data-test="order-timeline-older-error" />
+        <div v-if="hasOlder" class="flex justify-center">
+            <v-btn
+                variant="text"
+                :loading="loadingOlder"
+                :disabled="loadingOlder"
+                data-test="order-timeline-older"
+                @click="showOlder"
+            >
+                {{ t('order-timeline.show-older') }}
+            </v-btn>
+        </div>
     </section>
 </template>

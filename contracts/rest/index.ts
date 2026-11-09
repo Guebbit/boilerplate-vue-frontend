@@ -49,7 +49,7 @@ import { orvalMutator } from '../../src/infrastructure/http/index.js';
 export type Page = number;
 
 /**
- * Optional override; server may clamp to a max
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
  * @minimum 1
  * @maximum 100
  */
@@ -7020,6 +7020,7 @@ export type OrderTimelineEntry =
 
 export interface OrderTimelineResponse {
     items: OrderTimelineEntry[];
+    meta: PaginationMeta;
 }
 
 export interface CreateOrderNoteRequest {
@@ -7847,7 +7848,7 @@ export type ListLocaleEntriesParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -7868,7 +7869,7 @@ export type ListAppLocaleEntriesParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -7907,7 +7908,7 @@ export type ListObservabilityAuditEntriesParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -7957,7 +7958,7 @@ export type ListAuditEntriesParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8022,7 +8023,7 @@ export type ListUsersParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8074,7 +8075,7 @@ export type ListTasksParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8109,7 +8110,7 @@ export type ListProductsParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8166,7 +8167,7 @@ export type ListOrdersParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8236,7 +8237,7 @@ export type ListPreorderFulfillmentOrdersParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8279,7 +8280,7 @@ export type SummarizePreorderFulfillmentOrdersParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8298,7 +8299,7 @@ export type ListReturnsParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8321,7 +8322,7 @@ export type ListInventoryLevelsParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8340,7 +8341,7 @@ export type ListPreorderLevelsParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8355,7 +8356,7 @@ export type ListStockMovementsParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8378,7 +8379,7 @@ export type ListWebhookSubscriptionsParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8402,7 +8403,7 @@ export type ListWebhookDeliveriesParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8419,7 +8420,7 @@ export type ListApiKeysParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8466,6 +8467,21 @@ export type ExportOrdersParams = {
     returnStatus?: OrderReturnStatus;
 };
 
+export type GetOrderTimelineParams = {
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+};
+
 export type ListPaymentsParams = {
     /**
      * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
@@ -8474,7 +8490,7 @@ export type ListPaymentsParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8519,7 +8535,7 @@ export type ListRefundsParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8652,7 +8668,7 @@ export type ListExamplesParams = {
      */
     page?: PageParamParameter;
     /**
-     * Optional override; server may clamp to a max
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -12725,15 +12741,16 @@ export const exportOrders = (
 };
 
 /**
- * What happened to the order, oldest first: status moves, payments and refunds, shipments, returns, documents. Every caller who may read the order may read this, but not the same rows. A caller holding `display:Order` sees every row, with the `actor` who made it and any `text` staff wrote. The buyer sees only the buyer-visible types and never an `actor`: a manual correction, a hold and a failed refund stay with staff.
+ * What happened to the order, a page at a time, newest first (a log, so no `sort`): status moves, payments and refunds, shipments, returns, documents, staff notes. Paged rather than capped: staff notes make a history grow without limit, and `meta.totalItems` counts the rows this caller may read. Every caller who may read the order may read this, but not the same rows. A caller holding `display:Order` sees every row, with the `actor` who made it and any `text` staff wrote. The buyer sees only the buyer-visible types and never an `actor`: a manual correction, a hold and a failed refund stay with staff.
  * @summary The order's timeline
  */
 export const getOrderTimeline = (
     id: string,
+    params?: GetOrderTimelineParams,
     options?: SecondParameter<typeof orvalMutator<OrderTimelineResponse>>
 ) => {
     return orvalMutator<OrderTimelineResponse>(
-        { url: `/orders/${id}/timeline`, method: 'GET' },
+        { url: `/orders/${id}/timeline`, method: 'GET', params },
         options
     );
 };

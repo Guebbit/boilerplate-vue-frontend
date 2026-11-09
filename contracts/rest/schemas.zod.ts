@@ -19384,13 +19384,29 @@ export const ExportOrdersQueryParams = zod.strictObject({
 });
 export const ExportOrdersResponse = zod.unknown();
 /**
- * What happened to the order, oldest first: status moves, payments and refunds, shipments, returns, documents. Every caller who may read the order may read this, but not the same rows. A caller holding `display:Order` sees every row, with the `actor` who made it and any `text` staff wrote. The buyer sees only the buyer-visible types and never an `actor`: a manual correction, a hold and a failed refund stay with staff.
+ * What happened to the order, a page at a time, newest first (a log, so no `sort`): status moves, payments and refunds, shipments, returns, documents, staff notes. Paged rather than capped: staff notes make a history grow without limit, and `meta.totalItems` counts the rows this caller may read. Every caller who may read the order may read this, but not the same rows. A caller holding `display:Order` sees every row, with the `actor` who made it and any `text` staff wrote. The buyer sees only the buyer-visible types and never an `actor`: a manual correction, a hold and a failed refund stay with staff.
  * @summary The order's timeline
  */
 export const getOrderTimelinePathIdMax = 64;
 export const getOrderTimelinePathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const GetOrderTimelineParams = zod.strictObject({
     id: zod.string().min(1).max(getOrderTimelinePathIdMax).regex(getOrderTimelinePathIdRegExp)
+});
+export const getOrderTimelineQueryPageDefault = 1;
+export const getOrderTimelineQueryPageMax = 10000;
+export const getOrderTimelineQueryPageSizeDefault = 10;
+export const getOrderTimelineQueryPageSizeMax = 100;
+export const GetOrderTimelineQueryParams = zod.strictObject({
+    page: zod
+        .number()
+        .min(1)
+        .max(getOrderTimelineQueryPageMax)
+        .default(getOrderTimelineQueryPageDefault),
+    pageSize: zod
+        .number()
+        .min(1)
+        .max(getOrderTimelineQueryPageSizeMax)
+        .default(getOrderTimelineQueryPageSizeDefault)
 });
 export const getOrderTimelineResponseItemsItemOneOneIdMax = 64;
 export const getOrderTimelineResponseItemsItemOneOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -19655,6 +19671,12 @@ export const getOrderTimelineResponseItemsItemTwofourTwoDataFulfillmentOrderIdMa
 export const getOrderTimelineResponseItemsItemTwofourTwoDataFulfillmentOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const getOrderTimelineResponseMetaPageDefault = 1;
+export const getOrderTimelineResponseMetaPageMax = 10000;
+export const getOrderTimelineResponseMetaPageSizeDefault = 10;
+export const getOrderTimelineResponseMetaPageSizeMax = 100;
+export const getOrderTimelineResponseMetaTotalItemsMin = 0;
+export const getOrderTimelineResponseMetaTotalPagesMin = 0;
 export const GetOrderTimelineResponse = zod.strictObject({
     items: zod.array(
         zod.union([
@@ -20318,7 +20340,21 @@ export const GetOrderTimelineResponse = zod.strictObject({
                 })
             })
         ])
-    )
+    ),
+    meta: zod.strictObject({
+        page: zod
+            .number()
+            .min(1)
+            .max(getOrderTimelineResponseMetaPageMax)
+            .default(getOrderTimelineResponseMetaPageDefault),
+        pageSize: zod
+            .number()
+            .min(1)
+            .max(getOrderTimelineResponseMetaPageSizeMax)
+            .default(getOrderTimelineResponseMetaPageSizeDefault),
+        totalItems: zod.number().min(getOrderTimelineResponseMetaTotalItemsMin),
+        totalPages: zod.number().min(getOrderTimelineResponseMetaTotalPagesMin)
+    })
 });
 /**
  * Appends a `note_added` row to the order's timeline: a call, an agreement, anything staff want the next person to know. Needs `update:Order`. The row is staff-only (`audience: staff`): the buyer's timeline never shows it, but it is the buyer's data and so it is in their `POST /account/export`. The text is stored encrypted, unset when the order's personal data is erased and after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`, and never written to the audit log (only its length is). Answers the entry, with the `Location` of its `DELETE`.

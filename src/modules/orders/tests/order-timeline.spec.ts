@@ -70,13 +70,27 @@ const signIn = (staff: boolean, canWrite = false) => {
 };
 
 /**
+ * One page of the endpoint's answer, with its place in the whole history.
+ *
+ * @param items - the page's rows
+ * @param page - which page this is
+ * @param totalPages - how many pages there are
+ */
+const pageOf = (items: OrderTimelineEntry[], page = 1, totalPages = 1) => ({
+    items,
+    meta: { page, pageSize: items.length, totalItems: items.length * totalPages, totalPages }
+});
+
+/**
  * Mounts the component with the store read answering `rows`.
  *
  * @param rows - what the endpoint returns
  * @returns the mounted wrapper, after the read settled
  */
 const mountTimeline = (rows: OrderTimelineEntry[], ownerId?: string) => {
-    const fetchTimeline = vi.spyOn(useOrdersStore(), 'fetchTimeline').mockResolvedValue(rows);
+    const fetchTimeline = vi
+        .spyOn(useOrdersStore(), 'fetchTimeline')
+        .mockResolvedValue(pageOf(rows));
     const wrapper = mount(OrderTimeline, {
         props: { orderId: 'o1', refreshKey: 'a', ownerId },
         global: { plugins: [vuetify, i18n] }
@@ -343,5 +357,109 @@ describe('OrderTimeline — withdrawing a note’s text', () => {
             'Too many requests'
         );
         expect(fetchTimeline).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('OrderTimeline — older rows', () => {
+    /** Two pages, newest first: page 1 holds the two newest rows, page 2 the oldest. */
+    const NEWEST = [STAFF_ROWS[2], STAFF_ROWS[1]];
+    const OLDEST = [STAFF_ROWS[0]];
+
+    it('offers "show older" only while a page is left', async () => {
+        signIn(true);
+        vi.spyOn(useOrdersStore(), 'fetchTimeline').mockResolvedValue(pageOf(NEWEST, 1, 2));
+        const paged = mount(OrderTimeline, {
+            props: { orderId: 'o1' },
+            global: { plugins: [vuetify, i18n] }
+        });
+        await flushPromises();
+
+        const { wrapper: whole } = await mountTimeline(STAFF_ROWS);
+
+        expect(paged.find('[data-test="order-timeline-older"]').exists()).toBe(true);
+        expect(whole.find('[data-test="order-timeline-older"]').exists()).toBe(false);
+    });
+
+    it('appends the next page below the rows, asking for page 2, then hides the button', async () => {
+        signIn(true);
+        const fetchTimeline = vi
+            .spyOn(useOrdersStore(), 'fetchTimeline')
+            .mockResolvedValueOnce(pageOf(NEWEST, 1, 2))
+            .mockResolvedValueOnce(pageOf(OLDEST, 2, 2));
+        const wrapper = mount(OrderTimeline, {
+            props: { orderId: 'o1' },
+            global: { plugins: [vuetify, i18n] }
+        });
+        await flushPromises();
+
+        await wrapper.get('[data-test="order-timeline-older"]').trigger('click');
+        await flushPromises();
+
+        expect(fetchTimeline).toHaveBeenLastCalledWith('o1', 2);
+        expect(
+            wrapper
+                .findAll('[data-test="order-timeline-entry"]')
+                .map((row) => row.attributes('data-type'))
+        ).toEqual(['status_overridden', 'paid', 'created']);
+        expect(wrapper.find('[data-test="order-timeline-older"]').exists()).toBe(false);
+    });
+
+    it('skips a row the older page repeats because the history grew at its head', async () => {
+        signIn(true);
+        vi.spyOn(useOrdersStore(), 'fetchTimeline')
+            .mockResolvedValueOnce(pageOf(NEWEST, 1, 2))
+            .mockResolvedValueOnce(pageOf([STAFF_ROWS[1], ...OLDEST], 2, 2));
+        const wrapper = mount(OrderTimeline, {
+            props: { orderId: 'o1' },
+            global: { plugins: [vuetify, i18n] }
+        });
+        await flushPromises();
+
+        await wrapper.get('[data-test="order-timeline-older"]').trigger('click');
+        await flushPromises();
+
+        expect(wrapper.findAll('[data-test="order-timeline-entry"]')).toHaveLength(3);
+    });
+
+    it('goes back to the newest page when the order moves', async () => {
+        signIn(true);
+        const fetchTimeline = vi
+            .spyOn(useOrdersStore(), 'fetchTimeline')
+            .mockResolvedValueOnce(pageOf(NEWEST, 1, 2))
+            .mockResolvedValueOnce(pageOf(OLDEST, 2, 2))
+            .mockResolvedValueOnce(pageOf(NEWEST, 1, 2));
+        const wrapper = mount(OrderTimeline, {
+            props: { orderId: 'o1', refreshKey: 'a' },
+            global: { plugins: [vuetify, i18n] }
+        });
+        await flushPromises();
+        await wrapper.get('[data-test="order-timeline-older"]').trigger('click');
+        await flushPromises();
+
+        await wrapper.setProps({ refreshKey: 'b' });
+        await flushPromises();
+
+        expect(fetchTimeline).toHaveBeenLastCalledWith('o1');
+        expect(wrapper.findAll('[data-test="order-timeline-entry"]')).toHaveLength(2);
+        expect(wrapper.find('[data-test="order-timeline-older"]').exists()).toBe(true);
+    });
+
+    it('keeps the rows and shows the failure beside the button when the older page fails', async () => {
+        signIn(true);
+        vi.spyOn(useOrdersStore(), 'fetchTimeline')
+            .mockResolvedValueOnce(pageOf(NEWEST, 1, 2))
+            .mockRejectedValueOnce({ status: 500, errors: [{ message: 'Boom' }] });
+        const wrapper = mount(OrderTimeline, {
+            props: { orderId: 'o1' },
+            global: { plugins: [vuetify, i18n] }
+        });
+        await flushPromises();
+
+        await wrapper.get('[data-test="order-timeline-older"]').trigger('click');
+        await flushPromises();
+
+        expect(wrapper.get('[data-test="order-timeline-older-error"]').text()).toContain('Boom');
+        expect(wrapper.findAll('[data-test="order-timeline-entry"]')).toHaveLength(2);
+        expect(wrapper.find('[data-test="order-timeline-older"]').exists()).toBe(true);
     });
 });

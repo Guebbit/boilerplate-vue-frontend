@@ -52,6 +52,14 @@ const INVOICE = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
 const TIMELINE = [{ id: 'e1', at: '2026-10-01T10:00:00.000Z', type: 'created', data: {} }];
 
 /**
+ * The page the endpoint answers: the rows and where they sit in the whole history.
+ */
+const TIMELINE_PAGE = {
+    items: TIMELINE,
+    meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 }
+};
+
+/**
  * Fixture credit notes, the `items` the list endpoint answers.
  */
 const CREDIT_NOTES = [
@@ -95,7 +103,7 @@ vi.mock('@api', () => ({
     getOrderInvoice: vi.fn(() => Promise.resolve(INVOICE)),
     listOrderCreditNotes: vi.fn(() => Promise.resolve({ items: CREDIT_NOTES })),
     getOrderCreditNote: vi.fn(() => Promise.resolve(INVOICE)),
-    getOrderTimeline: vi.fn(() => Promise.resolve({ items: TIMELINE })),
+    getOrderTimeline: vi.fn(() => Promise.resolve(TIMELINE_PAGE)),
     addOrderNote: vi.fn(() => Promise.resolve(TIMELINE[0])),
     deleteOrderNote: vi.fn(() => Promise.resolve()),
     exportOrders: vi.fn(() =>
@@ -239,12 +247,19 @@ describe('useOrdersStore', () => {
     });
 
     describe('fetchTimeline', () => {
-        it('unwraps the envelope to the entries', () =>
+        it('asks for page 1 by default and answers the page with its meta', () =>
             useOrdersStore()
                 .fetchTimeline('o1')
                 .then((result) => {
-                    expect(getOrderTimeline).toHaveBeenCalledExactlyOnceWith('o1');
-                    expect(result).toEqual(TIMELINE);
+                    expect(getOrderTimeline).toHaveBeenCalledExactlyOnceWith('o1', { page: 1 });
+                    expect(result).toEqual(TIMELINE_PAGE);
+                }));
+
+        it('asks for the page it is given', () =>
+            useOrdersStore()
+                .fetchTimeline('o1', 3)
+                .then(() => {
+                    expect(getOrderTimeline).toHaveBeenCalledExactlyOnceWith('o1', { page: 3 });
                 }));
     });
 
