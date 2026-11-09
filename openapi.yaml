@@ -652,8 +652,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1166,8 +1164,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1363,8 +1359,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1527,8 +1521,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2227,8 +2219,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/Account"
           headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -3121,8 +3111,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3283,8 +3271,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5018,8 +5004,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
           headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -6358,8 +6342,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/Product"
           headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -6989,8 +6971,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7761,8 +7741,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
           headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -10729,8 +10707,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -12274,8 +12250,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -14349,8 +14323,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/Example"
           headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -14687,8 +14659,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
