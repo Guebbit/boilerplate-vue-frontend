@@ -472,8 +472,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/json:
               schema:
@@ -1101,8 +1099,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/json:
               schema:
@@ -1252,8 +1248,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2138,8 +2132,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2382,8 +2374,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2442,8 +2432,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2520,8 +2508,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2578,8 +2564,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2633,8 +2617,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2734,8 +2716,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3019,8 +2999,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -3206,8 +3184,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3345,8 +3321,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3536,8 +3510,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3592,8 +3564,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3654,8 +3624,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -3784,8 +3752,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3837,8 +3803,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/json:
               schema:
@@ -3985,8 +3949,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4039,8 +4001,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4137,8 +4097,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4192,8 +4150,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4249,8 +4205,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4308,8 +4262,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4367,8 +4319,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4426,8 +4376,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4543,8 +4491,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4600,8 +4546,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4779,6 +4723,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
   /users:
+    x-versioned:
+      - post
     get:
       x-cache: private-no-cache
       tags:
@@ -4902,6 +4848,10 @@ paths:
           headers:
             Location:
               $ref: "#/components/headers/Location"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -4914,8 +4864,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/json:
               schema:
@@ -5180,6 +5128,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
   /users/{id}/restore:
+    x-versioned:
+      - post
     post:
       tags:
         - Users
@@ -5203,6 +5153,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -5215,8 +5169,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5310,8 +5262,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5373,8 +5323,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -5533,8 +5481,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5718,8 +5664,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5774,8 +5718,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5831,8 +5773,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5896,8 +5836,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5958,8 +5896,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6023,8 +5959,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -6051,6 +5985,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: tasks
   /products:
+    x-versioned:
+      - post
     get:
       x-cache: "max-age: 3600"
       tags:
@@ -6188,6 +6124,10 @@ paths:
           headers:
             Location:
               $ref: "#/components/headers/Location"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -6200,8 +6140,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -6537,6 +6475,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: products
   /products/{id}/restore:
+    x-versioned:
+      - post
     post:
       tags:
         - Products
@@ -6560,6 +6500,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Product"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -6572,8 +6516,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6669,8 +6611,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6777,8 +6717,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -6833,8 +6771,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6889,8 +6825,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6943,8 +6877,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7067,6 +6999,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: cart
   /cart/checkout:
+    x-versioned:
+      - post
     post:
       tags:
         - Orders
@@ -7111,6 +7045,10 @@ paths:
           headers:
             Location:
               $ref: "#/components/headers/Location"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -7123,8 +7061,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -7199,8 +7135,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -7306,8 +7240,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7363,8 +7295,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7417,8 +7347,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7439,6 +7367,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: wishlist
   /orders:
+    x-versioned:
+      - post
     get:
       x-cache: private-no-cache
       tags:
@@ -7586,6 +7516,10 @@ paths:
           headers:
             Location:
               $ref: "#/components/headers/Location"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -7598,8 +7532,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -7668,8 +7600,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7914,6 +7844,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: orders
   /orders/{id}/restore:
+    x-versioned:
+      - post
     post:
       tags:
         - Orders
@@ -7936,6 +7868,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -7948,8 +7884,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -8013,6 +7947,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: orders
   /orders/{id}/cancel:
+    x-versioned:
+      - post
     post:
       tags:
         - Orders
@@ -8045,6 +7981,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -8057,8 +7997,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -8083,6 +8021,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: orders
   /orders/{id}/status-override:
+    x-versioned:
+      - post
     post:
       tags:
         - Orders
@@ -8112,6 +8052,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -8124,8 +8068,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -8411,8 +8353,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "201":
@@ -8432,8 +8372,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -8464,6 +8402,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: payments
   /orders/{id}/process:
+    x-versioned:
+      - post
     post:
       tags:
         - Delivery
@@ -8484,6 +8424,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -8496,8 +8440,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -8701,8 +8643,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -8877,8 +8817,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -8942,8 +8880,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9009,8 +8945,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
@@ -9265,8 +9199,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -9334,8 +9266,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -9403,8 +9333,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -9464,8 +9392,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9575,8 +9501,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -9640,8 +9564,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9782,8 +9704,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -9950,8 +9870,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -10007,8 +9925,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -10086,8 +10002,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -10332,8 +10246,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -10409,8 +10321,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -10436,8 +10346,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/problem+json:
               schema:
@@ -10489,8 +10397,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -10505,6 +10411,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: inventory
   /webhooks/subscriptions:
+    x-versioned:
+      - post
     get:
       tags:
         - Webhooks
@@ -10608,6 +10516,10 @@ paths:
           headers:
             Location:
               $ref: "#/components/headers/Location"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -10620,8 +10532,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/json:
               schema:
@@ -10913,8 +10823,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11034,8 +10942,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11211,8 +11117,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/json:
               schema:
@@ -11358,8 +11262,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11423,8 +11325,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11474,8 +11374,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11524,8 +11422,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11540,6 +11436,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
   /users/{id}/assign-role:
+    x-versioned:
+      - post
     post:
       tags:
         - Users
@@ -11570,6 +11468,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -11582,8 +11484,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -11608,6 +11508,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
   /users/{id}/revoke-role:
+    x-versioned:
+      - post
     post:
       tags:
         - Users
@@ -11632,6 +11534,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -11644,8 +11550,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11664,6 +11568,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
   /users/{id}/place-purchase-hold:
+    x-versioned:
+      - post
     post:
       tags:
         - Users
@@ -11693,6 +11599,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -11705,8 +11615,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -11731,6 +11639,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
   /users/{id}/lift-purchase-hold:
+    x-versioned:
+      - post
     post:
       tags:
         - Users
@@ -11754,6 +11664,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -11766,8 +11680,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11786,6 +11698,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
   /users/{id}/activate:
+    x-versioned:
+      - post
     post:
       tags:
         - Users
@@ -11809,6 +11723,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -11821,8 +11739,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11841,6 +11757,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
   /users/{id}/deactivate:
+    x-versioned:
+      - post
     post:
       tags:
         - Users
@@ -11864,6 +11782,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -11876,8 +11798,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11938,8 +11858,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -12187,8 +12105,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -12480,8 +12396,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "201":
           description: The payment intent, ready to confirm
           headers:
@@ -12499,8 +12413,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/json:
               schema:
@@ -12565,8 +12477,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -12756,8 +12666,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "401":
@@ -12836,8 +12744,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -13096,8 +13002,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -13162,8 +13066,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -13232,8 +13134,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -13305,8 +13205,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -13850,8 +13748,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -13874,6 +13770,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: inventory
   /webhooks/subscriptions/{id}/enable:
+    x-versioned:
+      - post
     post:
       tags:
         - Webhooks
@@ -13902,6 +13800,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/WebhookSubscription"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -13914,8 +13816,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -13934,6 +13834,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: webhooks
   /webhooks/subscriptions/{id}/disable:
+    x-versioned:
+      - post
     post:
       tags:
         - Webhooks
@@ -13961,6 +13863,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/WebhookSubscription"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -13973,8 +13879,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -14034,8 +13938,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -14100,6 +14002,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: webhooks
   /examples:
+    x-versioned:
+      - post
     get:
       x-cache: private-no-cache
       tags:
@@ -14191,6 +14095,10 @@ paths:
           headers:
             Location:
               $ref: "#/components/headers/Location"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -14203,8 +14111,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -14269,8 +14175,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -14504,6 +14408,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: example
   /examples/{id}/publish:
+    x-versioned:
+      - post
     post:
       tags:
         - Examples
@@ -14526,6 +14432,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Example"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -14538,8 +14448,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -14558,6 +14466,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: example
   /examples/{id}/archive:
+    x-versioned:
+      - post
     post:
       tags:
         - Examples
@@ -14580,6 +14490,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Example"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -14592,8 +14506,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -14612,6 +14524,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: example
   /examples/{id}/unarchive:
+    x-versioned:
+      - post
     post:
       tags:
         - Examples
@@ -14634,6 +14548,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Example"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -14646,8 +14564,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -15233,8 +15149,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -15290,8 +15204,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -15528,12 +15440,17 @@ components:
         type: string
     ETag:
       required: true
-      description: "A strong entity-tag over this exact answer (RFC 9110 §8.8.3). Send it back as `If-None-Match` for a `304`, or as `If-Match` on `PUT`, `PATCH` or `DELETE`, which compares only its edit part, so a stock or price change never refuses your edit. Opaque: compare it, never parse it."
+      description: "A strong entity-tag over this exact answer (RFC 9110 §8.8.3). Send it back as `If-None-Match` for a `304`, or as `If-Match` on `PUT`, `PATCH` or `DELETE`, which compares only its edit part, so a stock or price change never refuses your edit. On a create or an action it is the tag of the resource `Content-Location` names, so the next edit needs no read first. Opaque: compare it, never parse it."
+      schema:
+        type: string
+    ContentLocation:
+      required: true
+      description: "The resource the answer's body is a representation of, as a path on this API (RFC 9110 section 6.4.2), in the form `Location` uses. A create or an action answers it beside its `ETag`: the tag is that resource's, and a `GET` on it reads the same body."
       schema:
         type: string
     EntityTag:
       required: false
-      description: The strong entity-tag Express computes for any answer that has a body (RFC 9110 section 8.8.3). A client may send it back as `If-None-Match` on a read the app lets it keep, and a `GET` that declares `304` answers that way when it still matches. Only a resource marked versioned promises it (the `ETag` header) and takes it as `If-Match`.
+      description: The strong entity-tag Express computes for any read that has a body (RFC 9110 section 8.8.3); a write answer never carries it. A client may send it back as `If-None-Match` on a read the app lets it keep, and a `GET` that declares `304` answers that way when it still matches. Only a resource marked versioned promises it (the `ETag` header) and takes it as `If-Match`.
       schema:
         type: string
     RequestId:
