@@ -18,6 +18,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { WebhookSubscription } from '@types';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 import { contractRequest } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import * as schemas from '@api/schemas';
@@ -69,7 +70,7 @@ const SUBSCRIPTION: WebhookSubscription = {
  * Mounts the page for `sub-1`, seeding the store's cache by hand — the way the page's own load
  * would leave it.
  *
- * @returns The wrapper and the spied `updateSubscription`.
+ * @returns The wrapper and the spied `updateSubscription` and `fetchSubscription`.
  */
 const mountPage = () => {
     const store = useWebhooksStore();
@@ -78,6 +79,7 @@ const mountPage = () => {
     store.selectedSubscriptionId = SUBSCRIPTION.id;
     vi.spyOn(store, 'fetchEventCatalog').mockResolvedValue(undefined);
     const update = vi.spyOn(store, 'updateSubscription').mockResolvedValue(SUBSCRIPTION);
+    const fetch = vi.spyOn(store, 'fetchSubscription').mockResolvedValue(undefined);
 
     const wrapper = mount(WebhookEdit, {
         props: { id: SUBSCRIPTION.id },
@@ -87,7 +89,7 @@ const mountPage = () => {
             stubs: { VSelect: V_SELECT_STUB }
         }
     });
-    return { wrapper, update };
+    return { wrapper, update, fetch };
 };
 
 beforeEach(() => {
@@ -130,6 +132,23 @@ describe('WebhookEdit', () => {
                 expect(
                     contractRequest(schemas.UpdateWebhookSubscriptionBody, update.mock.calls[0][1])
                 ).toEqual({});
+            });
+    });
+
+    it('says the record moved on a 412, offers to reload, and re-reads on request', () => {
+        const { wrapper, update, fetch } = mountPage();
+        update.mockRejectedValue(
+            aProblem(412, [{ code: 'PRECONDITION_FAILED', message: 'Precondition failed' }])
+        );
+
+        return wrapper
+            .get('form')
+            .trigger('submit')
+            .then(flushPromises)
+            .then(() => wrapper.get('[data-test=webhook-reload-latest]').trigger('click'))
+            .then(flushPromises)
+            .then(() => {
+                expect(fetch).toHaveBeenCalledWith(SUBSCRIPTION.id, { forced: true });
             });
     });
 

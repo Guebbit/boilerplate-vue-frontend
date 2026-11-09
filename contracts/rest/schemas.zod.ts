@@ -394,6 +394,10 @@ export const replaceLocalePathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z
 export const ReplaceLocaleParams = zod.strictObject({
     locale: zod.string().max(replaceLocalePathLocaleMax).regex(replaceLocalePathLocaleRegExp)
 });
+export const replaceLocaleHeaderIfMatchMax = 200;
+export const ReplaceLocaleHeader = zod.strictObject({
+    'If-Match': zod.string().max(replaceLocaleHeaderIfMatchMax).optional()
+});
 export const replaceLocaleBodyNameMax = 100;
 export const replaceLocaleBodyNativeNameMax = 100;
 export const ReplaceLocaleBody = zod.strictObject({
@@ -459,6 +463,10 @@ export const updateLocalePathLocaleMax = 35;
 export const updateLocalePathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
 export const UpdateLocaleParams = zod.strictObject({
     locale: zod.string().max(updateLocalePathLocaleMax).regex(updateLocalePathLocaleRegExp)
+});
+export const updateLocaleHeaderIfMatchMax = 200;
+export const UpdateLocaleHeader = zod.strictObject({
+    'If-Match': zod.string().max(updateLocaleHeaderIfMatchMax).optional()
 });
 export const updateLocaleBodyNameMax = 100;
 export const updateLocaleBodyNativeNameMax = 100;
@@ -1176,6 +1184,10 @@ export const ReplaceEntityTranslationsParams = zod.strictObject({
         .max(replaceEntityTranslationsPathIdMax)
         .regex(replaceEntityTranslationsPathIdRegExp)
 });
+export const replaceEntityTranslationsHeaderIfMatchMax = 200;
+export const ReplaceEntityTranslationsHeader = zod.strictObject({
+    'If-Match': zod.string().max(replaceEntityTranslationsHeaderIfMatchMax).optional()
+});
 export const replaceEntityTranslationsBodyOneFieldsMaxOne = 10000;
 export const replaceEntityTranslationsBodyOneOriginDefault = `human`;
 export const ReplaceEntityTranslationsBody = zod.record(
@@ -1293,6 +1305,10 @@ export const UpdateEntityTranslationsParams = zod.strictObject({
         .min(1)
         .max(updateEntityTranslationsPathIdMax)
         .regex(updateEntityTranslationsPathIdRegExp)
+});
+export const updateEntityTranslationsHeaderIfMatchMax = 200;
+export const UpdateEntityTranslationsHeader = zod.strictObject({
+    'If-Match': zod.string().max(updateEntityTranslationsHeaderIfMatchMax).optional()
 });
 export const updateEntityTranslationsBodyOneFieldsMaxOne = 10000;
 export const UpdateEntityTranslationsBody = zod.record(
@@ -17866,6 +17882,10 @@ export const ReplaceWebhookSubscriptionParams = zod.strictObject({
         .max(replaceWebhookSubscriptionPathIdMax)
         .regex(replaceWebhookSubscriptionPathIdRegExp)
 });
+export const replaceWebhookSubscriptionHeaderIfMatchMax = 200;
+export const ReplaceWebhookSubscriptionHeader = zod.strictObject({
+    'If-Match': zod.string().max(replaceWebhookSubscriptionHeaderIfMatchMax).optional()
+});
 export const replaceWebhookSubscriptionBodyUrlMax = 2048;
 export const replaceWebhookSubscriptionBodyUrlRegExp = new RegExp('(?:^https://)');
 export const replaceWebhookSubscriptionBodyDescriptionMax = 500;
@@ -17979,6 +17999,10 @@ export const UpdateWebhookSubscriptionParams = zod.strictObject({
         .max(updateWebhookSubscriptionPathIdMax)
         .regex(updateWebhookSubscriptionPathIdRegExp)
 });
+export const updateWebhookSubscriptionHeaderIfMatchMax = 200;
+export const UpdateWebhookSubscriptionHeader = zod.strictObject({
+    'If-Match': zod.string().max(updateWebhookSubscriptionHeaderIfMatchMax).optional()
+});
 export const updateWebhookSubscriptionBodyUrlMax = 2048;
 export const updateWebhookSubscriptionBodyUrlRegExp = new RegExp('(?:^https://)');
 export const updateWebhookSubscriptionBodyDescriptionMax = 500;
@@ -18091,6 +18115,10 @@ export const DeleteWebhookSubscriptionParams = zod.strictObject({
         .min(1)
         .max(deleteWebhookSubscriptionPathIdMax)
         .regex(deleteWebhookSubscriptionPathIdRegExp)
+});
+export const deleteWebhookSubscriptionHeaderIfMatchMax = 200;
+export const DeleteWebhookSubscriptionHeader = zod.strictObject({
+    'If-Match': zod.string().max(deleteWebhookSubscriptionHeaderIfMatchMax).optional()
 });
 export const DeleteWebhookSubscriptionResponse = zod.void();
 /**
