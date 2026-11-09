@@ -596,7 +596,7 @@ const handleHardDelete = (productId: string, title: string) =>
                         {{ t('products-list-page.button-view') }}
                     </v-btn>
                     <v-btn
-                        v-if="session.can('update', 'Product')"
+                        v-if="item.actions.update"
                         :size="rowActionSize"
                         variant="tonal"
                         color="secondary"
@@ -609,7 +609,7 @@ const handleHardDelete = (productId: string, title: string) =>
                         {{ t('products-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
-                        v-if="session.can('delete', 'Product') && item.deletedAt"
+                        v-if="item.actions.restore"
                         :size="rowActionSize"
                         variant="tonal"
                         color="success"
@@ -623,7 +623,7 @@ const handleHardDelete = (productId: string, title: string) =>
                         {{ t('products-list-page.button-restore') }}
                     </v-btn>
                     <v-btn
-                        v-else-if="session.can('delete', 'Product')"
+                        v-else-if="item.actions.delete"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"
@@ -637,7 +637,7 @@ const handleHardDelete = (productId: string, title: string) =>
                         {{ t('products-list-page.button-delete') }}
                     </v-btn>
                     <v-btn
-                        v-if="session.can('delete', 'Product')"
+                        v-if="item.actions.hardDelete"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"

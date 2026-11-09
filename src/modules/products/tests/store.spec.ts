@@ -31,6 +31,7 @@ import {
 import type { Product } from '@types';
 
 import * as schemas from '@api/schemas';
+import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -79,6 +80,7 @@ const PRODUCT: Product = {
     inStock: true,
     lowStock: false,
     buyable: true,
+    actions: NO_PRODUCT_ACTIONS,
     description: 'A gadget',
     imageUrl: 'https://example.com/g.jpg',
     categories: ['tools'],

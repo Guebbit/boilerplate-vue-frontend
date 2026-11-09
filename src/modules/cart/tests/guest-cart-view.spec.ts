@@ -25,6 +25,7 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import { asStub } from '../../../../tests/support/stub';
 import { contractResponse } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import type { Product } from '@types';
+import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -57,7 +58,8 @@ const aProduct = (id: string, price: string): Product => ({
     currency: 'EUR',
     inStock: true,
     lowStock: false,
-    buyable: true
+    buyable: true,
+    actions: NO_PRODUCT_ACTIONS
 });
 
 /**

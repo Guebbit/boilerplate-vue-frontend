@@ -19,6 +19,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { asStub } from '../../../../tests/support/stub';
+import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -52,6 +53,7 @@ const serverHolds = (available: number) =>
             currency: 'EUR',
             inStock: available > 0,
             lowStock: false,
+            actions: NO_PRODUCT_ACTIONS,
             onHand: available,
             reserved: 0,
             available

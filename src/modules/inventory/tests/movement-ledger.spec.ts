@@ -19,6 +19,7 @@ import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { asStub } from '../../../../tests/support/stub';
 import type { StockMovement } from '@types';
+import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -145,7 +146,8 @@ describe('MovementLedger product titles', () => {
             currency: 'EUR',
             inStock: true,
             lowStock: false,
-            buyable: true
+            buyable: true,
+            actions: NO_PRODUCT_ACTIONS
         });
         const wrapper = mountLedger([movement('m1', 'p1'), movement('m2', 'p2')]);
 
@@ -163,7 +165,8 @@ describe('MovementLedger product titles', () => {
             currency: 'EUR',
             inStock: true,
             lowStock: false,
-            buyable: true
+            buyable: true,
+            actions: NO_PRODUCT_ACTIONS
         });
         mountLedger([movement('m1', 'p1')]);
 

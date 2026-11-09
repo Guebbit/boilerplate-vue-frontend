@@ -17,6 +17,7 @@ import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { contractResponse } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import type { CartResponse } from '@types';
+import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -33,7 +34,8 @@ vi.mock('@api', async (importOriginal) => ({
                         currency: 'GBP',
                         inStock: true,
                         lowStock: false,
-                        buyable: true
+                        buyable: true,
+                        actions: NO_PRODUCT_ACTIONS
                     }
                 ],
                 meta: { totalItems: 1, page: 1, pageSize: 1, totalPages: 1 }

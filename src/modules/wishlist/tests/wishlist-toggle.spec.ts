@@ -13,6 +13,7 @@ import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { Product } from '@types';
+import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -26,7 +27,8 @@ const PRODUCT: Product = {
     currency: 'EUR',
     inStock: true,
     lowStock: false,
-    buyable: true
+    buyable: true,
+    actions: NO_PRODUCT_ACTIONS
 };
 
 /**

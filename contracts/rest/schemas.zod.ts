@@ -8671,7 +8671,7 @@ export const CreateTaskNoteResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Returns a paginated list of products. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached.
+ * Returns a paginated list of products. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached. Each row's `actions` is all `false` for a caller answered from the shared cache; only a caller who sees more than a guest gets a `true`.
  * @summary List products (paginated)
  */
 export const listProductsQueryPageDefault = 1;
@@ -8792,6 +8792,12 @@ export const ListProductsResponse = zod.strictObject({
             createdAt: zod.iso.datetime({ offset: true }).optional(),
             updatedAt: zod.iso.datetime({ offset: true }).optional(),
             deletedAt: zod.iso.datetime({ offset: true }).optional(),
+            actions: zod.strictObject({
+                update: zod.boolean(),
+                delete: zod.boolean(),
+                restore: zod.boolean(),
+                hardDelete: zod.boolean()
+            }),
             translations: zod
                 .record(
                     zod.string(),
@@ -8931,6 +8937,12 @@ export const CreateProductResponse = zod.strictObject({
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
     deletedAt: zod.iso.datetime({ offset: true }).optional(),
+    actions: zod.strictObject({
+        update: zod.boolean(),
+        delete: zod.boolean(),
+        restore: zod.boolean(),
+        hardDelete: zod.boolean()
+    }),
     translations: zod
         .record(
             zod.string(),
@@ -9021,6 +9033,12 @@ export const GetProductByIdResponse = zod.strictObject({
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
     deletedAt: zod.iso.datetime({ offset: true }).optional(),
+    actions: zod.strictObject({
+        update: zod.boolean(),
+        delete: zod.boolean(),
+        restore: zod.boolean(),
+        hardDelete: zod.boolean()
+    }),
     translations: zod
         .record(
             zod.string(),
@@ -9155,6 +9173,12 @@ export const ReplaceProductByIdResponse = zod.strictObject({
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
     deletedAt: zod.iso.datetime({ offset: true }).optional(),
+    actions: zod.strictObject({
+        update: zod.boolean(),
+        delete: zod.boolean(),
+        restore: zod.boolean(),
+        hardDelete: zod.boolean()
+    }),
     translations: zod
         .record(
             zod.string(),
@@ -9304,6 +9328,12 @@ export const UpdateProductByIdResponse = zod.strictObject({
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
     deletedAt: zod.iso.datetime({ offset: true }).optional(),
+    actions: zod.strictObject({
+        update: zod.boolean(),
+        delete: zod.boolean(),
+        restore: zod.boolean(),
+        hardDelete: zod.boolean()
+    }),
     translations: zod
         .record(
             zod.string(),
@@ -9398,6 +9428,12 @@ export const RestoreProductByIdResponse = zod.strictObject({
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional(),
     deletedAt: zod.iso.datetime({ offset: true }).optional(),
+    actions: zod.strictObject({
+        update: zod.boolean(),
+        delete: zod.boolean(),
+        restore: zod.boolean(),
+        hardDelete: zod.boolean()
+    }),
     translations: zod
         .record(
             zod.string(),
@@ -9552,6 +9588,12 @@ export const SearchProductsResponse = zod.strictObject({
             createdAt: zod.iso.datetime({ offset: true }).optional(),
             updatedAt: zod.iso.datetime({ offset: true }).optional(),
             deletedAt: zod.iso.datetime({ offset: true }).optional(),
+            actions: zod.strictObject({
+                update: zod.boolean(),
+                delete: zod.boolean(),
+                restore: zod.boolean(),
+                hardDelete: zod.boolean()
+            }),
             translations: zod
                 .record(
                     zod.string(),
