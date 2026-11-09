@@ -355,7 +355,7 @@ describe('UserEdit — what each row allows', () => {
         loadedUser = aUser({
             ...LOADED_USER,
             actions: userActionsOf({
-                setPurchaseHold: true,
+                placePurchaseHold: true,
                 liftPurchaseHold: true,
                 activate: true,
                 deactivate: true

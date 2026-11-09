@@ -5780,17 +5780,18 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: tasks
-  /tasks/{id}/assignee:
-    put:
+  /tasks/{id}/assign:
+    post:
       tags:
         - Tasks
       summary: Assign a task
       description: |
-        Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task and `update:Task`, so they can open, note and close it. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`.
+        Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task and `update:Task`, so they can open, note and close it. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`; assigning it to the person who holds it already answers 409 `TASK_ALREADY_ASSIGNED` and writes nothing.
       operationId: assignTask
       x-error-codes:
         "409":
           - TASK_NOT_OPEN
+          - TASK_ALREADY_ASSIGNED
         "422":
           - TASK_ASSIGNEE_INVALID
       security:
@@ -5850,12 +5851,17 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: tasks
-    delete:
+  /tasks/{id}/unassign:
+    post:
       tags:
         - Tasks
       summary: Give a task back
-      description: Clears the assignee. An `in_progress` task goes back to `new`. Answers 200 whether or not anyone held it.
+      description: |
+        Clears the assignee, whatever the task's status. An `in_progress` task goes back to `new`. A task nobody holds answers 409 `TASK_NOT_ASSIGNED` and writes nothing.
       operationId: unassignTask
+      x-error-codes:
+        "409":
+          - TASK_NOT_ASSIGNED
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -5890,6 +5896,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "415":
           $ref: "#/components/responses/UnsupportedMediaType"
         "429":
@@ -11450,16 +11458,16 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
-  /users/{id}/purchase-hold:
-    put:
+  /users/{id}/place-purchase-hold:
+    post:
       tags:
         - Users
-      summary: Put a purchase hold on a user
-      description: "Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Clears the account's review flag: placing a hold is acting on it. Audited as `admin.user.purchase_hold_set`."
-      operationId: setUserPurchaseHold
+      summary: Place a purchase hold on a user
+      description: "Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `lift-purchase-hold` ends it. Clears the account's review flag: placing a hold is acting on it. Placing the staff hold already in force, with the same `until` and the same `note`, answers 409 `USER_PURCHASE_HOLD_ALREADY_SET` and writes, mails and audits nothing; any other body replaces the hold. Audited as `admin.user.purchase_hold_set`."
+      operationId: placeUserPurchaseHold
       x-error-codes:
         "409":
-          - CART_PURCHASE_HOLD
+          - USER_PURCHASE_HOLD_ALREADY_SET
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -11471,7 +11479,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SetPurchaseHoldRequest"
+              $ref: "#/components/schemas/PlacePurchaseHoldRequest"
       responses:
         "200":
           description: The user, now holding the hold
@@ -11502,6 +11510,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -11515,7 +11525,8 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
-    delete:
+  /users/{id}/lift-purchase-hold:
+    post:
       tags:
         - Users
       summary: Lift a user's purchase hold
@@ -16103,7 +16114,7 @@ components:
         - delete
         - hardDelete
         - restore
-        - setPurchaseHold
+        - placePurchaseHold
         - liftPurchaseHold
         - activate
         - deactivate
@@ -16124,12 +16135,12 @@ components:
         restore:
           type: boolean
           description: Whether `POST /users/{id}/restore` would be accepted — `delete:User`, the account is not a staff account the caller may not manage, and it is soft-deleted.
-        setPurchaseHold:
+        placePurchaseHold:
           type: boolean
-          description: Whether `PUT /users/{id}/purchase-hold` would be accepted — `ban:User`, and the account is not a staff account the caller may not manage. A hold can be placed again to extend it.
+          description: Whether `POST /users/{id}/place-purchase-hold` would be accepted — `ban:User`, and the account is not a staff account the caller may not manage. A hold can be placed again with a new end date or note to replace it; the client hides the control for the value already in force.
         liftPurchaseHold:
           type: boolean
-          description: Whether `DELETE /users/{id}/purchase-hold` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and there is a hold or a review flag to clear.
+          description: Whether `POST /users/{id}/lift-purchase-hold` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and there is a hold or a review flag to clear.
         activate:
           type: boolean
           description: Whether `POST /users/{id}/activate` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and it is deactivated.
@@ -21047,10 +21058,10 @@ components:
           description: Whether `POST /tasks/{id}/reopen` would be accepted.
         assign:
           type: boolean
-          description: Whether `PUT /tasks/{id}/assignee` would be accepted.
+          description: Whether `POST /tasks/{id}/assign` would be accepted. Stays true for a task someone holds, since a new person replaces them.
         unassign:
           type: boolean
-          description: Whether `DELETE /tasks/{id}/assignee` would change anything.
+          description: Whether `POST /tasks/{id}/unassign` would be accepted, which needs an assignee, in any status.
         note:
           type: boolean
           description: Whether `POST /tasks/{id}/notes` would be accepted.
@@ -24664,7 +24675,7 @@ components:
         secret:
           type: string
           description: The newly minted credential, in plaintext — `sk_<prefix>_<secret>`. Shown here once, on creation, and never again.
-    SetPurchaseHoldRequest:
+    PlacePurchaseHoldRequest:
       type: object
       additionalProperties: false
       required:
@@ -27355,6 +27366,9 @@ x-error-codes:
   STOCK_ALERT_PRODUCT_BUYABLE:
     status: 409
     description: The product can be ordered now, so there is nothing to wait for. The button is only offered while it cannot.
+  TASK_ALREADY_ASSIGNED:
+    status: 409
+    description: The task is assigned to that person already, so there is nothing to change.
   TASK_ALREADY_OPEN:
     status: 409
     description: The task is already open (new or in progress), so there is nothing to reopen.
@@ -27367,6 +27381,9 @@ x-error-codes:
   TASK_ASSIGNEE_INVALID:
     status: 422
     description: The person does not exist, or does not hold both the permission set that works this task and `update:Task`.
+  TASK_NOT_ASSIGNED:
+    status: 409
+    description: Nobody holds the task, so there is nothing to take back.
   TASK_NOT_OPEN:
     status: 409
     description: The task is closed; reopen it before assigning it.
@@ -27409,6 +27426,9 @@ x-error-codes:
   USER_NOT_WARNED:
     status: 409
     description: The inactivity reaper tried to delete an account that was never warned first. Raised by the reaper, never by a route.
+  USER_PURCHASE_HOLD_ALREADY_SET:
+    status: 409
+    description: The account already holds a staff purchase hold with this end date and note, so placing it again changes nothing.
   USER_PURCHASE_HOLD_NOT_SET:
     status: 409
     description: The account has no purchase hold and no review flag, so there is nothing to lift.

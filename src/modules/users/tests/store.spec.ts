@@ -326,21 +326,21 @@ describe('useUsersStore', () => {
     });
 
     describe('the purchase hold', () => {
-        it('puts the hold with its end date and note, as the JSON body', () =>
+        it('places the hold with its end date and note, as the JSON body', () =>
             useUsersStore()
                 .setPurchaseHold('u1', { until: '2999-01-01T23:59:59.999Z', note: 'Write to us.' })
                 .then(() => {
                     expect(lastRequest()).toMatchObject({
-                        url: '/users/u1/purchase-hold',
-                        method: 'PUT',
+                        url: '/users/u1/place-purchase-hold',
+                        method: 'POST',
                         data: { until: '2999-01-01T23:59:59.999Z', note: 'Write to us.' }
                     });
                 }));
 
-        it('lifts the hold with a DELETE on the same path', () => {
-            // Unlike the other deletes this one answers with the user, hold gone.
+        it('lifts the hold with a POST on its own path', () => {
+            // Unlike a delete, this answers with the user, hold gone.
             vi.mocked(orvalMutator).mockResolvedValueOnce(
-                parseOrvalFixture('DELETE', '/users/u1/purchase-hold', {
+                parseOrvalFixture('POST', '/users/u1/lift-purchase-hold', {
                     id: 'u1',
                     username: 'ada',
                     email: 'ada@example.com'
@@ -350,8 +350,8 @@ describe('useUsersStore', () => {
                 .liftPurchaseHold('u1')
                 .then(() => {
                     expect(lastRequest()).toMatchObject({
-                        url: '/users/u1/purchase-hold',
-                        method: 'DELETE'
+                        url: '/users/u1/lift-purchase-hold',
+                        method: 'POST'
                     });
                 });
         });

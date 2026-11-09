@@ -53,7 +53,7 @@ Every role picker (`UserCreate`, `UserEdit`, `UserAccessDialog`) is built from `
 would rank it correctly either way, and a reader should not have to know that.
 
 **Every button follows the row's `actions`**, the server's one flag per endpoint (`update`,
-`assignRole`, `delete`, `hardDelete`, `restore`, `setPurchaseHold`, `liftPurchaseHold`, `activate`,
+`assignRole`, `delete`, `hardDelete`, `restore`, `placePurchaseHold`, `liftPurchaseHold`, `activate`,
 `deactivate`), already counting the caller's keys, the protection of staff accounts and the row's own
 state. `UsersList` reads `restore` and `hardDelete` instead of deriving them from `deletedAt`;
 `UserAccessDialog` offers the role on `assignRole` (own account included: no rule refuses it) and the

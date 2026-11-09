@@ -212,7 +212,7 @@ describe('UserAccessDialog — what the picker offers', () => {
                 role: 'customer',
                 active: true,
                 actions: userActionsOf({
-                    setPurchaseHold: true,
+                    placePurchaseHold: true,
                     liftPurchaseHold: true,
                     activate: true,
                     deactivate: true

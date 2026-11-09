@@ -347,7 +347,7 @@ describe('UsersList — the row actions follow each row’s own `actions`', () =
                 id: 'u1',
                 username: 'customer',
                 actions: userActionsOf({
-                    setPurchaseHold: true,
+                    placePurchaseHold: true,
                     liftPurchaseHold: true,
                     activate: true,
                     deactivate: true

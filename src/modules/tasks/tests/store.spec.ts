@@ -262,8 +262,8 @@ describe('the status doors', () => {
         });
     });
 
-    it('assigns by posting the user id to the task’s assignee', () => {
-        responses['PUT /tasks/f1/assignee'] = { ...TASK, status: 'in_progress' };
+    it('assigns by posting the user id to the task’s assign action', () => {
+        responses['POST /tasks/f1/assign'] = { ...TASK, status: 'in_progress' };
         const store = useTasksStore();
         return store.assign('f1', 'u1').then(() => {
             const [request] = vi
@@ -272,8 +272,8 @@ describe('the status doors', () => {
                     (call) => call[0] as { url: string; method: string; data?: unknown }
                 );
             expect(request).toMatchObject({
-                url: '/tasks/f1/assignee',
-                method: 'PUT',
+                url: '/tasks/f1/assign',
+                method: 'POST',
                 data: { userId: 'u1' }
             });
             expect(contractRequest(schemas.AssignTaskBody, request.data)).toEqual({

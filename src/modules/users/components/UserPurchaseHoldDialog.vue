@@ -10,7 +10,7 @@ import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DialogShell from '@/ui/organisms/DialogShell.vue';
-import type { SetPurchaseHoldRequest } from '@types';
+import type { PlacePurchaseHoldRequest } from '@types';
 
 /**
  * Who the hold is for; `undefined` while the dialog is closed.
@@ -23,7 +23,7 @@ defineProps<{
  * Emitted when the admin confirms (with the request body) or backs out.
  */
 const emit = defineEmits<{
-    confirm: [hold: SetPurchaseHoldRequest];
+    confirm: [hold: PlacePurchaseHoldRequest];
     cancel: [];
 }>();
 

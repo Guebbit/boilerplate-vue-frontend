@@ -6720,7 +6720,7 @@ export const ListUsersResponse = zod.strictObject({
                 delete: zod.boolean(),
                 hardDelete: zod.boolean(),
                 restore: zod.boolean(),
-                setPurchaseHold: zod.boolean(),
+                placePurchaseHold: zod.boolean(),
                 liftPurchaseHold: zod.boolean(),
                 activate: zod.boolean(),
                 deactivate: zod.boolean()
@@ -6807,7 +6807,7 @@ export const CreateUserResponse = zod.strictObject({
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
-        setPurchaseHold: zod.boolean(),
+        placePurchaseHold: zod.boolean(),
         liftPurchaseHold: zod.boolean(),
         activate: zod.boolean(),
         deactivate: zod.boolean()
@@ -6869,7 +6869,7 @@ export const GetUserByIdResponse = zod.strictObject({
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
-        setPurchaseHold: zod.boolean(),
+        placePurchaseHold: zod.boolean(),
         liftPurchaseHold: zod.boolean(),
         activate: zod.boolean(),
         deactivate: zod.boolean()
@@ -6964,7 +6964,7 @@ export const ReplaceUserByIdResponse = zod.strictObject({
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
-        setPurchaseHold: zod.boolean(),
+        placePurchaseHold: zod.boolean(),
         liftPurchaseHold: zod.boolean(),
         activate: zod.boolean(),
         deactivate: zod.boolean()
@@ -7057,7 +7057,7 @@ export const UpdateUserByIdResponse = zod.strictObject({
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
-        setPurchaseHold: zod.boolean(),
+        placePurchaseHold: zod.boolean(),
         liftPurchaseHold: zod.boolean(),
         activate: zod.boolean(),
         deactivate: zod.boolean()
@@ -7143,7 +7143,7 @@ export const RestoreUserByIdResponse = zod.strictObject({
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
-        setPurchaseHold: zod.boolean(),
+        placePurchaseHold: zod.boolean(),
         liftPurchaseHold: zod.boolean(),
         activate: zod.boolean(),
         deactivate: zod.boolean()
@@ -7267,7 +7267,7 @@ export const SearchUsersResponse = zod.strictObject({
                 delete: zod.boolean(),
                 hardDelete: zod.boolean(),
                 restore: zod.boolean(),
-                setPurchaseHold: zod.boolean(),
+                placePurchaseHold: zod.boolean(),
                 liftPurchaseHold: zod.boolean(),
                 activate: zod.boolean(),
                 deactivate: zod.boolean()
@@ -8277,7 +8277,7 @@ export const ReopenTaskResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task and `update:Task`, so they can open, note and close it. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`.
+ * Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task and `update:Task`, so they can open, note and close it. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`; assigning it to the person who holds it already answers 409 `TASK_ALREADY_ASSIGNED` and writes nothing.
  * @summary Assign a task
  */
 export const assignTaskPathIdMax = 64;
@@ -8406,7 +8406,7 @@ export const AssignTaskResponse = zod.strictObject({
     updatedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Clears the assignee. An `in_progress` task goes back to `new`. Answers 200 whether or not anyone held it.
+ * Clears the assignee, whatever the task's status. An `in_progress` task goes back to `new`. A task nobody holds answers 409 `TASK_NOT_ASSIGNED` and writes nothing.
  * @summary Give a task back
  */
 export const unassignTaskPathIdMax = 64;
@@ -18602,34 +18602,38 @@ export const TouchSessionResponse = zod.strictObject({
     idleTimeoutSeconds: zod.number().min(1).optional()
 });
 /**
- * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Clears the account's review flag: placing a hold is acting on it. Audited as `admin.user.purchase_hold_set`.
- * @summary Put a purchase hold on a user
+ * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `lift-purchase-hold` ends it. Clears the account's review flag: placing a hold is acting on it. Placing the staff hold already in force, with the same `until` and the same `note`, answers 409 `USER_PURCHASE_HOLD_ALREADY_SET` and writes, mails and audits nothing; any other body replaces the hold. Audited as `admin.user.purchase_hold_set`.
+ * @summary Place a purchase hold on a user
  */
-export const setUserPurchaseHoldPathIdMax = 64;
-export const setUserPurchaseHoldPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const SetUserPurchaseHoldParams = zod.strictObject({
-    id: zod.string().min(1).max(setUserPurchaseHoldPathIdMax).regex(setUserPurchaseHoldPathIdRegExp)
-});
-export const setUserPurchaseHoldBodyNoteMax = 500;
-export const SetUserPurchaseHoldBody = zod.strictObject({
-    until: zod.iso.datetime({ offset: true }),
-    note: zod.string().min(1).max(setUserPurchaseHoldBodyNoteMax).optional()
-});
-export const setUserPurchaseHoldResponseIdMax = 64;
-export const setUserPurchaseHoldResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const setUserPurchaseHoldResponseEmailMax = 254;
-export const setUserPurchaseHoldResponseLocaleMax = 35;
-export const setUserPurchaseHoldResponseLocaleRegExp = new RegExp(
-    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
-);
-export const setUserPurchaseHoldResponsePurchaseHoldNoteMax = 500;
-export const SetUserPurchaseHoldResponse = zod.strictObject({
+export const placeUserPurchaseHoldPathIdMax = 64;
+export const placeUserPurchaseHoldPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const PlaceUserPurchaseHoldParams = zod.strictObject({
     id: zod
         .string()
         .min(1)
-        .max(setUserPurchaseHoldResponseIdMax)
-        .regex(setUserPurchaseHoldResponseIdRegExp),
-    email: zod.email().max(setUserPurchaseHoldResponseEmailMax),
+        .max(placeUserPurchaseHoldPathIdMax)
+        .regex(placeUserPurchaseHoldPathIdRegExp)
+});
+export const placeUserPurchaseHoldBodyNoteMax = 500;
+export const PlaceUserPurchaseHoldBody = zod.strictObject({
+    until: zod.iso.datetime({ offset: true }),
+    note: zod.string().min(1).max(placeUserPurchaseHoldBodyNoteMax).optional()
+});
+export const placeUserPurchaseHoldResponseIdMax = 64;
+export const placeUserPurchaseHoldResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const placeUserPurchaseHoldResponseEmailMax = 254;
+export const placeUserPurchaseHoldResponseLocaleMax = 35;
+export const placeUserPurchaseHoldResponseLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
+export const placeUserPurchaseHoldResponsePurchaseHoldNoteMax = 500;
+export const PlaceUserPurchaseHoldResponse = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(placeUserPurchaseHoldResponseIdMax)
+        .regex(placeUserPurchaseHoldResponseIdRegExp),
+    email: zod.email().max(placeUserPurchaseHoldResponseEmailMax),
     username: zod.string(),
     role: zod.string().optional(),
     active: zod.boolean().optional(),
@@ -18639,8 +18643,8 @@ export const SetUserPurchaseHoldResponse = zod.strictObject({
     thumbnailUrl: zod.string().optional(),
     locale: zod
         .string()
-        .max(setUserPurchaseHoldResponseLocaleMax)
-        .regex(setUserPurchaseHoldResponseLocaleRegExp)
+        .max(placeUserPurchaseHoldResponseLocaleMax)
+        .regex(placeUserPurchaseHoldResponseLocaleRegExp)
         .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
@@ -18656,7 +18660,7 @@ export const SetUserPurchaseHoldResponse = zod.strictObject({
         .strictObject({
             until: zod.iso.datetime({ offset: true }),
             reason: zod.enum(['repeated_cancellations', 'staff']),
-            note: zod.string().max(setUserPurchaseHoldResponsePurchaseHoldNoteMax).optional(),
+            note: zod.string().max(placeUserPurchaseHoldResponsePurchaseHoldNoteMax).optional(),
             setAt: zod.iso.datetime({ offset: true })
         })
         .optional(),
@@ -18666,7 +18670,7 @@ export const SetUserPurchaseHoldResponse = zod.strictObject({
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
-        setPurchaseHold: zod.boolean(),
+        placePurchaseHold: zod.boolean(),
         liftPurchaseHold: zod.boolean(),
         activate: zod.boolean(),
         deactivate: zod.boolean()
@@ -18738,7 +18742,7 @@ export const LiftUserPurchaseHoldResponse = zod.strictObject({
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
-        setPurchaseHold: zod.boolean(),
+        placePurchaseHold: zod.boolean(),
         liftPurchaseHold: zod.boolean(),
         activate: zod.boolean(),
         deactivate: zod.boolean()
@@ -18806,7 +18810,7 @@ export const ActivateUserByIdResponse = zod.strictObject({
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
-        setPurchaseHold: zod.boolean(),
+        placePurchaseHold: zod.boolean(),
         liftPurchaseHold: zod.boolean(),
         activate: zod.boolean(),
         deactivate: zod.boolean()
@@ -18874,7 +18878,7 @@ export const DeactivateUserByIdResponse = zod.strictObject({
         delete: zod.boolean(),
         hardDelete: zod.boolean(),
         restore: zod.boolean(),
-        setPurchaseHold: zod.boolean(),
+        placePurchaseHold: zod.boolean(),
         liftPurchaseHold: zod.boolean(),
         activate: zod.boolean(),
         deactivate: zod.boolean()

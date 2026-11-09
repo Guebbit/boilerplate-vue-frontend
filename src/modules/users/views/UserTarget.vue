@@ -42,7 +42,7 @@ import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import UserAccessDialog from '../components/UserAccessDialog.vue';
 import UserPurchaseHoldDialog from '../components/UserPurchaseHoldDialog.vue';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
-import type { SetPurchaseHoldRequest } from '@types';
+import type { PlacePurchaseHoldRequest } from '@types';
 import { formatText, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 
 /**
@@ -220,7 +220,7 @@ const reviewSummary = computed(() => {
  * @param hold - The end date and optional note.
  * @returns A promise settling once the write finished; a failure blocks in place ({@link holdError}).
  */
-const handleSetHold = (hold: SetPurchaseHoldRequest) => {
+const handleSetHold = (hold: PlacePurchaseHoldRequest) => {
     const target = currentUser.value;
     holdDialogOpen.value = false;
     if (!target) return;
@@ -391,7 +391,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                 </v-btn>
                 <div
                     v-if="
-                        currentUser?.actions?.setPurchaseHold ||
+                        currentUser?.actions?.placePurchaseHold ||
                         currentUser?.actions?.liftPurchaseHold
                     "
                     class="flex flex-col gap-2"
@@ -406,7 +406,9 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                         {{ t('user-target-page.button-lift-hold') }}
                     </v-btn>
                     <v-btn
-                        v-else-if="!currentUser.purchaseHold && currentUser.actions.setPurchaseHold"
+                        v-else-if="
+                            !currentUser.purchaseHold && currentUser.actions.placePurchaseHold
+                        "
                         variant="tonal"
                         color="secondary"
                         data-test="user-pause-checkout"

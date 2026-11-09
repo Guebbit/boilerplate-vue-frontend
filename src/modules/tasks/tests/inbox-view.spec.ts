@@ -32,7 +32,7 @@ const router = createRouter({
 });
 
 /**
- * Every body `POST /tasks/search` arrived with, and every body of `PUT /tasks/t1/assignee`.
+ * Every body `POST /tasks/search` arrived with, and every body of `POST /tasks/t1/assign`.
  */
 let searchBodies: Record<string, unknown>[];
 let assignBodies: Record<string, unknown>[];
@@ -61,7 +61,7 @@ beforeEach(() => {
                 meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 }
             });
         }),
-        http.put('*/tasks/t1/assignee', async ({ request }) => {
+        http.post('*/tasks/t1/assign', async ({ request }) => {
             assignBodies.push((await request.json()) as Record<string, unknown>);
             return HttpResponse.json(aTask({ assigneeId: 'staff-1', assigneeName: 'Sam' }));
         })

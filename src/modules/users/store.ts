@@ -25,7 +25,7 @@ import {
     restoreUserById,
     activateUserById,
     deactivateUserById,
-    setUserPurchaseHold,
+    placeUserPurchaseHold,
     liftUserPurchaseHold,
     UserSortItem
 } from '@api';
@@ -35,7 +35,7 @@ import type {
     CreateUserRequestMultipart,
     UpdateUserByIdRequest,
     SearchUsersRequest,
-    SetPurchaseHoldRequest
+    PlacePurchaseHoldRequest
 } from '@types';
 
 /**
@@ -267,24 +267,26 @@ export const useUsersStore = defineStore('users', () => {
         });
 
     /**
-     * Pauses checkout for one account — `PUT /users/{id}/purchase-hold`. The answered user
+     * Pauses checkout for one account — `POST /users/{id}/place-purchase-hold`. The answered user
      * (hold included) replaces the cached one.
      *
      * @param userId - Identifier of the account.
      * @param hold - When checkout opens again, and an optional note the buyer reads.
      * @returns A promise resolving with the user.
      */
-    const setPurchaseHold = (userId: string, hold: SetPurchaseHoldRequest) =>
+    const setPurchaseHold = (userId: string, hold: PlacePurchaseHoldRequest) =>
         fetchAny(() =>
-            setUserPurchaseHold(userId, hold).then((response) => {
+            placeUserPurchaseHold(userId, hold).then((response) => {
                 addUser(response);
                 return response;
             })
         );
 
     /**
-     * Ends a purchase hold now — `DELETE /users/{id}/purchase-hold`. This is the staff review: it
-     * also restarts the count of cancellations. A 409 `USER_PURCHASE_HOLD_NOT_SET` when there is nothing to lift.
+     * Ends a purchase hold now — `POST /users/{id}/lift-purchase-hold`. This is the staff review: it
+     * also restarts the count of cancellations. A 409 `USER_PURCHASE_HOLD_NOT_SET` when there is nothing to lift;
+     * placing the staff hold already in force (same end date and note) is a 409
+     * `USER_PURCHASE_HOLD_ALREADY_SET`.
      *
      * @param userId - Identifier of the account.
      * @returns A promise resolving with the user.

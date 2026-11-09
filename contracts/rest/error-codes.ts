@@ -260,6 +260,8 @@ export const ERROR_CODES = {
     STOCK_ALERT_LIMIT_REACHED: 'STOCK_ALERT_LIMIT_REACHED',
     /** 409 — The product can be ordered now, so there is nothing to wait for. The button is only offered while it cannot. */
     STOCK_ALERT_PRODUCT_BUYABLE: 'STOCK_ALERT_PRODUCT_BUYABLE',
+    /** 409 — The task is assigned to that person already, so there is nothing to change. */
+    TASK_ALREADY_ASSIGNED: 'TASK_ALREADY_ASSIGNED',
     /** 409 — The task is already open (new or in progress), so there is nothing to reopen. */
     TASK_ALREADY_OPEN: 'TASK_ALREADY_OPEN',
     /** 409 — The task is already resolved. */
@@ -268,6 +270,8 @@ export const ERROR_CODES = {
     TASK_ALREADY_SPAM: 'TASK_ALREADY_SPAM',
     /** 422 — The person does not exist, or does not hold both the permission set that works this task and `update:Task`. */
     TASK_ASSIGNEE_INVALID: 'TASK_ASSIGNEE_INVALID',
+    /** 409 — Nobody holds the task, so there is nothing to take back. */
+    TASK_NOT_ASSIGNED: 'TASK_NOT_ASSIGNED',
     /** 409 — The task is closed; reopen it before assigning it. */
     TASK_NOT_OPEN: 'TASK_NOT_OPEN',
     /** 409 — A newer open task already covers the same situation, so this one cannot be reopened. `details.taskId` names the newer one. */
@@ -296,6 +300,8 @@ export const ERROR_CODES = {
     USER_NOT_REAPER_DELETED: 'USER_NOT_REAPER_DELETED',
     /** 409 — The inactivity reaper tried to delete an account that was never warned first. Raised by the reaper, never by a route. */
     USER_NOT_WARNED: 'USER_NOT_WARNED',
+    /** 409 — The account already holds a staff purchase hold with this end date and note, so placing it again changes nothing. */
+    USER_PURCHASE_HOLD_ALREADY_SET: 'USER_PURCHASE_HOLD_ALREADY_SET',
     /** 409 — The account has no purchase hold and no review flag, so there is nothing to lift. */
     USER_PURCHASE_HOLD_NOT_SET: 'USER_PURCHASE_HOLD_NOT_SET',
     /** 409 — The inactivity reaper met an account holding a staff role and left it alone. Raised by the reaper, never by a route. */

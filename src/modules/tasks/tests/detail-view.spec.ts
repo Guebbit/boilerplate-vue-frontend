@@ -59,7 +59,7 @@ beforeEach(() => {
     noteBodies = [];
     useSessionStore().viewer = { id: 'staff-1', email: 'sam@example.com' };
     server.use(
-        http.put('*/tasks/t1/assignee', async ({ request }) => {
+        http.post('*/tasks/t1/assign', async ({ request }) => {
             assignBodies.push((await request.json()) as Record<string, unknown>);
             return HttpResponse.json(aTask({ assigneeId: 'staff-1', assigneeName: 'Sam' }));
         }),

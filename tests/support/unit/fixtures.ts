@@ -143,7 +143,7 @@ export const NO_USER_ACTIONS: UserActions = {
     delete: false,
     hardDelete: false,
     restore: false,
-    setPurchaseHold: false,
+    placePurchaseHold: false,
     liftPurchaseHold: false,
     activate: false,
     deactivate: false
@@ -156,7 +156,7 @@ export const ALL_USER_ACTIONS: UserActions = {
     delete: true,
     hardDelete: true,
     restore: true,
-    setPurchaseHold: true,
+    placePurchaseHold: true,
     liftPurchaseHold: true,
     activate: true,
     deactivate: true

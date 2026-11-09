@@ -490,9 +490,9 @@ export interface UserActions {
     hardDelete: boolean;
     /** Whether `POST /users/{id}/restore` would be accepted — `delete:User`, the account is not a staff account the caller may not manage, and it is soft-deleted. */
     restore: boolean;
-    /** Whether `PUT /users/{id}/purchase-hold` would be accepted — `ban:User`, and the account is not a staff account the caller may not manage. A hold can be placed again to extend it. */
-    setPurchaseHold: boolean;
-    /** Whether `DELETE /users/{id}/purchase-hold` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and there is a hold or a review flag to clear. */
+    /** Whether `POST /users/{id}/place-purchase-hold` would be accepted — `ban:User`, and the account is not a staff account the caller may not manage. A hold can be placed again with a new end date or note to replace it; the client hides the control for the value already in force. */
+    placePurchaseHold: boolean;
+    /** Whether `POST /users/{id}/lift-purchase-hold` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and there is a hold or a review flag to clear. */
     liftPurchaseHold: boolean;
     /** Whether `POST /users/{id}/activate` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and it is deactivated. */
     activate: boolean;
@@ -4308,9 +4308,9 @@ export interface TaskActions {
     markSpam: boolean;
     /** Whether `POST /tasks/{id}/reopen` would be accepted. */
     reopen: boolean;
-    /** Whether `PUT /tasks/{id}/assignee` would be accepted. */
+    /** Whether `POST /tasks/{id}/assign` would be accepted. Stays true for a task someone holds, since a new person replaces them. */
     assign: boolean;
-    /** Whether `DELETE /tasks/{id}/assignee` would change anything. */
+    /** Whether `POST /tasks/{id}/unassign` would be accepted, which needs an assignee, in any status. */
     unassign: boolean;
     /** Whether `POST /tasks/{id}/notes` would be accepted. */
     note: boolean;
@@ -6637,7 +6637,7 @@ export interface ApiKeyCreated {
     secret: string;
 }
 
-export interface SetPurchaseHoldRequest {
+export interface PlacePurchaseHoldRequest {
     /** When checkout opens again. Must be in the future. */
     until: string;
     /**
@@ -10724,7 +10724,7 @@ export const reopenTask = (id: string, options?: SecondParameter<typeof orvalMut
 };
 
 /**
- * Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task and `update:Task`, so they can open, note and close it. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`.
+ * Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task and `update:Task`, so they can open, note and close it. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`; assigning it to the person who holds it already answers 409 `TASK_ALREADY_ASSIGNED` and writes nothing.
  * @summary Assign a task
  */
 export const assignTask = (
@@ -10734,8 +10734,8 @@ export const assignTask = (
 ) => {
     return orvalMutator<Task>(
         {
-            url: `/tasks/${id}/assignee`,
-            method: 'PUT',
+            url: `/tasks/${id}/assign`,
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: assignTaskRequest
         },
@@ -10744,11 +10744,11 @@ export const assignTask = (
 };
 
 /**
- * Clears the assignee. An `in_progress` task goes back to `new`. Answers 200 whether or not anyone held it.
+ * Clears the assignee, whatever the task's status. An `in_progress` task goes back to `new`. A task nobody holds answers 409 `TASK_NOT_ASSIGNED` and writes nothing.
  * @summary Give a task back
  */
 export const unassignTask = (id: string, options?: SecondParameter<typeof orvalMutator<Task>>) => {
-    return orvalMutator<Task>({ url: `/tasks/${id}/assignee`, method: 'DELETE' }, options);
+    return orvalMutator<Task>({ url: `/tasks/${id}/unassign`, method: 'POST' }, options);
 };
 
 /**
@@ -12575,20 +12575,20 @@ export const touchSession = (options?: SecondParameter<typeof orvalMutator<Sessi
 };
 
 /**
- * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Clears the account's review flag: placing a hold is acting on it. Audited as `admin.user.purchase_hold_set`.
- * @summary Put a purchase hold on a user
+ * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `lift-purchase-hold` ends it. Clears the account's review flag: placing a hold is acting on it. Placing the staff hold already in force, with the same `until` and the same `note`, answers 409 `USER_PURCHASE_HOLD_ALREADY_SET` and writes, mails and audits nothing; any other body replaces the hold. Audited as `admin.user.purchase_hold_set`.
+ * @summary Place a purchase hold on a user
  */
-export const setUserPurchaseHold = (
+export const placeUserPurchaseHold = (
     id: string,
-    setPurchaseHoldRequest: SetPurchaseHoldRequest,
+    placePurchaseHoldRequest: PlacePurchaseHoldRequest,
     options?: SecondParameter<typeof orvalMutator<User>>
 ) => {
     return orvalMutator<User>(
         {
-            url: `/users/${id}/purchase-hold`,
-            method: 'PUT',
+            url: `/users/${id}/place-purchase-hold`,
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: setPurchaseHoldRequest
+            data: placePurchaseHoldRequest
         },
         options
     );
@@ -12602,7 +12602,7 @@ export const liftUserPurchaseHold = (
     id: string,
     options?: SecondParameter<typeof orvalMutator<User>>
 ) => {
-    return orvalMutator<User>({ url: `/users/${id}/purchase-hold`, method: 'DELETE' }, options);
+    return orvalMutator<User>({ url: `/users/${id}/lift-purchase-hold`, method: 'POST' }, options);
 };
 
 /**
@@ -13939,8 +13939,8 @@ export type ActivateLocaleResult = NonNullable<Awaited<ReturnType<typeof activat
 export type DeactivateLocaleResult = NonNullable<Awaited<ReturnType<typeof deactivateLocale>>>;
 export type SendReauthCodeResult = NonNullable<Awaited<ReturnType<typeof sendReauthCode>>>;
 export type TouchSessionResult = NonNullable<Awaited<ReturnType<typeof touchSession>>>;
-export type SetUserPurchaseHoldResult = NonNullable<
-    Awaited<ReturnType<typeof setUserPurchaseHold>>
+export type PlaceUserPurchaseHoldResult = NonNullable<
+    Awaited<ReturnType<typeof placeUserPurchaseHold>>
 >;
 export type LiftUserPurchaseHoldResult = NonNullable<
     Awaited<ReturnType<typeof liftUserPurchaseHold>>
