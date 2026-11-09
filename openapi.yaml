@@ -547,6 +547,10 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: locales
   /locales/{locale}:
+    x-versioned:
+      - get
+      - put
+      - patch
     get:
       x-cache: revalidate
       tags:
@@ -578,6 +582,8 @@ paths:
               description: "`public, no-cache`: the shared cache keeps it, a browser revalidates first. A caller who sees more than the public answer gets `private, no-cache`."
               schema:
                 type: string
+            ETag:
+              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Content-Language:
@@ -588,8 +594,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/json:
               schema:
@@ -626,6 +630,7 @@ paths:
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: true
         content:
@@ -640,6 +645,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Language"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -652,8 +659,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -662,6 +667,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -694,6 +701,7 @@ paths:
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: true
         content:
@@ -711,6 +719,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Language"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -723,8 +733,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -733,6 +741,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
