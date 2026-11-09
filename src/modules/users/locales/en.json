@@ -60,7 +60,6 @@
         "username-min": "Username must be at least 3 characters long",
         "username-too-long": "Username is too long",
         "email-too-long": "Email address is too long",
-        "terms-required": "You must accept the Terms of Service and Privacy Policy!",
         "password-required": "Password is required",
         "password-min": "Password must be at least 8 characters long",
         "password-max": "Password must be at most 128 characters long",

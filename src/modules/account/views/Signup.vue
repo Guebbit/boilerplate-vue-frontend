@@ -80,7 +80,7 @@ const signupSchema = usersSchema
         // The only required checkbox — the contract's own `enum: [true]` on `termsAccepted`
         // enforces this server-side too, so a client that skipped this refine would still 422.
         termsAccepted: z.boolean().refine((value) => value, {
-            error: () => t('users-form.terms-required')
+            error: () => t('signup-page.error-terms-required')
         }),
         // Optional, unlike `termsAccepted`: nothing to refine, unchecked is a legal answer.
         analyticsConsent: z.boolean(),

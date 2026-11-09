@@ -13,6 +13,7 @@
         "label-email": "Email",
         "label-password": "Password",
         "text-terms": "Accetto i {terms} e ho letto la {privacy}",
+        "error-terms-required": "Devi accettare i Termini di Servizio e confermare di aver letto l'Informativa sulla Privacy.",
         "text-analytics-consent": "Condividi statistiche d'uso, segnalazioni di errore e misurazioni della velocità delle pagine per aiutarci a migliorare il prodotto",
         "button-submit": "Registrati",
         "success-email-code-sent": "Benvenuto! Ti abbiamo inviato un link per confermare il tuo indirizzo email — intanto puoi guardarti attorno.",
