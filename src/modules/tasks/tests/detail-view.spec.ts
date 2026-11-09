@@ -4,7 +4,7 @@
  * note is appended with its text trimmed and the composer emptied, and the button is withheld
  * when the server does not offer the note door.
  */
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
@@ -78,6 +78,27 @@ describe('TaskDetail reference', () => {
     it('shows the last eight characters of the id, as the mail subject does', () =>
         openDetail(aTask({ id: '65dc8a99604c307b702aaaaa' })).then((wrapper) => {
             expect(wrapper.get('[data-test=task-ref]').text()).toBe('#702aaaaa');
+        }));
+});
+
+describe('TaskDetail unknown kind', () => {
+    // Production validation is report-only: a response passes through as it arrived
+    // (`isReportOnly` in `src/infrastructure/http/validate.ts`).
+    beforeEach(() => {
+        vi.stubEnv('PROD', true);
+        vi.stubEnv('VITE_CONTRACT_THROW', '');
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    it('shows the generic word, not a raw key, for a kind this client does not know', () =>
+        // Spread after the fixture: its own contract check would refuse the unknown kind.
+        openDetail({ ...aTask(), kind: 'kind_from_the_future' as Task['kind'] }).then((wrapper) => {
+            const text = wrapper.get('[data-test=task-detail]').text();
+            expect(text).toContain('Task ·');
+            expect(text).not.toContain('task-kind.');
         }));
 });
 

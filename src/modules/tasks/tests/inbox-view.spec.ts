@@ -4,7 +4,7 @@
  * search body, a typed filter is sent on submit, and "take" assigns the task to the viewer.
  * The store, the generated client and the interceptors are real; only the wire is faked.
  */
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
@@ -18,6 +18,7 @@ import { enabledModules } from '@/modules';
 import { server } from '../../../../tests/support/unit/msw-server.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { aTask } from '../../../../tests/support/unit/fixtures.ts';
+import type { Task } from '@types';
 
 wireModulesIntoCore();
 
@@ -109,6 +110,42 @@ describe('TaskInbox reference', () => {
             expect(wrapper.get('[data-test=task-item] [data-test=task-ref]').text()).toBe(
                 '#702aaaaa'
             );
+        });
+    });
+});
+
+describe('TaskInbox unknown kind', () => {
+    // Production validation is report-only: a response passes through as it arrived
+    // (`isReportOnly` in `src/infrastructure/http/validate.ts`).
+    beforeEach(() => {
+        vi.stubEnv('PROD', true);
+        vi.stubEnv('VITE_CONTRACT_THROW', '');
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    it('shows the generic word, not a raw key, for a kind this client does not know', () => {
+        server.use(
+            http.post('*/tasks/search', () =>
+                HttpResponse.json({
+                    // Spread after the fixture: its own contract check would refuse the unknown kind.
+                    items: [
+                        {
+                            ...aTask({ email: undefined }),
+                            kind: 'kind_from_the_future' as Task['kind']
+                        }
+                    ],
+                    meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 }
+                })
+            )
+        );
+
+        return openInbox('/en/tasks').then((wrapper) => {
+            const row = wrapper.get('[data-test=task-item]').text();
+            expect(row).toContain('Task');
+            expect(row).not.toContain('task-kind.');
         });
     });
 });

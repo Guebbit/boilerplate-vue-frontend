@@ -22,6 +22,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useTasksStore } from '../store.ts';
 import { taskRef } from '../task-ref.ts';
+import { taskKindKey } from '../task-kind.ts';
 import { useRowActions } from '@/ui/composables/use-row-actions.ts';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -131,7 +132,7 @@ const handleNote = () =>
                 <div>
                     <h1 class="text-xl font-semibold">{{ task.subject }}</h1>
                     <p class="text-sm opacity-muted">
-                        {{ t(`task-kind.${task.kind}`) }} ·
+                        {{ t(taskKindKey(task.kind)) }} ·
                         <span data-test="task-ref">#{{ taskRef(task.id) }}</span> ·
                         {{ formatDateTime(task.createdAt) }}
                     </p>
