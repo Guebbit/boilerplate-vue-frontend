@@ -649,8 +649,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/Language"
           headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -1530,8 +1528,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/EntityTranslations"
           headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -10733,8 +10729,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/WebhookSubscription"
           headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
