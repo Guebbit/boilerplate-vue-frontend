@@ -254,12 +254,24 @@ export const useAccountAuthStore = defineStore('account-auth', () => {
      * @param token - One-time token received by email.
      * @param password - New password.
      * @param passwordConfirm - Confirmation of the new password.
+     * @param termsAccepted - The holder's tick of the Terms; sent only when the account has no
+     *  Terms record (a staff-created one), where the API requires it.
      * @returns A promise resolving once the password has been changed and this tab's own session,
      *  dead server-side like every other, has been dropped locally.
      */
-    const confirmPasswordReset = (token: string, password: string, passwordConfirm: string) =>
+    const confirmPasswordReset = (
+        token: string,
+        password: string,
+        passwordConfirm: string,
+        termsAccepted?: true
+    ) =>
         fetchAny(() =>
-            apiConfirmPasswordReset({ token, password, passwordConfirm }).then(() => {
+            apiConfirmPasswordReset({
+                token,
+                password,
+                passwordConfirm,
+                ...(termsAccepted && { termsAccepted })
+            }).then(() => {
                 useAccountProfileStore().endLocalSession();
             })
         );

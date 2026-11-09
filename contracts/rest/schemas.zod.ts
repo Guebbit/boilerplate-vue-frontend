@@ -2991,7 +2991,8 @@ export const ConfirmPasswordResetBody = zod.strictObject({
     passwordConfirm: zod
         .string()
         .min(confirmPasswordResetBodyPasswordConfirmMin)
-        .max(confirmPasswordResetBodyPasswordConfirmMax)
+        .max(confirmPasswordResetBodyPasswordConfirmMax),
+    termsAccepted: zod.literal(true).optional()
 });
 export const ConfirmPasswordResetResponse = zod.void();
 /**

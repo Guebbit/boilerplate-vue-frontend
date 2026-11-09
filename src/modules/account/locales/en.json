@@ -183,6 +183,10 @@
         "button-go-to-login": "Back to login",
         "success": "Password updated successfully. You can now log in."
     },
+    "account-setup-page": {
+        "page-title": "Set up your account",
+        "button-submit": "Set my password"
+    },
     "account-restore-challenge-page": {
         "page-title": "Restore your account",
         "title": "Your account is scheduled for deletion",

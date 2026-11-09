@@ -25,6 +25,7 @@ sweepA11y('account — guest', [
     ['signup', '/en/signup'],
     ['password reset', '/en/password-reset'],
     ['password reset confirm', `/en/password-reset/confirm#token=${UNISSUED_TOKEN}`],
+    ['account setup', `/en/account-setup#token=${UNISSUED_TOKEN}`],
     ['account restore', `/en/account-restore#token=${UNISSUED_TOKEN}`],
     ['verify email confirm', `/en/verify-email/confirm#token=${UNISSUED_TOKEN}`],
     ['email change confirm', `/en/email-change/confirm#token=${UNISSUED_TOKEN}`],

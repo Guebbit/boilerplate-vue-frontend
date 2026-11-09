@@ -183,6 +183,10 @@
         "button-go-to-login": "Torna al login",
         "success": "Password aggiornata con successo. Ora puoi effettuare il login."
     },
+    "account-setup-page": {
+        "page-title": "Configura il tuo account",
+        "button-submit": "Imposta la mia password"
+    },
     "account-restore-challenge-page": {
         "page-title": "Ripristina il tuo account",
         "title": "Il tuo account è in programma per l'eliminazione",

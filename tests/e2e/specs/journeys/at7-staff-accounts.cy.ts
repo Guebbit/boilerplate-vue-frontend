@@ -59,6 +59,10 @@ describe('AT7 · Staff accounts', () => {
         });
         cy.get('#password-reset-confirm-page [type=password]').eq(0).type(STAFF.password);
         cy.get('#password-reset-confirm-page [type=password]').eq(1).type(STAFF.password);
+        // The setup page asks the holder's own tick of the Terms: a box that starts unticked.
+        cy.get('[data-test=password-reset-terms-accepted] input[type=checkbox]')
+            .should('not.be.checked')
+            .check();
         cy.get('#password-reset-confirm-page button[type=submit]').click();
         cy.get('#login-page').should('exist');
 
