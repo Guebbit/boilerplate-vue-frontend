@@ -16787,7 +16787,7 @@ components:
               - "null"
             maxLength: 2000
           description: |-
-            Translation key to text, or to `null` to delete it. A `null` for a key that is not stored is a no-op, not an error. An empty map is a 422 — enforced at write time.
+            Translation key to text, or to `null` to delete it. A `null` for a key that is not stored is a no-op, not an error. An empty map changes nothing and answers 200.
             A key is 1 to 200 characters once trimmed, and two keys that are the same once trimmed are a 409. A key being written (a string) is refused when it is a strict prefix of a key that will remain, or has one as a prefix — `products.list` alongside `products.list.title`; a key being deleted is not part of that check. The rationale and the "undefined keys are accepted" rule are on `ReplaceLocaleEntriesRequest`.
           example:
             products.list.title: Catálogo
@@ -27319,9 +27319,6 @@ x-error-codes:
   LOCALE_ENTITY_TYPE_UNKNOWN:
     status: 404
     description: The entity type is not a registered translatable.
-  LOCALE_ENTRIES_EMPTY:
-    status: 422
-    description: A merge patch named no entry at all.
   LOCALE_ENTRY_KEY_COLLISION:
     status: 409
     description: "The key is a strict dotted prefix of another key, or has one as a prefix: no dictionary tree can hold both."
