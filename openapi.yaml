@@ -16107,14 +16107,14 @@ components:
         - liftPurchaseHold
         - activate
         - deactivate
-      description: "What the requesting caller may do to this account, one flag per endpoint. Each is the route's permission key AND the protection of staff accounts: an account that holds a staff role is `false` for all of them unless the caller holds `assign:Role`; the caller's own account is judged by the keys alone. A flag also reads the account's state, so a control never offers a move the server would refuse with a 409."
+      description: "What the requesting caller may do to this account, one flag per endpoint. Each is the route's permission key AND the protection of staff accounts: an account that holds a staff role is `false` for all of them unless the caller holds `assign:Role`, the caller's own account and an API key's minter included. A flag also reads the account's state, so a control never offers a move the server would refuse with a 409."
       properties:
         update:
           type: boolean
           description: "Whether `PUT`/`PATCH /users/{id}` would be accepted for the profile fields — `update:User`, and the account is not a staff account the caller may not manage. Never covers a credential: no caller changes another person's email, password or second factor."
         assignRole:
           type: boolean
-          description: Whether the `role` field of `PUT`/`PATCH /users/{id}` would be accepted — `update` AND the caller holds `assign:Role`. No rule refuses the caller's own account.
+          description: Whether the `role` field of `PUT`/`PATCH /users/{id}` would be accepted — `update` AND the caller holds `assign:Role`. The caller's own account is judged like any other.
         delete:
           type: boolean
           description: Whether `DELETE /users/{id}` would soft-delete the account — `delete:User`, the account is not a staff account the caller may not manage, and it is not deleted already.
@@ -27339,7 +27339,7 @@ x-error-codes:
     description: "The period for the reason named has ended: the withdrawal period for a withdrawal or other, two years from delivery for a defect or a wrong item."
   ROLE_MANAGEMENT_REQUIRED:
     status: 403
-    description: "The caller holds the permission this route requires, but the change needs `assign:Role`, which they do not hold: it would hand out a staff role, or it would change an account that holds one. Staff without it change customers only, and a role they may not give is refused here before any role name is judged. The caller's own account is never refused."
+    description: "The caller holds the permission this route requires, but the change needs `assign:Role`, which they do not hold: it would hand out a staff role, or it would change an account that holds one. Staff without it change customers only, and a role they may not give is refused here before any role name is judged. The caller's own account is judged like any other, and an API key never acts on the account that minted it."
   SECOND_FACTOR_ENROLLMENT_REQUIRED:
     status: 403
     description: The caller's staff role grants nothing until an authenticator app is armed, and this action needs it. Enrol at `POST /account/2fa/methods/totp/setup`; the account keeps its customer powers meanwhile.
