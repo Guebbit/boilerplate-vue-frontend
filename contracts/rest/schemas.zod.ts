@@ -10372,6 +10372,7 @@ export const CheckoutResponse = zod.strictObject({
         .min(checkoutResponseCurrencyOneMin)
         .max(checkoutResponseCurrencyOneMax)
         .regex(checkoutResponseCurrencyOneRegExp),
+    termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', checkoutResponseNetTotalRegExp)
         .max(checkoutResponseNetTotalMax),
@@ -10974,6 +10975,7 @@ export const ListOrdersResponse = zod.strictObject({
                 .min(listOrdersResponseItemsItemCurrencyOneMin)
                 .max(listOrdersResponseItemsItemCurrencyOneMax)
                 .regex(listOrdersResponseItemsItemCurrencyOneRegExp),
+            termsVersion: zod.string().optional(),
             netTotal: zod
                 .stringFormat('decimal', listOrdersResponseItemsItemNetTotalRegExp)
                 .max(listOrdersResponseItemsItemNetTotalMax),
@@ -11299,6 +11301,7 @@ export const CreateOrderResponse = zod.strictObject({
         .min(createOrderResponseCurrencyOneMin)
         .max(createOrderResponseCurrencyOneMax)
         .regex(createOrderResponseCurrencyOneRegExp),
+    termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', createOrderResponseNetTotalRegExp)
         .max(createOrderResponseNetTotalMax),
@@ -11653,6 +11656,7 @@ export const SearchOrdersResponse = zod.strictObject({
                 .min(searchOrdersResponseItemsItemCurrencyOneMin)
                 .max(searchOrdersResponseItemsItemCurrencyOneMax)
                 .regex(searchOrdersResponseItemsItemCurrencyOneRegExp),
+            termsVersion: zod.string().optional(),
             netTotal: zod
                 .stringFormat('decimal', searchOrdersResponseItemsItemNetTotalRegExp)
                 .max(searchOrdersResponseItemsItemNetTotalMax),
@@ -11951,6 +11955,7 @@ export const GetOrderByIdResponse = zod.strictObject({
         .min(getOrderByIdResponseCurrencyOneMin)
         .max(getOrderByIdResponseCurrencyOneMax)
         .regex(getOrderByIdResponseCurrencyOneRegExp),
+    termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', getOrderByIdResponseNetTotalRegExp)
         .max(getOrderByIdResponseNetTotalMax),
@@ -12208,6 +12213,7 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
         .min(replaceOrderByIdResponseCurrencyOneMin)
         .max(replaceOrderByIdResponseCurrencyOneMax)
         .regex(replaceOrderByIdResponseCurrencyOneRegExp),
+    termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', replaceOrderByIdResponseNetTotalRegExp)
         .max(replaceOrderByIdResponseNetTotalMax),
@@ -12473,6 +12479,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
         .min(updateOrderByIdResponseCurrencyOneMin)
         .max(updateOrderByIdResponseCurrencyOneMax)
         .regex(updateOrderByIdResponseCurrencyOneRegExp),
+    termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', updateOrderByIdResponseNetTotalRegExp)
         .max(updateOrderByIdResponseNetTotalMax),
@@ -12744,6 +12751,7 @@ export const RestoreOrderByIdResponse = zod.strictObject({
         .min(restoreOrderByIdResponseCurrencyOneMin)
         .max(restoreOrderByIdResponseCurrencyOneMax)
         .regex(restoreOrderByIdResponseCurrencyOneRegExp),
+    termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', restoreOrderByIdResponseNetTotalRegExp)
         .max(restoreOrderByIdResponseNetTotalMax),
@@ -13020,6 +13028,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
         .min(cancelOrderByIdResponseCurrencyOneMin)
         .max(cancelOrderByIdResponseCurrencyOneMax)
         .regex(cancelOrderByIdResponseCurrencyOneRegExp),
+    termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', cancelOrderByIdResponseNetTotalRegExp)
         .max(cancelOrderByIdResponseNetTotalMax),
@@ -13284,6 +13293,7 @@ export const OverrideOrderStatusResponse = zod.strictObject({
         .min(overrideOrderStatusResponseCurrencyOneMin)
         .max(overrideOrderStatusResponseCurrencyOneMax)
         .regex(overrideOrderStatusResponseCurrencyOneRegExp),
+    termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', overrideOrderStatusResponseNetTotalRegExp)
         .max(overrideOrderStatusResponseNetTotalMax),
@@ -14105,6 +14115,7 @@ export const ProcessOrderResponse = zod.strictObject({
         .min(processOrderResponseCurrencyOneMin)
         .max(processOrderResponseCurrencyOneMax)
         .regex(processOrderResponseCurrencyOneRegExp),
+    termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', processOrderResponseNetTotalRegExp)
         .max(processOrderResponseNetTotalMax),
@@ -21279,6 +21290,7 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
         .min(correctOrderShippingAddressResponseCurrencyOneMin)
         .max(correctOrderShippingAddressResponseCurrencyOneMax)
         .regex(correctOrderShippingAddressResponseCurrencyOneRegExp),
+    termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', correctOrderShippingAddressResponseNetTotalRegExp)
         .max(correctOrderShippingAddressResponseNetTotalMax),
