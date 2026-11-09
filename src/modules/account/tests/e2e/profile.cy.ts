@@ -220,17 +220,16 @@ describe('Profile self-service', () => {
         it('an email change leaves the account verified, and shows no banner', () => {
             // Wait for hydration the way a person does: type only once the record shows.
             cy.get('#profile-page [type=email]').should('have.value', seedAccount('user').email);
-            cy.get('#profile-page [type=email]').should('not.be.disabled').clear();
-            cy.get('#profile-page [type=email]')
+            cy.get('[data-test=profile-new-email] input')
                 .should('not.be.disabled')
                 .type('fresh-address@example.com');
-            cy.get('#profile-page form button[type=submit]').first().click();
+            cy.get('[data-test=profile-email-change-submit]').click();
 
             /*
              * The API parks the new address in `pendingEmail` and leaves `email`/`verifiedAt` alone
              * until a token proves it, so asking for a change never unverifies the account. No
              * banner, because nothing about the CURRENT address changed. The notice naming the
-             * new address is the proof the PATCH went through: without it this case would pass on
+             * new address is the proof the request went through: without it this case would pass on
              * a rejected change too.
              */
             cy.get('[data-test=pending-email-notice]').should(
@@ -250,11 +249,10 @@ describe('Profile self-service', () => {
         it('confirming the mailed link swaps the pending address into the live one', () => {
             cy.skipUnlessMailbox();
             cy.get('#profile-page [type=email]').should('have.value', seedAccount('user').email);
-            cy.get('#profile-page [type=email]').should('not.be.disabled').clear();
-            cy.get('#profile-page [type=email]')
+            cy.get('[data-test=profile-new-email] input')
                 .should('not.be.disabled')
                 .type('new-address@example.com');
-            cy.get('#profile-page form button[type=submit]').first().click();
+            cy.get('[data-test=profile-email-change-submit]').click();
 
             // Same template as signup verification — only the link's kind differs — so the
             // outbox is read the same way `registration.cy.ts` reads its own.

@@ -83,6 +83,7 @@ beforeEach(() => {
         // A fresh access token for this session.
         'POST /account/password': { token: 'rotated-jwt' },
         'POST /account/email-verification/confirm': undefined,
+        'POST /account/email-change': { ...USER, pendingEmail: 'new@example.com' },
         'POST /account/email-change/confirm': undefined,
         'POST /account/email-change/undo': undefined,
         // The request answers `202` with the export and its status; the data comes later, by link.
@@ -160,16 +161,34 @@ describe('updateProfile', () => {
                         contractRequest(schemas.UpdateAccountBody, last.data) as object
                     ).toSorted()
                 ).toEqual(
-                    [
-                        'email',
-                        'username',
-                        'locale',
-                        'phone',
-                        'website',
-                        'analyticsConsent'
-                    ].toSorted()
+                    ['username', 'locale', 'phone', 'website', 'analyticsConsent'].toSorted()
                 );
                 expect(last.data.username).toBe('ada2');
+            });
+    });
+});
+
+describe('requestEmailChange', () => {
+    it('posts the address to its own door and refetches the profile, never a PATCH', () => {
+        const store = useAccountProfileStore();
+
+        return store
+            .fetchProfile(true)
+            .then(() => store.requestEmailChange('new@example.com'))
+            .then(() => {
+                const writes = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.map(
+                        (call) => call[0] as { url: string; method?: string; data?: unknown }
+                    )
+                    .filter(({ method }) => method?.toUpperCase() !== 'GET');
+
+                expect(writes.map(({ method, url }) => `${method?.toUpperCase()} ${url}`)).toEqual([
+                    'POST /account/email-change'
+                ]);
+                expect(contractRequest(schemas.RequestEmailChangeBody, writes[0]?.data)).toEqual({
+                    email: 'new@example.com'
+                });
             });
     });
 });

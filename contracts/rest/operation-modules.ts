@@ -216,6 +216,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     replayWebhookDelivery: 'webhooks',
     requestAccountDelete: 'account',
     requestAccountExport: 'account',
+    requestEmailChange: 'account',
     requestEmailVerification: 'account',
     requestPasswordReset: 'account',
     resendPendingEmail: 'account',

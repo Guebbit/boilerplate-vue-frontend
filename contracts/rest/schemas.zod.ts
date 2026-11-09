@@ -1878,14 +1878,13 @@ export const GetAccountResponse = zod.strictObject({
     })
 });
 /**
- * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change/confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change/undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/email-change`, or have its link mailed again with `POST /account/email-change/resend`.
+ * Replaces every writable field of the authenticated user's own profile — username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state, email and password are out of scope — the first two belong to the admin `/users` endpoints, the email to `POST /account/email-change`, the password to `POST /account/password`. An `email` in the body is refused with 422 like any unknown field.
  * @summary Replace own profile
  */
 export const replaceAccountHeaderIfMatchMax = 200;
 export const ReplaceAccountHeader = zod.strictObject({
     'If-Match': zod.string().max(replaceAccountHeaderIfMatchMax).optional()
 });
-export const replaceAccountBodyEmailMax = 254;
 export const replaceAccountBodyUsernameMin = 3;
 export const replaceAccountBodyUsernameMax = 50;
 export const replaceAccountBodyLocaleOneMax = 35;
@@ -1893,7 +1892,6 @@ export const replaceAccountBodyLocaleOneRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-
 export const replaceAccountBodyPhoneMax = 32;
 export const replaceAccountBodyWebsiteMax = 2048;
 export const ReplaceAccountBody = zod.strictObject({
-    email: zod.email().max(replaceAccountBodyEmailMax),
     username: zod.string().min(replaceAccountBodyUsernameMin).max(replaceAccountBodyUsernameMax),
     locale: zod
         .union([
@@ -1950,14 +1948,13 @@ export const ReplaceAccountResponse = zod.strictObject({
         .optional()
 });
 /**
- * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change/confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change/undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/email-change`, or have its link mailed again with `POST /account/email-change/resend`.
+ * Merges the given fields into the authenticated user's own profile — username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state, email and password are out of scope — the first two belong to the admin `/users` endpoints, the email to `POST /account/email-change`, the password to `POST /account/password`. An `email` in the body is refused with 422 like any unknown field.
  * @summary Update own profile
  */
 export const updateAccountHeaderIfMatchMax = 200;
 export const UpdateAccountHeader = zod.strictObject({
     'If-Match': zod.string().max(updateAccountHeaderIfMatchMax).optional()
 });
-export const updateAccountBodyEmailMax = 254;
 export const updateAccountBodyUsernameMin = 3;
 export const updateAccountBodyUsernameMax = 50;
 export const updateAccountBodyLocaleOneMax = 35;
@@ -1965,7 +1962,6 @@ export const updateAccountBodyLocaleOneRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Z
 export const updateAccountBodyPhoneMax = 32;
 export const updateAccountBodyWebsiteMax = 2048;
 export const UpdateAccountBody = zod.strictObject({
-    email: zod.email().max(updateAccountBodyEmailMax).optional(),
     username: zod
         .string()
         .min(updateAccountBodyUsernameMin)
@@ -2031,12 +2027,66 @@ export const RequestAccountDeleteResponse = zod.strictObject({
     purgeAt: zod.iso.datetime({ offset: true })
 });
 /**
- * Discards a pending `pendingEmail` change started by `PUT`/`PATCH /account`, without proving it. A no-op when nothing is pending — a client does not need to check `GET /account` first.
+ * Starts a change of the account's sign-in and recovery address. The new address is held as `pendingEmail` until `POST /account/email-change/confirm` proves it, and a notice carrying a 7-day one-time undo link (`POST /account/email-change/undo`) is sent to the OLD address the moment the change is requested. A different address while one is already pending replaces it, revokes the earlier link and mails both addresses again. Needs a fresh session, always; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Answers 409 `EMAIL_ALREADY_CURRENT` for the address the account already has and `EMAIL_CHANGE_ALREADY_PENDING` for the one already pending (nothing is mailed; `POST /account/email-change/resend` mails it again), and 409 `EMAIL_ALREADY_USED` when another account holds it. Answers 429 `EMAIL_CHANGE_TOO_SOON` inside the minute after the previous request. Cancel a pending change with `DELETE /account/email-change`.
+ * @summary Request an email change
+ */
+export const requestEmailChangeBodyEmailMax = 254;
+export const RequestEmailChangeBody = zod.strictObject({
+    email: zod.email().max(requestEmailChangeBodyEmailMax)
+});
+export const requestEmailChangeResponseIdMax = 64;
+export const requestEmailChangeResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const requestEmailChangeResponseEmailMax = 254;
+export const requestEmailChangeResponseLocaleMax = 35;
+export const requestEmailChangeResponseLocaleRegExp = new RegExp(
+    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
+);
+export const requestEmailChangeResponsePurchaseHoldNoteMax = 500;
+export const RequestEmailChangeResponse = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(requestEmailChangeResponseIdMax)
+        .regex(requestEmailChangeResponseIdRegExp),
+    email: zod.email().max(requestEmailChangeResponseEmailMax),
+    username: zod.string(),
+    role: zod.string().optional(),
+    active: zod.boolean().optional(),
+    verifiedAt: zod.iso.datetime({ offset: true }).optional(),
+    pendingEmail: zod.email().optional(),
+    imageUrl: zod.string().min(1).optional(),
+    thumbnailUrl: zod.string().optional(),
+    locale: zod
+        .string()
+        .max(requestEmailChangeResponseLocaleMax)
+        .regex(requestEmailChangeResponseLocaleRegExp)
+        .optional(),
+    phone: zod.string().optional(),
+    website: zod.string().optional(),
+    analyticsConsent: zod.boolean().optional(),
+    analyticsConsentAt: zod.iso.datetime({ offset: true }).optional(),
+    termsAcceptedAt: zod.iso.datetime({ offset: true }).optional(),
+    termsVersion: zod.string().optional(),
+    twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+    createdAt: zod.iso.datetime({ offset: true }).optional(),
+    updatedAt: zod.iso.datetime({ offset: true }).optional(),
+    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+    purchaseHold: zod
+        .strictObject({
+            until: zod.iso.datetime({ offset: true }),
+            reason: zod.enum(['repeated_cancellations', 'staff']),
+            note: zod.string().max(requestEmailChangeResponsePurchaseHoldNoteMax).optional(),
+            setAt: zod.iso.datetime({ offset: true })
+        })
+        .optional()
+});
+/**
+ * Discards a pending `pendingEmail` change started by `POST /account/email-change`, without proving it. A no-op when nothing is pending — a client does not need to check `GET /account` first.
  * @summary Cancel a pending email change
  */
 export const CancelPendingEmailChangeResponse = zod.void();
 /**
- * Mails the NEW (pending) address a fresh confirmation link — and only that address; the old one is not told again. The previous link stops working, since only the newest one counts. Answers 200 with `resendAfter`, the seconds a client counts down before offering the button again — the same shape as `POST /account/email-verification/resend`. A no-op, answering 200 with `resendAfter` 0 and mailing nothing, when nothing is pending, so a client does not need to check `GET /account` first. Sending the pending address again through `PUT`/`PATCH /account` does nothing, which is why this route exists. Answers 429 inside the previous send's cooldown (the same 60 seconds as `POST /account/email-verification/resend`, with `details.retryAfter` naming the wait) and spends the same per-account budget on a failure, so a client that waits never sees one. No fresh-auth guard — it mails an address the caller already asked for and changes nothing about the account.
+ * Mails the NEW (pending) address a fresh confirmation link — and only that address; the old one is not told again. The previous link stops working, since only the newest one counts. Answers 200 with `resendAfter`, the seconds a client counts down before offering the button again — the same shape as `POST /account/email-verification/resend`. A no-op, answering 200 with `resendAfter` 0 and mailing nothing, when nothing is pending, so a client does not need to check `GET /account` first. Sending the pending address again through `POST /account/email-change` is refused with 409, which is why this route exists. Answers 429 inside the previous send's cooldown (the same 60 seconds as `POST /account/email-verification/resend`, with `details.retryAfter` naming the wait) and spends the same per-account budget on a failure, so a client that waits never sees one. No fresh-auth guard — it mails an address the caller already asked for and changes nothing about the account.
  * @summary Resend the pending email confirmation
  */
 export const resendPendingEmailResponseResendAfterMin = 0;
@@ -2644,7 +2694,7 @@ export const ConfirmEmailVerificationBody = zod.strictObject({
 });
 export const ConfirmEmailVerificationResponse = zod.void();
 /**
- * Completes the email-change flow started by `PUT /account`. Validates the one-time `email-change` token sent to the NEW address and, if valid, swaps `pendingEmail` into `email`, marks the account verified, and revokes every refresh token — the same treatment `POST /account/password` gives a password change, since an email change is the stronger takeover primitive of the two. A `verify` token from the signup flow is refused here, and this token is refused by `/account/email-verification/confirm` — the two prove different things.
+ * Completes the email-change flow started by `POST /account/email-change`. Validates the one-time `email-change` token sent to the NEW address and, if valid, swaps `pendingEmail` into `email`, marks the account verified, and revokes every refresh token — the same treatment `POST /account/password` gives a password change, since an email change is the stronger takeover primitive of the two. A `verify` token from the signup flow is refused here, and this token is refused by `/account/email-verification/confirm` — the two prove different things.
  * @summary Confirm a pending email change
  */
 export const confirmEmailChangeBodyTokenMax = 128;

@@ -33,6 +33,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "POST", pattern: /^\/account\/email-change\/resend$/, schemaName: "ResendPendingEmailResponse", bodySchemaName: undefined, module: "account", noRefresh: false },
     { method: "POST", pattern: /^\/account\/email-change\/undo$/, schemaName: "UndoEmailChangeResponse", bodySchemaName: "UndoEmailChangeBody", module: "account", noRefresh: false },
     { method: "DELETE", pattern: /^\/account\/email-change$/, schemaName: "CancelPendingEmailChangeResponse", bodySchemaName: undefined, module: "account", noRefresh: false },
+    { method: "POST", pattern: /^\/account\/email-change$/, schemaName: "RequestEmailChangeResponse", bodySchemaName: "RequestEmailChangeBody", module: "account", noRefresh: false },
     { method: "POST", pattern: /^\/account\/email-verification\/confirm$/, schemaName: "ConfirmEmailVerificationResponse", bodySchemaName: "ConfirmEmailVerificationBody", module: "account", noRefresh: false },
     { method: "POST", pattern: /^\/account\/email-verification\/resend$/, schemaName: "RequestEmailVerificationResponse", bodySchemaName: undefined, module: "account", noRefresh: false },
     { method: "GET", pattern: /^\/account\/export\/file$/, schemaName: "DownloadAccountExportResponse", bodySchemaName: undefined, module: "account", noRefresh: false },
