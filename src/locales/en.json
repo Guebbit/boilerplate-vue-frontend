@@ -406,7 +406,7 @@
             "lifetime": "Lifetime",
             "necessity": "Consent"
         },
-        "turnstile": "The human check on some forms is Cloudflare Turnstile, a third party: it loads a script from Cloudflare and Cloudflare sees your visit to that form.",
+        "turnstile": "The human check on some forms is Cloudflare Turnstile, a third party: it loads a script from Cloudflare and Cloudflare sees your visit to that form. Cloudflare also uses what it sees to improve its bot detection, under its own privacy policy.",
         "checkout-draft-suffix": "followed by your account id",
         "kind": {
             "cookie": "Cookie",

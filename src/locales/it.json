@@ -406,7 +406,7 @@
             "lifetime": "Durata",
             "necessity": "Consenso"
         },
-        "turnstile": "Il controllo anti-bot su alcuni moduli è Cloudflare Turnstile, una terza parte: carica uno script da Cloudflare e Cloudflare vede la tua visita a quel modulo.",
+        "turnstile": "Il controllo anti-bot su alcuni moduli è Cloudflare Turnstile, una terza parte: carica uno script da Cloudflare e Cloudflare vede la tua visita a quel modulo. Cloudflare usa inoltre ciò che vede per migliorare il rilevamento dei bot, secondo la propria informativa sulla privacy.",
         "checkout-draft-suffix": "seguito dall'id del tuo account",
         "kind": {
             "cookie": "Cookie",
