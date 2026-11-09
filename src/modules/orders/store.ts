@@ -40,7 +40,8 @@ import type {
     OrderAddress,
     OrderStatus,
     CreditNoteSummary,
-    OrderTimelineEntry
+    OrderTimelineEntry,
+    OrderTimelineResponse
 } from '@types';
 
 /**
@@ -100,15 +101,17 @@ const criteriaOf = (filters: OrdersFilters) => ({
 });
 
 /**
- * Reads an order's timeline, oldest first. A background read like {@link listCreditNotes}: outside
- * `fetchAny`, so it never flips the store's shared `loading` and disables the page's buttons. The
- * server decides the rows: staff get every one with its actor, the buyer only the buyer-visible ones.
+ * Reads one page of an order's timeline, newest first (a log: no `sort`). A background read like
+ * {@link listCreditNotes}: outside `fetchAny`, so it never flips the store's shared `loading` and
+ * disables the page's buttons. The server decides the rows: staff get every one with its actor, the
+ * buyer only the buyer-visible ones, and `meta.totalItems` counts only what this caller may read.
  *
  * @param orderId - Identifier of the order.
- * @returns A promise resolving with the entries.
+ * @param page - 1-based page; the server's default page size applies.
+ * @returns A promise resolving with the page's entries and its pagination meta.
  */
-const fetchTimeline = (orderId: string): Promise<OrderTimelineEntry[]> =>
-    getOrderTimeline(orderId).then((response) => response.items);
+const fetchTimeline = (orderId: string, page = 1): Promise<OrderTimelineResponse> =>
+    getOrderTimeline(orderId, { page });
 
 /**
  * `Idempotency-Key`s for `addNote`, one per order and text: a lost response resends the SAME key,

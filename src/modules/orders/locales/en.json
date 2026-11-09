@@ -153,6 +153,7 @@
     },
     "order-timeline": {
         "title": "History",
+        "show-older": "Show older",
         "loading": "Loading history...",
         "empty": "Nothing has happened to this order yet.",
         "badge-staff-only": "Hidden from the buyer",

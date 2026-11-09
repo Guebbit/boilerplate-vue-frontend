@@ -12076,16 +12076,18 @@ paths:
       tags:
         - Orders
       summary: The order's timeline
-      description: "What happened to the order, oldest first: status moves, payments and refunds, shipments, returns, documents. Every caller who may read the order may read this, but not the same rows. A caller holding `display:Order` sees every row, with the `actor` who made it and any `text` staff wrote. The buyer sees only the buyer-visible types and never an `actor`: a manual correction, a hold and a failed refund stay with staff."
+      description: "What happened to the order, a page at a time, newest first (a log, so no `sort`): status moves, payments and refunds, shipments, returns, documents, staff notes. Paged rather than capped: staff notes make a history grow without limit, and `meta.totalItems` counts the rows this caller may read. Every caller who may read the order may read this, but not the same rows. A caller holding `display:Order` sees every row, with the `actor` who made it and any `text` staff wrote. The buyer sees only the buyer-visible types and never an `actor`: a manual correction, a hold and a failed refund stay with staff."
       operationId: getOrderTimeline
       security:
         - bearerAuth: []
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
       responses:
         "200":
-          description: The order's timeline, oldest first
+          description: A page of the order's timeline, newest first (a log, so no `sort`)
           content:
             application/json:
               schema:
@@ -12111,6 +12113,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -15878,7 +15882,7 @@ components:
       default: 10
       minimum: 1
       maximum: 100
-      description: Optional override; server may clamp to a max
+      description: "Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped."
     Id:
       type: string
       minLength: 1
@@ -25390,11 +25394,14 @@ components:
       additionalProperties: false
       required:
         - items
+        - meta
       properties:
         items:
           type: array
           items:
             $ref: "#/components/schemas/OrderTimelineEntry"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
     CreateOrderNoteRequest:
       type: object
       additionalProperties: false

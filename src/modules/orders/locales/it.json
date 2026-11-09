@@ -153,6 +153,7 @@
     },
     "order-timeline": {
         "title": "Cronologia",
+        "show-older": "Mostra i più vecchi",
         "loading": "Caricamento della cronologia...",
         "empty": "Nessun evento per questo ordine.",
         "badge-staff-only": "Nascosto all'acquirente",
