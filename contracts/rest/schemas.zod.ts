@@ -1184,6 +1184,10 @@ export const ReplaceEntityTranslationsParams = zod.strictObject({
         .max(replaceEntityTranslationsPathIdMax)
         .regex(replaceEntityTranslationsPathIdRegExp)
 });
+export const replaceEntityTranslationsHeaderIfMatchMax = 200;
+export const ReplaceEntityTranslationsHeader = zod.strictObject({
+    'If-Match': zod.string().max(replaceEntityTranslationsHeaderIfMatchMax).optional()
+});
 export const replaceEntityTranslationsBodyOneFieldsMaxOne = 10000;
 export const replaceEntityTranslationsBodyOneOriginDefault = `human`;
 export const ReplaceEntityTranslationsBody = zod.record(
@@ -1301,6 +1305,10 @@ export const UpdateEntityTranslationsParams = zod.strictObject({
         .min(1)
         .max(updateEntityTranslationsPathIdMax)
         .regex(updateEntityTranslationsPathIdRegExp)
+});
+export const updateEntityTranslationsHeaderIfMatchMax = 200;
+export const UpdateEntityTranslationsHeader = zod.strictObject({
+    'If-Match': zod.string().max(updateEntityTranslationsHeaderIfMatchMax).optional()
 });
 export const updateEntityTranslationsBodyOneFieldsMaxOne = 10000;
 export const UpdateEntityTranslationsBody = zod.record(

@@ -1431,6 +1431,10 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: locales
   /locales/translations/{entityType}/{id}:
+    x-versioned:
+      - get
+      - put
+      - patch
     get:
       tags:
         - Locales
@@ -1455,6 +1459,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/EntityTranslations"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -1467,8 +1473,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1511,6 +1515,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/TranslatableEntityTypePathParam"
         - $ref: "#/components/parameters/TranslationEntityIdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: true
         content:
@@ -1525,6 +1530,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/EntityTranslations"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -1537,8 +1544,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1547,6 +1552,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -1598,6 +1605,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/TranslatableEntityTypePathParam"
         - $ref: "#/components/parameters/TranslationEntityIdPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: true
         content:
@@ -1615,6 +1623,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/EntityTranslations"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -1627,8 +1637,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1637,6 +1645,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
