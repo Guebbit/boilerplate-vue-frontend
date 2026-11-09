@@ -8785,6 +8785,8 @@ export const getSecurityTxt = (options?: SecondParameter<typeof orvalMutator<str
  * caller who holds `display:Locale` is answered outside the shared cache, so only
  * such a caller gets a flag set to `true`; everyone else's answer is the cached one,
  * with every flag `false`.
+ *
+ * Unpaged: one row per language this deployment offers.
  * @summary Supported languages
  */
 export const listLocales = (options?: SecondParameter<typeof orvalMutator<LocaleCapabilities>>) => {
@@ -8826,6 +8828,8 @@ export const createLocale = (
  * `GET /locales/{locale}/messages?app=`.
  *
  * Public and cacheable, like every other locale read.
+ *
+ * Unpaged: the apps come from the API's configuration.
  * @summary Translation apps
  */
 export const listLocaleApps = (options?: SecondParameter<typeof orvalMutator<LocaleApps>>) => {
@@ -9769,6 +9773,7 @@ export const logout = (options?: SecondParameter<typeof orvalMutator<NoContentRe
 
 /**
  * Lists the authenticated user's live sessions, one per sign-in, newest first. Each carries an id that stays the same for as long as the sign-in lasts (a `jwt` refresh or a `cookie` re-proof does not change it), when the sign-in happened, when it ends, and a `current` marker; never a credential. The session the caller's own cookie (or `ses_…` bearer) belongs to is flagged `current`. In `cookie` mode each also carries a coarse `device` label such as "Firefox on Linux", read from the User-Agent at the sign-in. A staff session that has idled out is not listed: it no longer signs anyone in.
+ * Unpaged: only live sign-ins are listed, and each ends when it expires.
  * @summary List active sessions
  */
 export const listSessions = (options?: SecondParameter<typeof orvalMutator<SessionsResponse>>) => {
@@ -9809,7 +9814,7 @@ export const revokeSession = (
 };
 
 /**
- * The authenticated user's address book. Whenever it is non-empty, exactly one entry carries `default` — the one checkout ships to when no `addressId` is named.
+ * The authenticated user's address book. Whenever it is non-empty, exactly one entry carries `default` — the one checkout ships to when no `addressId` is named. Unpaged: the book holds at most `NODE_ADDRESS_BOOK_MAX` entries.
  * @summary List saved addresses
  */
 export const listAddresses = (
@@ -10330,7 +10335,7 @@ export const regenerateBackupCodes = (
 };
 
 /**
- * The sign-in providers linked to the authenticated account (Google, GitHub), with when each was connected. Never carries a provider's own identifier. An empty list means the account signs in with a password alone.
+ * The sign-in providers linked to the authenticated account (Google, GitHub), with when each was connected. Never carries a provider's own identifier. An empty list means the account signs in with a password alone. Unpaged: at most one per provider.
  * @summary List the caller's connected accounts
  */
 export const listOAuthLinks = (options?: SecondParameter<typeof orvalMutator<OAuthLinks>>) => {
@@ -11665,6 +11670,7 @@ export const getOrderInvoice = (
 
 /**
  * One entry per refund that has settled on this order's payment, oldest first — a full refund and each part of a partial one each have their own credit note. Empty for an order never refunded, with no invoice to reverse, or whose money the caller may not read: the buyer sees their own, and staff need the payments staff read (`display:Payment`), so the warehouse that packs the order sees none. `id` is what `GET /orders/{id}/credit-notes/{creditNoteId}` downloads.
+ * Unpaged: one per settled refund of this order.
  * @summary List the order's credit notes
  */
 export const listOrderCreditNotes = (
@@ -11765,7 +11771,7 @@ export const listOrderShipments = (
 };
 
 /**
- * Which methods this deployment offers, so the frontend hard-codes none. `card` is present only when a card payment provider is configured; `bank_transfer` only once its beneficiary and IBAN are configured. With neither the list is empty, and checkout is off until a method is configured. Public — like `GET /delivery/methods`, this is pre-purchase information.
+ * Which methods this deployment offers, so the frontend hard-codes none. `card` is present only when a card payment provider is configured; `bank_transfer` only once its beneficiary and IBAN are configured. With neither the list is empty, and checkout is off until a method is configured. Public — like `GET /delivery/methods`, this is pre-purchase information. Unpaged: at most one per payment method kind.
  * @summary List payment methods
  */
 export const listPaymentMethods = (
@@ -11878,7 +11884,7 @@ export const receivePaymentWebhook = (
 };
 
 /**
- * Every shipping method this shop offers — flat rates and free-above thresholds, unfiltered. Public, because what shipping costs is pre-purchase information; the authoritative pricing and weight-fit check happen server-side, against the caller's real basket, at `PUT /cart/shipping-method` and again at checkout — this list is a catalogue, not a quote.
+ * Every shipping method this shop offers — flat rates and free-above thresholds, unfiltered. Public, because what shipping costs is pre-purchase information; the authoritative pricing and weight-fit check happen server-side, against the caller's real basket, at `PUT /cart/shipping-method` and again at checkout — this list is a catalogue, not a quote. Unpaged: the shop's configured catalogue.
  * @summary List shipping methods
  */
 export const listShippingMethods = (
@@ -12467,6 +12473,8 @@ export const replayWebhookDelivery = (
  * `asyncapi.webhooks.yaml` — the same files `asyncapi.public.yaml` is generated from —
  * so this list and what can actually fire can never drift apart. A module that is
  * not deployed lists nothing. See `docs/api/asyncapi-workflow.md`.
+ *
+ * Unpaged: the event catalogue of the deployed modules.
  * @summary The public event catalogue
  */
 export const listWebhookEvents = (

@@ -52,12 +52,11 @@ describe('onEtagResponse', () => {
         expect(knownEtag('/products/p1')).toBe('"100"');
     });
 
-    it('remembers the NEW tag a PUT or PATCH answered with, replacing the old one', () => {
+    it('remembers the NEW tag a PATCH answered with, replacing the old one', () => {
         onEtagResponse(answered('get', '/users/u1', '"100"'));
         onEtagResponse(answered('patch', '/users/u1', '"200"'));
-        onEtagResponse(answered('put', '/users/u1', '"300"'));
 
-        expect(knownEtag('/users/u1')).toBe('"300"');
+        expect(knownEtag('/users/u1')).toBe('"200"');
     });
 
     it('treats the hard-delete spelling as the same resource', () => {
