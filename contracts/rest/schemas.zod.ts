@@ -1804,8 +1804,9 @@ export const CreateAnalyticsEventResponse = zod.void();
  * request is re-evaluated server-side. A non-passive `GET /account` also counts as
  * activity, so a restore needs no separate touch.
  *
- * The `ETag` is computed over the stored account, not over this body: a role change
- * does not make an `If-Match` taken from an earlier read answer `412`.
+ * The `ETag`'s edit part is the stored account's revision, which a role change moves,
+ * so an `If-Match` taken from an earlier read answers `412` after one. Its body part
+ * moves on every read (`lastActiveAt`).
  * @summary Current user info
  */
 export const getAccountResponseIdMax = 64;
