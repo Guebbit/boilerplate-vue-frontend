@@ -19,6 +19,7 @@ import {
     restoreAccount as apiRestoreAccount,
     updateAccount as apiUpdateAccount,
     updateAccountWithMultipart as apiUpdateAccountWithMultipart,
+    requestEmailChange as apiRequestEmailChange,
     cancelPendingEmailChange as apiCancelPendingEmailChange,
     resendPendingEmail as apiResendPendingEmail,
     changePassword as apiChangePassword,
@@ -182,7 +183,9 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
      * What a profile write may carry: the record's own fields, widened where the wire accepts
      * `null` (a clear) but the local `Account` never holds one.
      */
-    type ProfileWrite = Partial<Omit<Account, 'imageUrl' | 'locale' | 'phone' | 'website'>> & {
+    type ProfileWrite = Partial<
+        Omit<Account, 'email' | 'imageUrl' | 'locale' | 'phone' | 'website'>
+    > & {
         imageUrl?: null;
         locale?: string | null;
         phone?: string | null;
@@ -220,11 +223,10 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
      * routing self-service through them answered every non-admin a 403 — the bug this store
      * shipped until the API grew the self-service route. The payload is deliberately what a user
      * owns: no `password` (that is {@link changePassword}, which proves the current one) and no
-     * role or account state. A new email is parked in `pendingEmail` rather than applied — `email`
-     * and the verification state stay untouched until `POST /account/email-change/confirm` proves
-     * it — so the fresh record in the response is what shows the caller their change is pending.
+     * role or account state. The email is not a field here: it starts at
+     * {@link requestEmailChange}, behind a step-up of its own.
      *
-     * @param userData - Fields to change; `email`, `username`, `locale`, `imageUrl`, `phone`,
+     * @param userData - Fields to change; `username`, `locale`, `imageUrl`, `phone`,
      *  `website` and `analyticsConsent` are sent. An `imageUpload` switches the call to
      *  `multipart/form-data` — the `{ imageUpload, ...rest }` split `modules/users/store.ts`
      *  already has for the admin form,
@@ -251,7 +253,6 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
         // `verifiedAt` or `deletedAt`, and none of those is a user's to send. The two branches
         // differ only in how the picture travels.
         const fields = {
-            email: userData.email,
             username: userData.username,
             locale: userData.locale,
             phone: userData.phone,
@@ -323,9 +324,32 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
     };
 
     /**
+     * Starts an email change through its own door — `POST /account/email-change`. The new address
+     * is parked in `pendingEmail` (`email` and the verification state stay untouched until
+     * `POST /account/email-change/confirm` proves it), and the old address is mailed a notice with
+     * an undo link. The door always asks for a fresh session (an armed account also for a code), so
+     * a stale one rejects with `REAUTH_REQUIRED`, which the shell's step-up dialog answers before
+     * the call is retried.
+     *
+     * @param email - The address to move the account to.
+     * @returns A promise resolving once the request is accepted and the profile refetched, so
+     *  `pendingEmail` shows. A 409 (`EMAIL_ALREADY_CURRENT`, `EMAIL_CHANGE_ALREADY_PENDING`,
+     *  `EMAIL_ALREADY_USED`) or a 429 (`EMAIL_CHANGE_TOO_SOON`) rejects instead.
+     */
+    const requestEmailChange = (email: string) =>
+        fetchAny(
+            () =>
+                apiRequestEmailChange({ email }).then(() =>
+                    fetchProfile(true).then(() => undefined)
+                ),
+            // The same bucket as the resend and cancel buttons: one email change in flight at a time.
+            { key: ['pending-email'], forced: true }
+        );
+
+    /**
      * Cancels a pending email change, through the endpoint dedicated to it — `DELETE
-     * /account/email-change`. Resending the current address is a no-op, not a cancel, so a
-     * routine save never drops a change in flight by accident; this is the only thing that does.
+     * /account/email-change`. Asking for the current address is a 409, not a cancel, so nothing
+     * else drops a change in flight by accident; this is the only thing that does.
      *
      * @returns A promise resolving once the change is discarded and the profile refetched.
      */
@@ -558,6 +582,7 @@ export const useAccountProfileStore = defineStore('account-profile', () => {
         resetAll,
         fetchProfile,
         updateProfile,
+        requestEmailChange,
         cancelPendingEmailChange,
         resendPendingEmail,
         changePassword,

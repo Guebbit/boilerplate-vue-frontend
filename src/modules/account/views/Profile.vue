@@ -69,8 +69,13 @@ const { addMessage } = useNotificationsStore();
 /**
  * Profile logic
  */
-const { updateProfile, cancelPendingEmailChange, resendPendingEmail, fetchProfile } =
-    useAccountProfileStore();
+const {
+    updateProfile,
+    requestEmailChange,
+    cancelPendingEmailChange,
+    resendPendingEmail,
+    fetchProfile
+} = useAccountProfileStore();
 
 /**
  * The signed-in visitor's profile record.
@@ -251,13 +256,13 @@ const submitForm = () => {
     // own request. Sending the loaded value back on every details save would overwrite whatever
     // the avatar panel just wrote and orphan the file it uploaded — see `updateProfile`'s docblock.
     //
-    // The baseline is the loaded profile: an unchanged `email` is omitted (PATCH treats an included
-    // one as a real request, even a no-op), so is an untouched `analyticsConsent`, and an emptied
-    // phone or website becomes `null` (the clear) instead of a 422-bound `''`.
-    const { email, username, locale, phone, website, analyticsConsent } = form.value;
+    // The baseline is the loaded profile: an untouched `analyticsConsent` is omitted, and an
+    // emptied phone or website becomes `null` (the clear) instead of a 422-bound `''`. No `email`:
+    // that has its own form below, its own door and its own step-up.
+    const { username, locale, phone, website, analyticsConsent } = form.value;
     return toRequestBody(
         'UpdateAccountBody',
-        { email, username, locale, phone, website, analyticsConsent },
+        { username, locale, phone, website, analyticsConsent },
         profile.value
     )
         .then((body) => updateProfile(body))
@@ -333,9 +338,37 @@ const resendPendingEmailLink = () => {
 };
 
 /**
+ * The address typed into the email-change form, apart from the details form: it is a request of
+ * its own (`POST /account/email-change`), not a field of the profile.
+ */
+const newEmail = ref('');
+
+/**
+ * Asks to move the account to {@link newEmail} — `POST /account/email-change`.
+ *
+ * Always behind a fresh session (an armed account also a code): a stale one is answered by the
+ * shell's step-up dialog and the call retried, so a rejection reaching here is a real refusal.
+ *
+ * @returns A promise resolving once the request settles; success is toasted, the field cleared and
+ *  `pendingEmail` shows. A failure (the current or pending address, one another account holds,
+ *  asking again inside the minute) blocks in place ({@link pendingEmailError}).
+ */
+const submitEmailChange = () => {
+    const email = newEmail.value.trim();
+    if (!email || changingPendingEmail.value) return;
+    clearPendingEmailError();
+    return requestEmailChange(email)
+        .then(() => {
+            newEmail.value = '';
+            addMessage(t('profile-page.email-change-requested'));
+        })
+        .catch((error: unknown) => reportPendingEmailError(error));
+};
+
+/**
  * Cancels the pending email change through its own endpoint — `DELETE /account/email-change`.
- * Resending the current address is a no-op, not a cancel, so a routine save can never drop a
- * change in flight by accident.
+ * Asking for the current address is a 409, not a cancel, so nothing else can drop a change in
+ * flight by accident.
  *
  * @returns A promise resolving once the request settles; success is toasted, a failure blocks in
  *  place ({@link pendingEmailError}).
@@ -365,54 +398,6 @@ const cancelPendingEmail = () => {
                     :label="t('profile-page.label-username')"
                     v-bind="fieldErrorProps(showErrors ? formErrors.username : [])"
                     class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.email"
-                    type="email"
-                    autocomplete="email"
-                    :label="t('profile-page.label-email')"
-                    v-bind="fieldErrorProps(showErrors ? formErrors.email : [])"
-                    class="mb-2"
-                />
-                <div
-                    v-if="profile?.pendingEmail"
-                    class="mb-2 flex flex-wrap items-center gap-2 text-sm opacity-80"
-                    data-test="pending-email-notice"
-                >
-                    <span>
-                        {{
-                            t('profile-page.pending-email-notice', { email: profile.pendingEmail })
-                        }}
-                    </span>
-                    <v-btn
-                        variant="text"
-                        size="small"
-                        :disabled="changingPendingEmail || resendCooldown > 0"
-                        data-test="pending-email-resend"
-                        @click="resendPendingEmailLink"
-                    >
-                        {{
-                            resendCooldown > 0
-                                ? t('profile-page.pending-email-resend-wait', {
-                                      seconds: resendCooldown
-                                  })
-                                : t('profile-page.pending-email-resend')
-                        }}
-                    </v-btn>
-                    <v-btn
-                        variant="text"
-                        size="small"
-                        :disabled="changingPendingEmail"
-                        data-test="pending-email-cancel"
-                        @click="cancelPendingEmail"
-                    >
-                        {{ t('profile-page.pending-email-cancel') }}
-                    </v-btn>
-                </div>
-                <InlineErrorAlert
-                    :message="pendingEmailError"
-                    class="mb-2"
-                    data-test="pending-email-error"
                 />
                 <v-text-field
                     v-model="form.phone"
@@ -479,6 +464,73 @@ const cancelPendingEmail = () => {
                 >
                     {{ t('generic.action-reload-latest') }}
                 </v-btn>
+            </form>
+
+            <form novalidate data-test="email-change-form" @submit.prevent="submitEmailChange">
+                <v-text-field
+                    :model-value="profile?.email"
+                    type="email"
+                    readonly
+                    data-test="profile-email"
+                    :label="t('profile-page.label-email')"
+                    class="mb-2"
+                />
+                <v-text-field
+                    v-model="newEmail"
+                    type="email"
+                    autocomplete="email"
+                    data-test="profile-new-email"
+                    :label="t('profile-page.label-new-email')"
+                    class="mb-2"
+                />
+                <v-btn
+                    type="submit"
+                    variant="tonal"
+                    :disabled="!newEmail.trim() || changingPendingEmail"
+                    data-test="profile-email-change-submit"
+                >
+                    {{ t('profile-page.button-change-email') }}
+                </v-btn>
+                <div
+                    v-if="profile?.pendingEmail"
+                    class="mb-2 flex flex-wrap items-center gap-2 text-sm opacity-80"
+                    data-test="pending-email-notice"
+                >
+                    <span>
+                        {{
+                            t('profile-page.pending-email-notice', { email: profile.pendingEmail })
+                        }}
+                    </span>
+                    <v-btn
+                        variant="text"
+                        size="small"
+                        :disabled="changingPendingEmail || resendCooldown > 0"
+                        data-test="pending-email-resend"
+                        @click="resendPendingEmailLink"
+                    >
+                        {{
+                            resendCooldown > 0
+                                ? t('profile-page.pending-email-resend-wait', {
+                                      seconds: resendCooldown
+                                  })
+                                : t('profile-page.pending-email-resend')
+                        }}
+                    </v-btn>
+                    <v-btn
+                        variant="text"
+                        size="small"
+                        :disabled="changingPendingEmail"
+                        data-test="pending-email-cancel"
+                        @click="cancelPendingEmail"
+                    >
+                        {{ t('profile-page.pending-email-cancel') }}
+                    </v-btn>
+                </div>
+                <InlineErrorAlert
+                    :message="pendingEmailError"
+                    class="mb-2"
+                    data-test="pending-email-error"
+                />
             </form>
 
             <ProfilePasswordChange />

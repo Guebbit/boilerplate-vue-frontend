@@ -107,11 +107,10 @@ describe('AC1 · I lost my phone: backup codes', () => {
                     cy.step('the fresh-login window lapses, and changing the address asks again');
                     cy.travel(PAST_SENSITIVE_MS);
                     cy.visit('/en/profile');
-                    cy.get('#profile-page [type=email]').should('not.be.disabled').clear();
-                    cy.get('#profile-page [type=email]')
+                    cy.get('[data-test=profile-new-email] input')
                         .should('not.be.disabled')
                         .type('ac1-new-address@example.com');
-                    cy.get('#profile-page form button[type=submit]').first().click();
+                    cy.get('[data-test=profile-email-change-submit]').click();
                     cy.get('[data-test=reauth-dialog]').should('be.visible');
 
                     cy.step('an armed account is asked for a code as well as the password');

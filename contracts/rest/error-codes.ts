@@ -78,10 +78,14 @@ export const ERROR_CODES = {
     DELIVERY_NOT_REOPENABLE: 'DELIVERY_NOT_REOPENABLE',
     /** 409 — The fulfillment order cannot ship now: it is on hold, closed or canceled, or the order is canceled, or still `pending` (never paid: start or pay it first). */
     DELIVERY_NOT_SHIPPABLE: 'DELIVERY_NOT_SHIPPABLE',
-    /** 409 — Another account already holds this email address — on signup, or on a profile email change. */
+    /** 409 — The requested address is the one the account already has, so there is nothing to change. */
+    EMAIL_ALREADY_CURRENT: 'EMAIL_ALREADY_CURRENT',
+    /** 409 — Another account already holds this email address — on signup, or on an email change. */
     EMAIL_ALREADY_USED: 'EMAIL_ALREADY_USED',
     /** 409 — The account's email address is verified already, so there is nothing to resend. */
     EMAIL_ALREADY_VERIFIED: 'EMAIL_ALREADY_VERIFIED',
+    /** 409 — This address is already the pending one, and its link is on the way — `POST /account/email-change/resend` mails it again. */
+    EMAIL_CHANGE_ALREADY_PENDING: 'EMAIL_CHANGE_ALREADY_PENDING',
     /** 429 — An email change was already requested for this account in the last minute — carries `details.retryAfter`. */
     EMAIL_CHANGE_TOO_SOON: 'EMAIL_CHANGE_TOO_SOON',
     /** 403 — Checkout requires a verified email address — see `POST /account/email-verification/resend`. */

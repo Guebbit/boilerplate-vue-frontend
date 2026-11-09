@@ -39,9 +39,8 @@ const NOTICE = 'account.email-change-notice';
  */
 const requestChangeTo = (address: string): void => {
     cy.visit('/en/profile');
-    cy.get('#profile-page [type=email]').should('not.be.disabled').clear();
-    cy.get('#profile-page [type=email]').should('not.be.disabled').type(address);
-    cy.get('#profile-page form button[type=submit]').first().click();
+    cy.get('[data-test=profile-new-email] input').should('not.be.disabled').type(address);
+    cy.get('[data-test=profile-email-change-submit]').click();
     cy.get('[data-test=pending-email-notice]').should('contain.text', address);
 };
 

@@ -133,6 +133,7 @@ beforeEach(() => {
     responses = {
         'GET /account': accountView(USER),
         'PATCH /account': USER,
+        'POST /account/email-change': USER,
         'DELETE /account/email-change': undefined,
         'POST /account/email-change/resend': { resendAfter: 60 }
     };
@@ -185,10 +186,9 @@ describe('the GDPR analytics-consent switch', () => {
 });
 
 /**
- * An ordinary save must never carry the visitor's own unchanged address, because the backend
- * reads any INCLUDED `email` as "cancel/redirect the pending change" — see `updateAccount`'s
- * generated doc comment on `PATCH /account`. The notice's UI and the save-side fix are pinned in
- * one file since they are the same mechanism proven from two ends.
+ * The email is not a field of the details form: `PATCH /account` refuses one, and a change starts
+ * at its own form and door, `POST /account/email-change`. The notice's UI and the two writes are
+ * pinned in one file since they are the same mechanism proven from two ends.
  */
 describe('the email field, and a pending change', () => {
     it('omits email from the PATCH body on an ordinary save that leaves it untouched', () => {
@@ -200,24 +200,52 @@ describe('the email field, and a pending change', () => {
             .then(flushPromises)
             .then(() => {
                 const patch = lastAccountPatch();
-                // Same "absent means untouched" proof as the consent switch above — this is the
-                // actual bug being guarded: a routine save silently cancelling a pending email change.
+                // The contract refuses an `email` on this body, so a save must never carry one.
                 expect(JSON.stringify(patch?.data)).not.toContain('"email"');
             });
     });
 
-    it('sends the new address when the visitor actually edits the email field', () => {
+    it('asks for the change at its own door, and not through the details save', () => {
         const wrapper = mountProfile();
 
         return flushPromises()
-            .then(() => wrapper.get('input[type=email]').setValue('new@example.com'))
-            .then(() => wrapper.get('form').trigger('submit'))
+            .then(() =>
+                wrapper.get('[data-test=profile-new-email] input').setValue('new@example.com')
+            )
+            .then(() => wrapper.get('[data-test=email-change-form]').trigger('submit'))
             .then(flushPromises)
             .then(() => {
-                const patch = lastAccountPatch();
-                expect(contractRequest(schemas.UpdateAccountBody, patch?.data)).toMatchObject({
-                    email: 'new@example.com'
-                });
+                const [call] = callsTo('POST', '/account/email-change');
+                expect(
+                    contractRequest(
+                        schemas.RequestEmailChangeBody,
+                        (call?.[0] as { data: unknown }).data
+                    )
+                ).toEqual({ email: 'new@example.com' });
+                expect(lastAccountPatch()).toBeUndefined();
+            });
+    });
+
+    it('answers a refused request in place, beside the form', () => {
+        const wrapper = mountProfile();
+
+        return flushPromises()
+            .then(() =>
+                wrapper.get('[data-test=profile-new-email] input').setValue('taken@example.com')
+            )
+            .then(() => {
+                vi.mocked(orvalMutator).mockRejectedValueOnce(
+                    aProblem(409, [
+                        { code: 'EMAIL_ALREADY_USED', message: 'Email was already used.' }
+                    ])
+                );
+                return wrapper.get('[data-test=email-change-form]').trigger('submit');
+            })
+            .then(flushPromises)
+            .then(() => {
+                expect(wrapper.get('[data-test=pending-email-error]').text()).toContain(
+                    'Email was already used.'
+                );
             });
     });
 

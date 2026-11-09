@@ -159,11 +159,10 @@ describe('AC5 · I changed my mind about my new email', () => {
 
         cy.step('an address somebody else holds is refused in words, and nothing is parked');
         cy.accountOf('editor').then(({ email: taken }) => {
-            cy.get('#profile-page [type=email]').should('not.be.disabled').clear();
-            cy.get('#profile-page [type=email]').type(taken);
+            cy.get('[data-test=profile-new-email] input').should('not.be.disabled').type(taken);
         });
-        cy.get('#profile-page form button[type=submit]').first().click();
-        cy.get('[data-test=profile-form-error]')
+        cy.get('[data-test=profile-email-change-submit]').click();
+        cy.get('[data-test=pending-email-error]')
             .should('not.be.empty')
             .and('not.contain.text', 'Conflict');
         cy.get('[data-test=pending-email-notice]').should('not.exist');
