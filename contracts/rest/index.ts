@@ -820,7 +820,7 @@ export interface CreateLocaleEntryRequest {
 }
 
 /**
- * Translation key to text, or to `null` to delete it. A `null` for a key that is not stored is a no-op, not an error. An empty map is a 422 — enforced at write time.
+ * Translation key to text, or to `null` to delete it. A `null` for a key that is not stored is a no-op, not an error. An empty map changes nothing and answers 200.
  * A key is 1 to 200 characters once trimmed, and two keys that are the same once trimmed are a 409. A key being written (a string) is refused when it is a strict prefix of a key that will remain, or has one as a prefix — `products.list` alongside `products.list.title`; a key being deleted is not part of that check. The rationale and the "undefined keys are accepted" rule are on `ReplaceLocaleEntriesRequest`.
  */
 export type UpdateLocaleEntriesRequestEntries = { [key: string]: string | null };
@@ -830,7 +830,7 @@ export type UpdateLocaleEntriesRequestEntries = { [key: string]: string | null }
  */
 export interface UpdateLocaleEntriesRequest {
     /**
-     * Translation key to text, or to `null` to delete it. A `null` for a key that is not stored is a no-op, not an error. An empty map is a 422 — enforced at write time.
+     * Translation key to text, or to `null` to delete it. A `null` for a key that is not stored is a no-op, not an error. An empty map changes nothing and answers 200.
      * A key is 1 to 200 characters once trimmed, and two keys that are the same once trimmed are a 409. A key being written (a string) is refused when it is a strict prefix of a key that will remain, or has one as a prefix — `products.list` alongside `products.list.title`; a key being deleted is not part of that check. The rationale and the "undefined keys are accepted" rule are on `ReplaceLocaleEntriesRequest`.
      */
     entries: UpdateLocaleEntriesRequestEntries;
