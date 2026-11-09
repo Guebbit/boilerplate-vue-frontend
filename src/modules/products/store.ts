@@ -276,7 +276,7 @@ export const useProductsStore = defineStore('products', () => {
 
             // Neither the uploaded Blob nor `translations` belongs in the optimistic patch: the
             // new `imageUrl` comes back from the API, and a product's rendered `title`/
-            // `description` are resolved server-side from the fallback locale — this store has
+            // `description` are resolved server-side in the request's language — this store has
             // no way to guess them ahead of the response, so they stay whatever they were until
             // the real one arrives.
             //
