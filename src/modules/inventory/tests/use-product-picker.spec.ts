@@ -14,6 +14,7 @@ import {
 } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import type { Product } from '@types';
 import * as schemas from '@api/schemas';
+import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
 
 vi.mock('@/infrastructure/http', () => ({ orvalMutator: vi.fn() }));
 
@@ -43,7 +44,8 @@ const WIDGET: Product = {
     currency: 'EUR',
     inStock: true,
     lowStock: false,
-    buyable: true
+    buyable: true,
+    actions: NO_PRODUCT_ACTIONS
 };
 
 /** A second product, used as the pinned one. */
@@ -54,7 +56,8 @@ const GADGET: Product = {
     currency: 'EUR',
     inStock: true,
     lowStock: false,
-    buyable: true
+    buyable: true,
+    actions: NO_PRODUCT_ACTIONS
 };
 
 beforeEach(() => {

@@ -5986,7 +5986,7 @@ paths:
       tags:
         - Products
       summary: List products (paginated)
-      description: Returns a paginated list of products. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached.
+      description: Returns a paginated list of products. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached. Each row's `actions` is all `false` for a caller answered from the shared cache; only a caller who sees more than a guest gets a `true`.
       operationId: listProducts
       security:
         - {}
@@ -21406,6 +21406,28 @@ components:
       type: string
       format: date
       description: "The day stock is expected back, for a product that allows backorder: a day on the shop's calendar (`Shop.timeZone`) as `YYYY-MM-DD`; stored as the UTC instant of that day's midnight in the shop's zone and always answered back as the same day. At most one year ahead. Without one the shop promises delivery within 30 days. A day in the past is accepted and the product then reads sold out until staff set a new date or clear it. Moving it later notifies the buyers who already paid (`delivery`)."
+    ProductActions:
+      type: object
+      additionalProperties: false
+      required:
+        - update
+        - delete
+        - restore
+        - hardDelete
+      description: "What THIS caller may do to THIS product right now, so a client never restates the rules. A caller answered from the cache shared with every guest gets every flag `false`: only a caller who sees more than a guest (`display:Product`) is answered fresh, and only they can read a `true`."
+      properties:
+        update:
+          type: boolean
+          description: "Whether `PUT` or `PATCH /products/{id}` would be accepted: the caller holds `update:Product` AND `update:Translation`."
+        delete:
+          type: boolean
+          description: "Whether `DELETE /products/{id}` (a soft delete) would be accepted: the caller holds `delete:Product` and the product is not already deleted."
+        restore:
+          type: boolean
+          description: "Whether `POST /products/{id}/restore` would be accepted: the caller holds `delete:Product` and the product is soft-deleted (a live one answers 409 `PRODUCT_NOT_DELETED`)."
+        hardDelete:
+          type: boolean
+          description: "Whether `DELETE /products/{id}/hard` would be accepted: the caller holds `delete:Product`."
     ProductTranslationFields:
       type: object
       additionalProperties: false
@@ -21427,6 +21449,7 @@ components:
         - inStock
         - lowStock
         - buyable
+        - actions
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -21524,6 +21547,8 @@ components:
         deletedAt:
           type: string
           format: date-time
+        actions:
+          $ref: "#/components/schemas/ProductActions"
         translations:
           type: object
           additionalProperties:

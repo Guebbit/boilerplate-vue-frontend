@@ -29,6 +29,7 @@ import { AddressPickerStub, router } from './mount-cart-page.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { emitOn, nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import type { CartResponse, Order, Product } from '@types';
+import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -1292,6 +1293,7 @@ const product = (id: string, noWithdrawal: boolean) => ({
     inStock: true,
     lowStock: false,
     buyable: true,
+    actions: NO_PRODUCT_ACTIONS,
     noWithdrawal
 });
 

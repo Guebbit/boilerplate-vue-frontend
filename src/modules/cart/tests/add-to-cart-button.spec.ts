@@ -17,6 +17,7 @@ import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import type { CartResponse, Product } from '@types';
+import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
 
 // The shop states the backorder promise; these cases are about the wording around it.
 vi.mock('@/modules/shop', async (importOriginal) => {
@@ -69,6 +70,7 @@ const IN_STOCK: Product = {
     inStock: true,
     lowStock: false,
     buyable: true,
+    actions: NO_PRODUCT_ACTIONS,
     onHand: 5,
     reserved: 1,
     available: 4

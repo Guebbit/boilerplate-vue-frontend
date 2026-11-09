@@ -4447,6 +4447,20 @@ export const TaxClass = {
  */
 export type RestockDate = string;
 
+/**
+ * What THIS caller may do to THIS product right now, so a client never restates the rules. A caller answered from the cache shared with every guest gets every flag `false`: only a caller who sees more than a guest (`display:Product`) is answered fresh, and only they can read a `true`.
+ */
+export interface ProductActions {
+    /** Whether `PUT` or `PATCH /products/{id}` would be accepted: the caller holds `update:Product` AND `update:Translation`. */
+    update: boolean;
+    /** Whether `DELETE /products/{id}` (a soft delete) would be accepted: the caller holds `delete:Product` and the product is not already deleted. */
+    delete: boolean;
+    /** Whether `POST /products/{id}/restore` would be accepted: the caller holds `delete:Product` and the product is soft-deleted (a live one answers 409 `PRODUCT_NOT_DELETED`). */
+    restore: boolean;
+    /** Whether `DELETE /products/{id}/hard` would be accepted: the caller holds `delete:Product`. */
+    hardDelete: boolean;
+}
+
 export interface ProductTranslationFields {
     title: string;
     description?: string;
@@ -4509,6 +4523,7 @@ export interface Product {
     createdAt?: string;
     updatedAt?: string;
     deletedAt?: string;
+    actions: ProductActions;
     /** Every language the product has a row for, drafts included, keyed by locale: the editor's form fills one tab per entry. Present only on `GET /products/{id}` and only for a caller holding `read:Translation`; every other read, and every other caller, gets the resolved `title`/`description` alone. */
     translations?: ProductTranslations;
 }
@@ -10758,7 +10773,7 @@ export const createTaskNote = (
 };
 
 /**
- * Returns a paginated list of products. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached.
+ * Returns a paginated list of products. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached. Each row's `actions` is all `false` for a caller answered from the shared cache; only a caller who sees more than a guest gets a `true`.
  * @summary List products (paginated)
  */
 export const listProducts = (

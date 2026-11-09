@@ -38,6 +38,7 @@ import type {
     OrderActions,
     Payment,
     PreorderFulfillmentOrder,
+    ProductActions,
     PreorderLevel,
     PreorderProductSummary,
     Problem,
@@ -224,6 +225,16 @@ export const aReturn = (overrides: Partial<Return> = {}): Return =>
     });
 
 /**
+ * A product's `actions` for nobody in particular: every door closed, what the server sends a guest.
+ */
+export const NO_PRODUCT_ACTIONS: ProductActions = {
+    update: false,
+    delete: false,
+    restore: false,
+    hardDelete: false
+};
+
+/**
  * A valid catalogue product — the required fields only, plus whatever a case sets.
  *
  * @param overrides - the fields a case actually cares about
@@ -238,6 +249,7 @@ export const aProduct = (overrides: Partial<Product> = {}): Product => {
         inStock: true,
         lowStock: false,
         active: true,
+        actions: NO_PRODUCT_ACTIONS,
         ...overrides
     };
     // The server's rule, kept coarse: on sale and something to order (shelf or open backorder).

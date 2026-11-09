@@ -13,6 +13,7 @@ import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { Product } from '@types';
+import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -34,7 +35,8 @@ const aProduct = (overrides: Partial<Product> = {}): Product => {
     // The server's answer, coarsely: on sale and something to order.
     return {
         buyable: product.purchasable !== false && (product.inStock || product.backorder === true),
-        ...product
+        ...product,
+        actions: product.actions ?? NO_PRODUCT_ACTIONS
     };
 };
 

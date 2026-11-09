@@ -74,7 +74,8 @@ The catalogue is public, but what a viewer may do decides how it is shown: staff
 by-id filter; everyone else, guests included, gets a **storefront grid** of `ProductCard`s. A card
 is an `<article>`: picture, the title as its one link, price, availability, and whatever the
 `product-actions` slot carries — the same slot the product page hosts, so the grid learns nothing
-about the cart. The product page's Edit button is gated the same way, on `update Product`.
+about the cart. Each row button, and the product page's Edit button, reads the server's `actions`
+flag on the product (`update`, `delete`, `restore`, `hardDelete`) rather than the caller's keys.
 
 ```mermaid
 flowchart TD

@@ -26,6 +26,7 @@ import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { noopWatchHandle } from '../../../../tests/support/unit/watch-handle.ts';
 import type { Product as ProductType } from '@types';
+import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -89,6 +90,7 @@ describe('the shelf', () => {
             inStock: false,
             lowStock: false,
             buyable: false,
+            actions: NO_PRODUCT_ACTIONS,
             onHand: 3,
             reserved: 3,
             available: 0
@@ -106,6 +108,7 @@ describe('the shelf', () => {
             inStock: true,
             lowStock: false,
             buyable: true,
+            actions: NO_PRODUCT_ACTIONS,
             noWithdrawal: true
         });
 
@@ -122,7 +125,8 @@ describe('the shelf', () => {
             currency: 'EUR',
             inStock: true,
             lowStock: false,
-            buyable: true
+            buyable: true,
+            actions: NO_PRODUCT_ACTIONS
         });
 
         expect(wrapper.find('[data-test=product-no-withdrawal]').exists()).toBe(false);
@@ -137,6 +141,7 @@ describe('the shelf', () => {
             inStock: true,
             lowStock: false,
             buyable: true,
+            actions: NO_PRODUCT_ACTIONS,
             onHand: 5,
             reserved: 1,
             available: 4
@@ -155,7 +160,8 @@ describe('the shelf', () => {
             currency: 'EUR',
             inStock: true,
             lowStock: false,
-            buyable: true
+            buyable: true,
+            actions: NO_PRODUCT_ACTIONS
         });
 
         expect(wrapper.get('[data-test=product-stock]').text()).toContain('In stock');
@@ -169,7 +175,8 @@ describe('the shelf', () => {
             currency: 'EUR',
             inStock: true,
             lowStock: true,
-            buyable: true
+            buyable: true,
+            actions: NO_PRODUCT_ACTIONS
         });
 
         expect(wrapper.get('[data-test=product-stock]').text()).toContain('Low stock');
@@ -186,7 +193,8 @@ describe('the product-actions slot', () => {
                 currency: 'EUR',
                 inStock: true,
                 lowStock: false,
-                buyable: true
+                buyable: true,
+                actions: NO_PRODUCT_ACTIONS
             },
             [SlotProbe]
         );
@@ -202,7 +210,8 @@ describe('the product-actions slot', () => {
             currency: 'EUR',
             inStock: true,
             lowStock: false,
-            buyable: true
+            buyable: true,
+            actions: NO_PRODUCT_ACTIONS
         });
 
         expect(wrapper.find('[data-test=slot-probe]').exists()).toBe(false);
@@ -224,7 +233,8 @@ describe('a barebones product', () => {
             currency: 'EUR',
             inStock: true,
             lowStock: false,
-            buyable: true
+            buyable: true,
+            actions: NO_PRODUCT_ACTIONS
         });
 
         expect(wrapper.text()).toContain('—');
@@ -239,6 +249,7 @@ describe('a barebones product', () => {
             inStock: true,
             lowStock: false,
             buyable: true,
+            actions: NO_PRODUCT_ACTIONS,
             description: 'Everything a widget could want',
             categories: ['tools']
         });
@@ -263,7 +274,8 @@ describe('the edit button', () => {
         currency: 'EUR',
         inStock: true,
         lowStock: false,
-        buyable: true
+        buyable: true,
+        actions: { update: false, delete: false, restore: false, hardDelete: false }
     };
 
     it('is hidden from a shopper, who would only meet a guard refusal', () => {
@@ -272,14 +284,23 @@ describe('the edit button', () => {
         expect(mountProduct(widget).find('[data-test=go-to-edit]').exists()).toBe(false);
     });
 
+    // Holding `update:Product` is not enough: a write also needs `update:Translation`, which the
+    // server folds into the flag.
+    it('follows the flag, not the key', () => {
+        signInWith([['update', 'Product']]);
+
+        expect(mountProduct(widget).find('[data-test=go-to-edit]').exists()).toBe(false);
+    });
+
     it('is hidden from a guest', () => {
         expect(mountProduct(widget).find('[data-test=go-to-edit]').exists()).toBe(false);
     });
 
-    it('is shown to staff who may update products', () => {
+    it('is shown to staff whose flag says they may update', () => {
         signInWith([['update', 'Product']]);
+        const editable = { ...widget, actions: { ...widget.actions, update: true } };
 
-        expect(mountProduct(widget).find('[data-test=go-to-edit]').exists()).toBe(true);
+        expect(mountProduct(editable).find('[data-test=go-to-edit]').exists()).toBe(true);
     });
 });
 
@@ -294,7 +315,8 @@ describe('the page view', () => {
             currency: 'EUR',
             inStock: true,
             lowStock: false,
-            buyable: true
+            buyable: true,
+            actions: NO_PRODUCT_ACTIONS
         });
 
         expect(trackBrowsing).toHaveBeenCalledExactlyOnceWith({

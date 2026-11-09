@@ -25,6 +25,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { LineAvailability } from '@types';
+import { NO_PRODUCT_ACTIONS } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -73,7 +74,8 @@ const mountWishlist = (
         currency: 'EUR',
         inStock: true,
         lowStock: false,
-        buyable: true
+        buyable: true,
+        actions: NO_PRODUCT_ACTIONS
     });
     // `onMounted` fetches the lines and then the products; both are seeded above, so both are
     // answered from state rather than from a transport this spec does not exercise.

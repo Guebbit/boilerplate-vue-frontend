@@ -28,6 +28,7 @@ import { asStub } from '../../../../tests/support/stub.ts';
 import { aProduct } from '../../../../tests/support/unit/fixtures.ts';
 import { contractResponse } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import * as schemas from '@api/schemas';
+import type { ProductActions } from '@types';
 
 wireModulesIntoCore();
 
@@ -61,6 +62,30 @@ const answerWith = (...titles: string[]) =>
                     totalItems: titles.length,
                     totalPages: 1
                 }
+            })
+        )
+    );
+
+/**
+ * Answers every search with one product carrying exactly these `actions`.
+ */
+const answerWithActions = (actions: Partial<ProductActions>) =>
+    vi.mocked(searchProducts).mockResolvedValue(
+        asStub<Awaited<ReturnType<typeof searchProducts>>>(
+            contractResponse(schemas.SearchProductsResponse, {
+                items: [
+                    aProduct({
+                        id: 'p0',
+                        actions: {
+                            update: false,
+                            delete: false,
+                            restore: false,
+                            hardDelete: false,
+                            ...actions
+                        }
+                    })
+                ],
+                meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 }
             })
         )
     );
@@ -134,7 +159,7 @@ describe('ProductsList — grid for shoppers, table for staff', () => {
             ['update', 'Product'],
             ['delete', 'Product']
         ]);
-        answerWith('Walnut desk');
+        answerWithActions({ update: true, delete: true, hardDelete: true });
 
         const wrapper = await mountList();
 
@@ -150,6 +175,38 @@ describe('ProductsList — grid for shoppers, table for staff', () => {
         const wrapper = await mountList();
 
         expect(wrapper.find('table').exists()).toBe(true);
+    });
+
+    it.each<[string, Partial<ProductActions>, string[]]>([
+        [
+            'a live row offers edit, delete and hard delete',
+            { update: true, delete: true, hardDelete: true },
+            ['row-edit', 'row-delete', 'row-hard-delete']
+        ],
+        [
+            'a deleted row offers restore, not delete',
+            { update: true, restore: true, hardDelete: true },
+            ['row-edit', 'row-restore', 'row-hard-delete']
+        ],
+        // Holding the keys is not enough: the server's flag decides, and says no.
+        ['a row with every flag false offers nothing', {}, []]
+    ])('draws the row buttons from the server flags: %s', async (_name, actions, shown) => {
+        signInWith([
+            ['update', 'Product'],
+            ['delete', 'Product']
+        ]);
+        answerWithActions(actions);
+
+        const wrapper = await mountList();
+
+        const present = ['row-edit', 'row-restore', 'row-delete', 'row-hard-delete'].filter(
+            (name) => wrapper.find(`[data-test=${name}]`).exists()
+        );
+        expect(present).toEqual(
+            ['row-edit', 'row-restore', 'row-delete', 'row-hard-delete'].filter((name) =>
+                shown.includes(name)
+            )
+        );
     });
 
     it('says so, in place of an empty grid, when nothing matches', async () => {

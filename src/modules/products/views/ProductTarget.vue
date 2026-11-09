@@ -315,7 +315,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
 
             <template #actions>
                 <v-btn
-                    v-if="currentProduct && session.can('update', 'Product')"
+                    v-if="currentProduct?.actions.update"
                     color="secondary"
                     data-test="go-to-edit"
                     :to="routerLinkI18n({ name: 'ProductEdit', params: { id: currentProduct.id } })"
