@@ -2123,6 +2123,7 @@ export interface ExportOrder {
     readonly withdrawUntil?: string;
     paidAt?: string;
     createdAt?: string;
+    /** When staff or the buyer last edited the order or moved its status. Reports from payments, delivery and returns don't move it. */
     updatedAt?: string;
     deletedAt?: string;
 }
@@ -5064,6 +5065,7 @@ export interface Order {
     readonly withdrawUntil?: string;
     paidAt?: string;
     createdAt?: string;
+    /** When staff or the buyer last edited the order or moved its status. Reports from payments, delivery and returns don't move it. */
     updatedAt?: string;
     deletedAt?: string;
 }

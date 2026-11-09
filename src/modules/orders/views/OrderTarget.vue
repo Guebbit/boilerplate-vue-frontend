@@ -18,7 +18,7 @@ export default {
  */
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { shopCurrency } from '@/modules/shop';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
@@ -139,6 +139,22 @@ const auditLogTo = computed(() =>
 );
 
 /**
+ * How many times a panel reported a change that already reloaded the order. A report from
+ * `delivery` or `payments` no longer moves `updatedAt`, so a second partial shipment would
+ * otherwise leave the timeline's key as it was.
+ */
+const reportCount = ref(0);
+
+/**
+ * Reload the order after a panel reported a change, and tell the timeline to read again.
+ * @param orderId - the order shown
+ */
+const reloadAfterReport = (orderId: string) => {
+    reportCount.value += 1;
+    return fetchOrder(orderId, { forced: true });
+};
+
+/**
  * Changes whenever the order moves — status, money, parcels, returns or any edit — so the timeline
  * reads again instead of showing the state before.
  */
@@ -148,7 +164,8 @@ const timelineRefreshKey = computed(() =>
         currentOrder.value?.paymentStatus,
         currentOrder.value?.fulfillmentStatus,
         currentOrder.value?.returnStatus,
-        currentOrder.value?.updatedAt
+        currentOrder.value?.updatedAt,
+        reportCount.value
     ].join('|')
 );
 
@@ -429,7 +446,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                             :order-id="currentOrder.id"
                             :order-payable="currentOrder.actions?.pay"
                             :pay-by="currentOrder.payBy"
-                            @paid="fetchOrder(currentOrder.id, { forced: true })"
+                            @paid="reloadAfterReport(currentOrder.id)"
                         />
                     </div>
                     <div v-if="currentOrder" data-tour="order-shipment">
@@ -437,7 +454,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                             :order-id="currentOrder.id"
                             :can-start="currentOrder.actions?.process ?? false"
                             :shipping-address="shippingAddressText"
-                            @moved="fetchOrder(currentOrder.id, { forced: true })"
+                            @moved="reloadAfterReport(currentOrder.id)"
                         />
                     </div>
                     <WithdrawalPanel
@@ -447,7 +464,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                         :withdraw-blocked="currentOrder.actions?.withdrawBlocked"
                         :withdraw-until="currentOrder.withdrawUntil"
                         :order-number="currentOrder.orderNumber"
-                        @opened="fetchOrder(currentOrder.id, { forced: true })"
+                        @opened="reloadAfterReport(currentOrder.id)"
                     />
                     <ItemDetailField
                         :label="t('order-target-page.label-date')"

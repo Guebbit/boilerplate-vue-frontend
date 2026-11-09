@@ -18904,6 +18904,7 @@ components:
         updatedAt:
           type: string
           format: date-time
+          description: When staff or the buyer last edited the order or moved its status. Reports from payments, delivery and returns don't move it.
         deletedAt:
           type: string
           format: date-time
@@ -22555,6 +22556,7 @@ components:
         updatedAt:
           type: string
           format: date-time
+          description: When staff or the buyer last edited the order or moved its status. Reports from payments, delivery and returns don't move it.
         deletedAt:
           type: string
           format: date-time
