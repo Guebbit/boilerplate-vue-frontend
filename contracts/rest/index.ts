@@ -5383,7 +5383,7 @@ export const PaymentStatus = {
 } as const;
 
 /**
- * How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /payments/orders/{orderId}/offline`, from what the admin chose there.
+ * How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /orders/{id}/payments`, from what the admin chose there.
  */
 export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod];
 
@@ -5418,14 +5418,14 @@ export interface Payment {
     email?: Email;
     /** Which provider implementation handled it — the name the deployment registered (`NODE_PAYMENT_PROVIDER`), or `manual` for a payment recorded by hand (`POST /orders/{id}/payments`). */
     provider: string;
-    /** How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /payments/orders/{orderId}/offline`, from what the admin chose there. */
+    /** How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /orders/{id}/payments`, from what the admin chose there. */
     method: PaymentMethod;
     /**
      * Free text identifying an offline payment — a bank transaction id, a receipt number. Set only by `POST /orders/{id}/payments`; absent from a card payment.
      * @maxLength 120
      */
     reference?: string;
-    /** When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST /payments/orders/{orderId}/offline`; absent from a card payment. */
+    /** When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST /orders/{id}/payments`; absent from a card payment. */
     receivedAt?: string;
     /** Returned by `POST /payments` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response. */
     clientSecret?: string;
@@ -6199,7 +6199,7 @@ export interface PreorderLevel {
      */
     left?: number;
     /**
-     * Lifetime units claimed through `preorder` movements in the ledger, given back or not.
+     * Lifetime units claimed through `backorder` movements in the ledger, given back or not.
      * @minimum 0
      */
     ordered: number;
@@ -7780,7 +7780,7 @@ export type AntibotChallengeTokenHeaderParameter = string;
 export type RequiredIdempotencyKeyHeaderParameter = string;
 
 /**
- * An opaque, client-generated value (a UUID by convention) that makes a retried write safe. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.
+ * An opaque, client-generated value (a UUID by convention) that makes a retried write safe. A key belongs to its caller (the account, or the address on a public route): two callers sending the same value never see each other's replies. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.
  */
 export type IdempotencyKeyHeaderParameter = string;
 
@@ -12474,7 +12474,8 @@ export const listApiKeys = (
  * session that made it. `expiresAt` is required and at most one year ahead, or the
  * request is refused with 422. The minter is mailed that a key was created, and every
  * key a person minted is revoked (and listed to them by mail) when they log out
- * everywhere, reset their password or report an email change as not theirs.
+ * everywhere, reset their password or report an email change as not theirs. The keys a staff
+ * member minted are revoked the same way when they lose their last authenticator app.
  * @summary Mint a machine-to-machine credential
  */
 export const createApiKey = (
@@ -12778,7 +12779,7 @@ export const correctOrderShippingAddress = (
 };
 
 /**
- * Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /payments/orders/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. Each row carries `actions` for the caller, so a client never decides `refund` from the status; `actions.pay` is false on a list row (paying is the payer's own step, read on the order page). The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
+ * Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /orders/{id}/payments`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. Each row carries `actions` for the caller, so a client never decides `refund` from the status; `actions.pay` is false on a list row (paying is the payer's own step, read on the order page). The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
  * @summary List payments (staff)
  */
 export const listPayments = (

@@ -18454,7 +18454,8 @@ export const ListApiKeysResponse = zod.strictObject({
  * session that made it. `expiresAt` is required and at most one year ahead, or the
  * request is refused with 422. The minter is mailed that a key was created, and every
  * key a person minted is revoked (and listed to them by mail) when they log out
- * everywhere, reset their password or report an email change as not theirs.
+ * everywhere, reset their password or report an email change as not theirs. The keys a staff
+ * member minted are revoked the same way when they lose their last authenticator app.
  * @summary Mint a machine-to-machine credential
  */
 export const createApiKeyBodyNameMax = 200;
@@ -21418,7 +21419,7 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
     deletedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /payments/orders/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. Each row carries `actions` for the caller, so a client never decides `refund` from the status; `actions.pay` is false on a list row (paying is the payer's own step, read on the order page). The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
+ * Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /orders/{id}/payments`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. Each row carries `actions` for the caller, so a client never decides `refund` from the status; `actions.pay` is false on a list row (paying is the payer's own step, read on the order page). The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
  * @summary List payments (staff)
  */
 export const listPaymentsQueryPageDefault = 1;

@@ -11098,7 +11098,8 @@ paths:
         session that made it. `expiresAt` is required and at most one year ahead, or the
         request is refused with 422. The minter is mailed that a key was created, and every
         key a person minted is revoked (and listed to them by mail) when they log out
-        everywhere, reset their password or report an email change as not theirs.
+        everywhere, reset their password or report an email change as not theirs. The keys a staff
+        member minted are revoked the same way when they lose their last authenticator app.
       operationId: createApiKey
       x-error-codes:
         "401":
@@ -12243,7 +12244,7 @@ paths:
       tags:
         - Payments
       summary: List payments (staff)
-      description: Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /payments/orders/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. Each row carries `actions` for the caller, so a client never decides `refund` from the status; `actions.pay` is false on a list row (paying is the payer's own step, read on the order page). The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
+      description: Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /orders/{id}/payments`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. Each row carries `actions` for the caller, so a client never decides `refund` from the status; `actions.pay` is false on a list row (paying is the payer's own step, read on the order page). The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
       operationId: listPayments
       security:
         - bearerAuth: []
@@ -15297,7 +15298,7 @@ components:
         maxLength: 202
         pattern: ^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$
       description: |
-        An opaque, client-generated value (a UUID by convention) that makes a retried write safe. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.
+        An opaque, client-generated value (a UUID by convention) that makes a retried write safe. A key belongs to its caller (the account, or the address on a public route): two callers sending the same value never see each other's replies. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.
     IfMatchHeader:
       name: If-Match
       in: header
@@ -22989,7 +22990,7 @@ components:
             - bank_transfer
             - cash
             - other
-          description: How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /payments/orders/{orderId}/offline`, from what the admin chose there.
+          description: How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /orders/{id}/payments`, from what the admin chose there.
         reference:
           type: string
           maxLength: 120
@@ -22997,7 +22998,7 @@ components:
         receivedAt:
           type: string
           format: date-time
-          description: When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST /payments/orders/{orderId}/offline`; absent from a card payment.
+          description: When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST /orders/{id}/payments`; absent from a card payment.
         clientSecret:
           type: string
           description: "Returned by `POST /payments` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response."
@@ -24131,7 +24132,7 @@ components:
         ordered:
           type: integer
           minimum: 0
-          description: Lifetime units claimed through `preorder` movements in the ledger, given back or not.
+          description: Lifetime units claimed through `backorder` movements in the ledger, given back or not.
     PreorderLevelsResponse:
       type: object
       additionalProperties: false
