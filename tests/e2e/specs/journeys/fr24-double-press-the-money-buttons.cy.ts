@@ -1,7 +1,7 @@
 // requires-module: orders, payments, returns
 /**
  * @module
- * FR19 · A double press on a money button. Each row presses one control that moves money or
+ * FR24 · A double press on a money button. Each row presses one control that moves money or
  * stock twice in a row, fast: a synthetic `dblclick` is synchronous, the strictest form. A
  * confirmation that follows is pressed twice too. The rows assert what a person is owed:
  * at most one confirmation dialog at a time, no second one after the answer, the operation
@@ -113,7 +113,7 @@ const ROWS: readonly PressRow[] = [
         prepare: () => {
             cy.get('[data-test=mark-started]').click();
             cy.get('[data-test=open-ship]').click();
-            cy.get('[data-test=ship-tracking-code] input').type('FR19-TRACK-001');
+            cy.get('[data-test=ship-tracking-code] input').type('FR24-TRACK-001');
         },
         trigger: '[data-test=ship-submit]',
         operation: '**/delivery/fulfillment-orders/*/shipments',
@@ -127,7 +127,7 @@ const ROWS: readonly PressRow[] = [
         subject: 'order.awaitingTransfer',
         page: (orderId) => `/en/orders/${orderId}/edit`,
         prepare: () => {
-            cy.get('[data-test=record-offline-reference] input').type('FR19-REF-001');
+            cy.get('[data-test=record-offline-reference] input').type('FR24-REF-001');
         },
         trigger: '[data-test=record-offline-submit]',
         operation: '**/orders/*/payments',
@@ -153,7 +153,7 @@ interface Seen {
     keys: (string | undefined)[];
 }
 
-describe('FR19 · A double press on a money button', () => {
+describe('FR24 · A double press on a money button', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();
