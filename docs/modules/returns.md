@@ -158,6 +158,11 @@ Store `returns`, from `store.ts`. Only what the setup function returns is listed
 | **Getters** | `returnsList` · `currentReturn` · `loading` · `pageTotal` · `pageItemList`                                                                                                                           |
 | **Actions** | `fetchPaginationReturns` · `watchSearchReturns` · `fetchReturn` · `watchReturn` · `openReturn` · `fetchOrderReturns` · `fetchReturnOptions` · `approve` · `decline` · `receive` · `close` · `cancel` |
 
+The list answers a `ReturnListItem`, not the whole return: the table's fields, and the full record comes
+from the audited detail read. The list view reads with `partial: true`, so a row merges over a full
+return the store already holds instead of replacing it, and the detail page still reads the whole
+record.
+
 ## Screens
 
 | Path            | Route name     | Access | Permission    | View                     |

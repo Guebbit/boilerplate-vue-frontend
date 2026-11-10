@@ -24,6 +24,7 @@ import type {
     CreateReturnRequest,
     ListReturnsParams,
     Return,
+    ReturnListItem,
     ReturnOptions,
     ReceiveReturnRequest,
     RecordProofOfSendingRequest,
@@ -35,6 +36,17 @@ import type {
  * state).
  */
 type ReturnsFilters = Omit<ListReturnsParams, 'page' | 'pageSize'>;
+
+/**
+ * Return list rows as the records the store caches. A list item is the part of a `Return` a table
+ * renders; the list reads are stored with `partial: true` (see `ReturnsList.vue`), which merges
+ * them over a full record already cached instead of replacing it. The one narrowing the compiler
+ * cannot see: a list view reads list fields only.
+ *
+ * @param items - the rows a list answered
+ * @returns the same rows, typed as the records the dictionary holds
+ */
+const asRecords = (items: ReturnListItem[]): Return[] => items as Return[];
 
 /**
  * Returns and the withdrawal button.
@@ -77,7 +89,7 @@ export const useReturnsStore = defineStore('returns', () => {
                     status: filters.status,
                     reason: filters.reason
                 }).then((response) => ({
-                    items: response.items,
+                    items: asRecords(response.items),
                     totalItems: response.meta.totalItems
                 })),
 
@@ -128,18 +140,17 @@ export const useReturnsStore = defineStore('returns', () => {
 
     /**
      * Reads every return opened on one order — how an order page shows what became of a
-     * withdrawal. Cached like any other read, but outside the paginated list: the list page keeps
-     * its own filters, and this must not disturb them.
+     * withdrawal. Outside the paginated list (the list page keeps its own filters, and this must
+     * not disturb them) and not cached: the rows are list items, and a record cached from one
+     * would stand in for the whole return.
      *
      * @param orderId - The order whose returns to read.
-     * @returns A promise resolving with that order's returns, newest first as the API serves them.
+     * @returns A promise resolving with that order's list items, newest first as the API serves them.
      */
-    const fetchOrderReturns = (orderId: string): Promise<Return[]> =>
-        fetchAny(() => listReturns({ orderId, pageSize: 50 })).then((response) => {
-            const items = response?.items ?? [];
-            for (const item of items) addReturn(item);
-            return items;
-        });
+    const fetchOrderReturns = (orderId: string): Promise<ReturnListItem[]> =>
+        fetchAny(() => listReturns({ orderId, pageSize: 50 })).then(
+            (response) => response?.items ?? []
+        );
 
     /**
      * Reads what one order can still send back and cancel — the server's own counts and refund

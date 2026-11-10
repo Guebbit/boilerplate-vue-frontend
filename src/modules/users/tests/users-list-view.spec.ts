@@ -55,7 +55,9 @@ const router = createRouter({
  * @param items - The rows the search answers; one default user when omitted.
  * @returns The mounted wrapper.
  */
-const mountWithRows = async (items: ReturnType<typeof aUser>[] = [aUser()]) => {
+const mountWithRows = async (
+    items: (ReturnType<typeof aUser> & { purchaseHeld?: true })[] = [aUser()]
+) => {
     vi.mocked(searchUsers).mockResolvedValue(
         asStub<Awaited<ReturnType<typeof searchUsers>>>(
             contractResponse(schemas.SearchUsersResponse, {
@@ -140,16 +142,7 @@ describe('UsersList — the purchase-hold filter', () => {
     });
 
     it('marks a row whose checkout is paused', async () => {
-        const wrapper = await mountWithRows([
-            aUser({
-                id: 'u9',
-                purchaseHold: {
-                    until: '2999-01-01T00:00:00.000Z',
-                    reason: 'staff',
-                    setAt: '2026-10-19T10:00:00.000Z'
-                }
-            })
-        ]);
+        const wrapper = await mountWithRows([{ ...aUser({ id: 'u9' }), purchaseHeld: true }]);
 
         expect(wrapper.get('[data-test=row-purchase-hold]').text()).toBe('Checkout paused');
     });

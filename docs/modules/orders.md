@@ -180,6 +180,11 @@ Store `orders`, from `store.ts`. Only what the setup function returns is listed 
 | **Getters** | `ordersList` · `currentOrder` · `loading` · `pageTotal` · `pageItemList`                                                                                                                                                               | Computed, derived from state. Read-only by construction.         |
 | **Actions** | `addOrder` · `fetchOrders` · `fetchPaginationOrders` · `watchSearchOrders` · `fetchOrder` · `watchOrder` · `updateOrder` · `deleteOrder` · `cancelOrder` · `hardDeleteOrder` · `fetchInvoice` · `fetchCreditNotes` · `fetchCreditNote` | Everything that changes state or calls the API.                  |
 
+The list answers a `OrderListItem`, not the whole order: the table's fields, and the full record comes
+from the audited detail read. The list view reads with `partial: true`, so a row merges over a full
+order the store already holds instead of replacing it, and the detail page still reads the whole
+record.
+
 ## Screens
 
 | Path              | Route name    | Access | Permission      | View                    |

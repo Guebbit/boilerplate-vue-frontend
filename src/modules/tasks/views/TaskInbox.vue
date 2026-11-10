@@ -40,7 +40,7 @@ import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
 import { TaskCategory, TaskKind, TaskSource, TaskStatus } from '@/types/enums.ts';
-import type { Task } from '@types';
+import type { TaskListItem } from '@types';
 
 /**
  * The admin tasks page for the public contact form: every task, movable through its statuses.
@@ -296,7 +296,7 @@ const handleDoor = (move: (id: string) => Promise<unknown>, requestId: string) =
  * @param request - Which task.
  * @returns A promise settling once the write and the reload have finished.
  */
-const handleTake = (request: Task) =>
+const handleTake = (request: TaskListItem) =>
     run({
         action: () => assign(request.id, session.viewer?.id ?? ''),
         success: t('tasks-page.success-take'),
@@ -503,7 +503,9 @@ const handleDelete = (requestId: string, subject: string) =>
                         </v-chip>
                     </div>
                 </div>
-                <p class="mt-3 whitespace-pre-line">{{ request.message }}</p>
+                <p class="mt-3 whitespace-pre-line" data-test="task-message-preview">
+                    {{ request.messagePreview }}
+                </p>
 
                 <div class="mt-3 flex flex-wrap gap-2">
                     <v-btn

@@ -38,7 +38,7 @@ import RecordWithdrawalDialog from './RecordWithdrawalDialog.vue';
 import ReturnRequestForm from './ReturnRequestForm.vue';
 import type {
     CancelableFulfillmentOrder,
-    Return,
+    ReturnListItem,
     ReturnOptions,
     WithdrawBlockedReason
 } from '@types';
@@ -95,7 +95,7 @@ const { loading } = storeToRefs(useReturnsStore());
 /**
  * The returns already opened on this order.
  */
-const opened = ref<Return[]>([]);
+const opened = ref<ReturnListItem[]>([]);
 
 /**
  * What the server says can still be returned and canceled; `undefined` until read, or when the

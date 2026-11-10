@@ -11,7 +11,7 @@ import * as schemas from '@api/schemas';
 import { orvalMutator } from '@/infrastructure/http';
 import { useReturnsStore } from '../store.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aReturn } from '../../../../tests/support/unit/fixtures.ts';
+import { aReturn, aReturnListItem } from '../../../../tests/support/unit/fixtures.ts';
 import {
     contractRequest,
     parseOrvalFixture
@@ -250,9 +250,9 @@ describe('cancel', () => {
 });
 
 describe('fetchOrderReturns', () => {
-    it('asks for one order’s returns and caches them', () => {
+    it('asks for one order’s returns and caches none: a list item would stand in for the return', () => {
         responses['GET /returns'] = {
-            items: [aReturn()],
+            items: [aReturnListItem()],
             meta: { page: 1, pageSize: 50, totalItems: 1, totalPages: 1 }
         };
         const store = useReturnsStore();
@@ -260,7 +260,7 @@ describe('fetchOrderReturns', () => {
         return store.fetchOrderReturns('o1').then((items) => {
             expect(items).toHaveLength(1);
             expect(sent[0]).toMatchObject({ params: { orderId: 'o1' } });
-            expect(store.returns.r1).toBeDefined();
+            expect(store.returns.r1).toBeUndefined();
         });
     });
 });

@@ -27,7 +27,7 @@ import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { formatDate } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
-import type { User } from '@types';
+import type { UserListItem } from '@types';
 
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
@@ -188,7 +188,7 @@ const deletedChoice = useAnyFilterChoice(
  *
  * @returns The localized headers, re-translated on locale change.
  */
-const tableHeaders = computed<CoreDataTableHeader<User>[]>(() => [
+const tableHeaders = computed<CoreDataTableHeader<UserListItem>[]>(() => [
     /*
      * `synthetic` although `imageUrl` IS a field: the cell renders the picture, not the string,
      * and a sortable column of URLs is a control that offers an ordering nobody wants.
@@ -226,9 +226,13 @@ const { sync: syncUrl } = useListUrlState({
 
 /**
  * Search function bound to the store's reactive `filters`/pagination, reporting
- * a failed request as a toast.
+ * a failed request as a toast. `partial`: a row is a list item, merged over a full account already
+ * cached and never replacing it, so the detail page still reads the whole account.
  */
-const { search } = watchSearchUsers({ onError: (error) => notifyErrorMessages(addMessage, error) });
+const { search } = watchSearchUsers({
+    partial: true,
+    onError: (error) => notifyErrorMessages(addMessage, error)
+});
 
 /**
  * Apply and clear, both restarting from the first page and keeping the URL in step.
@@ -302,7 +306,7 @@ const handleDelete = (userId: string, username: string) =>
  * @param item - The row, named in the question.
  * @returns A promise resolving with the admin's answer.
  */
-const confirmScheduledRestore = (item: User) =>
+const confirmScheduledRestore = (item: UserListItem) =>
     useDialogStore().confirm({
         title: t('users-list-page.confirm-restore-scheduled-title'),
         message: t('users-list-page.confirm-restore-scheduled', { name: item.username }),
@@ -320,7 +324,7 @@ const confirmScheduledRestore = (item: User) =>
  * @returns A promise settling once the restore and the reload have finished; a failure blocks the
  *  list in place ({@link rowActionError}).
  */
-const handleRestore = (item: User) =>
+const handleRestore = (item: UserListItem) =>
     (item.purgeAt ? confirmScheduledRestore(item) : Promise.resolve(true)).then((accepted) =>
         accepted
             ? run({
@@ -340,7 +344,7 @@ const handleRestore = (item: User) =>
  * @returns A promise settling once the dialog closes and, if accepted, the update has finished; a
  *  failure blocks the list in place ({@link rowActionError}).
  */
-const handleManageAccess = (item: User) =>
+const handleManageAccess = (item: UserListItem) =>
     requestAccessChange({
         id: item.id,
         name: item.username,
@@ -494,7 +498,7 @@ const handleHardDelete = (userId: string, username: string) =>
                     {{ item.active ? t('generic.enabled') : t('generic.disabled') }}
                 </v-chip>
                 <v-chip
-                    v-if="item.purchaseHold"
+                    v-if="item.purchaseHeld"
                     size="small"
                     variant="tonal"
                     color="warning"

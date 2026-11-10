@@ -26,7 +26,7 @@ import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import { asStub } from '../../../../tests/support/stub.ts';
-import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
+import { anOrder, anOrderListItem } from '../../../../tests/support/unit/fixtures.ts';
 import { contractResponse } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import * as schemas from '@api/schemas';
 
@@ -147,14 +147,11 @@ const signInAsOrderDeleter = () => {
     session.setAbilities({ tenant: [['delete', 'Order']], platform: [] });
 };
 
-/** An order as the list reads it — a whole contract `Order`, so every column has its field. */
+/** An order as the list reads it — a list item, so every column has its field and nothing more. */
 const order = (id: string, deletedAt?: string) =>
-    anOrder({
+    anOrderListItem({
         id,
-        totalItems: 1,
-        totalQuantity: 1,
         totalPrice: '10.00',
-        netTotal: '10.00',
         createdAt: '2026-01-01T00:00:00Z',
         ...(deletedAt && { deletedAt })
     });
@@ -207,7 +204,7 @@ describe('OrdersList — a soft-deleted row', () => {
             )
         );
         const orders = useOrdersStore();
-        const restore = vi.spyOn(orders, 'restoreOrder').mockResolvedValue(order('live'));
+        const restore = vi.spyOn(orders, 'restoreOrder').mockResolvedValue(anOrder({ id: 'live' }));
 
         const wrapper = mount(OrdersList, {
             global: {
@@ -223,6 +220,32 @@ describe('OrdersList — a soft-deleted row', () => {
         await wrapper.get('[data-test="row-restore"]').trigger('click');
 
         expect(restore).toHaveBeenCalledWith('gone');
+    });
+});
+
+/**
+ * A row is a list item, and the list stores it with `partial: true`: it merges over the full order
+ * the detail page already cached, so opening the list never strips that order of its lines.
+ */
+describe('OrdersList — a row over a full order already cached', () => {
+    it('keeps the fields only the detail read carries', async () => {
+        vi.mocked(searchOrders).mockResolvedValue(
+            asStub<Awaited<ReturnType<typeof searchOrders>>>(
+                contractResponse(schemas.SearchOrdersResponse, {
+                    items: [order('o9')],
+                    meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 }
+                })
+            )
+        );
+        const orders = useOrdersStore();
+        orders.addOrder(anOrder({ id: 'o9', email: 'mario@example.com' }));
+
+        mount(OrdersList, { global: { plugins: [router, vuetify, i18n] } });
+        await flushPromises();
+
+        expect(searchOrders).toHaveBeenCalled();
+        expect(orders.orders.o9?.email).toBe('mario@example.com');
+        expect(orders.orders.o9?.totalPrice).toBe('10.00');
     });
 });
 

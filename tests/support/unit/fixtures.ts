@@ -36,6 +36,7 @@ import type {
     InventoryLevel,
     Order,
     OrderActions,
+    OrderListItem,
     Payment,
     PreorderFulfillmentOrder,
     ProductActions,
@@ -44,9 +45,11 @@ import type {
     Problem,
     Product,
     Return,
+    ReturnListItem,
     Shipment,
     Shop,
     Task,
+    TaskListItem,
     User,
     UserActions
 } from '@types';
@@ -95,6 +98,26 @@ export const anOrder = (overrides: Partial<Order> = {}): Order =>
         actions: NO_ORDER_ACTIONS,
         ...overrides
     });
+
+/**
+ * A row of the orders list as `GET /orders` answers it: the table's fields and nothing else, so a
+ * spec cannot lean on an address or a line the list never carries.
+ *
+ * @param overrides - the fields a case actually cares about
+ * @returns an `OrderListItem`
+ */
+export const anOrderListItem = (overrides: Partial<OrderListItem> = {}): OrderListItem => ({
+    id: 'o1',
+    orderNumber: '2026-000001',
+    status: 'pending',
+    paymentStatus: 'unpaid',
+    fulfillmentStatus: 'unfulfilled',
+    returnStatus: 'none',
+    totalPrice: '0.00',
+    currency: 'EUR',
+    actions: NO_ORDER_ACTIONS,
+    ...overrides
+});
 
 /**
  * A valid payment as `GET /payments` answers it for staff — the required fields, plus whatever a
@@ -229,6 +252,32 @@ export const aReturn = (overrides: Partial<Return> = {}): Return =>
         },
         ...overrides
     });
+
+/**
+ * A row of the returns list as `GET /returns` answers it: the table's fields, no note or lines.
+ *
+ * @param overrides - the fields a case actually cares about
+ * @returns a `ReturnListItem`
+ */
+export const aReturnListItem = (overrides: Partial<ReturnListItem> = {}): ReturnListItem => ({
+    id: 'r1',
+    orderId: 'o1',
+    orderNumber: '2026-000001',
+    status: 'approved',
+    reason: 'withdrawal',
+    kind: 'return',
+    requestedAt: '2026-09-01T10:00:00.000Z',
+    createdAt: '2026-09-01T10:00:00.000Z',
+    actions: {
+        approve: false,
+        decline: false,
+        receive: false,
+        recordProof: false,
+        close: false,
+        cancel: false
+    },
+    ...overrides
+});
 
 /**
  * A product's `actions` for nobody in particular: every door closed, what the server sends a guest.
@@ -500,3 +549,31 @@ export const aTask = (overrides: Partial<Task> = {}): Task =>
         createdAt: '2026-01-01T00:00:00.000Z',
         ...overrides
     });
+
+/**
+ * A row of the staff inbox as `POST /tasks/search` answers it: a preview of the message, no notes.
+ *
+ * @param overrides - the fields a case actually cares about
+ * @returns a `TaskListItem`
+ */
+export const aTaskListItem = (overrides: Partial<TaskListItem> = {}): TaskListItem => ({
+    id: 't1',
+    source: 'visitor',
+    kind: 'contact',
+    overdue: false,
+    actions: {
+        resolve: true,
+        markSpam: true,
+        reopen: false,
+        assign: true,
+        unassign: false,
+        note: true,
+        delete: true
+    },
+    email: 'curious@example.com',
+    subject: 'A question',
+    messagePreview: 'About the cats',
+    status: 'new',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    ...overrides
+});

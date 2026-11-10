@@ -34,12 +34,17 @@ import {
     contractRequest,
     contractResponse
 } from '../../../../tests/support/unit/orval-fixture-schema.ts';
-import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
+import { anOrder, anOrderListItem } from '../../../../tests/support/unit/fixtures.ts';
 
 /**
  * Fixture order returned by the mocked `@api` client.
  */
 const ORDER = anOrder({ totalItems: 1, totalQuantity: 2, totalPrice: '19.98', netTotal: '19.98' });
+
+/**
+ * A row of the list, which answers list items rather than whole orders.
+ */
+const ROW = anOrderListItem({ totalPrice: '19.98' });
 
 /**
  * Fixture PDF blob returned by the mocked invoice endpoint.
@@ -127,7 +132,7 @@ describe('useOrdersStore', () => {
             vi.mocked(listOrders).mockResolvedValueOnce(
                 contractResponse(schemas.ListOrdersResponse, {
                     ...EMPTY_PAGE,
-                    items: [ORDER],
+                    items: [ROW],
                     meta: { ...EMPTY_PAGE.meta, totalItems: 1 }
                 }) as never
             );
@@ -135,7 +140,7 @@ describe('useOrdersStore', () => {
 
             return store.fetchOrders().then(() => {
                 expect(listOrders).toHaveBeenCalledTimes(1);
-                expect(store.ordersList).toEqual([ORDER]);
+                expect(store.ordersList).toEqual([ROW]);
             });
         });
     });

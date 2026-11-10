@@ -2085,7 +2085,7 @@ paths:
         successful sign-ins): that is a shop admin's `GET /audit`.
         Every `ip` is a keyed digest (`hmac:` and 12 hex characters), comparable across rows
         but not readable.
-        Entries are retained for a deployment-configured period (90 days by default) and expire after.
+        Entries are retained for a deployment-configured period (180 days by default) and expire after.
         `meta.totalItems` counts every incident matching the filters, not just the returned page.
         Requires the platform operator's observability key.
       operationId: listObservabilityAuditEntries
@@ -2207,6 +2207,12 @@ paths:
             type: string
             maxLength: 100
           description: Filter by the id of the row the action was taken on (e.g. an order or a user)
+        - name: subject
+          in: query
+          schema:
+            type: string
+            maxLength: 64
+          description: Filter by the id of the person whose data the row is about (`subjectId`), which is how "who looked at this person's data" is answered. Only staff reads of a person's record carry one.
         - name: since
           in: query
           schema:
@@ -18483,6 +18489,9 @@ components:
           type: string
         targetId:
           type: string
+        subjectId:
+          type: string
+          description: "The person whose data the row is about, when that is not the actor: set on a staff read of someone's record. Absent for a guest's order and for actions that are not about a person."
         metadata:
           type: object
           additionalProperties: true
@@ -19437,6 +19446,48 @@ components:
             request:
               type: boolean
               description: "`POST /account/export` would start a new build. `false` while one is `building`: asking then only returns that one."
+    AuditConsultation:
+      type: object
+      additionalProperties: false
+      required:
+        - timestamp
+        - targetType
+        - targetId
+        - purpose
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        targetType:
+          type: string
+          description: The kind of record opened, e.g. order.
+        targetId:
+          type: string
+          description: The record opened.
+        purpose:
+          type: string
+          description: Why staff open this kind of record, e.g. handling your order.
+    AuditConsultations:
+      type: object
+      additionalProperties: false
+      required:
+        - windowDays
+        - entries
+      description: |
+        Every time staff opened a record about the person, for their own data export (GDPR
+        Art. 15). Dates, kind of record and purpose, never the staff member (CJEU C-579/21).
+        Limits, stated rather than hidden: it covers the last `windowDays` days, because the
+        audit trail is kept that long and no longer; a guest's order has no person to name;
+        the orders CSV export names none.
+      properties:
+        windowDays:
+          type: integer
+          minimum: 1
+          description: How many days back the list reaches (`NODE_AUDIT_RETENTION_DAYS`).
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditConsultation"
     ExportSession:
       type: object
       additionalProperties: false
@@ -21703,6 +21754,7 @@ components:
         - exportedAt
         - profile
         - auditLog
+        - consultations
         - sessions
         - addresses
         - signInMethods
@@ -21733,6 +21785,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AuditEntryItem"
+        consultations:
+          $ref: "#/components/schemas/AuditConsultations"
         sessions:
           type: array
           items:
@@ -22074,6 +22128,51 @@ components:
           - -email
           - username
           - -username
+    UserListItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - email
+        - username
+        - actions
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        email:
+          $ref: "#/components/schemas/Email"
+        username:
+          type: string
+        role:
+          type: string
+          description: The staff role this account holds, by name. Absent for a plain customer.
+        active:
+          type: boolean
+        imageUrl:
+          $ref: "#/components/schemas/ImageUrl"
+        thumbnailUrl:
+          $ref: "#/components/schemas/ThumbnailUrl"
+        purchaseHeld:
+          type: boolean
+          enum:
+            - true
+          description: Present, as `true`, only while a purchase hold is in force. Its reason, end and note are on `GET /users/{id}`.
+        purchaseHoldFlaggedAt:
+          type: string
+          format: date-time
+          description: When the shop's rule flagged this account for staff review. Absent once staff set or lift a hold.
+        purgeAt:
+          type: string
+          format: date-time
+          description: When the account is erased, after its owner asked to delete it. Absent otherwise.
+        createdAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+        actions:
+          $ref: "#/components/schemas/UserActions"
     UsersResponse:
       type: object
       additionalProperties: false
@@ -22084,7 +22183,7 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/User"
+            $ref: "#/components/schemas/UserListItem"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
     CreateUserRequest:
@@ -22298,39 +22397,6 @@ components:
       type: string
       minLength: 2
       maxLength: 24
-    TaskNote:
-      type: object
-      additionalProperties: false
-      required:
-        - body
-        - at
-      properties:
-        authorId:
-          $ref: "#/components/schemas/Id"
-          description: Absent once the author's account is erased.
-        body:
-          type: string
-        at:
-          type: string
-          format: date-time
-    TaskRef:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - status
-        - createdAt
-      description: An earlier task about the same record.
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        kind:
-          $ref: "#/components/schemas/TaskKind"
-        status:
-          $ref: "#/components/schemas/TaskStatus"
-        createdAt:
-          type: string
-          format: date-time
     TaskActions:
       type: object
       additionalProperties: false
@@ -22365,6 +22431,192 @@ components:
         delete:
           type: boolean
           description: Whether `DELETE /tasks/{id}` would be accepted.
+    TaskListItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - source
+        - kind
+        - subject
+        - messagePreview
+        - status
+        - overdue
+        - createdAt
+        - actions
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        source:
+          $ref: "#/components/schemas/TaskSource"
+        kind:
+          $ref: "#/components/schemas/TaskKind"
+        name:
+          type: string
+        email:
+          $ref: "#/components/schemas/Email"
+          description: The sender's address. Present on a visitor task, absent on a system one.
+        subject:
+          type: string
+        messagePreview:
+          type: string
+          maxLength: 160
+          description: The message cut to 160 characters, ending in `…` when it was longer. The whole message is `GET /tasks/{id}`.
+        category:
+          $ref: "#/components/schemas/TaskCategory"
+        orderNumber:
+          type: string
+          description: The order the visitor said this is about, as they typed it. Not checked against any order.
+        assigneeId:
+          $ref: "#/components/schemas/Id"
+        assigneeName:
+          type: string
+          description: The assignee's username.
+        dueAt:
+          type: string
+          format: date-time
+        overdue:
+          type: boolean
+          description: Open and past `dueAt`, computed at read time.
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+          readOnly: true
+        respondedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        actions:
+          $ref: "#/components/schemas/TaskActions"
+    TasksResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - meta
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaskListItem"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    CreateContactTaskRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - subject
+        - message
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        email:
+          $ref: "#/components/schemas/Email"
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 200
+        message:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        category:
+          $ref: "#/components/schemas/TaskCategory"
+        orderNumber:
+          type: string
+          minLength: 1
+          maxLength: 40
+          description: The order the visitor says this is about, free text. Not checked against any order.
+        website:
+          type: string
+          maxLength: 200
+          description: |
+            Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `Task`, which does not declare it.
+    SearchTasksRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        page:
+          $ref: "#/components/schemas/Page"
+        pageSize:
+          $ref: "#/components/schemas/PageSize"
+        sort:
+          $ref: "#/components/schemas/TaskSort"
+        text:
+          $ref: "#/components/schemas/Text"
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+        category:
+          $ref: "#/components/schemas/TaskCategory"
+        source:
+          $ref: "#/components/schemas/TaskSource"
+        kind:
+          $ref: "#/components/schemas/TaskKind"
+        assignee:
+          $ref: "#/components/schemas/TaskAssigneeFilter"
+        overdue:
+          type: boolean
+        email:
+          $ref: "#/components/schemas/Email"
+    TaskSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - open
+        - mine
+        - overdue
+        - unassigned
+      description: Counts over the caller's jurisdiction.
+      properties:
+        open:
+          type: integer
+          minimum: 0
+        mine:
+          type: integer
+          minimum: 0
+        overdue:
+          type: integer
+          minimum: 0
+        unassigned:
+          type: integer
+          minimum: 0
+    TaskNote:
+      type: object
+      additionalProperties: false
+      required:
+        - body
+        - at
+      properties:
+        authorId:
+          $ref: "#/components/schemas/Id"
+          description: Absent once the author's account is erased.
+        body:
+          type: string
+        at:
+          type: string
+          format: date-time
+    TaskRef:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - status
+        - createdAt
+      description: An earlier task about the same record.
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        kind:
+          $ref: "#/components/schemas/TaskKind"
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+        createdAt:
+          type: string
+          format: date-time
     Task:
       type: object
       additionalProperties: false
@@ -22456,101 +22708,6 @@ components:
         updatedAt:
           type: string
           format: date-time
-    TasksResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - items
-        - meta
-      properties:
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/Task"
-        meta:
-          $ref: "#/components/schemas/PaginationMeta"
-    CreateContactTaskRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - email
-        - subject
-        - message
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 120
-        email:
-          $ref: "#/components/schemas/Email"
-        subject:
-          type: string
-          minLength: 1
-          maxLength: 200
-        message:
-          type: string
-          minLength: 1
-          maxLength: 5000
-        category:
-          $ref: "#/components/schemas/TaskCategory"
-        orderNumber:
-          type: string
-          minLength: 1
-          maxLength: 40
-          description: The order the visitor says this is about, free text. Not checked against any order.
-        website:
-          type: string
-          maxLength: 200
-          description: |
-            Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `Task`, which does not declare it.
-    SearchTasksRequest:
-      type: object
-      additionalProperties: false
-      properties:
-        page:
-          $ref: "#/components/schemas/Page"
-        pageSize:
-          $ref: "#/components/schemas/PageSize"
-        sort:
-          $ref: "#/components/schemas/TaskSort"
-        text:
-          $ref: "#/components/schemas/Text"
-        status:
-          $ref: "#/components/schemas/TaskStatus"
-        category:
-          $ref: "#/components/schemas/TaskCategory"
-        source:
-          $ref: "#/components/schemas/TaskSource"
-        kind:
-          $ref: "#/components/schemas/TaskKind"
-        assignee:
-          $ref: "#/components/schemas/TaskAssigneeFilter"
-        overdue:
-          type: boolean
-        email:
-          $ref: "#/components/schemas/Email"
-    TaskSummary:
-      type: object
-      additionalProperties: false
-      required:
-        - open
-        - mine
-        - overdue
-        - unassigned
-      description: Counts over the caller's jurisdiction.
-      properties:
-        open:
-          type: integer
-          minimum: 0
-        mine:
-          type: integer
-          minimum: 0
-        overdue:
-          type: integer
-          minimum: 0
-        unassigned:
-          type: integer
-          minimum: 0
     AssignTaskRequest:
       type: object
       additionalProperties: false
@@ -23775,6 +23932,49 @@ components:
           - -payBy
           - paidAt
           - -paidAt
+    OrderListItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderNumber
+        - status
+        - paymentStatus
+        - fulfillmentStatus
+        - returnStatus
+        - totalPrice
+        - currency
+        - actions
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderNumber:
+          type: string
+          example: 2026-000041
+        status:
+          $ref: "#/components/schemas/OrderStatus"
+        paymentStatus:
+          $ref: "#/components/schemas/OrderPaymentStatus"
+        fulfillmentStatus:
+          $ref: "#/components/schemas/OrderFulfillmentStatus"
+        returnStatus:
+          $ref: "#/components/schemas/OrderReturnStatus"
+        totalPrice:
+          $ref: "#/components/schemas/NonNegativeDecimalAmount"
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+        paidAt:
+          type: string
+          format: date-time
+          description: When the order reached `paid`. Absent while unpaid.
+        createdAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          description: Present only on a soft-deleted order, which only staff list.
+        actions:
+          $ref: "#/components/schemas/OrderActions"
     OrdersResponse:
       type: object
       additionalProperties: false
@@ -23785,7 +23985,7 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/Order"
+            $ref: "#/components/schemas/OrderListItem"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
     OrderLineInput:
@@ -24822,6 +25022,144 @@ components:
         - return
         - cancellation
       description: "What the record is: `return` — goods that left coming back; `cancellation` — the unshipped remainder of one fulfillment order, canceled and refunded, closed when made."
+    ReturnActions:
+      type: object
+      additionalProperties: false
+      required:
+        - approve
+        - decline
+        - receive
+        - recordProof
+        - close
+        - cancel
+      description: What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the key that names the act and a status the act can run from.
+      properties:
+        approve:
+          type: boolean
+          description: Whether `POST /returns/{id}/approve` would be accepted.
+        decline:
+          type: boolean
+          description: Whether `POST /returns/{id}/decline` would be accepted.
+        receive:
+          type: boolean
+          description: Whether `POST /returns/{id}/receive` would be accepted.
+        recordProof:
+          type: boolean
+          description: Whether `POST /returns/{id}/proof-of-sending` would be accepted.
+        close:
+          type: boolean
+          description: Whether `POST /returns/{id}/close` would be accepted.
+        cancel:
+          type: boolean
+          description: Whether `POST /returns/{id}/cancel` would be accepted.
+    ReturnListItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - orderNumber
+        - status
+        - reason
+        - kind
+        - requestedAt
+        - createdAt
+        - actions
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        orderNumber:
+          type: string
+          description: The order's human number.
+        status:
+          $ref: "#/components/schemas/ReturnStatus"
+        reason:
+          $ref: "#/components/schemas/ReturnReason"
+        kind:
+          $ref: "#/components/schemas/ReturnKind"
+        requestedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        actions:
+          $ref: "#/components/schemas/ReturnActions"
+    ReturnsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - meta
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReturnListItem"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    StaffStatementChannel:
+      type: string
+      enum:
+        - phone
+        - email
+        - letter
+        - other
+      description: How the buyer stated a withdrawal outside the shop, as staff record it.
+    ReturnRemedy:
+      type: string
+      enum:
+        - refund
+        - replace
+        - repair
+      description: "What the buyer is given for a faulty or wrong item (Directive 2019/771 Art. 13): `repair` and `replace` come first and the buyer chooses; `refund` is the money back. Choosing `repair` extends the guarantee by 12 months (Directive 2024/1799). Only a `defective` or `wrong_item` return has a choice; every other reason is refunded."
+    CreateReturnRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - reason
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        reason:
+          $ref: "#/components/schemas/ReturnReason"
+        note:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        kind:
+          $ref: "#/components/schemas/ReturnKind"
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+          description: Required exactly when `kind` is `cancellation` — the fulfillment order whose remainder is canceled.
+        requestedAt:
+          type: string
+          format: date-time
+          description: "Staff only: when the buyer asked, or for a withdrawal when they stated it (Art. 11(2) judges timing on the day it was sent). Required for a staff withdrawal, optional otherwise (default now). Never in the future, never before the order was made. The buyer does not send it."
+        statedVia:
+          $ref: "#/components/schemas/StaffStatementChannel"
+        preferredRemedy:
+          $ref: "#/components/schemas/ReturnRemedy"
+          description: "What the buyer would like for a faulty or wrong item: a repair, a replacement or the money back. Only for `defective` and `wrong_item` (422 `RETURN_REMEDY_INVALID` otherwise). Staff decide at receipt; the buyer is told that choosing repair extends the guarantee by 12 months."
+        lines:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - productId
+              - quantity
+            properties:
+              productId:
+                $ref: "#/components/schemas/Id"
+              quantity:
+                type: integer
+                minimum: 1
+          description: "What comes back. Absent means everything on the order that is still left to return — the usual shape of a withdrawal. Not allowed on a `cancellation`: the whole remainder is its lines."
     ReturnLine:
       type: object
       additionalProperties: false
@@ -24874,43 +25212,6 @@ components:
         - window_closed
         - excluded_goods
       description: "A rule staff waived when they opened the return for a buyer: `window_closed` — the reason's deadline had passed when the buyer asked; `excluded_goods` — a line is goods Art. 16 takes the right of withdrawal away from."
-    ReturnRemedy:
-      type: string
-      enum:
-        - refund
-        - replace
-        - repair
-      description: "What the buyer is given for a faulty or wrong item (Directive 2019/771 Art. 13): `repair` and `replace` come first and the buyer chooses; `refund` is the money back. Choosing `repair` extends the guarantee by 12 months (Directive 2024/1799). Only a `defective` or `wrong_item` return has a choice; every other reason is refunded."
-    ReturnActions:
-      type: object
-      additionalProperties: false
-      required:
-        - approve
-        - decline
-        - receive
-        - recordProof
-        - close
-        - cancel
-      description: What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the key that names the act and a status the act can run from.
-      properties:
-        approve:
-          type: boolean
-          description: Whether `POST /returns/{id}/approve` would be accepted.
-        decline:
-          type: boolean
-          description: Whether `POST /returns/{id}/decline` would be accepted.
-        receive:
-          type: boolean
-          description: Whether `POST /returns/{id}/receive` would be accepted.
-        recordProof:
-          type: boolean
-          description: Whether `POST /returns/{id}/proof-of-sending` would be accepted.
-        close:
-          type: boolean
-          description: Whether `POST /returns/{id}/close` would be accepted.
-        cancel:
-          type: boolean
-          description: Whether `POST /returns/{id}/cancel` would be accepted.
     Return:
       type: object
       additionalProperties: false
@@ -25028,72 +25329,6 @@ components:
         updatedAt:
           type: string
           format: date-time
-    ReturnsResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - items
-        - meta
-      properties:
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/Return"
-        meta:
-          $ref: "#/components/schemas/PaginationMeta"
-    StaffStatementChannel:
-      type: string
-      enum:
-        - phone
-        - email
-        - letter
-        - other
-      description: How the buyer stated a withdrawal outside the shop, as staff record it.
-    CreateReturnRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - orderId
-        - reason
-      properties:
-        orderId:
-          $ref: "#/components/schemas/Id"
-        reason:
-          $ref: "#/components/schemas/ReturnReason"
-        note:
-          type: string
-          minLength: 1
-          maxLength: 1000
-        kind:
-          $ref: "#/components/schemas/ReturnKind"
-        fulfillmentOrderId:
-          $ref: "#/components/schemas/Id"
-          description: Required exactly when `kind` is `cancellation` — the fulfillment order whose remainder is canceled.
-        requestedAt:
-          type: string
-          format: date-time
-          description: "Staff only: when the buyer asked, or for a withdrawal when they stated it (Art. 11(2) judges timing on the day it was sent). Required for a staff withdrawal, optional otherwise (default now). Never in the future, never before the order was made. The buyer does not send it."
-        statedVia:
-          $ref: "#/components/schemas/StaffStatementChannel"
-        preferredRemedy:
-          $ref: "#/components/schemas/ReturnRemedy"
-          description: "What the buyer would like for a faulty or wrong item: a repair, a replacement or the money back. Only for `defective` and `wrong_item` (422 `RETURN_REMEDY_INVALID` otherwise). Staff decide at receipt; the buyer is told that choosing repair extends the guarantee by 12 months."
-        lines:
-          type: array
-          minItems: 1
-          items:
-            type: object
-            additionalProperties: false
-            required:
-              - productId
-              - quantity
-            properties:
-              productId:
-                $ref: "#/components/schemas/Id"
-              quantity:
-                type: integer
-                minimum: 1
-          description: "What comes back. Absent means everything on the order that is still left to return — the usual shape of a withdrawal. Not allowed on a `cancellation`: the whole remainder is its lines."
     ReturnOptionLine:
       type: object
       additionalProperties: false

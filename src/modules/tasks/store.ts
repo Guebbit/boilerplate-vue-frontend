@@ -30,7 +30,13 @@ import {
     unassignTask,
     TaskSortItem
 } from '@api';
-import type { CreateContactTaskRequest, Task, SearchTasksRequest, TaskSummary } from '@types';
+import type {
+    CreateContactTaskRequest,
+    Task,
+    TaskListItem,
+    SearchTasksRequest,
+    TaskSummary
+} from '@types';
 
 /**
  * Search criteria for the inbox, i.e. everything but pagination (which is owned by the toolkit's
@@ -72,7 +78,7 @@ export const useTasksStore = defineStore('tasks', () => {
         watchList: watchSearchRequests,
         deleteOne: deleteRequest,
         fetchAny
-    } = useStructureCrudApi<Task, string, TaskFilters>(
+    } = useStructureCrudApi<TaskListItem, string, TaskFilters>(
         {
             search: (filters, page, pageSize) =>
                 searchTasks({
