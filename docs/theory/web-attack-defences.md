@@ -199,7 +199,7 @@ same shape of finding as the backend's own supply-chain table, and the same cave
 off` and the Permissions-Policy line argues for closing this too once the script's build hash is
   stable enough to pin.
 - **§14 Two `high` advisories in the production tree** (`nanoid`, `postcss`) — see
-  [Supply chain](#supply-chain--this-repos-own-tree--14). Both are build-time-only and a fix is
+  [Supply chain](#supply-chain-—-this-repo-s-own-tree-—-§14). Both are build-time-only and a fix is
   available; neither has been taken yet. `npm audit --omit=dev` runs on every push/PR outside
   the `ci` gate in both repos: an alert on its own red square, not a gate.
 
