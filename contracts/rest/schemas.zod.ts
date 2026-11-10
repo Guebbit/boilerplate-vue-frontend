@@ -641,6 +641,9 @@ export const GetLocaleMessagesResponse = zod.strictObject({
  * `text` searches keys and values together. Every app's rows are listed; one app's
  * slice is a resource of its own, `/locales/{locale}/apps/{app}/entries`, which is
  * where it is written.
+ *
+ * The `ETag` is the language's dictionary version, whichever app's rows were
+ * listed: send it as `If-Match` on an import and a write that landed since is a 412.
  * @summary List translation entries
  */
 export const listLocaleEntriesPathLocaleMax = 35;
@@ -729,6 +732,9 @@ export const ListLocaleEntriesResponse = zod.strictObject({
  * `text` searches keys and values together. Only this app's rows, at the address
  * the writes below target; an app the deployment does not configure is refused
  * with a 422.
+ *
+ * The `ETag` is the language's dictionary version, the same one `GET
+ * /locales/{locale}/entries` answers: a write to any app moves it.
  * @summary List one app's translation entries
  */
 export const listAppLocaleEntriesPathLocaleMax = 35;
@@ -882,6 +888,10 @@ export const CreateLocaleEntryResponse = zod.strictObject({
  *
  * Nobody adds five hundred keys through a form; without this the admin surface is a
  * demo.
+ *
+ * `If-Match` takes the tag of a list read of this language: when any entry of it
+ * (in any app) was written since, the import is refused with a 412 and writes
+ * nothing. An import that would change nothing is checked too.
  * @summary Replace every entry
  */
 export const replaceLocaleEntriesPathLocaleMax = 35;
@@ -900,6 +910,10 @@ export const ReplaceLocaleEntriesParams = zod.strictObject({
         .min(1)
         .max(replaceLocaleEntriesPathAppMax)
         .regex(replaceLocaleEntriesPathAppRegExp)
+});
+export const replaceLocaleEntriesHeaderIfMatchMax = 200;
+export const ReplaceLocaleEntriesHeader = zod.strictObject({
+    'If-Match': zod.string().max(replaceLocaleEntriesHeaderIfMatchMax).optional()
 });
 export const replaceLocaleEntriesBodyEntriesMaxOne = 2000;
 export const ReplaceLocaleEntriesBody = zod.strictObject({
@@ -922,6 +936,9 @@ export const ReplaceLocaleEntriesResponse = zod.strictObject({
  *
  * See `PUT` on this collection for the replacing counterpart, and for why the choice
  * lives in the method.
+ *
+ * `If-Match` is checked as on the `PUT`, and the answer's `ETag` is the language's
+ * new version.
  * @summary Merge entries
  */
 export const updateLocaleEntriesPathLocaleMax = 35;
@@ -940,6 +957,10 @@ export const UpdateLocaleEntriesParams = zod.strictObject({
         .min(1)
         .max(updateLocaleEntriesPathAppMax)
         .regex(updateLocaleEntriesPathAppRegExp)
+});
+export const updateLocaleEntriesHeaderIfMatchMax = 200;
+export const UpdateLocaleEntriesHeader = zod.strictObject({
+    'If-Match': zod.string().max(updateLocaleEntriesHeaderIfMatchMax).optional()
 });
 export const updateLocaleEntriesBodyEntriesMaxOne = 2000;
 export const UpdateLocaleEntriesBody = zod.strictObject({
@@ -16954,6 +16975,10 @@ export const ListWebhookSubscriptionsResponse = zod.strictObject({
  * delivery that fails later; `PUT` and `PATCH` run the same check when the `url`
  * changes. It runs again on every delivery, since a subscription's DNS can change
  * after it is created.
+ *
+ * A subscription hands an event stream to a machine, so the caller must hold the read
+ * rule of every event it carries (`GET /webhooks/events` marks each one `actions.subscribe`;
+ * `*` needs them all). Otherwise 403 `WEBHOOK_EVENT_READ_REQUIRED`, naming the events.
  * @summary Create a webhook subscription
  */
 export const createWebhookSubscriptionBodyUrlMax = 2048;
@@ -17135,6 +17160,11 @@ export const GetWebhookSubscriptionResponse = zod.strictObject({
  * Full replace of url/description/eventTypes — an omitted `description` is cleared.
  * Never touches the secret ring or whether the subscription is on; rotate or drop a
  * secret, enable or disable it, through its own action route below.
+ *
+ * A `PUT`, or a `PATCH` that carries `url` or `eventTypes`, needs the read rule of every
+ * event in the stored filter AND in the new one: otherwise a caller could narrow a stream
+ * and redirect it in one call. Otherwise 403 `WEBHOOK_EVENT_READ_REQUIRED`. A
+ * description-only `PATCH` is not checked.
  * @summary Replace a webhook subscription
  */
 export const replaceWebhookSubscriptionPathIdMax = 64;
@@ -17252,6 +17282,10 @@ export const ReplaceWebhookSubscriptionResponse = zod.strictObject({
  * Partial update of url/description/eventTypes. Never touches the secret ring or
  * whether the subscription is on; rotate or drop a secret, enable or disable it,
  * through its own action route below.
+ *
+ * A `PATCH` that carries `url` or `eventTypes` needs the read rule of every event in the
+ * stored filter AND in the new one, as `PUT` does; a description-only `PATCH` is not
+ * checked. Otherwise 403 `WEBHOOK_EVENT_READ_REQUIRED`.
  * @summary Update a webhook subscription
  */
 export const updateWebhookSubscriptionPathIdMax = 64;
@@ -17592,7 +17626,9 @@ export const ListWebhookDeliveriesResponse = zod.strictObject({
  * row: `attempt` advances exactly like a real queued attempt would (one step forward
  * on a failure with backoff tiers left, unchanged on success or exhaustion), and
  * `status`/`responseCode`/`durationMs`/`error` reflect this replay. Refused while the subscription is
- * disabled (`actions.replay` is false): enable it first.
+ * disabled (`actions.replay` is false): enable it first. The stored payload is re-sent, so
+ * the caller needs the read rule of the delivery's event (`actions.replay` is false
+ * otherwise): 403 `WEBHOOK_EVENT_READ_REQUIRED`.
  * @summary Re-send one delivery
  */
 export const replayWebhookDeliveryPathIdMax = 64;
@@ -17671,7 +17707,8 @@ export const ReplayWebhookDeliveryResponse = zod.strictObject({
  * The events of the modules this deployment runs, read from each one's own
  * `asyncapi.webhooks.yaml` — the same files `asyncapi.public.yaml` is generated from —
  * so this list and what can actually fire can never drift apart. A module that is
- * not deployed lists nothing. See `docs/api/asyncapi-workflow.md`.
+ * not deployed lists nothing. Each entry's `actions.subscribe` says whether the caller holds
+ * the event's read rule and so may put it in a filter. See `docs/api/asyncapi-workflow.md`.
  *
  * Unpaged: the event catalogue of the deployed modules.
  * @summary The public event catalogue
@@ -17701,7 +17738,10 @@ export const ListWebhookEventsResponse = zod.strictObject({
                 'user.erased',
                 'user.updated'
             ]),
-            description: zod.string().optional()
+            description: zod.string().optional(),
+            actions: zod.strictObject({
+                subscribe: zod.boolean()
+            })
         })
     )
 });
@@ -23516,6 +23556,10 @@ export const DisableWebhookSubscriptionResponse = zod.strictObject({
  * most two: adding a third drops the oldest, which is already superseded. A secret is a
  * line of the subscription, so adding one is a `POST` on the line collection and answers
  * 200 with the whole subscription (docs/api/write-methods.md).
+ *
+ * A secret signs for the subscription's stored filter, so the caller needs the read rule
+ * of every event in it (`actions.createSecret` is false otherwise): 403
+ * `WEBHOOK_EVENT_READ_REQUIRED`.
  * @summary Add a secret to a webhook subscription's ring (rotate)
  */
 export const createWebhookSubscriptionSecretPathIdMax = 64;

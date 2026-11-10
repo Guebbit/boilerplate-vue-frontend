@@ -87,6 +87,7 @@ channels:
                 $ref: '#/components/messages/HeartbeatEvent'
     order.created:
         address: order.created
+        x-read-rule: display:Order
         description: A new order was placed.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -95,6 +96,7 @@ channels:
                 $ref: '#/components/messages/OrderCreatedEvent'
     order.paid:
         address: order.paid
+        x-read-rule: display:Order
         description: An order's payment settled.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -103,6 +105,7 @@ channels:
                 $ref: '#/components/messages/OrderPaidEvent'
     order.canceled:
         address: order.canceled
+        x-read-rule: display:Order
         description: An order was canceled.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -111,6 +114,7 @@ channels:
                 $ref: '#/components/messages/OrderCanceledEvent'
     order.redacted:
         address: order.redacted
+        x-read-rule: display:Order
         description: An order's personal data was scrubbed.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -119,6 +123,7 @@ channels:
                 $ref: '#/components/messages/OrderRedactedEvent'
     shipment.shipped:
         address: shipment.shipped
+        x-read-rule: display:Order
         description: A shipment left — some or all of an order's goods.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -127,6 +132,7 @@ channels:
                 $ref: '#/components/messages/ShipmentShippedEvent'
     shipment.delivered:
         address: shipment.delivered
+        x-read-rule: display:Order
         description: A shipment arrived.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -135,6 +141,7 @@ channels:
                 $ref: '#/components/messages/ShipmentDeliveredEvent'
     shipment.lost:
         address: shipment.lost
+        x-read-rule: display:Order
         description: Staff reported a shipment lost or damaged in transit.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -143,6 +150,7 @@ channels:
                 $ref: '#/components/messages/ShipmentLostEvent'
     payment.succeeded:
         address: payment.succeeded
+        x-read-rule: display:Payment
         description: A payment settled successfully.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -151,6 +159,7 @@ channels:
                 $ref: '#/components/messages/PaymentSucceededEvent'
     payment.failed:
         address: payment.failed
+        x-read-rule: display:Payment
         description: A payment attempt was declined.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -159,6 +168,7 @@ channels:
                 $ref: '#/components/messages/PaymentFailedEvent'
     payment.refunded:
         address: payment.refunded
+        x-read-rule: display:Payment
         description: A refund on a payment settled — the whole payment, or a part of it.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -167,6 +177,7 @@ channels:
                 $ref: '#/components/messages/PaymentRefundedEvent'
     payment.refund_failed:
         address: payment.refund_failed
+        x-read-rule: display:Payment
         description: The provider refused a refund, or reported one failed.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -175,6 +186,7 @@ channels:
                 $ref: '#/components/messages/PaymentRefundFailedEvent'
     payment.refund_reversed:
         address: payment.refund_reversed
+        x-read-rule: display:Payment
         description: The provider took back a refund it had settled.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -183,6 +195,7 @@ channels:
                 $ref: '#/components/messages/PaymentRefundReversedEvent'
     payment.dispute_opened:
         address: payment.dispute_opened
+        x-read-rule: display:Payment
         description: The buyer's bank disputed a card payment.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -191,6 +204,7 @@ channels:
                 $ref: '#/components/messages/PaymentDisputeOpenedEvent'
     payment.dispute_updated:
         address: payment.dispute_updated
+        x-read-rule: display:Payment
         description: A dispute on a card payment changed (evidence sent, decided, reopened).
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -199,6 +213,7 @@ channels:
                 $ref: '#/components/messages/PaymentDisputeUpdatedEvent'
     return.requested:
         address: return.requested
+        x-read-rule: read:Return
         description: A return was opened — a withdrawal or a request.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -207,6 +222,7 @@ channels:
                 $ref: '#/components/messages/ReturnRequestedEvent'
     return.received:
         address: return.received
+        x-read-rule: read:Return
         description: Returned goods arrived and went back on sale.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -215,6 +231,7 @@ channels:
                 $ref: '#/components/messages/ReturnReceivedEvent'
     return.closed:
         address: return.closed
+        x-read-rule: read:Return
         description: A return finished — the money went back.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -223,6 +240,7 @@ channels:
                 $ref: '#/components/messages/ReturnClosedEvent'
     example.published:
         address: example.published
+        x-read-rule: public
         description: An example was published. The `example` module's one webhook, there to be copied.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -231,6 +249,7 @@ channels:
                 $ref: '#/components/messages/ExamplePublishedEvent'
     user.erased:
         address: user.erased
+        x-read-rule: read:User
         description: An account was erased.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
@@ -239,6 +258,7 @@ channels:
                 $ref: '#/components/messages/UserErasedEvent'
     user.updated:
         address: user.updated
+        x-read-rule: read:User
         description: A personal-data field of an account was rectified.
         servers:
             - $ref: '#/servers/subscriberEndpoint'
