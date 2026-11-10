@@ -1,0 +1,496 @@
+---
+tags:
+  - 2brain
+  - 2brain/arch
+  - project/boilerplate-vue-frontend
+type: architecture
+component: Design_CSS_Audit_Tooling
+---
+
+```mermaid
+graph LR
+    Invasive_CSS_Scanner_Report_Engine["Invasive-CSS Scanner & Report Engine"]
+    CSS_Source_Stylesheet_Class_Registry["CSS Source & Stylesheet-Class Registry"]
+    Design_Policy_ESLint_Config_Assembly["Design Policy & ESLint Config Assembly"]
+    Invasive_CSS_Scanner_Report_Engine -- "Consumes CSS source collection as scan input" --> CSS_Source_Stylesheet_Class_Registry
+    Design_Policy_ESLint_Config_Assembly -- "Registers theme-token rule into the ESLint plugin rule table" --> Invasive_CSS_Scanner_Report_Engine
+    Design_Policy_ESLint_Config_Assembly -- "Reads stylesheet class registry to build no-unknown-classes ignore lists" --> CSS_Source_Stylesheet_Class_Registry
+```
+
+## Details
+
+The cross-cutting design/CSS governance tooling — the design-policy knobs, the css-sources collector, the CSS-invasive and code-shape audit scripts, and the ESLint design rules and shared-rule generators that enforce the theme-token and class policy in CI.
+
+### Invasive-CSS Scanner & Report Engine
+The automated enforcement engine behind npm run audit:css and the css-invasiveness spec. It runs three readers over the collected CSS sources, SFC templates, and src/ scripts — PostCSS + postcss-selector-parser for rules, vue/compiler-sfc for template elements, and the TypeScript compiler for string literals — and folds them into one list of CssFindings against the shared CHECKS catalogue (vuetify-internal, :deep, --v-* variables, z-index, utility redefinition, disallowed units, stale/bad allowances, etc.). It implements the single css-allow <check> -- <why> allowance grammar (an allowance covering nothing, or with no reason, is itself a finding) and emits either a human report or --json for agent-driven fixes (report.ts). It also carries the local/theme-token rule, which forces colours to be named theme colours using the policy's derived colour set. This is the terminal 'scan → findings → report' stage of the flow.
+
+**Related Classes/Methods**: _None_
+
+**Source Files:**
+
+- `scripts/audit/code-shape/scripts/generate-shallow-candidates.ts`
+  - `scripts.audit.code-shape.scripts.generate-shallow-candidates.readConfig.raw.ts.readConfigFile() callback` (L62-L63) - Function
+  - `scripts.audit.code-shape.scripts.generate-shallow-candidates.readConfig.raw` (L62-L64) - Class
+  - `scripts.audit.code-shape.scripts.generate-shallow-candidates.fileExists` (L81-L81) - Function
+  - `scripts.audit.code-shape.scripts.generate-shallow-candidates.getSourceFile` (L82-L87) - Function
+  - `scripts.audit.code-shape.scripts.generate-shallow-candidates.resolveModuleNameLiterals` (L93-L112) - Function
+  - `scripts.audit.code-shape.scripts.generate-shallow-candidates.resolveModuleNameLiterals.literals.map() callback` (L94-L112) - Function
+- `scripts/audit/code-shape/scripts/shallow-candidates.ts`
+  - `scripts.audit.code-shape.scripts.shallow-candidates.forwardTarget.passed` (L289-L294) - Class
+  - `scripts.audit.code-shape.scripts.shallow-candidates.forwardTarget.passed.call.arguments.map() callback` (L289-L294) - Function
+  - `scripts.audit.code-shape.scripts.shallow-candidates.optionalNeverPassed` (L306-L317) - Class
+  - `scripts.audit.code-shape.scripts.shallow-candidates.optionalNeverPassed.declared.parameters.filter() callback` (L311-L314) - Function
+  - `scripts.audit.code-shape.scripts.shallow-candidates.optionalNeverPassed.map() callback` (L316-L316) - Function
+- `scripts/audit/css-invasive/report.ts`
+  - `scripts.audit.css-invasive.report.countsByCheck.counts.map() callback` (L17-L17) - Function
+  - `scripts.audit.css-invasive.report.countsByCheck.counts` (L17-L20) - Class
+  - `scripts.audit.css-invasive.report.catch() callback` (L57-L62) - Function
+- `scripts/audit/css-invasive/scan.ts`
+  - `scripts.audit.css-invasive.scan.CheckInfo` (L41-L46) - Interface
+  - `scripts.audit.css-invasive.scan.Allowance` (L140-L153) - Interface
+  - `scripts.audit.css-invasive.scan.Scan` (L156-L161) - Interface
+  - `scripts.audit.css-invasive.scan.compoundsOf.compounds.compounds.filter() callback` (L231-L231) - Function
+  - `scripts.audit.css-invasive.scan.isBareElement` (L235-L237) - Class
+  - `scripts.audit.css-invasive.scan.compound.some() callback` (L236-L236) - Function
+  - `scripts.audit.css-invasive.scan.isBareElement.compound.some() callback` (L237-L237) - Function
+  - `scripts.audit.css-invasive.scan.deepReachesElement` (L243-L248) - Class
+  - `scripts.audit.css-invasive.scan.deepReachesElement.deeps.some() callback` (L244-L247) - Function
+  - `scripts.audit.css-invasive.scan.deepReachesElement.deeps.some() callback.deep.nodes.some() callback` (L245-L246) - Function
+  - `scripts.audit.css-invasive.scan.deepReachesElement.deeps.some() callback.deep.nodes.some() callback.compounds.some() callback` (L246-L246) - Function
+  - `scripts.audit.css-invasive.scan.classesOf` (L251-L257) - Class
+  - `scripts.audit.css-invasive.scan.classesOf.selector.walkClasses() callback` (L253-L255) - Function
+  - `scripts.audit.css-invasive.scan.usesDeep` (L260-L267) - Class
+  - `scripts.audit.css-invasive.scan.usesDeep.selector.walk() callback` (L262-L265) - Function
+  - `scripts.audit.css-invasive.scan.RuleContext` (L272-L277) - Interface
+  - `scripts.audit.css-invasive.scan.declsOf` (L287-L288) - Class
+  - `scripts.audit.css-invasive.scan.declsOf.rule.nodes.filter() callback` (L288-L288) - Function
+  - `scripts.audit.css-invasive.scan.RULE_CHECKS` (L313-L365) - Class
+  - `scripts.audit.css-invasive.scan.<function>.selectors.filter() callback` (L319-L321) - Function
+  - `scripts.audit.css-invasive.scan.<function>.selectors.filter() callback.some() callback` (L320-L320) - Function
+  - `scripts.audit.css-invasive.scan.RULE_CHECKS.<function>.selectors.filter() callback` (L341-L341) - Function
+  - `scripts.audit.css-invasive.scan.RULE_CHECKS.<function>.selectors.filter() callback.some() callback` (L341-L341) - Function
+  - `scripts.audit.css-invasive.scan.RULE_CHECKS.<function>` (L360-L363) - Function
+  - `scripts.audit.css-invasive.scan.RULE_CHECKS.<function>.filter() callback` (L362-L362) - Function
+  - `scripts.audit.css-invasive.scan.RULE_CHECKS.<function>.filter() callback.KNOBS.disallowedUnits.some() callback` (L362-L362) - Function
+  - `scripts.audit.css-invasive.scan.RULE_CHECKS.<function>.map() callback` (L363-L363) - Function
+  - `scripts.audit.css-invasive.scan.ruleHits` (L386-L402) - Class
+  - `scripts.audit.css-invasive.scan.ruleHits.RULE_CHECKS.flatMap() callback` (L388-L401) - Function
+  - `scripts.audit.css-invasive.scan.classesIn` (L436-L446) - Class
+  - `scripts.audit.css-invasive.scan.classesIn.container.walkRules() callback` (L438-L444) - Function
+  - `scripts.audit.css-invasive.scan.classesIn.container.walkRules() callback.nodes.flatMap() callback` (L442-L442) - Function
+  - `scripts.audit.css-invasive.scan.tailwindUtilities` (L455-L463) - Class
+  - `scripts.audit.css-invasive.scan.tailwindUtilities.candidates` (L456-L456) - Class
+  - `scripts.audit.css-invasive.scan.tailwindUtilities.candidates.parsed.flatMap() callback` (L456-L456) - Function
+  - `scripts.audit.css-invasive.scan.tailwindUtilities.walkAtRules('layer') callback` (L459-L461) - Function
+  - `scripts.audit.css-invasive.scan.scanCss.hits.parsed.flatMap() callback` (L476-L482) - Function
+  - `scripts.audit.css-invasive.scan.scanCss.hits.parsed.flatMap() callback.root.walkRules() callback` (L478-L480) - Function
+  - `scripts.audit.css-invasive.scan.TemplateNode` (L497-L512) - Interface
+  - `scripts.audit.css-invasive.scan.TemplateProp` (L517-L530) - Interface
+  - `scripts.audit.css-invasive.scan.TemplateContext` (L574-L577) - Interface
+  - `scripts.audit.css-invasive.scan.ClassSource` (L601-L606) - Interface
+  - `scripts.audit.css-invasive.scan.ElementOffence` (L701-L710) - Interface
+  - `scripts.audit.css-invasive.scan.<function>` (L722-L728) - Function
+  - `scripts.audit.css-invasive.scan.<function>.filter() callback` (L724-L724) - Function
+  - `scripts.audit.css-invasive.scan.<function>.map() callback` (L725-L728) - Function
+  - `scripts.audit.css-invasive.scan.rootOverrideHits.descriptor.styles.flatMap() callback.walkRules() callback.named` (L828-L831) - Class
+  - `scripts.audit.css-invasive.scan.rootOverrideHits.descriptor.styles.flatMap() callback.walkRules() callback.named.nodes.flatMap() callback` (L830-L830) - Function
+  - `scripts.audit.css-invasive.scan.rootOverrideHits.descriptor.styles.flatMap() callback.walkRules() callback.named.filter() callback` (L831-L831) - Function
+  - `scripts.audit.css-invasive.scan.rootOverrideHits.descriptor.styles.flatMap() callback.walkRules() callback.real` (L832-L832) - Class
+  - `scripts.audit.css-invasive.scan.rootOverrideHits.descriptor.styles.flatMap() callback.walkRules() callback.real.filter() callback` (L832-L832) - Function
+  - `scripts.audit.css-invasive.scan.scanTemplate.hits.elements.flatMap() callback` (L872-L883) - Function
+  - `scripts.audit.css-invasive.scan.scanTemplate.hits.elements.flatMap() callback.ELEMENT_CHECKS.flatMap() callback` (L873-L882) - Function
+  - `scripts.audit.css-invasive.scan.scanTemplate.hits.elements.flatMap() callback.ELEMENT_CHECKS.flatMap() callback.map() callback` (L874-L881) - Function
+  - `scripts.audit.css-invasive.scan.vuetifyClasses` (L910-L919) - Class
+  - `scripts.audit.css-invasive.scan.vuetifyClasses.flatMap() callback` (L913-L915) - Function
+  - `scripts.audit.css-invasive.scan.vuetifyClasses.map() callback` (L916-L916) - Function
+  - `scripts.audit.css-invasive.scan.scriptsOf` (L961-L967) - Class
+  - `scripts.audit.css-invasive.scan.scriptsOf.flatMap() callback` (L964-L965) - Function
+  - `scripts.audit.css-invasive.scan.scanScript.hits.flatMap() callback` (L980-L1000) - Function
+  - `scripts.audit.css-invasive.scan.scanScript.hits.flatMap() callback.filter() callback` (L982-L982) - Function
+  - `scripts.audit.css-invasive.scan.scanScript.hits.flatMap() callback.flatMap() callback` (L983-L1000) - Function
+  - `scripts.audit.css-invasive.scan.scanScript.hits.flatMap() callback.flatMap() callback.unknown` (L991-L993) - Class
+  - `scripts.audit.css-invasive.scan.scanScript.hits.flatMap() callback.flatMap() callback.unknown.map() callback` (L992-L992) - Function
+  - `scripts.audit.css-invasive.scan.scanScript.hits.flatMap() callback.flatMap() callback.unknown.filter() callback` (L993-L993) - Function
+  - `scripts.audit.css-invasive.scan.scanScript.allowances.lines.flatMap() callback` (L1002-L1009) - Function
+  - `scripts.audit.css-invasive.scan.shippedScripts` (L1014-L1017) - Class
+  - `scripts.audit.css-invasive.scan.shippedScripts.filter() callback` (L1016-L1016) - Function
+  - `scripts.audit.css-invasive.scan.scanApp.scripts` (L1083-L1083) - Class
+  - `scripts.audit.css-invasive.scan.scanApp.scripts.map() callback` (L1083-L1083) - Function
+- `scripts/audit/design-manual/scripts/bands.ts`
+  - `scripts.audit.design-manual.scripts.bands.FixedBox` (L43-L52) - Interface
+- `scripts/audit/design-manual/scripts/capture-matrix.ts`
+  - `scripts.audit.design-manual.scripts.capture-matrix.CaptureCaseShape` (L14-L25) - Interface
+  - `scripts.audit.design-manual.scripts.capture-matrix.PlannedShot` (L30-L39) - Interface
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandCaptureCases` (L162-L175) - Class
+  - `scripts.audit.design-manual.scripts.capture-matrix.ActionRowShape` (L186-L193) - Interface
+  - `scripts.audit.design-manual.scripts.capture-matrix.PlannedActionShot` (L198-L201) - Interface
+- `scripts/audit/design-manual/scripts/capture-task.ts`
+  - `scripts.audit.design-manual.scripts.capture-task.stitchDesignCapture.segments` (L58-L61) - Class
+  - `scripts.audit.design-manual.scripts.capture-task.stitchDesignCapture.segments.request.segments.map() callback` (L58-L61) - Function
+- `scripts/audit/design-manual/scripts/capture.ts`
+  - `scripts.audit.design-manual.scripts.capture.runCapture` (L60-L78) - Class
+  - `scripts.audit.design-manual.scripts.capture.runCapture.<function>` (L61-L78) - Function
+  - `scripts.audit.design-manual.scripts.capture.runCapture.<function>.child.on('close') callback` (L74-L77) - Function
+- `scripts/audit/design-manual/scripts/check-report.ts`
+  - `scripts.audit.design-manual.scripts.check-report.cellsOf` (L58-L64) - Class
+  - `scripts.audit.design-manual.scripts.check-report.cellsOf.map() callback` (L64-L64) - Function
+  - `scripts.audit.design-manual.scripts.check-report.checkReport` (L148-L187) - Class
+  - `scripts.audit.design-manual.scripts.check-report.checkReport.cells.every() callback` (L171-L171) - Function
+- `scripts/audit/design-manual/scripts/manifest.ts`
+  - `scripts.audit.design-manual.scripts.manifest.InputFact` (L24-L35) - Interface
+  - `scripts.audit.design-manual.scripts.manifest.PageGeometry` (L40-L53) - Interface
+  - `scripts.audit.design-manual.scripts.manifest.DesignTile` (L58-L69) - Interface
+  - `scripts.audit.design-manual.scripts.manifest.DesignShot` (L74-L109) - Interface
+  - `scripts.audit.design-manual.scripts.manifest.DesignCaptureManifest` (L114-L131) - Interface
+  - `scripts.audit.design-manual.scripts.manifest.mergeManifests.shots.parts.flatMap() callback` (L147-L147) - Function
+  - `scripts.audit.design-manual.scripts.manifest.mergeManifests.viewports.parts.flatMap() callback` (L155-L155) - Function
+  - `scripts.audit.design-manual.scripts.manifest.mergeManifests.chromeSources.parts.flatMap() callback` (L156-L156) - Function
+- `scripts/audit/design-manual/scripts/stitch.ts`
+  - `scripts.audit.design-manual.scripts.stitch.Segment` (L35-L40) - Interface
+  - `scripts.audit.design-manual.scripts.stitch.StitchInput` (L45-L54) - Interface
+  - `scripts.audit.design-manual.scripts.stitch.Tile` (L59-L64) - Interface
+- `scripts/contracts/generate-shared-rules.ts`
+  - `scripts.contracts.generate-shared-rules.formatted` (L60-L65) - Class
+  - `scripts.contracts.generate-shared-rules.formatted.then() callback` (L63-L64) - Function
+  - `scripts.contracts.generate-shared-rules.writeRule` (L74-L87) - Class
+  - `scripts.contracts.generate-shared-rules.writeRule.then() callback` (L83-L86) - Function
+  - `scripts.contracts.generate-shared-rules.map() callback` (L89-L89) - Function
+- `scripts/contracts/shared-rules/browser-storage.ts`
+  - `scripts.contracts.shared-rules.browser-storage.InventoryRow` (L13-L26) - Interface
+  - `scripts.contracts.shared-rules.browser-storage.BrowserStorageDocument` (L29-L34) - Interface
+  - `scripts.contracts.shared-rules.browser-storage.repeated` (L42-L43) - Class
+  - `scripts.contracts.shared-rules.browser-storage.repeated.ids.filter() callback` (L43-L43) - Function
+  - `scripts.contracts.shared-rules.browser-storage.buildBrowserStorage.backendRows` (L57-L62) - Class
+  - `scripts.contracts.shared-rules.browser-storage.buildBrowserStorage.backendRows.map() callback` (L58-L61) - Function
+  - `scripts.contracts.shared-rules.browser-storage.buildBrowserStorage.ownRows` (L63-L65) - Class
+  - `scripts.contracts.shared-rules.browser-storage.buildBrowserStorage.ownRows.map() callback` (L64-L64) - Function
+  - `scripts.contracts.shared-rules.browser-storage.buildBrowserStorage.clash` (L67-L67) - Class
+  - `scripts.contracts.shared-rules.browser-storage.buildBrowserStorage.clash.filter() callback` (L67-L67) - Function
+  - `scripts.contracts.shared-rules.browser-storage.buildBrowserStorage.missing` (L74-L74) - Class
+  - `scripts.contracts.shared-rules.browser-storage.buildBrowserStorage.missing.filter() callback` (L74-L74) - Function
+  - `scripts.contracts.shared-rules.browser-storage.buildBrowserStorage.unknown` (L77-L77) - Class
+  - `scripts.contracts.shared-rules.browser-storage.buildBrowserStorage.unknown.own.order.filter() callback` (L77-L77) - Function
+  - `scripts.contracts.shared-rules.browser-storage.buildBrowserStorage.names.map() callback` (L81-L81) - Function
+  - `scripts.contracts.shared-rules.browser-storage.buildBrowserStorage.items.own.order.map() callback` (L85-L85) - Function
+  - `scripts.contracts.shared-rules.browser-storage.buildBrowserStorage.names.items.map() callback` (L88-L88) - Function
+- `scripts/contracts/shared-rules/generate-spec.ts`
+  - `scripts.contracts.shared-rules.generate-spec.GeneratedExport` (L19-L28) - Interface
+  - `scripts.contracts.shared-rules.generate-spec.GenerateSpec` (L31-L36) - Interface
+  - `scripts.contracts.shared-rules.generate-spec.KeyedEntry` (L39-L44) - Interface
+- `scripts/contracts/shared-rules/render.ts`
+  - `scripts.contracts.shared-rules.render.docblock` (L26-L34) - Class
+  - `scripts.contracts.shared-rules.render.docblock.lines.map() callback` (L31-L31) - Function
+  - `scripts.contracts.shared-rules.render.renderKeyed.keys` (L59-L59) - Class
+  - `scripts.contracts.shared-rules.render.renderKeyed.keys.entries.map() callback` (L59-L59) - Function
+  - `scripts.contracts.shared-rules.render.renderKeyed.rows` (L61-L64) - Class
+  - `scripts.contracts.shared-rules.render.renderKeyed.rows.entries.map() callback` (L62-L63) - Function
+  - `scripts.contracts.shared-rules.render.withNumericSeparators` (L75-L78) - Class
+  - `scripts.contracts.shared-rules.render.withNumericSeparators.json.replaceAll() callback` (L76-L77) - Function
+  - `scripts.contracts.shared-rules.render.renderGenerated` (L104-L108) - Class
+  - `scripts.contracts.shared-rules.render.renderGenerated.spec.exports.map() callback` (L107-L107) - Function
+- `scripts/contracts/shared-rules/rules.ts`
+  - `scripts.contracts.shared-rules.rules.staticPagesSchema.pages.refine() callback` (L73-L73) - Function
+  - `scripts.contracts.shared-rules.rules.toursSchema.tours.refine() callback` (L91-L91) - Function
+  - `scripts.contracts.shared-rules.rules.SharedRule` (L98-L112) - Interface
+  - `scripts.contracts.shared-rules.rules.SHARED_RULES.'browser-storage'.derive` (L120-L124) - Method
+- `scripts/eslint/template-directive-description.ts`
+  - `scripts.eslint.template-directive-description.TemplateComment` (L27-L30) - Interface
+  - `scripts.eslint.template-directive-description.templateDirectiveDescription` (L49-L74) - Class
+  - `scripts.eslint.template-directive-description.templateDirectiveDescription.ESLintUtils.RuleCreator() callback` (L50-L50) - Function
+  - `scripts.eslint.template-directive-description.templateDirectiveDescription.create` (L63-L73) - Method
+- `scripts/eslint/theme-token.ts`
+  - `scripts.eslint.theme-token.TemplateNode` (L31-L35) - Interface
+  - `scripts.eslint.theme-token.TemplateAttribute` (L38-L47) - Interface
+  - `scripts.eslint.theme-token.themeToken.create.templateVisitor` (L143-L150) - Class
+  - `scripts.eslint.theme-token.themeToken.create.templateVisitor.VAttribute` (L145-L149) - Method
+- `src/infrastructure/utils/single-flight.ts`
+  - `src.infrastructure.utils.single-flight.singleFlight` (L15-L33) - Class
+  - `src.infrastructure.utils.single-flight.singleFlight.<function>` (L19-L32) - Function
+
+### CSS Source & Stylesheet-Class Registry
+The data-collection layer that answers 'what CSS exists and which classes are valid where.' It walks the repo to gather every CSS source — src/styles/main.css, each SFC <style> block (scoped or not), and the index.html splash — preserving the first line of each block so PostCSS node lines map back to real file lines (css-sources.ts). It also builds the stylesheet-class registry (stylesheet-classes.ts → readStylesheetClasses, classesOfCss) that splits classes into global vs. per-SFC-scoped sets, which no-unknown-classes consumes so a class is only 'known' where its CSS actually reaches. It carries the local/no-hover-only rule, which refuses hover-only and gesture-only interactions so nothing important is reachable by pointer alone. This layer is the shared input both the ESLint config and the invasive scanner read.
+
+**Related Classes/Methods**:
+
+- `scripts.css-sources.cssSources`:77-80
+- `scripts.eslint.stylesheet-classes.classesOfCss`:31-40
+- `scripts.eslint.no-hover-only.noHoverOnly`:94-173
+
+**Source Files:**
+
+- `scripts/audit/code-shape/scripts/generate-shallow-candidates.ts`
+  - `scripts.audit.code-shape.scripts.generate-shallow-candidates.scriptOf.lines` (L40-L40) - Class
+  - `scripts.audit.code-shape.scripts.generate-shallow-candidates.scriptOf.lines.map() callback` (L40-L40) - Function
+- `scripts/audit/code-shape/scripts/shallow-candidates.ts`
+  - `scripts.audit.code-shape.scripts.shallow-candidates.FunctionFacts` (L46-L64) - Interface
+  - `scripts.audit.code-shape.scripts.shallow-candidates.FileFacts` (L69-L78) - Interface
+  - `scripts.audit.code-shape.scripts.shallow-candidates.ShallowReport` (L83-L92) - Interface
+  - `scripts.audit.code-shape.scripts.shallow-candidates.Usage` (L97-L102) - Interface
+  - `scripts.audit.code-shape.scripts.shallow-candidates.NamedFunction` (L107-L112) - Interface
+  - `scripts.audit.code-shape.scripts.shallow-candidates.callArgumentsOf` (L150-L156) - Class
+  - `scripts.audit.code-shape.scripts.shallow-candidates.callArgumentsOf.call.arguments.some() callback` (L153-L153) - Function
+  - `scripts.audit.code-shape.scripts.shallow-candidates.projectFiles` (L164-L171) - Class
+  - `scripts.audit.code-shape.scripts.shallow-candidates.projectFiles.filter() callback` (L168-L170) - Function
+  - `scripts.audit.code-shape.scripts.shallow-candidates.collectUsage.record` (L186-L207) - Class
+  - `scripts.audit.code-shape.scripts.shallow-candidates.collectUsage.record.symbol.declarations.some() callback` (L193-L193) - Function
+  - `scripts.audit.code-shape.scripts.shallow-candidates.findShallowCandidates.inScope` (L459-L461) - Class
+  - `scripts.audit.code-shape.scripts.shallow-candidates.findShallowCandidates.inScope.scope.some() callback` (L461-L461) - Function
+  - `scripts.audit.code-shape.scripts.shallow-candidates.findShallowCandidates.smallAndRare.functions.filter() callback` (L494-L494) - Function
+  - `scripts.audit.code-shape.scripts.shallow-candidates.findShallowCandidates.passThroughs.functions.filter() callback` (L496-L496) - Function
+  - `scripts.audit.code-shape.scripts.shallow-candidates.findShallowCandidates.optionalNeverPassed.functions.filter() callback` (L498-L498) - Function
+  - `scripts.audit.code-shape.scripts.shallow-candidates.findShallowCandidates.lazyFiles.files.filter() callback` (L502-L505) - Function
+  - `scripts.audit.code-shape.scripts.shallow-candidates.findShallowCandidates.lazyFiles.toSorted() callback` (L508-L508) - Function
+- `scripts/audit/css-invasive/report.ts`
+  - `scripts.audit.css-invasive.report.print` (L38-L51) - Class
+  - `scripts.audit.css-invasive.report.print.findings.map() callback` (L46-L46) - Function
+  - `scripts.audit.css-invasive.report.then() callback` (L54-L56) - Function
+- `scripts/audit/css-invasive/scan.ts`
+  - `scripts.audit.css-invasive.scan.ruleHits.RULE_CHECKS.flatMap() callback.pieces` (L389-L389) - Class
+  - `scripts.audit.css-invasive.scan.ruleHits.RULE_CHECKS.flatMap() callback.pieces.map() callback` (L389-L389) - Function
+  - `scripts.audit.css-invasive.scan.cssAllowances` (L418-L433) - Class
+  - `scripts.audit.css-invasive.scan.cssAllowances.root.walkComments() callback` (L420-L431) - Function
+  - `scripts.audit.css-invasive.scan.scanCss.allowances.parsed.flatMap() callback` (L485-L485) - Function
+  - `scripts.audit.css-invasive.scan.childrenOf` (L537-L538) - Class
+  - `scripts.audit.css-invasive.scan.childrenOf.filter() callback` (L538-L538) - Function
+  - `scripts.audit.css-invasive.scan.staticAttribute` (L580-L581) - Class
+  - `scripts.audit.css-invasive.scan.staticAttribute.node.props.find() callback` (L581-L581) - Function
+  - `scripts.audit.css-invasive.scan.tokensOf` (L635-L636) - Class
+  - `scripts.audit.css-invasive.scan.tokensOf.strings.flatMap() callback` (L636-L636) - Function
+  - `scripts.audit.css-invasive.scan.dynamicClassTokens` (L666-L686) - Class
+  - `scripts.audit.css-invasive.scan.dynamicClassTokens.expression` (L670-L673) - Class
+  - `scripts.audit.css-invasive.scan.dynamicClassTokens.expression.node.props.find() callback` (L671-L672) - Function
+  - `scripts.audit.css-invasive.scan.dynamicClassTokens.flatMap() callback` (L685-L685) - Function
+  - `scripts.audit.css-invasive.scan.elementsOf` (L770-L776) - Class
+  - `scripts.audit.css-invasive.scan.elementsOf.nodes.flatMap() callback` (L771-L776) - Function
+  - `scripts.audit.css-invasive.scan.templateAllowances` (L789-L802) - Class
+  - `scripts.audit.css-invasive.scan.templateAllowances.nodes.flatMap() callback` (L790-L802) - Function
+  - `scripts.audit.css-invasive.scan.rootOverrideHits` (L814-L848) - Class
+  - `scripts.audit.css-invasive.scan.rootOverrideHits.descriptor.styles.flatMap() callback` (L825-L847) - Function
+  - `scripts.audit.css-invasive.scan.rootOverrideHits.descriptor.styles.flatMap() callback.walkRules() callback` (L827-L845) - Function
+  - `scripts.audit.css-invasive.scan.rootOverrideHits.descriptor.styles.flatMap() callback.walkRules() callback.snippet.real.map() callback` (L841-L841) - Function
+  - `scripts.audit.css-invasive.scan.scanTemplate.elements` (L867-L870) - Class
+  - `scripts.audit.css-invasive.scan.scanTemplate.elements.map() callback` (L867-L870) - Function
+  - `scripts.audit.css-invasive.scan.applyAllowances` (L1042-L1072) - Class
+  - `scripts.audit.css-invasive.scan.applyAllowances.own.allowances.flatMap() callback.covered` (L1045-L1045) - Class
+  - `scripts.audit.css-invasive.scan.applyAllowances.own.allowances.flatMap() callback.covered.hits.filter() callback` (L1045-L1045) - Function
+  - `scripts.audit.css-invasive.scan.scanApp` (L1079-L1091) - Class
+  - `scripts.audit.css-invasive.scan.scanApp.templates` (L1082-L1082) - Class
+  - `scripts.audit.css-invasive.scan.scanApp.templates.map() callback` (L1082-L1082) - Function
+  - `scripts.audit.css-invasive.scan.scanApp.hits.all.flatMap() callback` (L1086-L1086) - Function
+  - `scripts.audit.css-invasive.scan.scanApp.allowances.all.flatMap() callback` (L1087-L1087) - Function
+  - `scripts.audit.css-invasive.scan.scanApp.toSorted() callback` (L1089-L1089) - Function
+- `scripts/audit/design-manual/scripts/capture-matrix.ts`
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandCase.extra` (L145-L145) - Class
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandCase.extra.locales.filter() callback` (L145-L145) - Function
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandCase.extra.map() callback` (L150-L150) - Function
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandActionRow` (L234-L245) - Class
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandActionRow.flatMap() callback` (L236-L243) - Function
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandActionRow.flatMap() callback.PREPARED_SIZES.map() callback` (L237-L243) - Function
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandActionRows.expanded` (L258-L258) - Class
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandActionRows.expanded.rows.map() callback` (L258-L258) - Function
+- `scripts/audit/design-manual/scripts/capture-scope.ts`
+  - `scripts.audit.design-manual.scripts.capture-scope.scopeToSpecs.touched` (L82-L89) - Class
+  - `scripts.audit.design-manual.scripts.capture-scope.scopeToSpecs.touched.changedFiles.filter() callback` (L85-L85) - Function
+  - `scripts.audit.design-manual.scripts.capture-scope.scopeToSpecs.touched.map() callback` (L86-L86) - Function
+  - `scripts.audit.design-manual.scripts.capture-scope.scopeToSpecs.touched.filter() callback` (L87-L87) - Function
+- `scripts/audit/design-manual/scripts/capture-task.ts`
+  - `scripts.audit.design-manual.scripts.capture-task.StitchSegmentRequest` (L18-L23) - Interface
+  - `scripts.audit.design-manual.scripts.capture-task.StitchRequest` (L28-L39) - Interface
+  - `scripts.audit.design-manual.scripts.capture-task.RecordShotRequest` (L89-L94) - Interface
+  - `scripts.audit.design-manual.scripts.capture-task.recordDesignShot.kept` (L109-L114) - Class
+  - `scripts.audit.design-manual.scripts.capture-task.kept.filter() callback` (L112-L112) - Function
+  - `scripts.audit.design-manual.scripts.capture-task.recordDesignShot.kept.filter() callback` (L113-L113) - Function
+- `scripts/audit/design-manual/scripts/capture.ts`
+  - `scripts.audit.design-manual.scripts.capture.sweptModules` (L41-L44) - Class
+  - `scripts.audit.design-manual.scripts.capture.sweptModules.filter() callback` (L42-L43) - Function
+- `scripts/audit/design-manual/scripts/plan.ts`
+  - `scripts.audit.design-manual.scripts.plan.shots` (L28-L30) - Class
+  - `scripts.audit.design-manual.scripts.plan.shots.manifest.shots.filter() callback` (L29-L29) - Function
+- `scripts/audit/unused-locale-keys/scan.ts`
+  - `scripts.audit.unused-locale-keys.scan.Dictionary` (L16-L18) - Interface
+  - `scripts.audit.unused-locale-keys.scan.leafPathsOf` (L28-L34) - Class
+  - `scripts.audit.unused-locale-keys.scan.leafPathsOf.flatMap() callback` (L29-L34) - Function
+  - `scripts.audit.unused-locale-keys.scan.dynamicPrefixesOf` (L43-L47) - Class
+  - `scripts.audit.unused-locale-keys.scan.dynamicPrefixesOf.map() callback` (L47-L47) - Function
+  - `scripts.audit.unused-locale-keys.scan.unusedPaths` (L57-L64) - Class
+  - `scripts.audit.unused-locale-keys.scan.unusedPaths.filter() callback` (L63-L63) - Function
+  - `scripts.audit.unused-locale-keys.scan.unusedPaths.filter() callback.prefixes.some() callback` (L63-L63) - Function
+  - `scripts.audit.unused-locale-keys.scan.scanLocaleKeys.haystack.dictionaries.map() callback` (L87-L87) - Function
+  - `scripts.audit.unused-locale-keys.scan.scanLocaleKeys.haystack` (L87-L89) - Class
+  - `scripts.audit.unused-locale-keys.scan.scanLocaleKeys.unused.dictionaries.flatMap() callback` (L91-L92) - Function
+  - `scripts.audit.unused-locale-keys.scan.scanLocaleKeys.unused.dictionaries.flatMap() callback.map() callback` (L92-L92) - Function
+- `scripts/css-sources.ts`
+  - `scripts.css-sources.vueFiles` (L42-L47) - Class
+  - `scripts.css-sources.vueFiles.flatMap() callback` (L43-L47) - Function
+  - `scripts.css-sources.sfcStyles` (L63-L70) - Class
+  - `scripts.css-sources.sfcStyles.descriptor.styles.map() callback` (L64-L70) - Function
+  - `scripts.css-sources.cssSources` (L77-L80) - Class
+  - `scripts.css-sources.cssSources.flatMap() callback` (L79-L79) - Function
+- `scripts/eslint/design-config.ts`
+  - `scripts.eslint.design-config.designLintConfig.restrictedClasses` (L63-L72) - Class
+  - `scripts.eslint.design-config.designLintConfig.restrictedClasses.DESIGN_POLICY.ambiguousUtilities.filter() callback` (L66-L66) - Function
+  - `scripts.eslint.design-config.designLintConfig.restrictedClasses.map() callback` (L67-L71) - Function
+- `scripts/eslint/no-hover-only.ts`
+  - `scripts.eslint.no-hover-only.TemplateAttribute` (L27-L35) - Interface
+  - `scripts.eslint.no-hover-only.TemplateElement` (L38-L42) - Interface
+  - `scripts.eslint.no-hover-only.listensFor` (L71-L74) - Class
+  - `scripts.eslint.no-hover-only.listensFor.element.startTag.attributes.some() callback` (L73-L73) - Function
+  - `scripts.eslint.no-hover-only.setsAttribute` (L77-L85) - Class
+  - `scripts.eslint.no-hover-only.setsAttribute.element.startTag.attributes.find() callback` (L78-L85) - Function
+  - `scripts.eslint.no-hover-only.staticClasses` (L88-L91) - Class
+  - `scripts.eslint.no-hover-only.staticClasses.element.startTag.attributes.find() callback` (L90-L90) - Function
+  - `scripts.eslint.no-hover-only.noHoverOnly.ESLintUtils.RuleCreator() callback` (L94-L94) - Function
+  - `scripts.eslint.no-hover-only.noHoverOnly` (L94-L173) - Class
+  - `scripts.eslint.no-hover-only.noHoverOnly.create` (L115-L172) - Method
+- `scripts/eslint/stylesheet-classes.ts`
+  - `scripts.eslint.stylesheet-classes.StylesheetClasses` (L15-L20) - Interface
+  - `scripts.eslint.stylesheet-classes.classesOfCss` (L31-L40) - Class
+  - `scripts.eslint.stylesheet-classes.classesOfCss.walkRules() callback` (L34-L38) - Function
+- `scripts/eslint/theme-token.ts`
+  - `scripts.eslint.theme-token.themeToken.create.scriptVisitor` (L112-L121) - Class
+  - `scripts.eslint.theme-token.themeToken.create.scriptVisitor.Literal` (L113-L115) - Method
+  - `scripts.eslint.theme-token.themeToken.create.scriptVisitor.TemplateElement` (L116-L120) - Method
+
+### Design Policy & ESLint Config Assembly
+The policy-and-configuration layer that turns the design knobs into runnable ESLint flat-config blocks. It owns the single source of truth for the theme/class policy (design-policy.ts: themeColorNames, DESIGN_POLICY with severities, restricted/ambiguous utilities, mobile-strategy tags) and assembles the Tailwind half of the design lint (design-config.ts → designLintConfig) by wiring eslint-plugin-better-tailwindcss to the live @theme stylesheet, the policy's restricted-class list, and the per-file scoped-class ignore lists. It also carries the local/mobile-strategy rule, which enforces the phone strategy (fullscreen dialogs, DataTable-owned tables, named scroll regions) directly from the policy's tag/owner knobs. This is the upstream 'what is allowed and how loud' decision point that both the editor and CI consume.
+
+**Related Classes/Methods**:
+
+- `scripts.design-policy.themeColorNames`:37-49
+- `scripts.eslint.design-config.designLintConfig`:53-121
+- `scripts.eslint.mobile-strategy.mobileStrategy`:61-112
+- `scripts.eslint.stylesheet-classes.ignorePatterns`:103-104
+
+**Source Files:**
+
+- `scripts/audit/code-shape/scripts/generate-shallow-candidates.ts`
+  - `scripts.audit.code-shape.scripts.generate-shallow-candidates.virtualFiles` (L53-L58) - Class
+  - `scripts.audit.code-shape.scripts.generate-shallow-candidates.virtualFiles.map() callback` (L54-L57) - Function
+- `scripts/audit/code-shape/scripts/shallow-candidates.ts`
+  - `scripts.audit.code-shape.scripts.shallow-candidates.forwardTarget.own.declared.parameters.map() callback` (L284-L287) - Function
+  - `scripts.audit.code-shape.scripts.shallow-candidates.forwardTarget.own` (L284-L288) - Class
+  - `scripts.audit.code-shape.scripts.shallow-candidates.publishedFiles.queue` (L377-L377) - Class
+  - `scripts.audit.code-shape.scripts.shallow-candidates.publishedFiles.queue.filter() callback` (L377-L377) - Function
+- `scripts/audit/css-invasive/scan.ts`
+  - `scripts.audit.css-invasive.scan.CssFinding` (L114-L127) - Interface
+  - `scripts.audit.css-invasive.scan.RawHit` (L132-L135) - Interface
+  - `scripts.audit.css-invasive.scan.scanCss.parsed` (L474-L474) - Class
+  - `scripts.audit.css-invasive.scan.scanCss.parsed.sources.map() callback` (L474-L474) - Function
+  - `scripts.audit.css-invasive.scan.vuetifyComponent` (L554-L558) - Class
+  - `scripts.audit.css-invasive.scan.vuetifyComponent.tag.replaceAll() callback` (L557-L557) - Function
+  - `scripts.audit.css-invasive.scan.titleAttribute` (L584-L589) - Class
+  - `scripts.audit.css-invasive.scan.titleAttribute.node.props.find() callback` (L586-L588) - Function
+  - `scripts.audit.css-invasive.scan.dynamicClassTokens.first` (L681-L681) - Class
+  - `scripts.audit.css-invasive.scan.dynamicClassTokens.first.source.names.flatMap() callback` (L681-L681) - Function
+  - `scripts.audit.css-invasive.scan.dynamicClassTokens.second.first.flatMap() callback` (L682-L683) - Function
+  - `scripts.audit.css-invasive.scan.dynamicClassTokens.second` (L682-L684) - Class
+  - `scripts.audit.css-invasive.scan.dynamicClassTokens.second.first.flatMap() callback.binding.names.flatMap() callback` (L683-L683) - Function
+  - `scripts.audit.css-invasive.scan.ELEMENT_CHECKS` (L719-L767) - Class
+  - `scripts.audit.css-invasive.scan.ELEMENT_CHECKS.<function>.filter() callback` (L746-L746) - Function
+  - `scripts.audit.css-invasive.scan.ELEMENT_CHECKS.<function>.map() callback` (L747-L750) - Function
+  - `scripts.audit.css-invasive.scan.ELEMENT_CHECKS.<function>` (L754-L765) - Function
+  - `scripts.audit.css-invasive.scan.templateAllowances.nodes.flatMap() callback.next` (L791-L791) - Class
+  - `scripts.audit.css-invasive.scan.templateAllowances.nodes.flatMap() callback.next.find() callback` (L791-L791) - Function
+  - `scripts.audit.css-invasive.scan.rootOverrideHits.onVuetify` (L819-L823) - Class
+  - `scripts.audit.css-invasive.scan.rootOverrideHits.onVuetify.elements.filter() callback` (L821-L821) - Function
+  - `scripts.audit.css-invasive.scan.rootOverrideHits.onVuetify.flatMap() callback` (L822-L822) - Function
+  - `scripts.audit.css-invasive.scan.vuetifyParts` (L1022-L1027) - Class
+  - `scripts.audit.css-invasive.scan.vuetifyParts.map() callback` (L1025-L1025) - Function
+  - `scripts.audit.css-invasive.scan.vuetifyParts.filter() callback` (L1026-L1026) - Function
+  - `scripts.audit.css-invasive.scan.applyAllowances.kept` (L1043-L1043) - Class
+  - `scripts.audit.css-invasive.scan.applyAllowances.kept.hits.filter() callback` (L1043-L1043) - Function
+  - `scripts.audit.css-invasive.scan.applyAllowances.kept.hits.filter() callback.allowances.some() callback` (L1043-L1043) - Function
+  - `scripts.audit.css-invasive.scan.applyAllowances.own` (L1044-L1070) - Class
+  - `scripts.audit.css-invasive.scan.applyAllowances.own.allowances.flatMap() callback` (L1044-L1070) - Function
+  - `scripts.audit.css-invasive.scan.applyAllowances.own.allowances.flatMap() callback.broad` (L1046-L1048) - Class
+  - `scripts.audit.css-invasive.scan.applyAllowances.own.allowances.flatMap() callback.broad.covered.some() callback` (L1047-L1047) - Function
+  - `scripts.audit.css-invasive.scan.applyAllowances.kept.map() callback` (L1071-L1071) - Function
+- `scripts/audit/design-manual/scripts/capture-matrix.ts`
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandCase` (L113-L152) - Class
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandCase.sizes` (L134-L136) - Class
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandCase.sizes.PREPARED_SIZES.filter() callback` (L136-L136) - Function
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandCase.sizes.flatMap() callback` (L137-L140) - Function
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandCase.PLAIN_SHOTS.filter() callback` (L147-L147) - Function
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandCase.map() callback` (L147-L148) - Function
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandCaptureCases.expanded` (L167-L167) - Class
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandCaptureCases.expanded.shapes.map() callback` (L167-L167) - Function
+  - `scripts.audit.design-manual.scripts.capture-matrix.expandCaptureCases.expanded.flatMap() callback` (L170-L170) - Function
+- `scripts/audit/design-manual/scripts/capture-scope.ts`
+  - `scripts.audit.design-manual.scripts.capture-scope.ScopeInput` (L24-L33) - Interface
+  - `scripts.audit.design-manual.scripts.capture-scope.ScopeResult` (L38-L43) - Interface
+  - `scripts.audit.design-manual.scripts.capture-scope.scopeToSpecs` (L69-L102) - Class
+  - `scripts.audit.design-manual.scripts.capture-scope.scopeToSpecs.collect.specs.names.flatMap() callback` (L73-L73) - Function
+  - `scripts.audit.design-manual.scripts.capture-scope.scopeToSpecs.changedFiles.some() callback.SHARED_PREFIXES.some() callback` (L80-L80) - Function
+- `scripts/audit/design-manual/scripts/capture-task.ts`
+  - `scripts.audit.design-manual.scripts.capture-task.stitchDesignCapture` (L57-L84) - Class
+  - `scripts.audit.design-manual.scripts.capture-task.stitchDesignCapture.map() callback` (L73-L83) - Function
+- `scripts/audit/design-manual/scripts/capture.ts`
+  - `scripts.audit.design-manual.scripts.capture.changedFiles` (L47-L52) - Class
+  - `scripts.audit.design-manual.scripts.capture.changedFiles.filter() callback` (L51-L51) - Function
+  - `scripts.audit.design-manual.scripts.capture.changedFiles.map() callback` (L52-L52) - Function
+  - `scripts.audit.design-manual.scripts.capture.readParts` (L81-L92) - Class
+  - `scripts.audit.design-manual.scripts.capture.readParts.filter() callback` (L85-L85) - Function
+  - `scripts.audit.design-manual.scripts.capture.readParts.map() callback` (L86-L90) - Function
+  - `scripts.audit.design-manual.scripts.capture.readParts.map() callback.filter() callback` (L89-L89) - Function
+  - `scripts.audit.design-manual.scripts.capture.readParts.map() callback.map() callback` (L90-L90) - Function
+  - `scripts.audit.design-manual.scripts.capture.viewportsOf` (L99-L105) - Class
+  - `scripts.audit.design-manual.scripts.capture.viewportsOf.shots.map() callback` (L101-L101) - Function
+  - `scripts.audit.design-manual.scripts.capture.viewportsOf.map() callback` (L101-L104) - Function
+  - `scripts.audit.design-manual.scripts.capture.then() callback` (L132-L150) - Function
+  - `scripts.audit.design-manual.scripts.capture.then() callback.parts` (L133-L137) - Class
+  - `scripts.audit.design-manual.scripts.capture.then() callback.parts.map() callback` (L133-L137) - Function
+  - `scripts.audit.design-manual.scripts.capture.then() callback.tiles` (L143-L146) - Class
+  - `scripts.audit.design-manual.scripts.capture.then() callback.tiles.manifest.shots.reduce() callback` (L144-L144) - Function
+  - `scripts.audit.design-manual.scripts.capture.catch() callback` (L151-L156) - Function
+- `scripts/audit/design-manual/scripts/check-report.ts`
+  - `scripts.audit.design-manual.scripts.check-report.CitationSources` (L14-L21) - Interface
+  - `scripts.audit.design-manual.scripts.check-report.CitationFailure` (L26-L33) - Interface
+  - `scripts.audit.design-manual.scripts.check-report.CheckResult` (L38-L43) - Interface
+  - `scripts.audit.design-manual.scripts.check-report.columnsOf.find.index` (L75-L75) - Class
+  - `scripts.audit.design-manual.scripts.check-report.columnsOf.find.index.header.findIndex() callback` (L75-L75) - Function
+  - `scripts.audit.design-manual.scripts.check-report.columnsOf.id.find() callback` (L79-L79) - Function
+  - `scripts.audit.design-manual.scripts.check-report.columnsOf.item.find() callback` (L80-L80) - Function
+  - `scripts.audit.design-manual.scripts.check-report.columnsOf.tile.find() callback` (L81-L81) - Function
+  - `scripts.audit.design-manual.scripts.check-report.columnsOf.source.find() callback` (L82-L82) - Function
+  - `scripts.audit.design-manual.scripts.check-report.columnsOf.severity.find() callback` (L83-L83) - Function
+  - `scripts.audit.design-manual.scripts.check-report.columnsOf.fix.find() callback` (L84-L84) - Function
+- `scripts/audit/design-manual/scripts/plan-batches.ts`
+  - `scripts.audit.design-manual.scripts.plan-batches.BatchBudget` (L25-L30) - Interface
+  - `scripts.audit.design-manual.scripts.plan-batches.Batch` (L38-L49) - Interface
+  - `scripts.audit.design-manual.scripts.plan-batches.BatchPlan` (L54-L59) - Interface
+  - `scripts.audit.design-manual.scripts.plan-batches.CaseGroup` (L65-L70) - Interface
+  - `scripts.audit.design-manual.scripts.plan-batches.groupByCase` (L75-L93) - Class
+  - `scripts.audit.design-manual.scripts.plan-batches.groupByCase.shot.tiles.reduce() callback` (L88-L88) - Function
+  - `scripts.audit.design-manual.scripts.plan-batches.planBatches` (L99-L141) - Class
+  - `scripts.audit.design-manual.scripts.plan-batches.planBatches.group.shots.map() callback` (L126-L126) - Function
+  - `scripts.audit.design-manual.scripts.plan-batches.planBatches.planned.flatMap() callback` (L132-L138) - Function
+  - `scripts.audit.design-manual.scripts.plan-batches.planBatches.planned` (L132-L139) - Class
+  - `scripts.audit.design-manual.scripts.plan-batches.planBatches.planned.flatMap() callback.batches.map() callback` (L135-L138) - Function
+- `scripts/audit/unused-locale-keys/scan.ts`
+  - `scripts.audit.unused-locale-keys.scan.scanLocaleKeys.sourceText` (L81-L83) - Class
+  - `scripts.audit.unused-locale-keys.scan.scanLocaleKeys.sourceText.map() callback` (L82-L82) - Function
+  - `scripts.audit.unused-locale-keys.scan.scanLocaleKeys.dictionaries` (L86-L86) - Class
+  - `scripts.audit.unused-locale-keys.scan.scanLocaleKeys.dictionaries.files.map() callback` (L86-L86) - Function
+- `scripts/design-policy.ts`
+  - `scripts.design-policy.themeColorNames` (L37-L49) - Class
+  - `scripts.design-policy.themeColorNames.map() callback` (L48-L48) - Function
+- `scripts/eslint/design-config.ts`
+  - `scripts.eslint.design-config.designLintConfig` (L53-L121) - Class
+  - `scripts.eslint.design-config.designLintConfig.map() callback` (L111-L119) - Function
+- `scripts/eslint/mobile-strategy.ts`
+  - `scripts.eslint.mobile-strategy.TemplateAttribute` (L27-L34) - Interface
+  - `scripts.eslint.mobile-strategy.TemplateElement` (L37-L41) - Interface
+  - `scripts.eslint.mobile-strategy.hasAttribute` (L44-L49) - Class
+  - `scripts.eslint.mobile-strategy.hasAttribute.element.startTag.attributes.some() callback` (L45-L49) - Function
+  - `scripts.eslint.mobile-strategy.directiveNamed` (L52-L58) - Class
+  - `scripts.eslint.mobile-strategy.directiveNamed.element.startTag.attributes.find() callback` (L54-L57) - Function
+  - `scripts.eslint.mobile-strategy.mobileStrategy` (L61-L112) - Class
+  - `scripts.eslint.mobile-strategy.mobileStrategy.ESLintUtils.RuleCreator() callback` (L62-L62) - Function
+  - `scripts.eslint.mobile-strategy.mobileStrategy.create` (L79-L111) - Method
+- `scripts/eslint/stylesheet-classes.ts`
+  - `scripts.eslint.stylesheet-classes.ignorePatterns` (L103-L104) - Class
+  - `scripts.eslint.stylesheet-classes.ignorePatterns.map() callback` (L104-L104) - Function
+- `scripts/eslint/theme-token.ts`
+  - `scripts.eslint.theme-token.themeToken.ESLintUtils.RuleCreator() callback` (L74-L74) - Function
+  - `scripts.eslint.theme-token.themeToken` (L74-L164) - Class
+  - `scripts.eslint.theme-token.themeToken.create` (L93-L163) - Method

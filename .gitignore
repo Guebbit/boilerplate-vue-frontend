@@ -75,4 +75,5 @@ dist-ssr
 .2brain/modules/.modules-cache.json
 .2brain/repo-index.json
 .codeboarding/
+.2brain/map/
 # 2brain:end
