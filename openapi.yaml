@@ -361,6 +361,8 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /locales:
+    x-versioned:
+      - post
     get:
       x-cache: revalidate
       tags:
@@ -450,11 +452,16 @@ paths:
         to the default language. It carries only the frontend app until one exists.
       operationId: createLocale
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - LOCALE_LANGUAGE_EXISTS
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - create:Locale
+        - apiKeyAuth:
+            - create:Locale
         - cookieAuth: []
       requestBody:
         required: true
@@ -468,6 +475,10 @@ paths:
           headers:
             Location:
               $ref: "#/components/headers/Location"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -641,11 +652,16 @@ paths:
         /locales/{locale}/activate` and `/deactivate` move it.
       operationId: replaceLocale
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "404":
           - LOCALE_LANGUAGE_NOT_FOUND
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Locale
+        - apiKeyAuth:
+            - update:Locale
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
@@ -713,11 +729,16 @@ paths:
         /locales/{locale}/activate` and `/deactivate` move it.
       operationId: updateLocale
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "404":
           - LOCALE_LANGUAGE_NOT_FOUND
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Locale
+        - apiKeyAuth:
+            - update:Locale
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
@@ -789,13 +810,18 @@ paths:
         the language says whether it would be accepted now.
       operationId: deleteLocale
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "404":
           - LOCALE_LANGUAGE_NOT_FOUND
         "409":
           - LOCALE_LANGUAGE_IS_FALLBACK
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - delete:Locale
+        - apiKeyAuth:
+            - delete:Locale
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
@@ -961,6 +987,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: locales
   /locales/{locale}/entries:
+    x-versioned:
+      - get
     get:
       tags:
         - Locales
@@ -973,13 +1001,21 @@ paths:
         `text` searches keys and values together. Every app's rows are listed; one app's
         slice is a resource of its own, `/locales/{locale}/apps/{app}/entries`, which is
         where it is written.
+
+        The `ETag` is the language's dictionary version, whichever app's rows were
+        listed: send it as `If-Match` on an import and a write that landed since is a 412.
       operationId: listLocaleEntries
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "404":
           - LOCALE_LANGUAGE_NOT_FOUND
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Locale
+        - apiKeyAuth:
+            - update:Locale
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
@@ -994,6 +1030,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/LocaleEntriesResponse"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -1006,8 +1044,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1024,6 +1060,10 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: locales
   /locales/{locale}/apps/{app}/entries:
+    x-versioned:
+      - get
+      - put
+      - patch
     get:
       tags:
         - Locales
@@ -1036,15 +1076,23 @@ paths:
         `text` searches keys and values together. Only this app's rows, at the address
         the writes below target; an app the deployment does not configure is refused
         with a 422.
+
+        The `ETag` is the language's dictionary version, the same one `GET
+        /locales/{locale}/entries` answers: a write to any app moves it.
       operationId: listAppLocaleEntries
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "404":
           - LOCALE_LANGUAGE_NOT_FOUND
         "422":
           - LOCALE_APP_UNKNOWN
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Locale
+        - apiKeyAuth:
+            - update:Locale
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
@@ -1060,6 +1108,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/LocaleEntriesResponse"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -1072,8 +1122,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1099,6 +1147,9 @@ paths:
         rather than discovered when the tree is built.
       operationId: createLocaleEntry
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "404":
           - LOCALE_LANGUAGE_NOT_FOUND
         "409":
@@ -1108,8 +1159,10 @@ paths:
           - LOCALE_APP_UNKNOWN
           - LOCALE_ENTRY_KEY_INVALID
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - create:Locale
+        - apiKeyAuth:
+            - create:Locale
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
@@ -1182,20 +1235,30 @@ paths:
 
         Nobody adds five hundred keys through a form; without this the admin surface is a
         demo.
+
+        `If-Match` takes the tag of a list read of this language: when any entry of it
+        (in any app) was written since, the import is refused with a 412 and writes
+        nothing. An import that would change nothing is checked too.
       operationId: replaceLocaleEntries
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "404":
           - LOCALE_LANGUAGE_NOT_FOUND
         "422":
           - LOCALE_APP_UNKNOWN
           - LOCALE_ENTRY_KEY_INVALID
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Locale
+        - apiKeyAuth:
+            - update:Locale
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/AppPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: true
         content:
@@ -1232,6 +1295,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -1256,8 +1321,14 @@ paths:
 
         See `PUT` on this collection for the replacing counterpart, and for why the choice
         lives in the method.
+
+        `If-Match` is checked as on the `PUT`, and the answer's `ETag` is the language's
+        new version.
       operationId: updateLocaleEntries
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "404":
           - LOCALE_LANGUAGE_NOT_FOUND
         "409":
@@ -1266,12 +1337,15 @@ paths:
           - LOCALE_APP_UNKNOWN
           - LOCALE_ENTRY_KEY_INVALID
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Locale
+        - apiKeyAuth:
+            - update:Locale
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/AppPathParam"
+        - $ref: "#/components/parameters/IfMatchHeader"
       requestBody:
         required: true
         content:
@@ -1289,6 +1363,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/LocaleImportResult"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -1311,6 +1387,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -1336,11 +1414,16 @@ paths:
         the same 404.
       operationId: getLocaleEntry
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "422":
           - LOCALE_APP_UNKNOWN
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Locale
+        - apiKeyAuth:
+            - update:Locale
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
@@ -1393,11 +1476,16 @@ paths:
         collision checks that go with them.
       operationId: replaceLocaleEntry
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "422":
           - LOCALE_APP_UNKNOWN
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Locale
+        - apiKeyAuth:
+            - update:Locale
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
@@ -1457,11 +1545,16 @@ paths:
       description: Removes a single key from one language. The other languages keep theirs.
       operationId: deleteLocaleEntry
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "422":
           - LOCALE_APP_UNKNOWN
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - delete:Locale
+        - apiKeyAuth:
+            - delete:Locale
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
@@ -1502,12 +1595,17 @@ paths:
         server-side; this is the only door that shows every language at once.
       operationId: getEntityTranslations
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "404":
           - LOCALE_ENTITY_TYPE_UNKNOWN
           - LOCALE_ENTITY_NOT_FOUND
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:Translation
+        - apiKeyAuth:
+            - read:Translation
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/TranslatableEntityTypePathParam"
@@ -1570,11 +1668,16 @@ paths:
         missing/`null` fallback locale.
       operationId: replaceEntityTranslations
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "404":
           - LOCALE_ENTITY_NOT_FOUND
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Translation
+        - apiKeyAuth:
+            - update:Translation
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/TranslatableEntityTypePathParam"
@@ -1661,12 +1764,17 @@ paths:
         failed.
       operationId: updateEntityTranslations
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "404":
           - LOCALE_ENTITY_TYPE_UNKNOWN
           - LOCALE_ENTITY_NOT_FOUND
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Translation
+        - apiKeyAuth:
+            - update:Translation
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/TranslatableEntityTypePathParam"
@@ -1788,7 +1896,8 @@ paths:
         Requires the operator role (`read:ObservabilitySnapshot`).
       operationId: getObservabilityHealth
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:ObservabilitySnapshot
         - cookieAuth: []
       responses:
         "200":
@@ -1823,6 +1932,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: observability
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /observability/metrics:
     get:
       tags:
@@ -1919,7 +2032,8 @@ paths:
         Requires the operator role (`read:ObservabilitySnapshot`).
       operationId: getObservabilityMetricsOverview
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:ObservabilitySnapshot
         - cookieAuth: []
       responses:
         "200":
@@ -1954,6 +2068,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: observability
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /observability/audit:
     get:
       tags:
@@ -1972,7 +2090,8 @@ paths:
         Requires the platform operator's observability key.
       operationId: listObservabilityAuditEntries
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:ObservabilitySnapshot
         - cookieAuth: []
       parameters:
         - name: actor
@@ -2038,6 +2157,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: observability
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /audit:
     get:
       tags:
@@ -2052,8 +2175,10 @@ paths:
         Requires `read:AuditLog` — held by `admin` in the demo.
       operationId: listAuditEntries
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:AuditLog
+        - apiKeyAuth:
+            - read:AuditLog
         - cookieAuth: []
       parameters:
         - name: actor
@@ -2131,6 +2256,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: audit-logs
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /antibot/challenge:
     get:
       tags:
@@ -3099,25 +3228,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/Address"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: addresses
   /account/addresses/{addressId}:
     get:
@@ -3730,23 +3859,23 @@ paths:
               schema:
                 $ref: "#/components/schemas/Account"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: account
   /account/password/reset:
     post:
@@ -4858,8 +4987,10 @@ paths:
       description: Returns a paginated list of user accounts.
       operationId: listUsers
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:User
+        - apiKeyAuth:
+            - read:User
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
@@ -4942,6 +5073,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
     post:
       tags:
         - Users
@@ -4952,10 +5087,14 @@ paths:
         "401":
           - REAUTH_REQUIRED
         "403":
+          - FORBIDDEN
           - ROLE_MANAGEMENT_REQUIRED
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - create:User
+        - apiKeyAuth:
+            - create:User
         - cookieAuth: []
       requestBody:
         required: true
@@ -5030,8 +5169,10 @@ paths:
       description: Returns the full profile of the user identified by `{id}`. Functionally equivalent to `GET /users?id={id}`.
       operationId: getUserById
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:User
+        - apiKeyAuth:
+            - read:User
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -5072,6 +5213,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
     put:
       tags:
         - Users
@@ -5080,10 +5225,14 @@ paths:
       operationId: replaceUserById
       x-error-codes:
         "403":
+          - FORBIDDEN
           - ROLE_MANAGEMENT_REQUIRED
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:User
+        - apiKeyAuth:
+            - update:User
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -5151,10 +5300,14 @@ paths:
       operationId: updateUserById
       x-error-codes:
         "403":
+          - FORBIDDEN
           - ROLE_MANAGEMENT_REQUIRED
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:User
+        - apiKeyAuth:
+            - update:User
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -5228,8 +5381,12 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - delete:User
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -5269,11 +5426,15 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - USER_ERASURE_DUE
           - USER_NOT_DELETED
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - delete:User
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -5330,9 +5491,13 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
       x-alias-of: deleteUserById
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - delete:User
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -5368,8 +5533,10 @@ paths:
       operationId: searchUsers
       x-alias-of: listUsers
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:User
+        - apiKeyAuth:
+            - read:User
         - cookieAuth: []
       requestBody:
         required: true
@@ -5416,6 +5583,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /tasks:
     post:
       tags:
@@ -5463,25 +5634,25 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: tasks
     get:
       x-cache: private-no-cache
@@ -5492,8 +5663,10 @@ paths:
         Returns the tasks the caller may work: every visitor message, and the system tasks whose route set the caller holds (an administrator holds them all). Open work first when sorted by `dueAt`.
       operationId: listTasks
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:Task
+        - apiKeyAuth:
+            - read:Task
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
@@ -5580,6 +5753,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: tasks
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /tasks/search:
     post:
       tags:
@@ -5589,8 +5766,10 @@ paths:
       operationId: searchTasks
       x-alias-of: listTasks
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:Task
+        - apiKeyAuth:
+            - read:Task
         - cookieAuth: []
       requestBody:
         required: true
@@ -5637,6 +5816,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: tasks
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /tasks/summary:
     get:
       tags:
@@ -5646,8 +5829,10 @@ paths:
         How much work the caller's jurisdiction holds: open tasks, the caller's own, the overdue ones and the unassigned ones. Never cached: it is one person's view.
       operationId: getTaskSummary
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:Task
+        - apiKeyAuth:
+            - read:Task
         - cookieAuth: []
       responses:
         "200":
@@ -5682,6 +5867,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: tasks
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /tasks/{id}:
     get:
       x-cache: private-no-cache
@@ -5692,8 +5881,10 @@ paths:
         One task with its notes, assignee and the earlier tasks about the same record. A visitor task names a person, so staff reading it is audited. An unknown, malformed or out-of-jurisdiction id is a 404.
       operationId: getTask
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:Task
+        - apiKeyAuth:
+            - read:Task
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -5734,6 +5925,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: tasks
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
     delete:
       tags:
         - Tasks
@@ -5741,8 +5936,10 @@ paths:
       description: Permanently removes the task identified by `{id}`. Needs `delete:Task` and, for a system task, the task's route set.
       operationId: deleteTask
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - delete:Task
+        - apiKeyAuth:
+            - delete:Task
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -5764,6 +5961,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: tasks
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /tasks/{id}/resolve:
     post:
       tags:
@@ -5773,11 +5974,16 @@ paths:
         From `new`, `in_progress` or `spam` to `resolved`, with `resolution: staff`. Stamps `closedAt` (kept when it was already closed) and `respondedAt` (once), and releases the dedup key. No body. Needs `update:Task` and, for a system task, its route set. The move is conditional on the status read, so a repeat answers 409.
       operationId: resolveTask
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - TASK_ALREADY_RESOLVED
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Task
+        - apiKeyAuth:
+            - update:Task
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -5827,11 +6033,16 @@ paths:
         From `new`, `in_progress` or `resolved` to `spam`, with `resolution: spam`. Same stamps as a resolve, without `respondedAt`. Also undoes a false resolve. No body. Needs `update:Task` and, for a system task, its route set.
       operationId: markTaskSpam
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - TASK_ALREADY_SPAM
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Task
+        - apiKeyAuth:
+            - update:Task
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -5881,12 +6092,17 @@ paths:
         From `resolved` or `spam` to `in_progress` when it has an assignee, else `new`. Clears `closedAt` and `resolution` (the retention clock stops) and restores the dedup key of a linked task. `dueAt` is kept: the deadline belongs to the situation, not to the reopen. When a newer open task already covers the same situation the answer is 409 `TASK_SUPERSEDED` with `details.taskId`. No body. Needs `update:Task` and, for a system task, its route set.
       operationId: reopenTask
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - TASK_ALREADY_OPEN
           - TASK_SUPERSEDED
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Task
+        - apiKeyAuth:
+            - update:Task
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -5936,14 +6152,19 @@ paths:
         Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task and `update:Task`, so they can open, note and close it. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`; assigning it to the person who holds it already answers 409 `TASK_ALREADY_ASSIGNED` and writes nothing.
       operationId: assignTask
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - TASK_NOT_OPEN
           - TASK_ALREADY_ASSIGNED
         "422":
           - TASK_ASSIGNEE_INVALID
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Task
+        - apiKeyAuth:
+            - update:Task
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -6005,11 +6226,16 @@ paths:
         Clears the assignee, whatever the task's status. An `in_progress` task goes back to `new`. A task nobody holds answers 409 `TASK_NOT_ASSIGNED` and writes nothing.
       operationId: unassignTask
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - TASK_NOT_ASSIGNED
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Task
+        - apiKeyAuth:
+            - update:Task
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -6059,13 +6285,18 @@ paths:
         Appends a note to the staff thread: append-only, with its author and time. Notes are written and read by staff, and the data subject's export carries them without the author. Write each one as if the customer will read it.
       operationId: createTaskNote
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - IDEMPOTENCY_IN_FLIGHT
         "422":
           - IDEMPOTENCY_KEY_MISMATCH
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Task
+        - apiKeyAuth:
+            - update:Task
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -6099,27 +6330,27 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: tasks
   /products:
     x-versioned:
@@ -6233,13 +6464,20 @@ paths:
       description: "Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/levels/{productId}/receive`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it."
       operationId: createProduct
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - IDEMPOTENCY_IN_FLIGHT
         "422":
           - IDEMPOTENCY_KEY_MISMATCH
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - create:Product
+            - update:Translation
+        - apiKeyAuth:
+            - create:Product
+            - update:Translation
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
@@ -6284,25 +6522,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/Product"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: products
   /products/facets:
     get:
@@ -6420,8 +6658,12 @@ paths:
         change one locale without restating the others, use `PATCH`.
       operationId: replaceProductById
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Product
+            - update:Translation
+        - apiKeyAuth:
+            - update:Product
+            - update:Translation
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -6483,6 +6725,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: products
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
     patch:
       tags:
         - Products
@@ -6507,8 +6753,12 @@ paths:
         `translations.it.title`.
       operationId: updateProductById
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Product
+            - update:Translation
+        - apiKeyAuth:
+            - update:Product
+            - update:Translation
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -6575,6 +6825,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: products
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
     delete:
       tags:
         - Products
@@ -6582,8 +6836,10 @@ paths:
       description: Deletes the product identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /products/{id}/restore`.
       operationId: deleteProductById
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - delete:Product
+        - apiKeyAuth:
+            - delete:Product
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -6611,6 +6867,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: products
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /products/{id}/restore:
     x-versioned:
       - post
@@ -6621,11 +6881,16 @@ paths:
       description: Undoes the soft delete of the product identified by `{id}`. Answers 409 when the product is not soft-deleted, so a restore can never be mistaken for an ordinary read.
       operationId: restoreProductById
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - PRODUCT_NOT_DELETED
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - delete:Product
+        - apiKeyAuth:
+            - delete:Product
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -6681,8 +6946,10 @@ paths:
       operationId: hardDeleteProductById
       x-alias-of: deleteProductById
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - delete:Product
+        - apiKeyAuth:
+            - delete:Product
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -6709,6 +6976,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: products
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /products/search:
     post:
       tags:
@@ -6858,27 +7129,27 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: cart
     delete:
       tags:
@@ -7177,7 +7448,8 @@ paths:
           - IDEMPOTENCY_KEY_MISMATCH
           - CART_QUANTITY_LIMIT
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - checkout:Cart
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
@@ -7216,27 +7488,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: cart
   /cart/reorder:
     post:
@@ -7286,27 +7558,27 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: cart
   /wishlist:
     get:
@@ -7640,6 +7912,9 @@ paths:
         A body is bounded twice. The schema caps it at 1000 lines of at most 999999 units (what the contract promises); a deployment may set a lower limit in `NODE_ADMIN_ORDER_MAX_LINES` and `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`, and a body over it answers `422` with `ORDER_LINE_LIMIT_EXCEEDED`.
       operationId: createOrder
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - IDEMPOTENCY_IN_FLIGHT
           - ORDER_INSUFFICIENT_STOCK
@@ -7648,7 +7923,8 @@ paths:
           - IDEMPOTENCY_KEY_MISMATCH
           - ORDER_LINE_LIMIT_EXCEEDED
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - create:Order
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
@@ -7687,27 +7963,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: orders
   /orders/search:
     post:
@@ -7829,7 +8105,8 @@ paths:
       description: Replaces the order identified by `{id}` in the path (RFC 9110 §9.3.4). `email` is the only writable field — `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/override-status`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
       operationId: replaceOrderById
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Order
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -7883,6 +8160,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: orders
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
     patch:
       tags:
         - Orders
@@ -7890,7 +8171,8 @@ paths:
       description: Updates the order identified by `{id}` in the path, merging — an omitted `email` leaves the stored one untouched. `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/override-status`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
       operationId: updateOrderById
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Order
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -7949,6 +8231,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: orders
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
     delete:
       tags:
         - Orders
@@ -7956,12 +8242,16 @@ paths:
       description: Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record, which is only allowed for an order that is canceled and was never paid (409 `ORDER_NOT_CANCELED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel). A soft delete hides a canceled order from its buyer (409 `ORDER_NOT_CANCELED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`.
       operationId: deleteOrderById
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - ORDER_HAS_MONEY_HISTORY
           - ORDER_INVOICED
           - ORDER_NOT_CANCELED
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - delete:Order
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -8001,10 +8291,14 @@ paths:
       description: Undoes the soft delete of the order identified by `{id}`. Answers 409 `ORDER_NOT_DELETED` when the order is not soft-deleted, so a restore can never be mistaken for an ordinary read.
       operationId: restoreOrderById
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - ORDER_NOT_DELETED
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - delete:Order
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -8059,13 +8353,17 @@ paths:
       description: Permanently removes the order identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /orders/{id}?hardDelete=true`, and only for an order that is canceled and was never paid (409 `ORDER_NOT_CANCELED` while it is open, 409 `ORDER_INVOICED` once paid).
       operationId: hardDeleteOrderById
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - ORDER_HAS_MONEY_HISTORY
           - ORDER_INVOICED
           - ORDER_NOT_CANCELED
       x-alias-of: deleteOrderById
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - delete:Order
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -8180,11 +8478,15 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - ORDER_OVERRIDE_AWAITING_STOCK
           - ORDER_OVERRIDE_NOT_ALLOWED
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - override:Order
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -8464,6 +8766,9 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - IDEMPOTENCY_IN_FLIGHT
           - PAYMENT_IN_FLIGHT
@@ -8471,7 +8776,8 @@ paths:
         "422":
           - IDEMPOTENCY_KEY_MISMATCH
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - create:Payment
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -8529,27 +8835,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Payment"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: payments
   /orders/{id}/process:
     x-versioned:
@@ -8561,10 +8867,14 @@ paths:
       description: Reports that fulfillment has started — the order moves `paid → processing`. The verb names the status it reaches, as `cancel` does; the module behind it is `delivery`'s. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
       operationId: processOrder
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - ORDER_NOT_PAID
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - start:Shipment
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -8618,7 +8928,8 @@ paths:
       description: "The plan for an order's goods: its fulfillment orders, the groups of lines that leave together, made by rule when the order is paid. Each carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers `items: []` — absence is the answer, never a 404. A hold reads to the buyer as `holdNotice` and staff's `holdMessage`; `holdReason` and `holdNote` are staff's own and are left out for anyone else. Unpaged: one order holds a handful. Each item has its own read at `GET /delivery/fulfillment-orders/{id}`."
       operationId: listOrderFulfillmentOrders
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:Order
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -8658,6 +8969,9 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: delivery
+      x-error-codes:
+        "403":
+          - FORBIDDEN
   /orders/{id}/shipments:
     get:
       tags:
@@ -8666,7 +8980,8 @@ paths:
       description: "What actually left for an order: the shipments cut from its fulfillment orders, oldest first, with tracking code and delivered date. Each carries its own `actions`, decided per caller. Scoped like the order: a buyer reads their own, staff holding `display:Order` read any; someone else's order is a 404, and an order with nothing shipped is `items: []`. Unpaged. Each item has its own read at `GET /delivery/shipments/{id}`, which is also where the `Location` of a newly cut shipment points."
       operationId: listOrderShipments
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:Order
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -8706,6 +9021,9 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: delivery
+      x-error-codes:
+        "403":
+          - FORBIDDEN
   /payments/methods:
     get:
       tags:
@@ -8760,6 +9078,9 @@ paths:
           - IDEMPOTENCY_KEY_REQUIRED
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - IDEMPOTENCY_IN_FLIGHT
           - PAYMENT_DISPUTED
@@ -8768,7 +9089,8 @@ paths:
           - IDEMPOTENCY_KEY_MISMATCH
           - PAYMENT_REFUND_EXCEEDS_REMAINING
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - create:Refund
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -8804,27 +9126,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Refund"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: payments
   /payments/{id}/refunds/{refundId}:
     get:
@@ -8942,7 +9264,8 @@ paths:
         "422":
           - IDEMPOTENCY_KEY_MISMATCH
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - checkout:Cart
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -8976,27 +9299,27 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: payments
   /payments/{id}/sync:
     post:
@@ -9014,7 +9337,8 @@ paths:
           - PAYMENT_DECLINED
           - PAYMENT_NOT_CONFIRMABLE
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - checkout:Cart
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -9173,7 +9497,8 @@ paths:
         else only their own orders'. `delivered` is true once nothing remains and every shipment arrived.
       operationId: listPreorderFulfillmentOrders
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:Order
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
@@ -9248,6 +9573,9 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: delivery
+      x-error-codes:
+        "403":
+          - FORBIDDEN
   /delivery/fulfillment-orders/summary:
     get:
       tags:
@@ -9260,7 +9588,8 @@ paths:
         tab of the preorder board; same audience and scope as the list.
       operationId: summarizePreorderFulfillmentOrders
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:Order
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
@@ -9306,6 +9635,9 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: delivery
+      x-error-codes:
+        "403":
+          - FORBIDDEN
   /delivery/fulfillment-orders/{id}/shipments:
     post:
       tags:
@@ -9318,6 +9650,9 @@ paths:
         Send an `Idempotency-Key`: a partial ship creates a NEW shipment, so a retry without one (a dropped connection, a double click) would cut a second parcel and take the stock twice. The same key replays the first answer; a 409 means the first request is still running, a 422 means the key was reused with another body.
       operationId: shipFulfillmentOrder
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - DELIVERY_NOT_PHYSICAL
           - DELIVERY_NOT_SHIPPABLE
@@ -9328,7 +9663,8 @@ paths:
           - DELIVERY_LINES_INVALID
           - IDEMPOTENCY_KEY_MISMATCH
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Shipment
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -9365,27 +9701,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Shipment"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: delivery
   /delivery/fulfillment-orders/{id}/fulfill:
     post:
@@ -9395,6 +9731,9 @@ paths:
       description: "The digital act: a shipment with no tracking, born and delivered in the same write. A `digital` fulfillment order has nothing to carry, so this is its only door. Refuses a physical one with `DELIVERY_NOT_DIGITAL` (ship it instead). When it leaves nothing remaining and nothing undelivered the order moves to `delivered`, its withdrawal clock counted from payment (digital content, Art. 9(2)(c)). Works from `paid` too: it moves the order to `processing` itself, so it also needs `start:Shipment` (403 without it). Answers like the create it is: 201 with `Location` pointing at the new shipment. Send an `Idempotency-Key`, as for shipping (a 409 is the first request still running, a 422 the key reused with another body)."
       operationId: fulfillFulfillmentOrder
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - DELIVERY_NOT_DIGITAL
           - IDEMPOTENCY_IN_FLIGHT
@@ -9403,7 +9742,8 @@ paths:
         "422":
           - IDEMPOTENCY_KEY_MISMATCH
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Shipment
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -9434,23 +9774,23 @@ paths:
               schema:
                 $ref: "#/components/schemas/Shipment"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: delivery
   /delivery/fulfillment-orders/{id}/hold:
     post:
@@ -9460,10 +9800,14 @@ paths:
       description: "Staff stops a fulfillment order from shipping, with a reason. Only an open or in-progress one can be held (`DELIVERY_NOT_HOLDABLE`). `awaiting_stock` is never a reason staff can give: only the allocation of stock sets it."
       operationId: holdFulfillmentOrder
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - DELIVERY_NOT_HOLDABLE
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Shipment
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -9525,10 +9869,14 @@ paths:
       description: "Staff lets a held fulfillment order ship again. A hold for `awaiting_stock` is refused (`DELIVERY_NOT_RELEASABLE`): a hand release would ship goods the ledger never counted out, so only the stock arriving releases it."
       operationId: releaseFulfillmentOrder
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - DELIVERY_NOT_RELEASABLE
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Shipment
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -9578,7 +9926,8 @@ paths:
       description: "One shipment by its own id, at the address `PATCH` corrects it. Scoped like the order it belongs to (`read:Order`): a buyer reads their own, staff holding `display:Order` read any. Someone else's shipment, an unknown id and a malformed one are the same 404."
       operationId: getShipment
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:Order
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -9618,6 +9967,9 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: delivery
+      x-error-codes:
+        "403":
+          - FORBIDDEN
     patch:
       tags:
         - Delivery
@@ -9625,10 +9977,14 @@ paths:
       description: 'Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped`, `delivered` or `lost`; a digital fulfillment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.'
       operationId: updateShipment
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - DELIVERY_NOT_PHYSICAL
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Shipment
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -9696,11 +10052,15 @@ paths:
         A `lost` shipment that turns up is accepted too, but only while every unit on it is still open: not shipped again and not canceled, the owed units of a short shelf included. All or nothing, in one transaction: the shipment becomes `delivered` (its `lostAt` and `lostReason` stay as history), the units go back on the fulfillment order, the top-up of the stock hold is given back and the owed fulfillment order is closed with no refund (`cancelReason: found`). Otherwise `DELIVERY_LOST_SUPERSEDED` (409).
       operationId: deliverShipment
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - DELIVERY_LOST_SUPERSEDED
           - DELIVERY_NOT_DELIVERABLE
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Shipment
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -9873,27 +10233,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Return"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: returns
   /returns/options:
     get:
@@ -10005,10 +10365,14 @@ paths:
       description: Staff accept a `requested` return; the customer is told they may send the goods back. The write is conditional on the return still being `requested`, so two staff members deciding at once cannot both win — the second answers 409.
       operationId: approveReturn
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - RETURN_NOT_DECIDABLE
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Return
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -10057,10 +10421,14 @@ paths:
       description: "Staff refuse a `requested` return with a reason code, and a message to the buyer that `other` requires — the customer is mailed the code's sentence, in their own language, and the message. Same conditional write as `approve`. A decline is final: a mistaken one is fixed by opening a new return for the same lines. A decline is a complaint the shop does not settle, so the mail does not carry the ADR information Directive 2013/11 Art. 13(3) asks for; that is the shop's to add."
       operationId: declineReturn
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - RETURN_NOT_DECIDABLE
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Return
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -10125,6 +10493,9 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - DELIVERY_NOT_REOPENABLE
           - IDEMPOTENCY_IN_FLIGHT
@@ -10136,7 +10507,8 @@ paths:
           - RETURN_REMEDY_INVALID
           - RETURN_RESTOCK_INVALID
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - receive:Return
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -10170,27 +10542,27 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: returns
   /inventory/levels:
     get:
@@ -10200,8 +10572,10 @@ paths:
       description: The stock board — every product with its three counters and the availability derived from them. Admin; a customer sees `available` on the product itself. Answers the question a catalogue listing cannot, which is WHY something is unbuyable — nothing on the shelf, or everything on it already spoken for.
       operationId: listInventoryLevels
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:StockLevel
+        - apiKeyAuth:
+            - read:StockLevel
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
@@ -10248,6 +10622,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: inventory
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /inventory/preorders:
     get:
       tags:
@@ -10259,8 +10637,10 @@ paths:
         The release date and the title come from the catalogue. Never public: exact counts are what a competitor wants.
       operationId: listPreorderLevels
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:StockLevel
+        - apiKeyAuth:
+            - read:StockLevel
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
@@ -10300,6 +10680,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: inventory
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /inventory/movements:
     get:
       tags:
@@ -10308,8 +10692,10 @@ paths:
       description: A page of the ledger, newest first — one row per counter change, with every counter delta and the reason attached. Every row was written by the same call that moved the counter, so the ledger cannot have gaps. Paged rather than capped, and `meta.totalItems` counts everything matching the filters — this is the record an audit works through, and a read that returned only the newest rows would misreport history as complete.
       operationId: listStockMovements
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:StockLevel
+        - apiKeyAuth:
+            - read:StockLevel
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
@@ -10361,6 +10747,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: inventory
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /inventory/levels/{productId}/receive:
     post:
       tags:
@@ -10369,13 +10759,18 @@ paths:
       description: Units arrive from a supplier — `onHand` rises, `reserved` does not, so the delivery becomes available immediately. The only transition that can create units, and the reason a shop that has sold out can sell again. Send an `Idempotency-Key` — a retried receipt with the same key replays the first answer instead of counting the delivery twice.
       operationId: receiveStock
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - IDEMPOTENCY_IN_FLIGHT
         "422":
           - IDEMPOTENCY_KEY_MISMATCH
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - create:StockMovement
+        - apiKeyAuth:
+            - create:StockMovement
         - cookieAuth: []
       parameters:
         - name: productId
@@ -10414,27 +10809,27 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: inventory
   /inventory/levels/{productId}/adjust:
     post:
@@ -10444,14 +10839,19 @@ paths:
       description: A stocktake correction — signed, because shrinkage is the common case and it is negative. Refuses to take `onHand` below what is already reserved, because those units are promised to orders that exist — the fix for finding fewer units than were sold is to cancel orders, not to make availability negative. Send an `Idempotency-Key` — a retried correction with the same key replays the first answer instead of applying the delta twice.
       operationId: adjustStock
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - IDEMPOTENCY_IN_FLIGHT
           - INVENTORY_BELOW_RESERVED
         "422":
           - IDEMPOTENCY_KEY_MISMATCH
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - create:StockMovement
+        - apiKeyAuth:
+            - create:StockMovement
         - cookieAuth: []
       parameters:
         - name: productId
@@ -10490,13 +10890,13 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
           description: The correction would leave fewer units than are already reserved
           headers:
@@ -10512,22 +10912,24 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: inventory
   /inventory/reservations/sweep:
     post:
@@ -10540,8 +10942,10 @@ paths:
         A job behind an admin endpoint rather than an internal schedule. The application ships no scheduler, so the tick is driven from outside — a cron entry, the platform's scheduled job, or an operator. Idempotent; running it twice releases nothing the first run already released.
       operationId: sweepReservations
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - sweep:StockLevel
+        - apiKeyAuth:
+            - sweep:StockLevel
         - cookieAuth: []
       responses:
         "200":
@@ -10576,6 +10980,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: inventory
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /webhooks/subscriptions:
     x-versioned:
       - post
@@ -10589,8 +10997,10 @@ paths:
         `POST .../{id}/secrets`).
       operationId: listWebhookSubscriptions
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:WebhookSubscription
+        - apiKeyAuth:
+            - read:WebhookSubscription
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
@@ -10649,6 +11059,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: webhooks
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
     post:
       tags:
         - Webhooks
@@ -10662,13 +11076,23 @@ paths:
         delivery that fails later; `PUT` and `PATCH` run the same check when the `url`
         changes. It runs again on every delivery, since a subscription's DNS can change
         after it is created.
+
+        A subscription hands an event stream to a machine, so the caller must hold the read
+        rule of every event it carries (`GET /webhooks/events` marks each one `actions.subscribe`;
+        `*` needs them all). Otherwise 403 `WEBHOOK_EVENT_READ_REQUIRED`, naming the events.
       operationId: createWebhookSubscription
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
+          - WEBHOOK_EVENT_READ_REQUIRED
         "409":
           - WEBHOOK_SUBSCRIPTION_LIMIT_REACHED
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - create:WebhookSubscription
+        - apiKeyAuth:
+            - create:WebhookSubscription
         - cookieAuth: []
       requestBody:
         required: true
@@ -10738,8 +11162,10 @@ paths:
         shop's subscriptions, whether it never existed or belongs to another shop.
       operationId: getWebhookSubscription
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:WebhookSubscription
+        - apiKeyAuth:
+            - read:WebhookSubscription
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -10778,6 +11204,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: webhooks
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
     put:
       tags:
         - Webhooks
@@ -10786,10 +11216,22 @@ paths:
         Full replace of url/description/eventTypes — an omitted `description` is cleared.
         Never touches the secret ring or whether the subscription is on; rotate or drop a
         secret, enable or disable it, through its own action route below.
+
+        A `PUT`, or a `PATCH` that carries `url` or `eventTypes`, needs the read rule of every
+        event in the stored filter AND in the new one: otherwise a caller could narrow a stream
+        and redirect it in one call. Otherwise 403 `WEBHOOK_EVENT_READ_REQUIRED`. A
+        description-only `PATCH` is not checked.
       operationId: replaceWebhookSubscription
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
+          - WEBHOOK_EVENT_READ_REQUIRED
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:WebhookSubscription
+        - apiKeyAuth:
+            - update:WebhookSubscription
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -10851,10 +11293,21 @@ paths:
         Partial update of url/description/eventTypes. Never touches the secret ring or
         whether the subscription is on; rotate or drop a secret, enable or disable it,
         through its own action route below.
+
+        A `PATCH` that carries `url` or `eventTypes` needs the read rule of every event in the
+        stored filter AND in the new one, as `PUT` does; a description-only `PATCH` is not
+        checked. Otherwise 403 `WEBHOOK_EVENT_READ_REQUIRED`.
       operationId: updateWebhookSubscription
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
+          - WEBHOOK_EVENT_READ_REQUIRED
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:WebhookSubscription
+        - apiKeyAuth:
+            - update:WebhookSubscription
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -10920,8 +11373,10 @@ paths:
       description: Permanently removes the subscription. Its delivery log is left in place, so past attempts stay auditable.
       operationId: deleteWebhookSubscription
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - delete:WebhookSubscription
+        - apiKeyAuth:
+            - delete:WebhookSubscription
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -10946,6 +11401,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: webhooks
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /webhooks/subscriptions/{id}/secrets/{secretId}:
     delete:
       tags:
@@ -10957,8 +11416,10 @@ paths:
         of `POST .../secrets`.
       operationId: deleteWebhookSubscriptionSecret
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:WebhookSubscription
+        - apiKeyAuth:
+            - update:WebhookSubscription
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -11006,6 +11467,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: webhooks
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /webhooks/deliveries:
     get:
       tags:
@@ -11014,8 +11479,10 @@ paths:
       description: Every attempt, newest first, optionally filtered by subscription and status. The order is fixed - this is a log.
       operationId: listWebhookDeliveries
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:WebhookSubscription
+        - apiKeyAuth:
+            - read:WebhookSubscription
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
@@ -11065,6 +11532,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: webhooks
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /webhooks/deliveries/{id}/replay:
     post:
       tags:
@@ -11076,15 +11547,23 @@ paths:
         row: `attempt` advances exactly like a real queued attempt would (one step forward
         on a failure with backoff tiers left, unchanged on success or exhaustion), and
         `status`/`responseCode`/`durationMs`/`error` reflect this replay. Refused while the subscription is
-        disabled (`actions.replay` is false): enable it first.
+        disabled (`actions.replay` is false): enable it first. The stored payload is re-sent, so
+        the caller needs the read rule of the delivery's event (`actions.replay` is false
+        otherwise): 403 `WEBHOOK_EVENT_READ_REQUIRED`.
       operationId: replayWebhookDelivery
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
+          - WEBHOOK_EVENT_READ_REQUIRED
         "409":
           - WEBHOOK_DELIVERY_IN_PROGRESS
           - WEBHOOK_SUBSCRIPTION_DISABLED
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:WebhookSubscription
+        - apiKeyAuth:
+            - update:WebhookSubscription
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -11134,13 +11613,16 @@ paths:
         The events of the modules this deployment runs, read from each one's own
         `asyncapi.webhooks.yaml` — the same files `asyncapi.public.yaml` is generated from —
         so this list and what can actually fire can never drift apart. A module that is
-        not deployed lists nothing. See `docs/api/asyncapi-workflow.md`.
+        not deployed lists nothing. Each entry's `actions.subscribe` says whether the caller holds
+        the event's read rule and so may put it in a filter. See `docs/api/asyncapi-workflow.md`.
 
         Unpaged: the event catalogue of the deployed modules.
       operationId: listWebhookEvents
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:WebhookSubscription
+        - apiKeyAuth:
+            - read:WebhookSubscription
         - cookieAuth: []
       responses:
         "200":
@@ -11175,6 +11657,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: webhooks
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /api-keys:
     get:
       tags:
@@ -11183,7 +11669,8 @@ paths:
       description: Newest first unless `sort` says otherwise. Never returns a credential's secret — that exists only in the response of the call that minted it.
       operationId: listApiKeys
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:ApiKey
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
@@ -11230,6 +11717,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: api-keys
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
     post:
       tags:
         - ApiKeys
@@ -11256,8 +11747,12 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - create:ApiKey
         - cookieAuth: []
       requestBody:
         required: true
@@ -11314,7 +11809,8 @@ paths:
       description: One credential of this shop, with the same `status` the list gives it. Never its secret — that exists only in the response of the call that minted it. Another shop's credential, an unknown id and a malformed one are the same 404.
       operationId: getApiKey
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:ApiKey
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -11353,6 +11849,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: api-keys
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
     delete:
       tags:
         - ApiKeys
@@ -11363,7 +11863,8 @@ paths:
         readable. Immediate — there is no grace window.
       operationId: revokeApiKey
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - delete:ApiKey
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -11385,6 +11886,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: api-keys
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /locales/{locale}/activate:
     post:
       tags:
@@ -11400,13 +11905,18 @@ paths:
         `actions.activate` says whether it would be accepted.
       operationId: activateLocale
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "404":
           - LOCALE_LANGUAGE_NOT_FOUND
         "409":
           - LOCALE_LANGUAGE_ALREADY_ACTIVE
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Locale
+        - apiKeyAuth:
+            - update:Locale
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
@@ -11464,14 +11974,19 @@ paths:
         `actions.deactivate` says whether it would be accepted.
       operationId: deactivateLocale
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "404":
           - LOCALE_LANGUAGE_NOT_FOUND
         "409":
           - LOCALE_LANGUAGE_ALREADY_INACTIVE
           - LOCALE_LANGUAGE_IS_FALLBACK
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:Locale
+        - apiKeyAuth:
+            - update:Locale
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
@@ -11622,10 +12137,12 @@ paths:
           - REAUTH_REQUIRED
         "403":
           - ROLE_MANAGEMENT_REQUIRED
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - USER_ROLE_ALREADY_ASSIGNED
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - assign:Role
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -11696,10 +12213,12 @@ paths:
           - REAUTH_REQUIRED
         "403":
           - ROLE_MANAGEMENT_REQUIRED
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - USER_ROLE_NOT_ASSIGNED
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - assign:Role
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -11754,11 +12273,16 @@ paths:
       description: "Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `lift-purchase-hold` ends it. Clears the account's review flag: placing a hold is acting on it. Placing the staff hold already in force, with the same `until` and the same `note`, answers 409 `USER_PURCHASE_HOLD_ALREADY_SET` and writes, mails and audits nothing; any other body replaces the hold. Audited as `admin.user.purchase_hold_set`."
       operationId: placeUserPurchaseHold
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - USER_PURCHASE_HOLD_ALREADY_SET
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - ban:User
+        - apiKeyAuth:
+            - ban:User
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -11825,11 +12349,16 @@ paths:
       description: Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call, and it clears the account's review flag. An account with neither a hold nor a review flag answers 409 `USER_PURCHASE_HOLD_NOT_SET`. Audited as `admin.user.purchase_hold_lifted` (`inForce` says whether the hold was still running).
       operationId: liftUserPurchaseHold
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - USER_PURCHASE_HOLD_NOT_SET
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - ban:User
+        - apiKeyAuth:
+            - ban:User
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -11886,11 +12415,16 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - USER_ALREADY_ACTIVE
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - ban:User
+        - apiKeyAuth:
+            - ban:User
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -11948,12 +12482,16 @@ paths:
         "401":
           - REAUTH_REQUIRED
         "403":
+          - FORBIDDEN
           - ROLE_MANAGEMENT_REQUIRED
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - USER_ALREADY_INACTIVE
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - ban:User
+        - apiKeyAuth:
+            - ban:User
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -12044,25 +12582,25 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: cart
   /orders/export:
     get:
@@ -12089,10 +12627,14 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "422":
           - ORDER_EXPORT_TOO_LARGE
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - export:Order
         - cookieAuth: []
       parameters:
         - name: sort
@@ -12256,12 +12798,16 @@ paths:
       description: "Appends a `note_added` row to the order's timeline: a call, an agreement, anything staff want the next person to know. Needs `update:Order`. The row is staff-only (`audience: staff`): the buyer's timeline never shows it, but it is the buyer's data and so it is in their `POST /account/export`. The text is stored encrypted, unset when the order's personal data is erased and after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`, and never written to the audit log (only its length is). Answers the entry, with the `Location` of its `DELETE`."
       operationId: addOrderNote
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - IDEMPOTENCY_IN_FLIGHT
         "422":
           - IDEMPOTENCY_KEY_MISMATCH
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Order
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -12297,27 +12843,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/OrderTimelineEntry"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: orders
   /orders/{id}/timeline/notes/{eventId}:
     delete:
@@ -12327,7 +12873,8 @@ paths:
       description: "Unsets the text of one `note_added` row: the row stays in the timeline, without its text, so the history still shows that a note was written and withdrawn (GDPR Art. 16 and 17). Needs `update:Order`. An id that is not a note of this order is a 404. Writes an audit row with the note's length, never its text. A second call on the same note is a 404."
       operationId: deleteOrderNote
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Order
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -12355,6 +12902,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: orders
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /orders/{id}/shipping-address:
     put:
       tags:
@@ -12363,12 +12914,16 @@ paths:
       description: "Replaces the order's shipping address, as staff do when a fulfillment order was held for `incorrect_address` and the buyer wrote back. Needs `update:Order`. Allowed while units remain to send (held and awaiting-stock ones included) and the order has a shipping address at all (`409 ORDER_ADDRESS_LOCKED` otherwise). A parcel already cut keeps the address it went to: each shipment stores its own `destination`. The country must be on the shop's ship-to list (`422 ORDER_SHIP_TO_COUNTRY_NOT_SUPPORTED`). Leaves a staff-only timeline row, `address_corrected`, and an audit row naming who changed it, never what it says. `OrderActions.correctAddress` says whether this would be accepted."
       operationId: correctOrderShippingAddress
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - ORDER_ADDRESS_LOCKED
         "422":
           - ORDER_SHIP_TO_COUNTRY_NOT_SUPPORTED
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Order
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -12430,7 +12985,8 @@ paths:
       description: Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /orders/{id}/payments`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. Each row carries `actions` for the caller, so a client never decides `refund` from the status; `actions.pay` is false on a list row (paying is the payer's own step, read on the order page). The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
       operationId: listPayments
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - display:Payment
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
@@ -12541,6 +13097,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: payments
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
     post:
       tags:
         - Payments
@@ -12557,7 +13117,8 @@ paths:
           - PAYMENT_IN_FLIGHT
           - PAYMENT_ORDER_NOT_PAYABLE
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - checkout:Cart
         - cookieAuth: []
       requestBody:
         required: true
@@ -12638,7 +13199,8 @@ paths:
       operationId: searchPayments
       x-alias-of: listPayments
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - display:Payment
         - cookieAuth: []
       requestBody:
         required: true
@@ -12685,6 +13247,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: payments
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /payments/refunds:
     get:
       x-cache: private-no-cache
@@ -12694,7 +13260,8 @@ paths:
       description: "One row per refund across every payment, newest first, for the Refunds tab. Read only: a refund is opened and settled through `POST /payments/{id}/refunds` and the cancel path. Needs `display:Payment`."
       operationId: listRefunds
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - display:Payment
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
@@ -12758,6 +13325,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: payments
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /payments/attention:
     get:
       x-cache: private-no-cache
@@ -12767,7 +13338,8 @@ paths:
       description: "Only problems still recorded on a document, so a fixed one disappears. Six kinds, each source capped at 100 rows: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`); card refunds the provider refused for good (`refused_refund`: shown at once, the money has to go back another way); refunds the provider took back after settling them (`reversed_refund`); an open refund an outside refund left no room for (`refund_exceeds_remaining`); refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age); and disputes the shop has to answer (`dispute_needs_response`, with its deadline). A canceled order's refund is one of them, because its record opens before the provider is asked. Oldest first. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`."
       operationId: listPaymentAttention
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - display:Payment
         - cookieAuth: []
       responses:
         "200":
@@ -12804,6 +13376,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: payments
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /payments/{id}/refunds/{refundId}/settle:
     post:
       tags:
@@ -12816,6 +13392,9 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - IDEMPOTENCY_IN_FLIGHT
           - PAYMENT_REFUND_IN_FLIGHT
@@ -12823,7 +13402,8 @@ paths:
         "422":
           - IDEMPOTENCY_KEY_MISMATCH
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - create:Refund
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -12858,23 +13438,23 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: payments
   /payments/{id}/refunds/{refundId}/cancel:
     post:
@@ -12888,6 +13468,9 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - IDEMPOTENCY_IN_FLIGHT
           - PAYMENT_REFUND_IN_FLIGHT
@@ -12895,7 +13478,8 @@ paths:
         "422":
           - IDEMPOTENCY_KEY_MISMATCH
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - create:Refund
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -12936,27 +13520,27 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: payments
   /delivery/fulfillment-orders/release-date-impact:
     get:
@@ -12975,7 +13559,9 @@ paths:
         is never cached.
       operationId: previewReleaseDateImpact
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Product
+            - display:Order
         - cookieAuth: []
       parameters:
         - name: productId
@@ -13028,6 +13614,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: delivery
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /delivery/fulfillment-orders/restock-date-impact:
     get:
       tags:
@@ -13045,7 +13635,9 @@ paths:
         is never cached.
       operationId: previewRestockDateImpact
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Product
+            - display:Order
         - cookieAuth: []
       parameters:
         - name: productId
@@ -13098,6 +13690,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: delivery
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /delivery/fulfillment-orders/{id}:
     get:
       tags:
@@ -13106,7 +13702,8 @@ paths:
       description: "One fulfillment order by its own id, the record `ship`, `fulfill`, `hold` and `release` act on, with the same `actions` they answer. Scoped like the order it belongs to (`read:Order`): a buyer reads their own, staff holding `display:Order` read any. Someone else's, an unknown id and a malformed one are the same 404."
       operationId: getFulfillmentOrder
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:Order
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -13146,6 +13743,9 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: delivery
+      x-error-codes:
+        "403":
+          - FORBIDDEN
   /delivery/shipments/{id}/mark-lost:
     post:
       tags:
@@ -13157,10 +13757,14 @@ paths:
         One transaction: the shipment becomes `lost`; its units come off the fulfillment order's `shipped` count, so staff ship them again with the ordinary ship door (the same order, no new invoice, no new revenue, shipping is not charged again); the order's stock hold is topped up, with whatever free shelf units exist. Units the shelf cannot cover are owed: they move to a NEW fulfillment order on hold for stock (`cause: backorder`, dated by the product's restock date or 30 days), outside the backorder cap, first in the queue by the original payment. An order that was `shipped` goes back to `processing`. The buyer is mailed and gets an inbox row, always; `message` is the sentence they read.
       operationId: markShipmentLost
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - DELIVERY_NOT_LOSABLE
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Shipment
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -13224,10 +13828,14 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - RETURN_NOT_CLOSABLE
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - receive:Return
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -13291,11 +13899,15 @@ paths:
         A parcel lost on its way back is NOT canceled: this shop's policy is to bear the risk of a return lost in transit and to refund on proof of sending (the EU leaves the final risk to national law), so the refund may be owed. Receive it with a restock count of 0 instead. Needs `update:Return`; no fresh session, since nothing moves.
       operationId: cancelReturn
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - RETURN_NOT_CANCELABLE
           - RETURN_REFUND_OPEN
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Return
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -13360,13 +13972,17 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - RETURN_NOT_RECEIVABLE
           - RETURN_PROOF_ALREADY_RECORDED
         "422":
           - RETURN_PROOF_DATE_INVALID
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - receive:Return
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -13428,7 +14044,8 @@ paths:
       description: "Headline totals, the same totals for the equal-length period before, and one bucket per day, week (Monday) or month, per currency. Every figure is net of VAT unless it says otherwise; money is grouped by currency and never converted. A sale is dated by `paidAt`, a reversal by the credit note's `issuedAt`, and days are the shop's (`NODE_SHOP_TIMEZONE`), so a bucket edge is shop-local midnight. `from` and `to` are shop-local calendar days, both inclusive; the range may not pass two years or 400 buckets. Needs `read:Stats`. Never cached: it is the shop's money."
       operationId: getSalesStats
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:Stats
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/StatsFromParam"
@@ -13471,6 +14088,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: stats
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /stats/products:
     get:
       x-cache: private-no-cache
@@ -13480,7 +14101,8 @@ paths:
       description: "The products that sold most in the period, by net sales: units ordered, units reversed by returns received in the period, net units and net sales (VAT out). Reads the order lines as they were frozen, so a deleted order drops out. Needs `read:Stats`."
       operationId: getProductStats
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:Stats
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/StatsFromParam"
@@ -13530,6 +14152,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: stats
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /stats/products/{productId}:
     get:
       x-cache: private-no-cache
@@ -13539,7 +14165,8 @@ paths:
       description: Units ordered and units reversed for one product, per bucket, plus its title as the orders froze it. The orders behind it are `GET /orders?productId=…&paidFrom=…`. Needs `read:Stats`.
       operationId: getProductSalesSeries
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:Stats
         - cookieAuth: []
       parameters:
         - name: productId
@@ -13589,6 +14216,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: stats
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /stats/categories:
     get:
       x-cache: private-no-cache
@@ -13598,7 +14229,8 @@ paths:
       description: Net sales and units per category, from the categories each order line froze. A product in two categories counts in both, so the rows do not add up to the total. Needs `read:Stats`.
       operationId: getCategoryStats
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:Stats
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/StatsFromParam"
@@ -13640,6 +14272,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: stats
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /stats/payments:
     get:
       x-cache: private-no-cache
@@ -13649,7 +14285,8 @@ paths:
       description: Payments that took money in the period (`succeeded`, refunded or not), by method and provider, with their count and amount. Needs `read:Stats`.
       operationId: getPaymentMixStats
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:Stats
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/StatsFromParam"
@@ -13691,6 +14328,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: stats
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /stats/operations:
     get:
       x-cache: private-no-cache
@@ -13700,7 +14341,8 @@ paths:
       description: Cancellation rate as a cohort (orders placed in the period that ended canceled, including an order whose every parcel was lost and refunded), return rate (units returned ÷ units ordered, Shopify's `returned_quantity_rate`) and refund rate (credit notes ÷ invoices, VAT included). Needs `read:Stats`.
       operationId: getOperationsStats
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:Stats
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/StatsFromParam"
@@ -13742,6 +14384,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: stats
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /stats/customers:
     get:
       x-cache: private-no-cache
@@ -13751,7 +14397,8 @@ paths:
       description: "Customers who paid in the period, split into new (their first paid order falls in the period) and returning. Matched by account only, never by email: every erased account shares one placeholder address. Needs `read:Stats`."
       operationId: getCustomerStats
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:Stats
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/StatsFromParam"
@@ -13793,6 +14440,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: stats
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /stats/pipeline:
     get:
       x-cache: private-no-cache
@@ -13802,7 +14453,8 @@ paths:
       description: "A snapshot, not a period: bank transfers awaiting money (count, amount incl. VAT, the nearest `payBy`) and paid orders not yet shipped. Needs `read:Stats`."
       operationId: getPipelineStats
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:Stats
         - cookieAuth: []
       responses:
         "200":
@@ -13839,6 +14491,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: stats
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /inventory/levels/{productId}:
     get:
       tags:
@@ -13847,8 +14503,10 @@ paths:
       description: One row of the stock board by product, with its counters and availability — the record `receive`, `adjust` and the `PATCH` act on. Same audience as the board (`read:StockLevel`). An unknown product, one with no level row and a malformed id are the same 404.
       operationId: getInventoryLevel
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:StockLevel
+        - apiKeyAuth:
+            - read:StockLevel
         - cookieAuth: []
       parameters:
         - name: productId
@@ -13891,6 +14549,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: inventory
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
     patch:
       tags:
         - Inventory
@@ -13901,8 +14563,10 @@ paths:
         Not a stock movement: nothing on the shelf changes, so it leaves no ledger row (it is audited). Needs `update:StockLevel`.
       operationId: updateInventoryLevel
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:StockLevel
+        - apiKeyAuth:
+            - update:StockLevel
         - cookieAuth: []
       parameters:
         - name: productId
@@ -13960,6 +14624,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: inventory
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /webhooks/subscriptions/{id}/enable:
     x-versioned:
       - post
@@ -13975,11 +14643,16 @@ paths:
         healthy subscription is never reset by a repeated call.
       operationId: enableWebhookSubscription
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - WEBHOOK_SUBSCRIPTION_ALREADY_ENABLED
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:WebhookSubscription
+        - apiKeyAuth:
+            - update:WebhookSubscription
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -14038,11 +14711,16 @@ paths:
         `WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED` when it is already off.
       operationId: disableWebhookSubscription
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:WebhookSubscription
+        - apiKeyAuth:
+            - update:WebhookSubscription
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -14102,10 +14780,21 @@ paths:
         most two: adding a third drops the oldest, which is already superseded. A secret is a
         line of the subscription, so adding one is a `POST` on the line collection and answers
         200 with the whole subscription (docs/api/write-methods.md).
+
+        A secret signs for the subscription's stored filter, so the caller needs the read rule
+        of every event in it (`actions.createSecret` is false otherwise): 403
+        `WEBHOOK_EVENT_READ_REQUIRED`.
       operationId: createWebhookSubscriptionSecret
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
+          - WEBHOOK_EVENT_READ_REQUIRED
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - update:WebhookSubscription
+        - apiKeyAuth:
+            - update:WebhookSubscription
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -14152,8 +14841,10 @@ paths:
       description: One row of this shop's delivery log, the same shape the list gives it, with `actions.replay`. Another shop's delivery, an unknown id and a malformed one are the same 404.
       operationId: getWebhookDelivery
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth:
+            - read:WebhookSubscription
+        - apiKeyAuth:
+            - read:WebhookSubscription
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -14192,6 +14883,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: webhooks
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /examples:
     x-versioned:
       - post
@@ -14203,7 +14898,8 @@ paths:
       description: Returns the caller's own examples, newest first by default. A caller holding `display:Example` sees everyone's.
       operationId: listExamples
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:Example
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
@@ -14258,6 +14954,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: example
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
     post:
       tags:
         - Examples
@@ -14265,12 +14965,16 @@ paths:
       description: Creates a draft example owned by the caller. Sending `Idempotency-Key` makes a retry safe, since the same key replays the first answer.
       operationId: createExample
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - IDEMPOTENCY_IN_FLIGHT
         "422":
           - IDEMPOTENCY_KEY_MISMATCH
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - create:Example
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
@@ -14309,25 +15013,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/Example"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: example
   /examples/search:
     post:
@@ -14338,7 +15042,8 @@ paths:
       operationId: searchExamples
       x-alias-of: listExamples
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - read:Example
         - cookieAuth: []
       requestBody:
         required: true
@@ -14385,6 +15090,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: example
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /examples/{id}:
     x-versioned:
       - get
@@ -14446,7 +15155,8 @@ paths:
       description: Replaces the example's writable fields (RFC 9110 §9.3.4). `title` and `body` are required, since a PUT names the whole representation. The status moves through `POST /examples/{id}/publish|archive|unarchive`.
       operationId: replaceExampleById
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Example
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -14500,6 +15210,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: example
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
     patch:
       tags:
         - Examples
@@ -14507,7 +15221,8 @@ paths:
       description: Merges a change into the example (RFC 7396, an omitted field is left unchanged).
       operationId: updateExampleById
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Example
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -14566,6 +15281,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: example
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
     delete:
       tags:
         - Examples
@@ -14573,7 +15292,8 @@ paths:
       description: Permanently removes the example identified by `{id}`, and its cover image with it.
       operationId: deleteExampleById
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - delete:Example
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -14598,6 +15318,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: example
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /examples/{id}/publish:
     x-versioned:
       - post
@@ -14608,10 +15332,14 @@ paths:
       description: Moves a draft to `published`. Stamps `publishedAt` the first time, announces `example.published` and mails the owner. Whether the door is open is the caller's `Example.actions.publish`. Another person's example answers `404`, as every write here does. Answers `409` `EXAMPLE_NOT_PUBLISHABLE` from any other status.
       operationId: publishExample
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - EXAMPLE_NOT_PUBLISHABLE
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Example
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -14666,10 +15394,14 @@ paths:
       description: Moves a draft or a published example to `archived`. Whether the door is open is the caller's `Example.actions.archive`. Another person's example answers `404`. Answers `409` `EXAMPLE_NOT_ARCHIVABLE` from any other status.
       operationId: archiveExample
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - EXAMPLE_NOT_ARCHIVABLE
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Example
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -14724,10 +15456,14 @@ paths:
       description: Moves an archived example back to `draft`; publishing it again keeps the original `publishedAt`. Whether the door is open is the caller's `Example.actions.unarchive`. Another person's example answers `404`. Answers `409` `EXAMPLE_NOT_UNARCHIVABLE` from any other status.
       operationId: unarchiveExample
       x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
         "409":
           - EXAMPLE_NOT_UNARCHIVABLE
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Example
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -14780,7 +15516,8 @@ paths:
       description: Replaces the cover image of the example identified by `{id}`. The image is digested in the background; until it is, `imageUrl` is a placeholder.
       operationId: replaceExampleCover
       security:
-        - bearerAuth: []
+        - bearerAuth:
+            - update:Example
         - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
@@ -14834,6 +15571,10 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: example
+      x-error-codes:
+        "403":
+          - FORBIDDEN
+          - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /notifications:
     get:
       tags:
@@ -15468,7 +16209,7 @@ components:
         maxLength: 202
         pattern: ^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$
       description: |
-        An opaque, client-generated value (a UUID by convention) that makes a retried write safe, and that this route REQUIRES: a request without it answers 400 (`IDEMPOTENCY_KEY_REQUIRED`) and nothing is written. Repeating the request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write); the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409.
+        An opaque, client-generated value (a UUID by convention) that makes a retried write safe, and that this route REQUIRES: a request without it answers 400 (`IDEMPOTENCY_KEY_REQUIRED`) and nothing is written. Repeating the request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write); the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. A 429 is never stored: every budget refuses before the key is claimed, so a retry after `Retry-After` with the same key runs for real.
     IdempotencyKeyHeader:
       name: Idempotency-Key
       in: header
@@ -15479,7 +16220,7 @@ components:
         maxLength: 202
         pattern: ^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$
       description: |
-        An opaque, client-generated value (a UUID by convention) that makes a retried write safe. A key belongs to its caller (the account, or the address on a public route): two callers sending the same value never see each other's replies. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.
+        An opaque, client-generated value (a UUID by convention) that makes a retried write safe. A key belongs to its caller (the account, or the address on a public route): two callers sending the same value never see each other's replies. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. A 429 is never stored: every budget refuses before the key is claimed, so a retry after `Retry-After` with the same key runs for real. Omitting the header simply forgoes replay protection — the write still happens normally.
     IfMatchHeader:
       name: If-Match
       in: header
@@ -15666,7 +16407,7 @@ components:
         type: string
     Idempotent-Replayed:
       required: false
-      description: "`true` when this answer is the stored first answer replayed for a repeated `Idempotency-Key`, not a fresh run: nothing was written a second time. Absent on a first run. Sent on a replay only."
+      description: "`true` when this answer is the stored first answer replayed for a repeated `Idempotency-Key`, not a fresh run: nothing was written a second time. Absent on a first run. Sent on a replay only. Declared on every answer of an operation that takes an `Idempotency-Key` except a 429, which the ledger never sees."
       schema:
         type: string
         enum:
@@ -15912,6 +16653,16 @@ components:
       headers:
         Cache-Control:
           $ref: "#/components/headers/CacheControlNoStore"
+        Accept:
+          description: The media types the operation takes, comma-separated (RFC 9110 §12.5.1). Absent when the operation declares no body.
+          required: false
+          schema:
+            type: string
+        Accept-Patch:
+          description: The same list, on a refused `PATCH` only (RFC 5789 §2.2).
+          required: false
+          schema:
+            type: string
         x-request-id:
           $ref: "#/components/headers/RequestId"
         Content-Language:
@@ -15991,6 +16742,250 @@ components:
           $ref: "#/components/headers/RateLimit"
         ETag:
           $ref: "#/components/headers/EntityTag"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    BadRequestReplayable:
+      description: "The request could not be understood or authenticated as what it claims to be — distinct from `ValidationError`, which is a well-formed request whose FIELDS are wrong. Used where a caller is a machine rather than a form: an unverifiable webhook signature is the case that needs it."
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnauthorizedReplayable:
+      description: Unauthorized
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        WWW-Authenticate:
+          $ref: "#/components/headers/WWW-Authenticate"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ForbiddenReplayable:
+      description: Forbidden
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ConflictReplayable:
+      description: The request conflicts with the current state of the resource
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    PayloadTooLargeReplayable:
+      description: "The request body is larger than this deployment accepts: a JSON body over `NODE_JSON_BODY_LIMIT` (100kb by default), an uploaded file over `NODE_MAX_UPLOAD_BYTES`, or a multipart field value over 100 KB. Refused by the body parser or the upload middleware, which is why it is declared for every body-accepting operation rather than by hand. The other multipart limits (counts, shapes) answer `400`."
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnsupportedMediaTypeReplayable:
+      description: The body's media type is not one the operation declares (`details.accepted` lists them), or its charset or encoding cannot be read. Refused before any route runs, like `413` above. A request with no body is never judged. A `DELETE` that declares no body refuses any body, and `details.accepted` is then empty.
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        Accept:
+          description: The media types the operation takes, comma-separated (RFC 9110 §12.5.1). Absent when the operation declares no body.
+          required: false
+          schema:
+            type: string
+        Accept-Patch:
+          description: The same list, on a refused `PATCH` only (RFC 5789 §2.2).
+          required: false
+          schema:
+            type: string
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ValidationErrorReplayable:
+      description: Validation failed
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    InternalErrorReplayable:
+      description: Internal server error
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ServiceUnavailableReplayable:
+      description: "A dependency the request needed (Mongo, Redis) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from."
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        Retry-After:
+          $ref: "#/components/headers/Retry-After"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFoundReplayable:
+      description: Resource not found
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
       content:
         application/problem+json:
           schema:
@@ -18946,6 +19941,11 @@ components:
             - $ref: "#/components/schemas/CurrencyCode"
           readOnly: true
           description: ISO-4217 currency code this order was priced in (e.g. EUR).
+        termsVersion:
+          type: string
+          readOnly: true
+          description: The Terms version in force when the buyer placed the order at checkout; absent on staff-placed orders.
+          example: "2"
         netTotal:
           $ref: "#/components/schemas/NonNegativeDecimalAmount"
           readOnly: true
@@ -24521,7 +25521,7 @@ components:
           description: Whether `POST /webhooks/subscriptions/{id}/disable` would be accepted — false while it is already disabled.
         createSecret:
           type: boolean
-          description: Whether `POST /webhooks/subscriptions/{id}/secrets` would be accepted.
+          description: Whether `POST /webhooks/subscriptions/{id}/secrets` would be accepted — false while the stored filter names an event the caller may not read.
         deleteSecret:
           type: boolean
           description: Whether `DELETE /webhooks/subscriptions/{id}/secrets/{secretId}` would be accepted — false while the ring holds a single secret.
@@ -24769,7 +25769,7 @@ components:
       properties:
         replay:
           type: boolean
-          description: Whether `POST /webhooks/deliveries/{id}/replay` would be accepted — false while the delivery's subscription is disabled or gone.
+          description: Whether `POST /webhooks/deliveries/{id}/replay` would be accepted — false while the delivery's subscription is disabled or gone, or the caller may not read the delivery's event.
     WebhookDelivery:
       type: object
       additionalProperties: false
@@ -24835,11 +25835,21 @@ components:
       additionalProperties: false
       required:
         - name
+        - actions
       properties:
         name:
           $ref: "#/components/schemas/WebhookEventName"
         description:
           type: string
+        actions:
+          type: object
+          additionalProperties: false
+          required:
+            - subscribe
+          properties:
+            subscribe:
+              type: boolean
+              description: Whether the caller holds the event's read rule, so may name it in a subscription filter (and `*`, which needs every event, is accepted only when all are true).
     WebhookEventCatalogResponse:
       type: object
       additionalProperties: false
@@ -27803,6 +28813,9 @@ x-error-codes:
   WEBHOOK_DELIVERY_IN_PROGRESS:
     status: 409
     description: A retry of this delivery is already in flight.
+  WEBHOOK_EVENT_READ_REQUIRED:
+    status: 403
+    description: The filter names an event the caller may not read, so a stream of it cannot be handed to a receiver. Each event declares the rule that reads it (`x-read-rule` in `asyncapi.public.yaml`).
   WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED:
     status: 409
     description: The subscription is already disabled.

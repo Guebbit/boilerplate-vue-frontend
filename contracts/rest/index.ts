@@ -2098,6 +2098,8 @@ export interface ExportOrder {
     totalPrice: NonNegativeDecimalAmount;
     /** ISO-4217 currency code this order was priced in (e.g. EUR). */
     readonly currency: CurrencyCode;
+    /** The Terms version in force when the buyer placed the order at checkout; absent on staff-placed orders. */
+    readonly termsVersion?: string;
     /** Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. */
     readonly netTotal: NonNegativeDecimalAmount;
     /** Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. */
@@ -6360,7 +6362,7 @@ export interface WebhookSubscriptionActions {
     enable: boolean;
     /** Whether `POST /webhooks/subscriptions/{id}/disable` would be accepted — false while it is already disabled. */
     disable: boolean;
-    /** Whether `POST /webhooks/subscriptions/{id}/secrets` would be accepted. */
+    /** Whether `POST /webhooks/subscriptions/{id}/secrets` would be accepted — false while the stored filter names an event the caller may not read. */
     createSecret: boolean;
     /** Whether `DELETE /webhooks/subscriptions/{id}/secrets/{secretId}` would be accepted — false while the ring holds a single secret. */
     deleteSecret: boolean;
@@ -6519,7 +6521,7 @@ export const WebhookEventName = {
 } as const;
 
 export interface WebhookDeliveryActions {
-    /** Whether `POST /webhooks/deliveries/{id}/replay` would be accepted — false while the delivery's subscription is disabled or gone. */
+    /** Whether `POST /webhooks/deliveries/{id}/replay` would be accepted — false while the delivery's subscription is disabled or gone, or the caller may not read the delivery's event. */
     replay: boolean;
 }
 
@@ -6550,9 +6552,15 @@ export interface WebhookDeliveriesResponse {
     meta: PaginationMeta;
 }
 
+export type WebhookEventCatalogEntryActions = {
+    /** Whether the caller holds the event's read rule, so may name it in a subscription filter (and `*`, which needs every event, is accepted only when all are true). */
+    subscribe: boolean;
+};
+
 export interface WebhookEventCatalogEntry {
     name: WebhookEventName;
     description?: string;
+    actions: WebhookEventCatalogEntryActions;
 }
 
 export interface WebhookEventCatalogResponse {
@@ -7770,6 +7778,56 @@ export type ServiceUnavailableResponse = Problem;
  */
 export type InternalErrorResponse = Problem;
 
+/**
+ * The request could not be understood or authenticated as what it claims to be — distinct from `ValidationError`, which is a well-formed request whose FIELDS are wrong. Used where a caller is a machine rather than a form: an unverifiable webhook signature is the case that needs it.
+ */
+export type BadRequestReplayableResponse = Problem;
+
+/**
+ * Unauthorized
+ */
+export type UnauthorizedReplayableResponse = Problem;
+
+/**
+ * Forbidden
+ */
+export type ForbiddenReplayableResponse = Problem;
+
+/**
+ * The request conflicts with the current state of the resource
+ */
+export type ConflictReplayableResponse = Problem;
+
+/**
+ * The request body is larger than this deployment accepts: a JSON body over `NODE_JSON_BODY_LIMIT` (100kb by default), an uploaded file over `NODE_MAX_UPLOAD_BYTES`, or a multipart field value over 100 KB. Refused by the body parser or the upload middleware, which is why it is declared for every body-accepting operation rather than by hand. The other multipart limits (counts, shapes) answer `400`.
+ */
+export type PayloadTooLargeReplayableResponse = Problem;
+
+/**
+ * The body's media type is not one the operation declares (`details.accepted` lists them), or its charset or encoding cannot be read. Refused before any route runs, like `413` above. A request with no body is never judged. A `DELETE` that declares no body refuses any body, and `details.accepted` is then empty.
+ */
+export type UnsupportedMediaTypeReplayableResponse = Problem;
+
+/**
+ * Validation failed
+ */
+export type ValidationErrorReplayableResponse = Problem;
+
+/**
+ * Internal server error
+ */
+export type InternalErrorReplayableResponse = Problem;
+
+/**
+ * A dependency the request needed (Mongo, Redis) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from.
+ */
+export type ServiceUnavailableReplayableResponse = Problem;
+
+/**
+ * Resource not found
+ */
+export type NotFoundReplayableResponse = Problem;
+
 export type PageParamParameter = Page;
 
 export type PageSizeParamParameter = PageSize;
@@ -7782,12 +7840,12 @@ export type TextParamParameter = Text;
 export type AntibotChallengeTokenHeaderParameter = string;
 
 /**
- * An opaque, client-generated value (a UUID by convention) that makes a retried write safe, and that this route REQUIRES: a request without it answers 400 (`IDEMPOTENCY_KEY_REQUIRED`) and nothing is written. Repeating the request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write); the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409.
+ * An opaque, client-generated value (a UUID by convention) that makes a retried write safe, and that this route REQUIRES: a request without it answers 400 (`IDEMPOTENCY_KEY_REQUIRED`) and nothing is written. Repeating the request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write); the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. A 429 is never stored: every budget refuses before the key is claimed, so a retry after `Retry-After` with the same key runs for real.
  */
 export type RequiredIdempotencyKeyHeaderParameter = string;
 
 /**
- * An opaque, client-generated value (a UUID by convention) that makes a retried write safe. A key belongs to its caller (the account, or the address on a public route): two callers sending the same value never see each other's replies. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.
+ * An opaque, client-generated value (a UUID by convention) that makes a retried write safe. A key belongs to its caller (the account, or the address on a public route): two callers sending the same value never see each other's replies. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. A 429 is never stored: every budget refuses before the key is claimed, so a retry after `Retry-After` with the same key runs for real. Omitting the header simply forgoes replay protection — the write still happens normally.
  */
 export type IdempotencyKeyHeaderParameter = string;
 
@@ -9027,6 +9085,9 @@ export const getLocaleMessages = (
  * `text` searches keys and values together. Every app's rows are listed; one app's
  * slice is a resource of its own, `/locales/{locale}/apps/{app}/entries`, which is
  * where it is written.
+ *
+ * The `ETag` is the language's dictionary version, whichever app's rows were
+ * listed: send it as `If-Match` on an import and a write that landed since is a 412.
  * @summary List translation entries
  */
 export const listLocaleEntries = (
@@ -9048,6 +9109,9 @@ export const listLocaleEntries = (
  * `text` searches keys and values together. Only this app's rows, at the address
  * the writes below target; an app the deployment does not configure is refused
  * with a 422.
+ *
+ * The `ETag` is the language's dictionary version, the same one `GET
+ * /locales/{locale}/entries` answers: a write to any app moves it.
  * @summary List one app's translation entries
  */
 export const listAppLocaleEntries = (
@@ -9098,6 +9162,10 @@ export const createLocaleEntry = (
  *
  * Nobody adds five hundred keys through a form; without this the admin surface is a
  * demo.
+ *
+ * `If-Match` takes the tag of a list read of this language: when any entry of it
+ * (in any app) was written since, the import is refused with a 412 and writes
+ * nothing. An import that would change nothing is checked too.
  * @summary Replace every entry
  */
 export const replaceLocaleEntries = (
@@ -9124,6 +9192,9 @@ export const replaceLocaleEntries = (
  *
  * See `PUT` on this collection for the replacing counterpart, and for why the choice
  * lives in the method.
+ *
+ * `If-Match` is checked as on the `PUT`, and the answer's `ETag` is the language's
+ * new version.
  * @summary Merge entries
  */
 export const updateLocaleEntries = (
@@ -9150,6 +9221,9 @@ export const updateLocaleEntries = (
  *
  * See `PUT` on this collection for the replacing counterpart, and for why the choice
  * lives in the method.
+ *
+ * `If-Match` is checked as on the `PUT`, and the answer's `ETag` is the language's
+ * new version.
  * @summary Merge entries
  */
 export const updateLocaleEntriesWithMergePatchJson = (
@@ -12312,6 +12386,10 @@ export const listWebhookSubscriptions = (
  * delivery that fails later; `PUT` and `PATCH` run the same check when the `url`
  * changes. It runs again on every delivery, since a subscription's DNS can change
  * after it is created.
+ *
+ * A subscription hands an event stream to a machine, so the caller must hold the read
+ * rule of every event it carries (`GET /webhooks/events` marks each one `actions.subscribe`;
+ * `*` needs them all). Otherwise 403 `WEBHOOK_EVENT_READ_REQUIRED`, naming the events.
  * @summary Create a webhook subscription
  */
 export const createWebhookSubscription = (
@@ -12348,6 +12426,11 @@ export const getWebhookSubscription = (
  * Full replace of url/description/eventTypes — an omitted `description` is cleared.
  * Never touches the secret ring or whether the subscription is on; rotate or drop a
  * secret, enable or disable it, through its own action route below.
+ *
+ * A `PUT`, or a `PATCH` that carries `url` or `eventTypes`, needs the read rule of every
+ * event in the stored filter AND in the new one: otherwise a caller could narrow a stream
+ * and redirect it in one call. Otherwise 403 `WEBHOOK_EVENT_READ_REQUIRED`. A
+ * description-only `PATCH` is not checked.
  * @summary Replace a webhook subscription
  */
 export const replaceWebhookSubscription = (
@@ -12370,6 +12453,10 @@ export const replaceWebhookSubscription = (
  * Partial update of url/description/eventTypes. Never touches the secret ring or
  * whether the subscription is on; rotate or drop a secret, enable or disable it,
  * through its own action route below.
+ *
+ * A `PATCH` that carries `url` or `eventTypes` needs the read rule of every event in the
+ * stored filter AND in the new one, as `PUT` does; a description-only `PATCH` is not
+ * checked. Otherwise 403 `WEBHOOK_EVENT_READ_REQUIRED`.
  * @summary Update a webhook subscription
  */
 export const updateWebhookSubscription = (
@@ -12392,6 +12479,10 @@ export const updateWebhookSubscription = (
  * Partial update of url/description/eventTypes. Never touches the secret ring or
  * whether the subscription is on; rotate or drop a secret, enable or disable it,
  * through its own action route below.
+ *
+ * A `PATCH` that carries `url` or `eventTypes` needs the read rule of every event in the
+ * stored filter AND in the new one, as `PUT` does; a description-only `PATCH` is not
+ * checked. Otherwise 403 `WEBHOOK_EVENT_READ_REQUIRED`.
  * @summary Update a webhook subscription
  */
 export const updateWebhookSubscriptionWithMergePatchJson = (
@@ -12461,7 +12552,9 @@ export const listWebhookDeliveries = (
  * row: `attempt` advances exactly like a real queued attempt would (one step forward
  * on a failure with backoff tiers left, unchanged on success or exhaustion), and
  * `status`/`responseCode`/`durationMs`/`error` reflect this replay. Refused while the subscription is
- * disabled (`actions.replay` is false): enable it first.
+ * disabled (`actions.replay` is false): enable it first. The stored payload is re-sent, so
+ * the caller needs the read rule of the delivery's event (`actions.replay` is false
+ * otherwise): 403 `WEBHOOK_EVENT_READ_REQUIRED`.
  * @summary Re-send one delivery
  */
 export const replayWebhookDelivery = (
@@ -12478,7 +12571,8 @@ export const replayWebhookDelivery = (
  * The events of the modules this deployment runs, read from each one's own
  * `asyncapi.webhooks.yaml` — the same files `asyncapi.public.yaml` is generated from —
  * so this list and what can actually fire can never drift apart. A module that is
- * not deployed lists nothing. See `docs/api/asyncapi-workflow.md`.
+ * not deployed lists nothing. Each entry's `actions.subscribe` says whether the caller holds
+ * the event's read rule and so may put it in a filter. See `docs/api/asyncapi-workflow.md`.
  *
  * Unpaged: the event catalogue of the deployed modules.
  * @summary The public event catalogue
@@ -13279,6 +13373,10 @@ export const disableWebhookSubscription = (
  * most two: adding a third drops the oldest, which is already superseded. A secret is a
  * line of the subscription, so adding one is a `POST` on the line collection and answers
  * 200 with the whole subscription (docs/api/write-methods.md).
+ *
+ * A secret signs for the subscription's stored filter, so the caller needs the read rule
+ * of every event in it (`actions.createSecret` is false otherwise): 403
+ * `WEBHOOK_EVENT_READ_REQUIRED`.
  * @summary Add a secret to a webhook subscription's ring (rotate)
  */
 export const createWebhookSubscriptionSecret = (
