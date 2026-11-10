@@ -35,7 +35,7 @@ const PAYMENT = {
     method: 'card',
     amountRefunded: '0.00',
     refunds: [],
-    actions: { pay: false, sync: false, refund: false, settleByHand: [], cancelRefund: [] }
+    actions: { pay: false, sync: false, refund: false, settleRefundByHand: [], cancelRefund: [] }
 };
 
 /** Canned response per `METHOD /url` key; an `Error` or `Declined` entry makes the call reject. */
@@ -438,7 +438,7 @@ describe('refundPayment', () => {
                 pay: false,
                 sync: false,
                 refund: true,
-                settleByHand: ['refund-1'],
+                settleRefundByHand: ['refund-1'],
                 cancelRefund: []
             }
         };
@@ -446,8 +446,8 @@ describe('refundPayment', () => {
 
         return store.refundPayment(TARGET_1, '50.00').then((done) => {
             expect(done?.refund).toMatchObject({ status: 'failed', failureReason: 'declined' });
-            expect(done?.payment.actions.settleByHand).toEqual(['refund-1']);
-            expect(store.payment?.actions.settleByHand).toEqual(['refund-1']);
+            expect(done?.payment.actions.settleRefundByHand).toEqual(['refund-1']);
+            expect(store.payment?.actions.settleRefundByHand).toEqual(['refund-1']);
         });
     });
 
@@ -457,7 +457,13 @@ describe('refundPayment', () => {
             ...PAYMENT,
             status: 'succeeded',
             amountRefunded: '5.00',
-            actions: { pay: false, sync: false, refund: true, settleByHand: [], cancelRefund: [] }
+            actions: {
+                pay: false,
+                sync: false,
+                refund: true,
+                settleRefundByHand: [],
+                cancelRefund: []
+            }
         };
         const store = usePaymentsStore();
 
@@ -495,7 +501,13 @@ describe('settleRefundByHand', () => {
         method: 'cash',
         status: 'succeeded',
         refunds: [{ ...REFUND, status: 'succeeded', settledByHand: true }],
-        actions: { pay: false, sync: false, refund: false, settleByHand: [], cancelRefund: [] }
+        actions: {
+            pay: false,
+            sync: false,
+            refund: false,
+            settleRefundByHand: [],
+            cancelRefund: []
+        }
     };
 
     it('posts to the refund, then reads the payment again and mirrors it', () => {
@@ -508,7 +520,7 @@ describe('settleRefundByHand', () => {
                 pay: false,
                 sync: false,
                 refund: false,
-                settleByHand: ['refund-1'],
+                settleRefundByHand: ['refund-1'],
                 cancelRefund: []
             }
         });
@@ -520,7 +532,7 @@ describe('settleRefundByHand', () => {
                     '/payments/payment-1/refunds/refund-1/settle',
                     '/payments/payment-1'
                 ]);
-                expect(store.payment?.actions.settleByHand).toEqual([]);
+                expect(store.payment?.actions.settleRefundByHand).toEqual([]);
             });
     });
 
@@ -564,7 +576,7 @@ describe('cancelRefund', () => {
     const VOIDED = {
         ...PAYMENT,
         refunds: [{ ...REFUND, status: 'failed', failureReason: 'canceled' }],
-        actions: { pay: false, sync: false, refund: true, settleByHand: [], cancelRefund: [] }
+        actions: { pay: false, sync: false, refund: true, settleRefundByHand: [], cancelRefund: [] }
     };
 
     it('posts the note, then reads the payment again and mirrors it', () => {
@@ -577,7 +589,7 @@ describe('cancelRefund', () => {
                 pay: false,
                 sync: false,
                 refund: false,
-                settleByHand: ['refund-1'],
+                settleRefundByHand: ['refund-1'],
                 cancelRefund: ['refund-1']
             }
         });

@@ -21,7 +21,7 @@ import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import {
     emailVerifyResendRetryAfter,
-    requestEmailVerification
+    resendEmailVerification
 } from '@/infrastructure/email-verification.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
@@ -82,7 +82,7 @@ onUnmounted(() => {
  * @returns Nothing; a toast reports the send (or the 409 for an already verified account).
  */
 const handleResendVerification = () => {
-    requestEmailVerification()
+    resendEmailVerification()
         .then((resendAfter) => {
             startCooldown(resendAfter);
             addMessage(t('verification-banner.sent'));

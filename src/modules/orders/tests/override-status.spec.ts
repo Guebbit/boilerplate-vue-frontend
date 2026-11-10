@@ -47,7 +47,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     sent = [];
     responses = {
-        'POST /orders/o1/status-override': ORDER
+        'POST /orders/o1/override-status': ORDER
     };
 });
 

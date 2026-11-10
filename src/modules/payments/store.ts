@@ -239,7 +239,7 @@ export const usePaymentsStore = defineStore('payments', () => {
      * The API answers 201 with the record this request wrote, whatever became of it: `succeeded`,
      * `pending` (hand-paid money waiting for the operator) or `failed` (the provider refused). A
      * refusal is an answer, not an error. The payment is read again (`GET /payments/{id}`) and
-     * replaces the cached one: that carries the running totals, `actions.settleByHand` (which names
+     * replaces the cached one: that carries the running totals, `actions.settleRefundByHand` (which names
      * the record to confirm) and withdraws `actions.refund`, which greys the control out.
      *
      * @param target - The payment being returned and the order it belongs to.

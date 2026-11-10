@@ -2821,7 +2821,7 @@ export interface Refund {
     failureReason?: RefundFailureReason;
     /** `true` while this refund is open and the money cannot go back to the card: the provider refused it for good, or took it back after settling it. The buyer is emailed to agree how they would like to receive it, at no cost to them (Consumer Rights Directive Art. 13(1)), and the order page says so instead of "retried automatically". Carries no reason: that stays staff-only. Absent otherwise. */
     owedAnotherWay?: boolean;
-    /** When the provider took this refund back (a bank sent the money back, or the provider reported the refund failed). Set once; a reversed refund is `failed` again, counts against what is left, and is owed another way: an operator pays it and presses mark-returned (`actions.settleByHand`). The credit note issued when it first settled stays. Absent otherwise. */
+    /** When the provider took this refund back (a bank sent the money back, or the provider reported the refund failed). Set once; a reversed refund is `failed` again, counts against what is left, and is owed another way: an operator pays it and presses mark-returned (`actions.settleRefundByHand`). The credit note issued when it first settled stays. Absent otherwise. */
     reversedAt?: string;
     createdAt: string;
 }
@@ -5000,8 +5000,8 @@ export interface OrderActions {
     recordPayment: boolean;
     /** Whether `POST /orders/{id}/process` would be accepted for this caller. `paid → processing` is `system`-only in the lifecycle, reached only by reporting the fact through `delivery`'s own door. */
     process: boolean;
-    /** The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `override:Order`, or once the order has left every overridable status. */
-    override: OrderStatus[];
+    /** The statuses `POST /orders/{id}/override-status` would accept as a destination for this caller right now — empty for anyone without `override:Order`, or once the order has left every overridable status. */
+    overrideStatus: OrderStatus[];
     /** Whether `PUT /orders/{id}/shipping-address` would be accepted for this caller: they hold `update:Order`, the order has a shipping address, and units remain to send. */
     correctAddress: boolean;
     /** Whether the "withdraw from contract here" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`. A mixed order is not a reason to hide it: before dispatch the withdrawal takes the eligible goods (the whole order while it is unpaid or paid, the eligible shipment groups once it is `processing`); only an order made wholly of excluded goods is blocked. */
@@ -5366,11 +5366,11 @@ export interface PaymentActions {
     pay: boolean;
     /** Whether the buyer may finish at the provider with `POST /payments/{id}/sync` — the payment is `requires_action` or `processing`, it went through the provider, and the caller is the payer holding `checkout:Cart`. Narrower than the route on purpose: the route also accepts a payment that is awaiting confirmation or was declined, whose next step is `pay`. Never true together with `pay`. */
     sync: boolean;
-    /** Whether `POST /payments/{id}/refunds` would be accepted: the caller holds `create:Refund`, the payment is `succeeded` and something is left to refund. False once nothing is left (fully refunded, or the rest already asked back, or a lost chargeback took the rest) or a chargeback is open on the payment (`PAYMENT_DISPUTED`), which is what greys the control out rather than letting the operator discover it by clicking. A refund still open counts against what is left but does not hide the control while money remains. On a hand-paid payment the refund only opens a record; `settleByHand` confirms it. */
+    /** Whether `POST /payments/{id}/refunds` would be accepted: the caller holds `create:Refund`, the payment is `succeeded` and something is left to refund. False once nothing is left (fully refunded, or the rest already asked back, or a lost chargeback took the rest) or a chargeback is open on the payment (`PAYMENT_DISPUTED`), which is what greys the control out rather than letting the operator discover it by clicking. A refund still open counts against what is left but does not hide the control while money remains. On a hand-paid payment the refund only opens a record; `settleRefundByHand` confirms it. */
     refund: boolean;
     /** The ids of the refunds this caller may mark as returned with `POST /payments/{id}/refunds/{refundId}/settle`: the caller holds `create:Refund`, the payment is `succeeded`, and the refund is either a hand-paid payment's `pending` one or a card refund `failed` with a reason that proves the money did not move (`RefundFailureReason`). The server decides; a client never rebuilds this rule. An array because the route takes a target; empty when there is none. */
-    settleByHand: Id[];
-    /** The ids of the refunds this caller may void with `POST /payments/{id}/refunds/{refundId}/cancel`: the same set as `settleByHand` (money that provably did not move), so a hand-paid `pending` refund or a card refund refused for a clear reason. The server decides. Empty when there is none. */
+    settleRefundByHand: Id[];
+    /** The ids of the refunds this caller may void with `POST /payments/{id}/refunds/{refundId}/cancel`: the same set as `settleRefundByHand` (money that provably did not move), so a hand-paid `pending` refund or a card refund refused for a clear reason. The server decides. Empty when there is none. */
     cancelRefund: Id[];
 }
 
@@ -5540,7 +5540,7 @@ export interface ShipmentActions {
     deliver: boolean;
     /** Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — any physical shipment, shipped, delivered or lost. */
     update: boolean;
-    /** Whether `POST /delivery/shipments/{id}/lost` would be accepted — a physical shipment still `shipped`, on an order that is `processing` or `shipped`. */
+    /** Whether `POST /delivery/shipments/{id}/mark-lost` would be accepted — a physical shipment still `shipped`, on an order that is `processing` or `shipped`. */
     markLost: boolean;
 }
 
@@ -9954,7 +9954,7 @@ export const setDefaultAddress = (
  * Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/email-verification/confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived. Answers 429 inside the previous send's cooldown, so a client that respects `resendAfter` never sees one — unlike a login guess, a SUCCESSFUL call here is the expensive one, since each publishes mail.
  * @summary Request email verification
  */
-export const requestEmailVerification = (
+export const resendEmailVerification = (
     options?: SecondParameter<typeof orvalMutator<EmailVerificationRequested>>
 ) => {
     return orvalMutator<EmailVerificationRequested>(
@@ -11520,7 +11520,7 @@ export const getOrderById = (id: string, options?: SecondParameter<typeof orvalM
 };
 
 /**
- * Replaces the order identified by `{id}` in the path (RFC 9110 §9.3.4). `email` is the only writable field — `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/status-override`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
+ * Replaces the order identified by `{id}` in the path (RFC 9110 §9.3.4). `email` is the only writable field — `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/override-status`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
  * @summary Replace order
  */
 export const replaceOrderById = (
@@ -11540,7 +11540,7 @@ export const replaceOrderById = (
 };
 
 /**
- * Updates the order identified by `{id}` in the path, merging — an omitted `email` leaves the stored one untouched. `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/status-override`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
+ * Updates the order identified by `{id}` in the path, merging — an omitted `email` leaves the stored one untouched. `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/override-status`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
  * @summary Edit order
  */
 export const updateOrderById = (
@@ -11560,7 +11560,7 @@ export const updateOrderById = (
 };
 
 /**
- * Updates the order identified by `{id}` in the path, merging — an omitted `email` leaves the stored one untouched. `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/status-override`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
+ * Updates the order identified by `{id}` in the path, merging — an omitted `email` leaves the stored one untouched. `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/override-status`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
  * @summary Edit order
  */
 export const updateOrderByIdWithMergePatchJson = (
@@ -11651,7 +11651,7 @@ export const overrideOrderStatus = (
 ) => {
     return orvalMutator<Order>(
         {
-            url: `/orders/${id}/status-override`,
+            url: `/orders/${id}/override-status`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: statusOverrideRequest
@@ -11791,8 +11791,8 @@ export const listPaymentMethods = (
 
 /**
  * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 201 with the new `Refund` record and its address in `Location`; read the payment again (`GET /payments/{id}`) for the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left to refund) or 422 (asks for more than is left). A refund still open counts against what is left, so a second partial refund beside it is allowed while money remains.
- * The 201 is the answer for every outcome of the record the request wrote; its `status` carries the result. `succeeded`: the money is back. `failed`: the provider refused, the record is kept and counts against what is left, and it is either retried by the refund sweep or, when `actions.settleByHand` lists it, final and waiting for the money to be returned another way. `pending`: hand-paid money waiting for an operator. A refusal is never a 5xx. The reason of a refusal (`failureReason`) is sent to `display:Payment` callers only.
- * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it.
+ * The 201 is the answer for every outcome of the record the request wrote; its `status` carries the result. `succeeded`: the money is back. `failed`: the provider refused, the record is kept and counts against what is left, and it is either retried by the refund sweep or, when `actions.settleRefundByHand` lists it, final and waiting for the money to be returned another way. `pending`: hand-paid money waiting for an operator. A refusal is never a 5xx. The reason of a refusal (`failureReason`) is sent to `display:Payment` callers only.
+ * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleRefundByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it.
  * There is no list at this path: a payment's refunds are listed by `GET /payments/{id}` (`refunds`), and one by `GET /payments/{id}/refunds/{refundId}`.
  * Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund a payment
@@ -12902,7 +12902,7 @@ export const listPaymentAttention = (
 
 /**
  * An operator confirming that money was handed back outside the application (cash given back, a bank transfer sent). Nothing is sent anywhere: the refund record settles with `settledByHand`, `payment.refunded` fires as for any refund (the credit note is issued, a return waiting on it closes), and the audit row is `admin.payment.refund_settled_by_hand`. The refund is named by its own id, so one payment carrying several open refunds settles each separately.
- * Which refunds may be settled: a hand-paid (`manual`) payment's `pending` refund; and a card refund the provider refused in a way that proves the money did not move (`RefundFailureReason`: `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card`, `provider_removed`). The payment's `actions.settleByHand` lists exactly these ids. A card refund that is `pending` (an attempt is running) or `failed` for an unclear reason (`provider_unavailable`, `unknown`) answers 409 `PAYMENT_REFUND_IN_FLIGHT`: the money may have moved, and the sweep settles it from the provider. A refund two operators settle at once settles once, and the loser answers 409 `PAYMENT_REFUND_NOT_OPEN`. Needs `create:Refund`, which carries the same fresh-session requirement as the refund itself: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
+ * Which refunds may be settled: a hand-paid (`manual`) payment's `pending` refund; and a card refund the provider refused in a way that proves the money did not move (`RefundFailureReason`: `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card`, `provider_removed`). The payment's `actions.settleRefundByHand` lists exactly these ids. A card refund that is `pending` (an attempt is running) or `failed` for an unclear reason (`provider_unavailable`, `unknown`) answers 409 `PAYMENT_REFUND_IN_FLIGHT`: the money may have moved, and the sweep settles it from the provider. A refund two operators settle at once settles once, and the loser answers 409 `PAYMENT_REFUND_NOT_OPEN`. Needs `create:Refund`, which carries the same fresh-session requirement as the refund itself: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
  * @summary Mark a hand-paid refund as returned
  */
 export const settleRefundByHand = (
@@ -12918,7 +12918,7 @@ export const settleRefundByHand = (
 
 /**
  * A local void for a refund the shop will not pay: a duplicate opened by mistake, or one the provider's dashboard already covered. The record goes `failed` with `failureReason: canceled` and the amount it held returns to what is refundable. Nothing is sent to the provider, no credit note is issued and the buyer is not mailed: the money never moved, so there is nothing to report. The sweep never sends a canceled refund. The note says why, and is kept in the audit row `admin.payment.refund_canceled` with the order's timeline row `refund_canceled` (staff only) and the `payment.refund_canceled` event.
- * Which refunds may be canceled: exactly the ones `actions.cancelRefund` lists, the same set as `actions.settleByHand`: a hand-paid (`manual`) payment's `pending` refund, and a card refund the provider refused in a way that proves the money did not move (`RefundFailureReason`: `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card`, `provider_removed`). A `succeeded` refund, or one already canceled, answers 409 `PAYMENT_REFUND_NOT_OPEN`: the money moved, and cancelling it would falsify the books. A card refund that is `pending` (an attempt is running) or `failed` for an unclear reason (`provider_unavailable`, `unknown`) answers 409 `PAYMENT_REFUND_IN_FLIGHT`: the money may have moved. Needs `create:Refund`, with the same fresh-session requirement as creating one: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
+ * Which refunds may be canceled: exactly the ones `actions.cancelRefund` lists, the same set as `actions.settleRefundByHand`: a hand-paid (`manual`) payment's `pending` refund, and a card refund the provider refused in a way that proves the money did not move (`RefundFailureReason`: `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card`, `provider_removed`). A `succeeded` refund, or one already canceled, answers 409 `PAYMENT_REFUND_NOT_OPEN`: the money moved, and cancelling it would falsify the books. A card refund that is `pending` (an attempt is running) or `failed` for an unclear reason (`provider_unavailable`, `unknown`) answers 409 `PAYMENT_REFUND_IN_FLIGHT`: the money may have moved. Needs `create:Refund`, with the same fresh-session requirement as creating one: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
  * @summary Cancel a refund that must never be paid
  */
 export const cancelRefund = (
@@ -13009,7 +13009,7 @@ export const markShipmentLost = (
 ) => {
     return orvalMutator<Shipment>(
         {
-            url: `/delivery/shipments/${id}/lost`,
+            url: `/delivery/shipments/${id}/mark-lost`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: markShipmentLostRequest
@@ -13768,8 +13768,8 @@ export type UpdateAddressWithMergePatchJsonResult = NonNullable<
 >;
 export type DeleteAddressResult = NonNullable<Awaited<ReturnType<typeof deleteAddress>>>;
 export type SetDefaultAddressResult = NonNullable<Awaited<ReturnType<typeof setDefaultAddress>>>;
-export type RequestEmailVerificationResult = NonNullable<
-    Awaited<ReturnType<typeof requestEmailVerification>>
+export type ResendEmailVerificationResult = NonNullable<
+    Awaited<ReturnType<typeof resendEmailVerification>>
 >;
 export type ConfirmEmailVerificationResult = NonNullable<
     Awaited<ReturnType<typeof confirmEmailVerification>>

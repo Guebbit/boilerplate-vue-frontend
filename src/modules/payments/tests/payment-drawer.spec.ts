@@ -45,7 +45,7 @@ const FULL: Payment = aPayment({
     cardLast4: '4242',
     amountRefunded: '10.00',
     displayStatus: 'refund_pending',
-    actions: { pay: false, sync: false, refund: true, settleByHand: [], cancelRefund: [] },
+    actions: { pay: false, sync: false, refund: true, settleRefundByHand: [], cancelRefund: [] },
     refunds: [
         {
             id: 'r1',
@@ -164,7 +164,7 @@ describe('PaymentDrawer', () => {
                     pay: false,
                     sync: false,
                     refund: false,
-                    settleByHand: [],
+                    settleRefundByHand: [],
                     cancelRefund: []
                 }
             })
@@ -275,7 +275,7 @@ describe('PaymentDrawer', () => {
                 pay: false,
                 sync: false,
                 refund: false,
-                settleByHand: ['r-owed'],
+                settleRefundByHand: ['r-owed'],
                 cancelRefund: []
             },
             refunds: [
@@ -360,7 +360,7 @@ describe('PaymentDrawer', () => {
                 pay: false,
                 sync: false,
                 refund: false,
-                settleByHand: ['r-owed'],
+                settleRefundByHand: ['r-owed'],
                 cancelRefund: ['r-owed']
             },
             refunds: [

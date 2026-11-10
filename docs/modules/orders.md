@@ -206,7 +206,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `PATCH /orders/{id}`                           | `UpdateOrderByIdResponse`      |
 | `POST /orders/{id}/cancel`                     | `CancelOrderByIdResponse`      |
 | `POST /orders/{id}/restore`                    | `RestoreOrderByIdResponse`     |
-| `POST /orders/{id}/status-override`            | `OverrideOrderStatusResponse`  |
+| `POST /orders/{id}/override-status`            | `OverrideOrderStatusResponse`  |
 | `DELETE /orders/{id}/hard`                     | `HardDeleteOrderByIdResponse`  |
 | `GET /orders/{id}/invoice`                     | `GetOrderInvoiceResponse`      |
 | `GET /orders/{id}/credit-notes`                | `ListOrderCreditNotesResponse` |

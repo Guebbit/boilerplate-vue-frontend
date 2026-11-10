@@ -109,14 +109,14 @@ and recording an offline payment stay on the order's page.
 
 **Hand-paid refunds are confirmed, not guessed.** Cash and transfers have no provider to ask, so a
 refund on them only opens a `pending` record (the panel says an operator has to hand the money back).
-`actions.settleByHand` names the records the caller may confirm; the drawer and the order's edit page
+`actions.settleRefundByHand` names the records the caller may confirm; the drawer and the order's edit page
 show one "Mark returned" button per id, after a question naming the amount — nothing is sent anywhere,
 the click is the operator's word (`POST /payments/{id}/refunds/{refundId}/settle`). A refund another
 operator confirmed first answers 409 and the payment is re-read. The needs-attention list opens the
 drawer from a refund owed by hand.
 
 **Refunds that must never be paid are voided, not settled.** `actions.cancelRefund` names the records
-staff may cancel (the same set as `settleByHand`: the money provably did not move). The drawer
+staff may cancel (the same set as `settleRefundByHand`: the money provably did not move). The drawer
 shows a "Cancel refund" button per id; it opens a note field (required, the audit says why) and sends
 `POST /payments/{id}/refunds/{refundId}/cancel`. No question is asked: writing the note is the
 deliberate step. Nothing is sent to the provider and nobody is mailed. Like the hand settle, a lost

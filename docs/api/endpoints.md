@@ -143,7 +143,7 @@ Regular users see only their own orders. A permission is needed to write to any 
 | PUT    | `/orders/:id`                            | permission | Replace an order                            |
 | PATCH  | `/orders/:id`                            | permission | Update the fields sent                      |
 | POST   | `/orders/:id/cancel`                     | user       | Cancel an order that may still be cancelled |
-| POST   | `/orders/:id/status-override`            | permission | Move an order to a status by hand           |
+| POST   | `/orders/:id/override-status`            | permission | Move an order to a status by hand           |
 | DELETE | `/orders/:id`                            | permission | Soft-delete an order                        |
 
 ## Users (admin)

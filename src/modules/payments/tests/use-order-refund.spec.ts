@@ -42,7 +42,7 @@ const payment = (refund: boolean, owed: string[] = []) => ({
         reason: 'goodwill',
         createdAt: '2026-03-05T10:00:00Z'
     })),
-    actions: { pay: false, sync: false, refund, settleByHand: owed }
+    actions: { pay: false, sync: false, refund, settleRefundByHand: owed }
 });
 
 /** Canned response per `METHOD /url` key, set by each test before it acts. */

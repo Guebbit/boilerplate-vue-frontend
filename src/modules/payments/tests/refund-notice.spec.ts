@@ -1,7 +1,7 @@
 /**
  * @module
  * What the operator is told about a refund they asked for: money back, money on file, or a refusal
- * with the next step the SERVER names (`actions.settleByHand`), never one the client derives.
+ * with the next step the SERVER names (`actions.settleRefundByHand`), never one the client derives.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EToastType } from '@guebbit/vue-toolkit';

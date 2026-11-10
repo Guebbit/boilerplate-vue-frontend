@@ -3,7 +3,7 @@
  * The verification-mail resend, and the one 429 code both resend endpoints answer. Plain
  * functions: nothing here holds state, so nothing here is a store.
  */
-import { requestEmailVerification as apiRequestEmailVerification } from '@api';
+import { resendEmailVerification as apiResendEmailVerification } from '@api';
 import { ERROR_CODES } from '@api/error-codes';
 import { getRetryAfter } from '@/infrastructure/http/envelope.ts';
 
@@ -25,5 +25,5 @@ export const emailVerifyResendRetryAfter = (error: unknown): number | undefined 
  * @returns The server's own cooldown in seconds. A caller that counts this down never sees
  *  the 429 the endpoint answers inside it — the number is the server's, never the client's.
  */
-export const requestEmailVerification = (): Promise<number> =>
-    apiRequestEmailVerification().then(({ resendAfter }) => resendAfter);
+export const resendEmailVerification = (): Promise<number> =>
+    apiResendEmailVerification().then(({ resendAfter }) => resendAfter);

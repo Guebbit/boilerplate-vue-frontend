@@ -2705,9 +2705,9 @@ export const SetDefaultAddressResponse = zod.strictObject({
  * Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/email-verification/confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived. Answers 429 inside the previous send's cooldown, so a client that respects `resendAfter` never sees one — unlike a login guess, a SUCCESSFUL call here is the expensive one, since each publishes mail.
  * @summary Request email verification
  */
-export const requestEmailVerificationResponseResendAfterMin = 0;
-export const RequestEmailVerificationResponse = zod.strictObject({
-    resendAfter: zod.number().min(requestEmailVerificationResponseResendAfterMin)
+export const resendEmailVerificationResponseResendAfterMin = 0;
+export const ResendEmailVerificationResponse = zod.strictObject({
+    resendAfter: zod.number().min(resendEmailVerificationResponseResendAfterMin)
 });
 /**
  * Completes the email-verification flow. Validates the one-time token issued at signup or by `/account/email-verification/resend` and, if valid, marks the account's email address as verified.
@@ -10525,7 +10525,7 @@ export const CheckoutResponse = zod.strictObject({
         pay: zod.boolean(),
         recordPayment: zod.boolean(),
         process: zod.boolean(),
-        override: zod.array(
+        overrideStatus: zod.array(
             zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
@@ -11166,7 +11166,7 @@ export const ListOrdersResponse = zod.strictObject({
                 pay: zod.boolean(),
                 recordPayment: zod.boolean(),
                 process: zod.boolean(),
-                override: zod.array(
+                overrideStatus: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
                 ),
                 correctAddress: zod.boolean(),
@@ -11454,7 +11454,7 @@ export const CreateOrderResponse = zod.strictObject({
         pay: zod.boolean(),
         recordPayment: zod.boolean(),
         process: zod.boolean(),
-        override: zod.array(
+        overrideStatus: zod.array(
             zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
@@ -11853,7 +11853,7 @@ export const SearchOrdersResponse = zod.strictObject({
                 pay: zod.boolean(),
                 recordPayment: zod.boolean(),
                 process: zod.boolean(),
-                override: zod.array(
+                overrideStatus: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
                 ),
                 correctAddress: zod.boolean(),
@@ -12108,7 +12108,7 @@ export const GetOrderByIdResponse = zod.strictObject({
         pay: zod.boolean(),
         recordPayment: zod.boolean(),
         process: zod.boolean(),
-        override: zod.array(
+        overrideStatus: zod.array(
             zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
@@ -12126,7 +12126,7 @@ export const GetOrderByIdResponse = zod.strictObject({
     deletedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Replaces the order identified by `{id}` in the path (RFC 9110 §9.3.4). `email` is the only writable field — `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/status-override`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
+ * Replaces the order identified by `{id}` in the path (RFC 9110 §9.3.4). `email` is the only writable field — `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/override-status`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
  * @summary Replace order
  */
 export const replaceOrderByIdPathIdMax = 64;
@@ -12374,7 +12374,7 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
         pay: zod.boolean(),
         recordPayment: zod.boolean(),
         process: zod.boolean(),
-        override: zod.array(
+        overrideStatus: zod.array(
             zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
@@ -12392,7 +12392,7 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
     deletedAt: zod.iso.datetime({ offset: true }).optional()
 });
 /**
- * Updates the order identified by `{id}` in the path, merging — an omitted `email` leaves the stored one untouched. `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/status-override`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
+ * Updates the order identified by `{id}` in the path, merging — an omitted `email` leaves the stored one untouched. `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/override-status`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
  * @summary Edit order
  */
 export const updateOrderByIdPathIdMax = 64;
@@ -12636,7 +12636,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
         pay: zod.boolean(),
         recordPayment: zod.boolean(),
         process: zod.boolean(),
-        override: zod.array(
+        overrideStatus: zod.array(
             zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
@@ -12912,7 +12912,7 @@ export const RestoreOrderByIdResponse = zod.strictObject({
         pay: zod.boolean(),
         recordPayment: zod.boolean(),
         process: zod.boolean(),
-        override: zod.array(
+        overrideStatus: zod.array(
             zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
@@ -13185,7 +13185,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
         pay: zod.boolean(),
         recordPayment: zod.boolean(),
         process: zod.boolean(),
-        override: zod.array(
+        overrideStatus: zod.array(
             zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
@@ -13457,7 +13457,7 @@ export const OverrideOrderStatusResponse = zod.strictObject({
         pay: zod.boolean(),
         recordPayment: zod.boolean(),
         process: zod.boolean(),
-        override: zod.array(
+        overrideStatus: zod.array(
             zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
@@ -13601,8 +13601,8 @@ export const listOrderPaymentsResponseItemsItemDisputesItemCurrencyMax = 3;
 export const listOrderPaymentsResponseItemsItemDisputesItemCurrencyRegExp = new RegExp(
     '^[A-Z]{3}$'
 );
-export const listOrderPaymentsResponseItemsItemActionsSettleByHandItemMax = 64;
-export const listOrderPaymentsResponseItemsItemActionsSettleByHandItemRegExp = new RegExp(
+export const listOrderPaymentsResponseItemsItemActionsSettleRefundByHandItemMax = 64;
+export const listOrderPaymentsResponseItemsItemActionsSettleRefundByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const listOrderPaymentsResponseItemsItemActionsCancelRefundItemMax = 64;
@@ -13785,12 +13785,14 @@ export const ListOrderPaymentsResponse = zod.strictObject({
                 pay: zod.boolean(),
                 sync: zod.boolean(),
                 refund: zod.boolean(),
-                settleByHand: zod.array(
+                settleRefundByHand: zod.array(
                     zod
                         .string()
                         .min(1)
-                        .max(listOrderPaymentsResponseItemsItemActionsSettleByHandItemMax)
-                        .regex(listOrderPaymentsResponseItemsItemActionsSettleByHandItemRegExp)
+                        .max(listOrderPaymentsResponseItemsItemActionsSettleRefundByHandItemMax)
+                        .regex(
+                            listOrderPaymentsResponseItemsItemActionsSettleRefundByHandItemRegExp
+                        )
                 ),
                 cancelRefund: zod.array(
                     zod
@@ -13864,8 +13866,8 @@ export const recordOrderPaymentResponseDisputesItemAmountMax = 32;
 export const recordOrderPaymentResponseDisputesItemCurrencyMin = 3;
 export const recordOrderPaymentResponseDisputesItemCurrencyMax = 3;
 export const recordOrderPaymentResponseDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
-export const recordOrderPaymentResponseActionsSettleByHandItemMax = 64;
-export const recordOrderPaymentResponseActionsSettleByHandItemRegExp = new RegExp(
+export const recordOrderPaymentResponseActionsSettleRefundByHandItemMax = 64;
+export const recordOrderPaymentResponseActionsSettleRefundByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const recordOrderPaymentResponseActionsCancelRefundItemMax = 64;
@@ -14031,12 +14033,12 @@ export const RecordOrderPaymentResponse = zod.strictObject({
         pay: zod.boolean(),
         sync: zod.boolean(),
         refund: zod.boolean(),
-        settleByHand: zod.array(
+        settleRefundByHand: zod.array(
             zod
                 .string()
                 .min(1)
-                .max(recordOrderPaymentResponseActionsSettleByHandItemMax)
-                .regex(recordOrderPaymentResponseActionsSettleByHandItemRegExp)
+                .max(recordOrderPaymentResponseActionsSettleRefundByHandItemMax)
+                .regex(recordOrderPaymentResponseActionsSettleRefundByHandItemRegExp)
         ),
         cancelRefund: zod.array(
             zod
@@ -14269,7 +14271,7 @@ export const ProcessOrderResponse = zod.strictObject({
         pay: zod.boolean(),
         recordPayment: zod.boolean(),
         process: zod.boolean(),
-        override: zod.array(
+        overrideStatus: zod.array(
             zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
@@ -14511,8 +14513,8 @@ export const ListPaymentMethodsResponse = zod.strictObject({
 });
 /**
  * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 201 with the new `Refund` record and its address in `Location`; read the payment again (`GET /payments/{id}`) for the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left to refund) or 422 (asks for more than is left). A refund still open counts against what is left, so a second partial refund beside it is allowed while money remains.
- * The 201 is the answer for every outcome of the record the request wrote; its `status` carries the result. `succeeded`: the money is back. `failed`: the provider refused, the record is kept and counts against what is left, and it is either retried by the refund sweep or, when `actions.settleByHand` lists it, final and waiting for the money to be returned another way. `pending`: hand-paid money waiting for an operator. A refusal is never a 5xx. The reason of a refusal (`failureReason`) is sent to `display:Payment` callers only.
- * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it.
+ * The 201 is the answer for every outcome of the record the request wrote; its `status` carries the result. `succeeded`: the money is back. `failed`: the provider refused, the record is kept and counts against what is left, and it is either retried by the refund sweep or, when `actions.settleRefundByHand` lists it, final and waiting for the money to be returned another way. `pending`: hand-paid money waiting for an operator. A refusal is never a 5xx. The reason of a refusal (`failureReason`) is sent to `display:Payment` callers only.
+ * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleRefundByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it.
  * There is no list at this path: a payment's refunds are listed by `GET /payments/{id}` (`refunds`), and one by `GET /payments/{id}/refunds/{refundId}`.
  * Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund a payment
@@ -14695,8 +14697,8 @@ export const getPaymentResponseDisputesItemAmountMax = 32;
 export const getPaymentResponseDisputesItemCurrencyMin = 3;
 export const getPaymentResponseDisputesItemCurrencyMax = 3;
 export const getPaymentResponseDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
-export const getPaymentResponseActionsSettleByHandItemMax = 64;
-export const getPaymentResponseActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getPaymentResponseActionsSettleRefundByHandItemMax = 64;
+export const getPaymentResponseActionsSettleRefundByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getPaymentResponseActionsCancelRefundItemMax = 64;
 export const getPaymentResponseActionsCancelRefundItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const GetPaymentResponse = zod.strictObject({
@@ -14854,12 +14856,12 @@ export const GetPaymentResponse = zod.strictObject({
         pay: zod.boolean(),
         sync: zod.boolean(),
         refund: zod.boolean(),
-        settleByHand: zod.array(
+        settleRefundByHand: zod.array(
             zod
                 .string()
                 .min(1)
-                .max(getPaymentResponseActionsSettleByHandItemMax)
-                .regex(getPaymentResponseActionsSettleByHandItemRegExp)
+                .max(getPaymentResponseActionsSettleRefundByHandItemMax)
+                .regex(getPaymentResponseActionsSettleRefundByHandItemRegExp)
         ),
         cancelRefund: zod.array(
             zod
@@ -14933,8 +14935,10 @@ export const confirmPaymentResponseDisputesItemAmountMax = 32;
 export const confirmPaymentResponseDisputesItemCurrencyMin = 3;
 export const confirmPaymentResponseDisputesItemCurrencyMax = 3;
 export const confirmPaymentResponseDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
-export const confirmPaymentResponseActionsSettleByHandItemMax = 64;
-export const confirmPaymentResponseActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const confirmPaymentResponseActionsSettleRefundByHandItemMax = 64;
+export const confirmPaymentResponseActionsSettleRefundByHandItemRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const confirmPaymentResponseActionsCancelRefundItemMax = 64;
 export const confirmPaymentResponseActionsCancelRefundItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const ConfirmPaymentResponse = zod.strictObject({
@@ -15092,12 +15096,12 @@ export const ConfirmPaymentResponse = zod.strictObject({
         pay: zod.boolean(),
         sync: zod.boolean(),
         refund: zod.boolean(),
-        settleByHand: zod.array(
+        settleRefundByHand: zod.array(
             zod
                 .string()
                 .min(1)
-                .max(confirmPaymentResponseActionsSettleByHandItemMax)
-                .regex(confirmPaymentResponseActionsSettleByHandItemRegExp)
+                .max(confirmPaymentResponseActionsSettleRefundByHandItemMax)
+                .regex(confirmPaymentResponseActionsSettleRefundByHandItemRegExp)
         ),
         cancelRefund: zod.array(
             zod
@@ -15149,8 +15153,10 @@ export const syncPaymentResponseDisputesItemAmountMax = 32;
 export const syncPaymentResponseDisputesItemCurrencyMin = 3;
 export const syncPaymentResponseDisputesItemCurrencyMax = 3;
 export const syncPaymentResponseDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
-export const syncPaymentResponseActionsSettleByHandItemMax = 64;
-export const syncPaymentResponseActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const syncPaymentResponseActionsSettleRefundByHandItemMax = 64;
+export const syncPaymentResponseActionsSettleRefundByHandItemRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const syncPaymentResponseActionsCancelRefundItemMax = 64;
 export const syncPaymentResponseActionsCancelRefundItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const SyncPaymentResponse = zod.strictObject({
@@ -15308,12 +15314,12 @@ export const SyncPaymentResponse = zod.strictObject({
         pay: zod.boolean(),
         sync: zod.boolean(),
         refund: zod.boolean(),
-        settleByHand: zod.array(
+        settleRefundByHand: zod.array(
             zod
                 .string()
                 .min(1)
-                .max(syncPaymentResponseActionsSettleByHandItemMax)
-                .regex(syncPaymentResponseActionsSettleByHandItemRegExp)
+                .max(syncPaymentResponseActionsSettleRefundByHandItemMax)
+                .regex(syncPaymentResponseActionsSettleRefundByHandItemRegExp)
         ),
         cancelRefund: zod.array(
             zod
@@ -21527,7 +21533,7 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
         pay: zod.boolean(),
         recordPayment: zod.boolean(),
         process: zod.boolean(),
-        override: zod.array(
+        overrideStatus: zod.array(
             zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled'])
         ),
         correctAddress: zod.boolean(),
@@ -21642,8 +21648,8 @@ export const listPaymentsResponseItemsItemDisputesItemAmountMax = 32;
 export const listPaymentsResponseItemsItemDisputesItemCurrencyMin = 3;
 export const listPaymentsResponseItemsItemDisputesItemCurrencyMax = 3;
 export const listPaymentsResponseItemsItemDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
-export const listPaymentsResponseItemsItemActionsSettleByHandItemMax = 64;
-export const listPaymentsResponseItemsItemActionsSettleByHandItemRegExp = new RegExp(
+export const listPaymentsResponseItemsItemActionsSettleRefundByHandItemMax = 64;
+export const listPaymentsResponseItemsItemActionsSettleRefundByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const listPaymentsResponseItemsItemActionsCancelRefundItemMax = 64;
@@ -21829,12 +21835,12 @@ export const ListPaymentsResponse = zod.strictObject({
                 pay: zod.boolean(),
                 sync: zod.boolean(),
                 refund: zod.boolean(),
-                settleByHand: zod.array(
+                settleRefundByHand: zod.array(
                     zod
                         .string()
                         .min(1)
-                        .max(listPaymentsResponseItemsItemActionsSettleByHandItemMax)
-                        .regex(listPaymentsResponseItemsItemActionsSettleByHandItemRegExp)
+                        .max(listPaymentsResponseItemsItemActionsSettleRefundByHandItemMax)
+                        .regex(listPaymentsResponseItemsItemActionsSettleRefundByHandItemRegExp)
                 ),
                 cancelRefund: zod.array(
                     zod
@@ -21906,8 +21912,10 @@ export const createPaymentResponseDisputesItemAmountMax = 32;
 export const createPaymentResponseDisputesItemCurrencyMin = 3;
 export const createPaymentResponseDisputesItemCurrencyMax = 3;
 export const createPaymentResponseDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
-export const createPaymentResponseActionsSettleByHandItemMax = 64;
-export const createPaymentResponseActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createPaymentResponseActionsSettleRefundByHandItemMax = 64;
+export const createPaymentResponseActionsSettleRefundByHandItemRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const createPaymentResponseActionsCancelRefundItemMax = 64;
 export const createPaymentResponseActionsCancelRefundItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const CreatePaymentResponse = zod.strictObject({
@@ -22065,12 +22073,12 @@ export const CreatePaymentResponse = zod.strictObject({
         pay: zod.boolean(),
         sync: zod.boolean(),
         refund: zod.boolean(),
-        settleByHand: zod.array(
+        settleRefundByHand: zod.array(
             zod
                 .string()
                 .min(1)
-                .max(createPaymentResponseActionsSettleByHandItemMax)
-                .regex(createPaymentResponseActionsSettleByHandItemRegExp)
+                .max(createPaymentResponseActionsSettleRefundByHandItemMax)
+                .regex(createPaymentResponseActionsSettleRefundByHandItemRegExp)
         ),
         cancelRefund: zod.array(
             zod
@@ -22185,8 +22193,8 @@ export const searchPaymentsResponseItemsItemDisputesItemAmountMax = 32;
 export const searchPaymentsResponseItemsItemDisputesItemCurrencyMin = 3;
 export const searchPaymentsResponseItemsItemDisputesItemCurrencyMax = 3;
 export const searchPaymentsResponseItemsItemDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
-export const searchPaymentsResponseItemsItemActionsSettleByHandItemMax = 64;
-export const searchPaymentsResponseItemsItemActionsSettleByHandItemRegExp = new RegExp(
+export const searchPaymentsResponseItemsItemActionsSettleRefundByHandItemMax = 64;
+export const searchPaymentsResponseItemsItemActionsSettleRefundByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const searchPaymentsResponseItemsItemActionsCancelRefundItemMax = 64;
@@ -22375,12 +22383,12 @@ export const SearchPaymentsResponse = zod.strictObject({
                 pay: zod.boolean(),
                 sync: zod.boolean(),
                 refund: zod.boolean(),
-                settleByHand: zod.array(
+                settleRefundByHand: zod.array(
                     zod
                         .string()
                         .min(1)
-                        .max(searchPaymentsResponseItemsItemActionsSettleByHandItemMax)
-                        .regex(searchPaymentsResponseItemsItemActionsSettleByHandItemRegExp)
+                        .max(searchPaymentsResponseItemsItemActionsSettleRefundByHandItemMax)
+                        .regex(searchPaymentsResponseItemsItemActionsSettleRefundByHandItemRegExp)
                 ),
                 cancelRefund: zod.array(
                     zod
@@ -22615,7 +22623,7 @@ export const ListPaymentAttentionResponse = zod.strictObject({
 });
 /**
  * An operator confirming that money was handed back outside the application (cash given back, a bank transfer sent). Nothing is sent anywhere: the refund record settles with `settledByHand`, `payment.refunded` fires as for any refund (the credit note is issued, a return waiting on it closes), and the audit row is `admin.payment.refund_settled_by_hand`. The refund is named by its own id, so one payment carrying several open refunds settles each separately.
- * Which refunds may be settled: a hand-paid (`manual`) payment's `pending` refund; and a card refund the provider refused in a way that proves the money did not move (`RefundFailureReason`: `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card`, `provider_removed`). The payment's `actions.settleByHand` lists exactly these ids. A card refund that is `pending` (an attempt is running) or `failed` for an unclear reason (`provider_unavailable`, `unknown`) answers 409 `PAYMENT_REFUND_IN_FLIGHT`: the money may have moved, and the sweep settles it from the provider. A refund two operators settle at once settles once, and the loser answers 409 `PAYMENT_REFUND_NOT_OPEN`. Needs `create:Refund`, which carries the same fresh-session requirement as the refund itself: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
+ * Which refunds may be settled: a hand-paid (`manual`) payment's `pending` refund; and a card refund the provider refused in a way that proves the money did not move (`RefundFailureReason`: `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card`, `provider_removed`). The payment's `actions.settleRefundByHand` lists exactly these ids. A card refund that is `pending` (an attempt is running) or `failed` for an unclear reason (`provider_unavailable`, `unknown`) answers 409 `PAYMENT_REFUND_IN_FLIGHT`: the money may have moved, and the sweep settles it from the provider. A refund two operators settle at once settles once, and the loser answers 409 `PAYMENT_REFUND_NOT_OPEN`. Needs `create:Refund`, which carries the same fresh-session requirement as the refund itself: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
  * @summary Mark a hand-paid refund as returned
  */
 export const settleRefundByHandPathIdMax = 64;
@@ -22695,7 +22703,7 @@ export const SettleRefundByHandResponse = zod.strictObject({
 });
 /**
  * A local void for a refund the shop will not pay: a duplicate opened by mistake, or one the provider's dashboard already covered. The record goes `failed` with `failureReason: canceled` and the amount it held returns to what is refundable. Nothing is sent to the provider, no credit note is issued and the buyer is not mailed: the money never moved, so there is nothing to report. The sweep never sends a canceled refund. The note says why, and is kept in the audit row `admin.payment.refund_canceled` with the order's timeline row `refund_canceled` (staff only) and the `payment.refund_canceled` event.
- * Which refunds may be canceled: exactly the ones `actions.cancelRefund` lists, the same set as `actions.settleByHand`: a hand-paid (`manual`) payment's `pending` refund, and a card refund the provider refused in a way that proves the money did not move (`RefundFailureReason`: `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card`, `provider_removed`). A `succeeded` refund, or one already canceled, answers 409 `PAYMENT_REFUND_NOT_OPEN`: the money moved, and cancelling it would falsify the books. A card refund that is `pending` (an attempt is running) or `failed` for an unclear reason (`provider_unavailable`, `unknown`) answers 409 `PAYMENT_REFUND_IN_FLIGHT`: the money may have moved. Needs `create:Refund`, with the same fresh-session requirement as creating one: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
+ * Which refunds may be canceled: exactly the ones `actions.cancelRefund` lists, the same set as `actions.settleRefundByHand`: a hand-paid (`manual`) payment's `pending` refund, and a card refund the provider refused in a way that proves the money did not move (`RefundFailureReason`: `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card`, `provider_removed`). A `succeeded` refund, or one already canceled, answers 409 `PAYMENT_REFUND_NOT_OPEN`: the money moved, and cancelling it would falsify the books. A card refund that is `pending` (an attempt is running) or `failed` for an unclear reason (`provider_unavailable`, `unknown`) answers 409 `PAYMENT_REFUND_IN_FLIGHT`: the money may have moved. Needs `create:Refund`, with the same fresh-session requirement as creating one: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
  * @summary Cancel a refund that must never be paid
  */
 export const cancelRefundPathIdMax = 64;

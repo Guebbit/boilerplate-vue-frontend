@@ -20,7 +20,7 @@ interface PaymentLike {
     status: string;
     amountRefunded: string;
     refunds: { settledByHand?: boolean }[];
-    actions: { refund: boolean; settleByHand: string[] };
+    actions: { refund: boolean; settleRefundByHand: string[] };
 }
 
 describe('OP23 · Cash goes back by hand', () => {
@@ -55,7 +55,7 @@ describe('OP23 · Cash goes back by hand', () => {
                 expect(payment?.refunds[0]?.settledByHand, 'nobody has confirmed it yet').to.equal(
                     undefined
                 );
-                expect(payment?.actions.settleByHand).to.have.length(1);
+                expect(payment?.actions.settleRefundByHand).to.have.length(1);
             });
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=payment-refund-pending]').should('exist');
@@ -73,7 +73,7 @@ describe('OP23 · Cash goes back by hand', () => {
             paymentOfOrder<PaymentLike>('moderator', orderId).should((payment) => {
                 expect(payment?.displayStatus).to.equal('refunded');
                 expect(payment?.refunds[0]?.settledByHand).to.equal(true);
-                expect(payment?.actions.settleByHand).to.have.length(0);
+                expect(payment?.actions.settleRefundByHand).to.have.length(0);
             });
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=payment-refunded-by-hand]').should('exist');

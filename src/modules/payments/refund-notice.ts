@@ -26,18 +26,18 @@ export interface RefundNotice {
  * What the operator should be told about the refund they just asked for.
  *
  * The server decides, the client copies: a refund the provider refused is a normal answer (201 and
- * a `failed` record), and whether the operator may settle it by hand is `actions.settleByHand`, not
+ * a `failed` record), and whether the operator may settle it by hand is `actions.settleRefundByHand`, not
  * a rule re-derived here.
  *
  * @param t - The caller's translate function.
  * @param refund - The record the request wrote; absent when the answer carried none.
- * @param settleByHand - `actions.settleByHand` of the payment, re-read after the request.
+ * @param settleRefundByHand - `actions.settleRefundByHand` of the payment, re-read after the request.
  * @param doneKey - The wording for a refund that went through, which differs per screen.
  */
 export const refundNotice = (
     t: Translate,
     refund: Pick<Refund, 'id' | 'status' | 'failureReason'> | undefined,
-    settleByHand: readonly string[],
+    settleRefundByHand: readonly string[],
     doneKey: string
 ): RefundNotice => {
     if (refund?.status === 'pending')
@@ -47,7 +47,7 @@ export const refundNotice = (
     const reason = refund.failureReason
         ? t(`payments-list-page.failure-reason-${refund.failureReason}`)
         : t('refund-notice.no-reason');
-    const next = settleByHand.includes(refund.id)
+    const next = settleRefundByHand.includes(refund.id)
         ? t('refund-notice.settle-by-hand')
         : t('refund-notice.retried');
     return { text: t('refund-notice.refused', { reason, next }), type: EToastType.WARNING };

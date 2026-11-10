@@ -87,7 +87,7 @@ beforeEach(() => {
         'POST /delivery/fulfillment-orders/fo1/release': aFulfillmentOrder(),
         'PATCH /delivery/shipments/s1': aShipment({ trackingCode: 'TRK-9' }),
         'POST /delivery/shipments/s1/deliver': aShipment({ status: 'delivered' }),
-        'POST /delivery/shipments/s1/lost': aShipment({ status: 'lost', lostReason: 'lost' }),
+        'POST /delivery/shipments/s1/mark-lost': aShipment({ status: 'lost', lostReason: 'lost' }),
         'POST /orders/order-3/process': {
             id: 'order-3',
             userId: 'u1',
@@ -333,14 +333,14 @@ describe('markLost', () => {
         expect(
             contractRequest(
                 schemas.MarkShipmentLostBody,
-                await sentBody('POST', '/delivery/shipments/s1/lost')
+                await sentBody('POST', '/delivery/shipments/s1/mark-lost')
             )
         ).toEqual({ reason: 'damaged', note: 'box crushed', message: 'We will send it again.' });
         expect(store.fulfillmentOrders).toHaveLength(1);
     });
 
     it('rejects on a refusal', () => {
-        responses['POST /delivery/shipments/s1/lost'] = new Error('DELIVERY_NOT_LOSABLE');
+        responses['POST /delivery/shipments/s1/mark-lost'] = new Error('DELIVERY_NOT_LOSABLE');
         const store = useDeliveryStore();
         return expect(store.markLost('s1', { reason: 'lost' })).rejects.toBeDefined();
     });

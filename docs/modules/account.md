@@ -160,7 +160,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `DELETE /account/sessions/{id}`              | `RevokeSessionResponse`            |
 | `POST /account/signup`                       | `SignupResponse`                   |
 | `POST /account/email-verification/confirm`   | `ConfirmEmailVerificationResponse` |
-| `POST /account/email-verification/resend`    | `RequestEmailVerificationResponse` |
+| `POST /account/email-verification/resend`    | `ResendEmailVerificationResponse`  |
 
 Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 
@@ -386,7 +386,7 @@ the dialog that is the difference between one prompt and five stacked on top of 
 
 `ReauthDialog.vue` lives in `app/` and the call it makes lives in the session store (`infrastructure/session.ts`),
 so the shell never imports this module — nor does the "resend verification" banner, which reads the
-session viewer's `verified` flag and calls `requestEmailVerification()` from `infrastructure/email-verification.ts`. The
+session viewer's `verified` flag and calls `resendEmailVerification()` from `infrastructure/email-verification.ts`. The
 store holding the dialog's open/closed state lives in
 `infrastructure/http/` rather than `ui/` — the interceptor reads it directly, and the
 infrastructure tier may not import `ui`. See [Layers](../theory/layers.md) for the rule.

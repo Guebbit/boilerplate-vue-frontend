@@ -119,11 +119,11 @@ const runOverride = () => {
 const { currentOrder, loading } = storeToRefs(useOrdersStore());
 
 /**
- * The order's own `actions.override` — every status `POST /orders/{id}/status-override` would
+ * The order's own `actions.overrideStatus` — every status `POST /orders/{id}/override-status` would
  * currently accept for this caller. Empty for anyone without `override:Order`, or once the
  * order has left every overridable status — the server's answer, not a locally filtered copy.
  */
-const overrideTargets = computed(() => currentOrder.value?.actions.override ?? []);
+const overrideTargets = computed(() => currentOrder.value?.actions.overrideStatus ?? []);
 
 /**
  * Whether the correction door renders at all.
@@ -613,7 +613,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
 
                     <!--
                         Hand-paid money opened but not yet confirmed back: one button per record the
-                        server names in `actions.settleByHand`. No amount field — the record has its own.
+                        server names in `actions.settleRefundByHand`. No amount field — the record has its own.
                     -->
                     <div v-if="settleable.length > 0" class="mt-3 flex flex-wrap gap-2">
                         <v-btn

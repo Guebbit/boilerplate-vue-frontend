@@ -31,7 +31,7 @@ const router = createRouter({
 
 /** A payment the viewer may refund, as the row hands it to the drawer. */
 const ROW = aPayment({
-    actions: { pay: false, sync: false, refund: true, settleByHand: [], cancelRefund: [] }
+    actions: { pay: false, sync: false, refund: true, settleRefundByHand: [], cancelRefund: [] }
 });
 
 /** The same payment after the provider refused a refund, as the re-read answers it. */

@@ -101,7 +101,7 @@ const anAction = (overrides: Partial<OrderActions> = {}): OrderActions => ({
     pay: false,
     recordPayment: false,
     process: false,
-    override: [],
+    overrideStatus: [],
     correctAddress: false,
     invoice: false,
     withdraw: false,
@@ -388,7 +388,7 @@ describe('cancelling', () => {
 });
 
 describe('the correct-status door', () => {
-    it('stays hidden with an empty actions.override', () => {
+    it('stays hidden with an empty actions.overrideStatus', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.shipped,
@@ -406,14 +406,14 @@ describe('the correct-status door', () => {
             });
     });
 
-    it('submits the picked status and reason once actions.override names a destination', () => {
+    it('submits the picked status and reason once actions.overrideStatus names a destination', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.shipped,
             actions: anAction({
                 cancel: true,
                 pay: false,
-                override: [OrderStatus.delivered]
+                overrideStatus: [OrderStatus.delivered]
             })
         });
         // Spied BEFORE mounting: the component destructures `overrideStatus` off the store at

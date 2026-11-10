@@ -7,28 +7,28 @@ import * as schemas from '@api/schemas';
 import { contractResponse } from '../../support/unit/orval-fixture-schema.ts';
 
 // Deliberately untyped: the mock returns case-by-case fixture shapes the generated types refuse.
-const requestEmailVerificationMock = vi.fn();
+const resendEmailVerificationMock = vi.fn();
 
 vi.mock('@api', () => ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
-    requestEmailVerification: () => requestEmailVerificationMock()
+    resendEmailVerification: () => resendEmailVerificationMock()
 }));
 
 /** The code under test, imported after the mocks are in place. */
-const { requestEmailVerification, emailVerifyResendRetryAfter } =
+const { resendEmailVerification, emailVerifyResendRetryAfter } =
     await import('@/infrastructure/email-verification.ts');
 
 beforeEach(() => {
     vi.clearAllMocks();
 });
 
-describe('requestEmailVerification', () => {
+describe('resendEmailVerification', () => {
     it("resolves with the server's own resend cooldown", () => {
-        requestEmailVerificationMock.mockResolvedValue(
-            contractResponse(schemas.RequestEmailVerificationResponse, { resendAfter: 60 })
+        resendEmailVerificationMock.mockResolvedValue(
+            contractResponse(schemas.ResendEmailVerificationResponse, { resendAfter: 60 })
         );
 
-        return requestEmailVerification().then((resendAfter) => {
+        return resendEmailVerification().then((resendAfter) => {
             expect(resendAfter).toBe(60);
         });
     });

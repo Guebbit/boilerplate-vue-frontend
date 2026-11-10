@@ -17,7 +17,7 @@ export default {
  * them whenever they are present and never asks who is looking. Refunding is the existing
  * `POST /payments/{id}/refunds`, offered only when `actions.refund` says it would work;
  * a hand-paid refund waiting for the operator gets a "Mark returned" button, offered for the ids
- * `actions.settleByHand` names. Beside it, "Cancel refund" voids a refund that must never be paid:
+ * `actions.settleRefundByHand` names. Beside it, "Cancel refund" voids a refund that must never be paid:
  * it opens a note field (the audit needs the why) and is offered for the ids `actions.cancelRefund`
  * names. The server decides what is offered; this renders it.
  */
@@ -119,9 +119,10 @@ const canRefund = computed(() => props.payment?.actions.refund === true);
  * Whether the server would take this refund as "returned by hand" from this caller.
  *
  * @param refundId - A record of the shown payment.
- * @returns `true` when `actions.settleByHand` names it.
+ * @returns `true` when `actions.settleRefundByHand` names it.
  */
-const canSettle = (refundId: string) => props.payment?.actions.settleByHand.includes(refundId);
+const canSettle = (refundId: string) =>
+    props.payment?.actions.settleRefundByHand.includes(refundId);
 
 /**
  * Whether the server would take this refund as "canceled" from this caller.
@@ -187,7 +188,7 @@ const handleRefund = singleFlight(() => {
                     const notice = refundNotice(
                         t,
                         refund,
-                        refreshed.actions.settleByHand,
+                        refreshed.actions.settleRefundByHand,
                         'payments-list-page.refund-done'
                     );
                     addMessage(notice.text, notice.type);

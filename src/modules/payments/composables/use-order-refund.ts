@@ -23,7 +23,7 @@ import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
  * Whether a refund is possible is never decided here. `actions.refund` is the server's answer, and
  * it is what greys the control out; re-deriving it from a status would put half the rule in a
  * separately deployed client. The same holds for the refunds an operator may mark as returned:
- * `actions.settleByHand` names them.
+ * `actions.settleRefundByHand` names them.
  *
  * @param orderId - The order whose money is in question, reactive so a route change re-reads it.
  * @returns Whether a refund is open, the call that performs one, and the hand-paid refunds
@@ -68,7 +68,7 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
          * confirmed), each with its amount for the confirmation. Empty when there is none.
          */
         settleable: computed(() => {
-            const ids = payment.value?.actions.settleByHand ?? [];
+            const ids = payment.value?.actions.settleRefundByHand ?? [];
             return (payment.value?.refunds ?? []).filter((refund) => ids.includes(refund.id));
         }),
         /**
@@ -100,7 +100,7 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
                               ? refundNotice(
                                     t,
                                     done.refund,
-                                    done.payment.actions.settleByHand,
+                                    done.payment.actions.settleRefundByHand,
                                     'order-edit-page.refund-done'
                                 )
                               : undefined
@@ -115,7 +115,7 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
         cancelNotice: (doneKey: string): string => {
             if (payment.value?.displayStatus === 'refunded') return t(doneKey);
             return t(
-                (payment.value?.actions.settleByHand.length ?? 0) > 0
+                (payment.value?.actions.settleRefundByHand.length ?? 0) > 0
                     ? 'refund-notice.recorded'
                     : 'refund-notice.cancel-under-way'
             );

@@ -11,7 +11,7 @@ import AppVerificationBanner from '@/app/components/AppVerificationBanner.vue';
 import vuetify from '@/ui/vuetify';
 
 /** Stub for the resend call. */
-const requestEmailVerification = vi.fn<() => unknown>();
+const resendEmailVerification = vi.fn<() => unknown>();
 
 /** The mocked session store: a viewer, or none. */
 const session = {
@@ -23,7 +23,7 @@ vi.mock('@/infrastructure/session.ts', () => ({
 }));
 
 vi.mock('@/infrastructure/email-verification.ts', () => ({
-    requestEmailVerification: () => requestEmailVerification(),
+    resendEmailVerification: () => resendEmailVerification(),
     emailVerifyResendRetryAfter: () => undefined
 }));
 
@@ -45,7 +45,7 @@ const mountBanner = () =>
 describe('AppVerificationBanner', () => {
     beforeEach(() => {
         session.viewer.value = undefined;
-        requestEmailVerification.mockReset();
+        resendEmailVerification.mockReset();
     });
 
     it('shows no banner to a guest', () => {
