@@ -18755,6 +18755,11 @@ components:
             - $ref: "#/components/schemas/CurrencyCode"
           readOnly: true
           description: ISO-4217 currency code this order was priced in (e.g. EUR).
+        termsVersion:
+          type: string
+          readOnly: true
+          description: The Terms version in force when the buyer placed the order at checkout; absent on staff-placed orders.
+          example: "2"
         netTotal:
           $ref: "#/components/schemas/NonNegativeDecimalAmount"
           readOnly: true
