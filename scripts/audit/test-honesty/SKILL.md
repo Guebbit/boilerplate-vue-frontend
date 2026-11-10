@@ -3,22 +3,22 @@ name: test-honesty
 description: Report tests that pass without proving anything — coverage padding, mocked subjects, swallowed failures, lying titles, degenerate inputs
 ---
 
+Before anything else, read `scripts/audit/RULES.md` and follow it. Where this skill and RULES.md
+disagree, RULES.md wins.
+
 ROLE: Sceptical test auditor. Read every test as if its author were paid per green test and per
 covered line. A test is innocent only once it has been seen to fail.
 
 GOAL: Find tests that stay green when the behaviour they claim to check is broken, and say what
 would make each one honest. This audit only reports. It never edits code, tests or documentation.
 
-SCOPE: the argument you were given — a module name (`cart`), a path, or `--diff` for modules
-touched by the working tree. If empty, use `git status --porcelain` to pick the scope.
+SCOPE: the argument you were given: a module name (`orders`), a path, `--diff` or `whole-repo` (`scripts/audit/RULES.md` rule 5).
+Empty means `whole-repo`.
 
 ## Naming the scope
 
-Output is `reports/audit/test-honesty/<SCOPE>.md`, where `<SCOPE>` is:
-
-- a module → the module name (`cart`)
-- a path → the path slugged, `src/` dropped (`src/infrastructure/http` → `infrastructure-http`)
-- `--diff` → the current branch name slugged (`git branch --show-current`)
+Output goes to `reports/audit-<run>/test-honesty/<SCOPE>…`. `<run>` and `<SCOPE>` (module, path slug,
+`--diff` branch slug, `whole-repo`) are defined in RULES.md rule 4.
 
 ## What this audit is not
 
@@ -118,10 +118,10 @@ report; never edit `src/` to check.
   laid over it.
 - A file's entry is stale when that source changed after the report was written
   (`git log -1 --format=%cI -- <file>` against the report's date): say so in the row.
-- No usable report: `npm run test:mutation -- --mutate <file>` re-runs Stryker for one file and
-  writes only under the gitignored `reports/`. Never run `test:mutation:pull` yourself — it writes
-  the tracked `mutation-baseline.json`. Ask the user to pull instead. If nothing covers the scope,
-  say so at the top and mark every row UNVERIFIED.
+- No usable report: ask the user before `npm run test:mutation -- --mutate <file>` (RULES.md rule 2).
+  It re-runs Stryker for one file and writes `reports/`. Never run `test:mutation:pull` or
+  `test:mutation:baseline` yourself: they write the tracked `mutation-baseline.json`. Ask the user to
+  pull instead. If nothing covers the scope, say so at the top and mark every row UNVERIFIED.
 
 - Match each break to a mutant: same location, same effect — a `ConditionalExpression` forced to
   `true` for a deleted guard, an emptied `BlockStatement` for a deleted call, an `EqualityOperator`
@@ -147,7 +147,7 @@ Only CONFIRMED and DULL rows are findings. CLEAN rows go in a one-line count, ne
 
 ### 4 — write the report
 
-`reports/audit/test-honesty/<SCOPE>.md`:
+`reports/audit-<run>/test-honesty/<SCOPE>.md`:
 
 | file:line | test name | shape | claims | break | mutant (id, status) | verdict | suggested fix |
 
@@ -169,7 +169,7 @@ good news, and worth saying.
 
 ## Rules
 
-- **Report only.** Write nothing but the report under `reports/audit/test-honesty/`. Do NOT edit
+- **Report only.** Write nothing but the report under `reports/audit-<run>/test-honesty/`. Do NOT edit
   source, tests, documentation, contracts or config. Do NOT commit, and never `git stash` — it
   takes every peer's uncommitted work with it.
 - A finding needs a mutant id. "It looks weak" is not a finding — the mutant either survived this
