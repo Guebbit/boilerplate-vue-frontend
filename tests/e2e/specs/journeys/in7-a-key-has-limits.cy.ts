@@ -21,6 +21,9 @@ const NOT_THE_ADMINS = 'read:ObservabilitySnapshot';
 /** The one write the key is given. */
 const GIVEN = 'create:WebhookSubscription';
 
+/** What the subscribed event's stream needs: a webhook can only carry events its writer may read. */
+const READS_THE_EVENT = 'display:Order';
+
 /** A name for the key, unique enough that two runs on one backend never read each other's row. */
 const KEY_NAME = `in7-writer-${String(Date.now())}`;
 
@@ -55,6 +58,7 @@ describe('IN7 · A key has limits', () => {
         cy.reload();
         cy.get('[data-test=api-key-name] input').type(KEY_NAME);
         cy.get('[data-test=api-key-permissions] input').type(`${GIVEN}{enter}`);
+        cy.get('[data-test=api-key-permissions] input').type(`${READS_THE_EVENT}{enter}`);
         cy.get('[data-test=api-key-expires-at] input').type(datetimeLocalIn(HOUR_MS));
         cy.get('form').submit();
         cy.get('[data-test=secret-reveal-value]')

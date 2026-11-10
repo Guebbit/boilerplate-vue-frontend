@@ -308,6 +308,8 @@ export const ERROR_CODES = {
     VALIDATION_ERROR: 'VALIDATION_ERROR',
     /** 409 — A retry of this delivery is already in flight. */
     WEBHOOK_DELIVERY_IN_PROGRESS: 'WEBHOOK_DELIVERY_IN_PROGRESS',
+    /** 403 — The filter names an event the caller may not read, so a stream of it cannot be handed to a receiver. Each event declares the rule that reads it (`x-read-rule` in `asyncapi.public.yaml`). */
+    WEBHOOK_EVENT_READ_REQUIRED: 'WEBHOOK_EVENT_READ_REQUIRED',
     /** 409 — The subscription is already disabled. */
     WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED: 'WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED',
     /** 409 — The subscription is already enabled. */

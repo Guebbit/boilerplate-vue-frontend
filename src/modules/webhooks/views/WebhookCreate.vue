@@ -26,6 +26,7 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { useWebhooksStore } from '../store';
+import { eventOptionProps } from '../domain/event-options.ts';
 import { webhookCreateSchema } from '../schemas.ts';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
@@ -205,6 +206,7 @@ const handleSecretDone = () => {
                 :items="eventCatalog"
                 item-title="name"
                 item-value="name"
+                :item-props="eventOptionProps"
                 :loading="loadingEventCatalog"
                 :label="t('webhook-create-page.label-event-types')"
                 v-bind="fieldErrorProps(showErrors ? formErrors.eventTypes : [])"

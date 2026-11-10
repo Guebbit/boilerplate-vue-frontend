@@ -99,7 +99,8 @@
         "reset-form": "Annulla modifiche",
         "button-go-to-details": "Torna ai dettagli della sottoscrizione",
         "button-go-to-list": "Torna alle sottoscrizioni",
-        "success-update": "Sottoscrizione aggiornata"
+        "success-update": "Sottoscrizione aggiornata",
+        "hint-stream-locked": "Bloccato: questa sottoscrizione riceve eventi che non puoi leggere, quindi puoi modificare solo la descrizione."
     },
     "webhook-deliveries-page": {
         "page-title": "Registro delle consegne",

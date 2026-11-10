@@ -17701,6 +17701,10 @@ export const ListWebhookSubscriptionsResponse = zod.strictObject({
  * delivery that fails later; `PUT` and `PATCH` run the same check when the `url`
  * changes. It runs again on every delivery, since a subscription's DNS can change
  * after it is created.
+ *
+ * A subscription hands an event stream to a machine, so the caller must hold the read
+ * rule of every event it carries (`GET /webhooks/events` marks each one `actions.subscribe`;
+ * `*` needs them all). Otherwise 403 `WEBHOOK_EVENT_READ_REQUIRED`, naming the events.
  * @summary Create a webhook subscription
  */
 export const createWebhookSubscriptionBodyUrlMax = 2048;
@@ -17882,6 +17886,11 @@ export const GetWebhookSubscriptionResponse = zod.strictObject({
  * Full replace of url/description/eventTypes — an omitted `description` is cleared.
  * Never touches the secret ring or whether the subscription is on; rotate or drop a
  * secret, enable or disable it, through its own action route below.
+ *
+ * A `PUT`, or a `PATCH` that carries `url` or `eventTypes`, needs the read rule of every
+ * event in the stored filter AND in the new one: otherwise a caller could narrow a stream
+ * and redirect it in one call. Otherwise 403 `WEBHOOK_EVENT_READ_REQUIRED`. A
+ * description-only `PATCH` is not checked.
  * @summary Replace a webhook subscription
  */
 export const replaceWebhookSubscriptionPathIdMax = 64;
@@ -17999,6 +18008,10 @@ export const ReplaceWebhookSubscriptionResponse = zod.strictObject({
  * Partial update of url/description/eventTypes. Never touches the secret ring or
  * whether the subscription is on; rotate or drop a secret, enable or disable it,
  * through its own action route below.
+ *
+ * A `PATCH` that carries `url` or `eventTypes` needs the read rule of every event in the
+ * stored filter AND in the new one, as `PUT` does; a description-only `PATCH` is not
+ * checked. Otherwise 403 `WEBHOOK_EVENT_READ_REQUIRED`.
  * @summary Update a webhook subscription
  */
 export const updateWebhookSubscriptionPathIdMax = 64;
@@ -18339,7 +18352,9 @@ export const ListWebhookDeliveriesResponse = zod.strictObject({
  * row: `attempt` advances exactly like a real queued attempt would (one step forward
  * on a failure with backoff tiers left, unchanged on success or exhaustion), and
  * `status`/`responseCode`/`durationMs`/`error` reflect this replay. Refused while the subscription is
- * disabled (`actions.replay` is false): enable it first.
+ * disabled (`actions.replay` is false): enable it first. The stored payload is re-sent, so
+ * the caller needs the read rule of the delivery's event (`actions.replay` is false
+ * otherwise): 403 `WEBHOOK_EVENT_READ_REQUIRED`.
  * @summary Re-send one delivery
  */
 export const replayWebhookDeliveryPathIdMax = 64;
@@ -18418,7 +18433,8 @@ export const ReplayWebhookDeliveryResponse = zod.strictObject({
  * The events of the modules this deployment runs, read from each one's own
  * `asyncapi.webhooks.yaml` — the same files `asyncapi.public.yaml` is generated from —
  * so this list and what can actually fire can never drift apart. A module that is
- * not deployed lists nothing. See `docs/api/asyncapi-workflow.md`.
+ * not deployed lists nothing. Each entry's `actions.subscribe` says whether the caller holds
+ * the event's read rule and so may put it in a filter. See `docs/api/asyncapi-workflow.md`.
  *
  * Unpaged: the event catalogue of the deployed modules.
  * @summary The public event catalogue
@@ -18448,7 +18464,10 @@ export const ListWebhookEventsResponse = zod.strictObject({
                 'user.erased',
                 'user.updated'
             ]),
-            description: zod.string().optional()
+            description: zod.string().optional(),
+            actions: zod.strictObject({
+                subscribe: zod.boolean()
+            })
         })
     )
 });
@@ -24263,6 +24282,10 @@ export const DisableWebhookSubscriptionResponse = zod.strictObject({
  * most two: adding a third drops the oldest, which is already superseded. A secret is a
  * line of the subscription, so adding one is a `POST` on the line collection and answers
  * 200 with the whole subscription (docs/api/write-methods.md).
+ *
+ * A secret signs for the subscription's stored filter, so the caller needs the read rule
+ * of every event in it (`actions.createSecret` is false otherwise): 403
+ * `WEBHOOK_EVENT_READ_REQUIRED`.
  * @summary Add a secret to a webhook subscription's ring (rotate)
  */
 export const createWebhookSubscriptionSecretPathIdMax = 64;
