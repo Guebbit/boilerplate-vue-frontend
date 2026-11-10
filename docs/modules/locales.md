@@ -8,18 +8,9 @@ checks `router.hasRoute('EntityTranslations')` before offering a link to it, gua
 assumed, so removing the route degrades that one link instead of breaking the build.
 :::
 
-| Fact                    | This module                                                                      |
-| ----------------------- | -------------------------------------------------------------------------------- |
-| **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.              |
-| **Screens**             | 4 — `LocalesList` · `LocalesDictionary` · `LocaleEntries` · `EntityTranslations` |
-| **Store**               | `locales`                                                                        |
-| **Menu entries**        | `LocalesList`                                                                    |
-| **API calls**           | 13                                                                               |
-| **Depends on**          | _nothing_                                                                        |
-| **Depended on by**      | _nothing through an import_ — `products` checks for its route by name            |
-| **Languages**           | `en` · `it`                                                                      |
-| **Publishes**           | _nothing_ — no barrel, so no sibling may import it                               |
-| **Backend counterpart** | `locales` in `boilerplate-node-backend`                                          |
+| Fact          | This module                                                         |
+| ------------- | ------------------------------------------------------------------- |
+| **Subdomain** | `generic` — A solved problem. Modelling effort here would be waste. |
 
 ::: info Almost stands alone
 No module imports this one and it imports none. `products`' `ProductEdit` still names its
@@ -73,26 +64,19 @@ The trap worth carrying over from the server: a language existing in the databas
 the API can answer in it. `GET /locales` reports scopes per language rather than a bare list of tags,
 so _may I request this language_ and _may I download a dictionary for it_ stay two questions.
 
+**A stale save says so.** A language's record, its entries, a translation set and an entries import
+are versioned writes: when someone saved first, the server answers `412`, the screen shows a warning
+(not an error) and offers "reload latest" instead of resending (`useStaleRecord`, see
+[Request Flow](../theory/request-flow.md#conditional-writes)). The import also sends the
+dictionary's tag, so a file built from an old list is refused rather than merged over newer rows.
+
 ## State
 
-Store `locales`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
-
-| Kind        | Members                                                                                                                                                                                                                                                                                                                                                         | What it is                                                       |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `capabilities` · `apps` · `defaultLocale` · `fallbackLocale` · `filters` · `pageCurrent` · `pageSize` · `entriesPageTotal`                                                                                                                                                                                                                                      | The refs the setup function returns — the only writable surface. |
-| **Getters** | `ownApp` · `backendApp` · `loading` · `pageTotal` · `pageItemList`                                                                                                                                                                                                                                                                                              | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `appLabel` · `fetchApps` · `fetchLanguages` · `createLanguage` · `editLanguage` · `activateLanguage` · `deactivateLanguage` · `removeLanguage` · `fetchEntityTranslations` · `saveEntityTranslations` · `watchSearchEntries` · `addEntry` · `editEntry` · `removeEntry` · `importEntries` · `fetchAllEntries` · `fetchApiDictionary` · `fetchBundledDictionary` | Everything that changes state or calls the API.                  |
+State, getters and actions are exactly what the setup function of each store returns: `src/modules/locales/store.ts`.
 
 ## Screens
 
-| Path                                   | Route name           | Access | Permission         | View                           |
-| -------------------------------------- | -------------------- | ------ | ------------------ | ------------------------------ |
-| `locales`                              | `LocalesList`        | `auth` | `update Locale`    | `views/LocalesList.vue`        |
-| `locales/dictionary`                   | `LocalesDictionary`  | `auth` | `update Locale`    | `views/LocalesDictionary.vue`  |
-| `locales/:tag`                         | `LocaleEntries`      | `auth` | `update Locale`    | `views/LocaleEntries.vue`      |
-| `locales/translations/:entityType/:id` | `EntityTranslations` | `auth` | `read Translation` | `views/EntityTranslations.vue` |
-
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
+Paths, route names, access and permission per screen: `src/modules/locales/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
 
 `EntityTranslations` is the generic translation door: any domain with translatable content links to
 it by route name (`ProductEdit.vue`'s own "Translations" button does, guarded by
@@ -104,67 +88,17 @@ purpose — see the route table's own comment in `routes.ts`.
 
 #### Endpoints called
 
-| Call                                            | Response schema                     |
-| ----------------------------------------------- | ----------------------------------- |
-| `POST /locales`                                 | `CreateLocaleResponse`              |
-| `PUT /locales/{id}`                             | `ReplaceLocaleResponse`             |
-| `DELETE /locales/{id}`                          | `DeleteLocaleResponse`              |
-| `PATCH /locales/{id}`                           | `UpdateLocaleResponse`              |
-| `PATCH /locales/{id}/apps/{app}/entries`        | `MergeLocaleEntriesResponse`        |
-| `POST /locales/{id}/apps/{app}/entries`         | `CreateLocaleEntryResponse`         |
-| `PUT /locales/{id}/apps/{app}/entries`          | `ReplaceLocaleEntriesResponse`      |
-| `GET /locales/{id}/entries(\?.*)?`              | `ListLocaleEntriesResponse`         |
-| `GET /locales/{id}/apps/{app}/entries(\?.*)?`   | `ListAppLocaleEntriesResponse`      |
-| `DELETE /locales/{id}/apps/{app}/entries/{id}`  | `DeleteLocaleEntryResponse`         |
-| `PUT /locales/{id}/apps/{app}/entries/{id}`     | `UpdateLocaleEntryResponse`         |
-| `GET /locales/translations/{entityType}/{id}`   | `GetEntityTranslationsResponse`     |
-| `PUT /locales/translations/{entityType}/{id}`   | `ReplaceEntityTranslationsResponse` |
-| `PATCH /locales/translations/{entityType}/{id}` | `UpdateEntityTranslationsResponse`  |
-
-Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/locales/response-schemas.ts`.
 
 #### Navigation entries
 
-| Route | Label key | Section | Order | Icon | Badge |
-| ------------- | -------------------------- | --- | --- | --- | --- | --- |
-| `LocalesList` | `navigation.label-locales` | `admin` | 43 | yes | — |
+Entries are declared in `src/modules/locales/module.ts`.
 
 ## Files
 
-| File                                                     | What it is                                                                                                                                                                                                                                       | Explained in                          |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
-| `components/EntriesImportDialog.vue`                     | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                                                                                         | [read](../theory/layers.md)           |
-| `components/EntryFormDialog.vue`                         | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                                                                                         | [read](../theory/layers.md)           |
-| `components/LanguageFormDialog.vue`                      | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                                                                                         | [read](../theory/layers.md)           |
-| `domain/translation-drafts.ts`                           | Pure client-side rules over plain data — no store, no component, no axios.                                                                                                                                                                       | [read](../tools/i18n.md)              |
-| `dictionaries.ts`                                        | `locales` only. The runtime override merge — server rows layered over what the app bundles, key by key.                                                                                                                                          | [read](../tools/i18n.md)              |
-| `locales/en.json`                                        | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                                                                  | [read](../tools/i18n.md)              |
-| `locales/it.json`                                        | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                                                                  | [read](../tools/i18n.md)              |
-| `module.ts`                                              | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots.                                                              | [read](../theory/modules.md)          |
-| `response-schemas.ts`                                    | One row per endpoint this domain calls, pairing a method and path pattern with the Zod schema its response is validated against.                                                                                                                 | [read](../api/openapi-workflow.md)    |
-| `routes.ts`                                              | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                                                                                           | [read](../theory/sitemap.md)          |
-| `schemas.ts`                                             | Form schemas for this domain. Hand-written: only the contract's numeric constraints (minimums) are read from `@api/schemas`, so the rest of a rule can drift from the request body — `VITE_VALIDATE_REQUESTS` checks the real body at send time. | [read](../api/openapi-workflow.md)    |
-| `store.ts`                                               | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                                                                                           | [read](../tools/state-and-routing.md) |
-| `tests/dictionaries.spec.ts`                             | Vitest suite — `dictionaries`, in isolation.                                                                                                                                                                                                     | [read](../tools/unit-testing.md)      |
-| `tests/e2e/__snapshots__/locale-entries.desktop.png`     | A committed visual-regression baseline.                                                                                                                                                                                                          | [read](../tools/visual-regression.md) |
-| `tests/e2e/__snapshots__/locales-dictionary.desktop.png` | A committed visual-regression baseline.                                                                                                                                                                                                          | [read](../tools/visual-regression.md) |
-| `tests/e2e/__snapshots__/locales-list.desktop.png`       | A committed visual-regression baseline.                                                                                                                                                                                                          | [read](../tools/visual-regression.md) |
-| `tests/e2e/a11y.cy.ts`                                   | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                                                                                                                | [read](../tools/component-testing.md) |
-| `tests/e2e/locales.visual.cy.ts`                         | Cypress visual suite — pixel diffs against the committed baselines.                                                                                                                                                                              | [read](../tools/component-testing.md) |
-| `tests/store.spec.ts`                                    | Vitest suite — this domain's store, with the transport mocked.                                                                                                                                                                                   | [read](../tools/unit-testing.md)      |
-| `tests/translation-drafts.spec.ts`                       | Vitest suite — `translation-drafts`, in isolation.                                                                                                                                                                                               | [read](../tools/unit-testing.md)      |
-| `views/EntityTranslations.vue`                           | A routed screen. Reads its store, renders, and holds no fetching logic of its own — the generic translation door any domain links to by route name.                                                                                              | [read](../theory/layers.md)           |
-| `views/LocaleEntries.vue`                                | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
-| `views/LocalesDictionary.vue`                            | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
-| `views/LocalesList.vue`                                  | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
+The folder is `src/modules/locales/`; each file's own `@module` header says what it is.
 
 ## Working on it
-
-| Suite            | Files | Where                                          |
-| ---------------- | ----- | ---------------------------------------------- |
-| Vitest           | 9     | `src/modules/locales/tests/`                   |
-| Cypress          | 2     | `src/modules/locales/tests/e2e/`               |
-| Visual baselines | 4     | `src/modules/locales/tests/e2e/__snapshots__/` |
 
 ```bash
 # this module's vitest suites

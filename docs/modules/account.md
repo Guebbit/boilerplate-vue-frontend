@@ -11,18 +11,11 @@ backend's freshness gate — email change, account delete, session revoke, check
 management — is answered through that one prompt.
 :::
 
-| Fact                    | This module                                                                                                                                                                                                                                                                 |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.                                                                                                                                                                                                         |
-| **Screens**             | 14 — `Login` · `Signup` · `TwoFactorChallenge` · `AccountRestoreChallenge` · `PasswordResetRequest` · `PasswordResetConfirm` · `AccountSetup` · `AccountRestore` · `VerifyEmailConfirm` · `EmailChangeConfirm` · `EmailChangeUndo` · `OAuthCallback` · `Profile` · `Logout` |
-| **Stores**              | `account-auth` · `account-profile` · `account-sessions` · `account-addresses` · `account-oauth-providers` · `account-oauth-links` · `account-two-factor` · `account-deletion-restore`                                                                                       |
-| **Menu entries**        | `Profile`                                                                                                                                                                                                                                                                   |
-| **API calls**           | 31                                                                                                                                                                                                                                                                          |
-| **Depends on**          | [`users`](./users.md)                                                                                                                                                                                                                                                       |
-| **Depended on by**      | [`cart`](./cart.md) — mounts `AddressPicker`, twice (shipping and billing), and `PurchaseHoldNotice`                                                                                                                                                                        |
-| **Languages**           | `en` · `it`                                                                                                                                                                                                                                                                 |
-| **Publishes**           | `AddressPicker` · `PurchaseHoldNotice`                                                                                                                                                                                                                                      |
-| **Backend counterpart** | `account` in `boilerplate-node-backend`                                                                                                                                                                                                                                     |
+| Fact          | This module                                                                                                                                                                           |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Subdomain** | `generic` — A solved problem. Modelling effort here would be waste.                                                                                                                   |
+| **Stores**    | `account-auth` · `account-profile` · `account-sessions` · `account-addresses` · `account-oauth-providers` · `account-oauth-links` · `account-two-factor` · `account-deletion-restore` |
+| **Publishes** | `AddressPicker` · `PurchaseHoldNotice`                                                                                                                                                |
 
 ## The map
 
@@ -33,7 +26,7 @@ The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
 ## The story
 
-Twelve screens, seven stores, and the widest API surface of any module here — which makes it a
+Many screens, several stores, and the widest API surface of any module here — which makes it a
 misleadingly ordinary-looking domain. Five things about it are worth knowing before you edit it.
 
 **The session is not in here.** The credential (an access token in `jwt` mode, a held-cookie flag in `cookie` mode: the backend's `NODE_SESSION_MODE`, read from `GET /config`) lives in `infrastructure/session`, because
@@ -41,10 +34,10 @@ misleadingly ordinary-looking domain. Five things about it are worth knowing bef
 caller's own rules before any domain code runs. A module cannot sit below the layer that needs it. This module owns the
 _editable record_, not the credential.
 
-**One domain, seven stores.** They split by lifecycle, not by screen: `account-auth` establishes and
+**One domain, one store per lifecycle.** They split by lifecycle, not by screen: `account-auth` establishes and
 ends a session, `account-profile` owns the editable record once one exists, and `account-sessions`,
-`account-addresses`, `account-oauth-links` and `account-two-factor` each own a panel's own slice, and
-`account-oauth-providers` holds the deployment's provider list — a public fact, not the visitor's.
+`account-addresses`, `account-oauth-links`, `account-two-factor` and `account-deletion-restore` each own a panel's own
+slice, and `account-oauth-providers` holds the deployment's provider list — a public fact, not the visitor's.
 A store that outlives its panel would be a cache nobody invalidates.
 
 **Connecting a provider is a signed-in step.** A sign-in with a provider whose email matches an
@@ -83,92 +76,23 @@ learning what an address book or a hold record is.
 
 ## State
 
-Seven stores, listed by what each one's setup function returns — an internal ref is not part of the surface.
-
-| Store                      | File                         | Surface                                                                                                                                                                                                                                                                                                    |
-| -------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `account-auth`             | `stores/auth.ts`             | `login` · `signup` · `requestPasswordReset` · `confirmPasswordReset` · `logout` · `logoutEverywhere`                                                                                                                                                                                                       |
-| `account-profile`          | `stores/profile.ts`          | `profile` · `loading` · `resetAll` · `fetchProfile` · `updateProfile` · `requestEmailChange` · `changePassword` · `confirmEmailVerification` · `requestAccountDelete` · `restoreAccount` · `requestAccountExport` · `downloadAccountExport`                                                                |
-| `account-sessions`         | `stores/sessions.ts`         | `sessions` · `loading` · `fetchSessions` · `revokeSession`                                                                                                                                                                                                                                                 |
-| `account-addresses`        | `stores/addresses.ts`        | `addresses` · `loading` · `fetchAddresses` · `addAddress` · `updateAddress` · `setDefaultAddress` · `removeAddress`                                                                                                                                                                                        |
-| `account-oauth-providers`  | `stores/oauth-providers.ts`  | `providers` · `loading` · `fetchProviders`                                                                                                                                                                                                                                                                 |
-| `account-oauth-links`      | `stores/oauth-links.ts`      | `links` · `loading` · `fetchLinks` · `unlinkProvider`                                                                                                                                                                                                                                                      |
-| `account-two-factor`       | `stores/two-factor.ts`       | `status` · `setup` · `confirmed` · `challenge` · `delivery` · `secondsUntilResend` · `loading` · `fetchStatus` · `setupMethod` · `confirmMethod` · `removeMethod` · `disableAll` · `regenerateBackupCodes` · `clearSetup` · `beginLoginChallenge` · `clearChallenge` · `sendLoginCode` · `submitLoginCode` |
-| `account-deletion-restore` | `stores/deletion-restore.ts` | `pending` · `loading` · `begin` · `beginOAuth` · `clear` · `restoreAndSignIn`                                                                                                                                                                                                                              |
+State, getters and actions are exactly what the setup function of each store returns: `src/modules/account/stores/`.
 
 ## Screens
 
+Paths, route names, access and permission per screen: `src/modules/account/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
+
 `VerifyEmailConfirm`, `EmailChangeConfirm`, `EmailChangeUndo` and `AccountRestore` render `components/LinkTokenConfirmCard.vue`; `PasswordResetConfirm` is its own form (three fields, a cross-field rule, field-level server errors). It also serves `account-setup`, the link in the mail staff trigger when they create an account, in `setup` mode: there it always shows the unticked Terms box (`components/TermsAcceptanceCheckbox.vue`, shared with `Signup`). On `password-reset/confirm` the box appears only once the API answers 422 naming `termsAccepted`, an account that never accepted. The tick is the holder's own and is sent only while the box is shown.
-
-| Path                     | Route name                | Access   | Permission | View                                |
-| ------------------------ | ------------------------- | -------- | ---------- | ----------------------------------- |
-| `login`                  | `Login`                   | `guest`  | —          | `views/Login.vue`                   |
-| `signup`                 | `Signup`                  | `guest`  | —          | `views/Signup.vue`                  |
-| `login/2fa`              | `TwoFactorChallenge`      | `guest`  | —          | `views/TwoFactorChallenge.vue`      |
-| `login/restore`          | `AccountRestoreChallenge` | `guest`  | —          | `views/AccountRestoreChallenge.vue` |
-| `password-reset`         | `PasswordResetRequest`    | `guest`  | —          | `views/PasswordResetRequest.vue`    |
-| `password-reset/confirm` | `PasswordResetConfirm`    | `guest`  | —          | `views/PasswordResetConfirm.vue`    |
-| `account-setup`          | `AccountSetup`            | `public` | —          | `views/PasswordResetConfirm.vue`    |
-| `account-restore`        | `AccountRestore`          | `public` | —          | `views/AccountRestore.vue`          |
-| `verify-email/confirm`   | `VerifyEmailConfirm`      | `public` | —          | `views/VerifyEmailConfirm.vue`      |
-| `oauth/callback`         | `OAuthCallback`           | `public` | —          | `views/OAuthCallback.vue`           |
-| `account-export`         | `AccountExportDownload`   | `auth`   | —          | `views/AccountExportDownload.vue`   |
-| `profile`                | `Profile`                 | `auth`   | —          | `views/Profile.vue`                 |
-| `logout`                 | `Logout`                  | `public` | `—`        |
-
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
 ## Wiring
 
 #### Endpoints called
 
-| Call                                         | Response schema                    |
-| -------------------------------------------- | ---------------------------------- |
-| `DELETE /account`                            | `AccountDeletion`                  |
-| `PATCH /account`                             | `UpdateAccountResponse`            |
-| `GET /account/2fa`                           | `GetTwoFactorStatusResponse`       |
-| `POST /account/2fa/disable`                  | `DisableTwoFactorResponse`         |
-| `POST /account/2fa/backup-codes`             | `RegenerateBackupCodesResponse`    |
-| `POST /account/2fa/methods/{method}/setup`   | `SetupTwoFactorMethodResponse`     |
-| `POST /account/2fa/methods/{method}/confirm` | `ConfirmTwoFactorMethodResponse`   |
-| `POST /account/2fa/methods/{method}/remove`  | `RemoveTwoFactorMethodResponse`    |
-| `GET /account/addresses`                     | `GetAddressesResponse`             |
-| `POST /account/addresses`                    | `AddAddressResponse`               |
-| `DELETE /account/addresses/{id}`             | `RemoveAddressResponse`            |
-| `PATCH /account/addresses/{id}`              | `UpdateAddressResponse`            |
-| `PUT /account/addresses/{id}/default`        | `SetDefaultAddressResponse`        |
-| `POST /account/restore`                      | `RestoreAccountResponse`           |
-| `POST /account/export`                       | `RequestAccountExportResponse`     |
-| `GET /account/export`                        | `DownloadAccountExportResponse`    |
-| `POST /account/login`                        | `LoginResponse`                    |
-| `POST /account/login/2fa`                    | `LoginTwoFactorResponse`           |
-| `POST /account/login/restore`                | `LoginRestoreResponse`             |
-| `POST /account/login/2fa/send`               | `SendTwoFactorCodeResponse`        |
-| `POST /account/logout`                       | `LogoutResponse`                   |
-| `GET /account/oauth/{provider}`              | `StartOAuthLoginResponse`          |
-| `GET /account/oauth/{provider}/callback`     | `CompleteOAuthLoginResponse`       |
-| `POST /account/oauth/links/{provider}`       | `StartOAuthLinkResponse`           |
-| `POST /account/password`                     | `ChangePasswordResponse`           |
-| `DELETE /account/email-change`               | `CancelPendingEmailChangeResponse` |
-| `POST /account/email-change/resend`          | `ResendPendingEmailResponse`       |
-| `GET /account/reauth`                        | `GetReauthMethodsResponse`         |
-| `POST /account/reauth`                       | `ReauthResponse`                   |
-| `POST /account/reauth/methods/{method}/send` | `SendReauthCodeResponse`           |
-| `POST /account/password/reset`               | `RequestPasswordResetResponse`     |
-| `POST /account/password/reset/confirm`       | `ConfirmPasswordResetResponse`     |
-| `GET /account/sessions`                      | `GetSessionsResponse`              |
-| `DELETE /account/sessions/{id}`              | `RevokeSessionResponse`            |
-| `POST /account/signup`                       | `SignupResponse`                   |
-| `POST /account/email-verification/confirm`   | `ConfirmEmailVerificationResponse` |
-| `POST /account/email-verification/resend`    | `ResendEmailVerificationResponse`  |
-
-Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/account/response-schemas.ts`.
 
 #### Navigation entries
 
-| Route | Label key | Section | Order | Icon | Badge |
-| --------- | -------------------------- | --- | --- | --- | --- | --- |
-| `Profile` | `navigation.label-profile` | `account` | 70 | yes | — |
+Entries are declared in `src/modules/account/module.ts`.
 
 #### Analytics events
 
@@ -178,77 +102,9 @@ counting the logout that succeeded rather than the one that was attempted. See
 
 ## Files
 
-| File                                           | What it is                                                                                                                                                                                                                        | Explained in                          |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `components/PurchaseHoldNotice.vue`            | The banner telling a buyer why checkout is paused for their account: reason, end date, the note staff left and how to contest it. Published through the barrel for `cart` to mount; the page raises `refreshSignal` to reload it. | [read](../theory/layers.md)           |
-| `components/ProfileAddresses.vue`              | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                                                                          | [read](../theory/layers.md)           |
-| `components/ProfileAvatar.vue`                 | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                                                                          | [read](../theory/layers.md)           |
-| `components/ProfileDeleteAccount.vue`          | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                                                                          | [read](../theory/layers.md)           |
-| `components/PasswordStrengthMeter.vue`         | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                                                                          | [read](../theory/layers.md)           |
-| `components/TermsAcceptanceCheckbox.vue`       | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                                                                          | [read](../theory/layers.md)           |
-| `components/ProfilePasswordChange.vue`         | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                                                                          | [read](../theory/layers.md)           |
-| `components/ProfileSessions.vue`               | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                                                                          | [read](../theory/layers.md)           |
-| `components/ProfileTwoFactor.vue`              | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                                                                          | [read](../theory/layers.md)           |
-| `components/TwoFactorBackupCodes.vue`          | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                                                                          | [read](../theory/layers.md)           |
-| `components/TwoFactorEnroll.vue`               | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                                                                          | [read](../theory/layers.md)           |
-| `composables/use-countdown.ts`                 | The one ticking “seconds left” primitive: a server-sent deadline, counted down. Every 2FA expiry and the resend cooldown share it.                                                                                                | [read](../theory/layers.md)           |
-| `composables/use-method-label.ts`              | Renders a 2FA method’s wire name as copy, falling back to the wire string for a method this build has no word for.                                                                                                                | [read](../tools/i18n.md)              |
-| `composables/use-password-strength.ts`         | A local, advisory-only zxcvbn score for a password field — never a submit gate.                                                                                                                                                   | [read](#libraries)                    |
-| `composables/use-post-login-redirect.ts`       | Where a visitor lands once a session exists — shared by the password step and the 2FA step so both end the same way.                                                                                                              | [read](../theory/sitemap.md)          |
-| `locales/en.json`                              | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                                                   | [read](../tools/i18n.md)              |
-| `locales/it.json`                              | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                                                   | [read](../tools/i18n.md)              |
-| `module.ts`                                    | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots.                                               | [read](../theory/modules.md)          |
-| `response-schemas.ts`                          | One row per endpoint this domain calls, pairing a method and path pattern with the Zod schema its response is validated against.                                                                                                  | [read](../api/openapi-workflow.md)    |
-| `routes.ts`                                    | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                                                                            | [read](../theory/sitemap.md)          |
-| `stores/addresses.ts`                          | One Pinia store: one slice of this domain’s state, and the calls it makes to the generated client.                                                                                                                                | [read](../tools/state-and-routing.md) |
-| `stores/auth.ts`                               | One Pinia store: one slice of this domain’s state, and the calls it makes to the generated client.                                                                                                                                | [read](../tools/state-and-routing.md) |
-| `stores/oauth-providers.ts`                    | One Pinia store: one slice of this domain’s state, and the calls it makes to the generated client.                                                                                                                                | [read](../tools/state-and-routing.md) |
-| `stores/profile.ts`                            | One Pinia store: one slice of this domain’s state, and the calls it makes to the generated client.                                                                                                                                | [read](../tools/state-and-routing.md) |
-| `stores/sessions.ts`                           | One Pinia store: one slice of this domain’s state, and the calls it makes to the generated client.                                                                                                                                | [read](../tools/state-and-routing.md) |
-| `stores/deletion-restore.ts`                   | One Pinia store: one slice of this domain’s state, and the calls it makes to the generated client.                                                                                                                                |
-| `stores/two-factor.ts`                         | One Pinia store: one slice of this domain’s state, and the calls it makes to the generated client.                                                                                                                                | [read](../tools/state-and-routing.md) |
-| `tests/e2e/__snapshots__/login.desktop.png`    | A committed visual-regression baseline.                                                                                                                                                                                           | [read](../tools/visual-regression.md) |
-| `tests/e2e/__snapshots__/login.phone.png`      | A committed visual-regression baseline.                                                                                                                                                                                           | [read](../tools/visual-regression.md) |
-| `tests/e2e/a11y.cy.ts`                         | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                                                                                                 | [read](../tools/component-testing.md) |
-| `tests/e2e/account.visual.cy.ts`               | Cypress visual suite — pixel diffs against the committed baselines.                                                                                                                                                               | [read](../tools/component-testing.md) |
-| `tests/e2e/auth.cy.ts`                         | Cypress suite — the `auth` screens, in a browser.                                                                                                                                                                                 | [read](../tools/component-testing.md) |
-| `tests/e2e/oauth.cy.ts`                        | Cypress suite — the `oauth` screens, in a browser.                                                                                                                                                                                | [read](../tools/component-testing.md) |
-| `tests/e2e/password-reset.cy.ts`               | Cypress suite — the `password-reset` screens, in a browser.                                                                                                                                                                       | [read](../tools/component-testing.md) |
-| `tests/e2e/profile.cy.ts`                      | Cypress suite — the `profile` screens, in a browser.                                                                                                                                                                              | [read](../tools/component-testing.md) |
-| `tests/e2e/registration.cy.ts`                 | Cypress suite — the `registration` screens, in a browser.                                                                                                                                                                         | [read](../tools/component-testing.md) |
-| `tests/e2e/two-factor.cy.ts`                   | Cypress suite — the `two-factor` screens, in a browser.                                                                                                                                                                           | [read](../tools/component-testing.md) |
-| `tests/addresses.spec.ts`                      | Vitest suite — `addresses`, in isolation.                                                                                                                                                                                         | [read](../tools/unit-testing.md)      |
-| `tests/account-restore-challenge-view.spec.ts` | Vitest suite — `account-restore-challenge-view`, in isolation.                                                                                                                                                                    |
-| `tests/auth-login-restore.spec.ts`             | Vitest suite — `auth-login-restore`, in isolation.                                                                                                                                                                                |
-| `tests/auth-login-mfa.spec.ts`                 | Vitest suite — `auth-login-mfa`, in isolation.                                                                                                                                                                                    | [read](../tools/unit-testing.md)      |
-| `tests/auth-session.spec.ts`                   | Vitest suite — `auth-session`, in isolation.                                                                                                                                                                                      | [read](../tools/unit-testing.md)      |
-| `tests/auth-signup.spec.ts`                    | Vitest suite — `auth-signup`, in isolation.                                                                                                                                                                                       | [read](../tools/unit-testing.md)      |
-| `tests/login-view-i18n.spec.ts`                | Vitest suite — `login-view-i18n`, in isolation.                                                                                                                                                                                   | [read](../tools/unit-testing.md)      |
-| `tests/oauth.spec.ts`                          | Vitest suite — `oauth`, in isolation.                                                                                                                                                                                             | [read](../tools/unit-testing.md)      |
-| `tests/profile-avatar.spec.ts`                 | Vitest suite — `profile-avatar`, in isolation.                                                                                                                                                                                    | [read](../tools/unit-testing.md)      |
-| `tests/profile.spec.ts`                        | Vitest suite — `profile`, in isolation.                                                                                                                                                                                           | [read](../tools/unit-testing.md)      |
-| `tests/purchase-hold-notice.spec.ts`           | Vitest suite — `PurchaseHoldNotice.vue`: nothing without a hold, the reason and note while one is in force, the contact link, the reload.                                                                                         | [read](../tools/unit-testing.md)      |
-| `tests/routes.spec.ts`                         | Vitest suite — the route records and the `meta.access` each one declares.                                                                                                                                                         | [read](../tools/unit-testing.md)      |
-| `tests/sessions.spec.ts`                       | Vitest suite — `sessions`, in isolation.                                                                                                                                                                                          | [read](../tools/unit-testing.md)      |
-| `tests/two-factor-store.spec.ts`               | Vitest suite — `two-factor-store`, in isolation.                                                                                                                                                                                  | [read](../tools/unit-testing.md)      |
-| `views/AccountRestore.vue`                     | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                | [read](../theory/layers.md)           |
-| `views/Login.vue`                              | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                | [read](../theory/layers.md)           |
-| `views/OAuthCallback.vue`                      | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                | [read](../theory/layers.md)           |
-| `views/PasswordResetConfirm.vue`               | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                | [read](../theory/layers.md)           |
-| `views/PasswordResetRequest.vue`               | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                | [read](../theory/layers.md)           |
-| `views/Profile.vue`                            | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                | [read](../theory/layers.md)           |
-| `views/Signup.vue`                             | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                | [read](../theory/layers.md)           |
-| `views/AccountRestoreChallenge.vue`            | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                |
-| `views/TwoFactorChallenge.vue`                 | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                | [read](../theory/layers.md)           |
-| `views/VerifyEmailConfirm.vue`                 | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                | [read](../theory/layers.md)           |
+The folder is `src/modules/account/`; each file's own `@module` header says what it is.
 
 ## Working on it
-
-| Suite            | Files | Where                                          |
-| ---------------- | ----- | ---------------------------------------------- |
-| Vitest           | 11    | `src/modules/account/tests/`                   |
-| Cypress          | 8     | `src/modules/account/tests/e2e/`               |
-| Visual baselines | 6     | `src/modules/account/tests/e2e/__snapshots__/` |
 
 ```bash
 # this module's vitest suites
@@ -318,7 +174,9 @@ Three rules fall out of that shape and are easy to break:
 - **`remember` has to be carried by hand.** An `MfaChallenge` response has nowhere to hold the
   login form's "remember me" choice, so `beginLoginChallenge` takes it as a second argument and
   `submitLoginCode` applies it. Nothing else remembers it across the two steps.
-- **`/account/login/2fa`, `/account/login/2fa/send`, `/account/login/restore` and `/account/restore` are excluded from refresh-and-retry.** A
+- **The credential-taking doors are excluded from refresh-and-retry** — the operations the contract marks
+  `x-no-refresh`, listed as `noRefresh: true` in `contracts/rest/routes.ts` (login and its 2FA steps,
+  restore, signup, password reset). A
   wrong or expired code answers 401 like any other business outcome. Without the exclusion, a
   visitor still holding a valid refresh cookie from an earlier session gets a silent
   refresh-and-replay instead of "wrong code".

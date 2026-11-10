@@ -36,13 +36,14 @@ without both keys in both languages fails `tests/unit/infrastructure/browser-sto
 
 ## What is in it
 
-| Where             | Items                                                                                                                                          |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cookies, backend  | `__Host-session`, `isAuth`, `device`, and six `oauth_*` (state, verifier, continue, locale, link, MFA challenge)                               |
-| Cookies, frontend | `rememberMe`, `analyticsConsent` (six months), `themePreference`                                                                               |
-| `localStorage`    | `toursSeen` (six months after the last change), `guest-cart` (thirty days after the last change), `guest-cart-merge-attempt`, `umami.disabled` |
-| `sessionStorage`  | `checkout-draft:<userId>`, `checkout-attempt`, `app:stale-deploy-reloaded`                                                                     |
-| After consent     | `com.grafana.faro.lastNavigationId` in `sessionStorage` (gone when the tab closes), set by Faro's performance-measurement code                 |
+The inventory is data, not prose:
+
+- This app's own cookies and storage keys, with purpose and lifetime: `shared/rules/browser-storage.yaml`
+  (the privacy page's table is built from it).
+- The backend's cookies: `contracts/cookies.yaml`, copied from the backend, which documents them in the generated
+  "Cookies the backend sets" table of its [data protection page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/data-protection.md).
+- After consent, Faro's performance-measurement code also sets `com.grafana.faro.lastNavigationId` in
+  `sessionStorage` (gone when the tab closes).
 
 ## Rules that follow from the list
 

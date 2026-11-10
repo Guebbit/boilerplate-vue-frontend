@@ -28,26 +28,7 @@ Two words appear on almost every page below, so they are worth ten lines here.
 
 ### A **domain** is one area of the business
 
-Not a technical thing. Describe the shop out loud — "customers put **products** in a **cart**, then
-place an **order**" — and the nouns you used are the domains.
-
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 45}}}%%
-flowchart TD
-    APP["<b>the application</b>"]
-    APP --> P["🏷️ <b>products</b><br/><i>what is for sale</i>"]
-    APP --> C["🛒 <b>cart</b><br/><i>what you picked</i>"]
-    APP --> O["📦 <b>orders</b><br/><i>what you bought</i>"]
-    APP --> U["👤 <b>users</b><br/><i>who you are</i>"]
-
-    classDef app fill:#fef3c7,stroke:#d97706,color:#111827;
-    classDef dom fill:#dbeafe,stroke:#2563eb,color:#111827;
-    class APP app;
-    class P,C,O,U dom;
-```
-
-**One domain = one folder** under `src/modules/`. That is the whole rule, and it is what makes
-"adding a domain is a folder plus a line, removing one is `rm -rf`" true.
+Defined once, in [the backend's Theory page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/index.md); the word means the same here.
 
 ### The confusing part: a domain contains a folder called `domain/`
 
@@ -127,22 +108,22 @@ point.
 
 ## Where each topic lives
 
-| Need                                                | Go to                                                                                                 |
-| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| **Open the code for the first time**                | **[Reading Path](./reading-path.md)**                                                                 |
-| Understand the big blocks and boundaries            | [Architecture](./architecture.md)                                                                     |
-| Read the folder-by-folder explanation               | [Layers](./layers.md)                                                                                 |
-| Understand how domains stay separable               | [Modules](./modules.md)                                                                               |
-| Actually add or remove a domain                     | [Adding & Removing a Module](./module-lifecycle.md)                                                   |
-| Understand the domain-modelling stance              | [Strategic DDD](./strategic-ddd.md)                                                                   |
-| Follow one request end-to-end                       | [Request Flow](./request-flow.md)                                                                     |
-| Know what may show a spinner                        | [Loading State](./loading-state.md)                                                                   |
-| Know why a performance number never fails a build   | [Delivery performance](../tools/testing-and-docs.md#delivery-performance-lab-field-and-what-may-gate) |
-| See all routes and access levels at a glance        | [Sitemap & Access Control](./sitemap.md)                                                              |
-| Know what a finger can and cannot reach             | [Design system](./design-system.md)                                                                   |
-| Know which library owns a style token               | [Design system](./design-system.md#who-owns-which-token)                                              |
-| Know what makes a design finding a defect           | [Judging a Design](./design-judgement.md)                                                             |
-| Know every attack a site can receive                | [Web Attack Catalog](./web-attack-catalog.md)                                                         |
-| Know which of those attacks this app stops, and how | [Web Attack Defences](./web-attack-defences.md)                                                       |
-| Understand dependency choices                       | [Tools](../tools/)                                                                                    |
-| Change contract, types, or mocks                    | [API](../api/)                                                                                        |
+| Need                                                | Go to                                                                                                                                             |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Open the code for the first time**                | **[Reading Path](./reading-path.md)**                                                                                                             |
+| Understand the big blocks and boundaries            | [Architecture](./architecture.md)                                                                                                                 |
+| Read the folder-by-folder explanation               | [Layers](./layers.md)                                                                                                                             |
+| Understand how domains stay separable               | [Modules](./modules.md)                                                                                                                           |
+| Actually add or remove a domain                     | [Adding & Removing a Module](./module-lifecycle.md)                                                                                               |
+| Understand the domain-modelling stance              | [Strategic DDD](./strategic-ddd.md)                                                                                                               |
+| Follow one request end-to-end                       | [Request Flow](./request-flow.md)                                                                                                                 |
+| Know what may show a spinner                        | [Loading State](./loading-state.md)                                                                                                               |
+| Know why a performance number never fails a build   | [Delivery performance](../tools/testing-and-docs.md#delivery-performance-lab-field-and-what-may-gate)                                             |
+| See all routes and access levels at a glance        | [Sitemap & Access Control](./sitemap.md)                                                                                                          |
+| Know what a finger can and cannot reach             | [Design system](./design-system.md)                                                                                                               |
+| Know which library owns a style token               | [Design system](./design-system.md#who-owns-which-token)                                                                                          |
+| Know what makes a design finding a defect           | [Judging a Design](./design-judgement.md)                                                                                                         |
+| Know every attack a site can receive                | [Every attack, A to Z](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/defences/index.md#every-attack-a-to-z) (backend) |
+| Know which of those attacks this app stops, and how | [Web Attack Defences](./web-attack-defences.md)                                                                                                   |
+| Understand dependency choices                       | [Tools](../tools/)                                                                                                                                |
+| Change contract, types, or mocks                    | [API](../api/)                                                                                                                                    |

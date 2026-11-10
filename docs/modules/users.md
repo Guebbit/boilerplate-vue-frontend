@@ -7,18 +7,10 @@
 **Breaks if you change** — `schemas.ts`. [`account`](./account.md) validates every one of its forms against it.
 :::
 
-| Fact                    | This module                                                         |
-| ----------------------- | ------------------------------------------------------------------- |
-| **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste. |
-| **Screens**             | 4 — `UsersList` · `UserCreate` · `UserTarget` · `UserEdit`          |
-| **Store**               | `users`                                                             |
-| **Menu entries**        | `UsersList`                                                         |
-| **API calls**           | 10                                                                  |
-| **Depends on**          | _nothing_                                                           |
-| **Depended on by**      | [`account`](./account.md)                                           |
-| **Languages**           | `en` · `it`                                                         |
-| **Publishes**           | `usersPasswordSchema` · `usersSchema`                               |
-| **Backend counterpart** | `users` in `boilerplate-node-backend`                               |
+| Fact          | This module                                                         |
+| ------------- | ------------------------------------------------------------------- |
+| **Subdomain** | `generic` — A solved problem. Modelling effort here would be waste. |
+| **Publishes** | `usersPasswordSchema` · `usersSchema`                               |
 
 ## The map
 
@@ -28,7 +20,7 @@ The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
 ## The story
 
-Four admin screens over one collection, and a barrel that exists for one reason: the field rules.
+Admin screens over one collection, and a barrel that exists for one reason: the field rules.
 
 `usersSchema` and `usersPasswordSchema` are built on the **generated** request schemas rather than
 hand-written beside them, so _what makes a valid username_ comes from `openapi.yaml` and cannot
@@ -73,21 +65,9 @@ checkout" opens `UserPurchaseHoldDialog` (an end date and a note the buyer reads
 once (a toast says what happened) and doubles as the staff review. The list filters by it (`purchaseHold`, `true` only) and marks
 the rows. The buyer's side is `account`'s `PurchaseHoldNotice`, mounted by the cart.
 
-`UserTarget` (`views/UserTarget.vue`) also carries the one deliberate exception to "prove the factor to
-remove it": an admin-assisted 2FA recovery button, `adminDisableTwoFactor`, for an owner who has
-lost both their authenticator and their backup codes. No code is asked for — the audited server-side
-log is what makes skipping that proof safe to expose at all. It is the reason `account`'s own 2FA
-panel never needs a "my last resort is calling support" story.
-
 ## State
 
-Store `users`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
-
-| Kind        | Members                                                                                                                                                                                      | What it is                                                       |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `users` · `selectedUserId` · `filters` · `pageCurrent` · `pageSize`                                                                                                                          | The refs the setup function returns — the only writable surface. |
-| **Getters** | `usersList` · `currentUser` · `loading` · `pageTotal` · `pageItemList`                                                                                                                       | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `addUser` · `fetchUsers` · `fetchPaginationUsers` · `watchSearchUsers` · `fetchUser` · `watchUser` · `createUser` · `updateUser` · `deleteUser` · `hardDeleteUser` · `adminDisableTwoFactor` | Everything that changes state or calls the API.                  |
+State, getters and actions are exactly what the setup function of each store returns: `src/modules/users/store.ts`. Beside the main store, `badge-store.ts` holds the nav badge's number (the review list's total).
 
 The list answers a `UserListItem`, not the whole account: the table's fields, and the full record comes
 from the audited detail read. The list view reads with `partial: true`, so a row merges over a full
@@ -96,79 +76,23 @@ record.
 
 ## Screens
 
-| Path             | Route name   | Access | Permission    | View                   |
-| ---------------- | ------------ | ------ | ------------- | ---------------------- |
-| `users`          | `UsersList`  | `auth` | `read User`   | `views/UsersList.vue`  |
-| `users/create`   | `UserCreate` | `auth` | `create User` | `views/UserCreate.vue` |
-| `users/:id`      | `UserTarget` | `auth` | `read User`   | `views/UserTarget.vue` |
-| `users/:id/edit` | `UserEdit`   | `auth` | `update User` | `views/UserEdit.vue`   |
-
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
+Paths, route names, access and permission per screen: `src/modules/users/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
 
 ## Wiring
 
 #### Endpoints called
 
-| Call                      | Response schema              |
-| ------------------------- | ---------------------------- |
-| `DELETE /users`           | `DeleteUserResponse`         |
-| `GET /users`              | `ListUsersResponse`          |
-| `POST /users`             | `CreateUserResponse`         |
-| `DELETE /users/{id}`      | `DeleteUserByIdResponse`     |
-| `GET /users/{id}`         | `GetUserByIdResponse`        |
-| `PATCH /users/{id}`       | `UpdateUserByIdResponse`     |
-| `PUT /users/{id}`         | `ReplaceUserByIdResponse`    |
-| `DELETE /users/{id}/hard` | `HardDeleteUserByIdResponse` |
-| `POST /users/search`      | `SearchUsersResponse`        |
-
-Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/users/response-schemas.ts`.
 
 #### Navigation entries
 
-| Route | Label key | Section | Order | Icon | Badge |
-| ----------- | ----------------------------- | --- | --- | --- | --- | --- |
-| `UsersList` | `navigation.label-users-list` | `admin` | 50 | yes | live accounts flagged for review (its own list total) |
+Entries are declared in `src/modules/users/module.ts`. Badges: `UsersList` — live accounts flagged for review (its own list total).
 
 ## Files
 
-| File                                             | What it is                                                                                                                                                                                                                                       | Explained in                          |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
-| `index.ts`                                       | The public barrel: the only surface a sibling module may import.                                                                                                                                                                                 | [read](../theory/strategic-ddd.md)    |
-| `components/UserPurchaseHoldDialog.vue`          | The form that pauses checkout for one account: an end date and a note the buyer reads. Opened from the detail page.                                                                                                                              | [read](../theory/layers.md)           |
-| `composables/use-role-options.ts`                | `useRoleOptions` — the role select's items, built from the server's `grantableRoles` plus the account's current role.                                                                                                                            | [read](../theory/strategic-ddd.md)    |
-| `components/UserAccessDialog.vue`                | Shared role/status editor with a confirm step, opened from the list, the detail page and the edit form.                                                                                                                                          | [read](../theory/layers.md)           |
-| `composables/use-user-access-dialog.ts`          | Promise wrapper around `UserAccessDialog.vue`'s `v-model`, so a caller awaits its outcome like `useDialogStore().confirm()`.                                                                                                                     | [read](../theory/layers.md)           |
-| `locales/en.json`                                | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                                                                  | [read](../tools/i18n.md)              |
-| `locales/it.json`                                | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                                                                  | [read](../tools/i18n.md)              |
-| `module.ts`                                      | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots.                                                              | [read](../theory/modules.md)          |
-| `response-schemas.ts`                            | One row per endpoint this domain calls, pairing a method and path pattern with the Zod schema its response is validated against.                                                                                                                 | [read](../api/openapi-workflow.md)    |
-| `routes.ts`                                      | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                                                                                           | [read](../theory/sitemap.md)          |
-| `schemas.ts`                                     | Form schemas for this domain. Hand-written: only the contract's numeric constraints (minimums) are read from `@api/schemas`, so the rest of a rule can drift from the request body — `VITE_VALIDATE_REQUESTS` checks the real body at send time. | [read](../api/openapi-workflow.md)    |
-| `store.ts`                                       | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                                                                                           | [read](../tools/state-and-routing.md) |
-| `tests/e2e/__snapshots__/users-list.desktop.png` | A committed visual-regression baseline.                                                                                                                                                                                                          | [read](../tools/visual-regression.md) |
-| `tests/e2e/a11y.cy.ts`                           | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                                                                                                                | [read](../tools/component-testing.md) |
-| `tests/e2e/users.visual.cy.ts`                   | Cypress visual suite — pixel diffs against the committed baselines.                                                                                                                                                                              | [read](../tools/component-testing.md) |
-| `tests/routes.spec.ts`                           | Vitest suite — the route records and the `meta.access` each one declares.                                                                                                                                                                        | [read](../tools/unit-testing.md)      |
-| `tests/schemas-i18n.spec.ts`                     | Vitest suite — the `schemas-i18n` validation rules.                                                                                                                                                                                              | [read](../tools/unit-testing.md)      |
-| `tests/schemas.spec.ts`                          | Vitest suite — the `schemas` validation rules.                                                                                                                                                                                                   | [read](../tools/unit-testing.md)      |
-| `tests/store.spec.ts`                            | Vitest suite — this domain's store, with the transport mocked.                                                                                                                                                                                   | [read](../tools/unit-testing.md)      |
-| `tests/user-purchase-hold-dialog.spec.ts`        | Vitest suite — `UserPurchaseHoldDialog.vue`: the day offered, the body sent, the refused past date.                                                                                                                                              | [read](../tools/unit-testing.md)      |
-| `tests/user-access-dialog.spec.ts`               | Vitest suite — `UserAccessDialog.vue`'s picker/confirm flow, mounted directly.                                                                                                                                                                   | [read](../tools/unit-testing.md)      |
-| `tests/user-create-view.spec.ts`                 | Vitest suite — `UserCreate.vue`, mounted against a real router.                                                                                                                                                                                  | [read](../tools/unit-testing.md)      |
-| `tests/user-edit-view.spec.ts`                   | Vitest suite — `UserEdit.vue`, mounted against a real router.                                                                                                                                                                                    | [read](../tools/unit-testing.md)      |
-| `tests/user-target-view.spec.ts`                 | Vitest suite — `UserTarget.vue`, mounted against a real router.                                                                                                                                                                                  | [read](../tools/unit-testing.md)      |
-| `views/UserTarget.vue`                           | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
-| `views/UserCreate.vue`                           | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
-| `views/UserEdit.vue`                             | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
-| `views/UsersList.vue`                            | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
+The folder is `src/modules/users/`; each file's own `@module` header says what it is.
 
 ## Working on it
-
-| Suite            | Files | Where                                        |
-| ---------------- | ----- | -------------------------------------------- |
-| Vitest           | 8     | `src/modules/users/tests/`                   |
-| Cypress          | 2     | `src/modules/users/tests/e2e/`               |
-| Visual baselines | 1     | `src/modules/users/tests/e2e/__snapshots__/` |
 
 ```bash
 # this module's vitest suites

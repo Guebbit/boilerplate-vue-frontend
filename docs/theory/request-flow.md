@@ -122,8 +122,8 @@ persists the visitor's choice, and `http/interceptors.ts`'s `onRequest` forwards
 
 ### Conditional writes
 
-The API versions a few records — a product, a user, an order, the caller's own account — with an
-`ETag` on the read and an optional `If-Match` on the write; a stale one is a `412`. The rules are
+The API versions the records its contract marks `x-versioned`, with an `ETag` on the read and an
+optional `If-Match` on the write; a stale one is a `412`. The rules are
 the backend's ([Write Methods](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/api/write-methods.md#conditional-writes-etag-and-if-match));
 this repo's part is that no edit form has to remember any of it.
 
@@ -145,7 +145,7 @@ sequenceDiagram
 ```
 
 - **`src/infrastructure/http/etag.ts` is the whole transport half.** A success interceptor keeps the
-  tag a read, PUT or PATCH answered with; a request interceptor sends it as `If-Match` on the next
+  tag a GET or PATCH answered with (a PUT answers none, so its held tag is dropped); a request interceptor sends it as `If-Match` on the next
   PUT, PATCH or DELETE of that path. `/…/hard` is another path for the same
   resource. A resource never read here is written unconditionally — the API's own default.
 - **An action forgets the tag.** `POST /orders/1/cancel` changes the row and answers no tag, so
@@ -154,9 +154,9 @@ sequenceDiagram
   a `412` becomes a _warning_ through the form's own `useBlockingError` — nothing is wrong with the
   request, the record moved — plus a "reload latest" button that re-reads the record, re-hydrates the
   form and, by that read, refreshes the tag. The stale edit is never resent on its own.
-- **Where it is wired:** `ProductEdit.vue`, `UserEdit.vue` and the profile form. Anything built on the
-  generated client gets the header for free; only a form that wants to _answer_ a 412 needs the
-  composable.
+- **Where it is wired:** every edit form of a versioned resource (`grep useStaleRecord src`). Anything
+  built on the generated client gets the header for free; only a form that wants to _answer_ a 412
+  needs the composable.
 
 ### Downloads are named by the server
 

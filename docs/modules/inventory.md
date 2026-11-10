@@ -6,18 +6,9 @@
 **Breaks if you change** — nothing outside this folder. No module depends on it.
 :::
 
-| Fact                    | This module                                                                    |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| **Subdomain**           | `supporting` — Specific to this business but not a differentiator. Kept plain. |
-| **Screens**             | 2 — `InventoryLedger` · `PreordersBoard`                                       |
-| **Store**               | `inventory`                                                                    |
-| **Menu entries**        | `InventoryLedger` · `PreordersBoard`                                           |
-| **API calls**           | 7                                                                              |
-| **Depends on**          | [`delivery`](./delivery.md) · [`products`](./products.md)                      |
-| **Depended on by**      | _nothing_                                                                      |
-| **Languages**           | `en` · `it`                                                                    |
-| **Publishes**           | _nothing_ — no barrel, so no sibling may import it                             |
-| **Backend counterpart** | `inventory` in `boilerplate-node-backend`                                      |
+| Fact          | This module                                                                    |
+| ------------- | ------------------------------------------------------------------------------ |
+| **Subdomain** | `supporting` — Specific to this business but not a differentiator. Kept plain. |
 
 ## The map
 
@@ -107,74 +98,27 @@ flowchart LR
 
 ## State
 
-Store `inventory`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
-
-| Kind        | Members                                                                                                | What it is                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| **State**   | `movements` · `movementsTotal` · `levels` · `levelsTotal` · `preorderLevels`                           | The refs the setup function returns — the only writable surface. |
-| **Getters** | `loading`                                                                                              | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `fetchMovements` · `fetchLevels` · `fetchPreorderLevels` · `setLimit` · `receive` · `adjust` · `sweep` | Everything that changes state or calls the API.                  |
+State, getters and actions are exactly what the setup function of each store returns: `src/modules/inventory/store.ts`.
 
 ## Screens
 
-| Path              | Route name        | Access | Permission        | View                        |
-| ----------------- | ----------------- | ------ | ----------------- | --------------------------- |
-| `inventory`       | `InventoryLedger` | `auth` | `read StockLevel` | `views/InventoryLedger.vue` |
-| `sales/preorders` | `PreordersBoard`  | `auth` | `display Order`   | `views/PreordersBoard.vue`  |
-
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
+Paths, route names, access and permission per screen: `src/modules/inventory/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
 
 ## Wiring
 
 #### Endpoints called
 
-| Call                                         | Response schema                |
-| -------------------------------------------- | ------------------------------ |
-| `POST /inventory/levels/{productId}/adjust`  | `AdjustStockResponse`          |
-| `GET /inventory/levels(\?.*)?`               | `ListInventoryLevelsResponse`  |
-| `GET /inventory/movements(\?.*)?`            | `ListStockMovementsResponse`   |
-| `GET /inventory/preorders(\?.*)?`            | `ListPreorderLevelsResponse`   |
-| `PATCH /inventory/levels/{id}`               | `UpdateInventoryLevelResponse` |
-| `POST /inventory/levels/{productId}/receive` | `ReceiveStockResponse`         |
-| `POST /inventory/reservations/sweep`         | `SweepReservationsResponse`    |
-
-Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/inventory/response-schemas.ts`.
 
 #### Navigation entries
 
-| Route | Label key | Section | Order | Icon | Badge |
-| ----------------- | ---------------------------- | --- | --- | --- | --- | --- |
-| `InventoryLedger` | `navigation.label-inventory` | `admin` | 47 | yes | `inventory`: levels at or under the low-stock threshold |
-| `PreordersBoard` | `navigation.label-preorders` | `admin` (group Sales) | 58 | yes | `salesPreorders`: late fulfillment orders |
+Entries are declared in `src/modules/inventory/module.ts`. Badges: `InventoryLedger` — `inventory`: levels at or under the low-stock threshold; `PreordersBoard` — `salesPreorders`: late fulfillment orders.
 
 ## Files
 
-| File                                                   | What it is                                                                                                                                                                          | Explained in                          |
-| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `locales/en.json`                                      | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
-| `locales/it.json`                                      | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
-| `module.ts`                                            | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots. | [read](../theory/modules.md)          |
-| `response-schemas.ts`                                  | One row per endpoint this domain calls, pairing a method and path pattern with the Zod schema its response is validated against.                                                    | [read](../api/openapi-workflow.md)    |
-| `routes.ts`                                            | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                              | [read](../theory/sitemap.md)          |
-| `store.ts`                                             | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                              | [read](../tools/state-and-routing.md) |
-| `tests/e2e/__snapshots__/inventory-ledger.desktop.png` | A committed visual-regression baseline.                                                                                                                                             | [read](../tools/visual-regression.md) |
-| `tests/e2e/__snapshots__/inventory-ledger.phone.png`   | A committed visual-regression baseline.                                                                                                                                             | [read](../tools/visual-regression.md) |
-| `tests/e2e/a11y.cy.ts`                                 | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                                                   | [read](../tools/component-testing.md) |
-| `tests/e2e/inventory.visual.cy.ts`                     | Cypress visual suite — pixel diffs against the committed baselines.                                                                                                                 | [read](../tools/component-testing.md) |
-| `tests/store.spec.ts`                                  | Vitest suite — this domain's store, with the transport mocked.                                                                                                                      | [read](../tools/unit-testing.md)      |
-| `views/InventoryLedger.vue`                            | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
-| `views/PreordersBoard.vue`                             | A routed screen: the preorder board's two tabs, the tab and product filter kept in the URL.                                                                                         | [read](../theory/layers.md)           |
-| `components/PreorderProductsTable.vue`                 | The board's first tab: the allowance joined to the units by state, one row per product.                                                                                             | [read](../theory/layers.md)           |
-| `components/BackorderLimitDialog.vue`                  | Staff set a product's preorder limit from the stock board.                                                                                                                          | [read](../theory/layers.md)           |
-| `domain/preorder-rows.ts`                              | Pure: joins the two reads by product and orders the rows, the worst first.                                                                                                          | [read](../theory/domain-layer.md)     |
+The folder is `src/modules/inventory/`; each file's own `@module` header says what it is.
 
 ## Working on it
-
-| Suite            | Files | Where                                            |
-| ---------------- | ----- | ------------------------------------------------ |
-| Vitest           | 1     | `src/modules/inventory/tests/`                   |
-| Cypress          | 2     | `src/modules/inventory/tests/e2e/`               |
-| Visual baselines | 2     | `src/modules/inventory/tests/e2e/__snapshots__/` |
 
 ```bash
 # this module's vitest suites

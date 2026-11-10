@@ -38,7 +38,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    Push["push / PR"] --> Demo["test:e2e\nevery journey, demo profile, 4 shards"]
+    Push["push / PR"] --> Demo["test:e2e\nevery journey, demo profile, 5 slices x 2 session modes + antibot"]
     Push --> Smoke["test-e2e-live\ngrep: @smoke\n1 job, 15 min"]
     Cron["03:15 UTC nightly"] --> Full["e2e-live.yml, grep empty\nevery test, 4 slices x 2 session modes\n45 min each"]
 ```
@@ -241,7 +241,7 @@ MAILPIT_URL=http://localhost:8025 npm run test:e2e:live
 
 The run refuses to start when `NODE_RATE_LIMIT_REDIS_URL` is missing from this shell (`scripts/e2e/live-rate-limit-guard.ts`, called from `cypress.config.ts`). The reseed does warn, but `cy.exec` hides its output, so without the guard the symptom would be a 429 hours later.
 
-Between specs `cy.restore()` runs `LIVE_RESET_COMMAND` (see [`BACKEND_PATH`](#backend_path)), which reseeds through the backend checkout. It needs the same `NODE_PSEUDONYM_KEY` and encryption keys as the running backend, so export them in this shell too, and the same `NODE_RATE_LIMIT_REDIS_URL`: the reseed is a separate process, and it clears the limiter's counters only through that URL. Do NOT export `NODE_ENV=development` here: `vite build` then makes a development bundle, which throws on a contract mismatch instead of validating like the real one. Put `NODE_ENV=development` in the backend checkout's `.env` instead, where the reseed reads it; CI puts them on the command itself.
+Between specs `cy.restore()` runs `LIVE_RESET_COMMAND` (see [`BACKEND_PATH`](#backend-path)), which reseeds through the backend checkout. It needs the same `NODE_PSEUDONYM_KEY` and encryption keys as the running backend, so export them in this shell too, and the same `NODE_RATE_LIMIT_REDIS_URL`: the reseed is a separate process, and it clears the limiter's counters only through that URL. Do NOT export `NODE_ENV=development` here: `vite build` then makes a development bundle, which throws on a contract mismatch instead of validating like the real one. Put `NODE_ENV=development` in the backend checkout's `.env` instead, where the reseed reads it; CI puts them on the command itself.
 
 With no `MAILPIT_URL`, the mail-driven specs report as skipped (`cy.skipUnlessMailbox()`) rather than failing. `test:e2e:live` builds the bundle with `VITE_VALIDATE_RESPONSES=true`, serves it on `:8085` with `vite preview`, then runs Cypress against it with `CYPRESS_liveProfile=true`.
 
@@ -308,11 +308,11 @@ The resolved value is always an absolute path, so `npm --prefix` errors name a r
 
 ## Response validation
 
-`orvalMutator` (`src/infrastructure/http/index.ts`) normally just unwraps `response.data`. Behind `VITE_VALIDATE_RESPONSES`, it additionally parses every response through the Zod schema matching its route (`src/infrastructure/http/response-schema-map.ts`, hand-mapped from `contracts/rest/index.ts`) and throws on a mismatch — the client-side mirror of the backend's own `toSatisfyApiSpec()` contract tests.
+`orvalMutator` (`src/infrastructure/http/index.ts`) normally just unwraps `response.data`. Behind `VITE_VALIDATE_RESPONSES`, it additionally parses every response through the Zod schema matching its route (`src/infrastructure/http/response-schema-map.ts`, built from the generated route table `contracts/rest/routes.ts`) and throws on a mismatch — the client-side mirror of the backend's own `toSatisfyApiSpec()` contract tests.
 
 - `build:e2e` bakes it to `true`, so every e2e profile carries it.
 - Otherwise it defaults to on (`MODE !== 'test'`) — so it also fires during ordinary local development against a live API — but off inside Vitest, where plenty of unit tests exercise `orvalMutator` against deliberately partial fixtures.
-- A route with no entry in `response-schema-map.ts` logs a dev-only warning rather than throwing: a missing map entry means the map is stale, not that the response is wrong.
+- A route with no entry in `response-schema-map.ts` logs a dev-only warning rather than throwing: a missing map entry means the generated route table is stale (run `npm run regenerate`), not that the response is wrong.
 
 This is the single highest-value piece of this profile: it converts all five pre-existing specs into live contract tests for free, closing the exact bug class that has previously shipped (an `_id`/`id` mismatch, a leaked password field) unnoticed by a green suite.
 
