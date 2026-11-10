@@ -9029,6 +9029,9 @@ export const getLocaleMessages = (
  * `text` searches keys and values together. Every app's rows are listed; one app's
  * slice is a resource of its own, `/locales/{locale}/apps/{app}/entries`, which is
  * where it is written.
+ *
+ * The `ETag` is the language's dictionary version, whichever app's rows were
+ * listed: send it as `If-Match` on an import and a write that landed since is a 412.
  * @summary List translation entries
  */
 export const listLocaleEntries = (
@@ -9050,6 +9053,9 @@ export const listLocaleEntries = (
  * `text` searches keys and values together. Only this app's rows, at the address
  * the writes below target; an app the deployment does not configure is refused
  * with a 422.
+ *
+ * The `ETag` is the language's dictionary version, the same one `GET
+ * /locales/{locale}/entries` answers: a write to any app moves it.
  * @summary List one app's translation entries
  */
 export const listAppLocaleEntries = (
@@ -9100,6 +9106,10 @@ export const createLocaleEntry = (
  *
  * Nobody adds five hundred keys through a form; without this the admin surface is a
  * demo.
+ *
+ * `If-Match` takes the tag of a list read of this language: when any entry of it
+ * (in any app) was written since, the import is refused with a 412 and writes
+ * nothing. An import that would change nothing is checked too.
  * @summary Replace every entry
  */
 export const replaceLocaleEntries = (
@@ -9126,6 +9136,9 @@ export const replaceLocaleEntries = (
  *
  * See `PUT` on this collection for the replacing counterpart, and for why the choice
  * lives in the method.
+ *
+ * `If-Match` is checked as on the `PUT`, and the answer's `ETag` is the language's
+ * new version.
  * @summary Merge entries
  */
 export const updateLocaleEntries = (
@@ -9152,6 +9165,9 @@ export const updateLocaleEntries = (
  *
  * See `PUT` on this collection for the replacing counterpart, and for why the choice
  * lives in the method.
+ *
+ * `If-Match` is checked as on the `PUT`, and the answer's `ETag` is the language's
+ * new version.
  * @summary Merge entries
  */
 export const updateLocaleEntriesWithMergePatchJson = (
