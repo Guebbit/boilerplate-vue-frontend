@@ -11,6 +11,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useLocalesStore } from '../store.ts';
 import { orvalMutator } from '@/infrastructure/http';
+import type { AxiosResponse } from 'axios';
+import { clearEtags, onEtagResponse } from '@/infrastructure/http/etag.ts';
+import { asStub } from '../../../../tests/support/stub.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
@@ -241,6 +244,38 @@ describe('entry writes', () => {
                 });
             });
     });
+});
+
+/** Holds `tag` for the all-apps list of Spanish, as a read of it would. */
+const readAllAppsList = (tag: string) =>
+    onEtagResponse(
+        asStub<AxiosResponse>({
+            config: { method: 'get', url: '/locales/es/entries' },
+            headers: { etag: tag }
+        })
+    );
+
+describe('importEntries If-Match', () => {
+    beforeEach(() => clearEtags());
+
+    it('sends the tag of the all-apps list, the one the export reads', () => {
+        readAllAppsList('"4.abc"');
+        return useLocalesStore()
+            .importEntries('es', 'merge', 'demo-fe', [{ key: 'a', value: 'b' }])
+            .then(() => {
+                const call = vi.mocked(orvalMutator).mock.calls[0][1] as {
+                    headers?: Record<string, string>;
+                };
+                expect(call.headers?.['If-Match']).toBe('"4.abc"');
+            });
+    });
+
+    it('goes out unconditionally when no list was read', () =>
+        useLocalesStore()
+            .importEntries('es', 'replace', 'demo-fe', [{ key: 'a', value: 'b' }])
+            .then(() => {
+                expect(vi.mocked(orvalMutator).mock.calls[0][1]).toBeUndefined();
+            }));
 });
 
 describe('fetchAllEntries', () => {

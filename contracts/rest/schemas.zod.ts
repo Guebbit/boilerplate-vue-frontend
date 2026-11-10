@@ -641,6 +641,9 @@ export const GetLocaleMessagesResponse = zod.strictObject({
  * `text` searches keys and values together. Every app's rows are listed; one app's
  * slice is a resource of its own, `/locales/{locale}/apps/{app}/entries`, which is
  * where it is written.
+ *
+ * The `ETag` is the language's dictionary version, whichever app's rows were
+ * listed: send it as `If-Match` on an import and a write that landed since is a 412.
  * @summary List translation entries
  */
 export const listLocaleEntriesPathLocaleMax = 35;
@@ -729,6 +732,9 @@ export const ListLocaleEntriesResponse = zod.strictObject({
  * `text` searches keys and values together. Only this app's rows, at the address
  * the writes below target; an app the deployment does not configure is refused
  * with a 422.
+ *
+ * The `ETag` is the language's dictionary version, the same one `GET
+ * /locales/{locale}/entries` answers: a write to any app moves it.
  * @summary List one app's translation entries
  */
 export const listAppLocaleEntriesPathLocaleMax = 35;
@@ -882,6 +888,10 @@ export const CreateLocaleEntryResponse = zod.strictObject({
  *
  * Nobody adds five hundred keys through a form; without this the admin surface is a
  * demo.
+ *
+ * `If-Match` takes the tag of a list read of this language: when any entry of it
+ * (in any app) was written since, the import is refused with a 412 and writes
+ * nothing. An import that would change nothing is checked too.
  * @summary Replace every entry
  */
 export const replaceLocaleEntriesPathLocaleMax = 35;
@@ -900,6 +910,10 @@ export const ReplaceLocaleEntriesParams = zod.strictObject({
         .min(1)
         .max(replaceLocaleEntriesPathAppMax)
         .regex(replaceLocaleEntriesPathAppRegExp)
+});
+export const replaceLocaleEntriesHeaderIfMatchMax = 200;
+export const ReplaceLocaleEntriesHeader = zod.strictObject({
+    'If-Match': zod.string().max(replaceLocaleEntriesHeaderIfMatchMax).optional()
 });
 export const replaceLocaleEntriesBodyEntriesMaxOne = 2000;
 export const ReplaceLocaleEntriesBody = zod.strictObject({
@@ -922,6 +936,9 @@ export const ReplaceLocaleEntriesResponse = zod.strictObject({
  *
  * See `PUT` on this collection for the replacing counterpart, and for why the choice
  * lives in the method.
+ *
+ * `If-Match` is checked as on the `PUT`, and the answer's `ETag` is the language's
+ * new version.
  * @summary Merge entries
  */
 export const updateLocaleEntriesPathLocaleMax = 35;
@@ -940,6 +957,10 @@ export const UpdateLocaleEntriesParams = zod.strictObject({
         .min(1)
         .max(updateLocaleEntriesPathAppMax)
         .regex(updateLocaleEntriesPathAppRegExp)
+});
+export const updateLocaleEntriesHeaderIfMatchMax = 200;
+export const UpdateLocaleEntriesHeader = zod.strictObject({
+    'If-Match': zod.string().max(updateLocaleEntriesHeaderIfMatchMax).optional()
 });
 export const updateLocaleEntriesBodyEntriesMaxOne = 2000;
 export const UpdateLocaleEntriesBody = zod.strictObject({
