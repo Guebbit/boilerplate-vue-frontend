@@ -42,14 +42,21 @@ implementation can contaminate them. Two passes, two files, in this order.
 
 Read ONLY, for everything in scope:
 
-- the root `openapi.yaml` and `asyncapi.yaml`, plus any
-  `src/modules/<module>/*.yaml` contract fragments this repo keeps
-- `docs/modules/<module>*.md`, `docs/theory/*.md`, `docs/api/*.md`
+- Contracts: the root `openapi.yaml` and `asyncapi.yaml` (synced from the backend), plus every
+  `src/modules/<module>/module.yaml`.
+- Docs: `docs/modules/<module>*.md`, `docs/theory/*.md`, `docs/api/*.md`, `docs/tools/*.md`.
+- Shared: `shared/rules/*.yaml`.
 
-Do NOT open the implementation (except the contract YAMLs) and do NOT open the
-test files yet.
+Do NOT open the implementation (except the YAML files listed above) and do NOT open the test
+files yet.
 
-When the docs are thin, search the read set above for the term (Grep, or `rg -n '<term>' docs/`).
+Under `whole-repo`, each slice follows the module rule; the system slice reads `shared/**` and the
+`docs/tools/*.md` pages that state rules in full. A module or path run reads its own docs and YAML
+in full and searches `shared/**` and `docs/tools/*.md` for scope terms.
+
+Where two spec files disagree, record both sides.
+
+When the docs are thin, search the read set above for the term (Grep, or `rg -n '<term>' docs/ shared/ src/modules/<module>/module.yaml`).
 A hit counts only when re-found and cited from its source file; a hit under `src/`, `tests/` or
 `.2brain/` is discarded.
 
