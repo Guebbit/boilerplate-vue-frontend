@@ -27,6 +27,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useWebhooksStore } from '../store';
+import { eventOptionProps, isStreamLocked } from '../domain/event-options.ts';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { webhookEditSchema } from '../schemas.ts';
 import { Calendar, Clock, Hash, Pencil, Webhook } from 'lucide-vue-next';
@@ -70,6 +71,14 @@ const { currentSubscription, eventCatalog, loadingEventCatalog, loadingSubscript
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises -- the read resolves into the composable's error state instead of rejecting
 onMounted(() => void fetchEventCatalog());
+
+/**
+ * Whether the stored filter names an event the caller may not read: the server refuses a change of
+ * url or events then, so both fields lock (a description-only save still works).
+ */
+const streamLocked = computed(() =>
+    isStreamLocked(currentSubscription.value?.eventTypes ?? [], eventCatalog.value)
+);
 
 /**
  * Edit form data model.
@@ -249,6 +258,11 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             v-model="form.url"
                             type="url"
                             data-test="webhook-url"
+                            :disabled="streamLocked"
+                            :hint="
+                                streamLocked ? t('webhook-edit-page.hint-stream-locked') : undefined
+                            "
+                            :persistent-hint="streamLocked"
                             :label="t('webhook-edit-page.label-url')"
                             v-bind="fieldErrorProps(showFormErrors ? formErrors.url : [])"
                         />
@@ -267,6 +281,8 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             :items="eventCatalog"
                             item-title="name"
                             item-value="name"
+                            :item-props="eventOptionProps"
+                            :disabled="streamLocked"
                             :loading="loadingEventCatalog"
                             :label="t('webhook-edit-page.label-event-types')"
                             v-bind="fieldErrorProps(showFormErrors ? formErrors.eventTypes : [])"

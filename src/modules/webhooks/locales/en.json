@@ -99,7 +99,8 @@
         "reset-form": "Reset changes",
         "button-go-to-details": "Back to subscription details",
         "button-go-to-list": "Back to subscriptions",
-        "success-update": "Subscription updated"
+        "success-update": "Subscription updated",
+        "hint-stream-locked": "Locked: this subscription carries events you may not read, so only its description can change."
     },
     "webhook-deliveries-page": {
         "page-title": "Delivery log",

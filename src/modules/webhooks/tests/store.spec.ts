@@ -464,7 +464,7 @@ describe('useWebhooksStore', () => {
                 (config: { url?: string; method?: string }) =>
                     Promise.resolve(
                         parseOrvalFixture(config.method, config.url, {
-                            items: [{ name: 'order.created' }]
+                            items: [{ name: 'order.created', actions: { subscribe: true } }]
                         })
                     )
             );
@@ -473,7 +473,9 @@ describe('useWebhooksStore', () => {
                 .fetchEventCatalog()
                 .then(() => {
                     expect(lastRequest()).toMatchObject({ url: '/webhooks/events', method: 'GET' });
-                    expect(useWebhooksStore().eventCatalog).toEqual([{ name: 'order.created' }]);
+                    expect(useWebhooksStore().eventCatalog).toEqual([
+                        { name: 'order.created', actions: { subscribe: true } }
+                    ]);
                 });
         });
     });

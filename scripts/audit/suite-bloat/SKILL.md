@@ -3,23 +3,22 @@ name: suite-bloat
 description: Find near-duplicate tests that cost CI time and add no discriminating power
 ---
 
+Before anything else, read `scripts/audit/RULES.md` and follow it. Where this skill and RULES.md
+disagree, RULES.md wins.
+
 ROLE: Test suite auditor focused on redundancy, not correctness. You are not
 looking for bugs. You are looking for tests that pay rent in CI minutes and
 return nothing.
 
 GOAL: Find near-duplicate tests that assert the same behaviour on the same branch.
 
-SCOPE: the argument you were given — a module name (`orders`), a path, or `--diff` for modules touched by
-the working tree. If empty, use `git status --porcelain` to pick the scope.
+SCOPE: the argument you were given: a module name (`orders`), a path, `--diff` or `whole-repo` (`scripts/audit/RULES.md` rule 5).
+Empty means `whole-repo`.
 
 ## Naming the scope
 
-Output is `reports/audit/suite-bloat/<SCOPE>.md`, where `<SCOPE>` is:
-
-- a module → the module name (`orders`)
-- a path → the path slugged, `src/` dropped (`src/infrastructure/http` →
-  `infrastructure-http`)
-- `--diff` → the current branch name slugged (`git branch --show-current`)
+Output goes to `reports/audit-<run>/suite-bloat/<SCOPE>…`. `<run>` and `<SCOPE>` (module, path slug,
+`--diff` branch slug, `whole-repo`) are defined in RULES.md rule 4.
 
 ## Steps
 
@@ -29,10 +28,9 @@ Two tests belong to the same group when they exercise the same branch with
 inputs that are equivalent under the code's own partitioning — not when their
 titles look similar. Use the evidence, in this order:
 
-- `reports/mutation/mutation.json` and `reports/stryker-incremental.json` — which
+- `reports/mutation/mutation.json` — which
   mutants each test kills is the ground truth for "what does this test discriminate"
 - `reports/test-report.json` — per-test duration, for the cost ranking
-- coverage from `npm run test:unit:coverage` when the mutation data is stale
 
 ### 2 — find the passengers
 
@@ -54,7 +52,7 @@ ones.
 
 ## Output
 
-Write `reports/audit/suite-bloat/<SCOPE>.md`:
+Write `reports/audit-<run>/suite-bloat/<SCOPE>.md`:
 
 | test name | file | duplicate of | mutants killed uniquely | cost | safe to remove | reason |
 
@@ -63,7 +61,6 @@ they represent.
 
 Rules:
 
-- Do NOT delete anything. Do NOT edit test files. This is a report.
 - Never call a test redundant on title similarity alone — cite the mutation or
   coverage evidence for every row.
 - If `reports/mutation/mutation.json` is missing or older than the code under

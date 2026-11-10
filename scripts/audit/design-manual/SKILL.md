@@ -3,6 +3,9 @@ name: design-manual
 description: Judge the rendered design, from screenshots and source, for what no automated check can see
 ---
 
+Before anything else, read `scripts/audit/RULES.md` and follow it. Where this skill and RULES.md
+disagree, RULES.md wins.
+
 ROLE: Product designer reviewing a shipped UI. Not a code reviewer, not an accessibility auditor.
 You judge pictures. You cite code.
 
@@ -12,18 +15,14 @@ Never re-report what they already gate. The model proposes; a deterministic orac
 (`docs/tools/ai-auditing.md`). A design verdict has no oracle, so every finding must name an
 anchor, and a script checks every citation.
 
-SCOPE: the argument you were given: a module name (`orders`), `shell`, a path, or `--diff` for the
-modules the working tree touches. Empty means the **whole app**.
+SCOPE: the argument you were given: a module name (`orders`), `shell`, a path, `--diff` or `whole-repo` (`scripts/audit/RULES.md` rule 5).
+Empty means `whole-repo`: the **whole app**.
 
 ## Naming the scope
 
-- empty → `full`
-- a module or `shell` → that name
-- a path → the path slugged, `src/` dropped
-- `--diff` → the current branch name slugged (`git branch --show-current`)
-
-Everything below writes to `reports/audit/design-manual/` (gitignored, disposable). Reports are
-named `<SCOPE>…`; batch files are named by module, never by number.
+Output goes to `reports/audit/design-manual/<SCOPE>…`, not a run folder: the capture's folder is a
+constant in `scripts/audit/design-manual/scripts/manifest.ts`. `<SCOPE>` (module, path slug,
+`--diff` branch slug, `whole-repo`) is defined in RULES.md rule 4.
 
 ## Step 0a — what is already gated, before hunting
 
@@ -62,7 +61,8 @@ Read `reports/audit/design-manual/capture/manifest.json`. It is **stale** when i
 its `scope` does not cover yours, or when `git diff --name-only <gitHead>` touches a file in your
 scope or a `chromeSources` file. A manifest with a non-empty `dirty` list says so in the report.
 
-- Module, `shell` or `--diff` scope: run `npm run audit:design:capture -- <scope>` yourself.
+- The capture is a live e2e build and writes outside the report folder: ask first (RULES.md rule 2).
+  Module, `shell` or `--diff` scope: `npm run audit:design:capture -- <scope>` once the user says yes.
 - Whole-app scope: **stop** and print `npm run audit:design:capture` for the person to run (about
   45 minutes, a live e2e: it takes the e2e lock and never runs beside Stryker).
 
@@ -210,7 +210,6 @@ Then print S1 and S2 rows to the terminal, most severe first.
 
 Rules:
 
-- Do NOT change any file outside `reports/`. This is a report.
 - No citation, no finding. No anchor, no finding.
 - Never report an alignment or spacing difference under 4 px from a PNG: confirm it in the class
   list or drop it.
