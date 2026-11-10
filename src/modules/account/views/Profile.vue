@@ -85,8 +85,11 @@ const { profile, savingProfile, changingPendingEmail } = storeToRefs(useAccountP
 /*
  * The record this page edits, loaded by this page. The session restore only fills the shell's
  * viewer projection, so on a hard reload of /profile the store held no record at all: the form
- * mounted empty, and the first save failed validation on fields the visitor never emptied. The
- * cached read costs nothing when login already fetched it.
+ * mounted empty, and the first save failed validation on fields the visitor never emptied.
+ *
+ * The store's read has no id, so it always asks the server.
+ * That fresh GET /account read holds the ETag the first save sends back.
+ * The login answer carries none.
  */
 onMounted(fetchProfile);
 
