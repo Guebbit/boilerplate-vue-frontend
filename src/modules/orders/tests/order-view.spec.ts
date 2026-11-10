@@ -8,6 +8,7 @@
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import type { ComponentPublicInstance } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Order from '../views/OrderTarget.vue';
@@ -300,6 +301,23 @@ describe('the timeline', () => {
         expect(timeline.props('orderId')).toBe('o1');
         // A move in any of the four states must change the key, or the history would go stale.
         expect(timeline.props('refreshKey')).toContain('paid|paid|unfulfilled|none');
+
+        wrapper.unmount();
+    });
+
+    it('is keyed again when a shipment panel reports a move, though `updatedAt` stays', async () => {
+        // A partial shipment no longer moves `updatedAt`, so only the report itself can tell
+        // the timeline that a second parcel left.
+        vi.spyOn(useOrdersStore(), 'fetchOrder').mockResolvedValue(undefined);
+        const wrapper = mountOrder({ ...BASE_ORDER, status: 'processing', items: [lineWith()] });
+        const keyOf = (): string =>
+            String(wrapper.getComponent({ name: 'OrderTimeline' }).props('refreshKey'));
+        const before = keyOf();
+
+        wrapper.getComponent<ComponentPublicInstance>({ name: 'ShipmentPanel' }).vm.$emit('moved');
+        await flushPromises();
+
+        expect(keyOf()).not.toBe(before);
 
         wrapper.unmount();
     });
