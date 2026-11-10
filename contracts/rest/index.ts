@@ -4123,8 +4123,28 @@ export const UserSortItem = {
  */
 export type UserSort = UserSortItem[];
 
+export interface UserListItem {
+    id: Id;
+    email: Email;
+    username: string;
+    /** The staff role this account holds, by name. Absent for a plain customer. */
+    role?: string;
+    active?: boolean;
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+    /** Present, as `true`, only while a purchase hold is in force. Its reason, end and note are on `GET /users/{id}`. */
+    purchaseHeld?: true;
+    /** When the shop's rule flagged this account for staff review. Absent once staff set or lift a hold. */
+    purchaseHoldFlaggedAt?: string;
+    /** When the account is erased, after its owner asked to delete it. Absent otherwise. */
+    purgeAt?: string;
+    createdAt?: string;
+    deletedAt?: string;
+    actions: UserActions;
+}
+
 export interface UsersResponse {
-    items: User[];
+    items: UserListItem[];
     meta: PaginationMeta;
 }
 
@@ -4299,23 +4319,6 @@ export const TaskSource = {
  */
 export type TaskAssigneeFilter = string;
 
-export interface TaskNote {
-    /** Absent once the author's account is erased. */
-    authorId?: Id;
-    body: string;
-    at: string;
-}
-
-/**
- * An earlier task about the same record.
- */
-export interface TaskRef {
-    id: Id;
-    kind?: TaskKind;
-    status: TaskStatus;
-    createdAt: string;
-}
-
 /**
  * What the requesting caller may do to this task, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the right to work the task (and its route set, for a system task) and a status the act can run from. `assign` covers taking it and assigning someone else.
  */
@@ -4336,47 +4339,36 @@ export interface TaskActions {
     delete: boolean;
 }
 
-export interface Task {
+export interface TaskListItem {
     id: Id;
     source: TaskSource;
     kind: TaskKind;
     name?: string;
-    /** The account the sender was signed in as; absent for an anonymous sender. On a system task, the account the situation is about. */
-    subjectId?: Id;
     /** The sender's address. Present on a visitor task, absent on a system one. */
     email?: Email;
     subject: string;
-    message: string;
+    /**
+     * The message cut to 160 characters, ending in `…` when it was longer. The whole message is `GET /tasks/{id}`.
+     * @maxLength 160
+     */
+    messagePreview: string;
     category?: TaskCategory;
     /** The order the visitor said this is about, as they typed it. Not checked against any order. */
     orderNumber?: string;
-    link?: TaskLink;
-    /** The permission set that works this task, frozen when it opened. */
-    routeSet: string;
     assigneeId?: Id;
     /** The assignee's username. */
     assigneeName?: string;
-    notes: TaskNote[];
-    /** When it falls overdue. Kept across a reopen. */
     dueAt?: string;
     /** Open and past `dueAt`, computed at read time. */
     overdue: boolean;
-    lastSeenAt?: string;
-    /** @minimum 1 */
-    seenCount?: number;
     readonly status: TaskStatus;
-    closedAt?: string;
-    resolution?: TaskResolution;
     respondedAt?: string;
-    /** Present on `GET /tasks/{id}` only. */
-    earlierTasks?: TaskRef[];
-    actions: TaskActions;
     createdAt: string;
-    updatedAt?: string;
+    actions: TaskActions;
 }
 
 export interface TasksResponse {
-    items: Task[];
+    items: TaskListItem[];
     meta: PaginationMeta;
 }
 
@@ -4437,6 +4429,62 @@ export interface TaskSummary {
     overdue: number;
     /** @minimum 0 */
     unassigned: number;
+}
+
+export interface TaskNote {
+    /** Absent once the author's account is erased. */
+    authorId?: Id;
+    body: string;
+    at: string;
+}
+
+/**
+ * An earlier task about the same record.
+ */
+export interface TaskRef {
+    id: Id;
+    kind?: TaskKind;
+    status: TaskStatus;
+    createdAt: string;
+}
+
+export interface Task {
+    id: Id;
+    source: TaskSource;
+    kind: TaskKind;
+    name?: string;
+    /** The account the sender was signed in as; absent for an anonymous sender. On a system task, the account the situation is about. */
+    subjectId?: Id;
+    /** The sender's address. Present on a visitor task, absent on a system one. */
+    email?: Email;
+    subject: string;
+    message: string;
+    category?: TaskCategory;
+    /** The order the visitor said this is about, as they typed it. Not checked against any order. */
+    orderNumber?: string;
+    link?: TaskLink;
+    /** The permission set that works this task, frozen when it opened. */
+    routeSet: string;
+    assigneeId?: Id;
+    /** The assignee's username. */
+    assigneeName?: string;
+    notes: TaskNote[];
+    /** When it falls overdue. Kept across a reopen. */
+    dueAt?: string;
+    /** Open and past `dueAt`, computed at read time. */
+    overdue: boolean;
+    lastSeenAt?: string;
+    /** @minimum 1 */
+    seenCount?: number;
+    readonly status: TaskStatus;
+    closedAt?: string;
+    resolution?: TaskResolution;
+    respondedAt?: string;
+    /** Present on `GET /tasks/{id}` only. */
+    earlierTasks?: TaskRef[];
+    actions: TaskActions;
+    createdAt: string;
+    updatedAt?: string;
 }
 
 export interface AssignTaskRequest {
@@ -5184,8 +5232,25 @@ export const OrderSortItem = {
  */
 export type OrderSort = OrderSortItem[];
 
+export interface OrderListItem {
+    id: Id;
+    orderNumber: string;
+    status: OrderStatus;
+    paymentStatus: OrderPaymentStatus;
+    fulfillmentStatus: OrderFulfillmentStatus;
+    returnStatus: OrderReturnStatus;
+    totalPrice: NonNegativeDecimalAmount;
+    currency: CurrencyCode;
+    /** When the order reached `paid`. Absent while unpaid. */
+    paidAt?: string;
+    createdAt?: string;
+    /** Present only on a soft-deleted order, which only staff list. */
+    deletedAt?: string;
+    actions: OrderActions;
+}
+
 export interface OrdersResponse {
-    items: Order[];
+    items: OrderListItem[];
     meta: PaginationMeta;
 }
 
@@ -5903,6 +5968,95 @@ export const ReturnKind = {
 } as const;
 
 /**
+ * What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the key that names the act and a status the act can run from.
+ */
+export interface ReturnActions {
+    /** Whether `POST /returns/{id}/approve` would be accepted. */
+    approve: boolean;
+    /** Whether `POST /returns/{id}/decline` would be accepted. */
+    decline: boolean;
+    /** Whether `POST /returns/{id}/receive` would be accepted. */
+    receive: boolean;
+    /** Whether `POST /returns/{id}/proof-of-sending` would be accepted. */
+    recordProof: boolean;
+    /** Whether `POST /returns/{id}/close` would be accepted. */
+    close: boolean;
+    /** Whether `POST /returns/{id}/cancel` would be accepted. */
+    cancel: boolean;
+}
+
+export interface ReturnListItem {
+    id: Id;
+    orderId: Id;
+    /** The order's human number. */
+    orderNumber: string;
+    status: ReturnStatus;
+    reason: ReturnReason;
+    kind: ReturnKind;
+    requestedAt: string;
+    createdAt: string;
+    actions: ReturnActions;
+}
+
+export interface ReturnsResponse {
+    items: ReturnListItem[];
+    meta: PaginationMeta;
+}
+
+/**
+ * How the buyer stated a withdrawal outside the shop, as staff record it.
+ */
+export type StaffStatementChannel =
+    (typeof StaffStatementChannel)[keyof typeof StaffStatementChannel];
+
+export const StaffStatementChannel = {
+    phone: 'phone',
+    email: 'email',
+    letter: 'letter',
+    other: 'other'
+} as const;
+
+/**
+ * What the buyer is given for a faulty or wrong item (Directive 2019/771 Art. 13): `repair` and `replace` come first and the buyer chooses; `refund` is the money back. Choosing `repair` extends the guarantee by 12 months (Directive 2024/1799). Only a `defective` or `wrong_item` return has a choice; every other reason is refunded.
+ */
+export type ReturnRemedy = (typeof ReturnRemedy)[keyof typeof ReturnRemedy];
+
+export const ReturnRemedy = {
+    refund: 'refund',
+    replace: 'replace',
+    repair: 'repair'
+} as const;
+
+export type CreateReturnRequestLinesItem = {
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
+};
+
+export interface CreateReturnRequest {
+    orderId: Id;
+    reason: ReturnReason;
+    /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+    note?: string;
+    kind?: ReturnKind;
+    /** Required exactly when `kind` is `cancellation` — the fulfillment order whose remainder is canceled. */
+    fulfillmentOrderId?: Id;
+    /** Staff only: when the buyer asked, or for a withdrawal when they stated it (Art. 11(2) judges timing on the day it was sent). Required for a staff withdrawal, optional otherwise (default now). Never in the future, never before the order was made. The buyer does not send it. */
+    requestedAt?: string;
+    statedVia?: StaffStatementChannel;
+    /** What the buyer would like for a faulty or wrong item: a repair, a replacement or the money back. Only for `defective` and `wrong_item` (422 `RETURN_REMEDY_INVALID` otherwise). Staff decide at receipt; the buyer is told that choosing repair extends the guarantee by 12 months. */
+    preferredRemedy?: ReturnRemedy;
+    /**
+     * What comes back. Absent means everything on the order that is still left to return — the usual shape of a withdrawal. Not allowed on a `cancellation`: the whole remainder is its lines.
+     * @minItems 1
+     */
+    lines?: CreateReturnRequestLinesItem[];
+}
+
+/**
  * One line of a return — a snapshot of what is coming back, so it reads the same later.
  */
 export interface ReturnLine {
@@ -5964,35 +6118,6 @@ export const ReturnPolicyException = {
     window_closed: 'window_closed',
     excluded_goods: 'excluded_goods'
 } as const;
-
-/**
- * What the buyer is given for a faulty or wrong item (Directive 2019/771 Art. 13): `repair` and `replace` come first and the buyer chooses; `refund` is the money back. Choosing `repair` extends the guarantee by 12 months (Directive 2024/1799). Only a `defective` or `wrong_item` return has a choice; every other reason is refunded.
- */
-export type ReturnRemedy = (typeof ReturnRemedy)[keyof typeof ReturnRemedy];
-
-export const ReturnRemedy = {
-    refund: 'refund',
-    replace: 'replace',
-    repair: 'repair'
-} as const;
-
-/**
- * What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the key that names the act and a status the act can run from.
- */
-export interface ReturnActions {
-    /** Whether `POST /returns/{id}/approve` would be accepted. */
-    approve: boolean;
-    /** Whether `POST /returns/{id}/decline` would be accepted. */
-    decline: boolean;
-    /** Whether `POST /returns/{id}/receive` would be accepted. */
-    receive: boolean;
-    /** Whether `POST /returns/{id}/proof-of-sending` would be accepted. */
-    recordProof: boolean;
-    /** Whether `POST /returns/{id}/close` would be accepted. */
-    close: boolean;
-    /** Whether `POST /returns/{id}/cancel` would be accepted. */
-    cancel: boolean;
-}
 
 export interface Return {
     id: Id;
@@ -6057,53 +6182,6 @@ export interface Return {
     actions: ReturnActions;
     createdAt: string;
     updatedAt?: string;
-}
-
-export interface ReturnsResponse {
-    items: Return[];
-    meta: PaginationMeta;
-}
-
-/**
- * How the buyer stated a withdrawal outside the shop, as staff record it.
- */
-export type StaffStatementChannel =
-    (typeof StaffStatementChannel)[keyof typeof StaffStatementChannel];
-
-export const StaffStatementChannel = {
-    phone: 'phone',
-    email: 'email',
-    letter: 'letter',
-    other: 'other'
-} as const;
-
-export type CreateReturnRequestLinesItem = {
-    productId: Id;
-    /** @minimum 1 */
-    quantity: number;
-};
-
-export interface CreateReturnRequest {
-    orderId: Id;
-    reason: ReturnReason;
-    /**
-     * @minLength 1
-     * @maxLength 1000
-     */
-    note?: string;
-    kind?: ReturnKind;
-    /** Required exactly when `kind` is `cancellation` — the fulfillment order whose remainder is canceled. */
-    fulfillmentOrderId?: Id;
-    /** Staff only: when the buyer asked, or for a withdrawal when they stated it (Art. 11(2) judges timing on the day it was sent). Required for a staff withdrawal, optional otherwise (default now). Never in the future, never before the order was made. The buyer does not send it. */
-    requestedAt?: string;
-    statedVia?: StaffStatementChannel;
-    /** What the buyer would like for a faulty or wrong item: a repair, a replacement or the money back. Only for `defective` and `wrong_item` (422 `RETURN_REMEDY_INVALID` otherwise). Staff decide at receipt; the buyer is told that choosing repair extends the guarantee by 12 months. */
-    preferredRemedy?: ReturnRemedy;
-    /**
-     * What comes back. Absent means everything on the order that is still left to return — the usual shape of a withdrawal. Not allowed on a `cancellation`: the whole remainder is its lines.
-     * @minItems 1
-     */
-    lines?: CreateReturnRequestLinesItem[];
 }
 
 export interface ReturnOptionLine {

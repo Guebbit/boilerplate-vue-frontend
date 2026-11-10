@@ -35,6 +35,7 @@ import {
 import type { AxiosRequestConfig } from 'axios';
 import type {
     User,
+    UserListItem,
     CreateUserRequestMultipart,
     UpdateUserByIdRequest,
     SearchUsersRequest,
@@ -62,6 +63,14 @@ type UsersFilters = Omit<SearchUsersRequest, 'page' | 'pageSize' | 'id' | 'sort'
  * same shape.
  */
 type UpdateUserData = UpdateUserByIdRequest & { imageUpload?: Blob };
+
+/**
+ * An account as the store caches it: a full `User`, or a list row (every field a `User` requires is
+ * on one), with the list's `purchaseHeld` flag. The hold's own details are `User.purchaseHold`, from
+ * the detail read. List reads are stored with `partial: true` (see `UsersList.vue`), which merges a
+ * row over a full record already cached instead of replacing it.
+ */
+export type UserRecord = User & Pick<UserListItem, 'purchaseHeld'>;
 
 /**
  * Users CRUD, paginated search and avatar upload.
@@ -101,7 +110,7 @@ export const useUsersStore = defineStore('users', () => {
         deleteTarget,
         fetchAny
     } = useStructureCrudApi<
-        User,
+        UserRecord,
         string,
         UsersFilters,
         CreateUserRequestMultipart,

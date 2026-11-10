@@ -114,8 +114,11 @@ const { sync: syncUrl } = useListUrlState({
 
 /**
  * Search bound to the store's reactive filters and pagination; a failed request is a toast.
+ * `partial`: a row is a list item, merged over a full return already cached and never replacing it,
+ * so the detail page still reads the whole return.
  */
 const { search } = watchSearchReturns({
+    partial: true,
     onError: (error) => notifyErrorMessages(addMessage, error)
 });
 

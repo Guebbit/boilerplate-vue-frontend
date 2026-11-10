@@ -34,6 +34,7 @@ import {
 } from '@api';
 import type {
     Order,
+    OrderListItem,
     CreateOrderRequest,
     UpdateOrderByIdRequest,
     SearchOrdersRequest,
@@ -99,6 +100,17 @@ const criteriaOf = (filters: OrdersFilters) => ({
     paymentStatus: filters.paymentStatus,
     returnStatus: filters.returnStatus
 });
+
+/**
+ * Order list rows as the records the store caches. A list item is the part of an `Order` a table
+ * renders; the list reads are stored with `partial: true` (see `OrdersList.vue`), which merges them
+ * over a full record already cached instead of replacing it. The one narrowing the compiler cannot
+ * see: a list view reads list fields only.
+ *
+ * @param items - the rows a list answered
+ * @returns the same rows, typed as the records the dictionary holds
+ */
+const asRecords = (items: OrderListItem[]): Order[] => items as Order[];
 
 /**
  * Reads one page of an order's timeline, newest first (a log: no `sort`). A background read like
@@ -206,7 +218,7 @@ export const useOrdersStore = defineStore('orders', () => {
         UpdateOrderByIdRequest
     >(
         {
-            list: () => listOrders().then((response) => response.items),
+            list: () => listOrders().then((response) => asRecords(response.items)),
 
             search: (filters, page, pageSize) =>
                 searchOrders({
@@ -214,7 +226,7 @@ export const useOrdersStore = defineStore('orders', () => {
                     pageSize,
                     ...criteriaOf(filters)
                 }).then((response) => ({
-                    items: response.items,
+                    items: asRecords(response.items),
                     totalItems: response.meta.totalItems
                 })),
 

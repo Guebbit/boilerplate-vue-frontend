@@ -35,7 +35,7 @@ import type { ThemeColor } from '@/ui/types.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
-import type { Order } from '@types';
+import type { OrderListItem } from '@types';
 import { exportRefusalOf } from '../domain';
 import {
     OrderFulfillmentStatus,
@@ -153,7 +153,7 @@ const rowActionSize = useTouchFriendlySize();
  *
  * @returns The localized headers, re-translated on locale change.
  */
-const tableHeaders = computed<CoreDataTableHeader<Order>[]>(() => [
+const tableHeaders = computed<CoreDataTableHeader<OrderListItem>[]>(() => [
     // Sorts by the id (creation order, which the number follows); the cell shows the number.
     { title: t('orders-list-page.column-order'), key: 'id' },
     { title: t('orders-list-page.column-status'), key: 'status' },
@@ -211,9 +211,11 @@ pinOwner();
 
 /**
  * Search function bound to the store's reactive `filters`/pagination, reporting
- * a failed request as a toast.
+ * a failed request as a toast. `partial`: a row is a list item, merged over a full order already
+ * cached and never replacing it, so the detail page still reads the whole order.
  */
 const { search } = watchSearchOrders({
+    partial: true,
     onError: (error) => notifyErrorMessages(addMessage, error)
 });
 

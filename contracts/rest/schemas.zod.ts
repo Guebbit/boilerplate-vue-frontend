@@ -6754,11 +6754,6 @@ export const ListUsersQueryParams = zod.strictObject({
 export const listUsersResponseItemsItemIdMax = 64;
 export const listUsersResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listUsersResponseItemsItemEmailMax = 254;
-export const listUsersResponseItemsItemLocaleMax = 35;
-export const listUsersResponseItemsItemLocaleRegExp = new RegExp(
-    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
-);
-export const listUsersResponseItemsItemPurchaseHoldNoteMax = 500;
 export const listUsersResponseMetaPageDefault = 1;
 export const listUsersResponseMetaPageMax = 10000;
 export const listUsersResponseMetaPageSizeDefault = 10;
@@ -6777,36 +6772,13 @@ export const ListUsersResponse = zod.strictObject({
             username: zod.string(),
             role: zod.string().optional(),
             active: zod.boolean().optional(),
-            verifiedAt: zod.iso.datetime({ offset: true }).optional(),
-            pendingEmail: zod.email().optional(),
             imageUrl: zod.string().min(1).optional(),
             thumbnailUrl: zod.string().optional(),
-            locale: zod
-                .string()
-                .max(listUsersResponseItemsItemLocaleMax)
-                .regex(listUsersResponseItemsItemLocaleRegExp)
-                .optional(),
-            phone: zod.string().optional(),
-            website: zod.string().optional(),
-            analyticsConsent: zod.boolean().optional(),
-            analyticsConsentAt: zod.iso.datetime({ offset: true }).optional(),
-            termsAcceptedAt: zod.iso.datetime({ offset: true }).optional(),
-            termsVersion: zod.string().optional(),
-            twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+            purchaseHeld: zod.literal(true).optional(),
+            purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional(),
+            purgeAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true }).optional(),
-            updatedAt: zod.iso.datetime({ offset: true }).optional(),
             deletedAt: zod.iso.datetime({ offset: true }).optional(),
-            purchaseHold: zod
-                .strictObject({
-                    until: zod.iso.datetime({ offset: true }),
-                    reason: zod.enum(['repeated_cancellations', 'staff']),
-                    note: zod
-                        .string()
-                        .max(listUsersResponseItemsItemPurchaseHoldNoteMax)
-                        .optional(),
-                    setAt: zod.iso.datetime({ offset: true })
-                })
-                .optional(),
             actions: zod.strictObject({
                 update: zod.boolean(),
                 assignRole: zod.boolean(),
@@ -6818,9 +6790,7 @@ export const ListUsersResponse = zod.strictObject({
                 liftPurchaseHold: zod.boolean(),
                 activate: zod.boolean(),
                 deactivate: zod.boolean()
-            }),
-            purgeAt: zod.iso.datetime({ offset: true }).optional(),
-            purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
+            })
         })
     ),
     meta: zod.strictObject({
@@ -7303,11 +7273,6 @@ export const SearchUsersBody = zod.strictObject({
 export const searchUsersResponseItemsItemIdMax = 64;
 export const searchUsersResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const searchUsersResponseItemsItemEmailMax = 254;
-export const searchUsersResponseItemsItemLocaleMax = 35;
-export const searchUsersResponseItemsItemLocaleRegExp = new RegExp(
-    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
-);
-export const searchUsersResponseItemsItemPurchaseHoldNoteMax = 500;
 export const searchUsersResponseMetaPageDefault = 1;
 export const searchUsersResponseMetaPageMax = 10000;
 export const searchUsersResponseMetaPageSizeDefault = 10;
@@ -7326,36 +7291,13 @@ export const SearchUsersResponse = zod.strictObject({
             username: zod.string(),
             role: zod.string().optional(),
             active: zod.boolean().optional(),
-            verifiedAt: zod.iso.datetime({ offset: true }).optional(),
-            pendingEmail: zod.email().optional(),
             imageUrl: zod.string().min(1).optional(),
             thumbnailUrl: zod.string().optional(),
-            locale: zod
-                .string()
-                .max(searchUsersResponseItemsItemLocaleMax)
-                .regex(searchUsersResponseItemsItemLocaleRegExp)
-                .optional(),
-            phone: zod.string().optional(),
-            website: zod.string().optional(),
-            analyticsConsent: zod.boolean().optional(),
-            analyticsConsentAt: zod.iso.datetime({ offset: true }).optional(),
-            termsAcceptedAt: zod.iso.datetime({ offset: true }).optional(),
-            termsVersion: zod.string().optional(),
-            twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+            purchaseHeld: zod.literal(true).optional(),
+            purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional(),
+            purgeAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true }).optional(),
-            updatedAt: zod.iso.datetime({ offset: true }).optional(),
             deletedAt: zod.iso.datetime({ offset: true }).optional(),
-            purchaseHold: zod
-                .strictObject({
-                    until: zod.iso.datetime({ offset: true }),
-                    reason: zod.enum(['repeated_cancellations', 'staff']),
-                    note: zod
-                        .string()
-                        .max(searchUsersResponseItemsItemPurchaseHoldNoteMax)
-                        .optional(),
-                    setAt: zod.iso.datetime({ offset: true })
-                })
-                .optional(),
             actions: zod.strictObject({
                 update: zod.boolean(),
                 assignRole: zod.boolean(),
@@ -7367,9 +7309,7 @@ export const SearchUsersResponse = zod.strictObject({
                 liftPurchaseHold: zod.boolean(),
                 activate: zod.boolean(),
                 deactivate: zod.boolean()
-            }),
-            purgeAt: zod.iso.datetime({ offset: true }).optional(),
-            purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
+            })
         })
     ),
     meta: zod.strictObject({
@@ -7489,15 +7429,10 @@ export const ListTasksQueryParams = zod.strictObject({
 });
 export const listTasksResponseItemsItemIdMax = 64;
 export const listTasksResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listTasksResponseItemsItemSubjectIdMax = 64;
-export const listTasksResponseItemsItemSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listTasksResponseItemsItemEmailMax = 254;
+export const listTasksResponseItemsItemMessagePreviewMax = 160;
 export const listTasksResponseItemsItemAssigneeIdMax = 64;
 export const listTasksResponseItemsItemAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listTasksResponseItemsItemNotesItemAuthorIdMax = 64;
-export const listTasksResponseItemsItemNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listTasksResponseItemsItemEarlierTasksItemIdMax = 64;
-export const listTasksResponseItemsItemEarlierTasksItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listTasksResponseMetaPageDefault = 1;
 export const listTasksResponseMetaPageMax = 10000;
 export const listTasksResponseMetaPageSizeDefault = 10;
@@ -7527,33 +7462,13 @@ export const ListTasksResponse = zod.strictObject({
                 'consent_due'
             ]),
             name: zod.string().optional(),
-            subjectId: zod
-                .string()
-                .min(1)
-                .max(listTasksResponseItemsItemSubjectIdMax)
-                .regex(listTasksResponseItemsItemSubjectIdRegExp)
-                .optional(),
             email: zod.email().max(listTasksResponseItemsItemEmailMax).optional(),
             subject: zod.string(),
-            message: zod.string(),
+            messagePreview: zod.string().max(listTasksResponseItemsItemMessagePreviewMax),
             category: zod
                 .enum(['account', 'privacy', 'other', 'order', 'cancellation', 'return', 'payment'])
                 .optional(),
             orderNumber: zod.string().optional(),
-            link: zod
-                .strictObject({
-                    type: zod.enum([
-                        'user',
-                        'export',
-                        'order',
-                        'payment',
-                        'refund',
-                        'fulfillment_order'
-                    ]),
-                    id: zod.string()
-                })
-                .optional(),
-            routeSet: zod.string(),
             assigneeId: zod
                 .string()
                 .min(1)
@@ -7561,54 +7476,11 @@ export const ListTasksResponse = zod.strictObject({
                 .regex(listTasksResponseItemsItemAssigneeIdRegExp)
                 .optional(),
             assigneeName: zod.string().optional(),
-            notes: zod.array(
-                zod.strictObject({
-                    authorId: zod
-                        .string()
-                        .min(1)
-                        .max(listTasksResponseItemsItemNotesItemAuthorIdMax)
-                        .regex(listTasksResponseItemsItemNotesItemAuthorIdRegExp)
-                        .optional(),
-                    body: zod.string(),
-                    at: zod.iso.datetime({ offset: true })
-                })
-            ),
             dueAt: zod.iso.datetime({ offset: true }).optional(),
             overdue: zod.boolean(),
-            lastSeenAt: zod.iso.datetime({ offset: true }).optional(),
-            seenCount: zod.number().min(1).optional(),
             status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-            closedAt: zod.iso.datetime({ offset: true }).optional(),
-            resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
             respondedAt: zod.iso.datetime({ offset: true }).optional(),
-            earlierTasks: zod
-                .array(
-                    zod.strictObject({
-                        id: zod
-                            .string()
-                            .min(1)
-                            .max(listTasksResponseItemsItemEarlierTasksItemIdMax)
-                            .regex(listTasksResponseItemsItemEarlierTasksItemIdRegExp),
-                        kind: zod
-                            .enum([
-                                'contact',
-                                'account_review',
-                                'export_failed',
-                                'manual_refund_owed',
-                                'refund_refused',
-                                'amount_mismatch',
-                                'dispute',
-                                'dispute_awaiting_bank',
-                                'refund_reversed',
-                                'paid_without_hold',
-                                'consent_due'
-                            ])
-                            .optional(),
-                        status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-                        createdAt: zod.iso.datetime({ offset: true })
-                    })
-                )
-                .optional(),
+            createdAt: zod.iso.datetime({ offset: true }),
             actions: zod.strictObject({
                 resolve: zod.boolean(),
                 markSpam: zod.boolean(),
@@ -7617,9 +7489,7 @@ export const ListTasksResponse = zod.strictObject({
                 unassign: zod.boolean(),
                 note: zod.boolean(),
                 delete: zod.boolean()
-            }),
-            createdAt: zod.iso.datetime({ offset: true }),
-            updatedAt: zod.iso.datetime({ offset: true }).optional()
+            })
         })
     ),
     meta: zod.strictObject({
@@ -7704,15 +7574,10 @@ export const SearchTasksBody = zod.strictObject({
 });
 export const searchTasksResponseItemsItemIdMax = 64;
 export const searchTasksResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const searchTasksResponseItemsItemSubjectIdMax = 64;
-export const searchTasksResponseItemsItemSubjectIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const searchTasksResponseItemsItemEmailMax = 254;
+export const searchTasksResponseItemsItemMessagePreviewMax = 160;
 export const searchTasksResponseItemsItemAssigneeIdMax = 64;
 export const searchTasksResponseItemsItemAssigneeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const searchTasksResponseItemsItemNotesItemAuthorIdMax = 64;
-export const searchTasksResponseItemsItemNotesItemAuthorIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const searchTasksResponseItemsItemEarlierTasksItemIdMax = 64;
-export const searchTasksResponseItemsItemEarlierTasksItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const searchTasksResponseMetaPageDefault = 1;
 export const searchTasksResponseMetaPageMax = 10000;
 export const searchTasksResponseMetaPageSizeDefault = 10;
@@ -7742,33 +7607,13 @@ export const SearchTasksResponse = zod.strictObject({
                 'consent_due'
             ]),
             name: zod.string().optional(),
-            subjectId: zod
-                .string()
-                .min(1)
-                .max(searchTasksResponseItemsItemSubjectIdMax)
-                .regex(searchTasksResponseItemsItemSubjectIdRegExp)
-                .optional(),
             email: zod.email().max(searchTasksResponseItemsItemEmailMax).optional(),
             subject: zod.string(),
-            message: zod.string(),
+            messagePreview: zod.string().max(searchTasksResponseItemsItemMessagePreviewMax),
             category: zod
                 .enum(['account', 'privacy', 'other', 'order', 'cancellation', 'return', 'payment'])
                 .optional(),
             orderNumber: zod.string().optional(),
-            link: zod
-                .strictObject({
-                    type: zod.enum([
-                        'user',
-                        'export',
-                        'order',
-                        'payment',
-                        'refund',
-                        'fulfillment_order'
-                    ]),
-                    id: zod.string()
-                })
-                .optional(),
-            routeSet: zod.string(),
             assigneeId: zod
                 .string()
                 .min(1)
@@ -7776,54 +7621,11 @@ export const SearchTasksResponse = zod.strictObject({
                 .regex(searchTasksResponseItemsItemAssigneeIdRegExp)
                 .optional(),
             assigneeName: zod.string().optional(),
-            notes: zod.array(
-                zod.strictObject({
-                    authorId: zod
-                        .string()
-                        .min(1)
-                        .max(searchTasksResponseItemsItemNotesItemAuthorIdMax)
-                        .regex(searchTasksResponseItemsItemNotesItemAuthorIdRegExp)
-                        .optional(),
-                    body: zod.string(),
-                    at: zod.iso.datetime({ offset: true })
-                })
-            ),
             dueAt: zod.iso.datetime({ offset: true }).optional(),
             overdue: zod.boolean(),
-            lastSeenAt: zod.iso.datetime({ offset: true }).optional(),
-            seenCount: zod.number().min(1).optional(),
             status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-            closedAt: zod.iso.datetime({ offset: true }).optional(),
-            resolution: zod.enum(['staff', 'cleared', 'spam']).optional(),
             respondedAt: zod.iso.datetime({ offset: true }).optional(),
-            earlierTasks: zod
-                .array(
-                    zod.strictObject({
-                        id: zod
-                            .string()
-                            .min(1)
-                            .max(searchTasksResponseItemsItemEarlierTasksItemIdMax)
-                            .regex(searchTasksResponseItemsItemEarlierTasksItemIdRegExp),
-                        kind: zod
-                            .enum([
-                                'contact',
-                                'account_review',
-                                'export_failed',
-                                'manual_refund_owed',
-                                'refund_refused',
-                                'amount_mismatch',
-                                'dispute',
-                                'dispute_awaiting_bank',
-                                'refund_reversed',
-                                'paid_without_hold',
-                                'consent_due'
-                            ])
-                            .optional(),
-                        status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-                        createdAt: zod.iso.datetime({ offset: true })
-                    })
-                )
-                .optional(),
+            createdAt: zod.iso.datetime({ offset: true }),
             actions: zod.strictObject({
                 resolve: zod.boolean(),
                 markSpam: zod.boolean(),
@@ -7832,9 +7634,7 @@ export const SearchTasksResponse = zod.strictObject({
                 unassign: zod.boolean(),
                 note: zod.boolean(),
                 delete: zod.boolean()
-            }),
-            createdAt: zod.iso.datetime({ offset: true }),
-            updatedAt: zod.iso.datetime({ offset: true }).optional()
+            })
         })
     ),
     meta: zod.strictObject({
@@ -10898,72 +10698,11 @@ export const ListOrdersQueryParams = zod.strictObject({
 });
 export const listOrdersResponseItemsItemIdMax = 64;
 export const listOrdersResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listOrdersResponseItemsItemUserIdMax = 64;
-export const listOrdersResponseItemsItemUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listOrdersResponseItemsItemEmailMax = 254;
-export const listOrdersResponseItemsItemItemsItemProductIdMax = 64;
-export const listOrdersResponseItemsItemItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listOrdersResponseItemsItemItemsItemProductPriceRegExp = new RegExp(
-    '^\\d+(\\.\\d+)?$'
-);
-export const listOrdersResponseItemsItemItemsItemProductPriceMax = 32;
-export const listOrdersResponseItemsItemItemsItemProductRequiresShippingDefault = true;
-export const listOrdersResponseItemsItemItemsItemProductSkuMax = 64;
-export const listOrdersResponseItemsItemItemsItemProductWeightMin = 0;
-export const listOrdersResponseItemsItemItemsItemProductTaxRateMin = 0;
-export const listOrdersResponseItemsItemItemsItemProductTaxRateMax = 1;
-export const listOrdersResponseItemsItemItemsItemLocaleMax = 35;
-export const listOrdersResponseItemsItemItemsItemLocaleRegExp = new RegExp(
-    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
-);
-export const listOrdersResponseItemsItemItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const listOrdersResponseItemsItemItemsItemTaxAmountMax = 32;
-export const listOrdersResponseItemsItemItemsItemNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const listOrdersResponseItemsItemItemsItemNetAmountMax = 32;
-export const listOrdersResponseItemsItemTotalItemsMin = 0;
-export const listOrdersResponseItemsItemTotalQuantityMin = 0;
 export const listOrdersResponseItemsItemTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const listOrdersResponseItemsItemTotalPriceMax = 32;
-export const listOrdersResponseItemsItemCurrencyOneMin = 3;
-export const listOrdersResponseItemsItemCurrencyOneMax = 3;
-export const listOrdersResponseItemsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
-export const listOrdersResponseItemsItemNetTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const listOrdersResponseItemsItemNetTotalMax = 32;
-export const listOrdersResponseItemsItemTaxTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const listOrdersResponseItemsItemTaxTotalMax = 32;
-export const listOrdersResponseItemsItemShippingNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const listOrdersResponseItemsItemShippingNetAmountMax = 32;
-export const listOrdersResponseItemsItemShippingTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const listOrdersResponseItemsItemShippingTaxAmountMax = 32;
-export const listOrdersResponseItemsItemTaxSummaryItemRateMin = 0;
-export const listOrdersResponseItemsItemTaxSummaryItemNetAmountRegExp = new RegExp(
-    '^\\d+(\\.\\d+)?$'
-);
-export const listOrdersResponseItemsItemTaxSummaryItemNetAmountMax = 32;
-export const listOrdersResponseItemsItemTaxSummaryItemTaxAmountRegExp = new RegExp(
-    '^\\d+(\\.\\d+)?$'
-);
-export const listOrdersResponseItemsItemTaxSummaryItemTaxAmountMax = 32;
-export const listOrdersResponseItemsItemTaxSummaryItemGrossAmountRegExp = new RegExp(
-    '^\\d+(\\.\\d+)?$'
-);
-export const listOrdersResponseItemsItemTaxSummaryItemGrossAmountMax = 32;
-export const listOrdersResponseItemsItemShippingCostRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const listOrdersResponseItemsItemShippingCostMax = 32;
-export const listOrdersResponseItemsItemShippingAddressFullNameMax = 100;
-export const listOrdersResponseItemsItemShippingAddressStreetMax = 200;
-export const listOrdersResponseItemsItemShippingAddressCityMax = 100;
-export const listOrdersResponseItemsItemShippingAddressZipMax = 20;
-export const listOrdersResponseItemsItemShippingAddressCountryMax = 2;
-export const listOrdersResponseItemsItemShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
-export const listOrdersResponseItemsItemShippingAddressPhoneMax = 32;
-export const listOrdersResponseItemsItemBillingAddressFullNameMax = 100;
-export const listOrdersResponseItemsItemBillingAddressStreetMax = 200;
-export const listOrdersResponseItemsItemBillingAddressCityMax = 100;
-export const listOrdersResponseItemsItemBillingAddressZipMax = 20;
-export const listOrdersResponseItemsItemBillingAddressCountryMax = 2;
-export const listOrdersResponseItemsItemBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
-export const listOrdersResponseItemsItemBillingAddressPhoneMax = 32;
+export const listOrdersResponseItemsItemCurrencyMin = 3;
+export const listOrdersResponseItemsItemCurrencyMax = 3;
+export const listOrdersResponseItemsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const listOrdersResponseMetaPageDefault = 1;
 export const listOrdersResponseMetaPageMax = 10000;
 export const listOrdersResponseMetaPageSizeDefault = 10;
@@ -10978,188 +10717,6 @@ export const ListOrdersResponse = zod.strictObject({
                 .min(1)
                 .max(listOrdersResponseItemsItemIdMax)
                 .regex(listOrdersResponseItemsItemIdRegExp),
-            userId: zod
-                .string()
-                .min(1)
-                .max(listOrdersResponseItemsItemUserIdMax)
-                .regex(listOrdersResponseItemsItemUserIdRegExp)
-                .optional(),
-            email: zod.email().max(listOrdersResponseItemsItemEmailMax),
-            items: zod.array(
-                zod.strictObject({
-                    product: zod.strictObject({
-                        id: zod
-                            .string()
-                            .min(1)
-                            .max(listOrdersResponseItemsItemItemsItemProductIdMax)
-                            .regex(listOrdersResponseItemsItemItemsItemProductIdRegExp),
-                        title: zod.string(),
-                        price: zod
-                            .stringFormat(
-                                'decimal',
-                                listOrdersResponseItemsItemItemsItemProductPriceRegExp
-                            )
-                            .max(listOrdersResponseItemsItemItemsItemProductPriceMax),
-                        description: zod.string().optional(),
-                        requiresShipping: zod
-                            .boolean()
-                            .default(
-                                listOrdersResponseItemsItemItemsItemProductRequiresShippingDefault
-                            ),
-                        noWithdrawal: zod.boolean().optional(),
-                        sku: zod
-                            .string()
-                            .min(1)
-                            .max(listOrdersResponseItemsItemItemsItemProductSkuMax)
-                            .optional(),
-                        weight: zod
-                            .number()
-                            .min(listOrdersResponseItemsItemItemsItemProductWeightMin)
-                            .optional(),
-                        releaseDate: zod.iso.date().optional(),
-                        preorder: zod.boolean().optional(),
-                        categories: zod.array(zod.string()).optional(),
-                        tags: zod.array(zod.string()).optional(),
-                        createdAt: zod.iso.datetime({ offset: true }).optional(),
-                        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                        deletedAt: zod.iso.datetime({ offset: true }).optional(),
-                        taxRate: zod
-                            .number()
-                            .min(listOrdersResponseItemsItemItemsItemProductTaxRateMin)
-                            .max(listOrdersResponseItemsItemItemsItemProductTaxRateMax),
-                        rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional()
-                    }),
-                    quantity: zod.number().min(1),
-                    locale: zod
-                        .string()
-                        .max(listOrdersResponseItemsItemItemsItemLocaleMax)
-                        .regex(listOrdersResponseItemsItemItemsItemLocaleRegExp),
-                    backorderedQuantity: zod.number().min(1).optional(),
-                    promisedAt: zod.iso.date().optional(),
-                    promiseDated: zod.boolean().optional(),
-                    current: zod
-                        .strictObject({
-                            imageUrl: zod.string().min(1).optional(),
-                            thumbnailUrl: zod.string().optional()
-                        })
-                        .optional(),
-                    taxAmount: zod
-                        .stringFormat(
-                            'decimal',
-                            listOrdersResponseItemsItemItemsItemTaxAmountRegExp
-                        )
-                        .max(listOrdersResponseItemsItemItemsItemTaxAmountMax),
-                    netAmount: zod
-                        .stringFormat(
-                            'decimal',
-                            listOrdersResponseItemsItemItemsItemNetAmountRegExp
-                        )
-                        .max(listOrdersResponseItemsItemItemsItemNetAmountMax)
-                })
-            ),
-            totalItems: zod.number().min(listOrdersResponseItemsItemTotalItemsMin),
-            totalQuantity: zod.number().min(listOrdersResponseItemsItemTotalQuantityMin),
-            totalPrice: zod
-                .stringFormat('decimal', listOrdersResponseItemsItemTotalPriceRegExp)
-                .max(listOrdersResponseItemsItemTotalPriceMax),
-            currency: zod
-                .string()
-                .min(listOrdersResponseItemsItemCurrencyOneMin)
-                .max(listOrdersResponseItemsItemCurrencyOneMax)
-                .regex(listOrdersResponseItemsItemCurrencyOneRegExp),
-            termsVersion: zod.string().optional(),
-            netTotal: zod
-                .stringFormat('decimal', listOrdersResponseItemsItemNetTotalRegExp)
-                .max(listOrdersResponseItemsItemNetTotalMax),
-            taxTotal: zod
-                .stringFormat('decimal', listOrdersResponseItemsItemTaxTotalRegExp)
-                .max(listOrdersResponseItemsItemTaxTotalMax),
-            shippingNetAmount: zod
-                .stringFormat('decimal', listOrdersResponseItemsItemShippingNetAmountRegExp)
-                .max(listOrdersResponseItemsItemShippingNetAmountMax),
-            shippingTaxAmount: zod
-                .stringFormat('decimal', listOrdersResponseItemsItemShippingTaxAmountRegExp)
-                .max(listOrdersResponseItemsItemShippingTaxAmountMax),
-            taxSummary: zod.array(
-                zod.strictObject({
-                    rate: zod.number().min(listOrdersResponseItemsItemTaxSummaryItemRateMin),
-                    netAmount: zod
-                        .stringFormat(
-                            'decimal',
-                            listOrdersResponseItemsItemTaxSummaryItemNetAmountRegExp
-                        )
-                        .max(listOrdersResponseItemsItemTaxSummaryItemNetAmountMax),
-                    taxAmount: zod
-                        .stringFormat(
-                            'decimal',
-                            listOrdersResponseItemsItemTaxSummaryItemTaxAmountRegExp
-                        )
-                        .max(listOrdersResponseItemsItemTaxSummaryItemTaxAmountMax),
-                    grossAmount: zod
-                        .stringFormat(
-                            'decimal',
-                            listOrdersResponseItemsItemTaxSummaryItemGrossAmountRegExp
-                        )
-                        .max(listOrdersResponseItemsItemTaxSummaryItemGrossAmountMax)
-                })
-            ),
-            notes: zod.string().optional(),
-            shippingMethod: zod.string().optional(),
-            shippingCost: zod
-                .stringFormat('decimal', listOrdersResponseItemsItemShippingCostRegExp)
-                .max(listOrdersResponseItemsItemShippingCostMax)
-                .optional(),
-            shippingAddress: zod
-                .strictObject({
-                    fullName: zod
-                        .string()
-                        .min(1)
-                        .max(listOrdersResponseItemsItemShippingAddressFullNameMax),
-                    street: zod
-                        .string()
-                        .min(1)
-                        .max(listOrdersResponseItemsItemShippingAddressStreetMax),
-                    city: zod
-                        .string()
-                        .min(1)
-                        .max(listOrdersResponseItemsItemShippingAddressCityMax),
-                    zip: zod.string().min(1).max(listOrdersResponseItemsItemShippingAddressZipMax),
-                    country: zod
-                        .string()
-                        .max(listOrdersResponseItemsItemShippingAddressCountryMax)
-                        .regex(listOrdersResponseItemsItemShippingAddressCountryRegExp),
-                    phone: zod
-                        .string()
-                        .min(1)
-                        .max(listOrdersResponseItemsItemShippingAddressPhoneMax)
-                        .optional()
-                })
-                .optional(),
-            billingAddress: zod
-                .strictObject({
-                    fullName: zod
-                        .string()
-                        .min(1)
-                        .max(listOrdersResponseItemsItemBillingAddressFullNameMax),
-                    street: zod
-                        .string()
-                        .min(1)
-                        .max(listOrdersResponseItemsItemBillingAddressStreetMax),
-                    city: zod.string().min(1).max(listOrdersResponseItemsItemBillingAddressCityMax),
-                    zip: zod.string().min(1).max(listOrdersResponseItemsItemBillingAddressZipMax),
-                    country: zod
-                        .string()
-                        .max(listOrdersResponseItemsItemBillingAddressCountryMax)
-                        .regex(listOrdersResponseItemsItemBillingAddressCountryRegExp),
-                    phone: zod
-                        .string()
-                        .min(1)
-                        .max(listOrdersResponseItemsItemBillingAddressPhoneMax)
-                        .optional()
-                })
-                .optional(),
-            paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
-            payBy: zod.iso.datetime({ offset: true }).optional(),
             orderNumber: zod.string(),
             status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
             paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
@@ -11178,6 +10735,17 @@ export const ListOrdersResponse = zod.strictObject({
                 'partially_returned',
                 'returned'
             ]),
+            totalPrice: zod
+                .stringFormat('decimal', listOrdersResponseItemsItemTotalPriceRegExp)
+                .max(listOrdersResponseItemsItemTotalPriceMax),
+            currency: zod
+                .string()
+                .min(listOrdersResponseItemsItemCurrencyMin)
+                .max(listOrdersResponseItemsItemCurrencyMax)
+                .regex(listOrdersResponseItemsItemCurrencyRegExp),
+            paidAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true }).optional(),
+            deletedAt: zod.string().optional(),
             actions: zod.strictObject({
                 cancel: zod.boolean(),
                 pay: zod.boolean(),
@@ -11195,12 +10763,7 @@ export const ListOrdersResponse = zod.strictObject({
                 hardDelete: zod.boolean(),
                 restore: zod.boolean(),
                 invoice: zod.boolean()
-            }),
-            withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
-            paidAt: zod.iso.datetime({ offset: true }).optional(),
-            createdAt: zod.iso.datetime({ offset: true }).optional(),
-            updatedAt: zod.iso.datetime({ offset: true }).optional(),
-            deletedAt: zod.iso.datetime({ offset: true }).optional()
+            })
         })
     ),
     meta: zod.strictObject({
@@ -11579,72 +11142,11 @@ export const SearchOrdersBody = zod.strictObject({
 });
 export const searchOrdersResponseItemsItemIdMax = 64;
 export const searchOrdersResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const searchOrdersResponseItemsItemUserIdMax = 64;
-export const searchOrdersResponseItemsItemUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const searchOrdersResponseItemsItemEmailMax = 254;
-export const searchOrdersResponseItemsItemItemsItemProductIdMax = 64;
-export const searchOrdersResponseItemsItemItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const searchOrdersResponseItemsItemItemsItemProductPriceRegExp = new RegExp(
-    '^\\d+(\\.\\d+)?$'
-);
-export const searchOrdersResponseItemsItemItemsItemProductPriceMax = 32;
-export const searchOrdersResponseItemsItemItemsItemProductRequiresShippingDefault = true;
-export const searchOrdersResponseItemsItemItemsItemProductSkuMax = 64;
-export const searchOrdersResponseItemsItemItemsItemProductWeightMin = 0;
-export const searchOrdersResponseItemsItemItemsItemProductTaxRateMin = 0;
-export const searchOrdersResponseItemsItemItemsItemProductTaxRateMax = 1;
-export const searchOrdersResponseItemsItemItemsItemLocaleMax = 35;
-export const searchOrdersResponseItemsItemItemsItemLocaleRegExp = new RegExp(
-    '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
-);
-export const searchOrdersResponseItemsItemItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const searchOrdersResponseItemsItemItemsItemTaxAmountMax = 32;
-export const searchOrdersResponseItemsItemItemsItemNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const searchOrdersResponseItemsItemItemsItemNetAmountMax = 32;
-export const searchOrdersResponseItemsItemTotalItemsMin = 0;
-export const searchOrdersResponseItemsItemTotalQuantityMin = 0;
 export const searchOrdersResponseItemsItemTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const searchOrdersResponseItemsItemTotalPriceMax = 32;
-export const searchOrdersResponseItemsItemCurrencyOneMin = 3;
-export const searchOrdersResponseItemsItemCurrencyOneMax = 3;
-export const searchOrdersResponseItemsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
-export const searchOrdersResponseItemsItemNetTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const searchOrdersResponseItemsItemNetTotalMax = 32;
-export const searchOrdersResponseItemsItemTaxTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const searchOrdersResponseItemsItemTaxTotalMax = 32;
-export const searchOrdersResponseItemsItemShippingNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const searchOrdersResponseItemsItemShippingNetAmountMax = 32;
-export const searchOrdersResponseItemsItemShippingTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const searchOrdersResponseItemsItemShippingTaxAmountMax = 32;
-export const searchOrdersResponseItemsItemTaxSummaryItemRateMin = 0;
-export const searchOrdersResponseItemsItemTaxSummaryItemNetAmountRegExp = new RegExp(
-    '^\\d+(\\.\\d+)?$'
-);
-export const searchOrdersResponseItemsItemTaxSummaryItemNetAmountMax = 32;
-export const searchOrdersResponseItemsItemTaxSummaryItemTaxAmountRegExp = new RegExp(
-    '^\\d+(\\.\\d+)?$'
-);
-export const searchOrdersResponseItemsItemTaxSummaryItemTaxAmountMax = 32;
-export const searchOrdersResponseItemsItemTaxSummaryItemGrossAmountRegExp = new RegExp(
-    '^\\d+(\\.\\d+)?$'
-);
-export const searchOrdersResponseItemsItemTaxSummaryItemGrossAmountMax = 32;
-export const searchOrdersResponseItemsItemShippingCostRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const searchOrdersResponseItemsItemShippingCostMax = 32;
-export const searchOrdersResponseItemsItemShippingAddressFullNameMax = 100;
-export const searchOrdersResponseItemsItemShippingAddressStreetMax = 200;
-export const searchOrdersResponseItemsItemShippingAddressCityMax = 100;
-export const searchOrdersResponseItemsItemShippingAddressZipMax = 20;
-export const searchOrdersResponseItemsItemShippingAddressCountryMax = 2;
-export const searchOrdersResponseItemsItemShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
-export const searchOrdersResponseItemsItemShippingAddressPhoneMax = 32;
-export const searchOrdersResponseItemsItemBillingAddressFullNameMax = 100;
-export const searchOrdersResponseItemsItemBillingAddressStreetMax = 200;
-export const searchOrdersResponseItemsItemBillingAddressCityMax = 100;
-export const searchOrdersResponseItemsItemBillingAddressZipMax = 20;
-export const searchOrdersResponseItemsItemBillingAddressCountryMax = 2;
-export const searchOrdersResponseItemsItemBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
-export const searchOrdersResponseItemsItemBillingAddressPhoneMax = 32;
+export const searchOrdersResponseItemsItemCurrencyMin = 3;
+export const searchOrdersResponseItemsItemCurrencyMax = 3;
+export const searchOrdersResponseItemsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const searchOrdersResponseMetaPageDefault = 1;
 export const searchOrdersResponseMetaPageMax = 10000;
 export const searchOrdersResponseMetaPageSizeDefault = 10;
@@ -11659,194 +11161,6 @@ export const SearchOrdersResponse = zod.strictObject({
                 .min(1)
                 .max(searchOrdersResponseItemsItemIdMax)
                 .regex(searchOrdersResponseItemsItemIdRegExp),
-            userId: zod
-                .string()
-                .min(1)
-                .max(searchOrdersResponseItemsItemUserIdMax)
-                .regex(searchOrdersResponseItemsItemUserIdRegExp)
-                .optional(),
-            email: zod.email().max(searchOrdersResponseItemsItemEmailMax),
-            items: zod.array(
-                zod.strictObject({
-                    product: zod.strictObject({
-                        id: zod
-                            .string()
-                            .min(1)
-                            .max(searchOrdersResponseItemsItemItemsItemProductIdMax)
-                            .regex(searchOrdersResponseItemsItemItemsItemProductIdRegExp),
-                        title: zod.string(),
-                        price: zod
-                            .stringFormat(
-                                'decimal',
-                                searchOrdersResponseItemsItemItemsItemProductPriceRegExp
-                            )
-                            .max(searchOrdersResponseItemsItemItemsItemProductPriceMax),
-                        description: zod.string().optional(),
-                        requiresShipping: zod
-                            .boolean()
-                            .default(
-                                searchOrdersResponseItemsItemItemsItemProductRequiresShippingDefault
-                            ),
-                        noWithdrawal: zod.boolean().optional(),
-                        sku: zod
-                            .string()
-                            .min(1)
-                            .max(searchOrdersResponseItemsItemItemsItemProductSkuMax)
-                            .optional(),
-                        weight: zod
-                            .number()
-                            .min(searchOrdersResponseItemsItemItemsItemProductWeightMin)
-                            .optional(),
-                        releaseDate: zod.iso.date().optional(),
-                        preorder: zod.boolean().optional(),
-                        categories: zod.array(zod.string()).optional(),
-                        tags: zod.array(zod.string()).optional(),
-                        createdAt: zod.iso.datetime({ offset: true }).optional(),
-                        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                        deletedAt: zod.iso.datetime({ offset: true }).optional(),
-                        taxRate: zod
-                            .number()
-                            .min(searchOrdersResponseItemsItemItemsItemProductTaxRateMin)
-                            .max(searchOrdersResponseItemsItemItemsItemProductTaxRateMax),
-                        rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional()
-                    }),
-                    quantity: zod.number().min(1),
-                    locale: zod
-                        .string()
-                        .max(searchOrdersResponseItemsItemItemsItemLocaleMax)
-                        .regex(searchOrdersResponseItemsItemItemsItemLocaleRegExp),
-                    backorderedQuantity: zod.number().min(1).optional(),
-                    promisedAt: zod.iso.date().optional(),
-                    promiseDated: zod.boolean().optional(),
-                    current: zod
-                        .strictObject({
-                            imageUrl: zod.string().min(1).optional(),
-                            thumbnailUrl: zod.string().optional()
-                        })
-                        .optional(),
-                    taxAmount: zod
-                        .stringFormat(
-                            'decimal',
-                            searchOrdersResponseItemsItemItemsItemTaxAmountRegExp
-                        )
-                        .max(searchOrdersResponseItemsItemItemsItemTaxAmountMax),
-                    netAmount: zod
-                        .stringFormat(
-                            'decimal',
-                            searchOrdersResponseItemsItemItemsItemNetAmountRegExp
-                        )
-                        .max(searchOrdersResponseItemsItemItemsItemNetAmountMax)
-                })
-            ),
-            totalItems: zod.number().min(searchOrdersResponseItemsItemTotalItemsMin),
-            totalQuantity: zod.number().min(searchOrdersResponseItemsItemTotalQuantityMin),
-            totalPrice: zod
-                .stringFormat('decimal', searchOrdersResponseItemsItemTotalPriceRegExp)
-                .max(searchOrdersResponseItemsItemTotalPriceMax),
-            currency: zod
-                .string()
-                .min(searchOrdersResponseItemsItemCurrencyOneMin)
-                .max(searchOrdersResponseItemsItemCurrencyOneMax)
-                .regex(searchOrdersResponseItemsItemCurrencyOneRegExp),
-            termsVersion: zod.string().optional(),
-            netTotal: zod
-                .stringFormat('decimal', searchOrdersResponseItemsItemNetTotalRegExp)
-                .max(searchOrdersResponseItemsItemNetTotalMax),
-            taxTotal: zod
-                .stringFormat('decimal', searchOrdersResponseItemsItemTaxTotalRegExp)
-                .max(searchOrdersResponseItemsItemTaxTotalMax),
-            shippingNetAmount: zod
-                .stringFormat('decimal', searchOrdersResponseItemsItemShippingNetAmountRegExp)
-                .max(searchOrdersResponseItemsItemShippingNetAmountMax),
-            shippingTaxAmount: zod
-                .stringFormat('decimal', searchOrdersResponseItemsItemShippingTaxAmountRegExp)
-                .max(searchOrdersResponseItemsItemShippingTaxAmountMax),
-            taxSummary: zod.array(
-                zod.strictObject({
-                    rate: zod.number().min(searchOrdersResponseItemsItemTaxSummaryItemRateMin),
-                    netAmount: zod
-                        .stringFormat(
-                            'decimal',
-                            searchOrdersResponseItemsItemTaxSummaryItemNetAmountRegExp
-                        )
-                        .max(searchOrdersResponseItemsItemTaxSummaryItemNetAmountMax),
-                    taxAmount: zod
-                        .stringFormat(
-                            'decimal',
-                            searchOrdersResponseItemsItemTaxSummaryItemTaxAmountRegExp
-                        )
-                        .max(searchOrdersResponseItemsItemTaxSummaryItemTaxAmountMax),
-                    grossAmount: zod
-                        .stringFormat(
-                            'decimal',
-                            searchOrdersResponseItemsItemTaxSummaryItemGrossAmountRegExp
-                        )
-                        .max(searchOrdersResponseItemsItemTaxSummaryItemGrossAmountMax)
-                })
-            ),
-            notes: zod.string().optional(),
-            shippingMethod: zod.string().optional(),
-            shippingCost: zod
-                .stringFormat('decimal', searchOrdersResponseItemsItemShippingCostRegExp)
-                .max(searchOrdersResponseItemsItemShippingCostMax)
-                .optional(),
-            shippingAddress: zod
-                .strictObject({
-                    fullName: zod
-                        .string()
-                        .min(1)
-                        .max(searchOrdersResponseItemsItemShippingAddressFullNameMax),
-                    street: zod
-                        .string()
-                        .min(1)
-                        .max(searchOrdersResponseItemsItemShippingAddressStreetMax),
-                    city: zod
-                        .string()
-                        .min(1)
-                        .max(searchOrdersResponseItemsItemShippingAddressCityMax),
-                    zip: zod
-                        .string()
-                        .min(1)
-                        .max(searchOrdersResponseItemsItemShippingAddressZipMax),
-                    country: zod
-                        .string()
-                        .max(searchOrdersResponseItemsItemShippingAddressCountryMax)
-                        .regex(searchOrdersResponseItemsItemShippingAddressCountryRegExp),
-                    phone: zod
-                        .string()
-                        .min(1)
-                        .max(searchOrdersResponseItemsItemShippingAddressPhoneMax)
-                        .optional()
-                })
-                .optional(),
-            billingAddress: zod
-                .strictObject({
-                    fullName: zod
-                        .string()
-                        .min(1)
-                        .max(searchOrdersResponseItemsItemBillingAddressFullNameMax),
-                    street: zod
-                        .string()
-                        .min(1)
-                        .max(searchOrdersResponseItemsItemBillingAddressStreetMax),
-                    city: zod
-                        .string()
-                        .min(1)
-                        .max(searchOrdersResponseItemsItemBillingAddressCityMax),
-                    zip: zod.string().min(1).max(searchOrdersResponseItemsItemBillingAddressZipMax),
-                    country: zod
-                        .string()
-                        .max(searchOrdersResponseItemsItemBillingAddressCountryMax)
-                        .regex(searchOrdersResponseItemsItemBillingAddressCountryRegExp),
-                    phone: zod
-                        .string()
-                        .min(1)
-                        .max(searchOrdersResponseItemsItemBillingAddressPhoneMax)
-                        .optional()
-                })
-                .optional(),
-            paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
-            payBy: zod.iso.datetime({ offset: true }).optional(),
             orderNumber: zod.string(),
             status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled']),
             paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
@@ -11865,6 +11179,17 @@ export const SearchOrdersResponse = zod.strictObject({
                 'partially_returned',
                 'returned'
             ]),
+            totalPrice: zod
+                .stringFormat('decimal', searchOrdersResponseItemsItemTotalPriceRegExp)
+                .max(searchOrdersResponseItemsItemTotalPriceMax),
+            currency: zod
+                .string()
+                .min(searchOrdersResponseItemsItemCurrencyMin)
+                .max(searchOrdersResponseItemsItemCurrencyMax)
+                .regex(searchOrdersResponseItemsItemCurrencyRegExp),
+            paidAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true }).optional(),
+            deletedAt: zod.string().optional(),
             actions: zod.strictObject({
                 cancel: zod.boolean(),
                 pay: zod.boolean(),
@@ -11882,12 +11207,7 @@ export const SearchOrdersResponse = zod.strictObject({
                 hardDelete: zod.boolean(),
                 restore: zod.boolean(),
                 invoice: zod.boolean()
-            }),
-            withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
-            paidAt: zod.iso.datetime({ offset: true }).optional(),
-            createdAt: zod.iso.datetime({ offset: true }).optional(),
-            updatedAt: zod.iso.datetime({ offset: true }).optional(),
-            deletedAt: zod.iso.datetime({ offset: true }).optional()
+            })
         })
     ),
     meta: zod.strictObject({
@@ -16387,24 +15707,6 @@ export const listReturnsResponseItemsItemIdMax = 64;
 export const listReturnsResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listReturnsResponseItemsItemOrderIdMax = 64;
 export const listReturnsResponseItemsItemOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listReturnsResponseItemsItemCurrencyOneMin = 3;
-export const listReturnsResponseItemsItemCurrencyOneMax = 3;
-export const listReturnsResponseItemsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
-export const listReturnsResponseItemsItemFulfillmentOrderIdMax = 64;
-export const listReturnsResponseItemsItemFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listReturnsResponseItemsItemNoteMax = 1000;
-export const listReturnsResponseItemsItemLinesItemProductIdMax = 64;
-export const listReturnsResponseItemsItemLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listReturnsResponseItemsItemLinesItemUnitPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const listReturnsResponseItemsItemLinesItemUnitPriceMax = 32;
-export const listReturnsResponseItemsItemLinesItemRestockedMin = 0;
-export const listReturnsResponseItemsItemDeclineMessageMax = 500;
-export const listReturnsResponseItemsItemHandlingDeductionRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const listReturnsResponseItemsItemHandlingDeductionMax = 32;
-export const listReturnsResponseItemsItemRefundAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
-export const listReturnsResponseItemsItemRefundAmountMax = 32;
-export const listReturnsResponseItemsItemProofCarrierMax = 200;
-export const listReturnsResponseItemsItemProofReferenceMax = 200;
 export const listReturnsResponseMetaPageDefault = 1;
 export const listReturnsResponseMetaPageMax = 10000;
 export const listReturnsResponseMetaPageSizeDefault = 10;
@@ -16425,11 +15727,6 @@ export const ListReturnsResponse = zod.strictObject({
                 .max(listReturnsResponseItemsItemOrderIdMax)
                 .regex(listReturnsResponseItemsItemOrderIdRegExp),
             orderNumber: zod.string(),
-            currency: zod
-                .string()
-                .min(listReturnsResponseItemsItemCurrencyOneMin)
-                .max(listReturnsResponseItemsItemCurrencyOneMax)
-                .regex(listReturnsResponseItemsItemCurrencyOneRegExp),
             status: zod.enum([
                 'requested',
                 'approved',
@@ -16440,66 +15737,8 @@ export const ListReturnsResponse = zod.strictObject({
             ]),
             reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
             kind: zod.enum(['return', 'cancellation']),
-            fulfillmentOrderId: zod
-                .string()
-                .min(1)
-                .max(listReturnsResponseItemsItemFulfillmentOrderIdMax)
-                .regex(listReturnsResponseItemsItemFulfillmentOrderIdRegExp)
-                .optional(),
-            note: zod.string().max(listReturnsResponseItemsItemNoteMax).optional(),
-            lines: zod.array(
-                zod.strictObject({
-                    productId: zod
-                        .string()
-                        .min(1)
-                        .max(listReturnsResponseItemsItemLinesItemProductIdMax)
-                        .regex(listReturnsResponseItemsItemLinesItemProductIdRegExp),
-                    quantity: zod.number().min(1),
-                    title: zod.string(),
-                    unitPrice: zod
-                        .stringFormat(
-                            'decimal',
-                            listReturnsResponseItemsItemLinesItemUnitPriceRegExp
-                        )
-                        .max(listReturnsResponseItemsItemLinesItemUnitPriceMax),
-                    restocked: zod
-                        .number()
-                        .min(listReturnsResponseItemsItemLinesItemRestockedMin)
-                        .optional()
-                })
-            ),
-            returnPostage: zod.enum(['consumer', 'shop']),
             requestedAt: zod.iso.datetime({ offset: true }),
-            statedVia: zod.enum(['online', 'phone', 'email', 'letter', 'other']).optional(),
-            openedBy: zod.enum(['buyer', 'staff']),
-            policyExceptions: zod.array(zod.enum(['window_closed', 'excluded_goods'])),
-            declineReason: zod
-                .enum(['return_period_ended', 'not_returnable', 'no_defect_found', 'other'])
-                .optional(),
-            declineMessage: zod
-                .string()
-                .max(listReturnsResponseItemsItemDeclineMessageMax)
-                .optional(),
-            decidedAt: zod.iso.datetime({ offset: true }).optional(),
-            preferredRemedy: zod.enum(['refund', 'replace', 'repair']).optional(),
-            receivedAt: zod.iso.datetime({ offset: true }).optional(),
-            remedy: zod.enum(['refund', 'replace', 'repair']).optional(),
-            handlingDeduction: zod
-                .stringFormat('decimal', listReturnsResponseItemsItemHandlingDeductionRegExp)
-                .max(listReturnsResponseItemsItemHandlingDeductionMax)
-                .optional(),
-            refundAmount: zod
-                .stringFormat('decimal', listReturnsResponseItemsItemRefundAmountRegExp)
-                .max(listReturnsResponseItemsItemRefundAmountMax)
-                .optional(),
-            proofOfSendingAt: zod.iso.datetime({ offset: true }).optional(),
-            proofCarrier: zod.string().max(listReturnsResponseItemsItemProofCarrierMax).optional(),
-            proofReference: zod
-                .string()
-                .max(listReturnsResponseItemsItemProofReferenceMax)
-                .optional(),
-            closedAt: zod.iso.datetime({ offset: true }).optional(),
-            canceledAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true }),
             actions: zod.strictObject({
                 approve: zod.boolean(),
                 decline: zod.boolean(),
@@ -16507,9 +15746,7 @@ export const ListReturnsResponse = zod.strictObject({
                 recordProof: zod.boolean(),
                 close: zod.boolean(),
                 cancel: zod.boolean()
-            }),
-            createdAt: zod.iso.datetime({ offset: true }),
-            updatedAt: zod.iso.datetime({ offset: true }).optional()
+            })
         })
     ),
     meta: zod.strictObject({

@@ -61,6 +61,10 @@ and a client module is one folder and one registry line away from using it.
 other admin list. `pageTotal` comes from the server's own `meta.totalPages` (`useServerPageTotal`),
 never from the rows already cached.
 
+A row is a `TaskListItem`: the sender, subject, status and a `messagePreview` of the first 160
+characters. The whole message and the staff notes are `TaskDetail`'s, behind the row's Open button:
+that read is the audited one, so the inbox itself carries no whole message.
+
 Every page is read through `POST /tasks/search`, never `GET /tasks`: the GET answers
 `Cache-Control: private, max-age=30`, so a reload right after a delete could be a browser cache hit
 handing the deleted row back. A POST body is never browser-cached.

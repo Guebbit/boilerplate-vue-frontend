@@ -89,6 +89,11 @@ Store `users`, from `store.ts`. Only what the setup function returns is listed �
 | **Getters** | `usersList` · `currentUser` · `loading` · `pageTotal` · `pageItemList`                                                                                                                       | Computed, derived from state. Read-only by construction.         |
 | **Actions** | `addUser` · `fetchUsers` · `fetchPaginationUsers` · `watchSearchUsers` · `fetchUser` · `watchUser` · `createUser` · `updateUser` · `deleteUser` · `hardDeleteUser` · `adminDisableTwoFactor` | Everything that changes state or calls the API.                  |
 
+The list answers a `UserListItem`, not the whole account: the table's fields, and the full record comes
+from the audited detail read. The list view reads with `partial: true`, so a row merges over a full
+account the store already holds instead of replacing it, and the detail page still reads the whole
+record.
+
 ## Screens
 
 | Path             | Route name   | Access | Permission    | View                   |
