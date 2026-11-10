@@ -3228,25 +3228,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/Address"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: addresses
   /account/addresses/{addressId}:
     get:
@@ -3859,23 +3859,23 @@ paths:
               schema:
                 $ref: "#/components/schemas/Account"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: account
   /account/password/reset:
     post:
@@ -5634,25 +5634,25 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: tasks
     get:
       x-cache: private-no-cache
@@ -6330,27 +6330,27 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: tasks
   /products:
     x-versioned:
@@ -6522,25 +6522,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/Product"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: products
   /products/facets:
     get:
@@ -7129,27 +7129,27 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: cart
     delete:
       tags:
@@ -7488,27 +7488,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: cart
   /cart/reorder:
     post:
@@ -7558,27 +7558,27 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: cart
   /wishlist:
     get:
@@ -7963,27 +7963,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: orders
   /orders/search:
     post:
@@ -8835,27 +8835,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Payment"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: payments
   /orders/{id}/process:
     x-versioned:
@@ -9126,27 +9126,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Refund"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: payments
   /payments/{id}/refunds/{refundId}:
     get:
@@ -9299,27 +9299,27 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: payments
   /payments/{id}/sync:
     post:
@@ -9701,27 +9701,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Shipment"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: delivery
   /delivery/fulfillment-orders/{id}/fulfill:
     post:
@@ -9774,23 +9774,23 @@ paths:
               schema:
                 $ref: "#/components/schemas/Shipment"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: delivery
   /delivery/fulfillment-orders/{id}/hold:
     post:
@@ -10233,27 +10233,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Return"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: returns
   /returns/options:
     get:
@@ -10542,27 +10542,27 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: returns
   /inventory/levels:
     get:
@@ -10809,27 +10809,27 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: inventory
   /inventory/levels/{productId}/adjust:
     post:
@@ -10890,13 +10890,13 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
           description: The correction would leave fewer units than are already reserved
           headers:
@@ -10912,22 +10912,24 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
+            Idempotent-Replayed:
+              $ref: "#/components/headers/Idempotent-Replayed"
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: inventory
   /inventory/reservations/sweep:
     post:
@@ -12560,25 +12562,25 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: cart
   /orders/export:
     get:
@@ -12821,27 +12823,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/OrderTimelineEntry"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: orders
   /orders/{id}/timeline/notes/{eventId}:
     delete:
@@ -13416,23 +13418,23 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: payments
   /payments/{id}/refunds/{refundId}/cancel:
     post:
@@ -13498,27 +13500,27 @@ paths:
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "404":
-          $ref: "#/components/responses/NotFound"
+          $ref: "#/components/responses/NotFoundReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: payments
   /delivery/fulfillment-orders/release-date-impact:
     get:
@@ -14986,25 +14988,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/Example"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/BadRequestReplayable"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/UnauthorizedReplayable"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenReplayable"
         "409":
-          $ref: "#/components/responses/Conflict"
+          $ref: "#/components/responses/ConflictReplayable"
         "413":
-          $ref: "#/components/responses/PayloadTooLarge"
+          $ref: "#/components/responses/PayloadTooLargeReplayable"
         "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+          $ref: "#/components/responses/UnsupportedMediaTypeReplayable"
         "422":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/ValidationErrorReplayable"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
-          $ref: "#/components/responses/InternalError"
+          $ref: "#/components/responses/InternalErrorReplayable"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          $ref: "#/components/responses/ServiceUnavailableReplayable"
       x-module: example
   /examples/search:
     post:
@@ -16182,7 +16184,7 @@ components:
         maxLength: 202
         pattern: ^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$
       description: |
-        An opaque, client-generated value (a UUID by convention) that makes a retried write safe, and that this route REQUIRES: a request without it answers 400 (`IDEMPOTENCY_KEY_REQUIRED`) and nothing is written. Repeating the request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write); the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409.
+        An opaque, client-generated value (a UUID by convention) that makes a retried write safe, and that this route REQUIRES: a request without it answers 400 (`IDEMPOTENCY_KEY_REQUIRED`) and nothing is written. Repeating the request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write); the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. A 429 is never stored: every budget refuses before the key is claimed, so a retry after `Retry-After` with the same key runs for real.
     IdempotencyKeyHeader:
       name: Idempotency-Key
       in: header
@@ -16193,7 +16195,7 @@ components:
         maxLength: 202
         pattern: ^("[A-Za-z0-9_-]{1,200}"|[A-Za-z0-9_-]{1,200})$
       description: |
-        An opaque, client-generated value (a UUID by convention) that makes a retried write safe. A key belongs to its caller (the account, or the address on a public route): two callers sending the same value never see each other's replies. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.
+        An opaque, client-generated value (a UUID by convention) that makes a retried write safe. A key belongs to its caller (the account, or the address on a public route): two callers sending the same value never see each other's replies. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. A 429 is never stored: every budget refuses before the key is claimed, so a retry after `Retry-After` with the same key runs for real. Omitting the header simply forgoes replay protection — the write still happens normally.
     IfMatchHeader:
       name: If-Match
       in: header
@@ -16380,7 +16382,7 @@ components:
         type: string
     Idempotent-Replayed:
       required: false
-      description: "`true` when this answer is the stored first answer replayed for a repeated `Idempotency-Key`, not a fresh run: nothing was written a second time. Absent on a first run. Sent on a replay only."
+      description: "`true` when this answer is the stored first answer replayed for a repeated `Idempotency-Key`, not a fresh run: nothing was written a second time. Absent on a first run. Sent on a replay only. Declared on every answer of an operation that takes an `Idempotency-Key` except a 429, which the ledger never sees."
       schema:
         type: string
         enum:
@@ -16715,6 +16717,250 @@ components:
           $ref: "#/components/headers/RateLimit"
         ETag:
           $ref: "#/components/headers/EntityTag"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    BadRequestReplayable:
+      description: "The request could not be understood or authenticated as what it claims to be — distinct from `ValidationError`, which is a well-formed request whose FIELDS are wrong. Used where a caller is a machine rather than a form: an unverifiable webhook signature is the case that needs it."
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnauthorizedReplayable:
+      description: Unauthorized
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        WWW-Authenticate:
+          $ref: "#/components/headers/WWW-Authenticate"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ForbiddenReplayable:
+      description: Forbidden
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ConflictReplayable:
+      description: The request conflicts with the current state of the resource
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    PayloadTooLargeReplayable:
+      description: "The request body is larger than this deployment accepts: a JSON body over `NODE_JSON_BODY_LIMIT` (100kb by default), an uploaded file over `NODE_MAX_UPLOAD_BYTES`, or a multipart field value over 100 KB. Refused by the body parser or the upload middleware, which is why it is declared for every body-accepting operation rather than by hand. The other multipart limits (counts, shapes) answer `400`."
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnsupportedMediaTypeReplayable:
+      description: The body's media type is not one the operation declares (`details.accepted` lists them), or its charset or encoding cannot be read. Refused before any route runs, like `413` above. A request with no body is never judged. A `DELETE` that declares no body refuses any body, and `details.accepted` is then empty.
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        Accept:
+          description: The media types the operation takes, comma-separated (RFC 9110 §12.5.1). Absent when the operation declares no body.
+          required: false
+          schema:
+            type: string
+        Accept-Patch:
+          description: The same list, on a refused `PATCH` only (RFC 5789 §2.2).
+          required: false
+          schema:
+            type: string
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ValidationErrorReplayable:
+      description: Validation failed
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    InternalErrorReplayable:
+      description: Internal server error
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ServiceUnavailableReplayable:
+      description: "A dependency the request needed (Mongo, Redis) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from."
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        Retry-After:
+          $ref: "#/components/headers/Retry-After"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFoundReplayable:
+      description: Resource not found
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/CacheControlNoStore"
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+        Content-Language:
+          $ref: "#/components/headers/ContentLanguage"
+        Vary:
+          $ref: "#/components/headers/Vary"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        RateLimit:
+          $ref: "#/components/headers/RateLimit"
+        ETag:
+          $ref: "#/components/headers/EntityTag"
+        Idempotent-Replayed:
+          $ref: "#/components/headers/Idempotent-Replayed"
       content:
         application/problem+json:
           schema:

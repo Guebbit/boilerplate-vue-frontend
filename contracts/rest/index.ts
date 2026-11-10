@@ -7772,6 +7772,56 @@ export type ServiceUnavailableResponse = Problem;
  */
 export type InternalErrorResponse = Problem;
 
+/**
+ * The request could not be understood or authenticated as what it claims to be — distinct from `ValidationError`, which is a well-formed request whose FIELDS are wrong. Used where a caller is a machine rather than a form: an unverifiable webhook signature is the case that needs it.
+ */
+export type BadRequestReplayableResponse = Problem;
+
+/**
+ * Unauthorized
+ */
+export type UnauthorizedReplayableResponse = Problem;
+
+/**
+ * Forbidden
+ */
+export type ForbiddenReplayableResponse = Problem;
+
+/**
+ * The request conflicts with the current state of the resource
+ */
+export type ConflictReplayableResponse = Problem;
+
+/**
+ * The request body is larger than this deployment accepts: a JSON body over `NODE_JSON_BODY_LIMIT` (100kb by default), an uploaded file over `NODE_MAX_UPLOAD_BYTES`, or a multipart field value over 100 KB. Refused by the body parser or the upload middleware, which is why it is declared for every body-accepting operation rather than by hand. The other multipart limits (counts, shapes) answer `400`.
+ */
+export type PayloadTooLargeReplayableResponse = Problem;
+
+/**
+ * The body's media type is not one the operation declares (`details.accepted` lists them), or its charset or encoding cannot be read. Refused before any route runs, like `413` above. A request with no body is never judged. A `DELETE` that declares no body refuses any body, and `details.accepted` is then empty.
+ */
+export type UnsupportedMediaTypeReplayableResponse = Problem;
+
+/**
+ * Validation failed
+ */
+export type ValidationErrorReplayableResponse = Problem;
+
+/**
+ * Internal server error
+ */
+export type InternalErrorReplayableResponse = Problem;
+
+/**
+ * A dependency the request needed (Mongo, Redis) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from.
+ */
+export type ServiceUnavailableReplayableResponse = Problem;
+
+/**
+ * Resource not found
+ */
+export type NotFoundReplayableResponse = Problem;
+
 export type PageParamParameter = Page;
 
 export type PageSizeParamParameter = PageSize;
@@ -7784,12 +7834,12 @@ export type TextParamParameter = Text;
 export type AntibotChallengeTokenHeaderParameter = string;
 
 /**
- * An opaque, client-generated value (a UUID by convention) that makes a retried write safe, and that this route REQUIRES: a request without it answers 400 (`IDEMPOTENCY_KEY_REQUIRED`) and nothing is written. Repeating the request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write); the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409.
+ * An opaque, client-generated value (a UUID by convention) that makes a retried write safe, and that this route REQUIRES: a request without it answers 400 (`IDEMPOTENCY_KEY_REQUIRED`) and nothing is written. Repeating the request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write); the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. A 429 is never stored: every budget refuses before the key is claimed, so a retry after `Retry-After` with the same key runs for real.
  */
 export type RequiredIdempotencyKeyHeaderParameter = string;
 
 /**
- * An opaque, client-generated value (a UUID by convention) that makes a retried write safe. A key belongs to its caller (the account, or the address on a public route): two callers sending the same value never see each other's replies. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. Omitting the header simply forgoes replay protection — the write still happens normally.
+ * An opaque, client-generated value (a UUID by convention) that makes a retried write safe. A key belongs to its caller (the account, or the address on a public route): two callers sending the same value never see each other's replies. Repeating this request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write) instead of running it again; the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. A 429 is never stored: every budget refuses before the key is claimed, so a retry after `Retry-After` with the same key runs for real. Omitting the header simply forgoes replay protection — the write still happens normally.
  */
 export type IdempotencyKeyHeaderParameter = string;
 
