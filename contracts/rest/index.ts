@@ -2098,6 +2098,8 @@ export interface ExportOrder {
     totalPrice: NonNegativeDecimalAmount;
     /** ISO-4217 currency code this order was priced in (e.g. EUR). */
     readonly currency: CurrencyCode;
+    /** The Terms version in force when the buyer placed the order at checkout; absent on staff-placed orders. */
+    readonly termsVersion?: string;
     /** Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. */
     readonly netTotal: NonNegativeDecimalAmount;
     /** Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. */

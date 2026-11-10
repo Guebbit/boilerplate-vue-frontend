@@ -4270,6 +4270,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .min(downloadAccountExportResponseOrdersItemCurrencyOneMin)
                 .max(downloadAccountExportResponseOrdersItemCurrencyOneMax)
                 .regex(downloadAccountExportResponseOrdersItemCurrencyOneRegExp),
+            termsVersion: zod.string().optional(),
             netTotal: zod
                 .stringFormat('decimal', downloadAccountExportResponseOrdersItemNetTotalRegExp)
                 .max(downloadAccountExportResponseOrdersItemNetTotalMax),
