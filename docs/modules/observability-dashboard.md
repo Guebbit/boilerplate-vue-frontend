@@ -55,8 +55,7 @@ feeds the realtime playground, the other screen this same module owns.
 | `GET /observability/events`           | registered here, consumed by the realtime playground's screen | none: registered here, no composable calls it |
 | `GET /observability/audit`            | the Audit tab's table                                         | `use-audit-trail`                             |
 
-All five are registered through this module's manifest, so enabling the domain turns their contract
-validation on and deleting the folder turns it off. There is no shared table to remember to edit.
+All five are registered through this module's manifest, so their contract validation follows the module: [why](../theory/modules.md#the-one-arrow-that-cannot-point-down). Two of the five have no composable.
 
 ## Why `types.ts` exists here
 

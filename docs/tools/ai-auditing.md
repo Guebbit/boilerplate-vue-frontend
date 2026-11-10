@@ -96,7 +96,7 @@ Owned by the backend: [The two-pass method](https://github.com/Guebbit/boilerpla
 
 Owned by the backend: [How to run one](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#how-to-run-one).
 
-This repo's delta: `design-manual` needs a model that can read images, because its reviewers read the capture's PNG tiles. The mutation report that `test-honesty` reads is `reports/mutation/mutation.json`.
+This repo's delta: `design-manual` needs a model that can read images; the screenshots go only into the reviewing session's own context, and nothing is uploaded to an image service. The mutation report that `test-honesty` reads is `reports/mutation/mutation.json`.
 
 ## `test-honesty`: a test is innocent once it has failed
 
