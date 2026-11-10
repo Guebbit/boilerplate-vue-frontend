@@ -1,6 +1,6 @@
 /**
  * @module
- * Conditional writes, client side: remember the `ETag` a read or a write answered with, and send it
+ * Conditional writes, client side: remember the `ETag` a GET or PATCH answered with, and send it
  * back as `If-Match` on the next PUT/PATCH/DELETE of the same resource. The server refuses with 412
  * when someone else changed the record in between; a form turns that into "reload".
  *

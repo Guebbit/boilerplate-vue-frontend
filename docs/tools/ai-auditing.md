@@ -16,22 +16,24 @@ names mean, the tripwire) live in
 
 ## The one rule
 
-Owned by the backend, and the same here: [The one rule](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [The one rule](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#the-one-rule).
 
 ## The prompts
 
-| File                                          | Asks                                                                                                                                                                                                                                                                                                   | Writes to                                   |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
-| `scripts/audit/spec-drift/SKILL.md`           | Which tests assert what the **code** does rather than what the **spec** says?                                                                                                                                                                                                                          | `reports/audit-<run>/spec-drift/`           |
-| `scripts/audit/spec-gaps/SKILL.md`            | Which business rules and security boundaries have **zero** coverage?                                                                                                                                                                                                                                   | `reports/audit-<run>/spec-gaps/`            |
-| `scripts/audit/suite-bloat/SKILL.md`          | Which tests cost CI time and discriminate nothing?                                                                                                                                                                                                                                                     | `reports/audit-<run>/suite-bloat/`          |
-| `scripts/audit/test-honesty/SKILL.md`         | Which tests stay green when the behaviour they claim to check is broken? See [below](#test-honesty-a-test-is-innocent-once-it-has-failed).                                                                                                                                                             | `reports/audit-<run>/test-honesty/`         |
-| `scripts/audit/accessibility-manual/SKILL.md` | Which accessibility defects live in the ~60–70% axe/eslint/keyboard.cy.ts structurally can't reach — see [Accessibility Testing](./accessibility-testing.md)?                                                                                                                                          | `reports/audit-<run>/accessibility-manual/` |
-| `scripts/audit/design-manual/SKILL.md`        | Which design defects do the screenshots show that no automated check can? See [Design Review](./design-review.md).                                                                                                                                                                                     | `reports/audit/design-manual/`              |
-| `scripts/audit/css-invasive/SKILL.md`         | Which CSS answers a question Vuetify or Tailwind already answer, beyond the hits `npm run audit:css` gates? See [Design Lint](./design-lint.md#the-invasive-css-scan).                                                                                                                                 | `reports/audit-<run>/css-invasive/`         |
-| `scripts/audit/unused-locale-keys/SKILL.md`   | Which locale keys does nothing in the app read? A report-only scan (`npm run audit:locale-keys`), then a judgement on each candidate.                                                                                                                                                                  |
-| `scripts/audit/ddd-drift/SKILL.md`            | Where do the strategic-DDD claims (module labels, barrels, who decides a rule) and the code disagree, beyond what the module lint and the specs see? Mirrors `../boilerplate-node-backend/scripts/audit/ddd-drift/SKILL.md`; F2 (FE) and C1 (BE) are one rule seen from each side.                     | `reports/audit-<run>/ddd-drift/`            |
-| `scripts/audit/code-shape/SKILL.md`           | Which code does not earn its place: shallow functions, pass-throughs, lazy files, speculative generality, large classes, repeated switches, dead code (`knip`) and copy-paste (`jscpd`)? Counters run first (`npm run audit:shallow`, `audit:unused`, `audit:duplicates`); `.vue` callers are counted. | `reports/audit-<run>/code-shape/`           |
+| File                                  | Asks                                                                                                                                       | Writes to                          |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
+| `scripts/audit/spec-drift/SKILL.md`   | Which tests assert what the **code** does rather than what the **spec** says?                                                              | `reports/audit-<run>/spec-drift/`  |
+| `scripts/audit/spec-gaps/SKILL.md`    | Which business rules and security boundaries have **zero** coverage?                                                                       | `reports/audit-<run>/spec-gaps/`   |
+| `scripts/audit/suite-bloat/SKILL.md`  | Which tests cost CI time and discriminate nothing?                                                                                         | `reports/audit-<run>/suite-bloat/` |
+| `scripts/audit/test-honesty/SKILL.md` | Which tests stay green when the behaviour they claim to check is broken? See [below](#test-honesty-a-test-is-innocent-once-it-has-failed). |
+
+This repo's delta: two blind spots are marked `UNVERIFIED` because Stryker cannot see them, Cypress specs and logic inside `.vue` files. A whole-component `toMatchSnapshot()` is a named shape, the "snapshot dump". | `reports/audit-<run>/test-honesty/` |
+| `scripts/audit/accessibility-manual/SKILL.md` | Which accessibility defects live in the ~60–70% axe/eslint/keyboard.cy.ts structurally can't reach — see [Accessibility Testing](./accessibility-testing.md)? | `reports/audit-<run>/accessibility-manual/` |
+| `scripts/audit/design-manual/SKILL.md` | Which design defects do the screenshots show that no automated check can? See [Design Review](./design-review.md). | `reports/audit/design-manual/` |
+| `scripts/audit/css-invasive/SKILL.md` | Which CSS answers a question Vuetify or Tailwind already answer, beyond the hits `npm run audit:css` gates? See [Design Lint](./design-lint.md#the-invasive-css-scan). | `reports/audit-<run>/css-invasive/` |
+| `scripts/audit/unused-locale-keys/SKILL.md` | Which locale keys does nothing in the app read? A report-only scan (`npm run audit:locale-keys`), then a judgement on each candidate. |
+| `scripts/audit/ddd-drift/SKILL.md` | Where do the strategic-DDD claims (module labels, barrels, who decides a rule) and the code disagree, beyond what the module lint and the specs see? Mirrors `../boilerplate-node-backend/scripts/audit/ddd-drift/SKILL.md`; F2 (FE) and C1 (BE) are one rule seen from each side. | `reports/audit-<run>/ddd-drift/` |
+| `scripts/audit/code-shape/SKILL.md` | Which code does not earn its place: shallow functions, pass-throughs, lazy files, speculative generality, large classes, repeated switches, dead code (`knip`) and copy-paste (`jscpd`)? Counters run first (`npm run audit:shallow`, `audit:unused`, `audit:duplicates`); `.vue` callers are counted. | `reports/audit-<run>/code-shape/` |
 
 The first four take one argument — a module (`orders`), a path, or `--diff` for whatever the
 working tree touched. `accessibility-manual` takes the same shape but defaults an empty scope to
@@ -74,27 +76,31 @@ its own findings, so the backend's copy is _expected_ to differ and must not be 
 
 ### Naming the scope
 
-Owned by the backend, and the same here: [Naming the scope](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [Naming the scope](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#naming-the-scope).
 
 ### The tripwire
 
-Owned by the backend, and the same here: [The tripwire](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [The tripwire](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#the-tripwire).
 
 ### The reports are disposable
 
-Owned by the backend, and the same here: [The reports are disposable](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [The reports are disposable](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#the-reports-are-disposable).
+
+This repo's delta: the report folder is `reports/audit-<run>/`, not `tmp/reports`. `design-manual` is the exception and keeps one fixed folder, `reports/audit/design-manual/`.
 
 ## The two-pass method
 
-Owned by the backend, and the same here: [The two-pass method](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [The two-pass method](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#the-two-pass-method).
 
 ## How to run one
 
-Owned by the backend, and the same here: [How to run one](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [How to run one](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#how-to-run-one).
+
+This repo's delta: `design-manual` needs a model that can read images, because its reviewers read the capture's PNG tiles. The mutation report that `test-honesty` reads is `reports/mutation/mutation.json`.
 
 ## `test-honesty`: a test is innocent once it has failed
 
-Owned by the backend, and the same here: [test-honesty: a test is innocent once it has failed](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [test-honesty: a test is innocent once it has failed](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#test-honesty-a-test-is-innocent-once-it-has-failed).
 
 ## Reading the output
 
@@ -207,7 +213,7 @@ apart — not on a schedule.
 
 ## Footnote: the tools we evaluated, and why none were adopted
 
-Owned by the backend, and the same here: [Footnote: the tools we evaluated, and why none were adopted](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [Footnote: the tools we evaluated, and why none were adopted](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#footnote-the-tools-we-evaluated-and-why-none-were-adopted).
 
 ## Related
 

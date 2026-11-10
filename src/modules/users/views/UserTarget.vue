@@ -135,7 +135,7 @@ const {
 } = useUserAccessDialog();
 
 /**
- * This action's own blocked state — same reasoning as {@link disableTwoFactorError} below.
+ * This action's own blocked state: a failed access change is shown inline by the page, not as a toast.
  */
 const {
     message: accessError,

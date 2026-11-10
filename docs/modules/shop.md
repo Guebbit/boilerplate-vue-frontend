@@ -6,18 +6,10 @@
 **Breaks if you change** — the barrel's readers (`shopCurrency`, `shipToCountries`, `backorderPromiseDays`, `loadShop`). Four modules import them.
 :::
 
-| Fact                    | This module                              |
-| ----------------------- | ---------------------------------------- |
-| **Subdomain**           | `supporting`                             |
-| **Screens**             | 0                                        |
-| **Store**               | — (module-level refs in `shop.ts`)       |
-| **Menu entries**        | —                                        |
-| **API calls**           | 1 — `GET /shop`                          |
-| **Depends on**          | —                                        |
-| **Depended on by**      | `cart`, `delivery`, `orders`, `products` |
-| **Languages**           | —                                        |
-| **Publishes**           | the readers in `index.ts`                |
-| **Backend counterpart** | `shop` in `boilerplate-node-backend`     |
+| Fact          | This module               |
+| ------------- | ------------------------- |
+| **Subdomain** | `supporting`              |
+| **Publishes** | the readers in `index.ts` |
 
 ## The story
 

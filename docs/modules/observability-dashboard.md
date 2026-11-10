@@ -47,13 +47,13 @@ feeds the realtime playground, the other screen this same module owns.
 
 ## The five reads
 
-| Call                                  | Feeds                                                         |
-| ------------------------------------- | ------------------------------------------------------------- |
-| `GET /observability/health`           | the Overview tab's status panel                               |
-| `GET /observability/metrics/overview` | the KPI tiles                                                 |
-| `GET /observability/metrics`          | the raw Prometheus exposition, shown as text                  |
-| `GET /observability/events`           | registered here, consumed by the realtime playground's screen |
-| `GET /observability/audit`            | the Audit tab's table                                         |
+| Call                                  | Feeds                                                         | Composable                                    |
+| ------------------------------------- | ------------------------------------------------------------- | --------------------------------------------- |
+| `GET /observability/health`           | the Overview tab's status panel                               | `use-admin-observability`                     |
+| `GET /observability/metrics/overview` | the KPI tiles                                                 | `use-admin-observability`                     |
+| `GET /observability/metrics`          | the raw Prometheus exposition, shown as text                  | none: registered here, no composable calls it |
+| `GET /observability/events`           | registered here, consumed by the realtime playground's screen | none: registered here, no composable calls it |
+| `GET /observability/audit`            | the Audit tab's table                                         | `use-audit-trail`                             |
 
 All five are registered through this module's manifest, so enabling the domain turns their contract
 validation on and deleting the folder turns it off. There is no shared table to remember to edit.

@@ -34,7 +34,7 @@ flowchart TD
     class End error;
 ```
 
-The rest of this page describes the `jwt` flow in detail; `cookie` mode drops the token and the refresh step. The backend's sessions theory page explains when to pick which.
+The rest of this page describes the `jwt` flow in detail; `cookie` mode drops the token and the refresh step. The backend's [session-mode page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/account-sessions.md#choosing-the-session-mode) explains when to pick which.
 
 ## Auth token model in `jwt` mode (what the FE sees)
 

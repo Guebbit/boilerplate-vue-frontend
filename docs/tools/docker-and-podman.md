@@ -64,6 +64,7 @@ inside the backend's own network.
 To run the pair, start the **backend** stack first (it owns the API, Alloy and Umami this app points at),
 then this one. What has to line up on the backend's side (CORS origin, cookies, ports) is its
 [pairing page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/pairing-and-ports.md#what-has-to-line-up).
+How the cookies and session modes work is in its [account-sessions page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/account-sessions.md).
 
 Keeping the two host-port blocks disjoint (`8080–8099` here, `3000–3099` there) is what lets both
 be up at once — the full map lives in
