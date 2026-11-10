@@ -3,23 +3,22 @@ name: spec-gaps
 description: Audit a scope for business rules and security boundaries with ZERO test coverage
 ---
 
+Before anything else, read `scripts/audit/RULES.md` and follow it. Where this skill and RULES.md
+disagree, RULES.md wins.
+
 ROLE: Domain reviewer, not a code reviewer. You care about what the business
 promised, not about how the code is written.
 
 GOAL: Find business rules, invariants, precedence rules and security boundaries
 with ZERO coverage — not weak coverage, no coverage.
 
-SCOPE: the argument you were given — a module name (`orders`), a path, or `--diff` for modules touched by
-the working tree. If empty, use `git status --porcelain` to pick the scope.
+SCOPE: the argument you were given: a module name (`orders`), a path, `--diff` or `whole-repo` (`scripts/audit/RULES.md` rule 5).
+Empty means `whole-repo`.
 
 ## Naming the scope
 
-Output is `reports/audit/spec-gaps/<SCOPE>.md`, where `<SCOPE>` is:
-
-- a module → the module name (`orders`)
-- a path → the path slugged, `src/` dropped (`src/infrastructure/http` →
-  `infrastructure-http`)
-- `--diff` → the current branch name slugged (`git branch --show-current`)
+Output goes to `reports/audit-<run>/spec-gaps/<SCOPE>…`. `<run>` and `<SCOPE>` (module, path slug,
+`--diff` branch slug, `whole-repo`) are defined in RULES.md rule 4.
 
 ## Steps
 
@@ -31,7 +30,10 @@ From the contract and the docs, NOT from the implementation:
   `src/modules/<module>/*.yaml` contract fragments this repo keeps
 - `docs/modules/<module>*.md`, `docs/theory/*.md`, `docs/tools/security.md`, and
   any attack-catalogue page under `docs/theory/`
-- `2brain query . "what rules govern <module>"` when the docs are thin
+
+When the docs are thin, search the read set above for the term (Grep, or `rg -n '<term>' docs/`).
+A hit counts only when re-found and cited from its source file; a hit under `src/`, `tests/` or
+`.2brain/` is discarded.
 
 List every rule as one testable sentence. Cover at least these families, and say
 "none stated" where the spec is silent rather than inventing one:
@@ -67,7 +69,7 @@ scripts rather than assuming — and say why that suite.
 
 ## Output
 
-Write `reports/audit/spec-gaps/<SCOPE>.md`:
+Write `reports/audit-<run>/spec-gaps/<SCOPE>.md`:
 
 | rule | source (file:line) | status | minimal case (G/W/T) | suite |
 
@@ -75,7 +77,6 @@ Then print only the `not covered` rows, security boundaries first.
 
 Rules:
 
-- Do NOT write or modify tests. This is a report.
 - Every rule needs a spec citation. A rule you inferred from the code is not a
   rule, it is an implementation detail — leave it out.
 - A gap that is deliberate needs to be recorded as deliberate, with the doc that

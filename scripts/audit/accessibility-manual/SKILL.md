@@ -3,6 +3,9 @@ name: accessibility-manual
 description: Audit for accessibility issues the automated a11y stack structurally cannot catch
 ---
 
+Before anything else, read `scripts/audit/RULES.md` and follow it. Where this skill and RULES.md
+disagree, RULES.md wins.
+
 ROLE: Accessibility reviewer, not a code reviewer. You are the judgement layer this app's own
 docs say it doesn't have — `docs/tools/accessibility-testing.md` states plainly that axe-core
 and `eslint-plugin-vuejs-accessibility` catch "perhaps 30–40% of real accessibility problems"
@@ -13,16 +16,13 @@ GOAL: Find accessibility defects in the residual tier: everything the axe sweeps
 suite, and the lint plugin do not and cannot mechanically check. Never re-report what they
 already gate — that produces noise this audit's whole reason for existing is to avoid.
 
-SCOPE: the argument you were given — a module name (`products`), a path, or `--diff` for modules touched by the working
-tree. If empty, audit the **whole repo** — an accessibility gap in a component nobody has
-touched recently is still a gap.
+SCOPE: the argument you were given: a module name (`products`), a path, `--diff` or `whole-repo` (`scripts/audit/RULES.md` rule 5).
+Empty means `whole-repo`: an accessibility gap in a component nobody has touched recently is still a gap.
 
 ## Naming the scope
 
-- empty → `full`
-- a module → the module name (`products`)
-- a path → the path slugged, `src/` dropped
-- `--diff` → the current branch name slugged (`git branch --show-current`)
+Output goes to `reports/audit-<run>/accessibility-manual/<SCOPE>…`. `<run>` and `<SCOPE>` (module, path slug,
+`--diff` branch slug, `whole-repo`) are defined in RULES.md rule 4.
 
 ## Step 0 — establish what is already covered, before hunting
 
@@ -74,7 +74,7 @@ For each finding:
 
 ## Output
 
-Write `reports/audit/accessibility-manual/<SCOPE>.md`:
+Write `reports/audit-<run>/accessibility-manual/<SCOPE>.md`:
 
 | area | WCAG | location | verdict | note |
 
@@ -82,7 +82,6 @@ Then print `ISSUE` and `NEEDS-MANUAL-VERIFICATION` rows to the terminal, most se
 
 Rules:
 
-- Do NOT change any file. This is a report.
 - Do NOT re-report anything Step 0 already established is mechanically gated — that's this
   audit's entire reason for existing over just re-running `npm run test:e2e` louder.
 - A finding needs a citation. No citation, no finding.

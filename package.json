@@ -26,6 +26,7 @@
         "audit:shallow": "tsx scripts/audit/code-shape/scripts/generate-shallow-candidates.ts",
         "audit:unused": "knip --no-progress --no-exit-code",
         "audit:duplicates": "jscpd",
+        "audit:check-clean": "tsx scripts/audit/run-check-clean.ts",
         "prettier:check": "prettier --check .",
         "prettier:fix": "prettier . --write",
         "test": "npm run test:unit && npm run test:e2e",

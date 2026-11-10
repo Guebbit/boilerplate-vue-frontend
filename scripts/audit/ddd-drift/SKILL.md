@@ -3,6 +3,9 @@ name: ddd-drift
 description: Find where the strategic-DDD story (modules as bounded contexts, barrels as published language, the server deciding rules) and the code disagree — what the module lint and the specs cannot see
 ---
 
+Before anything else, read `scripts/audit/RULES.md` and follow it. Where this skill and RULES.md
+disagree, RULES.md wins.
+
 ROLE: Architecture auditor for a frontend that uses strategic DDD only. You are not hunting bugs and not
 judging presentation. You compare what the docs and `module.ts` docblocks CLAIM about the modules with what
 the code DOES.
@@ -15,17 +18,14 @@ WHAT DDD MEANS HERE: strategic only. Modules are bounded contexts. The context m
 rules; the client reads the `*Actions` flags (`docs/theory/strategic-ddd.md` §4). There is no tactical DDD
 on purpose (`docs/theory/domain-layer.md` §4). Do not ask for aggregates, entities or repositories.
 
-SCOPE: the argument you were given — a module name (`orders`), a path, or `--diff` for what the working tree
-touches. If empty, audit the whole repo (`full`).
+SCOPE: the argument you were given: a module name (`orders`), a path, `--diff` or `whole-repo` (`scripts/audit/RULES.md` rule 5).
+Empty means `whole-repo`. Drift is relational and is rarely introduced by the change that reveals it,
+so `--diff` is a starting point, not a boundary: widen it as the steps below say, and say so in the report.
 
 ## Naming the scope
 
-Output is `reports/audit/ddd-drift/<SCOPE>.md`, where `<SCOPE>` is:
-
-- empty → `all`
-- a module → the module name (`orders`)
-- a path → the path slugged, `src/` dropped (`src/infrastructure/http` → `infrastructure-http`)
-- `--diff` → the current branch name slugged (`git branch --show-current`)
+Output goes to `reports/audit-<run>/ddd-drift/<SCOPE>…`. `<run>` and `<SCOPE>` (module, path slug,
+`--diff` branch slug, `whole-repo`) are defined in RULES.md rule 4.
 
 Copy the exclusion list from "Out of scope" below into the report header.
 
@@ -89,8 +89,8 @@ For each hit, find the `*Actions` schema of that resource. Verdict:
 - the literal only labels, colours or picks a notice → **OK**
 
 A ROUTE is a BACKEND contract change and needs the user's yes. Report it. Never fix it, never edit the contract.
-A ROUTE is an open finding, not a pass: list every ROUTE in the report's totals line as "open, owner: backend",
-and copy each one into `HANDOFF.md`'s follow-ups so the backend audit's C1 picks it up.
+A ROUTE is an open finding, not a pass: list every ROUTE in the report's totals line as "open, owner: backend".
+They go in the report and in RULES.md rule 3's plan suggestion; this audit writes no other file.
 
 ### 3 — F3 and F4: edges and barrels
 
@@ -122,7 +122,7 @@ output). Drop any row that has only one. A fabricated citation costs more than a
 
 ## Output
 
-Write `reports/audit/ddd-drift/<SCOPE>.md`:
+Write `reports/audit-<run>/ddd-drift/<SCOPE>.md`:
 
 | class | claim (file:line) | evidence | verdict | suggested fix |
 
@@ -163,7 +163,6 @@ Rows move as the code is fixed. The point is the count and the false-positive co
 
 ## Rules
 
-- Do NOT edit code, tests, docs or the contract. Do NOT use `--fix`. Do NOT stash or commit. This is a report.
 - Never propose a spec, a census or a generator to guard a count. A count that needs a guard is a count that
   should not be written down.
 - A rule the contract describes in prose is still ROUTE when the client gates a control on it. Only an
