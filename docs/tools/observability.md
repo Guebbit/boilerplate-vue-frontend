@@ -155,7 +155,7 @@ name emitted from both sides writes two rows nothing downstream can tell apart.
 
 ### Environment variables
 
-The `VITE_UMAMI_*` variables are listed in [Environment](./environment.md#telemetry); consent decides whether the tracker loads at all.
+The `VITE_UMAMI_*` variables are listed in [Environment](./environment.md#telemetry); by default, consent decides whether the tracker loads at all.
 
 ### External references
 

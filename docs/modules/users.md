@@ -82,7 +82,7 @@ Paths, route names, access and permission per screen: `src/modules/users/routes.
 
 #### Endpoints called
 
-Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/users/response-schemas.ts`.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: 'users'`). Auth is in the backend contract.
 
 #### Navigation entries
 

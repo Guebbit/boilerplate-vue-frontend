@@ -88,7 +88,7 @@ Paths, route names, access and permission per screen: `src/modules/account/route
 
 #### Endpoints called
 
-Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/account/response-schemas.ts`.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: 'account'` or `'addresses'`). Auth is in the backend contract.
 
 #### Navigation entries
 
@@ -259,7 +259,7 @@ the server's own breach check. See `composables/use-password-strength.ts`.
 
 ## Related pages
 
-- [`users`](./users.md) — where the field rules come from, and the admin-assisted 2FA recovery button
+- [`users`](./users.md) — where the field rules come from
 - [Security](../tools/security.md) — the token, the guards, and what the client never stores
 - [Sitemap & Access Control](../theory/sitemap.md) — the guest-only and auth-only routes
 - [Domain Layer](../theory/domain-layer.md) — why `shared-kernel` does not appear on this map

@@ -166,7 +166,7 @@ None. The module has no routes.
 
 #### Endpoints called
 
-Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/notifications/response-schemas.ts`.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: 'notifications'`). Auth is in the backend contract.
 
 #### Stream events
 

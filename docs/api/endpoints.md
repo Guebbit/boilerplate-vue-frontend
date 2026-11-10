@@ -1,8 +1,7 @@
 # Endpoints
 
 What every HTTP endpoint answers and what a write sends. The endpoints themselves are not listed here:
-the generated client in `contracts/rest/index.ts` calls them, and `contracts/rest/routes.ts` is the
-complete list (method, path, auth and owning module per operation).
+see [Where each endpoint is listed](#where-each-endpoint-is-listed).
 
 ## The answers every endpoint travels in
 
@@ -63,10 +62,10 @@ flowchart LR
 
 ## Where each endpoint is listed
 
-The method, path and auth of every operation is the generated route table `contracts/rest/routes.ts`
-(one row per operation, with the module that owns it) and the backend's own contract: the root
-`openapi.yaml` and its per-module fragments. This page does not copy them. A module's page says
-which of them it calls and why.
+The method, path pattern, response schema and owning module of every operation is one row of the
+generated route table `contracts/rest/routes.ts`. Auth is not in it: that is in the backend's own
+contract, the root `openapi.yaml` and its per-module fragments. This page does not copy either. A
+module's page says which rows it owns.
 
 The live stream is described in [Realtime](../tools/realtime.md) and the observability contract
 (`asyncapi.yaml`); the reads behind the Admin Dashboard are in

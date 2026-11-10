@@ -38,12 +38,10 @@ without both keys in both languages fails `tests/unit/infrastructure/browser-sto
 
 The inventory is data, not prose:
 
-- This app's own cookies and storage keys, with purpose and lifetime: `shared/rules/browser-storage.yaml`
+- This app's own cookies and storage keys: `shared/rules/browser-storage.yaml`
   (the privacy page's table is built from it).
 - The backend's cookies: `contracts/cookies.yaml`, copied from the backend, which documents them in the generated
-  "Cookies the backend sets" table of its [data protection page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/data-protection.md).
-- After consent, Faro's performance-measurement code also sets `com.grafana.faro.lastNavigationId` in
-  `sessionStorage` (gone when the tab closes).
+  "Cookies the backend sets" table of its [data protection page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/data-protection.md#cookies-the-backend-sets).
 
 ## Rules that follow from the list
 

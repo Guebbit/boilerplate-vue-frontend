@@ -44,7 +44,7 @@ one of the two modules where it is cleanest, because nothing here is anyone else
 
 Read this page and [`payments`](./payments.md) together. They are the same architectural move — a
 domain whose entire published surface is a self-contained component — applied to two different
-concerns, and between them they cover four of the client's nine context edges.
+concerns.
 
 ## Fulfillment orders and shipments
 
@@ -129,7 +129,7 @@ This module routes to nothing. It contributes components, schemas or a store to 
 
 #### Endpoints called
 
-Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/delivery/response-schemas.ts`.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: 'delivery'`). Auth is in the backend contract.
 
 ## Files
 

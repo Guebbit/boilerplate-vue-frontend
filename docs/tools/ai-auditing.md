@@ -6,7 +6,7 @@ ceiling. Stryker cannot read `docs/theory/domain-layer.md`. axe cannot read a ta
 notice that the docs promise a rule the contract never encodes.
 
 **Prose ↔ code is the gap**, and it is the one place a language model beats a program rather than
-approximating one. This repo has ~70 files under `docs/` stating rules no schema enforces.
+approximating one. This repo has many files under `docs/` stating rules no schema enforces.
 
 `scripts/audit/` holds the prompts that live in exactly that gap, among them `test-honesty`, which asks
 whether a test can fail at all. They are plain markdown, run by hand against an LLM, and they write

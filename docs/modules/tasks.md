@@ -38,7 +38,7 @@ without restating a permission.
 
 ::: tip A leaf in both directions
 Together with `example` (see [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a-domain)) and [`observability`](./observability.md), this is a module to read when you
-want the module system with none of the interesting coupling in the way. Zero edges, one store, two
+want the module system with none of the interesting coupling in the way. Zero edges, one store, three
 screens.
 :::
 
@@ -96,7 +96,7 @@ Paths, route names, access and permission per screen: `src/modules/tasks/routes.
 
 #### Endpoints called
 
-Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/tasks/response-schemas.ts`.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: 'tasks'`). Auth is in the backend contract.
 
 #### Navigation entries
 
@@ -122,6 +122,6 @@ npm run regenerate
 ## Related pages
 
 - [Modules overview](./index.md) — the whole context map
-- [Sitemap & Access Control](../theory/sitemap.md) — the public/admin split on these two routes
+- [Sitemap & Access Control](../theory/sitemap.md) — the public/admin split on these three routes
 - [Adding & Removing a Module](../theory/module-lifecycle.md) — what adding a domain costs
-- [State & Routing](../tools/state-and-routing.md) — the store behind both screens
+- [State & Routing](../tools/state-and-routing.md) — the store behind all three screens
