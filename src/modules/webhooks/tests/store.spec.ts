@@ -58,11 +58,9 @@ vi.mock('@/infrastructure/http', () => ({
             parseOrvalFixture(
                 config.method,
                 config.url,
-                // A bare subscription DELETE answers empty; every other call, including the
-                // secret-removal DELETE on its own sub-resource route, answers the full record.
-                config.method?.toUpperCase() === 'DELETE' && !config.url.includes('/secrets/')
-                    ? undefined
-                    : SUBSCRIPTION
+                // Every DELETE answers empty (204), the secret-removal one included; every
+                // other call answers the full record.
+                config.method?.toUpperCase() === 'DELETE' ? undefined : SUBSCRIPTION
             )
         )
     )
@@ -224,10 +222,21 @@ describe('useWebhooksStore', () => {
             useWebhooksStore()
                 .removeSecret('sub1', 'sec1')
                 .then(() => {
-                    expect(lastRequest()).toMatchObject({
+                    expect(vi.mocked(orvalMutator).mock.calls.at(-2)?.[0]).toMatchObject({
                         url: '/webhooks/subscriptions/sub1/secrets/sec1',
                         method: 'DELETE'
                     });
+                }));
+
+        it('reads the subscription again, since the delete answers no body', () =>
+            useWebhooksStore()
+                .removeSecret('sub1', 'sec1')
+                .then((updated) => {
+                    expect(lastRequest()).toMatchObject({
+                        url: '/webhooks/subscriptions/sub1',
+                        method: 'GET'
+                    });
+                    expect(updated).toMatchObject({ id: 'sub1' });
                 }));
     });
 
