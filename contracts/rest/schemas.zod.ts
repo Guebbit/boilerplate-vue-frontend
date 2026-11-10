@@ -1605,7 +1605,7 @@ export const GetObservabilityMetricsOverviewResponse = zod.strictObject({
  * successful sign-ins): that is a shop admin's `GET /audit`.
  * Every `ip` is a keyed digest (`hmac:` and 12 hex characters), comparable across rows
  * but not readable.
- * Entries are retained for a deployment-configured period (90 days by default) and expire after.
+ * Entries are retained for a deployment-configured period (180 days by default) and expire after.
  * `meta.totalItems` counts every incident matching the filters, not just the returned page.
  * Requires the platform operator's observability key.
  * @summary Recent incidents from the audit trail
@@ -1663,6 +1663,7 @@ export const ListObservabilityAuditEntriesResponse = zod.strictObject({
                 .optional(),
             targetType: zod.string().optional(),
             targetId: zod.string().optional(),
+            subjectId: zod.string().optional(),
             metadata: zod.record(zod.string(), zod.unknown()).optional(),
             timestamp: zod.iso.datetime({ offset: true }),
             level: zod.enum(['info', 'warn'])
@@ -1695,6 +1696,7 @@ export const ListObservabilityAuditEntriesResponse = zod.strictObject({
 export const listAuditEntriesQueryActorMax = 64;
 export const listAuditEntriesQueryActionMax = 100;
 export const listAuditEntriesQueryTargetMax = 100;
+export const listAuditEntriesQuerySubjectMax = 64;
 export const listAuditEntriesQueryPageDefault = 1;
 export const listAuditEntriesQueryPageMax = 10000;
 export const listAuditEntriesQueryPageSizeDefault = 10;
@@ -1704,6 +1706,7 @@ export const ListAuditEntriesQueryParams = zod.strictObject({
     action: zod.string().max(listAuditEntriesQueryActionMax).optional(),
     outcome: zod.enum(['success', 'failure']).optional(),
     target: zod.string().max(listAuditEntriesQueryTargetMax).optional(),
+    subject: zod.string().max(listAuditEntriesQuerySubjectMax).optional(),
     since: zod.iso.datetime({ offset: true }).optional(),
     ownOrder: zod.boolean().optional(),
     page: zod
@@ -1743,6 +1746,7 @@ export const ListAuditEntriesResponse = zod.strictObject({
             traceId: zod.string().regex(listAuditEntriesResponseItemsItemTraceIdRegExp).optional(),
             targetType: zod.string().optional(),
             targetId: zod.string().optional(),
+            subjectId: zod.string().optional(),
             metadata: zod.record(zod.string(), zod.unknown()).optional(),
             timestamp: zod.iso.datetime({ offset: true }),
             level: zod.enum(['info', 'warn'])
@@ -4015,11 +4019,23 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .optional(),
             targetType: zod.string().optional(),
             targetId: zod.string().optional(),
+            subjectId: zod.string().optional(),
             metadata: zod.record(zod.string(), zod.unknown()).optional(),
             timestamp: zod.iso.datetime({ offset: true }),
             level: zod.enum(['info', 'warn'])
         })
     ),
+    consultations: zod.strictObject({
+        windowDays: zod.number().min(1),
+        entries: zod.array(
+            zod.strictObject({
+                timestamp: zod.iso.datetime({ offset: true }),
+                targetType: zod.string(),
+                targetId: zod.string(),
+                purpose: zod.string()
+            })
+        )
+    }),
     sessions: zod.array(
         zod.strictObject({
             id: zod

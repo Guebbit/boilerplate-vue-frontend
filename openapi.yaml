@@ -2052,7 +2052,7 @@ paths:
         successful sign-ins): that is a shop admin's `GET /audit`.
         Every `ip` is a keyed digest (`hmac:` and 12 hex characters), comparable across rows
         but not readable.
-        Entries are retained for a deployment-configured period (90 days by default) and expire after.
+        Entries are retained for a deployment-configured period (180 days by default) and expire after.
         `meta.totalItems` counts every incident matching the filters, not just the returned page.
         Requires the platform operator's observability key.
       operationId: listObservabilityAuditEntries
@@ -2174,6 +2174,12 @@ paths:
             type: string
             maxLength: 100
           description: Filter by the id of the row the action was taken on (e.g. an order or a user)
+        - name: subject
+          in: query
+          schema:
+            type: string
+            maxLength: 64
+          description: Filter by the id of the person whose data the row is about (`subjectId`), which is how "who looked at this person's data" is answered. Only staff reads of a person's record carry one.
         - name: since
           in: query
           schema:
@@ -18425,6 +18431,9 @@ components:
           type: string
         targetId:
           type: string
+        subjectId:
+          type: string
+          description: "The person whose data the row is about, when that is not the actor: set on a staff read of someone's record. Absent for a guest's order and for actions that are not about a person."
         metadata:
           type: object
           additionalProperties: true
@@ -19379,6 +19388,48 @@ components:
             request:
               type: boolean
               description: "`POST /account/export` would start a new build. `false` while one is `building`: asking then only returns that one."
+    AuditConsultation:
+      type: object
+      additionalProperties: false
+      required:
+        - timestamp
+        - targetType
+        - targetId
+        - purpose
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        targetType:
+          type: string
+          description: The kind of record opened, e.g. order.
+        targetId:
+          type: string
+          description: The record opened.
+        purpose:
+          type: string
+          description: Why staff open this kind of record, e.g. handling your order.
+    AuditConsultations:
+      type: object
+      additionalProperties: false
+      required:
+        - windowDays
+        - entries
+      description: |
+        Every time staff opened a record about the person, for their own data export (GDPR
+        Art. 15). Dates, kind of record and purpose, never the staff member (CJEU C-579/21).
+        Limits, stated rather than hidden: it covers the last `windowDays` days, because the
+        audit trail is kept that long and no longer; a guest's order has no person to name;
+        the orders CSV export names none.
+      properties:
+        windowDays:
+          type: integer
+          minimum: 1
+          description: How many days back the list reaches (`NODE_AUDIT_RETENTION_DAYS`).
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditConsultation"
     ExportSession:
       type: object
       additionalProperties: false
@@ -21645,6 +21696,7 @@ components:
         - exportedAt
         - profile
         - auditLog
+        - consultations
         - sessions
         - addresses
         - signInMethods
@@ -21675,6 +21727,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AuditEntryItem"
+        consultations:
+          $ref: "#/components/schemas/AuditConsultations"
         sessions:
           type: array
           items:

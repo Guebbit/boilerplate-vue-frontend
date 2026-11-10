@@ -1209,6 +1209,8 @@ export interface AuditEntryItem {
     traceId?: string;
     targetType?: string;
     targetId?: string;
+    /** The person whose data the row is about, when that is not the actor: set on a staff read of someone's record. Absent for a guest's order and for actions that are not about a person. */
+    subjectId?: string;
     /**
      * What the action carried. Open on purpose: each action adds its own keys, and a
      * declared-properties object would be validated closed by the generated schema.
@@ -1771,6 +1773,32 @@ export interface AccountExport {
     expiresAt?: string;
     /** What the caller may do with the export right now. */
     actions: AccountExportActions;
+}
+
+export interface AuditConsultation {
+    timestamp: string;
+    /** The kind of record opened, e.g. order. */
+    targetType: string;
+    /** The record opened. */
+    targetId: string;
+    /** Why staff open this kind of record, e.g. handling your order. */
+    purpose: string;
+}
+
+/**
+ * Every time staff opened a record about the person, for their own data export (GDPR
+ * Art. 15). Dates, kind of record and purpose, never the staff member (CJEU C-579/21).
+ * Limits, stated rather than hidden: it covers the last `windowDays` days, because the
+ * audit trail is kept that long and no longer; a guest's order has no person to name;
+ * the orders CSV export names none.
+ */
+export interface AuditConsultations {
+    /**
+     * How many days back the list reaches (`NODE_AUDIT_RETENTION_DAYS`).
+     * @minimum 1
+     */
+    windowDays: number;
+    entries: AuditConsultation[];
 }
 
 export interface ExportSession {
@@ -3899,6 +3927,7 @@ export interface AccountExportResponse {
     exportedAt: string;
     profile: Account;
     auditLog: AuditEntryItem[];
+    consultations: AuditConsultations;
     sessions: ExportSession[];
     addresses: Address[];
     signInMethods: ExportSignInMethods;
@@ -8002,6 +8031,11 @@ export type ListAuditEntriesParams = {
      */
     target?: string;
     /**
+     * Filter by the id of the person whose data the row is about (`subjectId`), which is how "who looked at this person's data" is answered. Only staff reads of a person's record carry one.
+     * @maxLength 64
+     */
+    subject?: string;
+    /**
      * Return events strictly after this ISO-8601 timestamp — an exclusive bound
      */
     since?: string;
@@ -9487,7 +9521,7 @@ export const getObservabilityMetricsOverview = (
  * successful sign-ins): that is a shop admin's `GET /audit`.
  * Every `ip` is a keyed digest (`hmac:` and 12 hex characters), comparable across rows
  * but not readable.
- * Entries are retained for a deployment-configured period (90 days by default) and expire after.
+ * Entries are retained for a deployment-configured period (180 days by default) and expire after.
  * `meta.totalItems` counts every incident matching the filters, not just the returned page.
  * Requires the platform operator's observability key.
  * @summary Recent incidents from the audit trail
