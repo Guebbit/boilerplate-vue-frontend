@@ -78,6 +78,12 @@ the boundary — two numbers this screen already owns for its own totals — not
 | `422`                          | The resolved address's country isn't on the ship-to list (`CART_SHIP_TO_COUNTRY_NOT_SUPPORTED`)                       | Say so — the country select already narrows a NEW address to the list, so the fix is picking or adding one, not a field this screen can correct.                                                                                                  |
 | transport, `502`, `503`, `504` | The request never reached the API, or the gateway gave up                                                             | Show the generic checkout error. The `Idempotency-Key` is kept, so a retry is the same attempt. See [the checkout key](./cart.md#the-checkout-key).                                                                                               |
 
+**The key.** No answer, a `502`/`503`/`504` and `IDEMPOTENCY_IN_FLIGHT` keep the `Idempotency-Key`,
+so the next press is the same call and replays whatever the server did. A bare `500` keeps it until
+the cart is read again (empty: the order exists; still full: a new key). Every other refusal, and a
+success, ends it. The key follows a fingerprint of the order: see
+[the checkout key](./cart.md#the-checkout-key).
+
 `classifyCheckoutError` (`domain/checkout-errors.ts`) maps each code to a verdict through one table;
 `useCheckoutRefusals` (`composables/use-checkout-refusals.ts`) maps each verdict to the reaction above
 through one exhaustive switch. A cart read that fails after a refusal shows the generic checkout error

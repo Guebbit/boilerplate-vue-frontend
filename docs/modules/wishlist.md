@@ -6,18 +6,10 @@
 **Breaks if you change** — the refresh after move-to-cart. It is the only reason the edge exists.
 :::
 
-| Fact                    | This module                                                                    |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| **Subdomain**           | `supporting` — Specific to this business but not a differentiator. Kept plain. |
-| **Screens**             | 1 — `Wishlist`                                                                 |
-| **Store**               | `wishlist`                                                                     |
-| **Menu entries**        | `Wishlist`                                                                     |
-| **API calls**           | 4                                                                              |
-| **Depends on**          | [`cart`](./cart.md) · [`products`](./products.md)                              |
-| **Depended on by**      | —                                                                              |
-| **Languages**           | `en` · `it`                                                                    |
-| **Publishes**           | —                                                                              |
-| **Backend counterpart** | `wishlist` in `boilerplate-node-backend`                                       |
+| Fact          | This module                                                                    |
+| ------------- | ------------------------------------------------------------------------------ |
+| **Subdomain** | `supporting` — Specific to this business but not a differentiator. Kept plain. |
+| **Publishes** | —                                                                              |
 
 ## The map
 
@@ -59,70 +51,27 @@ stock".
 
 ## State
 
-Store `wishlist`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
-
-| Kind        | Members                                                                             | What it is                                                       |
-| ----------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `items`                                                                             | The refs the setup function returns — the only writable surface. |
-| **Getters** | `savedProductIds` · `loading`                                                       | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `isSaved` · `fetchWishlist` · `addToWishlist` · `removeFromWishlist` · `moveToCart` | Everything that changes state or calls the API.                  |
+State, getters and actions are exactly what the setup function of each store returns: `src/modules/wishlist/store.ts`.
 
 ## Screens
 
-| Path       | Route name | Access | Permission | View                 |
-| ---------- | ---------- | ------ | ---------- | -------------------- |
-| `wishlist` | `Wishlist` | `auth` | —          | `views/Wishlist.vue` |
-
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
+Paths, route names, access and permission per screen: `src/modules/wishlist/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
 
 ## Wiring
 
 #### Endpoints called
 
-| Call                                     | Response schema                  |
-| ---------------------------------------- | -------------------------------- |
-| `GET /wishlist`                          | `GetWishlistResponse`            |
-| `POST /wishlist/items`                   | `CreateWishlistItemResponse`     |
-| `DELETE /wishlist/items/{id}`            | `DeleteWishlistItemResponse`     |
-| `POST /wishlist/items/{id}/move-to-cart` | `MoveWishlistItemToCartResponse` |
-
-Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/wishlist/response-schemas.ts`.
 
 #### Navigation entries
 
-| Route | Label key | Section | Order | Icon | Badge |
-| ---------- | --------------------------- | --- | --- | --- | --- | --- |
-| `Wishlist` | `navigation.label-wishlist` | `account` | 75 | yes | — |
+Entries are declared in `src/modules/wishlist/module.ts`.
 
 ## Files
 
-| File                                           | What it is                                                                                                                                                                          | Explained in                          |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `index.ts`                                     | The public barrel: the only surface a sibling module may import.                                                                                                                    | [read](../theory/strategic-ddd.md)    |
-| `locales/en.json`                              | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
-| `locales/it.json`                              | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
-| `module.ts`                                    | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots. | [read](../theory/modules.md)          |
-| `response-schemas.ts`                          | One row per endpoint this domain calls, pairing a method and path pattern with the Zod schema its response is validated against.                                                    | [read](../api/openapi-workflow.md)    |
-| `routes.ts`                                    | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                              | [read](../theory/sitemap.md)          |
-| `store.ts`                                     | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                              | [read](../tools/state-and-routing.md) |
-| `tests/e2e/__snapshots__/wishlist.desktop.png` | A committed visual-regression baseline.                                                                                                                                             | [read](../tools/visual-regression.md) |
-| `tests/e2e/a11y.cy.ts`                         | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                                                   | [read](../tools/component-testing.md) |
-| `tests/e2e/wishlist.cy.ts`                     | Cypress suite — the `wishlist` screens, in a browser.                                                                                                                               | [read](../tools/component-testing.md) |
-| `tests/e2e/wishlist.visual.cy.ts`              | Cypress visual suite — pixel diffs against the committed baselines.                                                                                                                 | [read](../tools/component-testing.md) |
-| `tests/routes.spec.ts`                         | Vitest suite — the route records and the `meta.access` each one declares.                                                                                                           | [read](../tools/unit-testing.md)      |
-| `tests/store.spec.ts`                          | Vitest suite — this domain's store, with the transport mocked.                                                                                                                      | [read](../tools/unit-testing.md)      |
-| `tests/store-ordering.spec.ts`                 | Vitest suite — answers in the wrong order and for the wrong person.                                                                                                                 | [read](../tools/unit-testing.md)      |
-| `tests/move-to-cart-checkout-key.spec.ts`      | Vitest suite — a move into the cart ends the checkout attempt in progress.                                                                                                          | [read](../tools/unit-testing.md)      |
-| `tests/wishlist-view.spec.ts`                  | Vitest suite — `wishlist-view`, in isolation.                                                                                                                                       | [read](../tools/unit-testing.md)      |
-| `views/Wishlist.vue`                           | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
+The folder is `src/modules/wishlist/`; each file's own `@module` header says what it is.
 
 ## Working on it
-
-| Suite            | Files | Where                                           |
-| ---------------- | ----- | ----------------------------------------------- |
-| Vitest           | 3     | `src/modules/wishlist/tests/`                   |
-| Cypress          | 3     | `src/modules/wishlist/tests/e2e/`               |
-| Visual baselines | 1     | `src/modules/wishlist/tests/e2e/__snapshots__/` |
 
 ```bash
 # this module's vitest suites

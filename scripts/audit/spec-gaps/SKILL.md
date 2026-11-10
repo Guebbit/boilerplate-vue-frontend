@@ -28,8 +28,7 @@ From the contract and the docs, NOT from the implementation:
 
 - the root `openapi.yaml` and `asyncapi.yaml`, plus any
   `src/modules/<module>/*.yaml` contract fragments this repo keeps
-- `docs/modules/<module>*.md`, `docs/theory/*.md`, `docs/tools/security.md`, and
-  any attack-catalogue page under `docs/theory/`
+- `docs/modules/<module>*.md`, `docs/theory/*.md`, and `docs/tools/security.md`
 
 When the docs are thin, search the read set above for the term (Grep, or `rg -n '<term>' docs/`).
 A hit counts only when re-found and cited from its source file; a hit under `src/`, `tests/` or

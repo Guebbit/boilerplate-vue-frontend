@@ -97,4 +97,4 @@ sidebar and this page are yours to remove.
 - [`observability`](./observability.md) — the module this belongs to, including the realtime playground
 - [Admin Dashboard](../tools/admin-dashboard.md) — the panels and how they refresh
 - [Observability](../tools/observability.md) — what is measured, and by whom
-- [Observability Endpoints](../api/observability.md) — the contract for all five reads
+- [Observability endpoints](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/api/observability.md) — the backend's page for all five reads

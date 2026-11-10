@@ -38,12 +38,11 @@ The rest of this page describes the `jwt` flow in detail; `cookie` mode drops th
 
 ## Auth token model in `jwt` mode (what the FE sees)
 
-The backend uses a **split-token model**. The FE receives:
-
-- **Access token** — short-lived JWT returned in the login response body. Sent on every protected API call as `Authorization: Bearer <token>`.
-- **Refresh token** — longer-lived JWT stored in an `HttpOnly` cookie set by the backend. The browser sends it automatically on `POST /account/refresh`; the FE never reads it directly.
-
-This keeps the refresh token out of JavaScript access (no `localStorage`, no `document.cookie`).
+The backend uses a **split-token model** (its [sessions theory](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/sessions.md) owns it). What
+the FE sees: a short-lived access token in the login response body, sent on every protected call as
+`Authorization: Bearer <token>`; and a refresh token in an `HttpOnly` cookie the browser sends
+automatically on `POST /account/refresh`, which the FE never reads. That keeps the refresh token out
+of JavaScript (no `localStorage`, no `document.cookie`).
 
 ## Login → auth → refresh flow (`jwt` mode)
 
@@ -178,11 +177,10 @@ slow network greys things out rather than opening them.
 
 ## Interceptor error handling
 
-| Status | What happens                                                                                 |
-| ------ | -------------------------------------------------------------------------------------------- |
-| `401`  | Redirect to Login with `?continue=` preserved; form-level actions show auth-focused messages |
-| `403`  | Show a clear "forbidden" message (never treated as a server error)                           |
-| `5xx`  | Navigate to `/error/500`; `captureException()` sends the error to Grafana Faro               |
+The interceptors redirect nothing. A `401` ends the session or is answered in place (a refresh, then a
+step-up prompt); the route guards decide where a signed-out visitor goes. A `403` is shown as a
+"forbidden" message, never as a server error. A `5xx` is reported to Grafana Faro through
+`captureException()` and shown where the call site chose to show it (a toast or an in-place alert).
 
 ## Security properties provided
 

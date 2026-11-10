@@ -7,18 +7,9 @@ detail page — a credential's fields are fixed at mint time.
 **Breaks if you change** — nothing outside this folder. It is designed to be deleted.
 :::
 
-| Fact                    | This module                                                                                  |
-| ----------------------- | -------------------------------------------------------------------------------------------- |
-| **Subdomain**           | `generic` — machine credential management is a solved problem, not a business differentiator |
-| **Screens**             | 2 — `ApiKeysList` · `ApiKeyCreate`                                                           |
-| **Store**               | `api-keys`                                                                                   |
-| **Menu entries**        | `ApiKeysList`                                                                                |
-| **API calls**           | 3                                                                                            |
-| **Depends on**          | _nothing_                                                                                    |
-| **Depended on by**      | _nothing_                                                                                    |
-| **Languages**           | `en` · `it`                                                                                  |
-| **Publishes**           | _nothing_ — no barrel, so no sibling may import it                                           |
-| **Backend counterpart** | `api-keys` in `boilerplate-node-backend`                                                     |
+| Fact          | This module                                                                                  |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| **Subdomain** | `generic` — machine credential management is a solved problem, not a business differentiator |
 
 ## The map
 
@@ -60,68 +51,31 @@ and its line in `src/modules.ts`; the backend module is unaffected.
 
 ## State
 
+State, getters and actions are exactly what the setup function of each store returns: `src/modules/api-keys/store.ts`.
+
 Store `api-keys`, from `store.ts` — one `useStructureCrudApi` instance (search only; there is no
 `get`/`update`, and no filters beyond pagination) behind one `defineStore`. Only what the setup
 function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                      | What it is                                                       |
-| ----------- | ------------------------------------------------------------ | ---------------------------------------------------------------- |
-| **State**   | `apiKeys` · `filters` · `pageCurrent` · `pageSize`           | The refs the setup function returns — the only writable surface. |
-| **Getters** | `apiKeysList` · `loading` · `pageTotal` · `pageItemList`     | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `watchApiKeysSearch` · `mintCredential` · `revokeCredential` | Everything that changes state or calls the API.                  |
-
 ## Screens
 
-| Path              | Route name     | Access | Permission      | View                     |
-| ----------------- | -------------- | ------ | --------------- | ------------------------ |
-| `api-keys`        | `ApiKeysList`  | `auth` | `read ApiKey`   | `views/ApiKeysList.vue`  |
-| `api-keys/create` | `ApiKeyCreate` | `auth` | `create ApiKey` | `views/ApiKeyCreate.vue` |
-
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
+Paths, route names, access and permission per screen: `src/modules/api-keys/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
 
 ## Wiring
 
 #### Endpoints called
 
-| Call                    | Response schema        |
-| ----------------------- | ---------------------- |
-| `GET /api-keys`         | `ListApiKeysResponse`  |
-| `POST /api-keys`        | `MintApiKeyResponse`   |
-| `DELETE /api-keys/{id}` | `RevokeApiKeyResponse` |
-
-Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/api-keys/response-schemas.ts`.
 
 #### Navigation entries
 
-| Route         | Label key                   | Section | Order | Icon | Badge |
-| ------------- | --------------------------- | ------- | ----- | ---- | ----- |
-| `ApiKeysList` | `navigation.label-api-keys` | `admin` | 51    | yes  | —     |
+Entries are declared in `src/modules/api-keys/module.ts`.
 
 ## Files
 
-| File                         | What it is                                                                                                                                                                          | Explained in                          |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `locales/en.json`            | This domain's translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
-| `locales/it.json`            | This domain's translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
-| `module.ts`                  | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots. | [read](../theory/modules.md)          |
-| `response-schemas.ts`        | One row per endpoint this domain calls, pairing a method and path pattern with the Zod schema its response is validated against.                                                    | [read](../api/openapi-workflow.md)    |
-| `routes.ts`                  | The domain's route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                              | [read](../theory/sitemap.md)          |
-| `schemas.ts`                 | Form schemas for this domain — the name/permissions/expiry rules the generated schema does not express as bound constants beyond `name`'s own maximum.                              | [read](../api/openapi-workflow.md)    |
-| `store.ts`                   | The Pinia store: this domain's state, and every call it makes to the generated client.                                                                                              | [read](../tools/state-and-routing.md) |
-| `tests/e2e/a11y.cy.ts`       | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                                                   | [read](../tools/component-testing.md) |
-| `tests/routes.spec.ts`       | Vitest suite — the route records and the `meta.access`/`meta.can` each one declares.                                                                                                | [read](../tools/unit-testing.md)      |
-| `tests/schemas-i18n.spec.ts` | Vitest suite — the `schemas-i18n` validation rules.                                                                                                                                 | [read](../tools/unit-testing.md)      |
-| `tests/schemas.spec.ts`      | Vitest suite — the `schemas` validation rules.                                                                                                                                      | [read](../tools/unit-testing.md)      |
-| `tests/store.spec.ts`        | Vitest suite — this domain's store, with the transport mocked, including that a minted secret never lands in cached state.                                                          | [read](../tools/unit-testing.md)      |
-| `views/ApiKeyCreate.vue`     | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
-| `views/ApiKeysList.vue`      | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
+The folder is `src/modules/api-keys/`; each file's own `@module` header says what it is.
 
 ## Working on it
-
-| Suite   | Files | Where                             |
-| ------- | ----- | --------------------------------- |
-| Vitest  | 4     | `src/modules/api-keys/tests/`     |
-| Cypress | 1     | `src/modules/api-keys/tests/e2e/` |
 
 ```bash
 # this module's vitest suites

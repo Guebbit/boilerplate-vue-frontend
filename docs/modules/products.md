@@ -6,18 +6,10 @@
 **Breaks if you change** — the shape of `useProductLines`, `shelfStateOf` or `invalidateProductsCache`. [`cart`](./cart.md), [`wishlist`](./wishlist.md), [`inventory`](./inventory.md) and [`stock-alerts`](./stock-alerts.md) call them.
 :::
 
-| Fact                    | This module                                                                                                             |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.                                                |
-| **Screens**             | 4 — `ProductsList` · `ProductCreate` · `ProductTarget` · `ProductEdit`                                                  |
-| **Store**               | `products`                                                                                                              |
-| **Menu entries**        | `ProductsList`                                                                                                          |
-| **API calls**           | 10                                                                                                                      |
-| **Depends on**          | —                                                                                                                       |
-| **Depended on by**      | [`inventory`](./inventory.md) · [`cart`](./cart.md) · [`wishlist`](./wishlist.md) · [`stock-alerts`](./stock-alerts.md) |
-| **Languages**           | `en` · `it`                                                                                                             |
-| **Publishes**           | `useProductLines` · `shelfStateOf` · `invalidateProductsCache`                                                          |
-| **Backend counterpart** | `products` in `boilerplate-node-backend`                                                                                |
+| Fact          | This module                                                              |
+| ------------- | ------------------------------------------------------------------------ |
+| **Subdomain** | `core` — The reason the product exists. Worth its own client-side rules. |
+| **Publishes** | `useProductLines` · `shelfStateOf` · `invalidateProductsCache`           |
 
 ## The map
 
@@ -135,7 +127,7 @@ Staff set the date with the "Release date" field on the create and edit forms
 server enforces). The day is the shop's: the server stores the UTC instant of its midnight in the
 shop's zone and sends the same day back, so the form fills the field from the response as it is and
 no screen does zone maths. Every place that prints a promise date (`releaseDate`, `restockDate`,
-`agreedAt`, `expectedAt`, `firstAgreedAt` and the timeline's moved-date rows) uses `formatDay`, which prints the day with no
+`agreedAt`, `expectedAt`, `firstAgreedAt`, an order line's `promisedAt` and the timeline's moved-date rows) uses `formatDay`, which prints the day with no
 time and no shift in any browser zone. An edit sends it only when it changed: moving it later notifies the buyers who
 already paid, so an untouched date must not travel. Clearing the field sends `null` and ends the
 preorder.
@@ -147,24 +139,11 @@ and a "Sale status" filter beside `active`.
 
 ## State
 
-Store `products`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
-
-| Kind        | Members                                                                                                                                                                                                                                 | What it is                                                       |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `facets` · `products` · `selectedProductId` · `filters` · `pageCurrent` · `pageSize`                                                                                                                                                    | The refs the setup function returns — the only writable surface. |
-| **Getters** | `productsList` · `currentProduct` · `loading` · `pageTotal` · `pageItemList`                                                                                                                                                            | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `fetchFacets` · `fetchProductsByIds` · `addProduct` · `fetchProducts` · `fetchPaginationProducts` · `watchSearchProducts` · `fetchProduct` · `watchProduct` · `createProduct` · `updateProduct` · `deleteProduct` · `hardDeleteProduct` | Everything that changes state or calls the API.                  |
+State, getters and actions are exactly what the setup function of each store returns: `src/modules/products/store.ts`.
 
 ## Screens
 
-| Path                | Route name      | Access   | Permission       | View                      |
-| ------------------- | --------------- | -------- | ---------------- | ------------------------- |
-| `products`          | `ProductsList`  | `public` | —                | `views/ProductsList.vue`  |
-| `products/create`   | `ProductCreate` | `auth`   | `create Product` | `views/ProductCreate.vue` |
-| `products/:id`      | `ProductTarget` | `public` | —                | `views/ProductTarget.vue` |
-| `products/:id/edit` | `ProductEdit`   | `auth`   | `update Product` | `views/ProductEdit.vue`   |
-
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
+Paths, route names, access and permission per screen: `src/modules/products/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
 
 ### Saving a later or cleared release date
 
@@ -195,60 +174,17 @@ on the server as a forbidden one.
 
 #### Endpoints called
 
-| Call                         | Response schema                 |
-| ---------------------------- | ------------------------------- |
-| `DELETE /products`           | `DeleteProductResponse`         |
-| `GET /products`              | `ListProductsResponse`          |
-| `POST /products`             | `CreateProductResponse`         |
-| `DELETE /products/{id}`      | `DeleteProductByIdResponse`     |
-| `GET /products/{id}`         | `GetProductByIdResponse`        |
-| `PATCH /products/{id}`       | `UpdateProductByIdResponse`     |
-| `DELETE /products/{id}/hard` | `HardDeleteProductByIdResponse` |
-| `GET /products/facets`       | `GetCatalogFacetsResponse`      |
-| `POST /products/search`      | `SearchProductsResponse`        |
-
-Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/products/response-schemas.ts`.
 
 #### Navigation entries
 
-| Route | Label key | Section | Order | Icon | Badge |
-| -------------- | -------------------------------- | --- | --- | --- | --- | --- |
-| `ProductsList` | `navigation.label-products-list` | `main` | 60 | yes | — |
+Entries are declared in `src/modules/products/module.ts`.
 
 ## Files
 
-| File                                                   | What it is                                                                                                                                                                                                                                       | Explained in                          |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
-| `index.ts`                                             | The public barrel: the only surface a sibling module may import.                                                                                                                                                                                 | [read](../theory/strategic-ddd.md)    |
-| `locales/en.json`                                      | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                                                                  | [read](../tools/i18n.md)              |
-| `locales/it.json`                                      | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                                                                  | [read](../tools/i18n.md)              |
-| `module.ts`                                            | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots.                                                              | [read](../theory/modules.md)          |
-| `response-schemas.ts`                                  | One row per endpoint this domain calls, pairing a method and path pattern with the Zod schema its response is validated against.                                                                                                                 | [read](../api/openapi-workflow.md)    |
-| `routes.ts`                                            | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                                                                                           | [read](../theory/sitemap.md)          |
-| `schemas.ts`                                           | Form schemas for this domain. Hand-written: only the contract's numeric constraints (minimums) are read from `@api/schemas`, so the rest of a rule can drift from the request body — `VITE_VALIDATE_REQUESTS` checks the real body at send time. | [read](../api/openapi-workflow.md)    |
-| `store.ts`                                             | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                                                                                           | [read](../tools/state-and-routing.md) |
-| `tests/e2e/__snapshots__/products-list.desktop.png`    | A committed visual-regression baseline.                                                                                                                                                                                                          | [read](../tools/visual-regression.md) |
-| `tests/e2e/__snapshots__/products-list.phone.dark.png` | A committed visual-regression baseline.                                                                                                                                                                                                          | [read](../tools/visual-regression.md) |
-| `tests/e2e/__snapshots__/products-list.phone.png`      | A committed visual-regression baseline.                                                                                                                                                                                                          | [read](../tools/visual-regression.md) |
-| `tests/e2e/__snapshots__/products-list.tablet.png`     | A committed visual-regression baseline.                                                                                                                                                                                                          | [read](../tools/visual-regression.md) |
-| `tests/e2e/a11y.cy.ts`                                 | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                                                                                                                | [read](../tools/component-testing.md) |
-| `tests/e2e/products.cy.ts`                             | Cypress suite — the `products` screens, in a browser.                                                                                                                                                                                            | [read](../tools/component-testing.md) |
-| `tests/e2e/products.visual.cy.ts`                      | Cypress visual suite — pixel diffs against the committed baselines.                                                                                                                                                                              | [read](../tools/component-testing.md) |
-| `tests/routes.spec.ts`                                 | Vitest suite — the route records and the `meta.access` each one declares.                                                                                                                                                                        | [read](../tools/unit-testing.md)      |
-| `tests/schemas-i18n.spec.ts`                           | Vitest suite — the `schemas-i18n` validation rules.                                                                                                                                                                                              | [read](../tools/unit-testing.md)      |
-| `tests/store.spec.ts`                                  | Vitest suite — this domain's store, with the transport mocked.                                                                                                                                                                                   | [read](../tools/unit-testing.md)      |
-| `views/ProductTarget.vue`                              | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
-| `views/ProductCreate.vue`                              | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
-| `views/ProductEdit.vue`                                | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
-| `views/ProductsList.vue`                               | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
+The folder is `src/modules/products/`; each file's own `@module` header says what it is.
 
 ## Working on it
-
-| Suite            | Files | Where                                           |
-| ---------------- | ----- | ----------------------------------------------- |
-| Vitest           | 3     | `src/modules/products/tests/`                   |
-| Cypress          | 3     | `src/modules/products/tests/e2e/`               |
-| Visual baselines | 6     | `src/modules/products/tests/e2e/__snapshots__/` |
 
 ```bash
 # this module's vitest suites

@@ -16,32 +16,7 @@ names mean, the tripwire) live in
 
 ## The one rule
 
-> The model proposes. A deterministic oracle disposes.
-
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 50}}}%%
-flowchart LR
-    A["LLM proposes<br/>a hypothesis"] --> B{"Deterministic<br/>gate"}
-    B -->|survives| C["Finding<br/>with a citation"]
-    B -->|dies| D["Discarded<br/>silently"]
-    C --> E["Human reads it,<br/>decides, writes a test"]
-
-    classDef ai fill:#ede9fe,stroke:#7c3aed,color:#111827;
-    classDef gate fill:#fef3c7,stroke:#d97706,color:#111827;
-    classDef out fill:#dcfce7,stroke:#16a34a,color:#111827;
-    classDef dead fill:#fee2e2,stroke:#dc2626,color:#111827;
-    class A ai;
-    class B gate;
-    class C,E out;
-    class D dead;
-```
-
-Two consequences, both non-negotiable:
-
-- **Nothing AI-generated gates CI.** A red build must be reproducible by re-running it. An LLM
-  verdict is not, so these report and never block.
-- **A finding without a citation is not a finding.** Either a `file:line` in the spec, or nothing.
-  Prose confidence is not evidence.
+Owned by the backend, and the same here: [The one rule](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
 
 ## The prompts
 
@@ -99,147 +74,27 @@ its own findings, so the backend's copy is _expected_ to differ and must not be 
 
 ### Naming the scope
 
-`scripts/audit/RULES.md` rules 4 and 5 own this: the report folder
-(`reports/audit-<YYYY-MM-DD-HHmm>/<audit>/`), the `<SCOPE>` names, and what an empty argument or
-`--diff` means. (`design-manual` keeps `reports/audit/design-manual/`: its capture folder is a
-constant in code.)
-
-| Argument     | `<SCOPE>`                                                           |
-| ------------ | ------------------------------------------------------------------- |
-| a module     | the module name — `orders`                                          |
-| a path       | slugged, `src/` dropped — `infrastructure-http`                     |
-| `--diff`     | the current branch name, slugged                                    |
-| `whole-repo` | `whole-repo` — a skill that runs it per module says so in its SKILL |
-
-An empty argument is `whole-repo`. A batch number never names a report: the module name tells
-the next reader what it covers.
+Owned by the backend, and the same here: [Naming the scope](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
 
 ### The tripwire
 
-An audit is read-only. To know it kept that promise, `npm run audit:check-clean` snapshots the repo
-(HEAD, every ref, the stash list, `git status --ignored`, the index hashes) before the run and diffs
-it after, ignoring the run's own report folder. It reports a write after the fact; it does not stop
-one. A peer session in the same worktree shows up as a change, and the reader judges. `--ignored`
-lists an ignored folder (`node_modules/`) as one entry, so a change inside it is not seen.
+Owned by the backend, and the same here: [The tripwire](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
 
 ### The reports are disposable
 
-`reports/` is gitignored, and that is the intended end state, not an oversight. A report is working
-evidence: once its conclusions land as a fixed test, a commit message or a tracked issue, the file
-has done its job. Audit paperwork that outlives the audit goes stale silently and misleads the next
-reader — the prompts are the durable asset here, not their output.
+Owned by the backend, and the same here: [The reports are disposable](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
 
 ## The two-pass method
 
-`spec-drift` is the one worth understanding, because its **ordering is the method**. Spec drift is
-a test and an implementation sharing one wrong reading of the spec — CI is green, and the test proves
-only that the test agrees with the code.
-
-You cannot find that by reading the test, because the test looks correct. You find it by deriving
-what the behaviour _should_ be **before** the implementation can contaminate you.
-
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 50}}}%%
-flowchart TD
-    S["Pass 1 — spec only<br/><i>openapi.yaml, asyncapi.yaml, docs/</i>"] --> F["Freeze expectations<br/>to a file, one row per behaviour"]
-    F --> G["<b>Save it. Do not revise it.</b><br/>This is the control."]
-    G --> I["Pass 2 — open the code<br/>and the tests"]
-    I --> C{"spec says X<br/>code does Y<br/>test asserts Y"}
-    C -->|yes| M["MISMATCH —<br/>spec drift"]
-    C -->|no| O["OK, or spec-silent"]
-
-    classDef pass fill:#dbeafe,stroke:#2563eb,color:#111827;
-    classDef ctrl fill:#fef3c7,stroke:#d97706,color:#111827;
-    classDef bad fill:#fee2e2,stroke:#dc2626,color:#111827;
-    classDef ok fill:#dcfce7,stroke:#16a34a,color:#111827;
-    class S,I pass;
-    class F,G ctrl;
-    class M bad;
-    class O,C ok;
-```
-
-Writing the expectations down before opening `src/` is not ceremony — it is the only thing keeping
-the control uncontaminated. Skip it and the audit degrades into a code review that agrees with
-whatever it just read.
-
-The freeze is procedural, not cryptographic: the file is gitignored, so nothing stops you editing it
-after the fact. Nothing except the fact that doing so destroys the only reason the second pass is
-worth running. If a pass-1 row turns out to be wrong, add a pass-2 row saying so — do not quietly
-rewrite the control to match what you just learned.
+Owned by the backend, and the same here: [The two-pass method](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
 
 ## How to run one
 
-Each prompt is an [Agent Skill](https://agentskills.io): a folder holding a `SKILL.md` an AI reads
-and follows, plus any `scripts/` it runs. The format is open, so the prompts are not tied to one
-tool:
-
-| Layer                          | What it holds                                                 |
-| ------------------------------ | ------------------------------------------------------------- |
-| `scripts/audit/<name>/`        | the prompt and its scripts — the only copy                    |
-| `.claude/skills/audit-<name>/` | a three-line pointer that registers it as a Claude Code skill |
-
-- **Claude Code** — `/audit-spec-drift orders`, `/audit-accessibility-manual`, and so on. The
-  pointer passes the argument through as the scope.
-- **Any other AI tool** — _"Read `scripts/audit/spec-drift/SKILL.md` and follow it, scope
-  `orders`."_ It needs to be able to read the repo; an audit that cannot open `openapi.yaml` has
-  nothing to compare against.
-
-The pointer's `allowed-tools` is Claude Code's permission list: it only skips prompts, and it does
-not keep an audit off the source (`Write` is allowed). What does is rule 1 of `RULES.md`: the audit
-changes nothing but its own report folder. A helper agent that is refused a file write returns the
-report as text, and the caller saves it.
-
-::: tip Which model
-Claude for `spec-drift` and `spec-gaps` — long-context reasoning over prose vs. code is exactly
-where small local models confabulate citations most confidently, and a fabricated `file:line` costs
-more than the finding was worth.
-
-`design-manual` needs a multimodal model, so Claude: the screenshots travel only as part of that
-conversation's own context, and nothing is uploaded to an image service.
-
-`suite-bloat` is no exception: the rows that mattered came from reading the code, not from
-bookkeeping over `reports/mutation/mutation.json`.
-:::
+Owned by the backend, and the same here: [How to run one](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
 
 ## `test-honesty`: a test is innocent once it has failed
 
-The fear it answers: tests written to raise a number, or to agree with whoever wrote the code, that
-stay green whatever the code does. Mutation testing finds some of them. This audit finds the rest,
-and names the shape — coverage padding, a snapshot dump, a mocked subject, a swallowed failure, a
-title that lies, an input that cannot discriminate.
-
-It applies [the one rule](#the-one-rule) with Stryker as the oracle. For each suspect test, the
-model writes down what the test's title claims, and the smallest `src/` change that would break
-that claim. Then it looks that change up in Stryker's report, which records per mutant which tests
-ran it and which failed on it. Stryker breaks the code in a sandbox copy; this audit never does.
-
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 50}}}%%
-flowchart LR
-    C["Candidate<br/><i>grep, survived mutants,<br/>git history</i>"] --> T["Break<br/>written from the title"]
-    T --> R{"Matching mutant<br/>in Stryker's report"}
-    R -->|survived this test| Y["CONFIRMED"]
-    R -->|killed by this test| N["CLEAN —<br/>dropped silently"]
-    Y --> F["Report, with a<br/>suggested fix in prose"]
-
-    classDef ai fill:#ede9fe,stroke:#7c3aed,color:#111827;
-    classDef gate fill:#fef3c7,stroke:#d97706,color:#111827;
-    classDef out fill:#dcfce7,stroke:#16a34a,color:#111827;
-    classDef dead fill:#fee2e2,stroke:#dc2626,color:#111827;
-    class C,T ai;
-    class R gate;
-    class Y,F out;
-    class N dead;
-```
-
-The break comes from the title, never from the assertions. One chosen by reading the assertions
-proves only that they agree with themselves.
-
-Like every prompt here it only reports. The fix is a human's, written from the report's suggested
-fix and the spec it cites.
-
-Two blind spots, both reported as `UNVERIFIED` rather than guessed: Cypress specs, which Stryker
-never runs, and logic inside a `.vue` file, which is outside Stryker's `mutate` list.
+Owned by the backend, and the same here: [test-honesty: a test is innocent once it has failed](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
 
 ## Reading the output
 
@@ -352,24 +207,7 @@ apart — not on a schedule.
 
 ## Footnote: the tools we evaluated, and why none were adopted
 
-Checked **2026-09-03**. Treat that as an expiry date, not a warranty — the whole reason this
-footnote exists is that the previous round of claims had quietly gone stale.
-
-| Tool                                 | State                                | Why not                                                                                                                                                                        |
-| ------------------------------------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Mutahunter** (LLM mutants)         | Dead — last release 2025-04-17       | Also removed its coverage-driven mode in 1.3.2, the one feature that made it fit here.                                                                                         |
-| **LLMorpheus** (LLM mutants, JS)     | Archived 2025-02-03                  | The only JS-native equivalent, and it stopped.                                                                                                                                 |
-| **Qodo Cover / Cover-Agent**         | Unmaintained notice since 2025-06-15 | Gates generated tests on coverage and pass/fail, never the spec — so every test it keeps agrees with the code by construction. That is the defect `spec-drift` exists to find. |
-| **CodeRabbit / PR-Agent / Greptile** | Alive and healthy                    | Duplicate review surface. `/code-review` and `/security-review` already cover the diff, and there is no PR workflow here for a bot to attach to.                               |
-| **promptfoo**                        | Alive, MIT, weekly releases          | ~600 MB and 524 packages for a YAML runner — 513 MB of it a local ONNX inference runtime we would never call.                                                                  |
-
-Two notes worth keeping, because they outlived the tools:
-
-- **The reason for rejecting the review bots is redundancy and cost.** "A hosted bot cannot read
-  `CLAUDE.md`" is not a reason: CodeRabbit reads that exact filename by default.
-- **Nothing in this niche is alive.** StrykerJS has not added LLM-authored mutants either. Meta run
-  the idea in production internally, but it is not a product. If that changes, the prompt files here
-  are the thing that would be replaced.
+Owned by the backend, and the same here: [Footnote: the tools we evaluated, and why none were adopted](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
 
 ## Related
 

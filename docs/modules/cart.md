@@ -6,19 +6,11 @@
 **Breaks if you change** — `badgeQuantity`. The shell's header reads it through the manifest.
 :::
 
-| Fact                    | This module                                                                                                         |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.                                            |
-| **Screens**             | 1 — `Cart`, which shows a guest `GuestCart` and a signed-in visitor `Cart`                                          |
-| **Shared parts**        | `CartLineCard` (one line, both carts) · `CartEmptyState` (the empty basket, both carts)                             |
-| **Store**               | `cart`                                                                                                              |
-| **Menu entries**        | `Cart` (pinned beside the account menu, with its unit count and total)                                              |
-| **API calls**           | 10                                                                                                                  |
-| **Depends on**          | [`account`](./account.md) · [`delivery`](./delivery.md) · [`payments`](./payments.md) · [`products`](./products.md) |
-| **Depended on by**      | [`orders`](./orders.md) · [`wishlist`](./wishlist.md)                                                               |
-| **Languages**           | `en` · `it`                                                                                                         |
-| **Publishes**           | `useCartStore`                                                                                                      |
-| **Backend counterpart** | `cart` in `boilerplate-node-backend`                                                                                |
+| Fact             | This module                                                                             |
+| ---------------- | --------------------------------------------------------------------------------------- |
+| **Subdomain**    | `core` — The reason the product exists. Worth its own client-side rules.                |
+| **Shared parts** | `CartLineCard` (one line, both carts) · `CartEmptyState` (the empty basket, both carts) |
+| **Publishes**    | `useCartStore`                                                                          |
 
 ## The map
 
@@ -111,15 +103,9 @@ sequenceDiagram
     S-->>G: the cart page's alert for the lines that changed or are short
 ```
 
-| Piece                             | What it does                                                                                                                                                                              |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `domain/guest-cart.ts`            | The rules: a line already there grows (the `POST /cart/items` rule), a line stops at 999, a cart holds at most 100 products, storage is never trusted.                                    |
-| `guest-cart-storage.ts`           | Reads and writes the two `localStorage` keys (the list and the pending merge), guarded: blocked or full storage costs the next visit, never this one.                                     |
-| `composables/use-guest-cart.ts`   | `guestLines` and its actions, saved on every change and re-read when another tab changes the key; the cart store sends it (`mergeGuestCart`) and `badgeQuantity` falls back to its total. |
-| `components/MergeReportAlert.vue` | The cart page's merge alert: reads the store's report, renders nothing while it is empty.                                                                                                 |
-| `components/SignedInCart.vue`     | The signed-in page: lines, shipping, addresses, payment and checkout.                                                                                                                     |
-| `components/GuestCart.vue`        | The guest's page: priced lines, steppers, "Sign in to check out". No shipping, address or payment: checkout needs an account.                                                             |
-| `views/Cart.vue`                  | The route's screen: `GuestCart` for a guest, `SignedInCart` for a signed-in visitor.                                                                                                      |
+The pieces are the files of `src/modules/cart/`: the guest-cart rules in `domain/guest-cart.ts`, its
+`localStorage` keys in `guest-cart-storage.ts`, the composable the store sends from in
+`composables/use-guest-cart.ts`, and `GuestCart` / `SignedInCart` behind the one `views/Cart.vue`.
 
 The route is `access: 'open'` and asks no permission: a guest passes, and so does every signed-in
 account, staff included, since every account shops.
@@ -131,9 +117,11 @@ guest cart it sends every line in one `POST /cart/merge`, which adds each by the
 `POST /cart/items`: a product already in the cart **grows** by the line's quantity. The answer is the
 merged cart and **one result per submitted line**:
 `{ productId, requested, resulting, reason?, availability }`. `reason` is absent when the line
-landed as chosen, and otherwise one of `summed`, `capped` or `removed`. A line the cart cannot
-take is not a failure: the call still answers 200, and for the lines that were `removed` the
-server also writes one `notifications.cart-merge-refused` notification, which the
+landed as chosen, and otherwise one of `summed`, `capped`, `removed` or `cart_full` (the product is new and the cart has no line
+left for it). The same limit refuses a plain
+`POST /cart/items` with 409 `CART_LINE_LIMIT_REACHED`. A line the cart cannot
+take is not a failure: the call still answers 200, and for the lines that were `removed` or `cart_full` the
+server also writes one `shop-tasks.cart-merge-refused` notification, which the
 [bell](./notifications.md) shows. Without a guest cart it reads the summary for the badge, as before.
 
 **Stock is checked, never enforced, and never revealed.** A line the shelf does not cover is still
@@ -185,7 +173,7 @@ It lists four kinds of line (`mergeReportKind`):
 | `changed`  | a `reason` of `summed` or `capped`                       | the quantities, and the reason in plain words                                        |
 | `short`    | `availability` is `insufficient_stock` or `out_of_stock` | the quantities, a "Not enough in stock" marker, "Lower the quantity before checkout" |
 | `off-sale` | `availability` is `unavailable`                          | the quantities, a "Not available right now" marker, "Remove it, or wait"             |
-| `gone`     | a `reason` of `removed`                                  | the quantities, and "no longer available, so it was not added"                       |
+| `gone`     | a `reason` of `removed` or `cart_full`                   | the quantities, and "no longer available, so it was not added"                       |
 
 Each line names the product in the reader's language, the quantity the guest chose and the quantity
 the cart holds now. The title comes from the same product lookup the lines use; a product that
@@ -317,10 +305,15 @@ a late read can neither wipe a pick nor leave a method the server dropped.
 
 ### The checkout key
 
-`POST /cart/checkout` carries an `Idempotency-Key`. The server binds a key to the request body,
-answers 409 `IDEMPOTENCY_IN_FLIGHT` while the first attempt still runs, and replays a recorded
-outcome (a 5xx too) for as long as it keeps the key. So a key may travel again only with the same
-order.
+`POST /cart/checkout` carries an `Idempotency-Key`. What the server does with a key (it binds it to
+the body, answers 409 while the first attempt runs, replays a recorded outcome) is the backend's:
+`boilerplate-node-backend/docs/tools/idempotency.md`. The consequence for this client is that a key
+may travel again only with the same order.
+
+Checkout and the merge keep their own key logic here. Add-to-cart and reorder take one key per intent
+through the shared helper `src/infrastructure/http/idempotency.ts`, which order and task notes,
+address create and product create use too: one key while an attempt may still be running, a fresh
+one after any answer.
 
 The key follows a **fingerprint** of the order and the person: the request body (the shown total
 included), the cart's lines
@@ -330,14 +323,8 @@ merge, a reorder), without any of them having to remember to say so. The attempt
 `sessionStorage` (`checkout-attempt-storage.ts`), so a reload in the middle of an
 unanswered checkout still replays the order instead of placing a second one.
 
-| What came back              | The key                           | What the page does                                                                        |
-| --------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------- |
-| no answer, 502, 503, 504    | kept                              | the next press is the same call and replays whatever the server did                       |
-| 409 `IDEMPOTENCY_IN_FLIGHT` | kept                              | the store asks again itself after 1, 2 and 4 s; if still running, a message and a re-read |
-| a bare 500                  | kept until the cart is read again | empty cart: the order exists, the page goes to the orders; still full: a new key          |
-| 409 `CART_EMPTY`            | ended                             | a message and a re-read, so the page stops offering a basket that is gone                 |
-| any other refusal           | ended                             | the refusal's own handling ([the checkout flow](./cart-checkout.md))                      |
-| success                     | ended                             | clear the draft, go to the order                                                          |
+What each answer does to the key (kept or ended) is the last paragraph of the refusals table in
+[the checkout flow](./cart-checkout.md#the-refusals-and-why-they-are-shaped-differently).
 
 ```mermaid
 flowchart TD
@@ -398,45 +385,21 @@ product is gone. At sign-in the merge reports such a line as `removed`.
 
 ## State
 
-Store `cart`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
-
-| Kind        | Members                                                                                                                                                                                                                                                                           | What it is                                                       |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `cart` · `guestLines` · `mergeReport`                                                                                                                                                                                                                                             | The refs the setup function returns — the only writable surface. |
-| **Getters** | `cartItems` · `cartSummary` · `badgeQuantity` · `badgeTotal` · `badgeCurrency` · `guestQuantity` · `hasGuestLines` · `loading`                                                                                                                                                    | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `fetchSummary` · `fetchCart` · `pollCart` · `checkout` · `reorder` · `addCartItem` · `updateCartItem` · `removeCartItem` · `clearCart` · `addGuestItem` · `updateGuestItem` · `removeGuestItems` · `clearGuestCart` · `mergeGuestCart` · `dismissMergeReport` · `seedAfterSignIn` | Everything that changes state or calls the API.                  |
+State, getters and actions are exactly what the setup function of each store returns: `src/modules/cart/store.ts`.
 
 ## Screens
 
-| Path   | Route name | Access | Permission | View             |
-| ------ | ---------- | ------ | ---------- | ---------------- |
-| `cart` | `Cart`     | `open` | —          | `views/Cart.vue` |
-
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
+Paths, route names, access and permission per screen: `src/modules/cart/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
 
 ## Wiring
 
 #### Endpoints called
 
-| Call                      | Response schema              |
-| ------------------------- | ---------------------------- |
-| `GET /cart`               | `GetCartResponse`            |
-| `POST /cart/items`        | `AddCartItemResponse`        |
-| `DELETE /cart/items`      | `ClearCartResponse`          |
-| `PATCH /cart/items/{id}`  | `UpdateCartItemByIdResponse` |
-| `DELETE /cart/items/{id}` | `RemoveCartItemResponse`     |
-| `POST /cart/checkout`     | `CheckoutResponse`           |
-| `POST /cart/merge`        | `MergeCartResponse`          |
-| `POST /cart/reorder`      | `ReorderResponse`            |
-| `GET /cart/summary`       | `GetCartSummaryResponse`     |
-
-Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/cart/response-schemas.ts`.
 
 #### Navigation entries
 
-| Route | Label key | Section | Order | Icon | Badge |
-| ------ | ----------------------- | --- | --- | --- | --- | --- |
-| `Cart` | `navigation.label-cart` | `account` | 80 | yes | yes |
+Entries are declared in `src/modules/cart/module.ts`. Badges: `Cart` — yes.
 
 #### Analytics events
 
@@ -446,75 +409,9 @@ in Faro. See [Observability](../tools/observability.md#event-taxonomy).
 
 ## Files
 
-| File                                        | What it is                                                                                                                                                                          | Explained in                          |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `guest-cart-storage.ts`                     | Reads and writes the guest cart's `localStorage` key, and the pending merge's, guarded against blocked or full storage.                                                             | [read](../theory/layers.md)           |
-| `composables/use-cart-stock-poll.ts`        | Starts the opt-in stock poll for the lifetime of the page's setup: the interval, the visibility pause, the stop on logout. Registers nothing when the knob is off.                  | [read](../theory/layers.md)           |
-| `composables/use-cart-focus-refresh.ts`     | Reads the cart again when the shopper comes back to the page: the window gets focus or the tab becomes visible.                                                                     | [read](../theory/layers.md)           |
-| `composables/use-guest-cart.ts`             | The guest cart as a composable: the list, its actions, the copy-taking from another tab and the merge key rules.                                                                    | [read](../theory/layers.md)           |
-| `checkout-attempt-storage.ts`               | Where the checkout attempt in progress is remembered: its key, its person and its fingerprint, in `sessionStorage`, guarded; also picks the key for the next checkout.              | [read](../theory/layers.md)           |
-| `idempotent-calls.ts`                       | The transport rules of the keyed calls: the `Idempotency-Key` header, the in-flight retry ladder and which merge refusals are final. Stateless.                                     | [read](../theory/layers.md)           |
-| `composables/use-line-quantity.ts`          | Debounces per-product stepper clicks into one trailing API call each, answering the visitor's own last click locally so the UI never waits on the round trip.                       | [read](../theory/layers.md)           |
-| `domain/checkout-errors.ts`                 | Pure rules over plain data — no store, no component, no axios. Classifies a checkout rejection into one of its verdicts.                                                            | [read](../theory/domain-layer.md)     |
-| `domain/guest-cart.ts`                      | Pure rules over plain data — no store, no component, no axios. The guest cart's lines, caps and read-back.                                                                          | [read](../theory/domain-layer.md)     |
-| `domain/merge-report.ts`                    | Pure rules over plain data — no store, no component, no axios. Which lines of a merge answer are worth telling the shopper about.                                                   |
-| `domain/expected-total.ts`                  | Pure rules over plain data. The shown total as decimal text and its currency, the shape `POST /cart/checkout` requires.                                                             | [read](../theory/domain-layer.md)     |
-| `domain/checkout-attempt.ts`                | Pure rules over plain data — no store, no component, no axios. The fingerprint that decides whether a checkout is the same call as the last one.                                    | [read](../theory/domain-layer.md)     |
-| `domain/empty-cart.ts`                      | Pure rules over plain data — no store, no component, no axios. The known-empty cart a successful checkout leaves.                                                                   | [read](../theory/domain-layer.md)     |
-| `domain/stock-poll.ts`                      | Pure rules over plain data — no store, no component, no axios. What the configured poll interval means: a positive whole number of seconds, else off.                               | [read](../theory/domain-layer.md)     |
-| `domain/index.ts`                           | The domain barrel.                                                                                                                                                                  | [read](../theory/domain-layer.md)     |
-| `domain/quantity.ts`                        | Pure client-side rules over plain data — no store, no component, no axios.                                                                                                          | [read](../theory/domain-layer.md)     |
-| `index.ts`                                  | The public barrel: the only surface a sibling module may import.                                                                                                                    | [read](../theory/strategic-ddd.md)    |
-| `locales/en.json`                           | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
-| `locales/it.json`                           | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
-| `module.ts`                                 | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots. | [read](../theory/modules.md)          |
-| `response-schemas.ts`                       | One row per endpoint this domain calls, pairing a method and path pattern with the Zod schema its response is validated against.                                                    | [read](../api/openapi-workflow.md)    |
-| `components/AddToCartButton.vue`            | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                            | [read](../theory/layers.md)           |
-| `components/GuestCart.vue`                  | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                            | [read](../theory/layers.md)           |
-| `routes.ts`                                 | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                              | [read](../theory/sitemap.md)          |
-| `store.ts`                                  | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                              | [read](../tools/state-and-routing.md) |
-| `tests/e2e/__snapshots__/cart.desktop.png`  | A committed visual-regression baseline.                                                                                                                                             | [read](../tools/visual-regression.md) |
-| `tests/e2e/a11y.cy.ts`                      | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                                                   | [read](../tools/component-testing.md) |
-| `tests/e2e/analytics.cy.ts`                 | Cypress suite — the `analytics` screens, in a browser.                                                                                                                              | [read](../tools/component-testing.md) |
-| `tests/e2e/cart.cy.ts`                      | Cypress suite — the `cart` screens, in a browser.                                                                                                                                   | [read](../tools/component-testing.md) |
-| `tests/e2e/cart.visual.cy.ts`               | Cypress visual suite — pixel diffs against the committed baselines.                                                                                                                 | [read](../tools/component-testing.md) |
-| `tests/cart-view.spec.ts`                   | Vitest suite — `cart-view`, in isolation.                                                                                                                                           | [read](../tools/unit-testing.md)      |
-| `tests/checkout-errors.spec.ts`             | Vitest suite — `checkout-errors`, in isolation.                                                                                                                                     | [read](../tools/unit-testing.md)      |
-| `tests/add-to-cart-button.spec.ts`          | Vitest suite — `add-to-cart-button`, in isolation.                                                                                                                                  | [read](../tools/unit-testing.md)      |
-| `tests/quantity.spec.ts`                    | Vitest suite — `quantity`, in isolation.                                                                                                                                            | [read](../tools/unit-testing.md)      |
-| `tests/routes.spec.ts`                      | Vitest suite — the route records and the `meta.access` each one declares.                                                                                                           | [read](../tools/unit-testing.md)      |
-| `tests/store.spec.ts`                       | Vitest suite — this domain's store, with the transport mocked.                                                                                                                      | [read](../tools/unit-testing.md)      |
-| `tests/use-line-quantity.spec.ts`           | Vitest suite — the `useLineQuantity` composable, in isolation.                                                                                                                      | [read](../tools/unit-testing.md)      |
-| `tests/cart-route-view.spec.ts`             | Vitest suite — `cart-route-view`, in isolation.                                                                                                                                     | [read](../tools/unit-testing.md)      |
-| `tests/guest-cart-storage.spec.ts`          | Vitest suite — `guest-cart-storage`, in isolation.                                                                                                                                  | [read](../tools/unit-testing.md)      |
-| `tests/guest-cart-store.spec.ts`            | Vitest suite — `guest-cart-store`, in isolation.                                                                                                                                    | [read](../tools/unit-testing.md)      |
-| `tests/guest-cart-view.spec.ts`             | Vitest suite — `guest-cart-view`, in isolation.                                                                                                                                     | [read](../tools/unit-testing.md)      |
-| `tests/guest-cart.spec.ts`                  | Vitest suite — `guest-cart`, in isolation.                                                                                                                                          |
-| `tests/merge-report.spec.ts`                | Vitest suite — which merge lines reach the shopper.                                                                                                                                 |
-| `tests/stock-poll-interval.spec.ts`         | Vitest suite — what each value of the poll knob means.                                                                                                                              | [read](../tools/unit-testing.md)      |
-| `tests/store-stock-poll.spec.ts`            | Vitest suite — the store's background read yields to anything fresher.                                                                                                              | [read](../tools/unit-testing.md)      |
-| `tests/use-cart-stock-poll.spec.ts`         | Vitest suite — the poll under fake timers: knob, sign-in, hidden tab, writes in flight, stop.                                                                                       | [read](../tools/unit-testing.md)      |
-| `tests/use-cart-focus-refresh.spec.ts`      | Vitest suite — the refresh on return: focus, visibility, hidden, a write in flight, cleanup.                                                                                        | [read](../tools/unit-testing.md)      |
-| `tests/store-stale-answer.spec.ts`          | Vitest suite — answers out of order never overwrite a fresher cart, for any delivery order.                                                                                         | [read](../tools/unit-testing.md)      |
-| `tests/store-late-answer.spec.ts`           | Vitest suite — an answer for the previous person never lands in the next one's store.                                                                                               | [read](../tools/unit-testing.md)      |
-| `tests/store-checkout-key.spec.ts`          | Vitest suite — the checkout key: same order, same key; reload, person, verdict, 500, in flight.                                                                                     | [read](../tools/unit-testing.md)      |
-| `tests/store-double-seed.spec.ts`           | Vitest suite — two sign-in seeds send the guest cart once.                                                                                                                          | [read](../tools/unit-testing.md)      |
-| `tests/module-badge-account-switch.spec.ts` | Vitest suite — another account taking the tab over is seeded for.                                                                                                                   | [read](../tools/unit-testing.md)      |
-| `tests/cart-view-shipping-radio.spec.ts`    | Vitest suite — the shipping radio follows the cart whatever order the answers arrive in.                                                                                            | [read](../tools/unit-testing.md)      |
-| `tests/cart-view-stale-refusal.spec.ts`     | Vitest suite — a lost order answer: empty cart, in flight, bare 500.                                                                                                                | [read](../tools/unit-testing.md)      |
-| `tests/cart-view-double-submit.spec.ts`     | Vitest suite — the page is shut while an order is placed.                                                                                                                           | [read](../tools/unit-testing.md)      |
-| `tests/guest-cart-input-validation.spec.ts` | Vitest suite — the guest cart's rules over every number, NaN included.                                                                                                              | [read](../tools/unit-testing.md)      |
-| `tests/merge-report-alert.spec.ts`          | Vitest suite — the merge alert: content per kind (changed, short, gone), language, dismiss, live region, axe.                                                                       | [read](../tools/unit-testing.md)      |
-| `components/SignedInCart.vue`               | The signed-in cart's page. Reads its store, renders, and holds no fetching logic of its own.                                                                                        | [read](../theory/layers.md)           |
-| `views/Cart.vue`                            | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
+The folder is `src/modules/cart/`; each file's own `@module` header says what it is.
 
 ## Working on it
-
-| Suite            | Files | Where                                       |
-| ---------------- | ----- | ------------------------------------------- |
-| Vitest           | 23    | `src/modules/cart/tests/`                   |
-| Cypress          | 4     | `src/modules/cart/tests/e2e/`               |
-| Visual baselines | 5     | `src/modules/cart/tests/e2e/__snapshots__/` |
 
 ```bash
 # this module's vitest suites

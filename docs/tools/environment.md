@@ -65,17 +65,10 @@ docker run -e VITE_API_URL=https://api.example.com -p 8080:80 boilerplate-fronte
 Only the keys of `RuntimeConfig` are written, and only these. Adding one means a key in that
 interface, a `config_entry` line in the entrypoint script, and the call site's `runtimeValue()`.
 
-| `config.js` key                                                     | Container variable                                                       |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `API_URL`, `API_SSE`                                                | `VITE_API_URL`, `VITE_API_SSE`                                           |
-| `APP_NAME`, `APP_LOGO`, `APP_EMPTY_VALUE`                           | `VITE_APP_NAME`, `_LOGO`, `_EMPTY_VALUE`                                 |
-| `LOCALE_APP`, `APP_DEFAULT_LOCALE`, `APP_FALLBACK_LOCALE`           | `VITE_LOCALE_APP`, `VITE_APP_DEFAULT_LOCALE`, `VITE_APP_FALLBACK_LOCALE` |
-| `APP_LOG_LEVEL`, `APP_LOG_SCOPES`                                   | `VITE_APP_LOG_LEVEL`, `VITE_APP_LOG_SCOPES`                              |
-| `AXIOS_TIMEOUT`, `MAX_UPLOAD_BYTES`                                 | `VITE_AXIOS_TIMEOUT`, `VITE_MAX_UPLOAD_BYTES`                            |
-| `CART_STOCK_POLL_SECONDS`                                           | `VITE_CART_STOCK_POLL_SECONDS`                                           |
-| `FARO_URL`, `FARO_APP_NAME`, `FARO_APP_VERSION`, `FARO_ENVIRONMENT` | `VITE_FARO_*`                                                            |
-| `UMAMI_SRC`, `UMAMI_WEBSITE_ID`, `UMAMI_REQUIRE_CONSENT`            | `VITE_UMAMI_*`                                                           |
-| `TOURS_ENABLED`                                                     | `VITE_TOURS_ENABLED`                                                     |
+Each key is its container variable without the prefix: `API_URL` is `VITE_API_URL`, `FARO_URL` is
+`VITE_FARO_URL`. The keys are the fields of `RuntimeConfig` (`src/infrastructure/runtime-config.ts`); the
+ones the container writes are the `config_entry` lines of
+`docker/docker-entrypoint.d/40-generate-runtime-config.sh`.
 
 The container variable keeps its `VITE_` name, so the same `.env` line works for a dev server and
 for `docker run -e`.

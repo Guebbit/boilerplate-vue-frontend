@@ -97,12 +97,7 @@ Manual exceptions go through `captureException()` — called from `src/infrastru
 
 ### Environment variables
 
-| Variable                | Purpose                                                |
-| ----------------------- | ------------------------------------------------------ |
-| `VITE_FARO_URL`         | Alloy Faro receiver URL — empty disables Faro entirely |
-| `VITE_FARO_APP_NAME`    | App name reported to Faro (default `frontend`)         |
-| `VITE_FARO_APP_VERSION` | App version (default: `package.json`'s version)        |
-| `VITE_FARO_ENVIRONMENT` | Environment tag (default: Vite `MODE`)                 |
+The `VITE_FARO_*` variables are listed in [Environment](./environment.md#telemetry).
 
 The trace-propagation origin is derived from `VITE_API_URL`, the same value the HTTP client uses. An empty value means the API is on the page's own origin: nothing is listed, and OpenTelemetry still sends `traceparent` to same-origin requests on its own.
 
@@ -160,11 +155,7 @@ name emitted from both sides writes two rows nothing downstream can tell apart.
 
 ### Environment variables
 
-| Variable                     | Purpose                                                                           |
-| ---------------------------- | --------------------------------------------------------------------------------- |
-| `VITE_UMAMI_WEBSITE_ID`      | Umami website id (from the Umami dashboard); required, with `VITE_UMAMI_SRC`      |
-| `VITE_UMAMI_SRC`             | Tracker script URL; required, with the website id (either missing disables Umami) |
-| `VITE_UMAMI_REQUIRE_CONSENT` | `true` (default): the tracker loads only after consent. `false` loads it unasked  |
+The `VITE_UMAMI_*` variables are listed in [Environment](./environment.md#telemetry); consent decides whether the tracker loads at all.
 
 ### External references
 
@@ -196,4 +187,4 @@ obs.captureException(error);
 
 - [Umami](./umami.md)
 - [Request Flow](../theory/request-flow.md)
-- [Observability Endpoints](../api/observability.md)
+- [Observability endpoints](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/api/observability.md) — the backend's page for the reads

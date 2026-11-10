@@ -268,10 +268,7 @@ flowchart LR
 
 ## Documentation rule of thumb
 
-- Keep docs grouped by concept.
-- Prefer visual maps when they help.
-- Use the local search bar first when you only need to jump to one concept.
-- Keep code comments brief and move long explanations here.
+The house style is the backend's: [documentation style](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/reference/documentation-style.md).
 
 ## External references
 

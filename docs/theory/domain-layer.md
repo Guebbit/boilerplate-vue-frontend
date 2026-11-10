@@ -213,88 +213,11 @@ application's route tree_, not about one domain.
 
 ## 2. What DDD is
 
-**Domain-Driven Design** (Eric Evans, 2003) is a way of _modelling a business in code_. It has two
-halves, and almost everyone means the second when they say "DDD".
-
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 30, 'rankSpacing': 40}}}%%
-flowchart TD
-    DDD["DDD"]
-    DDD --> ST["<b>Strategic</b><br/>how you carve the system up"]
-    DDD --> TA["<b>Tactical</b><br/>how you model inside one piece"]
-
-    ST --> S1["bounded contexts"]
-    ST --> S2["ubiquitous language"]
-    ST --> S3["context mapping"]
-    ST --> S4["core vs generic subdomains"]
-
-    TA --> T1["entities"]
-    TA --> T2["value objects"]
-    TA --> T3["aggregates"]
-    TA --> T4["domain repositories"]
-
-    classDef have fill:#dcfce7,stroke:#16a34a,color:#111827;
-    classDef lack fill:#fee2e2,stroke:#dc2626,color:#111827;
-    classDef neutral fill:#dbeafe,stroke:#2563eb,color:#111827;
-    class ST,S1,S2,S3,S4 have;
-    class TA,T1,T2,T3,T4 lack;
-    class DDD neutral;
-```
-
-**Green = this repo has it. Red = it does not.**
-
----
+Owned by the backend, and the same here: [2. What DDD is](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/domain-layer.md). This repo's differences, if any, are in the sections below.
 
 ## 3. DDD vs feature/domain architecture
 
-These are not the same thing, and conflating them is the usual reason "we do DDD" means "we have
-folders named after features".
-
-**Feature architecture is a _packaging_ decision.** Where do files live?
-
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 25, 'rankSpacing': 35}}}%%
-flowchart LR
-    subgraph BY_LAYER["❌ package by layer"]
-        direction TB
-        L1["stores/<br/>products · orders · cart"]
-        L2["views/<br/>products · orders · cart"]
-        L3["routes/<br/>products · orders · cart"]
-    end
-
-    subgraph BY_FEATURE["✅ package by feature"]
-        direction TB
-        F1["products/<br/>store · views · routes"]
-        F2["orders/<br/>store · views · routes"]
-        F3["cart/<br/>store · views · routes"]
-    end
-
-    classDef bad fill:#fee2e2,stroke:#dc2626,color:#111827;
-    classDef good fill:#dcfce7,stroke:#16a34a,color:#111827;
-    class L1,L2,L3 bad;
-    class F1,F2,F3 good;
-```
-
-Deleting a feature becomes one folder instead of three edits. **This repo does this, and it is
-done.**
-
-**DDD is a _modelling_ decision.** What do the files contain?
-
-|             | Feature architecture           | DDD (tactical)                |
-| ----------- | ------------------------------ | ----------------------------- |
-| Answers     | _where does this file live?_   | _how is this rule expressed?_ |
-| Unit        | a folder                       | an aggregate                  |
-| Deliverable | a directory tree               | a model of the business       |
-| Alone?      | yes — and this repo largely is | yes, in any tree shape        |
-
-**You can have immaculate feature folders and zero DDD.** That is roughly this repo's position, and
-it is a good one — the usual failure is the reverse: elaborate tactical patterns inside a ball of mud.
-
-A **bounded context** and a **feature folder** often end up being the same directory, which is why
-people conflate them. But a bounded context is defined by _where one model and one language stop
-being valid_, not by where you put files.
-
----
+Owned by the backend, and the same here: [3. DDD vs feature/domain architecture](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/domain-layer.md). This repo's differences, if any, are in the sections below.
 
 ## 4. Where this repo stands
 

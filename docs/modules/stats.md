@@ -6,18 +6,9 @@
 **Breaks if you change** — nothing outside this folder. No module depends on it.
 :::
 
-| Fact                    | This module                                                                    |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| **Subdomain**           | `supporting` — Specific to this business but not a differentiator. Kept plain. |
-| **Screens**             | 2 — `StatsDashboard`, `StatsProductSales`                                      |
-| **Store**               | `stats`                                                                        |
-| **Menu entries**        | `StatsDashboard`                                                               |
-| **API calls**           | 8                                                                              |
-| **Depends on**          | _nothing_                                                                      |
-| **Depended on by**      | _nothing_                                                                      |
-| **Languages**           | `en` · `it`                                                                    |
-| **Publishes**           | _nothing_ — no barrel, so no sibling may import it                             |
-| **Backend counterpart** | `stats` in `boilerplate-node-backend`                                          |
+| Fact          | This module                                                                    |
+| ------------- | ------------------------------------------------------------------------------ |
+| **Subdomain** | `supporting` — Specific to this business but not a differentiator. Kept plain. |
 
 ## The map
 
@@ -90,20 +81,11 @@ needs no server route and no step-up; a cell a spreadsheet would read as a formu
 
 ## State
 
-Store `stats`, from `store.ts`. Only what the setup function returns is listed.
-
-| Kind        | Members                                                                                                        | What it is                                        |
-| ----------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| **State**   | `sales` · `products` · `categories` · `paymentMix` · `operations` · `customers` · `pipeline` · `productSeries` | The last answer of each read, as the API gave it. |
-| **Getters** | `loading`                                                                                                      | The shared loading flag.                          |
-| **Actions** | `loadDashboard` · `loadProductSales`                                                                           | Everything that calls the API.                    |
+State, getters and actions are exactly what the setup function of each store returns: `src/modules/stats/store.ts`.
 
 ## Screens
 
-| Path                              | Route name          | Access | Permission   | View                          |
-| --------------------------------- | ------------------- | ------ | ------------ | ----------------------------- |
-| `sales/stats`                     | `StatsDashboard`    | `auth` | `read Stats` | `views/StatsDashboard.vue`    |
-| `sales/stats/products/:productId` | `StatsProductSales` | `auth` | `read Stats` | `views/StatsProductSales.vue` |
+Paths, route names, access and permission per screen: `src/modules/stats/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
 
 The permission is `read:Stats`, which the backend grants to `manager` and `admin`. See
 [Security](../tools/security.md#route-guards).
@@ -112,22 +94,11 @@ The permission is `read:Stats`, which the backend grants to `manager` and `admin
 
 #### Endpoints called
 
-| Call                              | Response schema                 |
-| --------------------------------- | ------------------------------- |
-| `GET /stats/sales`                | `GetSalesStatsResponse`         |
-| `GET /stats/products`             | `GetProductStatsResponse`       |
-| `GET /stats/products/{productId}` | `GetProductSalesSeriesResponse` |
-| `GET /stats/categories`           | `GetCategoryStatsResponse`      |
-| `GET /stats/payments`             | `GetPaymentMixStatsResponse`    |
-| `GET /stats/operations`           | `GetOperationsStatsResponse`    |
-| `GET /stats/customers`            | `GetCustomerStatsResponse`      |
-| `GET /stats/pipeline`             | `GetPipelineStatsResponse`      |
+Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/stats/response-schemas.ts`.
 
 #### Navigation entries
 
-| Route            | Label key                | Section | Order | Icon | Badge |
-| ---------------- | ------------------------ | ------- | ----- | ---- | ----- |
-| `StatsDashboard` | `navigation.label-stats` | `admin` | 57    | yes  | —     |
+Entries are declared in `src/modules/stats/module.ts`.
 
 ## Libraries
 
@@ -140,30 +111,7 @@ formula guard and a library would not remove the need to test it.
 
 ## Files
 
-| File                                | What it is                                                                                       | Explained in                          |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------- |
-| `components/ChartWithTable.vue`     | One chart block: the Mermaid picture, a table toggle and a CSV of the same data.                 | [read](../theory/layers.md)           |
-| `components/MermaidChart.vue`       | Draws Mermaid source as an inline SVG; the library loads only when a chart mounts.               | [read](../theory/layers.md)           |
-| `components/OperationsSection.vue`  | How the shop is running: payment mix, cancellation and return rates, customers, what is waiting. | [read](../theory/layers.md)           |
-| `components/ProductsSection.vue`    | Top products and sales by category, each product linking to its own page.                        | [read](../theory/layers.md)           |
-| `components/SalesSection.vue`       | The sales block, one group per currency: headline cards, series and the revenue table.           | [read](../theory/layers.md)           |
-| `components/StatsPeriodForm.vue`    | The period picker every stats page opens with; reports only a period the API accepts.            | [read](../theory/layers.md)           |
-| `domain/calendar.ts`                | Calendar days as `YYYY-MM-DD` strings and their arithmetic.                                      | [read](../theory/domain-layer.md)     |
-| `domain/chart.ts`                   | The one shape every chart, table and CSV is built from.                                          | [read](../theory/domain-layer.md)     |
-| `domain/csv.ts`                     | Client-side CSV with the spreadsheet formula guard.                                              | [read](../theory/domain-layer.md)     |
-| `domain/figures.ts`                 | Small pure rules over the figures the API returns.                                               | [read](../theory/domain-layer.md)     |
-| `domain/index.ts`                   | The domain barrel: periods, figures, charts and CSV.                                             | [read](../theory/domain-layer.md)     |
-| `domain/mermaid.ts`                 | Chart data to Mermaid text, every label reduced to a plain allow-list.                           | [read](../theory/domain-layer.md)     |
-| `domain/period.ts`                  | The period a page asks about and the rules the API enforces on it.                               | [read](../theory/domain-layer.md)     |
-| `locales/en.json · locales/it.json` | This domain's translation dictionary for one language, loaded as its own chunk.                  | [read](../tools/i18n.md)              |
-| `module.ts`                         | The manifest: routes, navigation entry, response schemas and locales.                            | [read](../theory/modules.md)          |
-| `response-schemas.ts`               | One row per endpoint this domain calls, with the Zod schema its response is validated against.   | [read](../api/openapi-workflow.md)    |
-| `routes.ts`                         | Two admin routes, lazy-loaded so the chart library downloads only when one opens.                | [read](../theory/modules.md)          |
-| `store.ts`                          | The Pinia store: the last answer of each read, with no cache across periods.                     | [read](../tools/state-and-routing.md) |
-| `tests/*.spec.ts`                   | Vitest suites: the store, routes, views, sections, period form, chart and domain rules.          | [read](../tools/unit-testing.md)      |
-| `tests/e2e/*.cy.ts`                 | Cypress: an axe sweep, the dashboard, the actions and the role gates in a browser.               | [read](../tools/component-testing.md) |
-| `views/StatsDashboard.vue`          | A routed screen: one period form over four blocks.                                               | [read](../theory/layers.md)           |
-| `views/StatsProductSales.vue`       | A routed screen: one product's sales over time.                                                  | [read](../theory/layers.md)           |
+The folder is `src/modules/stats/`; each file's own `@module` header says what it is.
 
 ## Working on it
 
