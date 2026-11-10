@@ -50,7 +50,7 @@ it('a customer buys a product', { tags: '@smoke' }, () => { … });
 describe('Checkout', { tags: '@smoke' }, () => { … }); // every test inside
 ```
 
-Tags come from [`@cypress/grep`](https://github.com/cypress-io/cypress/tree/develop/npm/grep), registered in `tests/support/e2e/e2e.ts` and `cypress.config.ts`. Tags, not file names: `@smoke` works in any file layout and keeps each spec's recorded run time. The catalogue in [Tests](../reference/tests.md#the-journey-catalogue) says which tier each journey is in.
+Tags come from [`@cypress/grep`](https://github.com/cypress-io/cypress/tree/develop/npm/grep), registered in `tests/support/e2e/e2e.ts` and `cypress.config.ts`. Tags, not file names: `@smoke` works in any file layout and keeps each spec's recorded run time. A journey is in the push tier when its spec carries `@smoke`: `grep -rl @smoke tests/e2e` lists them.
 
 | Tier     | Runs               | Grep     | Jobs                                                                         | Budget per job |
 | -------- | ------------------ | -------- | ---------------------------------------------------------------------------- | -------------- |
