@@ -13,6 +13,7 @@ import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
+import { unsetOmitted } from '@/infrastructure/utils/list-row.ts';
 import {
     listUsers,
     searchUsers,
@@ -73,6 +74,37 @@ type UpdateUserData = UpdateUserByIdRequest & { imageUpload?: Blob };
 export type UserRecord = User & Pick<UserListItem, 'purchaseHeld'>;
 
 /**
+ * Every field a `UserListItem` declares: what a list row may carry, so what a row that omits one
+ * has unset.
+ */
+const USER_LIST_KEYS: Record<keyof UserListItem, true> = {
+    id: true,
+    email: true,
+    username: true,
+    role: true,
+    active: true,
+    imageUrl: true,
+    thumbnailUrl: true,
+    purchaseHeld: true,
+    purchaseHoldFlaggedAt: true,
+    purgeAt: true,
+    createdAt: true,
+    deletedAt: true,
+    actions: true
+};
+
+/**
+ * User list rows as the records the store caches, each naming the list fields it omits (as
+ * `undefined`) so the `partial` merge clears a field someone else unset since the record was
+ * cached.
+ *
+ * @param items - the rows a list answered
+ * @returns the rows, typed as the records the dictionary holds
+ */
+const asRecords = (items: UserListItem[]): UserRecord[] =>
+    items.map((row) => unsetOmitted(USER_LIST_KEYS, row));
+
+/**
  * Users CRUD, paginated search and avatar upload.
  *
  * See the products store for the shape — the two are deliberately identical apart
@@ -118,7 +150,7 @@ export const useUsersStore = defineStore('users', () => {
         AxiosRequestConfig
     >(
         {
-            list: () => listUsers().then((response) => response.items),
+            list: () => listUsers().then((response) => asRecords(response.items)),
 
             search: (filters, page, pageSize) =>
                 searchUsers({
@@ -135,7 +167,7 @@ export const useUsersStore = defineStore('users', () => {
                     purchaseHold: filters.purchaseHold,
                     purchaseHoldReview: filters.purchaseHoldReview
                 }).then((response) => ({
-                    items: response.items,
+                    items: asRecords(response.items),
                     totalItems: response.meta.totalItems
                 })),
 

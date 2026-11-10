@@ -162,6 +162,27 @@ describe('useOrdersStore', () => {
                 }));
     });
 
+    describe('a list row merged over a cached order', () => {
+        it('unsets a list field the row omits and keeps a detail-only one', () => {
+            const store = useOrdersStore();
+            store.addOrder(anOrder({ paidAt: '2026-10-01T10:00:00.000Z', userId: 'u1' }));
+            // Someone else cleared `paidAt`: the row no longer carries it.
+            vi.mocked(searchOrders).mockResolvedValueOnce(
+                contractResponse(schemas.SearchOrdersResponse, {
+                    ...EMPTY_PAGE,
+                    items: [ROW],
+                    meta: { ...EMPTY_PAGE.meta, totalItems: 1 }
+                }) as never
+            );
+
+            return store.fetchPaginationOrders(1, 10, { partial: true, forced: true }).then(() => {
+                expect(store.orders.o1?.paidAt).toBeUndefined();
+                // `userId` is not a list field, so the merge leaves it.
+                expect(store.orders.o1?.userId).toBe('u1');
+            });
+        });
+    });
+
     describe('updateOrder', () => {
         // `status` is not a field of `UpdateOrderByIdRequest` — `email` is the only field this
         // body carries.

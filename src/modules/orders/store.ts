@@ -12,6 +12,7 @@ import { queryClient } from '@/infrastructure/query-client.ts';
 import { getCurrentLocale } from '@/i18n';
 import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
 import { endOfDayInstant, startOfDayInstant } from '@/infrastructure/utils/day-range.ts';
+import { unsetOmitted } from '@/infrastructure/utils/list-row.ts';
 import {
     listOrders,
     searchOrders,
@@ -102,15 +103,36 @@ const criteriaOf = (filters: OrdersFilters) => ({
 });
 
 /**
+ * Every field an `OrderListItem` declares: what a list row may carry, so what a row that omits one
+ * has unset.
+ */
+const ORDER_LIST_KEYS: Record<keyof OrderListItem, true> = {
+    id: true,
+    orderNumber: true,
+    status: true,
+    paymentStatus: true,
+    fulfillmentStatus: true,
+    returnStatus: true,
+    totalPrice: true,
+    currency: true,
+    paidAt: true,
+    createdAt: true,
+    deletedAt: true,
+    actions: true
+};
+
+/**
  * Order list rows as the records the store caches. A list item is the part of an `Order` a table
  * renders; the list reads are stored with `partial: true` (see `OrdersList.vue`), which merges them
  * over a full record already cached instead of replacing it. The one narrowing the compiler cannot
- * see: a list view reads list fields only.
+ * see: a list view reads list fields only. Each row also names the list fields it omits (as
+ * `undefined`), so the merge clears a field someone else unset since the record was cached.
  *
  * @param items - the rows a list answered
  * @returns the same rows, typed as the records the dictionary holds
  */
-const asRecords = (items: OrderListItem[]): Order[] => items as Order[];
+const asRecords = (items: OrderListItem[]): Order[] =>
+    items.map((row) => unsetOmitted(ORDER_LIST_KEYS, row)) as Order[];
 
 /**
  * Reads one page of an order's timeline, newest first (a log: no `sort`). A background read like

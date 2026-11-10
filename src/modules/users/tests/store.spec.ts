@@ -469,6 +469,20 @@ describe('useUsersStore', () => {
                 });
         });
 
+        it('a list row unsets a list field it omits and keeps a detail-only one', () => {
+            const store = useUsersStore();
+            const { actions } = aUser();
+            store.addUser(aUser({ id: 'u1', deletedAt: '2026-10-01T10:00:00.000Z', phone: '555' }));
+            // Someone restored the account: the row no longer carries `deletedAt`.
+            respondWithItems([{ id: 'u1', email: 'ada@example.com', username: 'ada', actions }]);
+
+            return store.fetchPaginationUsers(1, 10, { partial: true, forced: true }).then(() => {
+                expect(store.users.u1?.deletedAt).toBeUndefined();
+                // `phone` is not a list field, so the merge leaves it.
+                expect(store.users.u1?.phone).toBe('555');
+            });
+        });
+
         it('fetchUser requests one user and unwraps a single-record envelope', () => {
             vi.mocked(orvalMutator).mockImplementation(
                 (config: { url?: string; method?: string }) =>
