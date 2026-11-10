@@ -306,14 +306,12 @@ const {
 const onMissingRecord = useMissingRecord();
 
 /**
- * Selects and (re)fetches the order whenever the route id changes.
+ * Selects and fetches the order whenever the route id changes.
  *
- * The forced fetch below is not a duplicate of it. The list seeds the cache with SUMMARY rows,
- * and `watchOrder` is cache-first — arriving from the orders list, it would settle for that row
- * and never ask the API. But the DETAIL representation is the one carrying `actions` — which
- * buttons this caller may press, answered by the server's own lifecycle rules — and only
- * `GET /orders/:id` serves it. Drop the forced fetch and the page renders with no action buttons
- * at all for anyone who arrived from the list, which looks like an order nothing may be done to.
+ * `watchOrder` is cache-first. The list stores its rows with `partial: true`, which merges them
+ * over a record already cached, so a detail read stays valid as long as the row agrees with it.
+ * A row that disagrees on a list field marks the cached order stale (see the orders store), and
+ * the next visit reads `GET /orders/:id` again. An order never cached is read in full on arrival.
  */
 watchOrder(() => id, { onError: onMissingRecord });
 </script>

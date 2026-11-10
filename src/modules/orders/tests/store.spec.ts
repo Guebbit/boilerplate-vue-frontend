@@ -35,6 +35,7 @@ import {
     contractResponse
 } from '../../../../tests/support/unit/orval-fixture-schema.ts';
 import { anOrder, anOrderListItem } from '../../../../tests/support/unit/fixtures.ts';
+import type { OrderListItem } from '@api';
 
 /**
  * Fixture order returned by the mocked `@api` client.
@@ -120,6 +121,19 @@ vi.mock('@api', () => ({
     OrderSortItem: { createdAt: 'createdAt', '-createdAt': '-createdAt', status: 'status' }
 }));
 
+/**
+ * Answers the next search with one row of the given status.
+ * @param status - the status the row carries
+ */
+const searchAnswers = (status: OrderListItem['status']) =>
+    vi.mocked(searchOrders).mockResolvedValueOnce(
+        contractResponse(schemas.SearchOrdersResponse, {
+            ...EMPTY_PAGE,
+            items: [anOrderListItem({ status })],
+            meta: { ...EMPTY_PAGE.meta, totalItems: 1 }
+        }) as never
+    );
+
 describe('useOrdersStore', () => {
     beforeEach(() => {
         setActivePinia(createPinia());
@@ -180,6 +194,50 @@ describe('useOrdersStore', () => {
                 // `userId` is not a list field, so the merge leaves it.
                 expect(store.orders.o1?.userId).toBe('u1');
             });
+        });
+    });
+
+    describe('a list row that disagrees with a freshly read order', () => {
+        it('reads the order again on the next detail visit', async () => {
+            const store = useOrdersStore();
+            await store.fetchOrder('o1');
+            searchAnswers('canceled');
+            await store.fetchPaginationOrders(1, 10, { partial: true, forced: true });
+            vi.mocked(getOrderById).mockClear();
+
+            await store.fetchOrder('o1');
+
+            expect(getOrderById).toHaveBeenCalledTimes(1);
+        });
+
+        it('serves the cached order when the row agrees with it', async () => {
+            const store = useOrdersStore();
+            await store.fetchOrder('o1');
+            // The detail read answers `ORDER`; a row repeating its list fields changes nothing.
+            vi.mocked(searchOrders).mockResolvedValueOnce(
+                contractResponse(schemas.SearchOrdersResponse, {
+                    ...EMPTY_PAGE,
+                    items: [
+                        anOrderListItem({
+                            status: ORDER.status,
+                            paymentStatus: ORDER.paymentStatus,
+                            fulfillmentStatus: ORDER.fulfillmentStatus,
+                            returnStatus: ORDER.returnStatus,
+                            orderNumber: ORDER.orderNumber,
+                            totalPrice: ORDER.totalPrice,
+                            currency: ORDER.currency,
+                            actions: ORDER.actions
+                        })
+                    ],
+                    meta: { ...EMPTY_PAGE.meta, totalItems: 1 }
+                }) as never
+            );
+            await store.fetchPaginationOrders(1, 10, { partial: true, forced: true });
+            vi.mocked(getOrderById).mockClear();
+
+            await store.fetchOrder('o1');
+
+            expect(getOrderById).not.toHaveBeenCalled();
         });
     });
 

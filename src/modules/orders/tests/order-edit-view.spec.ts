@@ -93,7 +93,7 @@ const signInAsAdmin = (abilities: [string, string][] = [['create', 'Payment']]) 
 
 /**
  * `OrderActions`, defaulted to "nothing" — each case overrides only the fields its own scenario
- * is about, rather than restating `process`/`override` (this suite's concern only
+ * is about, rather than restating `process`/`overrideStatus` (this suite's concern only
  * in "the correct-status door" below) at every call site.
  */
 const anAction = (overrides: Partial<OrderActions> = {}): OrderActions => ({
@@ -392,7 +392,7 @@ describe('the correct-status door', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.shipped,
-            // `override` left at `anAction`'s empty default — no permission, or nothing left
+            // `overrideStatus` left at `anAction`'s empty default — no permission, or nothing left
             // overridable, read the same way here: the server already decided.
             actions: anAction({ cancel: true, pay: false })
         });
