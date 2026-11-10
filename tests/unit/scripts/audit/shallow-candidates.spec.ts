@@ -1,0 +1,475 @@
+/**
+ * `scripts/audit/code-shape/scripts/shallow-candidates.ts` — the counts the `code-shape` audit
+ * judges by. Each case builds a tiny in-memory program, so a count is checked against code small
+ * enough to count by eye.
+ */
+import { describe, expect, it } from 'vitest';
+import ts from 'typescript';
+import {
+    findShallowCandidates,
+    type ShallowReport
+} from '../../../../scripts/audit/code-shape/scripts/shallow-candidates';
+
+/** The virtual repo root every file below lives under. */
+const ROOT = '/repo';
+
+/**
+ * Builds a program over in-memory files and lists its candidates.
+ * TypeScript compiler host: https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API
+ *
+ * @param files - repo-relative path → source text
+ * @param scope - the scope to analyse, `src` by default
+ * @returns the report
+ */
+const analyse = (files: Record<string, string>, scope: string[] = ['src']): ShallowReport => {
+    const sources = new Map(Object.entries(files).map(([file, text]) => [`${ROOT}/${file}`, text]));
+    // `noLib`: skip the standard library; resolving names between these files needs none of it.
+    const options: ts.CompilerOptions = {
+        noLib: true,
+        module: ts.ModuleKind.ESNext,
+        moduleResolution: ts.ModuleResolutionKind.Bundler
+    };
+    const host: ts.CompilerHost = {
+        // `createSourceFile(…, true)`: set parent pointers, which the analysis walks up through.
+        getSourceFile: (fileName) => {
+            const text = sources.get(fileName);
+            return text === undefined
+                ? undefined
+                : ts.createSourceFile(fileName, text, ts.ScriptTarget.ES2022, true);
+        },
+        fileExists: (fileName) => sources.has(fileName),
+        readFile: (fileName) => sources.get(fileName),
+        getDefaultLibFileName: () => 'lib.d.ts',
+        writeFile: () => undefined,
+        getCurrentDirectory: () => ROOT,
+        getCanonicalFileName: (fileName) => fileName,
+        useCaseSensitiveFileNames: () => true,
+        getNewLine: () => '\n'
+    };
+    // `createProgram`: type-checks the files together, so an import resolves to its declaration.
+    const program = ts.createProgram({ rootNames: [...sources.keys()], options, host });
+    return findShallowCandidates(program, ROOT, scope);
+};
+
+/**
+ * The names in one candidate list.
+ *
+ * @param entries - a candidate list
+ * @returns their names, or file paths for a file list
+ */
+const namesOf = (entries: ({ name: string } | { file: string })[]): string[] =>
+    entries.map((entry) => ('name' in entry ? entry.name : entry.file));
+
+describe('smallAndRare', () => {
+    it('lists a one-line function with a single caller, and where the caller is', () => {
+        const report = analyse({
+            'src/math.ts': 'export const add = (a: number, b: number) => a + b;',
+            'src/use.ts': "import { add } from './math';\nexport const total = add(1, 2);"
+        });
+
+        expect(report.smallAndRare).toEqual([
+            expect.objectContaining({
+                name: 'add',
+                file: 'src/math.ts',
+                line: 1,
+                bodyLines: 1,
+                references: 1
+            })
+        ]);
+        expect(report.smallAndRare[0]?.referencedFrom).toEqual(['src/use.ts']);
+    });
+
+    it('counts a renamed import as a use of the same function', () => {
+        const report = analyse({
+            'src/math.ts': 'export const add = (a: number, b: number) => a + b;',
+            'src/use.ts':
+                "import { add as plus } from './math';\nimport { add } from './math';\nexport const both = [plus(1, 2), add(3, 4)];"
+        });
+
+        expect(report.smallAndRare.find((function_) => function_.name === 'add')?.references).toBe(
+            2
+        );
+    });
+
+    it('leaves out a function with more than two users', () => {
+        const report = analyse({
+            'src/math.ts':
+                'const add = (a: number, b: number) => a + b;\nexport const all = [add(1, 2), add(3, 4), add(5, 6)];'
+        });
+
+        expect(namesOf(report.smallAndRare)).not.toContain('add');
+    });
+
+    it('leaves out a function nothing uses — dead code is knip’s to report', () => {
+        const report = analyse({
+            'src/math.ts': 'export const add = (a: number, b: number) => a + b;'
+        });
+
+        expect(report.smallAndRare).toEqual([]);
+    });
+
+    it('leaves out a body longer than three lines, however few statements it has', () => {
+        const report = analyse({
+            'src/chain.ts':
+                'const long = (x: number) =>\n    [x]\n        .map((y) => y + 1)\n        .map((y) => y * 2)\n        .map((y) => y - 3);\nexport const value = long(1);'
+        });
+
+        expect(namesOf(report.smallAndRare)).not.toContain('long');
+    });
+
+    it('counts a test as a user without listing anything in it', () => {
+        const report = analyse(
+            {
+                'src/math.ts': 'export function add(a: number, b: number) { return a + b; }',
+                'tests/math.test.ts':
+                    "import { add } from '../src/math';\nconst helper = () => add(1, 2);\nexport const result = helper();"
+            },
+            ['src']
+        );
+
+        expect(namesOf(report.smallAndRare)).toEqual(['add']);
+        expect(report.smallAndRare[0]?.referencedFrom).toEqual(['tests/math.test.ts']);
+    });
+
+    it('never lists a function inside a module’s own tests folder', () => {
+        const report = analyse({
+            'src/modules/shop/tests/helpers.ts':
+                'const make = () => 1;\nexport const made = make();'
+        });
+
+        expect(report.smallAndRare).toEqual([]);
+    });
+});
+
+describe('passThroughs', () => {
+    it('names the callee of a body that only forwards its own parameters', () => {
+        const report = analyse({
+            'src/repo.ts': 'export const repo = { find: (id: string) => id };',
+            'src/service.ts':
+                "import { repo } from './repo';\nexport const find = async (id: string) => await repo.find(id);\nexport const rest = (...ids: string[]) => Math.max(...ids);"
+        });
+
+        expect(
+            report.passThroughs.map((function_) => [function_.name, function_.forwardsTo])
+        ).toEqual([
+            ['find', 'repo.find'],
+            ['rest', 'Math.max']
+        ]);
+    });
+
+    it('does not call a partial application or a reordering a pass-through', () => {
+        const report = analyse({
+            'src/wrap.ts':
+                'const g = (a: number, b: number) => a - b;\nexport const partial = (a: number) => g(a, 1);\nexport const swapped = (a: number, b: number) => g(b, a);'
+        });
+
+        expect(namesOf(report.passThroughs)).toEqual([]);
+    });
+
+    it('does not call a block body that does more than one thing a pass-through', () => {
+        const report = analyse({
+            'src/wrap.ts':
+                'const g = (a: number) => a;\nexport const logged = (a: number) => {\n    void a;\n    return g(a);\n};'
+        });
+
+        expect(namesOf(report.passThroughs)).toEqual([]);
+    });
+});
+
+describe('optionalNeverPassed', () => {
+    it('lists an optional parameter no call site supplies', () => {
+        const report = analyse({
+            'src/clock.ts':
+                'const at = (day: number, now?: number) => day + (now ?? 0);\nexport const today = at(1);'
+        });
+
+        expect(
+            report.optionalNeverPassed.map((function_) => function_.optionalNeverPassed)
+        ).toEqual([['now']]);
+    });
+
+    it('leaves it out once any caller passes it', () => {
+        const report = analyse({
+            'src/clock.ts':
+                'const at = (day: number, now = 0) => day + now;\nexport const days = [at(1), at(2, 5)];'
+        });
+
+        expect(report.optionalNeverPassed).toEqual([]);
+    });
+
+    it('leaves it out when the function is also handed over as a callback', () => {
+        const report = analyse({
+            'src/clock.ts':
+                'const at = (day: number, now?: number) => day + (now ?? 0);\nexport const today = at(1);\nexport const later = [1].map(at);'
+        });
+
+        expect(report.optionalNeverPassed).toEqual([]);
+    });
+});
+
+describe('lazyFiles', () => {
+    it('lists a file with one export and one importer', () => {
+        const report = analyse({
+            'src/tiny.ts': 'export const one = 1;',
+            'src/use.ts':
+                "import { one } from './tiny';\nexport const two = one + 1;\nexport const three = 3;\nexport const four = 4;"
+        });
+
+        expect(report.lazyFiles).toEqual([
+            { file: 'src/tiny.ts', exports: 1, importedBy: ['src/use.ts'], published: false }
+        ]);
+    });
+
+    it('leaves out a file with more than two exports', () => {
+        const report = analyse({
+            'src/many.ts': 'export const a = 1;\nexport const b = 2;\nexport const c = 3;',
+            'src/use.ts':
+                "import { a } from './many';\nexport const x = a;\nexport const y = 1;\nexport const z = 2;"
+        });
+
+        expect(namesOf(report.lazyFiles)).not.toContain('src/many.ts');
+    });
+
+    it('leaves out the files the module layout asks for', () => {
+        const report = analyse({
+            'src/modules/shop/routes.ts': 'export const routes = 1;',
+            'src/modules/shop/module.ts':
+                "import { routes } from './routes';\nexport const a = routes;\nexport const b = 2;\nexport const c = 3;"
+        });
+
+        expect(report.lazyFiles).toEqual([]);
+    });
+});
+
+describe('published', () => {
+    it('marks what a module barrel re-exports, through an intermediate index', () => {
+        const report = analyse({
+            'src/modules/shop/index.ts': "export * from './services/index';",
+            'src/modules/shop/services/index.ts': "export * from './price';",
+            'src/modules/shop/services/price.ts':
+                'export const price = (n: number) => n * 2;\nconst local = () => price(1);\nexport const x = local();',
+            'src/use.ts': "import { price } from './modules/shop';\nexport const p = price(3);"
+        });
+
+        expect(
+            report.smallAndRare.map((function_) => [function_.name, function_.published])
+        ).toEqual([
+            ['local', false],
+            ['price', true]
+        ]);
+        expect(
+            report.lazyFiles.find((entry) => entry.file === 'src/modules/shop/services/price.ts')
+                ?.published
+        ).toBe(true);
+    });
+});
+
+describe('functions carried by an object', () => {
+    const ADD = 'const add = (a: number, b: number) => a + b;';
+
+    it('counts each obj.fn read as one use, and the slot of a local object as none', () => {
+        const report = analyse({
+            'src/svc.ts': `${ADD}\nconst svc = { add };\nexport const one = svc.add(1, 2);\nexport const two = svc.add(3, 4);`
+        });
+
+        expect(report.smallAndRare.find((function_) => function_.name === 'add')?.references).toBe(
+            2
+        );
+    });
+
+    it('does not count a function only an unread local object carries', () => {
+        const report = analyse({
+            'src/svc.ts': `${ADD}\nconst svc = { add };\nexport const n = 1;`
+        });
+
+        expect(namesOf(report.smallAndRare)).not.toContain('add');
+    });
+
+    it('counts a function handed over in a call argument: that is how a handler is registered', () => {
+        const report = analyse({
+            'src/reg.ts':
+                'const fn = (n: number) => n;\nconst register = (options: { handler: (n: number) => number }) => options;\nexport const registered = register({ handler: fn });'
+        });
+
+        expect(report.smallAndRare.find((function_) => function_.name === 'fn')?.references).toBe(
+            1
+        );
+    });
+
+    it('counts a function in a returned object, an exported object and an interface-typed one', () => {
+        const report = analyse({
+            'src/shapes.ts':
+                'const a = (n: number) => n;\nconst b = (n: number) => n;\nconst c = (n: number) => n;\ninterface Port { c: (n: number) => number }\nexport const make = () => ({ a });\nexport const exported = { b };\nconst typed: Port = { c };\nexport const t = typed;'
+        });
+
+        expect(
+            Object.fromEntries(
+                report.smallAndRare.map((function_) => [function_.name, function_.references])
+            )
+        ).toMatchObject({ a: 1, b: 1, c: 1 });
+    });
+
+    it('follows an x: fn slot the same way', () => {
+        const report = analyse({
+            'src/svc.ts': `${ADD}\nconst svc = { plus: add };\nexport const one = svc.plus(1, 2);`
+        });
+
+        expect(report.smallAndRare.find((function_) => function_.name === 'add')?.references).toBe(
+            1
+        );
+    });
+
+    it('reaches a function through an object spread', () => {
+        const report = analyse({
+            'src/svc.ts': `${ADD}\nconst svc = { add };\nconst outer = { ...svc };\nexport const one = outer.add(1, 2);`
+        });
+
+        expect(report.smallAndRare.find((function_) => function_.name === 'add')?.references).toBe(
+            1
+        );
+    });
+
+    it('treats obj.fn(…) as a direct call, so an optional parameter nobody passes shows', () => {
+        const report = analyse({
+            'src/svc.ts':
+                'const at = (day: number, now?: number) => day + (now ?? 0);\nconst svc = { at };\nexport const today = svc.at(1);'
+        });
+
+        expect(report.optionalNeverPassed.map((function_) => function_.name)).toEqual(['at']);
+    });
+
+    it('does not follow a member of the same name on an unrelated object', () => {
+        const report = analyse({
+            'src/svc.ts': `${ADD}\nconst svc = { add };\nconst other = { add: 5 };\nexport const n = other.add;`
+        });
+
+        expect(namesOf(report.smallAndRare)).not.toContain('add');
+    });
+});
+
+describe('destructured names', () => {
+    it('counts const { fn } = obj as one use of fn', () => {
+        const report = analyse({
+            'src/svc.ts':
+                'const add = (a: number, b: number) => a + b;\nconst svc = { add };\nconst { add: alias } = svc;\nexport const one = alias(1, 2);'
+        });
+
+        expect(report.smallAndRare.find((function_) => function_.name === 'add')?.references).toBe(
+            1
+        );
+    });
+
+    it('counts a name destructured from a dynamic import() result', () => {
+        const report = analyse({
+            'src/globals.d.ts': 'interface Promise<T> { then<U>(on: (value: T) => U): U; }',
+            'src/config.ts': 'export const assertConfig = (n: number) => n;',
+            'src/boot.ts':
+                "export const boot = import('./config').then(({ assertConfig }) => assertConfig);"
+        });
+
+        expect(
+            report.smallAndRare.find((function_) => function_.name === 'assertConfig')?.references
+        ).toBe(1);
+    });
+});
+
+describe('self-calls', () => {
+    it('does not count a recursive call as a user', () => {
+        const report = analyse({
+            'src/tree.ts':
+                'export const depth = (n: number): number => (n > 0 ? depth(n - 1) : 0);',
+            'src/use.ts': "import { depth } from './tree';\nexport const d = depth(3);"
+        });
+
+        expect(
+            report.smallAndRare.find((function_) => function_.name === 'depth')?.references
+        ).toBe(1);
+    });
+
+    it('still counts a call from a sibling function', () => {
+        const report = analyse({
+            'src/tree.ts':
+                'const leaf = (n: number) => n;\nexport const a = (n: number) => leaf(n);\nexport const b = (n: number) => leaf(n);'
+        });
+
+        expect(report.smallAndRare.find((function_) => function_.name === 'leaf')?.references).toBe(
+            2
+        );
+    });
+});
+
+describe('published through an object', () => {
+    const BARREL_FILE = "export * from './services/index';";
+
+    it('publishes a function a published object carries, exported or not', () => {
+        const report = analyse({
+            'src/modules/shop/index.ts': BARREL_FILE,
+            'src/modules/shop/services/index.ts':
+                'const add = (a: number, b: number) => a + b;\nexport const shopService = { add };',
+            'src/use.ts':
+                "import { shopService } from '../src/modules/shop';\nexport const one = shopService.add(1, 2);"
+        });
+
+        expect(report.smallAndRare.find((function_) => function_.name === 'add')?.published).toBe(
+            true
+        );
+    });
+
+    it('publishes it through a spread of another object', () => {
+        const report = analyse({
+            'src/modules/shop/index.ts': BARREL_FILE,
+            'src/modules/shop/services/workflow.ts':
+                'const assign = (a: number) => a;\nexport const workflow = { assign };',
+            'src/modules/shop/services/index.ts':
+                "import { workflow } from './workflow';\nexport const shopService = { ...workflow };\nexport const one = shopService.assign(1);"
+        });
+
+        expect(
+            report.smallAndRare.find((function_) => function_.name === 'assign')?.published
+        ).toBe(true);
+    });
+
+    it('does not publish what an unpublished object carries', () => {
+        const report = analyse({
+            'src/modules/shop/index.ts': "export * from './services/listed';",
+            'src/modules/shop/services/listed.ts': 'export const listed = 1;',
+            'src/modules/shop/hidden.ts':
+                'const add = (a: number) => a;\nexport const hidden = { add };\nexport const one = hidden.add(1);'
+        });
+
+        expect(report.smallAndRare.find((function_) => function_.name === 'add')?.published).toBe(
+            false
+        );
+    });
+});
+
+describe('type-only re-exports', () => {
+    it('publish nothing: not export type * nor export type { }', () => {
+        const report = analyse({
+            'src/modules/shop/index.ts':
+                "export type * from './types';\nexport type { Only } from './named';",
+            'src/modules/shop/types.ts':
+                'export const fromStar = (n: number) => n;\nexport const x = fromStar(1);',
+            'src/modules/shop/named.ts':
+                'export type Only = number;\nexport const fromNamed = (n: number) => n;\nexport const y = fromNamed(1);'
+        });
+
+        expect(
+            Object.fromEntries(
+                report.smallAndRare.map((function_) => [function_.name, function_.published])
+            )
+        ).toEqual({ fromStar: false, fromNamed: false });
+    });
+
+    it('still publishes a value named next to a type-only specifier', () => {
+        const report = analyse({
+            'src/modules/shop/index.ts': "export { type Only, listed } from './named';",
+            'src/modules/shop/named.ts':
+                'export type Only = number;\nexport const listed = (n: number) => n;\nexport const y = listed(1);'
+        });
+
+        expect(
+            report.smallAndRare.find((function_) => function_.name === 'listed')?.published
+        ).toBe(true);
+    });
+});

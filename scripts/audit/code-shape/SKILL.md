@@ -52,7 +52,8 @@ Output goes to `reports/audit-<run>/code-shape/<SCOPE>…`. `<run>` and `<SCOPE>
 ### 1 — run the counters
 
 The tools count; you judge. Never count call sites or importers yourself — a text search misses
-an import alias and a re-export, and a wrong count produces a wrong verdict.
+an import alias, a re-export, an `obj.fn` read and a destructured name, and a wrong count produces a
+wrong verdict.
 
 Translate the scope to paths first: a module is `src/modules/<name>`.
 
