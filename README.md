@@ -70,6 +70,8 @@ Four ideas carry the whole repository:
 
 ## Where things live
 
+The tiers and the folder map live in [`docs/theory/layers.md`](docs/theory/layers.md#tiers) (`#tiers`, `#quick-map`).
+
 ---
 
 ## The map

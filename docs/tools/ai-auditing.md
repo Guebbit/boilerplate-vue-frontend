@@ -20,20 +20,18 @@ Owned by the backend: [The one rule](https://github.com/Guebbit/boilerplate-node
 
 ## The prompts
 
-| File                                  | Asks                                                                                                                                       | Writes to                          |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
-| `scripts/audit/spec-drift/SKILL.md`   | Which tests assert what the **code** does rather than what the **spec** says?                                                              | `reports/audit-<run>/spec-drift/`  |
-| `scripts/audit/spec-gaps/SKILL.md`    | Which business rules and security boundaries have **zero** coverage?                                                                       | `reports/audit-<run>/spec-gaps/`   |
-| `scripts/audit/suite-bloat/SKILL.md`  | Which tests cost CI time and discriminate nothing?                                                                                         | `reports/audit-<run>/suite-bloat/` |
-| `scripts/audit/test-honesty/SKILL.md` | Which tests stay green when the behaviour they claim to check is broken? See [below](#test-honesty-a-test-is-innocent-once-it-has-failed). |
-
-This repo's delta: two blind spots are marked `UNVERIFIED` because Stryker cannot see them, Cypress specs and logic inside `.vue` files. A whole-component `toMatchSnapshot()` is a named shape, the "snapshot dump". | `reports/audit-<run>/test-honesty/` |
-| `scripts/audit/accessibility-manual/SKILL.md` | Which accessibility defects live in the ~60–70% axe/eslint/keyboard.cy.ts structurally can't reach — see [Accessibility Testing](./accessibility-testing.md)? | `reports/audit-<run>/accessibility-manual/` |
-| `scripts/audit/design-manual/SKILL.md` | Which design defects do the screenshots show that no automated check can? See [Design Review](./design-review.md). | `reports/audit/design-manual/` |
-| `scripts/audit/css-invasive/SKILL.md` | Which CSS answers a question Vuetify or Tailwind already answer, beyond the hits `npm run audit:css` gates? See [Design Lint](./design-lint.md#the-invasive-css-scan). | `reports/audit-<run>/css-invasive/` |
-| `scripts/audit/unused-locale-keys/SKILL.md` | Which locale keys does nothing in the app read? A report-only scan (`npm run audit:locale-keys`), then a judgement on each candidate. |
-| `scripts/audit/ddd-drift/SKILL.md` | Where do the strategic-DDD claims (module labels, barrels, who decides a rule) and the code disagree, beyond what the module lint and the specs see? Mirrors `../boilerplate-node-backend/scripts/audit/ddd-drift/SKILL.md`; F2 (FE) and C1 (BE) are one rule seen from each side. | `reports/audit-<run>/ddd-drift/` |
-| `scripts/audit/code-shape/SKILL.md` | Which code does not earn its place: shallow functions, pass-throughs, lazy files, speculative generality, large classes, repeated switches, dead code (`knip`) and copy-paste (`jscpd`)? Counters run first (`npm run audit:shallow`, `audit:unused`, `audit:duplicates`); `.vue` callers are counted. | `reports/audit-<run>/code-shape/` |
+| File                                          | Asks                                                                                                                                                                                                                                                                                                   | Writes to                                   |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| `scripts/audit/spec-drift/SKILL.md`           | Which tests assert what the **code** does rather than what the **spec** says?                                                                                                                                                                                                                          | `reports/audit-<run>/spec-drift/`           |
+| `scripts/audit/spec-gaps/SKILL.md`            | Which business rules and security boundaries have **zero** coverage?                                                                                                                                                                                                                                   | `reports/audit-<run>/spec-gaps/`            |
+| `scripts/audit/suite-bloat/SKILL.md`          | Which tests cost CI time and discriminate nothing?                                                                                                                                                                                                                                                     | `reports/audit-<run>/suite-bloat/`          |
+| `scripts/audit/test-honesty/SKILL.md`         | Which tests stay green when the behaviour they claim to check is broken? See [below](#test-honesty-a-test-is-innocent-once-it-has-failed).                                                                                                                                                             | `reports/audit-<run>/test-honesty/`         |
+| `scripts/audit/accessibility-manual/SKILL.md` | Which accessibility defects live in the ~60–70% axe/eslint/keyboard.cy.ts structurally can't reach — see [Accessibility Testing](./accessibility-testing.md)?                                                                                                                                          | `reports/audit-<run>/accessibility-manual/` |
+| `scripts/audit/design-manual/SKILL.md`        | Which design defects do the screenshots show that no automated check can? See [Design Review](./design-review.md).                                                                                                                                                                                     | `reports/audit/design-manual/`              |
+| `scripts/audit/css-invasive/SKILL.md`         | Which CSS answers a question Vuetify or Tailwind already answer, beyond the hits `npm run audit:css` gates? See [Design Lint](./design-lint.md#the-invasive-css-scan).                                                                                                                                 | `reports/audit-<run>/css-invasive/`         |
+| `scripts/audit/unused-locale-keys/SKILL.md`   | Which locale keys does nothing in the app read? A report-only scan (`npm run audit:locale-keys`), then a judgement on each candidate.                                                                                                                                                                  |
+| `scripts/audit/ddd-drift/SKILL.md`            | Where do the strategic-DDD claims (module labels, barrels, who decides a rule) and the code disagree, beyond what the module lint and the specs see? Mirrors `../boilerplate-node-backend/scripts/audit/ddd-drift/SKILL.md`; F2 (FE) and C1 (BE) are one rule seen from each side.                     | `reports/audit-<run>/ddd-drift/`            |
+| `scripts/audit/code-shape/SKILL.md`           | Which code does not earn its place: shallow functions, pass-throughs, lazy files, speculative generality, large classes, repeated switches, dead code (`knip`) and copy-paste (`jscpd`)? Counters run first (`npm run audit:shallow`, `audit:unused`, `audit:duplicates`); `.vue` callers are counted. | `reports/audit-<run>/code-shape/`           |
 
 The first four take one argument — a module (`orders`), a path, or `--diff` for whatever the
 working tree touched. `accessibility-manual` takes the same shape but defaults an empty scope to
@@ -71,8 +69,7 @@ exactly one home and no second copy to drift from. To audit this repo's complian
 It reads this repo at `../boilerplate-vue-frontend` — the main checkout. A worktree branch is not
 what it sees: check the branch out there, or merge it, before running it.
 
-This page is per-repo in the same way. It names this repo's own tools, its own `docs/` count and
-its own findings, so the backend's copy is _expected_ to differ and must not be reconciled.
+This page is per-repo in the same way. It names this repo's own tools and its own findings, so the backend's copy is _expected_ to differ and must not be reconciled.
 
 ### Naming the scope
 
@@ -101,6 +98,8 @@ This repo's delta: `design-manual` needs a model that can read images; the scree
 ## `test-honesty`: a test is innocent once it has failed
 
 Owned by the backend: [test-honesty: a test is innocent once it has failed](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#test-honesty-a-test-is-innocent-once-it-has-failed).
+
+This repo's delta: two blind spots are marked `UNVERIFIED` because Stryker cannot see them, Cypress specs and logic inside `.vue` files. A whole-component `toMatchSnapshot()` is a named shape, the "snapshot dump".
 
 ## Reading the output
 

@@ -289,7 +289,7 @@ flowchart TB
 
 ## Scope — what is mutated
 
-Owned by the backend, except the file list: this repo's own is `mutate` in `stryker.config.json`. The backend's scope: [Scope — what is mutated](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/mutation-testing.md#scope-—-what-is-mutated).
+Owned by the backend, except the file list: this repo's own is `mutate` in `stryker.config.json`. The backend's scope: [Scope — what is mutated](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/mutation-testing.md#scope--what-is-mutated).
 
 ### Its relationship to the test scopes
 
