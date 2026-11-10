@@ -107,7 +107,7 @@ describe('check-clean', () => {
 });
 
 describe('gitEnvironment', () => {
-    /** Variables git reads that must never reach a nested call aimed at another checkout. */
+    /** The documented minimum: variables git reads that must never reach a nested call. */
     const SANDBOX = [
         'GIT_DIR',
         'GIT_WORK_TREE',
@@ -134,10 +134,11 @@ describe('gitEnvironment', () => {
         expect(SANDBOX.filter((name) => name in environment)).toEqual([]);
     });
 
-    it('keeps the rest, git settings that are not local included', () => {
-        process.env.KEEP_ME = '1';
+    it('drops any other GIT_* variable too, and keeps the rest', () => {
         process.env.GIT_EXEC_PATH = '/usr/lib/git-core';
+        process.env.KEEP_ME = '1';
         const environment = gitEnvironment();
-        expect(environment).toMatchObject({ KEEP_ME: '1', GIT_EXEC_PATH: '/usr/lib/git-core' });
+        expect(environment.GIT_EXEC_PATH).toBeUndefined();
+        expect(environment.KEEP_ME).toBe('1');
     });
 });
