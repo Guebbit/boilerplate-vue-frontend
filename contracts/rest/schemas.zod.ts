@@ -2127,7 +2127,35 @@ export const RequestEmailChangeResponse = zod.strictObject({
             note: zod.string().max(requestEmailChangeResponsePurchaseHoldNoteMax).optional(),
             setAt: zod.iso.datetime({ offset: true })
         })
-        .optional()
+        .optional(),
+    abilities: zod.strictObject({
+        secondFactorRequired: zod.boolean(),
+        grantableRoles: zod.array(zod.string()),
+        tenantId: zod.string().optional(),
+        tenant: zod.array(
+            zod.array(
+                zod.union([
+                    zod.string(),
+                    zod.union([zod.literal(0), zod.literal(1)]),
+                    zod.looseObject({})
+                ])
+            )
+        ),
+        platform: zod.array(
+            zod.array(
+                zod.union([
+                    zod.string(),
+                    zod.union([zod.literal(0), zod.literal(1)]),
+                    zod.looseObject({})
+                ])
+            )
+        ),
+        version: zod.number().min(1)
+    }),
+    activity: zod.strictObject({
+        lastActiveAt: zod.iso.datetime({ offset: true }),
+        idleTimeoutSeconds: zod.number().min(1).optional()
+    })
 });
 /**
  * Discards a pending `pendingEmail` change started by `POST /account/email-change`, without proving it. A no-op when nothing is pending — a client does not need to check `GET /account` first.
@@ -17428,7 +17456,8 @@ export const DeleteWebhookSubscriptionResponse = zod.void();
 /**
  * The other half of a rotation, once every consumer has switched. Refuses to empty
  * the ring — a subscription with no secret can never sign a delivery. The remove twin
- * of `POST .../secrets`.
+ * of `POST .../secrets`. Answers 204 with no body (RFC 9110 §9.3.5) and no tag: read the
+ * subscription again for its new `secretIds`.
  * @summary Drop one secret from a subscription's ring
  */
 export const deleteWebhookSubscriptionSecretPathIdMax = 64;
@@ -17442,69 +17471,7 @@ export const DeleteWebhookSubscriptionSecretParams = zod.strictObject({
         .regex(deleteWebhookSubscriptionSecretPathIdRegExp),
     secretId: zod.string().max(deleteWebhookSubscriptionSecretPathSecretIdMax)
 });
-export const deleteWebhookSubscriptionSecretResponseIdMax = 64;
-export const deleteWebhookSubscriptionSecretResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const deleteWebhookSubscriptionSecretResponseUrlRegExp = new RegExp('(?:^https://)');
-export const deleteWebhookSubscriptionSecretResponseConsecutiveFailuresMin = 0;
-export const DeleteWebhookSubscriptionSecretResponse = zod.strictObject({
-    id: zod
-        .string()
-        .min(1)
-        .max(deleteWebhookSubscriptionSecretResponseIdMax)
-        .regex(deleteWebhookSubscriptionSecretResponseIdRegExp),
-    url: zod.url().regex(deleteWebhookSubscriptionSecretResponseUrlRegExp),
-    description: zod.string().optional(),
-    eventTypes: zod
-        .array(
-            zod.enum([
-                'order.created',
-                'order.paid',
-                'order.canceled',
-                'order.redacted',
-                'shipment.shipped',
-                'shipment.delivered',
-                'shipment.lost',
-                'payment.succeeded',
-                'payment.failed',
-                'payment.refunded',
-                'payment.refund_failed',
-                'payment.refund_reversed',
-                'payment.dispute_opened',
-                'payment.dispute_updated',
-                'return.requested',
-                'return.received',
-                'return.closed',
-                'example.published',
-                'user.erased',
-                'user.updated',
-                '*'
-            ])
-        )
-        .min(1),
-    enabled: zod.boolean(),
-    consecutiveFailures: zod
-        .number()
-        .min(deleteWebhookSubscriptionSecretResponseConsecutiveFailuresMin),
-    disabledAt: zod.iso.datetime({ offset: true }).optional(),
-    autoDisabledAt: zod.iso.datetime({ offset: true }).optional(),
-    secretIds: zod.array(zod.string()),
-    retiringSecrets: zod.array(
-        zod.strictObject({
-            id: zod.string(),
-            retiresAt: zod.iso.datetime({ offset: true })
-        })
-    ),
-    actions: zod.strictObject({
-        update: zod.boolean(),
-        delete: zod.boolean(),
-        enable: zod.boolean(),
-        disable: zod.boolean(),
-        createSecret: zod.boolean(),
-        deleteSecret: zod.boolean()
-    }),
-    createdAt: zod.iso.datetime({ offset: true }),
-    updatedAt: zod.iso.datetime({ offset: true })
-});
+export const DeleteWebhookSubscriptionSecretResponse = zod.void();
 /**
  * Every attempt, newest first, optionally filtered by subscription and status. The order is fixed - this is a log.
  * @summary The delivery log

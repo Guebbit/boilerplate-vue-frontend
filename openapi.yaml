@@ -2609,6 +2609,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
   /account/email-change:
+    x-versioned:
+      - post
     post:
       tags:
         - Account
@@ -2635,12 +2637,16 @@ paths:
               $ref: "#/components/schemas/RequestEmailChangeRequest"
       responses:
         "200":
-          description: The change is pending; both addresses have been mailed
+          description: The change is pending; both addresses have been mailed. The body is what `GET /account` answers
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Account"
+                $ref: "#/components/schemas/AccountView"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -11419,7 +11425,8 @@ paths:
       description: |
         The other half of a rotation, once every consumer has switched. Refuses to empty
         the ring — a subscription with no secret can never sign a delivery. The remove twin
-        of `POST .../secrets`.
+        of `POST .../secrets`. Answers 204 with no body (RFC 9110 §9.3.5) and no tag: read the
+        subscription again for its new `secretIds`.
       operationId: deleteWebhookSubscriptionSecret
       security:
         - bearerAuth:
@@ -11437,25 +11444,8 @@ paths:
             maxLength: 64
           description: A ring entry's id, from `secretIds`.
       responses:
-        "200":
-          description: Subscription with that secret removed
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WebhookSubscription"
-          headers:
-            x-request-id:
-              $ref: "#/components/headers/RequestId"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-            Content-Language:
-              $ref: "#/components/headers/ContentLanguage"
-            Vary:
-              $ref: "#/components/headers/Vary"
-            RateLimit-Policy:
-              $ref: "#/components/headers/RateLimit-Policy"
-            RateLimit:
-              $ref: "#/components/headers/RateLimit"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11897,6 +11887,8 @@ paths:
           - FORBIDDEN
           - SECOND_FACTOR_ENROLLMENT_REQUIRED
   /locales/{locale}/activate:
+    x-versioned:
+      - post
     post:
       tags:
         - Locales
@@ -11934,6 +11926,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Language"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -11964,6 +11960,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: locales
   /locales/{locale}/deactivate:
+    x-versioned:
+      - post
     post:
       tags:
         - Locales
@@ -12004,6 +12002,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Language"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -14772,6 +14774,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: webhooks
   /webhooks/subscriptions/{id}/secrets:
+    x-versioned:
+      - post
     post:
       tags:
         - Webhooks
@@ -14812,6 +14816,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/WebhookSubscriptionCreated"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:

@@ -195,8 +195,8 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      * Drops one secret from a subscription's ring — the other half of a rotation, once every
      * consumer has switched to the new one. Hand-written, like {@link createSubscription} and
      * {@link createSecret}, because it calls its own dedicated action route rather than the
-     * generic update path — but unlike those two, its response carries no plaintext secret to
-     * scrub before caching.
+     * generic update path. The route answers 204 with no body, so the subscription is read again
+     * for its new ring and cached as it comes (it carries no plaintext secret).
      *
      * @param id - the subscription to update
      * @param secretId - the ring entry to remove
@@ -204,10 +204,12 @@ export const useWebhooksStore = defineStore('webhooks', () => {
     const removeSecret = (id: string, secretId: string) =>
         fetchAnySubscriptions(
             () =>
-                deleteWebhookSubscriptionSecret(id, secretId).then((updated) => {
-                    editSubscriptionRecord(updated, id);
-                    return updated;
-                }),
+                deleteWebhookSubscriptionSecret(id, secretId)
+                    .then(() => getWebhookSubscription(id))
+                    .then((updated) => {
+                        editSubscriptionRecord(updated, id);
+                        return updated;
+                    }),
             WRITE_SETTINGS
         );
 

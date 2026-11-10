@@ -124,7 +124,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `POST /webhooks/subscriptions/{id}/enable`         | `EnableWebhookSubscriptionResponse`       |
 | `POST /webhooks/subscriptions/{id}/disable`        | `DisableWebhookSubscriptionResponse`      |
 | `POST /webhooks/subscriptions/{id}/secrets`        | `CreateWebhookSubscriptionSecretResponse` |
-| `DELETE /webhooks/subscriptions/{id}/secrets/{id}` | `RemoveWebhookSubscriptionSecretResponse` |
+| `DELETE /webhooks/subscriptions/{id}/secrets/{id}` | `DeleteWebhookSubscriptionSecretResponse` |
 | `GET /webhooks/deliveries`                         | `ListWebhookDeliveriesResponse`           |
 | `POST /webhooks/deliveries/{id}/replay`            | `ReplayWebhookDeliveryResponse`           |
 | `GET /webhooks/events`                             | `ListWebhookEventsResponse`               |

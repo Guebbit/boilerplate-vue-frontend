@@ -9851,9 +9851,9 @@ export const requestAccountDelete = (
  */
 export const requestEmailChange = (
     requestEmailChangeRequest: RequestEmailChangeRequest,
-    options?: SecondParameter<typeof orvalMutator<Account>>
+    options?: SecondParameter<typeof orvalMutator<AccountView>>
 ) => {
-    return orvalMutator<Account>(
+    return orvalMutator<AccountView>(
         {
             url: `/account/email-change`,
             method: 'POST',
@@ -12630,15 +12630,16 @@ export const deleteWebhookSubscription = (
 /**
  * The other half of a rotation, once every consumer has switched. Refuses to empty
  * the ring — a subscription with no secret can never sign a delivery. The remove twin
- * of `POST .../secrets`.
+ * of `POST .../secrets`. Answers 204 with no body (RFC 9110 §9.3.5) and no tag: read the
+ * subscription again for its new `secretIds`.
  * @summary Drop one secret from a subscription's ring
  */
 export const deleteWebhookSubscriptionSecret = (
     id: string,
     secretId: string,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<WebhookSubscription>(
+    return orvalMutator<NoContentResponse>(
         { url: `/webhooks/subscriptions/${id}/secrets/${secretId}`, method: 'DELETE' },
         options
     );
