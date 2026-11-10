@@ -33,10 +33,8 @@ Owned by the backend: [The one rule](https://github.com/Guebbit/boilerplate-node
 | `scripts/audit/ddd-drift/SKILL.md`            | Where do the strategic-DDD claims (module labels, barrels, who decides a rule) and the code disagree, beyond what the module lint and the specs see? Mirrors `../boilerplate-node-backend/scripts/audit/ddd-drift/SKILL.md`; F2 (FE) and C1 (BE) are one rule seen from each side.                     | `reports/audit-<run>/ddd-drift/`            |
 | `scripts/audit/code-shape/SKILL.md`           | Which code does not earn its place: shallow functions, pass-throughs, lazy files, speculative generality, large classes, repeated switches, dead code (`knip`) and copy-paste (`jscpd`)? Counters run first (`npm run audit:shallow`, `audit:unused`, `audit:duplicates`); `.vue` callers are counted. | `reports/audit-<run>/code-shape/`           |
 
-The first four take one argument — a module (`orders`), a path, or `--diff` for whatever the
-working tree touched. `accessibility-manual` takes the same shape but defaults an empty scope to
-the **whole repo**, not the touched modules — an accessibility gap in an untouched component is
-still a gap. `design-manual` does the same and adds `shell` (the app-level sweep) as a scope; a
+Every prompt takes the scope [`RULES.md` rule 5](https://github.com/Guebbit/boilerplate-vue-frontend/blob/main/scripts/audit/RULES.md) names: a module, a path, `--diff` or `whole-repo`, and an empty
+argument means `whole-repo`. `design-manual` adds `shell` (the app-level sweep) as a scope; a
 whole-app run starts with a ~45 minute capture, so it prints the command and waits for a person.
 `css-invasive` takes the same scopes, defaults to the whole app, and reads source only: it starts
 from `npm run audit:css -- --json` and judges what the scanner cannot.
