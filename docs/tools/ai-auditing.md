@@ -6,7 +6,7 @@ ceiling. Stryker cannot read `docs/theory/domain-layer.md`. axe cannot read a ta
 notice that the docs promise a rule the contract never encodes.
 
 **Prose ↔ code is the gap**, and it is the one place a language model beats a program rather than
-approximating one. This repo has ~70 files under `docs/` stating rules no schema enforces.
+approximating one. This repo has many files under `docs/` stating rules no schema enforces.
 
 `scripts/audit/` holds the prompts that live in exactly that gap, among them `test-honesty`, which asks
 whether a test can fail at all. They are plain markdown, run by hand against an LLM, and they write
@@ -16,7 +16,7 @@ names mean, the tripwire) live in
 
 ## The one rule
 
-Owned by the backend, and the same here: [The one rule](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [The one rule](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#the-one-rule).
 
 ## The prompts
 
@@ -33,10 +33,8 @@ Owned by the backend, and the same here: [The one rule](https://github.com/Guebb
 | `scripts/audit/ddd-drift/SKILL.md`            | Where do the strategic-DDD claims (module labels, barrels, who decides a rule) and the code disagree, beyond what the module lint and the specs see? Mirrors `../boilerplate-node-backend/scripts/audit/ddd-drift/SKILL.md`; F2 (FE) and C1 (BE) are one rule seen from each side.                     | `reports/audit-<run>/ddd-drift/`            |
 | `scripts/audit/code-shape/SKILL.md`           | Which code does not earn its place: shallow functions, pass-throughs, lazy files, speculative generality, large classes, repeated switches, dead code (`knip`) and copy-paste (`jscpd`)? Counters run first (`npm run audit:shallow`, `audit:unused`, `audit:duplicates`); `.vue` callers are counted. | `reports/audit-<run>/code-shape/`           |
 
-The first four take one argument — a module (`orders`), a path, or `--diff` for whatever the
-working tree touched. `accessibility-manual` takes the same shape but defaults an empty scope to
-the **whole repo**, not the touched modules — an accessibility gap in an untouched component is
-still a gap. `design-manual` does the same and adds `shell` (the app-level sweep) as a scope; a
+Every prompt takes the scope [`RULES.md` rule 5](https://github.com/Guebbit/boilerplate-vue-frontend/blob/main/scripts/audit/RULES.md) names: a module, a path, `--diff` or `whole-repo`, and an empty
+argument means `whole-repo`. `design-manual` adds `shell` (the app-level sweep) as a scope; a
 whole-app run starts with a ~45 minute capture, so it prints the command and waits for a person.
 `css-invasive` takes the same scopes, defaults to the whole app, and reads source only: it starts
 from `npm run audit:css -- --json` and judges what the scanner cannot.
@@ -69,32 +67,37 @@ exactly one home and no second copy to drift from. To audit this repo's complian
 It reads this repo at `../boilerplate-vue-frontend` — the main checkout. A worktree branch is not
 what it sees: check the branch out there, or merge it, before running it.
 
-This page is per-repo in the same way. It names this repo's own tools, its own `docs/` count and
-its own findings, so the backend's copy is _expected_ to differ and must not be reconciled.
+This page is per-repo in the same way. It names this repo's own tools and its own findings, so the backend's copy is _expected_ to differ and must not be reconciled.
 
 ### Naming the scope
 
-Owned by the backend, and the same here: [Naming the scope](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [Naming the scope](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#naming-the-scope).
 
 ### The tripwire
 
-Owned by the backend, and the same here: [The tripwire](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [The tripwire](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#the-tripwire).
 
 ### The reports are disposable
 
-Owned by the backend, and the same here: [The reports are disposable](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [The reports are disposable](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#the-reports-are-disposable).
+
+This repo's delta: the report folder is `reports/audit-<run>/`, not `tmp/reports`. `design-manual` is the exception and keeps one fixed folder, `reports/audit/design-manual/`.
 
 ## The two-pass method
 
-Owned by the backend, and the same here: [The two-pass method](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [The two-pass method](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#the-two-pass-method).
 
 ## How to run one
 
-Owned by the backend, and the same here: [How to run one](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [How to run one](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#how-to-run-one).
+
+This repo's delta: `design-manual` needs a model that can read images; the screenshots go only into the reviewing session's own context, and nothing is uploaded to an image service. The mutation report that `test-honesty` reads is `reports/mutation/mutation.json`.
 
 ## `test-honesty`: a test is innocent once it has failed
 
-Owned by the backend, and the same here: [test-honesty: a test is innocent once it has failed](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [test-honesty: a test is innocent once it has failed](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#test-honesty-a-test-is-innocent-once-it-has-failed).
+
+This repo's delta: two blind spots are marked `UNVERIFIED` because Stryker cannot see them, Cypress specs and logic inside `.vue` files. A whole-component `toMatchSnapshot()` is a named shape, the "snapshot dump".
 
 ## Reading the output
 
@@ -207,7 +210,7 @@ apart — not on a schedule.
 
 ## Footnote: the tools we evaluated, and why none were adopted
 
-Owned by the backend, and the same here: [Footnote: the tools we evaluated, and why none were adopted](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [Footnote: the tools we evaluated, and why none were adopted](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/ai-auditing.md#footnote-the-tools-we-evaluated-and-why-none-were-adopted).
 
 ## Related
 

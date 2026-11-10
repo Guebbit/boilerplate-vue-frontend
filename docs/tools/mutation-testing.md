@@ -73,7 +73,7 @@ Read this first. The rest of the page uses these words precisely, and several of
 
 ## What a mutant actually is
 
-Owned by the backend, and the same here: [What a mutant actually is](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/mutation-testing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [What a mutant actually is](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/mutation-testing.md#what-a-mutant-actually-is).
 
 ## Tools
 
@@ -84,7 +84,7 @@ Owned by the backend, and the same here: [What a mutant actually is](https://git
 
 ## Architecture
 
-Owned by the backend, and the same here: [Architecture](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/mutation-testing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [Architecture](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/mutation-testing.md#architecture).
 
 ## Why the e2e suite is not mutated
 
@@ -289,7 +289,7 @@ flowchart TB
 
 ## Scope — what is mutated
 
-Owned by the backend, and the same here: [Scope — what is mutated](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/mutation-testing.md). This repo's differences, if any, are in the sections below.
+Owned by the backend, except the file list: this repo's own is `mutate` in `stryker.config.json`. The backend's scope: [Scope — what is mutated](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/mutation-testing.md#scope--what-is-mutated).
 
 ### Its relationship to the test scopes
 

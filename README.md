@@ -70,16 +70,7 @@ Four ideas carry the whole repository:
 
 ## Where things live
 
-The tiers, their folders and what each may import are one table, in [Modules](./docs/theory/modules.md) (the folder map is in [Layers](./docs/theory/layers.md#quick-map)).
-
---------------------- | ------------------------------------------------------------------------------------ |
-| `src/modules/*` | the domains — each one deletable |
-| `src/modules/example` | only an example: the module to copy for a new domain, deleted once you have your own |
-| `src/kernel` | the module registry |
-| `src/infrastructure` | http, i18n, session, uploads, observability |
-| `src/app` | shell, router, layouts, guards |
-| `src/ui` | shared presentational components |
-| `contracts/` | generated API client — never edited by hand |
+The tiers and the folder map live in [`docs/theory/layers.md`](docs/theory/layers.md#tiers) (`#tiers`, `#quick-map`).
 
 ---
 

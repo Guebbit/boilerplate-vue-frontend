@@ -13,7 +13,7 @@ event portal that keeps users, replaces products with events and drops the cart;
 site that keeps almost none of it. **"Which slices are in this build" has to be a configuration
 question, not a surgery question.**
 
-## The five tiers
+## The tiers
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 55}}}%%
@@ -22,7 +22,7 @@ flowchart TD
     M["<b>src/modules/*</b><br/>one domain each<br/><i>routes · store · schemas · views · locales</i>"]
     P["<b>src/kernel</b><br/>the module system itself<br/><i>registry</i>"]
     U["<b>src/ui</b><br/>the design system, no domain<br/><i>tokens · icons · shared components</i>"]
-    C["<b>src/infrastructure</b><br/>substrate — never knows modules exist<br/><i>http · i18n · errors · session · uploads</i>"]
+    C["<b>src/infrastructure</b><br/>substrate — never knows modules exist<br/><i>http · observability · utils · session</i>"]
 
     A ==> M ==> P ==> U ==> C
     A -.-> P
@@ -46,17 +46,11 @@ flowchart TD
 
 **Every arrow points down and none points back.** `eslint.config.ts`'s `eslint-plugin-boundaries`
 config enforces each edge in both directions — deny by default, an explicit policy per allowed
-edge, an unclassified file refused outright. `src/i18n` sits below this table's
+edge, an unclassified file refused outright. `src/i18n` sits below the diagram's
 `infrastructure`, its own tier again: nothing above it, not even infrastructure, may skip it — see
 the "extractable i18n runtime" note under [Layers](./layers.md).
 
-| Tier               | Folder               | Knows about                                                      | May import                 |
-| ------------------ | -------------------- | ---------------------------------------------------------------- | -------------------------- |
-| **App**            | `src/app`            | this application: which domains exist and how they are assembled | modules, kernel, ui, infra |
-| **Modules**        | `src/modules/<name>` | its own domain, plus siblings' **barrels**                       | kernel, ui, infra          |
-| **Kernel**         | `src/kernel`         | this _kind_ of app — never which domains exist                   | ui, infra                  |
-| **UI**             | `src/ui`             | nothing but design                                               | infra                      |
-| **Infrastructure** | `src/infrastructure` | nothing above it                                                 | —                          |
+Each tier, its folder, what it knows and what it holds: the [Tiers table in Layers](./layers.md#tiers).
 
 ### Why `app` exists
 
@@ -136,7 +130,7 @@ The backend repo carries the full comparison table, in its own `docs/theory/modu
 
 ### The one arrow that cannot point down
 
-`infrastructure` owns the http client and the i18n runtime. The response-schema rows and the translation
+`infrastructure` owns the http client, and `src/i18n` the i18n runtime. The response-schema rows and the translation
 dictionaries are domain knowledge. `infrastructure` may not import `@/modules`, so the composition root hands
 the data **down** instead of letting the bottom tier reach up:
 
@@ -145,6 +139,10 @@ the data **down** instead of letting the bottom tier reach up:
 registerResponseSchemas(collectModuleResponseSchemas(enabledModules));
 registerLocaleContributors(collectModuleLocales(enabledModules));
 ```
+
+Each module registers its own response-schema rows, and that registration is what switches contract
+validation on for its endpoints: enable the module and its answers are checked, delete the folder and
+they are not.
 
 This is the single most surprising thing in the codebase, and the thing most likely to bite: a test
 that exercises either subsystem without doing the same wiring silently measures an app with no

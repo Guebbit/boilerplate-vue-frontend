@@ -24,7 +24,7 @@ flowchart TD
     J --> J401{"401?"}
     J401 -- yes --> Refresh["POST /account/refresh\nthen replay once"]
     C --> C401{"401?"}
-    C401 -- yes --> End["end the session\nexpired toast, login"]
+    C401 -- yes --> End["session ends\nthe route guard decides"]
 
     classDef step fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef decision fill:#fef3c7,stroke:#d97706,color:#111827;
@@ -34,7 +34,7 @@ flowchart TD
     class End error;
 ```
 
-The rest of this page describes the `jwt` flow in detail; `cookie` mode drops the token and the refresh step. The backend's sessions theory page explains when to pick which.
+The rest of this page describes the `jwt` flow in detail; `cookie` mode drops the token and the refresh step. The backend's [session-mode page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/account-sessions.md#choosing-the-session-mode) explains when to pick which.
 
 ## Auth token model in `jwt` mode (what the FE sees)
 
@@ -59,7 +59,7 @@ flowchart TD
     H --> I{Valid?}
     I -- yes --> J[New access token]
     J --> E
-    I -- no --> K[Redirect to Login]
+    I -- no --> K[Session ends, the route guard decides]
 
     classDef entry fill:#f0fdf4,stroke:#16a34a,color:#111827;
     classDef token fill:#dcfce7,stroke:#16a34a,color:#111827;

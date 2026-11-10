@@ -53,10 +53,10 @@ translated yet.
 | Half         | Where                                | Needed by                    |
 | ------------ | ------------------------------------ | ---------------------------- |
 | **Consumer** | `infrastructure/locale-overrides.ts` | every visitor, on every page |
-| **Author**   | this module's two screens            | an admin, occasionally       |
+| **Author**   | this module's four screens           | an admin, occasionally       |
 
 ::: tip Which is why deleting this module costs so little
-The two admin screens go. **Every language already translated keeps rendering**, because rendering
+The four admin screens go. **Every language already translated keeps rendering**, because rendering
 runs through the consumer half, which sits in `infrastructure` and knows nothing about this folder.
 
 The two reads this module shares with the boot path — `GET /locales` and

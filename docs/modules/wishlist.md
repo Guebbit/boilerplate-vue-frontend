@@ -61,7 +61,7 @@ Paths, route names, access and permission per screen: `src/modules/wishlist/rout
 
 #### Endpoints called
 
-Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/wishlist/response-schemas.ts`.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: "wishlist"`). Auth is in the backend contract.
 
 #### Navigation entries
 

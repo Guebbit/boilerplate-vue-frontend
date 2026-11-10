@@ -178,7 +178,7 @@ Paths, route names, access and permission per screen: `src/modules/orders/routes
 
 #### Endpoints called
 
-Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/orders/response-schemas.ts`.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: "orders"` or `"invoicing"`). Auth is in the backend contract.
 
 #### Navigation entries
 

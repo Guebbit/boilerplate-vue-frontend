@@ -93,7 +93,7 @@ sequenceDiagram
     G->>S: add to cart (AddToCartButton)
     S->>LS: save the list
     G->>S: open /cart
-    S->>API: GET /products?id=a&id=b (price the lines)
+    S->>API: POST /products/search (price the lines)
     API-->>S: the products still visible
     S-->>G: lines, a marker on any whose product vanished
     G->>API: sign in (continue=/cart)
@@ -395,11 +395,11 @@ Paths, route names, access and permission per screen: `src/modules/cart/routes.t
 
 #### Endpoints called
 
-Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/cart/response-schemas.ts`.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: "cart"`). Auth is in the backend contract.
 
 #### Navigation entries
 
-Entries are declared in `src/modules/cart/module.ts`. Badges: `Cart` — yes.
+Entries are declared in `src/modules/cart/module.ts`. Badges: `Cart` — unit count and total.
 
 #### Analytics events
 

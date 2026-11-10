@@ -94,7 +94,7 @@ The permission is `read:Stats`, which the backend grants to `manager` and `admin
 
 #### Endpoints called
 
-Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/stats/response-schemas.ts`.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: "stats"`). Auth is in the backend contract.
 
 #### Navigation entries
 

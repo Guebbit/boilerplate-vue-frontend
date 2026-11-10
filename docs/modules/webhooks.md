@@ -84,10 +84,6 @@ HTTP client could.
 
 State, getters and actions are exactly what the setup function of each store returns: `src/modules/webhooks/store.ts`. Beside the main store, `badge-store.ts` holds the nav badge's number (the auto-disabled list's total).
 
-Store `webhooks`, from `store.ts` — two `useStructureCrudApi` instances (subscriptions,
-deliveries) plus the event catalogue, behind one `defineStore`. Only what the setup function
-returns is listed — an internal ref is not part of the surface.
-
 ## Screens
 
 Paths, route names, access and permission per screen: `src/modules/webhooks/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
@@ -96,7 +92,7 @@ Paths, route names, access and permission per screen: `src/modules/webhooks/rout
 
 #### Endpoints called
 
-Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/webhooks/response-schemas.ts`.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: "webhooks"`). Auth is in the backend contract.
 
 #### Navigation entries
 

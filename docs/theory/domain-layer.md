@@ -213,11 +213,11 @@ application's route tree_, not about one domain.
 
 ## 2. What DDD is
 
-Owned by the backend, and the same here: [2. What DDD is](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/domain-layer.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [2. What DDD is](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/domain-layer.md#2-what-ddd-is).
 
 ## 3. DDD vs feature/domain architecture
 
-Owned by the backend, and the same here: [3. DDD vs feature/domain architecture](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/domain-layer.md). This repo's differences, if any, are in the sections below.
+Owned by the backend: [3. DDD vs feature/domain architecture](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/theory/domain-layer.md#3-ddd-vs-featuredomain-architecture).
 
 ## 4. Where this repo stands
 

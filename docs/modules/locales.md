@@ -33,7 +33,7 @@ every visitor's locale switch reads it, on every page, whether or not anyone can
 This module is the screens an editor edits the dictionary _through_.
 
 ::: tip What deleting this module costs, precisely
-The two admin screens. **Every language already translated keeps rendering**, because rendering never
+The four admin screens. **Every language already translated keeps rendering**, because rendering never
 depended on this folder.
 
 The two reads it shares with the boot path — `GET /locales` and `GET /locales/{tag}/messages` — stay
@@ -88,7 +88,7 @@ purpose — see the route table's own comment in `routes.ts`.
 
 #### Endpoints called
 
-Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/locales/response-schemas.ts`.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: "locales"`). Auth is in the backend contract.
 
 #### Navigation entries
 
@@ -120,4 +120,4 @@ npm run regenerate
 - [Runtime overrides](./locales-overrides.md) — the two tiers and how they merge
 - [Internationalisation](../tools/i18n.md) — the mechanism both halves run on
 - [Modules overview](./index.md) — the whole context map
-- [Sitemap & Access Control](../theory/sitemap.md) — the `admin` gate on both screens
+- [Sitemap & Access Control](../theory/sitemap.md) — the `auth` gate and per-route permission on all four screens
