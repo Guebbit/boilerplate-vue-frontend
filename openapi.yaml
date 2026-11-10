@@ -32,13 +32,17 @@ info:
     (`{ methods }`). An answer with nothing to say is `204` and has no body. A create is `201`
     with a `Location` header. See `docs/api/responses.md`.
 
-    Errors: every 4xx and 5xx answers RFC 9457 problem details as `application/problem+json`,
+    Errors: every 4xx and 5xx the application answers is RFC 9457 problem details as `application/problem+json`,
     whatever `Accept` says: `type` (always `about:blank`), `title` (the English status
     phrase), `status`, `detail` (the translated sentence), `instance` (`urn:uuid:` and the
     request id) and the `errors` extension, whose `code` is the machine key. That includes the
     answers no operation declares: a path that matches nothing (404) and a method a path does
     not offer (405, with `Allow`). The few non-JSON answers (probes, the Prometheus text,
     `security.txt`) are named on their own operations.
+    Node's HTTP server answers four statuses itself, outside Express, with no body: 400 and 431
+    for a malformed request line or headers (before any route), and 408 (request not received
+    within `NODE_HTTP_REQUEST_TIMEOUT_MS`), 413 (chunk extension over 16 KiB) and 400 (malformed
+    body framing) mid-request, after the route was reached.
 
     The header is intentionally not declared per operation: it applies to all of them and
     clients set it once in an interceptor, so declaring it on every operation would only add a
@@ -298,6 +302,7 @@ paths:
           $ref: "#/components/responses/InternalError"
         "503":
           description: Booting, draining, or the database is unreachable.
+          x-not-problem: true
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControlNoStore"
@@ -390,6 +395,8 @@ paths:
         caller who holds `display:Locale` is answered outside the shared cache, so only
         such a caller gets a flag set to `true`; everyone else's answer is the cached one,
         with every flag `false`.
+
+        Unpaged: one row per language this deployment offers.
       operationId: listLocales
       security:
         - {}
@@ -442,6 +449,9 @@ paths:
         wording of their own in it until a dictionary file is deployed, so each falls back
         to the default language. It carries only the frontend app until one exists.
       operationId: createLocale
+      x-error-codes:
+        "409":
+          - LOCALE_LANGUAGE_EXISTS
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -470,8 +480,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/json:
               schema:
@@ -514,6 +522,8 @@ paths:
         `GET /locales/{locale}/messages?app=`.
 
         Public and cacheable, like every other locale read.
+
+        Unpaged: the apps come from the API's configuration.
       operationId: listLocaleApps
       security: []
       responses:
@@ -571,6 +581,9 @@ paths:
         `POST /locales` answers `Location` at this URL, so following it reads what was
         created.
       operationId: getLocale
+      x-error-codes:
+        "404":
+          - LOCALE_LANGUAGE_NOT_FOUND
       security:
         - {}
         - bearerAuth: []
@@ -627,6 +640,9 @@ paths:
         Whether the language is switched on is not a field here: `POST
         /locales/{locale}/activate` and `/deactivate` move it.
       operationId: replaceLocale
+      x-error-codes:
+        "404":
+          - LOCALE_LANGUAGE_NOT_FOUND
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -648,8 +664,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/Language"
           headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -698,6 +712,9 @@ paths:
         Whether the language is switched on is not a field here: `POST
         /locales/{locale}/activate` and `/deactivate` move it.
       operationId: updateLocale
+      x-error-codes:
+        "404":
+          - LOCALE_LANGUAGE_NOT_FOUND
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -772,6 +789,8 @@ paths:
         the language says whether it would be accepted now.
       operationId: deleteLocale
       x-error-codes:
+        "404":
+          - LOCALE_LANGUAGE_NOT_FOUND
         "409":
           - LOCALE_LANGUAGE_IS_FALLBACK
       security:
@@ -892,6 +911,9 @@ paths:
         Public and cacheable, like every other locale read; a staff answer skips the
         shared cache.
       operationId: getLocaleMessages
+      x-error-codes:
+        "404":
+          - LOCALE_LANGUAGE_NOT_FOUND
       security:
         - {}
         - bearerAuth: []
@@ -952,6 +974,9 @@ paths:
         slice is a resource of its own, `/locales/{locale}/apps/{app}/entries`, which is
         where it is written.
       operationId: listLocaleEntries
+      x-error-codes:
+        "404":
+          - LOCALE_LANGUAGE_NOT_FOUND
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -1012,6 +1037,11 @@ paths:
         the writes below target; an app the deployment does not configure is refused
         with a 422.
       operationId: listAppLocaleEntries
+      x-error-codes:
+        "404":
+          - LOCALE_LANGUAGE_NOT_FOUND
+        "422":
+          - LOCALE_APP_UNKNOWN
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -1068,6 +1098,15 @@ paths:
         — see `entries` on `ReplaceLocaleEntriesRequest` for what a collision is and why it is refused here
         rather than discovered when the tree is built.
       operationId: createLocaleEntry
+      x-error-codes:
+        "404":
+          - LOCALE_LANGUAGE_NOT_FOUND
+        "409":
+          - LOCALE_ENTRY_KEY_COLLISION
+          - LOCALE_ENTRY_KEY_EXISTS
+        "422":
+          - LOCALE_APP_UNKNOWN
+          - LOCALE_ENTRY_KEY_INVALID
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -1099,8 +1138,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/json:
               schema:
@@ -1146,6 +1183,12 @@ paths:
         Nobody adds five hundred keys through a form; without this the admin surface is a
         demo.
       operationId: replaceLocaleEntries
+      x-error-codes:
+        "404":
+          - LOCALE_LANGUAGE_NOT_FOUND
+        "422":
+          - LOCALE_APP_UNKNOWN
+          - LOCALE_ENTRY_KEY_INVALID
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -1179,8 +1222,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1216,6 +1257,14 @@ paths:
         See `PUT` on this collection for the replacing counterpart, and for why the choice
         lives in the method.
       operationId: updateLocaleEntries
+      x-error-codes:
+        "404":
+          - LOCALE_LANGUAGE_NOT_FOUND
+        "409":
+          - LOCALE_ENTRY_KEY_COLLISION
+        "422":
+          - LOCALE_APP_UNKNOWN
+          - LOCALE_ENTRY_KEY_INVALID
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -1252,8 +1301,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1288,6 +1335,9 @@ paths:
         key). An entry of another app or language, an unknown id and a malformed one are
         the same 404.
       operationId: getLocaleEntry
+      x-error-codes:
+        "422":
+          - LOCALE_APP_UNKNOWN
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -1342,6 +1392,9 @@ paths:
         client looks the string up by, so changing it is a delete plus an add, and the two
         collision checks that go with them.
       operationId: replaceLocaleEntry
+      x-error-codes:
+        "422":
+          - LOCALE_APP_UNKNOWN
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -1376,8 +1429,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1405,6 +1456,9 @@ paths:
       summary: Remove one translation entry
       description: Removes a single key from one language. The other languages keep theirs.
       operationId: deleteLocaleEntry
+      x-error-codes:
+        "422":
+          - LOCALE_APP_UNKNOWN
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -1447,6 +1501,10 @@ paths:
         translation screen reads as a whole. A public read resolves to one language
         server-side; this is the only door that shows every language at once.
       operationId: getEntityTranslations
+      x-error-codes:
+        "404":
+          - LOCALE_ENTITY_TYPE_UNKNOWN
+          - LOCALE_ENTITY_NOT_FOUND
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -1511,6 +1569,9 @@ paths:
         `fields` object, a `fields` key the `translatables` registry does not declare, or a
         missing/`null` fallback locale.
       operationId: replaceEntityTranslations
+      x-error-codes:
+        "404":
+          - LOCALE_ENTITY_NOT_FOUND
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -1533,8 +1594,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/EntityTranslations"
           headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -1601,6 +1660,10 @@ paths:
         `translations.it.title`, so an editor with several tabs open can tell which one
         failed.
       operationId: updateEntityTranslations
+      x-error-codes:
+        "404":
+          - LOCALE_ENTITY_TYPE_UNKNOWN
+          - LOCALE_ENTITY_NOT_FOUND
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -2076,6 +2139,9 @@ paths:
       description: |
         Only a provider this server hosts itself (`altcha`) issues a challenge here; the default `none` and any vendor-hosted provider answer 404, which is a truthful statement about the deployment rather than an error. The shape is the provider's own — pass it to its widget verbatim.
       operationId: getAntibotChallenge
+      x-error-codes:
+        "404":
+          - ANTIBOT_NO_CHALLENGE
       security: []
       responses:
         "200":
@@ -2142,8 +2208,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2227,6 +2291,11 @@ paths:
       summary: Replace own profile
       description: Replaces every writable field of the authenticated user's own profile — username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state, email and password are out of scope — the first two belong to the admin `/users` endpoints, the email to `POST /account/email-change`, the password to `POST /account/password`. An `email` in the body is refused with 422 like any unknown field.
       operationId: replaceAccount
+      x-error-codes:
+        "409":
+          - EMAIL_ALREADY_USED
+        "429":
+          - EMAIL_CHANGE_TOO_SOON
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -2250,8 +2319,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/Account"
           headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -2293,6 +2360,11 @@ paths:
       summary: Update own profile
       description: Merges the given fields into the authenticated user's own profile — username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state, email and password are out of scope — the first two belong to the admin `/users` endpoints, the email to `POST /account/email-change`, the password to `POST /account/password`. An `email` in the body is refused with 422 like any unknown field.
       operationId: updateAccount
+      x-error-codes:
+        "409":
+          - EMAIL_ALREADY_USED
+        "429":
+          - EMAIL_CHANGE_TOO_SOON
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -2388,8 +2460,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2448,8 +2518,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2503,6 +2571,11 @@ paths:
       summary: Resend the pending email confirmation
       description: Mails the NEW (pending) address a fresh confirmation link — and only that address; the old one is not told again. The previous link stops working, since only the newest one counts. Answers 200 with `resendAfter`, the seconds a client counts down before offering the button again — the same shape as `POST /account/email-verification/resend`. A no-op, answering 200 with `resendAfter` 0 and mailing nothing, when nothing is pending, so a client does not need to check `GET /account` first. Sending the pending address again through `POST /account/email-change` is refused with 409, which is why this route exists. Answers 429 inside the previous send's cooldown (the same 60 seconds as `POST /account/email-verification/resend`, with `details.retryAfter` naming the wait) and spends the same per-account budget on a failure, so a client that waits never sees one. No fresh-auth guard — it mails an address the caller already asked for and changes nothing about the account.
       operationId: resendPendingEmail
+      x-error-codes:
+        "409":
+          - EMAIL_ALREADY_VERIFIED
+        "429":
+          - EMAIL_VERIFY_RESEND_TOO_SOON
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -2526,8 +2599,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2584,8 +2655,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2639,8 +2708,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2711,6 +2778,8 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "429":
+          - TWO_FACTOR_RESEND_TOO_SOON
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -2740,8 +2809,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2790,7 +2857,9 @@ paths:
       tags:
         - Account
       summary: List active sessions
-      description: "Lists the authenticated user's live sessions, one per sign-in, newest first. Each carries an id that stays the same for as long as the sign-in lasts (a `jwt` refresh or a `cookie` re-proof does not change it), when the sign-in happened, when it ends, and a `current` marker; never a credential. The session the caller's own cookie (or `ses_…` bearer) belongs to is flagged `current`. In `cookie` mode each also carries a coarse `device` label such as \"Firefox on Linux\", read from the User-Agent at the sign-in. A staff session that has idled out is not listed: it no longer signs anyone in."
+      description: |-
+        Lists the authenticated user's live sessions, one per sign-in, newest first. Each carries an id that stays the same for as long as the sign-in lasts (a `jwt` refresh or a `cookie` re-proof does not change it), when the sign-in happened, when it ends, and a `current` marker; never a credential. The session the caller's own cookie (or `ses_…` bearer) belongs to is flagged `current`. In `cookie` mode each also carries a coarse `device` label such as "Firefox on Linux", read from the User-Agent at the sign-in. A staff session that has idled out is not listed: it no longer signs anyone in.
+        Unpaged: only live sign-ins are listed, and each ends when it expires.
       operationId: listSessions
       security:
         - bearerAuth: []
@@ -2946,7 +3015,7 @@ paths:
       tags:
         - Account
       summary: List saved addresses
-      description: The authenticated user's address book. Whenever it is non-empty, exactly one entry carries `default` — the one checkout ships to when no `addressId` is named.
+      description: "The authenticated user's address book. Whenever it is non-empty, exactly one entry carries `default` — the one checkout ships to when no `addressId` is named. Unpaged: the book holds at most `NODE_ADDRESS_BOOK_MAX` entries."
       operationId: listAddresses
       security:
         - bearerAuth: []
@@ -3023,8 +3092,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -3144,8 +3211,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3212,8 +3277,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3306,8 +3369,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3330,6 +3391,11 @@ paths:
       summary: Request email verification
       description: Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/email-verification/confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived. Answers 429 inside the previous send's cooldown, so a client that respects `resendAfter` never sees one — unlike a login guess, a SUCCESSFUL call here is the expensive one, since each publishes mail.
       operationId: requestEmailVerification
+      x-error-codes:
+        "409":
+          - EMAIL_ALREADY_VERIFIED
+        "429":
+          - EMAIL_VERIFY_RESEND_TOO_SOON
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -3353,8 +3419,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3544,8 +3608,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3600,8 +3662,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3631,6 +3691,7 @@ paths:
           - ANTIBOT_VERIFICATION_FAILED
         "409":
           - IDEMPOTENCY_IN_FLIGHT
+          - EMAIL_ALREADY_USED
         "422":
           - IDEMPOTENCY_KEY_MISMATCH
       x-no-refresh: true
@@ -3662,8 +3723,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -3792,8 +3851,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3845,8 +3902,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/json:
               schema:
@@ -3916,6 +3971,9 @@ paths:
       description: "Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. An account has one export, so there is no id to name: the caller's own is the one served. A FRESH session (`requireFreshAuth`), same as the request. `404` unless the export is `ready` and within its retention. A `ready` export whose file is missing from the store answers `404` too: the file honestly does not exist."
       x-cache: no-store
       operationId: downloadAccountExport
+      x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -3993,8 +4051,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4019,6 +4075,9 @@ paths:
       summary: Send a login code
       description: Delivers a fresh code for one armed delivered method, against a live challenge. Public like the rest of the login flow — the challenge token is the credential. Answers 429 while the previous code is still inside its cooldown, so a client that respects `resendAfter` never sees one; the cooldown exists because this endpoint sends mail on an unauthenticated caller's say-so.
       operationId: sendTwoFactorCode
+      x-error-codes:
+        "429":
+          - TWO_FACTOR_RESEND_TOO_SOON
       x-no-refresh: true
       security: []
       requestBody:
@@ -4047,8 +4106,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4114,6 +4171,9 @@ paths:
       summary: Start enrolling one second factor
       description: Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed. The FIRST factor an account arms needs only the fresh critical auth the route already demands. Once any factor is armed, every setup — a replace or a second method — also needs `code`, from an armed factor or an unused backup code, because a stolen-but-fresh session must not be able to swap the factor it would otherwise have to pass (OWASP MFA Cheat Sheet, "Changing MFA Factors"; NIST SP 800-63B). A caller whose only factor is delivered gets that code from POST /account/2fa/methods/{method}/send.
       operationId: setupTwoFactorMethod
+      x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -4145,8 +4205,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4175,6 +4233,11 @@ paths:
       summary: Send a code to prove an armed factor
       description: Delivers a fresh code for one ARMED delivered method to a signed-in caller, so an account whose only factor is delivered (email) can satisfy the code that removing, replacing or disabling a factor asks for without spending a backup code. Answers 422 for a method that is not armed or does not deliver, and 429 inside the per-code cooldown or once the account's hourly delivery budget is spent. Needs fresh critical auth, like the calls it serves.
       operationId: sendTwoFactorMethodCode
+      x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
+        "429":
+          - TWO_FACTOR_RESEND_TOO_SOON
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -4200,8 +4263,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4226,6 +4287,9 @@ paths:
       summary: Arm one second factor
       description: Arms the method pending from its setup call, against a code the caller has demonstrably received. Backup codes are minted here — but only by the FIRST factor an account arms, since they recover the account, not the method.
       operationId: confirmTwoFactorMethod
+      x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -4257,8 +4321,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4287,6 +4349,9 @@ paths:
       summary: Disable two-factor authentication
       description: "Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is POST /account/2fa/methods/{method}/remove."
       operationId: disableTwoFactor
+      x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -4316,8 +4381,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4344,6 +4407,9 @@ paths:
       summary: Remove one second factor
       description: Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as POST /account/2fa/disable would.
       operationId: removeTwoFactorMethod
+      x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -4375,8 +4441,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4405,6 +4469,9 @@ paths:
       summary: Regenerate backup codes
       description: Mints a fresh set of ten one-time backup codes and discards whatever was left of the old set — the answer to burning through them with no way back in short of admin-assisted recovery. Requires a valid code from any armed method, or an unused backup code, on top of the route's own fresh-auth requirement, same reasoning as disabling a factor.
       operationId: regenerateBackupCodes
+      x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -4434,8 +4501,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4460,7 +4525,7 @@ paths:
       tags:
         - Auth
       summary: List the caller's connected accounts
-      description: The sign-in providers linked to the authenticated account (Google, GitHub), with when each was connected. Never carries a provider's own identifier. An empty list means the account signs in with a password alone.
+      description: "The sign-in providers linked to the authenticated account (Google, GitHub), with when each was connected. Never carries a provider's own identifier. An empty list means the account signs in with a password alone. Unpaged: at most one per provider."
       operationId: listOAuthLinks
       security:
         - bearerAuth: []
@@ -4551,8 +4616,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4608,8 +4671,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4787,6 +4848,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
   /users:
+    x-versioned:
+      - post
     get:
       x-cache: private-no-cache
       tags:
@@ -4886,6 +4949,8 @@ paths:
       description: Creates a new user account with the supplied email and username, and mails the owner a link to choose their own password (the same email as "forgot your password", worded for "you have no password yet"). No caller can set another person's password, so the body has no password field. Optional image can be uploaded.
       operationId: createUser
       x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
         "403":
           - ROLE_MANAGEMENT_REQUIRED
       security:
@@ -4910,6 +4975,10 @@ paths:
           headers:
             Location:
               $ref: "#/components/headers/Location"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -4922,8 +4991,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/json:
               schema:
@@ -5041,8 +5108,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
           headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -5160,6 +5225,9 @@ paths:
       summary: Delete user
       description: Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`.
       operationId: deleteUserById
+      x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -5190,6 +5258,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
   /users/{id}/restore:
+    x-versioned:
+      - post
     post:
       tags:
         - Users
@@ -5197,6 +5267,8 @@ paths:
       description: Undoes the soft delete of the user identified by `{id}`, which includes an account whose owner asked to delete it and whose `purgeAt` has not passed (the owner is told by mail; the account is then no longer scheduled for erasure). Answers 409 `USER_NOT_DELETED` when the user is not soft-deleted, so a restore can never be mistaken for an ordinary read, and 409 `USER_ERASURE_DUE` past `purgeAt`.
       operationId: restoreUserById
       x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
         "409":
           - USER_ERASURE_DUE
           - USER_NOT_DELETED
@@ -5213,6 +5285,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -5225,8 +5301,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5253,6 +5327,9 @@ paths:
       summary: Permanently delete user
       description: Permanently removes the user identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /users/{id}?hardDelete=true`.
       operationId: hardDeleteUserById
+      x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
       x-alias-of: deleteUserById
       security:
         - bearerAuth: []
@@ -5320,8 +5397,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5350,6 +5425,8 @@ paths:
         Creates a contact task and notifies the support mailbox by email. Open to anyone. A valid session bearer token, when one is sent, records the sender's account on the task (`subjectId`), so the account's data export and erasure include it. No token files it as anonymous; a token that names no live session is refused `401`, so the client refreshes and sends it again as the person.
       operationId: createContactTask
       x-error-codes:
+        "403":
+          - ANTIBOT_VERIFICATION_FAILED
         "409":
           - IDEMPOTENCY_IN_FLIGHT
         "422":
@@ -5383,8 +5460,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -5543,8 +5618,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5728,8 +5801,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5784,8 +5855,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5841,8 +5910,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5906,8 +5973,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5968,8 +6033,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6033,8 +6096,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -6061,6 +6122,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: tasks
   /products:
+    x-versioned:
+      - post
     get:
       x-cache: "max-age: 3600"
       tags:
@@ -6198,6 +6261,10 @@ paths:
           headers:
             Location:
               $ref: "#/components/headers/Location"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -6210,8 +6277,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -6381,8 +6446,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/Product"
           headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -6549,6 +6612,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: products
   /products/{id}/restore:
+    x-versioned:
+      - post
     post:
       tags:
         - Products
@@ -6572,6 +6637,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Product"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -6584,8 +6653,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6681,8 +6748,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6758,6 +6823,7 @@ paths:
           - CART_LINE_LIMIT_REACHED
         "422":
           - IDEMPOTENCY_KEY_MISMATCH
+          - CART_QUANTITY_LIMIT
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -6789,8 +6855,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -6845,8 +6909,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6867,6 +6929,9 @@ paths:
       summary: Set cart item quantity
       description: Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart/items` is the door that adds. A change never creates, so a product the cart holds no line for is 404 `cart.item-not-found`, and a held line whose product the storefront no longer shows is 404 `products.not-found`. Repeating it changes nothing. Returns the updated cart.
       operationId: updateCartItemByProductId
+      x-error-codes:
+        "422":
+          - CART_QUANTITY_LIMIT
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -6901,8 +6966,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6955,8 +7018,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6980,6 +7041,8 @@ paths:
       description: Sets which shipping method (see `GET /delivery/methods`) the cart plans to ship by, ahead of checkout — priced and validated against the basket as it stands right now. `null` clears the choice. Checkout re-validates from scratch regardless of what this endpoint accepted, since the basket may change afterward. Returns the updated cart, including the priced `summary.shippingCost`/`summary.totalPrice`.
       operationId: setCartShippingMethod
       x-error-codes:
+        "404":
+          - CART_SHIPPING_METHOD_NOT_FOUND
         "409":
           - CART_SHIPPING_METHOD_WEIGHT
           - CART_SHIPPING_NOT_APPLICABLE
@@ -7012,8 +7075,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7081,6 +7142,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: cart
   /cart/checkout:
+    x-versioned:
+      - post
     post:
       tags:
         - Orders
@@ -7090,8 +7153,11 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - EMAIL_NOT_VERIFIED
         "404":
           - CART_ADDRESS_NOT_FOUND
+          - CART_SHIPPING_METHOD_NOT_FOUND
         "409":
           - CART_ADDRESS_NOT_APPLICABLE
           - CART_CHANGED
@@ -7102,12 +7168,14 @@ paths:
           - CART_PURCHASE_HOLD
           - CART_TOTAL_CHANGED
           - IDEMPOTENCY_IN_FLIGHT
+          - CART_PRODUCT_UNAVAILABLE
         "422":
           - CART_ADDRESS_REQUIRED
           - CART_BILLING_ADDRESS_REQUIRED
           - CART_SHIPPING_METHOD_REQUIRED
           - CART_SHIP_TO_COUNTRY_NOT_SUPPORTED
           - IDEMPOTENCY_KEY_MISMATCH
+          - CART_QUANTITY_LIMIT
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -7125,6 +7193,10 @@ paths:
           headers:
             Location:
               $ref: "#/components/headers/Location"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -7137,8 +7209,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -7213,8 +7283,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -7320,8 +7388,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7377,8 +7443,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7431,8 +7495,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7453,6 +7515,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: wishlist
   /orders:
+    x-versioned:
+      - post
     get:
       x-cache: private-no-cache
       tags:
@@ -7600,6 +7664,10 @@ paths:
           headers:
             Location:
               $ref: "#/components/headers/Location"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -7612,8 +7680,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -7682,8 +7748,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7784,8 +7848,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
           headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -7930,6 +7992,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: orders
   /orders/{id}/restore:
+    x-versioned:
+      - post
     post:
       tags:
         - Orders
@@ -7952,6 +8016,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -7964,8 +8032,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -8029,6 +8095,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: orders
   /orders/{id}/cancel:
+    x-versioned:
+      - post
     post:
       tags:
         - Orders
@@ -8061,6 +8129,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -8073,8 +8145,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -8099,6 +8169,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: orders
   /orders/{id}/status-override:
+    x-versioned:
+      - post
     post:
       tags:
         - Orders
@@ -8106,6 +8178,8 @@ paths:
       description: "Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. A forward move to `shipped` or `delivered` is refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`); a move to `processing` ships nothing and is allowed. Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `canceled` (`POST /orders/{id}/cancel` is that door). Requires `override:Order`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does."
       operationId: overrideOrderStatus
       x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
         "409":
           - ORDER_OVERRIDE_AWAITING_STOCK
           - ORDER_OVERRIDE_NOT_ALLOWED
@@ -8128,6 +8202,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -8140,8 +8218,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -8226,7 +8302,9 @@ paths:
       tags:
         - Invoicing
       summary: List the order's credit notes
-      description: "One entry per refund that has settled on this order's payment, oldest first — a full refund and each part of a partial one each have their own credit note. Empty for an order never refunded, with no invoice to reverse, or whose money the caller may not read: the buyer sees their own, and staff need the payments staff read (`display:Payment`), so the warehouse that packs the order sees none. `id` is what `GET /orders/{id}/credit-notes/{creditNoteId}` downloads."
+      description: |-
+        One entry per refund that has settled on this order's payment, oldest first — a full refund and each part of a partial one each have their own credit note. Empty for an order never refunded, with no invoice to reverse, or whose money the caller may not read: the buyer sees their own, and staff need the payments staff read (`display:Payment`), so the warehouse that packs the order sees none. `id` is what `GET /orders/{id}/credit-notes/{creditNoteId}` downloads.
+        Unpaged: one per settled refund of this order.
       operationId: listOrderCreditNotes
       security:
         - bearerAuth: []
@@ -8425,8 +8503,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "201":
@@ -8446,8 +8522,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -8478,12 +8552,17 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: payments
   /orders/{id}/process:
+    x-versioned:
+      - post
     post:
       tags:
         - Delivery
       summary: Process a paid order
       description: Reports that fulfillment has started — the order moves `paid → processing`. The verb names the status it reaches, as `cancel` does; the module behind it is `delivery`'s. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
       operationId: processOrder
+      x-error-codes:
+        "409":
+          - ORDER_NOT_PAID
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -8498,6 +8577,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -8510,8 +8593,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -8630,7 +8711,7 @@ paths:
       tags:
         - Payments
       summary: List payment methods
-      description: Which methods this deployment offers, so the frontend hard-codes none. `card` is present only when a card payment provider is configured; `bank_transfer` only once its beneficiary and IBAN are configured. With neither the list is empty, and checkout is off until a method is configured. Public — like `GET /delivery/methods`, this is pre-purchase information.
+      description: "Which methods this deployment offers, so the frontend hard-codes none. `card` is present only when a card payment provider is configured; `bank_transfer` only once its beneficiary and IBAN are configured. With neither the list is empty, and checkout is off until a method is configured. Public — like `GET /delivery/methods`, this is pre-purchase information. Unpaged: at most one per payment method kind."
       operationId: listPaymentMethods
       security: []
       responses:
@@ -8685,6 +8766,7 @@ paths:
           - PAYMENT_NOT_REFUNDABLE
         "422":
           - IDEMPOTENCY_KEY_MISMATCH
+          - PAYMENT_REFUND_EXCEEDS_REMAINING
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -8715,8 +8797,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -8852,6 +8932,8 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - EMAIL_NOT_VERIFIED
         "409":
           - IDEMPOTENCY_IN_FLIGHT
           - PAYMENT_DECLINED
@@ -8891,8 +8973,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -8928,6 +9008,8 @@ paths:
       x-error-codes:
         "401":
           - REAUTH_REQUIRED
+        "403":
+          - EMAIL_NOT_VERIFIED
         "409":
           - PAYMENT_DECLINED
           - PAYMENT_NOT_CONFIRMABLE
@@ -8956,8 +9038,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9023,8 +9103,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
@@ -9045,7 +9123,7 @@ paths:
       tags:
         - Delivery
       summary: List shipping methods
-      description: Every shipping method this shop offers — flat rates and free-above thresholds, unfiltered. Public, because what shipping costs is pre-purchase information; the authoritative pricing and weight-fit check happen server-side, against the caller's real basket, at `PUT /cart/shipping-method` and again at checkout — this list is a catalogue, not a quote.
+      description: "Every shipping method this shop offers — flat rates and free-above thresholds, unfiltered. Public, because what shipping costs is pre-purchase information; the authoritative pricing and weight-fit check happen server-side, against the caller's real basket, at `PUT /cart/shipping-method` and again at checkout — this list is a catalogue, not a quote. Unpaged: the shop's configured catalogue."
       operationId: listShippingMethods
       security: []
       responses:
@@ -9245,6 +9323,7 @@ paths:
           - DELIVERY_NOT_SHIPPABLE
           - IDEMPOTENCY_IN_FLIGHT
           - ORDER_NOT_PROCESSING
+          - ORDER_NOT_PAID
         "422":
           - DELIVERY_LINES_INVALID
           - IDEMPOTENCY_KEY_MISMATCH
@@ -9279,8 +9358,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -9321,6 +9398,8 @@ paths:
         "409":
           - DELIVERY_NOT_DIGITAL
           - IDEMPOTENCY_IN_FLIGHT
+          - ORDER_NOT_PAID
+          - ORDER_NOT_PROCESSING
         "422":
           - IDEMPOTENCY_KEY_MISMATCH
       security:
@@ -9348,8 +9427,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -9417,8 +9494,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -9478,8 +9553,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9589,8 +9662,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -9654,8 +9725,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9767,6 +9836,7 @@ paths:
           - RETURN_CANCELLATION_INVALID
           - RETURN_LINES_INVALID
           - RETURN_STATEMENT_INVALID
+          - RETURN_REMEDY_INVALID
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -9796,8 +9866,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -9964,8 +10032,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9990,6 +10056,9 @@ paths:
       summary: Decline a return request
       description: "Staff refuse a `requested` return with a reason code, and a message to the buyer that `other` requires — the customer is mailed the code's sentence, in their own language, and the message. Same conditional write as `approve`. A decline is final: a mistaken one is fixed by opening a new return for the same lines. A decline is a complaint the shop does not settle, so the mail does not carry the ADR information Directive 2013/11 Art. 13(3) asks for; that is the shop's to add."
       operationId: declineReturn
+      x-error-codes:
+        "409":
+          - RETURN_NOT_DECIDABLE
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -10021,8 +10090,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -10100,8 +10167,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -10346,8 +10411,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -10383,6 +10446,7 @@ paths:
       x-error-codes:
         "409":
           - IDEMPOTENCY_IN_FLIGHT
+          - INVENTORY_BELOW_RESERVED
         "422":
           - IDEMPOTENCY_KEY_MISMATCH
       security:
@@ -10423,8 +10487,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -10450,8 +10512,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/problem+json:
               schema:
@@ -10503,8 +10563,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -10519,6 +10577,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: inventory
   /webhooks/subscriptions:
+    x-versioned:
+      - post
     get:
       tags:
         - Webhooks
@@ -10622,6 +10682,10 @@ paths:
           headers:
             Location:
               $ref: "#/components/headers/Location"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -10634,8 +10698,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/json:
               schema:
@@ -10746,8 +10808,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/WebhookSubscription"
           headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -10929,8 +10989,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11050,8 +11108,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11079,6 +11135,8 @@ paths:
         `asyncapi.webhooks.yaml` — the same files `asyncapi.public.yaml` is generated from —
         so this list and what can actually fire can never drift apart. A module that is
         not deployed lists nothing. See `docs/api/asyncapi-workflow.md`.
+
+        Unpaged: the event catalogue of the deployed modules.
       operationId: listWebhookEvents
       security:
         - bearerAuth: []
@@ -11225,8 +11283,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/json:
               schema:
@@ -11344,6 +11400,8 @@ paths:
         `actions.activate` says whether it would be accepted.
       operationId: activateLocale
       x-error-codes:
+        "404":
+          - LOCALE_LANGUAGE_NOT_FOUND
         "409":
           - LOCALE_LANGUAGE_ALREADY_ACTIVE
       security:
@@ -11372,8 +11430,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11408,6 +11464,8 @@ paths:
         `actions.deactivate` says whether it would be accepted.
       operationId: deactivateLocale
       x-error-codes:
+        "404":
+          - LOCALE_LANGUAGE_NOT_FOUND
         "409":
           - LOCALE_LANGUAGE_ALREADY_INACTIVE
           - LOCALE_LANGUAGE_IS_FALLBACK
@@ -11437,8 +11495,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11463,6 +11519,9 @@ paths:
       summary: Send a code to re-authenticate
       description: Mails the caller a one-time code for step-up, for an account that has no password to prove instead. Answers 422 for an account that has a password, or that has no verified address or no way to deliver mail, and 429 inside the per-code cooldown or once the account's hourly delivery budget is spent (shared with `POST /account/2fa/methods/{method}/send`, since both spend the same mailbox). Needs no fresh auth — it is what earns one.
       operationId: sendReauthCode
+      x-error-codes:
+        "429":
+          - TWO_FACTOR_RESEND_TOO_SOON
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -11488,8 +11547,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11538,8 +11595,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11554,6 +11609,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
   /users/{id}/assign-role:
+    x-versioned:
+      - post
     post:
       tags:
         - Users
@@ -11561,6 +11618,8 @@ paths:
       description: "Gives the account the staff role named, replacing the one it holds (an account holds at most one). Naming the role it holds already answers 409 `USER_ROLE_ALREADY_ASSIGNED` and writes and audits nothing; two callers naming different roles both succeed, the last write wins. The only way a role is handed to an existing account. Needs `assign:Role`, with a critically fresh session, and only a session: an API key is refused 401. A name nobody can be given is a 422 naming `role`. Audited as `access.role.assigned`."
       operationId: assignUserRole
       x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
         "403":
           - ROLE_MANAGEMENT_REQUIRED
         "409":
@@ -11584,6 +11643,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -11596,8 +11659,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -11622,6 +11683,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
   /users/{id}/revoke-role:
+    x-versioned:
+      - post
     post:
       tags:
         - Users
@@ -11629,6 +11692,8 @@ paths:
       description: "Takes the account's staff role away, leaving a plain customer. An account that holds none answers 409 `USER_ROLE_NOT_ASSIGNED`. Needs `assign:Role`, with a critically fresh session, and only a session: an API key is refused 401. Audited as `access.role.revoked`."
       operationId: revokeUserRole
       x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
         "403":
           - ROLE_MANAGEMENT_REQUIRED
         "409":
@@ -11646,6 +11711,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -11658,8 +11727,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11678,6 +11745,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
   /users/{id}/place-purchase-hold:
+    x-versioned:
+      - post
     post:
       tags:
         - Users
@@ -11707,6 +11776,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -11719,8 +11792,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -11745,6 +11816,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
   /users/{id}/lift-purchase-hold:
+    x-versioned:
+      - post
     post:
       tags:
         - Users
@@ -11768,6 +11841,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -11780,8 +11857,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11800,6 +11875,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
   /users/{id}/activate:
+    x-versioned:
+      - post
     post:
       tags:
         - Users
@@ -11807,6 +11884,8 @@ paths:
       description: Lets a deactivated account sign in again. Answers 409 `USER_ALREADY_ACTIVE` when it is active already. Needs `ban:User`, the key deactivating takes. Audited as `admin.user.unbanned`.
       operationId: activateUserById
       x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
         "409":
           - USER_ALREADY_ACTIVE
       security:
@@ -11823,6 +11902,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -11835,8 +11918,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11855,6 +11936,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: users
   /users/{id}/deactivate:
+    x-versioned:
+      - post
     post:
       tags:
         - Users
@@ -11862,6 +11945,10 @@ paths:
       description: Locks the account out and ends every session it holds in the same save, so activating it later does not bring the old tokens back. Answers 409 `USER_ALREADY_INACTIVE` when it is deactivated already. Needs `ban:User`. Audited as `admin.user.banned`.
       operationId: deactivateUserById
       x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
+        "403":
+          - ROLE_MANAGEMENT_REQUIRED
         "409":
           - USER_ALREADY_INACTIVE
       security:
@@ -11878,6 +11965,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -11890,8 +11981,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -11952,8 +12041,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -12000,6 +12087,8 @@ paths:
         The response is never cached: `Cache-Control: private, no-store`.
       operationId: exportOrders
       x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
         "422":
           - ORDER_EXPORT_TOO_LARGE
       security:
@@ -12201,8 +12290,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -12311,8 +12398,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -12463,6 +12548,10 @@ paths:
       description: Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200, so a retry needs no `Idempotency-Key` (a stored replay would hand back the first answer's `clientSecret` for as long as the ledger keeps it). The caller's intents and syncs share one budget per hour (429) — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
       operationId: createPayment
       x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
+        "403":
+          - EMAIL_NOT_VERIFIED
         "409":
           - PAYMENT_CARD_NOT_AVAILABLE
           - PAYMENT_IN_FLIGHT
@@ -12496,8 +12585,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "201":
           description: The payment intent, ready to confirm
           headers:
@@ -12515,8 +12602,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
           content:
             application/json:
               schema:
@@ -12581,8 +12666,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -12772,8 +12855,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "401":
@@ -12852,8 +12933,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
         "400":
@@ -13112,8 +13191,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -13145,6 +13222,8 @@ paths:
       description: "Staff finish a `received` return whose refund will not follow the usual way: it was canceled, or the money went back outside the application. The return becomes `closed` and the order's timeline and the audit row `admin.return.closed` say so, with the note in the audit row only. No money moves, no stock moves (the units went back on sale when the goods were received), no credit note is issued and the customer is not mailed that their money went back: closing is bookkeeping, not a refund. A return that is not `received` (a `requested` one is declined, an `approved` one whose goods never came is canceled, not closed) answers 409 `RETURN_NOT_CLOSABLE`. Needs `receive:Return`, the key that receives the goods, which carries a fresh-session requirement."
       operationId: closeReturn
       x-error-codes:
+        "401":
+          - REAUTH_REQUIRED
         "409":
           - RETURN_NOT_CLOSABLE
       security:
@@ -13178,8 +13257,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -13248,8 +13325,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -13321,8 +13396,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -13866,8 +13939,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -13890,6 +13961,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: inventory
   /webhooks/subscriptions/{id}/enable:
+    x-versioned:
+      - post
     post:
       tags:
         - Webhooks
@@ -13918,6 +13991,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/WebhookSubscription"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -13930,8 +14007,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -13950,6 +14025,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: webhooks
   /webhooks/subscriptions/{id}/disable:
+    x-versioned:
+      - post
     post:
       tags:
         - Webhooks
@@ -13977,6 +14054,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/WebhookSubscription"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -13989,8 +14070,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -14050,8 +14129,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -14116,6 +14193,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: webhooks
   /examples:
+    x-versioned:
+      - post
     get:
       x-cache: private-no-cache
       tags:
@@ -14207,6 +14286,10 @@ paths:
           headers:
             Location:
               $ref: "#/components/headers/Location"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -14219,8 +14302,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
             Idempotent-Replayed:
               $ref: "#/components/headers/Idempotent-Replayed"
           content:
@@ -14285,8 +14366,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -14386,8 +14465,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/Example"
           headers:
-            ETag:
-              $ref: "#/components/headers/ETag"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -14522,6 +14599,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: example
   /examples/{id}/publish:
+    x-versioned:
+      - post
     post:
       tags:
         - Examples
@@ -14544,6 +14623,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Example"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -14556,8 +14639,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -14576,6 +14657,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: example
   /examples/{id}/archive:
+    x-versioned:
+      - post
     post:
       tags:
         - Examples
@@ -14598,6 +14681,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Example"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -14610,8 +14697,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -14630,6 +14715,8 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: example
   /examples/{id}/unarchive:
+    x-versioned:
+      - post
     post:
       tags:
         - Examples
@@ -14652,6 +14739,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Example"
           headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Content-Location:
+              $ref: "#/components/headers/ContentLocation"
             x-request-id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
@@ -14664,8 +14755,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -14724,8 +14813,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -15253,8 +15340,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -15310,8 +15395,6 @@ paths:
               $ref: "#/components/headers/RateLimit-Policy"
             RateLimit:
               $ref: "#/components/headers/RateLimit"
-            ETag:
-              $ref: "#/components/headers/EntityTag"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -15548,12 +15631,17 @@ components:
         type: string
     ETag:
       required: true
-      description: "A strong entity-tag over this exact answer (RFC 9110 §8.8.3). Send it back as `If-None-Match` for a `304`, or as `If-Match` on `PUT`, `PATCH` or `DELETE`, which compares only its edit part, so a stock or price change never refuses your edit. Opaque: compare it, never parse it."
+      description: "A strong entity-tag over this exact answer (RFC 9110 §8.8.3). Send it back as `If-None-Match` for a `304`, or as `If-Match` on `PUT`, `PATCH` or `DELETE`, which compares only its edit part, so a stock or price change never refuses your edit. On a create or an action it is the tag of the resource `Content-Location` names, so the next edit needs no read first. Opaque: compare it, never parse it."
+      schema:
+        type: string
+    ContentLocation:
+      required: true
+      description: "The resource the answer's body is a representation of, as a path on this API (RFC 9110 section 6.4.2), in the form `Location` uses. A create or an action answers it beside its `ETag`: the tag is that resource's, and a `GET` on it reads the same body."
       schema:
         type: string
     EntityTag:
       required: false
-      description: The strong entity-tag Express computes for any answer that has a body (RFC 9110 section 8.8.3). A client may send it back as `If-None-Match` on a read the app lets it keep, and a `GET` that declares `304` answers that way when it still matches. Only a resource marked versioned promises it (the `ETag` header) and takes it as `If-Match`.
+      description: The strong entity-tag Express computes for any read that has a body (RFC 9110 section 8.8.3); a write answer never carries it. A client may send it back as `If-None-Match` on a read the app lets it keep, and a `GET` that declares `304` answers that way when it still matches. Only a resource marked versioned promises it (the `ETag` header) and takes it as `If-Match`.
       schema:
         type: string
     RequestId:
@@ -15824,6 +15912,16 @@ components:
       headers:
         Cache-Control:
           $ref: "#/components/headers/CacheControlNoStore"
+        Accept:
+          description: The media types the operation takes, comma-separated (RFC 9110 §12.5.1). Absent when the operation declares no body.
+          required: false
+          schema:
+            type: string
+        Accept-Patch:
+          description: The same list, on a refused `PATCH` only (RFC 5789 §2.2).
+          required: false
+          schema:
+            type: string
         x-request-id:
           $ref: "#/components/headers/RequestId"
         Content-Language:
@@ -16890,7 +16988,7 @@ components:
               - "null"
             maxLength: 2000
           description: |-
-            Translation key to text, or to `null` to delete it. A `null` for a key that is not stored is a no-op, not an error. An empty map is a 422 — enforced at write time.
+            Translation key to text, or to `null` to delete it. A `null` for a key that is not stored is a no-op, not an error. An empty map changes nothing and answers 200.
             A key is 1 to 200 characters once trimmed, and two keys that are the same once trimmed are a 409. A key being written (a string) is refused when it is a strict prefix of a key that will remain, or has one as a prefix — `products.list` alongside `products.list.title`; a key being deleted is not part of that check. The rationale and the "undefined keys are accepted" rule are on `ReplaceLocaleEntriesRequest`.
           example:
             products.list.title: Catálogo
@@ -18858,6 +18956,11 @@ components:
             - $ref: "#/components/schemas/CurrencyCode"
           readOnly: true
           description: ISO-4217 currency code this order was priced in (e.g. EUR).
+        termsVersion:
+          type: string
+          readOnly: true
+          description: The Terms version in force when the buyer placed the order at checkout; absent on staff-placed orders.
+          example: "2"
         netTotal:
           $ref: "#/components/schemas/NonNegativeDecimalAmount"
           readOnly: true
@@ -18924,6 +19027,7 @@ components:
         updatedAt:
           type: string
           format: date-time
+          description: When staff or the buyer last edited the order or moved its status. Reports from payments, delivery and returns don't move it.
         deletedAt:
           type: string
           format: date-time
@@ -22575,6 +22679,7 @@ components:
         updatedAt:
           type: string
           format: date-time
+          description: When staff or the buyer last edited the order or moved its status. Reports from payments, delivery and returns don't move it.
         deletedAt:
           type: string
           format: date-time
@@ -27246,6 +27351,7 @@ x-error-codes:
     status: 403
     description: The human-challenge token is missing, expired, or the provider rejected it.
   BAD_REQUEST:
+    scope: app
     status: 400
     description: A malformed request the body parser or a library refused before any route ran.
   CART_ADDRESS_NOT_APPLICABLE:
@@ -27306,12 +27412,15 @@ x-error-codes:
     status: 409
     description: The total the buyer was shown is not the total this checkout would charge — a price, a shipping cost or the cart itself changed. `errors[].details` carries `expected` (what the request named) and `actual` (what the order would cost now), each `{ amount, currency }` with the amount as a decimal string; show the new total and let the buyer confirm.
   CLIENT_ERROR:
+    scope: app
     status: 400
     description: A 4xx whose status has no code of its own in this catalogue (the derived name is not listed here), so no wording is invented for it. Never a 5xx.
   CONFLICT:
+    scope: app
     status: 409
     description: The request is well-formed but conflicts with the resource's current state.
   CONTENT_TOO_LARGE:
+    scope: app
     status: 413
     description: The request body exceeds this deployment's size limit.
   DELIVERY_LINES_INVALID:
@@ -27375,6 +27484,7 @@ x-error-codes:
     status: 409
     description: Only an archived example can go back to draft, or another request moved it first. `errors[].details` is `{ status }`; `Example.actions.unarchive` says whether the door is open.
   FORBIDDEN:
+    scope: app
     status: 403
     description: "The server understood the request and refuses it, whoever the caller is: the caller lacks the permission this route requires (a key's own `deniedCode` can replace this default with a more specific one), or a human-challenge token is missing or refused (`ANTIBOT_VERIFICATION_FAILED`)."
   IDEMPOTENCY_IN_FLIGHT:
@@ -27387,30 +27497,38 @@ x-error-codes:
     status: 400
     description: This route requires an `Idempotency-Key` header and the request carries none.
   INTERNAL_SERVER_ERROR:
+    scope: app
     status: 500
     description: An unexpected server-side failure. Never carries library or stack detail.
   INVENTORY_BELOW_RESERVED:
     status: 409
     description: The requested on-hand count is below what is already reserved by open orders.
   LIMIT_FIELD_COUNT:
+    scope: app
     status: 400
     description: A multipart upload carries too many non-file fields (multer).
   LIMIT_FIELD_KEY:
+    scope: app
     status: 400
     description: A multipart field name is too long (multer).
   LIMIT_FIELD_VALUE:
+    scope: app
     status: 413
     description: A multipart field value is too long (multer).
   LIMIT_FILE_COUNT:
+    scope: app
     status: 400
     description: A multipart upload carries too many files (multer).
   LIMIT_FILE_SIZE:
+    scope: app
     status: 413
     description: An uploaded file exceeds this deployment's size limit (multer).
   LIMIT_PART_COUNT:
+    scope: app
     status: 400
     description: A multipart upload carries too many parts (multer).
   LIMIT_UNEXPECTED_FILE:
+    scope: app
     status: 400
     description: A multipart upload carries a file under a field name this operation does not accept (multer).
   LOCALE_APP_UNKNOWN:
@@ -27422,9 +27540,6 @@ x-error-codes:
   LOCALE_ENTITY_TYPE_UNKNOWN:
     status: 404
     description: The entity type is not a registered translatable.
-  LOCALE_ENTRIES_EMPTY:
-    status: 422
-    description: A merge patch named no entry at all.
   LOCALE_ENTRY_KEY_COLLISION:
     status: 409
     description: "The key is a strict dotted prefix of another key, or has one as a prefix: no dictionary tree can hold both."
@@ -27450,12 +27565,15 @@ x-error-codes:
     status: 404
     description: No language is registered under that tag.
   METHOD_NOT_ALLOWED:
+    scope: app
     status: 405
     description: The path exists, but not with this method. The `Allow` header lists the methods it does answer.
   MISSING_FIELD_NAME:
+    scope: app
     status: 400
     description: A multipart file part carries no field name (multer).
   NOT_FOUND:
+    scope: app
     status: 404
     description: The addressed resource does not exist, or the caller may not be told that it does.
   ORDER_ADDRESS_LOCKED:
@@ -27540,12 +27658,14 @@ x-error-codes:
     status: 409
     description: The refund was already settled (another operator confirmed it first).
   PRECONDITION_FAILED:
+    scope: app
     status: 412
     description: The write's `If-Match` no longer describes the stored resource — someone changed or removed it since the caller read it. Re-read, reapply the edit, resend.
   PRODUCT_NOT_DELETED:
     status: 409
     description: A restore named a product that is not soft-deleted, so there is nothing to undo.
   RATE_LIMITED:
+    scope: app
     status: 429
     description: "The caller spent a rate-limit budget: a request limiter, a mailbox's send budget, or an account's wrong-code budget (the 2FA lock). Carries `Retry-After`, and `details.retryAfter` with the same seconds; `details.policy` names the budget when there is one."
   REAUTH_REQUIRED:
@@ -27612,6 +27732,7 @@ x-error-codes:
     status: 403
     description: The caller's staff role grants nothing until an authenticator app is armed, and this action needs it. Enrol at `POST /account/2fa/methods/totp/setup`; the account keeps its customer powers meanwhile.
   SERVICE_UNAVAILABLE:
+    scope: app
     status: 503
     description: A dependency (database, broker) is unreachable. Carries a `Retry-After` hint.
   SESSION_IDLE:
@@ -27648,18 +27769,22 @@ x-error-codes:
     status: 409
     description: A newer open task already covers the same situation, so this one cannot be reopened. `details.taskId` names the newer one.
   TOO_MANY_REQUESTS:
+    scope: app
     status: 429
     description: The derived code of a status-only 429, one no budget named. Nothing sends it today; it keeps the status-to-code rule total.
   TWO_FACTOR_RESEND_TOO_SOON:
     status: 429
     description: A two-factor code was already sent recently — carries `details.retryAfter`.
   UNAUTHORIZED:
+    scope: app
     status: 401
     description: No valid session — log in and retry.
   UNPROCESSABLE_CONTENT:
+    scope: app
     status: 422
     description: "A 422 with no more specific code of its own: refused for a reason that is not one field (a field-level failure is `VALIDATION_ERROR`). The derived code of a status-only 422."
   UNSUPPORTED_MEDIA_TYPE:
+    scope: app
     status: 415
     description: The request's `Content-Type` is not one this operation accepts.
   USER_ALREADY_ACTIVE:
@@ -27671,18 +27796,9 @@ x-error-codes:
   USER_ERASURE_DUE:
     status: 409
     description: The account owner asked for its deletion and the grace has run out, so it is erased by the next purge run and can no longer be restored.
-  USER_ERASURE_NOT_DUE:
-    status: 409
-    description: The account's erasure was claimed by another run, or is not due yet, so this run did nothing.
   USER_NOT_DELETED:
     status: 409
     description: The account is not soft-deleted, so there is nothing to restore.
-  USER_NOT_REAPER_DELETED:
-    status: 409
-    description: The reaper may only erase an account it soft-deleted itself. Raised by the reaper, never by a route.
-  USER_NOT_WARNED:
-    status: 409
-    description: The inactivity reaper tried to delete an account that was never warned first. Raised by the reaper, never by a route.
   USER_PURCHASE_HOLD_ALREADY_SET:
     status: 409
     description: The account already holds a staff purchase hold with this end date and note, so placing it again changes nothing.
@@ -27695,10 +27811,8 @@ x-error-codes:
   USER_ROLE_NOT_ASSIGNED:
     status: 409
     description: The account holds no staff role, so `POST /users/{id}/revoke-role` has nothing to take away.
-  USER_STAFF_NOT_REAPABLE:
-    status: 409
-    description: The inactivity reaper met an account holding a staff role and left it alone. Raised by the reaper, never by a route.
   VALIDATION_ERROR:
+    scope: app
     status: 422
     description: One or more fields failed schema validation — see `errors[].details.field`.
   WEBHOOK_DELIVERY_IN_PROGRESS:

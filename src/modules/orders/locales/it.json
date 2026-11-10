@@ -75,7 +75,7 @@
         "button-download-credit-note": "Scarica nota di credito",
         "label-credit-note": "Nota di credito {number} · {date} · {amount}",
         "label-order-number": "Ordine n. {number}",
-        "label-updated-at": "Aggiornato il",
+        "label-updated-at": "Ultima modifica",
         "button-cancel": "Annulla ordine",
         "confirm-cancel": "Annullare l'ordine {id}? Le quantità tornano disponibili.",
         "success-cancel": "Ordine annullato.",
