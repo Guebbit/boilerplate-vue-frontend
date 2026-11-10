@@ -128,8 +128,8 @@ Every diagram under `/modules/` uses this and only this.
 
 ## Every module
 
-The shape of the client in one row, then one row per domain. Both are maintained by hand, so a module
-that gains a screen or a store gains it here when someone adds it.
+One row per domain: its subdomain and its group. Everything countable about a module is read off
+the code, not kept here.
 
 One row is worth noticing before you read any page: [`delivery`](./delivery.md) has **no screens
 at all** — its published surface is a component another module mounts. [`payments`](./payments.md)
@@ -144,29 +144,31 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 
 `example` is unclassified: it is the template a new domain is copied from, not a subdomain.
 
-| Module                                                         | Subdomain    | Group        | Screens | Store                    | API calls | Depends on | Depended on by |
-| -------------------------------------------------------------- | ------------ | ------------ | ------- | ------------------------ | --------- | ---------- | -------------- |
-| [`account`](./account.md)                                      | `generic`    | `foundation` | 12      | `account`                | 18        | 1          | 1              |
-| [`api-keys`](./api-keys.md)                                    | `generic`    | `foundation` | 2       | `api-keys`               | 3         | 0          | 0              |
-| [`cart`](./cart.md)                                            | `core`       | `shop`       | 1       | `cart`                   | 8         | 5          | 2              |
-| [`delivery`](./delivery.md)                                    | `supporting` | `shop`       | 0       | `delivery`               | 13        | 1          | 3              |
-| [`example`](../theory/modules.md#adding-and-deleting-a-domain) | —            | `example`    | 5       | `example`                | 6         | 0          | 0              |
-| [`tasks`](./tasks.md)                                          | `generic`    | `foundation` | 2       | `tasks`                  | 3         | 0          | 0              |
-| [`inventory`](./inventory.md)                                  | `supporting` | `shop`       | 2       | `inventory`              | 7         | 2          | 0              |
-| [`locales`](./locales.md)                                      | `generic`    | `foundation` | 4       | `locales`                | 9         | 0          | 0              |
-| [`notifications`](./notifications.md)                          | `supporting` | `foundation` | 0       | `notifications-inbox`    | 4         | 0          | 0              |
-| [`observability`](./observability.md)                          | `generic`    | `foundation` | 3       | `observability-realtime` | 5         | 0          | 0              |
-| [`orders`](./orders.md)                                        | `core`       | `shop`       | 4       | `orders`                 | 11        | 5          | 0              |
-| [`payments`](./payments.md)                                    | `supporting` | `shop`       | 1       | `payments`               | 7         | 0          | 2              |
-| [`products`](./products.md)                                    | `core`       | `shop`       | 4       | `products`               | 10        | 1          | 4              |
-| [`returns`](./returns.md)                                      | `supporting` | `shop`       | 2       | `returns`                | 6         | 0          | 1              |
-| [`shop`](./shop.md)                                            | `supporting` | `shop`       | 0       | —                        | 1         | 0          | 4              |
-| [`shop-tasks`](./shop-tasks.md)                                | `supporting` | `shop`       | 0       | —                        | 0         | 0          | 0              |
-| [`stats`](./stats.md)                                          | `supporting` | `shop`       | 2       | `stats`                  | 8         | 0          | 0              |
-| [`stock-alerts`](./stock-alerts.md)                            | `supporting` | `shop`       | 1       | `stock-alerts`           | 3         | 1          | 0              |
-| [`users`](./users.md)                                          | `generic`    | `foundation` | 4       | `users`                  | 9         | 0          | 1              |
-| [`webhooks`](./webhooks.md)                                    | `generic`    | `foundation` | 5       | `webhooks`               | 9         | 0          | 0              |
-| [`wishlist`](./wishlist.md)                                    | `supporting` | `shop`       | 1       | `wishlist`               | 4         | 2          | 0              |
+| Module                                                         | Subdomain    | Group        |
+| -------------------------------------------------------------- | ------------ | ------------ |
+| [`account`](./account.md)                                      | `generic`    | `foundation` |
+| [`api-keys`](./api-keys.md)                                    | `generic`    | `foundation` |
+| [`cart`](./cart.md)                                            | `core`       | `shop`       |
+| [`delivery`](./delivery.md)                                    | `supporting` | `shop`       |
+| [`example`](../theory/modules.md#adding-and-deleting-a-domain) | —            | `example`    |
+| [`tasks`](./tasks.md)                                          | `generic`    | `foundation` |
+| [`inventory`](./inventory.md)                                  | `supporting` | `shop`       |
+| [`locales`](./locales.md)                                      | `generic`    | `foundation` |
+| [`notifications`](./notifications.md)                          | `supporting` | `foundation` |
+| [`observability`](./observability.md)                          | `generic`    | `foundation` |
+| [`orders`](./orders.md)                                        | `core`       | `shop`       |
+| [`payments`](./payments.md)                                    | `supporting` | `shop`       |
+| [`products`](./products.md)                                    | `core`       | `shop`       |
+| [`returns`](./returns.md)                                      | `supporting` | `shop`       |
+| [`shop`](./shop.md)                                            | `supporting` | `shop`       |
+| [`shop-tasks`](./shop-tasks.md)                                | `supporting` | `shop`       |
+| [`stats`](./stats.md)                                          | `supporting` | `shop`       |
+| [`stock-alerts`](./stock-alerts.md)                            | `supporting` | `shop`       |
+| [`users`](./users.md)                                          | `generic`    | `foundation` |
+| [`webhooks`](./webhooks.md)                                    | `generic`    | `foundation` |
+| [`wishlist`](./wishlist.md)                                    | `supporting` | `shop`       |
+
+Screens, stores and calls are not counted here: they are the generated [sitemap](../theory/sitemap.md) and each module's `module.ts`. Who depends on whom is [the whole map](#the-whole-map), checked against every `module.yaml`.
 
 ## The two repositories
 
@@ -177,24 +179,9 @@ interesting ones**, and until this table the asymmetry was written down nowhere 
 
 Keeping the table below in step with the backend is a review job, not a checked one.
 
-| This repository                                                | boilerplate-node-backend          | Note                                                                                                                                                                         |
-| -------------------------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`account`](./account.md)                                      | `account` + `addresses` + `users` | The address book lives inside this module as `AddressPicker`, and it reads `users` for the account of record — the backend keeps both a separate domain.                     |
-| [`api-keys`](./api-keys.md)                                    | `api-keys`                        | —                                                                                                                                                                            |
-| [`cart`](./cart.md)                                            | `cart`                            | —                                                                                                                                                                            |
-| [`delivery`](./delivery.md)                                    | `delivery`                        | —                                                                                                                                                                            |
-| [`example`](../theory/modules.md#adding-and-deleting-a-domain) | `example`                         | —                                                                                                                                                                            |
-| [`tasks`](./tasks.md)                                          | `tasks`                           | —                                                                                                                                                                            |
-| [`inventory`](./inventory.md)                                  | `inventory`                       | —                                                                                                                                                                            |
-| [`locales`](./locales.md)                                      | `locales`                         | —                                                                                                                                                                            |
-| [`notifications`](./notifications.md)                          | `notifications`                   | —                                                                                                                                                                            |
-| [`observability`](./observability.md)                          | `observability` + `audit-logs`    | One set of screens over two backend domains: `observability` serves health, the metrics overview and the SSE stream, and `audit-logs` owns the trail behind the audit table. |
-| [`orders`](./orders.md)                                        | `orders`                          | —                                                                                                                                                                            |
-| [`payments`](./payments.md)                                    | `payments`                        | —                                                                                                                                                                            |
-| [`products`](./products.md)                                    | `products`                        | —                                                                                                                                                                            |
-| [`returns`](./returns.md)                                      | `returns`                         | —                                                                                                                                                                            |
-| [`shop-tasks`](./shop-tasks.md)                                | `shop-tasks`                      | —                                                                                                                                                                            |
-| [`stats`](./stats.md)                                          | `stats`                           | —                                                                                                                                                                            |
-| [`users`](./users.md)                                          | `users`                           | —                                                                                                                                                                            |
-| [`webhooks`](./webhooks.md)                                    | `webhooks`                        | —                                                                                                                                                                            |
-| [`wishlist`](./wishlist.md)                                    | `wishlist`                        | —                                                                                                                                                                            |
+| This repository                       | boilerplate-node-backend          | Note                                                                                                                                                                         |
+| ------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`account`](./account.md)             | `account` + `addresses` + `users` | The address book lives inside this module as `AddressPicker`, and it reads `users` for the account of record — the backend keeps both a separate domain.                     |
+| [`observability`](./observability.md) | `observability` + `audit-logs`    | One set of screens over two backend domains: `observability` serves health, the metrics overview and the SSE stream, and `audit-logs` owns the trail behind the audit table. |
+
+Every other module here has a backend module of the same name.

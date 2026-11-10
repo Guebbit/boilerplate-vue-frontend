@@ -39,7 +39,6 @@ export default withMermaid(
                             { text: 'Loading State', link: '/theory/loading-state' },
                             { text: 'Design System', link: '/theory/design-system' },
                             { text: 'Sitemap & Access Control', link: '/theory/sitemap' },
-                            { text: 'Web Attack Catalog', link: '/theory/web-attack-catalog' },
                             { text: 'Web Attack Defences', link: '/theory/web-attack-defences' },
                             { text: 'Judging a Design', link: '/theory/design-judgement' },
                             { text: 'Roadmap', link: '/theory/roadmap' }

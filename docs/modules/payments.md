@@ -6,18 +6,10 @@
 **Breaks if you change** — those components' props. [`orders`](./orders.md) mounts the panel and the staff forms; [`cart`](./cart.md) mounts `PaymentMethodSelector`.
 :::
 
-| Fact                    | This module                                                                                                       |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Subdomain**           | `supporting` — Specific to this business but not a differentiator. Kept plain.                                    |
-| **Screens**             | 1 — `PaymentsList`                                                                                                |
-| **Store**               | `payments`                                                                                                        |
-| **Menu entries**        | `PaymentsList`                                                                                                    |
-| **API calls**           | 11                                                                                                                |
-| **Depends on**          | _nothing_                                                                                                         |
-| **Depended on by**      | [`orders`](./orders.md) · [`cart`](./cart.md)                                                                     |
-| **Languages**           | `en` · `it`                                                                                                       |
-| **Publishes**           | `PaymentPanel` · `PaymentMethodSelector` · `RecordOfflinePaymentForm` · `OrderReferenceSearch` · `useOrderRefund` |
-| **Backend counterpart** | `payments` in `boilerplate-node-backend`                                                                          |
+| Fact          | This module                                                                                                       |
+| ------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Subdomain** | `supporting` — Specific to this business but not a differentiator. Kept plain.                                    |
+| **Publishes** | `PaymentPanel` · `PaymentMethodSelector` · `RecordOfflinePaymentForm` · `OrderReferenceSearch` · `useOrderRefund` |
 
 ## The map
 
@@ -142,21 +134,11 @@ automatically and the only trace is an audit row, so the tab points at the audit
 
 ## State
 
-Store `payments`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
-
-| Kind        | Members                                                                                                                                                                                     | What it is                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `payment` · `paymentsPage` · `paymentsTotal` · `refundsPage` · `refundsTotal` · `attention`                                                                                                 | The refs the setup function returns — the only writable surface. |
-| **Getters** | `loading`                                                                                                                                                                                   | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `fetchPaymentForOrder` · `readPaymentForOrder` · `payForOrder` · `finishAtProvider` · `refundForOrder` · `settleRefundByHand` · `fetchPaymentsPage` · `fetchRefundsPage` · `fetchAttention` | Everything that changes state or calls the API.                  |
+State, getters and actions are exactly what the setup function of each store returns: `src/modules/payments/store.ts`.
 
 ## Screens
 
-| Path             | Route name     | Access | Permission        | View                     |
-| ---------------- | -------------- | ------ | ----------------- | ------------------------ |
-| `sales/payments` | `PaymentsList` | `auth` | `display Payment` | `views/PaymentsList.vue` |
-
-Paths are relative to the localised root. **Access** is the route's own `meta.access` and **Permission** its `meta.can`, staff screens naming the staff action `display`. See [Security](../tools/security.md#route-guards).
+Paths, route names, access and permission per screen: `src/modules/payments/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
 
 The rest of the module is components, schemas and a store contributed to the modules that depend on it.
 
@@ -164,56 +146,17 @@ The rest of the module is components, schemas and a store contributed to the mod
 
 #### Endpoints called
 
-| Call                                            | Response schema                |
-| ----------------------------------------------- | ------------------------------ |
-| `POST /payments/{id}/confirm`                   | `ConfirmPaymentResponse`       |
-| `POST /payments/{id}/sync`                      | `SyncPaymentResponse`          |
-| `POST /payments`                                | `CreatePaymentResponse`        |
-| `GET /orders/{id}/payments`                     | `ListOrderPaymentsResponse`    |
-| `GET /payments/{id}`                            | `GetPaymentResponse`           |
-| `GET /payments/{id}/refunds/{refundId}`         | `GetRefundResponse`            |
-| `POST /payments/{id}/refunds`                   | `RefundPaymentByOrderResponse` |
-| `POST /payments/{id}/refunds/{refundId}/settle` | `SettleRefundByHandResponse`   |
-| `POST /payments/search`                         | `SearchPaymentsResponse`       |
-| `GET /payments/refunds`                         | `ListRefundsResponse`          |
-| `GET /payments/attention`                       | `ListPaymentAttentionResponse` |
+Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/payments/response-schemas.ts`.
 
 #### Navigation entries
 
-| Route          | Label key                   | Section | Order | Icon | Badge                                      |
-| -------------- | --------------------------- | ------- | ----- | ---- | ------------------------------------------ |
-| `PaymentsList` | `navigation.label-payments` | `admin` | 56    | yes  | `salesPayments`: the rows needing a person |
-
-Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+Entries are declared in `src/modules/payments/module.ts`. Badges: `PaymentsList` — `salesPayments`: the rows needing a person.
 
 ## Files
 
-| File                               | What it is                                                                                                                                                                          | Explained in                          |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `components/PaymentPanel.vue`      | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                            | [read](../theory/layers.md)           |
-| `components/TestCardPicker.vue`    | The fake provider's test cards, as a picker. Dev and e2e builds only; a production bundle does not contain it.                                                                      | [read](../theory/layers.md)           |
-| `components/PaymentDrawer.vue`     | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                            | [read](../theory/layers.md)           |
-| `components/PaymentsTable.vue`     | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                            | [read](../theory/layers.md)           |
-| `components/RefundsTable.vue`      | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                            | [read](../theory/layers.md)           |
-| `components/AttentionList.vue`     | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                            | [read](../theory/layers.md)           |
-| `components/PaymentStatusChip.vue` | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                            | [read](../theory/layers.md)           |
-| `composables/use-order-refund.ts`  | Reusable reactive logic for this domain — the tier between a store and a component.                                                                                                 | [read](../theory/layers.md)           |
-| `index.ts`                         | The public barrel: the only surface a sibling module may import.                                                                                                                    | [read](../theory/strategic-ddd.md)    |
-| `locales/en.json`                  | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
-| `locales/it.json`                  | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
-| `module.ts`                        | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots. | [read](../theory/modules.md)          |
-| `response-schemas.ts`              | One row per endpoint this domain calls, pairing a method and path pattern with the Zod schema its response is validated against.                                                    | [read](../api/openapi-workflow.md)    |
-| `routes.ts`                        | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                              | [read](../theory/sitemap.md)          |
-| `views/PaymentsList.vue`           | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
-| `store.ts`                         | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                              | [read](../tools/state-and-routing.md) |
-| `tests/store.spec.ts`              | Vitest suite — this domain's store, with the transport mocked.                                                                                                                      | [read](../tools/unit-testing.md)      |
-| `tests/use-order-refund.spec.ts`   | Vitest suite — the `useOrderRefund` composable, in isolation.                                                                                                                       | [read](../tools/unit-testing.md)      |
+The folder is `src/modules/payments/`; each file's own `@module` header says what it is.
 
 ## Working on it
-
-| Suite  | Files | Where                         |
-| ------ | ----- | ----------------------------- |
-| Vitest | 2     | `src/modules/payments/tests/` |
 
 ```bash
 # this module's vitest suites

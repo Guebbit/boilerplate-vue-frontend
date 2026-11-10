@@ -4,33 +4,7 @@ An ordinary test says _"for this input, expect that output."_ A property says _"
 
 ## The idea
 
-Example-based tests encode the cases someone thought of. That is genuinely useful — an example is readable, it documents intent, and it pins a specific historical bug. But it is bounded by imagination, and the bugs that survive to production are usually the ones nobody imagined.
-
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 50}}}%%
-flowchart LR
-    subgraph Example["EXAMPLE-based"]
-        direction TB
-        E1["you pick the inputs"] --> E2["3 cases you thought of"] --> E3["proves 3 things"]
-    end
-    subgraph Property["PROPERTY-based"]
-        direction TB
-        P1["you state the RULE"] --> P2["library generates 200 inputs"] --> P3["shrinks any failure\nto a minimal example"]
-    end
-    Example --> Both["both, deliberately:\nsee 'the split'"]
-    Property --> Both
-
-    classDef a fill:#dbeafe,stroke:#2563eb,color:#111827;
-    classDef b fill:#dcfce7,stroke:#16a34a,color:#111827;
-    classDef c fill:#fef3c7,stroke:#d97706,color:#111827;
-    class E1,E2,E3 a;
-    class P1,P2,P3 b;
-    class Both c;
-```
-
-This repo learned the value the expensive way, before adopting the technique. `src/infrastructure/http/response-schema-map.ts` is a 52-row lookup table that was tested by sampling a handful of rows. It scored 55% on mutation with 182 survivors in that one file. Replacing the sample with exhaustive generation took the file to ~96% and the whole suite from 55% to 81%.
-
-**Sampling a space you could have generated is the failure mode to watch for.** Property testing is the general form of that fix.
+Owned by the backend, and the same here: [The idea](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/property-testing.md). This repo's differences, if any, are in the sections below.
 
 ## What makes a good target
 
@@ -65,13 +39,7 @@ A fact asserted twice is a fact maintained twice — and it costs more than it l
 
 ## What it has actually caught
 
-Two things, and the second is the more instructive:
-
-**A real bug, in the paired backend.** `sumLineItems` promised never to return `NaN`. `Number(x) || 0` rejects `NaN` because `NaN` is falsy — but `Infinity` is truthy and passes straight through, and `Infinity * 0` is `NaN`. One line with an infinite quantity poisoned an entire order total, which reaches a customer as a blank price. Found on the seventh generated case.
-
-**A wrong test.** A property asserted that no sensitive value appears in `JSON.stringify(redacted)`. Generation produced the secret `"p"` — which occurs inside the _key_ `"password"`. The claim had never been about key names. The property was rewritten to walk the output's string values.
-
-That second one is worth internalising: a property that fails on your own assertion is doing its job. It is the difference between "my test passes" and "my claim is true".
+Owned by the backend, and the same here: [What it has actually caught](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/tools/property-testing.md). This repo's differences, if any, are in the sections below.
 
 ## Running budget
 

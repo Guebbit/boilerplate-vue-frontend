@@ -17,17 +17,19 @@ know _which domain_, the third line is the one.
 
 ## Every command, and when to reach for it
 
-| Command                        | Answers                                                   | Time    | Gate?             |
-| ------------------------------ | --------------------------------------------------------- | ------- | ----------------- |
-| `test:unit -- <path>`          | Did I break the module I'm editing?                       | seconds | —                 |
-| `test:unit`                    | Did I break a unit anywhere?                              | ~9s     | ✅                |
-| `test:unit:ci` + `test:report` | Which module owns the failure, and where did the time go? | +1s     | ✅ (prints in CI) |
-| `test:e2e`                     | Does the app work against the real API?                   | ~2m     | ✅                |
-| `test:e2e:serial`              | …just this one spec?                                      | ~30s    | —                 |
-| `test:e2e:live`                | Does the app agree with the **real backend**?             | ~6m     | ✅ (CI job)       |
-| `test:e2e:visual`              | Does it still _look_ right?                               | ~4m     | ❌ by design      |
-| `test:mutation`                | Do the tests **notice** when the source is wrong?         | ~9m     | ❌ nightly        |
-| `complete`                     | All of the gate, in CI's order                            | ~7m     | —                 |
+| Command                        | Answers                                                   | Gate?             |
+| ------------------------------ | --------------------------------------------------------- | ----------------- |
+| `test:unit -- <path>`          | Did I break the module I'm editing?                       | —                 |
+| `test:unit`                    | Did I break a unit anywhere?                              | ✅                |
+| `test:unit:ci` + `test:report` | Which module owns the failure, and where did the time go? | ✅ (prints in CI) |
+| `test:e2e`                     | Does the app work against the real API?                   | ✅                |
+| `test:e2e:serial`              | …just this one spec?                                      | —                 |
+| `test:e2e:live`                | Does the app agree with the **real backend**?             | ✅ (CI job)       |
+| `test:e2e:visual`              | Does it still _look_ right?                               | ❌ by design      |
+| `test:mutation`                | Do the tests **notice** when the source is wrong?         | ❌ nightly        |
+| `complete`                     | All of the gate, in CI's order                            | —                 |
+
+What each costs, dated: [Test timings](./testing-and-docs.md#test-timings).
 
 `test:unit:ci` is what the `test-unit` CI job actually runs — the unit run with two reporters (the
 log and the JSON report) in one vitest invocation. Reach for the individual commands above locally.

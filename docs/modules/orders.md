@@ -6,18 +6,9 @@
 **Breaks if you change** — nothing outside this folder. No module depends on it.
 :::
 
-| Fact                    | This module                                                                                                 |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------- |
-| **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.                                    |
-| **Screens**             | 4 — `OrdersList` · `SalesOrders` · `OrderTarget` · `OrderEdit`                                              |
-| **Store**               | `orders`                                                                                                    |
-| **Menu entries**        | `OrdersList` · `SalesOrders`                                                                                |
-| **API calls**           | 11                                                                                                          |
-| **Depends on**          | [`cart`](./cart.md) · [`delivery`](./delivery.md) · [`payments`](./payments.md) · [`returns`](./returns.md) |
-| **Depended on by**      | _nothing_                                                                                                   |
-| **Languages**           | `en` · `it`                                                                                                 |
-| **Publishes**           | _nothing_ — no barrel, so no sibling may import it                                                          |
-| **Backend counterpart** | `orders` in `boilerplate-node-backend`                                                                      |
+| Fact          | This module                                                              |
+| ------------- | ------------------------------------------------------------------------ |
+| **Subdomain** | `core` — The reason the product exists. Worth its own client-side rules. |
 
 ## The map
 
@@ -107,8 +98,8 @@ with the server's `ORDER_ADDRESS_LOCKED` message; the form decides nothing about
 
 ## The timeline
 
-`src/modules/orders/components/OrderTimeline.vue` sits under the order's details and lists what happened to it, oldest first
-(`GET /orders/{id}/timeline`). **The server decides who sees what**: staff (`display:Order`) get
+`src/modules/orders/components/OrderTimeline.vue` sits under the order's details and lists what happened to it, newest first, a
+page at a time (`GET /orders/{id}/timeline?page=`); a "show older" button reads the next page. **The server decides who sees what**: staff (`display:Order`) get
 every row with the acting account and any note, the buyer only the buyer-visible rows and never an
 actor. The component filters nothing; it only flags, for staff, the rows the buyer cannot see
 (each row carries the server's own `audience`, `buyer` or `staff`; the client keeps no table).
@@ -172,13 +163,7 @@ order's own cancel is there if they do not want to wait. Nothing is asked of the
 
 ## State
 
-Store `orders`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
-
-| Kind        | Members                                                                                                                                                                                                                                | What it is                                                       |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `orders` · `selectedOrderId` · `filters` · `pageCurrent` · `pageSize`                                                                                                                                                                  | The refs the setup function returns — the only writable surface. |
-| **Getters** | `ordersList` · `currentOrder` · `loading` · `pageTotal` · `pageItemList`                                                                                                                                                               | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `addOrder` · `fetchOrders` · `fetchPaginationOrders` · `watchSearchOrders` · `fetchOrder` · `watchOrder` · `updateOrder` · `deleteOrder` · `cancelOrder` · `hardDeleteOrder` · `fetchInvoice` · `fetchCreditNotes` · `fetchCreditNote` | Everything that changes state or calls the API.                  |
+State, getters and actions are exactly what the setup function of each store returns: `src/modules/orders/store.ts`.
 
 The list answers a `OrderListItem`, not the whole order: the table's fields, and the full record comes
 from the audited detail read. The list view reads with `partial: true`, so a row merges over a full
@@ -187,81 +172,23 @@ record.
 
 ## Screens
 
-| Path              | Route name    | Access | Permission      | View                    |
-| ----------------- | ------------- | ------ | --------------- | ----------------------- |
-| `orders`          | `OrdersList`  | `auth` | —               | `views/OrdersList.vue`  |
-| `sales/orders`    | `SalesOrders` | `auth` | `display Order` | `views/OrdersList.vue`  |
-| `orders/:id`      | `OrderTarget` | `auth` | —               | `views/OrderTarget.vue` |
-| `orders/:id/edit` | `OrderEdit`   | `auth` | `update Order`  | `views/OrderEdit.vue`   |
-
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from the `abilities` of `GET /account`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
+Paths, route names, access and permission per screen: `src/modules/orders/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
 
 ## Wiring
 
 #### Endpoints called
 
-| Call                                           | Response schema                |
-| ---------------------------------------------- | ------------------------------ |
-| `DELETE /orders`                               | `DeleteOrderResponse`          |
-| `GET /orders`                                  | `ListOrdersResponse`           |
-| `POST /orders`                                 | `CreateOrderResponse`          |
-| `DELETE /orders/{id}`                          | `DeleteOrderByIdResponse`      |
-| `GET /orders/{id}`                             | `GetOrderByIdResponse`         |
-| `PUT /orders/{id}`                             | `ReplaceOrderByIdResponse`     |
-| `PATCH /orders/{id}`                           | `UpdateOrderByIdResponse`      |
-| `POST /orders/{id}/cancel`                     | `CancelOrderByIdResponse`      |
-| `POST /orders/{id}/restore`                    | `RestoreOrderByIdResponse`     |
-| `POST /orders/{id}/override-status`            | `OverrideOrderStatusResponse`  |
-| `DELETE /orders/{id}/hard`                     | `HardDeleteOrderByIdResponse`  |
-| `GET /orders/{id}/invoice`                     | `GetOrderInvoiceResponse`      |
-| `GET /orders/{id}/credit-notes`                | `ListOrderCreditNotesResponse` |
-| `POST /orders/search`                          | `SearchOrdersResponse`         |
-| `GET /orders/export`                           | `ExportOrdersResponse`         |
-| `GET /orders/{id}/timeline`                    | `GetOrderTimelineResponse`     |
-| `POST /orders/{id}/timeline/notes`             | `AddOrderNoteResponse`         |
-| `DELETE /orders/{id}/timeline/notes/{eventId}` | `DeleteOrderNoteResponse`      |
-
-Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/orders/response-schemas.ts`.
 
 #### Navigation entries
 
-| Route | Label key | Section | Order | Icon | Badge |
-| ------------ | ------------------------- | --- | --- | --- | --- | --- |
-| `OrdersList` | `navigation.label-orders` | `account` | 90 | yes | — |
-| `SalesOrders` | `navigation.label-sales-orders` | `admin` | 55 | yes | `salesOrders`: orders paid and not yet with a carrier |
+Entries are declared in `src/modules/orders/module.ts`. Badges: `SalesOrders` — `salesOrders`: orders paid and not yet with a carrier.
 
 ## Files
 
-| File                                              | What it is                                                                                                                                                                                                                                       | Explained in                          |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
-| `locales/en.json`                                 | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                                                                  | [read](../tools/i18n.md)              |
-| `locales/it.json`                                 | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                                                                  | [read](../tools/i18n.md)              |
-| `module.ts`                                       | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots.                                                              | [read](../theory/modules.md)          |
-| `response-schemas.ts`                             | One row per endpoint this domain calls, pairing a method and path pattern with the Zod schema its response is validated against.                                                                                                                 | [read](../api/openapi-workflow.md)    |
-| `routes.ts`                                       | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                                                                                           | [read](../theory/sitemap.md)          |
-| `schemas.ts`                                      | Form schemas for this domain. Hand-written: only the contract's numeric constraints (minimums) are read from `@api/schemas`, so the rest of a rule can drift from the request body — `VITE_VALIDATE_REQUESTS` checks the real body at send time. | [read](../api/openapi-workflow.md)    |
-| `store.ts`                                        | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                                                                                           | [read](../tools/state-and-routing.md) |
-| `tests/cancel.spec.ts`                            | Vitest suite — `cancel`, in isolation.                                                                                                                                                                                                           | [read](../tools/unit-testing.md)      |
-| `tests/e2e/__snapshots__/orders-list.desktop.png` | A committed visual-regression baseline.                                                                                                                                                                                                          | [read](../tools/visual-regression.md) |
-| `tests/e2e/__snapshots__/orders-list.phone.png`   | A committed visual-regression baseline.                                                                                                                                                                                                          | [read](../tools/visual-regression.md) |
-| `tests/e2e/__snapshots__/orders-list.tablet.png`  | A committed visual-regression baseline.                                                                                                                                                                                                          | [read](../tools/visual-regression.md) |
-| `tests/e2e/a11y.cy.ts`                            | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                                                                                                                | [read](../tools/component-testing.md) |
-| `tests/e2e/orders.cy.ts`                          | Cypress suite — the `orders` screens, in a browser.                                                                                                                                                                                              | [read](../tools/component-testing.md) |
-| `tests/e2e/orders.visual.cy.ts`                   | Cypress visual suite — pixel diffs against the committed baselines.                                                                                                                                                                              | [read](../tools/component-testing.md) |
-| `tests/routes.spec.ts`                            | Vitest suite — the route records and the `meta.access` each one declares.                                                                                                                                                                        | [read](../tools/unit-testing.md)      |
-| `tests/schemas-i18n.spec.ts`                      | Vitest suite — the `schemas-i18n` validation rules.                                                                                                                                                                                              | [read](../tools/unit-testing.md)      |
-| `tests/store.spec.ts`                             | Vitest suite — this domain's store, with the transport mocked.                                                                                                                                                                                   | [read](../tools/unit-testing.md)      |
-| `views/OrderTarget.vue`                           | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
-| `views/OrderEdit.vue`                             | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
-| `views/OrdersList.vue`                            | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                               | [read](../theory/layers.md)           |
+The folder is `src/modules/orders/`; each file's own `@module` header says what it is.
 
 ## Working on it
-
-| Suite            | Files | Where                                         |
-| ---------------- | ----- | --------------------------------------------- |
-| Vitest           | 4     | `src/modules/orders/tests/`                   |
-| Cypress          | 3     | `src/modules/orders/tests/e2e/`               |
-| Visual baselines | 4     | `src/modules/orders/tests/e2e/__snapshots__/` |
 
 ```bash
 # this module's vitest suites

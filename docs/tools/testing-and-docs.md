@@ -35,20 +35,20 @@ flowchart TB
     class Mutation meta;
 ```
 
-| Layer              | Question it answers                                                         | Tool(s)                                              | Command                                  | Detail page                                                                                                   |
-| ------------------ | --------------------------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Unit               | Does this one component/store/plugin behave correctly in isolation?         | Vitest + @vue/test-utils + jsdom                     | `npm run test:unit`                      | [Unit Testing](./unit-testing.md)                                                                             |
-| Component          | Does this `.vue` render, emit and **clean up** correctly?                   | @vue/test-utils                                      | `npm run test:unit` (same suite)         | [Component Testing](./component-testing.md)                                                                   |
-| Property           | Does the rule hold for _every_ input, not just the ones someone thought of? | fast-check                                           | `npm run test:unit` (same suite)         | [Property Testing](./property-testing.md)                                                                     |
-| Cross-cutting      | Is the repository still the shape it claims to be?                          | Vitest, reading the filesystem                       | `npm run test:unit` (same suite)         | [Unit Testing](./unit-testing.md#the-cross-cutting-layer)                                                     |
-| Accessibility      | Are there mechanical a11y failures on the routes a user reaches?            | cypress-axe                                          | `npm run test:e2e` (same suite)          | [Accessibility Testing](./accessibility-testing.md)                                                           |
-| Layout             | Does every page fit, and stay usable, at every width?                       | Cypress + the a11y sweep's own checks                | `npm run test:e2e` (same suite)          | [Layout Sweep](./layout-sweep.md)                                                                             |
-| Touch              | Can a finger reach everything a mouse can?                                  | Cypress + CDP touch emulation + cypress-real-events  | `npm run test:e2e` (same suite)          | [Touch Testing](./touch-testing.md)                                                                           |
-| Visual Regression  | Does the page still **look** the way it did?                                | Cypress + pixelmatch                                 | `npm run test:e2e:visual`                | [Visual Regression](./visual-regression.md)                                                                   |
-| Lab performance    | Is a phone's first load stable and structurally sound?                      | Lighthouse (Node API) + puppeteer-core               | `npm run test:lighthouse` (nightly)      | [Lighthouse](./lighthouse.md)                                                                                 |
-| E2E — Demo Profile | Does the app behave correctly against **known** data?                       | Cypress + the real API on an in-memory Mongo, seeded | `npm run test:e2e`                       | [The demo profile](./demo-profile.md), [Journeys](../reference/tests.md#journeys--stories-that-cross-modules) |
-| E2E — Live         | Does the frontend agree with the **actual** backend?                        | Cypress + real API                                   | `npm run test:e2e:live` (required in CI) | [Live E2E](./live-e2e.md), [Journeys](../reference/tests.md#journeys--stories-that-cross-modules)             |
-| Mutation           | Do the tests **notice** when the source is wrong?                           | Stryker + vitest-runner                              | `npm run test:mutation`                  | [Mutation Testing](./mutation-testing.md)                                                                     |
+| Layer              | Question it answers                                                         | Tool(s)                                              | Command                                  | Detail page                                                                                                    |
+| ------------------ | --------------------------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Unit               | Does this one component/store/plugin behave correctly in isolation?         | Vitest + @vue/test-utils + jsdom                     | `npm run test:unit`                      | [Unit Testing](./unit-testing.md)                                                                              |
+| Component          | Does this `.vue` render, emit and **clean up** correctly?                   | @vue/test-utils                                      | `npm run test:unit` (same suite)         | [Component Testing](./component-testing.md)                                                                    |
+| Property           | Does the rule hold for _every_ input, not just the ones someone thought of? | fast-check                                           | `npm run test:unit` (same suite)         | [Property Testing](./property-testing.md)                                                                      |
+| Cross-cutting      | Is the repository still the shape it claims to be?                          | Vitest, reading the filesystem                       | `npm run test:unit` (same suite)         | [Unit Testing](./unit-testing.md#the-cross-cutting-layer)                                                      |
+| Accessibility      | Are there mechanical a11y failures on the routes a user reaches?            | cypress-axe                                          | `npm run test:e2e` (same suite)          | [Accessibility Testing](./accessibility-testing.md)                                                            |
+| Layout             | Does every page fit, and stay usable, at every width?                       | Cypress + the a11y sweep's own checks                | `npm run test:e2e` (same suite)          | [Layout Sweep](./layout-sweep.md)                                                                              |
+| Touch              | Can a finger reach everything a mouse can?                                  | Cypress + CDP touch emulation + cypress-real-events  | `npm run test:e2e` (same suite)          | [Touch Testing](./touch-testing.md)                                                                            |
+| Visual Regression  | Does the page still **look** the way it did?                                | Cypress + pixelmatch                                 | `npm run test:e2e:visual`                | [Visual Regression](./visual-regression.md)                                                                    |
+| Lab performance    | Is a phone's first load stable and structurally sound?                      | Lighthouse (Node API) + puppeteer-core               | `npm run test:lighthouse` (nightly)      | [Lighthouse](./lighthouse.md)                                                                                  |
+| E2E — Demo Profile | Does the app behave correctly against **known** data?                       | Cypress + the real API on an in-memory Mongo, seeded | `npm run test:e2e`                       | [The demo profile](./demo-profile.md), [Journeys](../reference/tests.md#journeys-—-stories-that-cross-modules) |
+| E2E — Live         | Does the frontend agree with the **actual** backend?                        | Cypress + real API                                   | `npm run test:e2e:live` (required in CI) | [Live E2E](./live-e2e.md), [Journeys](../reference/tests.md#journeys-—-stories-that-cross-modules)             |
+| Mutation           | Do the tests **notice** when the source is wrong?                           | Stryker + vitest-runner                              | `npm run test:mutation`                  | [Mutation Testing](./mutation-testing.md)                                                                      |
 
 None of these layers replaces another — each closes a gap the others structurally cannot:
 
@@ -268,10 +268,7 @@ flowchart LR
 
 ## Documentation rule of thumb
 
-- Keep docs grouped by concept.
-- Prefer visual maps when they help.
-- Use the local search bar first when you only need to jump to one concept.
-- Keep code comments brief and move long explanations here.
+The house style is the backend's: [documentation style](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/reference/documentation-style.md).
 
 ## External references
 

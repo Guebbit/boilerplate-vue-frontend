@@ -8,18 +8,10 @@ the staff queue that approves and receives them, cancelling what has not shipped
 **Breaks if you change** — the order page's withdrawal control and returns form.
 :::
 
-| Fact                    | This module                                         |
-| ----------------------- | --------------------------------------------------- |
-| **Subdomain**           | `supporting`                                        |
-| **Screens**             | 3 — `ReturnsList` · `SalesReturns` · `ReturnTarget` |
-| **Store**               | `returns`                                           |
-| **Menu entries**        | `ReturnsList` (account) · `SalesReturns` (admin)    |
-| **API calls**           | 7                                                   |
-| **Depends on**          | _nothing_                                           |
-| **Depended on by**      | [`orders`](./orders.md)                             |
-| **Languages**           | `en` · `it`                                         |
-| **Publishes**           | `WithdrawalPanel`                                   |
-| **Backend counterpart** | `returns` in `boilerplate-node-backend`             |
+| Fact          | This module       |
+| ------------- | ----------------- |
+| **Subdomain** | `supporting`      |
+| **Publishes** | `WithdrawalPanel` |
 
 ## The map
 
@@ -98,7 +90,8 @@ server's.
 **The returns form is for everything else.** Once something has shipped, `ReturnRequestForm` lets the
 customer tick the lines that come back, set a quantity for each (up to the server's `returnable`
 quantity), pick a reason (defective, wrong item or other — `withdrawal` is the button, not a choice
-here) and add a note. The reasons on offer are the server's `reasons`: after the withdrawal period
+here), for a defective or wrong item pick the remedy (repair, replacement or a refund, by
+Directive 2019/771 Art. 13: `domain/remedy.ts`) and add a note. The reasons on offer are the server's `reasons`: after the withdrawal period
 only the two guarantee reasons are left (two years from delivery), and a made-to-order line
 (`withdrawable: false`) is shut for `other`. It sends only the ticked lines, so part of an order can go back; the same
 product can be returned again until nothing is left. The server re-checks all of it (too many, an
@@ -150,13 +143,7 @@ the acknowledgement email; this module does not show it on the return page.
 
 ## State
 
-Store `returns`, from `store.ts`. Only what the setup function returns is listed.
-
-| Kind        | Members                                                                                                                                                                                              |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **State**   | `returns` · `filters` · `pageCurrent` · `pageSize`                                                                                                                                                   |
-| **Getters** | `returnsList` · `currentReturn` · `loading` · `pageTotal` · `pageItemList`                                                                                                                           |
-| **Actions** | `fetchPaginationReturns` · `watchSearchReturns` · `fetchReturn` · `watchReturn` · `openReturn` · `fetchOrderReturns` · `fetchReturnOptions` · `approve` · `decline` · `receive` · `close` · `cancel` |
+State, getters and actions are exactly what the setup function of each store returns: `src/modules/returns/store.ts`.
 
 The list answers a `ReturnListItem`, not the whole return: the table's fields, and the full record comes
 from the audited detail read. The list view reads with `partial: true`, so a row merges over a full
@@ -165,13 +152,7 @@ record.
 
 ## Screens
 
-| Path            | Route name     | Access | Permission    | View                     |
-| --------------- | -------------- | ------ | ------------- | ------------------------ |
-| `returns`       | `ReturnsList`  | `auth` | —             | `views/ReturnsList.vue`  |
-| `sales/returns` | `SalesReturns` | `auth` | `read Return` | `views/ReturnsList.vue`  |
-| `returns/:id`   | `ReturnTarget` | `auth` | —             | `views/ReturnTarget.vue` |
-
-Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route's own `meta.access` (the standing it needs) and **Permission** its `meta.can`.
+Paths, route names, access and permission per screen: `src/modules/returns/routes.ts`; every module's together are in the generated [sitemap](../theory/sitemap.md).
 
 `ReturnsList` and `SalesReturns` are one view on two routes: the server decides whether the rows are
 the caller's own or everyone's.
@@ -180,57 +161,17 @@ the caller's own or everyone's.
 
 #### Endpoints called
 
-| Call                         | Response schema            |
-| ---------------------------- | -------------------------- |
-| `GET /returns/options`       | `GetReturnOptionsResponse` |
-| `GET /returns`               | `ListReturnsResponse`      |
-| `POST /returns`              | `CreateReturnResponse`     |
-| `GET /returns/{id}`          | `GetReturnByIdResponse`    |
-| `POST /returns/{id}/approve` | `ApproveReturnResponse`    |
-| `POST /returns/{id}/decline` | `DeclineReturnResponse`    |
-| `POST /returns/{id}/receive` | `ReceiveReturnResponse`    |
-| `POST /returns/{id}/close`   | `CloseReturnResponse`      |
-| `POST /returns/{id}/cancel`  | `CancelReturnResponse`     |
-
-Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/returns/response-schemas.ts`.
 
 #### Navigation entries
 
-| Route          | Label key                        | Section   | Order | Icon | Badge                                     |
-| -------------- | -------------------------------- | --------- | ----- | ---- | ----------------------------------------- |
-| `ReturnsList`  | `navigation.label-returns`       | `account` | 92    | yes  | —                                         |
-| `SalesReturns` | `navigation.label-sales-returns` | `admin`   | 59    | yes  | `returns`: returns waiting for a decision |
+Entries are declared in `src/modules/returns/module.ts`. Badges: `SalesReturns` — `returns`: returns waiting for a decision.
 
 ## Files
 
-| File                                             | What it is                                                                                         | Explained in                          |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `components/CancelRemainderDialog.vue`           | Cancels what has not shipped yet, behind a confirm step that shows the server's own refund.        | [read](../theory/layers.md)           |
-| `components/RecordWithdrawalDialog.vue`          | Staff recording a withdrawal the buyer stated by phone, email or letter.                           | [read](../theory/layers.md)           |
-| `components/ReturnRequestForm.vue`               | The customer's returns form: which lines come back, why, and an optional note.                     | [read](../theory/layers.md)           |
-| `components/ReturnStaffActions.vue`              | The staff's six moves on a return: approve, decline, proof of sending, receive, close, cancel.     | [read](../theory/layers.md)           |
-| `components/StatedAtFields.vue`                  | The day and channel staff record for what the buyer said, shared by the three staff forms.         | [read](../theory/layers.md)           |
-| `components/WithdrawalPanel.vue`                 | The order page's returns corner: the withdrawal button and what became of earlier returns.         | [read](../theory/layers.md)           |
-| `domain/remedy.ts`                               | The remedies a faulty or wrong item can be given, so the forms offer only what the server accepts. | [read](../theory/domain-layer.md)     |
-| `domain/statement.ts`                            | The day and channel a buyer stated a request or withdrawal, converted both ways.                   | [read](../theory/domain-layer.md)     |
-| `index.ts`                                       | The public barrel: `WithdrawalPanel`, the only surface a sibling may import.                       | [read](../theory/modules.md)          |
-| `locales/en.json · locales/it.json`              | This domain's translation dictionary for one language, loaded as its own chunk.                    | [read](../tools/i18n.md)              |
-| `module.ts`                                      | The manifest: routes, navigation entries, response schemas and locales.                            | [read](../theory/modules.md)          |
-| `response-schemas.ts`                            | One row per endpoint this domain calls, with the Zod schema its response is validated against.     | [read](../api/openapi-workflow.md)    |
-| `routes.ts`                                      | The domain's route records, each carrying its own `meta.access`.                                   | [read](../theory/modules.md)          |
-| `schemas.ts`                                     | Zod field schemas for the returns forms, with length caps read from the contract.                  | [read](../theory/modules.md)          |
-| `store.ts`                                       | The Pinia store: a paginated search, a by-id read and the moves on a return.                       | [read](../tools/state-and-routing.md) |
-| `tests/*.spec.ts`                                | Vitest suites: the store, the routes, the schemas, the domain rules and each component.            | [read](../tools/unit-testing.md)      |
-| `tests/e2e/a11y.cy.ts · tests/e2e/actions.cy.ts` | Cypress: an axe sweep over the routes, and the moves in a browser.                                 | [read](../tools/component-testing.md) |
-| `views/ReturnsList.vue`                          | A routed screen: the filtered, paged list, for a customer or for staff.                            | [read](../theory/layers.md)           |
-| `views/ReturnTarget.vue`                         | A routed screen: one return, with the staff's open moves.                                          | [read](../theory/layers.md)           |
+The folder is `src/modules/returns/`; each file's own `@module` header says what it is.
 
 ## Working on it
-
-| Suite   | Files | Where                            |
-| ------- | ----- | -------------------------------- |
-| Vitest  | 9     | `src/modules/returns/tests/`     |
-| Cypress | 2     | `src/modules/returns/tests/e2e/` |
 
 ```bash
 # this module's vitest suites

@@ -1,6 +1,6 @@
 # boilerplate-vue-frontend
 
-> Vue 3 + TypeScript SPA. Contract-first, modular, and able to run with no backend at all.
+> Vue 3 + TypeScript SPA. Contract-first and modular.
 > Paired with [`boilerplate-node-backend`](https://github.com/Guebbit/boilerplate-node-backend).
 
 **📚 The documentation is the real reference — this file is only the door.**
@@ -61,7 +61,8 @@ Four ideas carry the whole repository:
    navigation, locales, response schemas — in one typed object.
    `src/modules.ts` lists them. Adding a domain is one folder plus one line; removing it is
    `rm -rf` plus that line.
-3. **The app runs without its backend.** Mock mode is a first-class build, not a stub.
+3. **The backend is the paired half.** The app is built against it and tested against the real thing:
+   its demo profile is the lightest way to have one.
 4. **The tests are part of the boilerplate.** Unit, component, e2e, accessibility, visual
    regression, property and mutation testing are all wired and all run.
 
@@ -69,15 +70,16 @@ Four ideas carry the whole repository:
 
 ## Where things live
 
-|                       |                                                                                      |
-| --------------------- | ------------------------------------------------------------------------------------ |
-| `src/modules/*`       | the domains — each one deletable                                                     |
+The tiers, their folders and what each may import are one table, in [Modules](./docs/theory/modules.md) (the folder map is in [Layers](./docs/theory/layers.md#quick-map)).
+
+--------------------- | ------------------------------------------------------------------------------------ |
+| `src/modules/*` | the domains — each one deletable |
 | `src/modules/example` | only an example: the module to copy for a new domain, deleted once you have your own |
-| `src/kernel`          | the module registry                                                                  |
-| `src/infrastructure`  | http, i18n, session, uploads, observability                                          |
-| `src/app`             | shell, router, layouts, guards                                                       |
-| `src/ui`              | shared presentational components                                                     |
-| `contracts/`          | generated API client — never edited by hand                                          |
+| `src/kernel` | the module registry |
+| `src/infrastructure` | http, i18n, session, uploads, observability |
+| `src/app` | shell, router, layouts, guards |
+| `src/ui` | shared presentational components |
+| `contracts/` | generated API client — never edited by hand |
 
 ---
 

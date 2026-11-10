@@ -1,23 +1,15 @@
 # shop-tasks
 
 ::: tip At a glance
-**Owns** — the words and links of the shop's 19 notification codes (`shop-tasks.*`), the shop's half of the `task-kind`, `task-category` and `task-link` labels, and the feed of the staff nav badges.
+**Owns** — the words and links of the shop's notification codes (`shop-tasks.*`, in `notices.ts`), the shop's half of the `task-kind`, `task-category` and `task-link` labels, and the feed of the staff nav badges.
 **Depends on** — nothing it imports. It declares `AppModule.notices` entries; the foundation's bell asks the registry and names no shop code.
 **Breaks if you change** — the `shop-tasks.*` codes and their `params` (the contract's union). A code this build has no entry for reads as a generic notification.
 :::
 
-| Fact                    | This module                                                     |
-| ----------------------- | --------------------------------------------------------------- |
-| **Subdomain**           | `supporting`                                                    |
-| **Screens**             | 0 — no routes (one headless app-bar component feeds the badges) |
-| **Store**               | `useShopTasksStore`                                             |
-| **Menu entries**        | —                                                               |
-| **API calls**           | 1 — `GET /shop-tasks/summary`                                   |
-| **Depends on**          | —                                                               |
-| **Depended on by**      | —                                                               |
-| **Languages**           | `en` · `it`                                                     |
-| **Publishes**           | —                                                               |
-| **Backend counterpart** | `shop-tasks` in `boilerplate-node-backend`                      |
+| Fact          | This module  |
+| ------------- | ------------ |
+| **Subdomain** | `supporting` |
+| **Publishes** | —            |
 
 ## The map
 
@@ -47,14 +39,14 @@ flowchart LR
 
 Three shapes of notice:
 
-| Shape           | Codes                                                                                                     | Links to                               |
-| --------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| Buyer           | `cart-line-removed`, `cart-merge-refused`                                                                 | `Cart`                                 |
-| Buyer           | `wishlist-item-removed`                                                                                   | `Wishlist`                             |
-| Buyer           | `stock-alert`                                                                                             | `ProductTarget`, buyable when it fires |
-| Buyer, an order | `fulfillment-delayed`, `fulfillment-held`, `shipment-lost`                                                | `OrderTarget`, where they can cancel   |
-| Staff record    | `staff.purchase-hold-placed`, `staff.return-requested`                                                    | `UserTarget`, `ReturnTarget`           |
-| Staff summary   | ten `staff.*` codes (`transfers-due`, `preorders-late`, `low-stock`, `unshipped`, ...) carrying a `count` | the list they count                    |
+| Shape           | Codes                                                                                                | Links to                               |
+| --------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Buyer           | `cart-line-removed`, `cart-merge-refused`                                                            | `Cart`                                 |
+| Buyer           | `wishlist-item-removed`                                                                              | `Wishlist`                             |
+| Buyer           | `stock-alert`                                                                                        | `ProductTarget`, buyable when it fires |
+| Buyer, an order | `fulfillment-delayed`, `fulfillment-held`, `shipment-lost`                                           | `OrderTarget`, where they can cancel   |
+| Staff record    | `staff.purchase-hold-placed`, `staff.return-requested`                                               | `UserTarget`, `ReturnTarget`           |
+| Staff summary   | the `staff.*` summary codes (`transfers-due`, `preorders-late`, `low-stock`, ...) carrying a `count` | the list they count                    |
 
 The shop's codes, and who is told of each, are on the backend's
 [shop-tasks page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/shop-tasks.md#the-notices).
@@ -81,7 +73,7 @@ so the unused-key audit sees them.
 ### The nav badges
 
 A staff nav badge counts open work (what a person still has to do on that screen), not unread
-notices, so opening the bell never empties it. The backend answers all five shop counts in one read,
+notices, so opening the bell never empties it. The backend answers every shop count in one read,
 `GET /shop-tasks/summary` (key names: `ShopWorkSummary` in the contract, and nowhere else). This
 module writes them into `@/kernel/work-counts`; the manifests of `orders`, `payments`, `returns`
 and `inventory` (two entries) read their own key there, so none of them imports this module. A key
@@ -117,22 +109,13 @@ flowchart LR
 ### Task labels
 
 `task-kind.*`, `task-category.*` and `task-link.*` are co-owned namespaces, one key per contract
-value. This module owns the shop's: kinds `manual_refund_owed`, `refund_refused`,
-`amount_mismatch`, `dispute`, `paid_without_hold`, `consent_due`; categories `order`,
-`cancellation`, `return`, `payment`; link types `order`, `payment`, `refund`, `fulfillment_order`.
-The foundation's are in [`tasks`](./tasks.md).
+value. This module owns the shop's values (the ones in `locales/*.json` under those namespaces); the
+foundation's are in [`tasks`](./tasks.md). The values themselves are the contract's `TaskKind`,
+`TaskCategory` and `TaskLinkType` enums.
 
 ## Files
 
-| File                                  | What it is                                                                          | Explained in                      |
-| ------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------- |
-| `module.ts`                           | The manifest. No routes; `notices`, locales and the app-bar feed.                   | [read](../theory/modules.md)      |
-| `store.ts`                            | `useShopTasksStore`: the summary read, published to `@/kernel/work-counts`.         | [read](../theory/layers.md)       |
-| `composables/use-shop-work-feed.ts`   | Who may be read for, and the shared refresh triggers.                               | [read](../theory/modules.md)      |
-| `components/ShopWorkFeed.vue`         | Renders nothing; mounted in the app bar, it keeps the feed running.                 | [read](../theory/modules.md)      |
-| `notices.ts`                          | The 19 codes as `AppModule.notices` entries; a summary row opens its `params.work`. | [read](../theory/modules.md)      |
-| `describe.ts`                         | Pure: the shop's sentences from a code's typed `params`, and `productName`.         | [read](../theory/domain-layer.md) |
-| `locales/en.json` · `locales/it.json` | The `shop-tasks` sentences and the shop's task labels.                              | [read](../tools/i18n.md)          |
+The folder is `src/modules/shop-tasks/`; each file's own `@module` header says what it is.
 
 ## Libraries
 

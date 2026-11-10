@@ -1,23 +1,15 @@
 # notifications
 
 ::: tip At a glance
-**Owns** — the signed-in visitor's inbox: the bell in the app bar, its panel, the live stream that keeps it current, and the wording of its five foundation codes.
+**Owns** — the signed-in visitor's inbox: the bell in the app bar, its panel, the live stream that keeps it current, and the wording of the foundation's codes (`notifications.staff.*`, in `notices.ts`).
 **Depends on** — nothing. The server writes the notifications; this module only reads and renders them. Every other code is worded and linked by the module that owns it, through `AppModule.notices`.
-**Breaks if you change** — the shape of `AppNotice` / `NoticeTarget` (`src/kernel/registry.ts`) and the five foundation codes. A code no enabled module declares reads as a generic message.
+**Breaks if you change** — the shape of `AppNotice` / `NoticeTarget` (`src/kernel/registry.ts`) and the foundation's codes. A code no enabled module declares reads as a generic message.
 :::
 
-| Fact                    | This module                                                                    |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| **Subdomain**           | `supporting` — Specific to this business but not a differentiator. Kept plain. |
-| **Screens**             | 0 — a bell the app bar hosts                                                   |
-| **Store**               | `notifications-inbox`                                                          |
-| **Menu entries**        | —                                                                              |
-| **API calls**           | 4, plus the `GET /notifications/stream` event stream                           |
-| **Depends on**          | —                                                                              |
-| **Depended on by**      | —                                                                              |
-| **Languages**           | `en` · `it`                                                                    |
-| **Publishes**           | —                                                                              |
-| **Backend counterpart** | `notifications` in `boilerplate-node-backend`                                  |
+| Fact          | This module                                                                    |
+| ------------- | ------------------------------------------------------------------------------ |
+| **Subdomain** | `supporting` — Specific to this business but not a differentiator. Kept plain. |
+| **Publishes** | —                                                                              |
 
 ## The map
 
@@ -30,8 +22,8 @@ The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 ## The story
 
 A notification is a message the server keeps for one person until they delete it. The foundation
-writes five kinds (a task opened, overdue or assigned; a webhook switched off; an event parked
-after every retry). Everything else, the shop's buyer notices and its staff summaries included, is
+writes the `notifications.staff.*` codes (a task opened, due soon, overdue or assigned; a webhook
+switched off; an event parked after every retry). Everything else, the shop's buyer notices and its staff summaries included, is
 written by a project's own module under its own prefix (here `shop-tasks.*`, see
 [`shop-tasks`](./shop-tasks.md)).
 
@@ -161,12 +153,7 @@ Staff nav badges count open work, not unread notices, so opening the bell never 
 
 ## State
 
-Store `notifications-inbox`, from `store.ts`. Only what the setup function returns is listed.
-
-| Kind        | Members                                                                                                                           |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Getters** | `items` · `unreadCount` · `hasWork`                                                                                               |
-| **Actions** | `sync` · `receiveCreated` · `receiveDeleted` · `receiveRead` · `markAllRead` · `dismiss` · `dismissAll` · `reset` · `retranslate` |
+State, getters and actions are exactly what the setup function of each store returns: `src/modules/notifications/store.ts`.
 
 The rows live in the toolkit's message store, not here: `items` is a projection of them, newest
 first. `hasWork` is true when any row is addressed to staff, the cue that the panel splits in two tabs.
@@ -179,16 +166,7 @@ None. The module has no routes.
 
 #### Endpoints called
 
-| Call                           | Response schema                   |
-| ------------------------------ | --------------------------------- |
-| `GET /notifications`           | `ListNotificationsResponse`       |
-| `POST /notifications/read-all` | `ReadAllNotificationsResponse`    |
-| `DELETE /notifications`        | `DismissAllNotificationsResponse` |
-| `DELETE /notifications/{id}`   | `DeleteNotificationByIdResponse`  |
-
-Each row registers one Zod schema through the manifest, so enabling the domain turns its contract
-validation on and deleting the folder turns it off. The stream's frames are validated against the
-AsyncAPI schemas by `createSseClient` while validation is on.
+Method, path and auth of every operation: `contracts/rest/routes.ts`. The calls this module makes, each with the schema its answer is checked against: `src/modules/notifications/response-schemas.ts`.
 
 #### Stream events
 
@@ -200,17 +178,7 @@ AsyncAPI schemas by `createSseClient` while validation is on.
 
 ## Files
 
-| File                                   | What it is                                                                                        | Explained in                          |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `module.ts`                            | The manifest. No routes; contributes the bell to the `app-bar` slot.                              | [read](../theory/modules.md)          |
-| `store.ts`                             | The `notifications-inbox` store: server rows to toolkit messages, and every write the bell makes. | [read](../tools/state-and-routing.md) |
-| `composables/use-inbox-lifecycle.ts`   | Starts the read and the stream for the signed-in person and ends them with them.                  | [read](../theory/layers.md)           |
-| `components/NotificationsBell.vue`     | The bell, its badge and its panel.                                                                | [read](../theory/layers.md)           |
-| `composables/use-notification-link.ts` | A notice's target as a link, if it exists here and the reader may open it.                        | [read](../theory/layers.md)           |
-| `notices.ts`                           | The five foundation codes as `AppModule.notices` entries: sentence and target.                    | [read](../theory/modules.md)          |
-| `types.ts`                             | The row the panel renders.                                                                        | [read](../theory/layers.md)           |
-| `response-schemas.ts`                  | One Zod schema per endpoint called.                                                               | [read](../api/openapi-workflow.md)    |
-| `locales/en.json` · `locales/it.json`  | The sentences, keyed by code, and the bell's labels.                                              | [read](../tools/i18n.md)              |
+The folder is `src/modules/notifications/`; each file's own `@module` header says what it is.
 
 ## Libraries
 

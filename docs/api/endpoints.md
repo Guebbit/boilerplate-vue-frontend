@@ -1,13 +1,12 @@
 # Endpoints
 
-All HTTP endpoints grouped by domain. These are what the generated client in `contracts/rest/index.ts` calls.
-The **Auth** column shows what the backend requires: `none`, `user` (a signed-in visitor), or `permission` (a rule the caller's own `abilities` (on `GET /account`) must grant, e.g. `update Product` — there is no `admin` level). The tables list the common operations; `contracts/rest/routes.ts` is the complete, generated list.
+What every HTTP endpoint answers and what a write sends. The endpoints themselves are not listed here:
+the generated client in `contracts/rest/index.ts` calls them, and `contracts/rest/routes.ts` is the
+complete list (method, path, auth and owning module per operation).
 
-> The backend-specific implementation details (Redis caching strategy, RabbitMQ events, PDF generation) are intentionally omitted here — they are transparent to the FE. What matters to the FE is the HTTP method, path, auth requirement, and response shape.
+## The answers every endpoint travels in
 
-## The answers every row below travels in
-
-Every endpoint on this page answers a success with the resource itself (a list is `{ items, meta }`, a
+Every endpoint answers a success with the resource itself (a list is `{ items, meta }`, a
 result with nothing to say is a body-less `204`), and every rejection reaches a call site as
 the same problem-details document (RFC 9457). That normalisation is the http tier's job, not each store's:
 
@@ -30,7 +29,7 @@ flowchart TD
     N --> R["The store's .catch receives that problem —<br/>never an Error, which is the point"]
 ```
 
-Two consequences worth carrying into every row below. A rejection is always a problem, so
+Two consequences worth carrying into every call. A rejection is always a problem, so
 `absentIs` and `rethrowUnlessAbsent` can read `status` off it to tell "nothing there" (a 404 on a
 payment read) from a real failure. And `errors[]` is where a machine-readable `code` lives —
 `REAUTH_REQUIRED`, `PAYMENT_DECLINED` — which is what the step-up interceptor and the checkout
@@ -62,136 +61,19 @@ flowchart LR
   `*RequestMultipart` types have no `null` in them. A store that uploads and clears in one save goes
   through `uploadThenClear`: the multipart first, then a JSON PATCH with only the clears.
 
-## System (public)
+## Where each endpoint is listed
 
-| Method | Endpoint | Auth | Description |
-| ------ | -------- | ---- | ----------- |
-| GET    | `/`      | none | Public ping |
+The method, path and auth of every operation is the generated route table `contracts/rest/routes.ts`
+(one row per operation, with the module that owns it) and the backend's own contract: the root
+`openapi.yaml` and its per-module fragments. This page does not copy them. A module's page says
+which of them it calls and why.
 
-## Observability
-
-Used by the Admin Dashboard. See [Observability Endpoints](./observability.md) for response shapes and the composable that fetches them.
-
-| Method | Endpoint                          | Auth       | Description                                 |
-| ------ | --------------------------------- | ---------- | ------------------------------------------- |
-| GET    | `/observability/events`           | none       | SSE stream: live metrics snapshot every 5 s |
-| GET    | `/observability/health`           | permission | Full health snapshot                        |
-| GET    | `/observability/metrics/overview` | permission | Curated KPI JSON                            |
-| GET    | `/observability/audit`            | permission | Recent audit events                         |
-
-## Account & Auth
-
-JWT-based authentication. Login returns an `accessToken` in the body and sets a `refreshToken` in an HttpOnly cookie. See [Security](../tools/security.md) for how the FE handles these.
-
-| Method | Endpoint                          | Auth | Description                                 |
-| ------ | --------------------------------- | ---- | ------------------------------------------- |
-| POST   | `/account/login`                  | none | Authenticate and get JWT                    |
-| POST   | `/account/signup`                 | none | Register a new user                         |
-| GET    | `/account`                        | user | Get current user profile                    |
-| POST   | `/account/refresh`                | none | Refresh access token (uses HttpOnly cookie) |
-| POST   | `/account/password/reset`         | none | Request password reset email                |
-| POST   | `/account/password/reset/confirm` | none | Confirm password reset                      |
-| DELETE | `/account/sessions`               | user | Revoke all refresh tokens                   |
-| DELETE | `/account`                        | user | Delete own account                          |
-
-## Products
-
-Read endpoints are public. Write endpoints require a permission. `PUT` replaces a record whole; `PATCH` merges the fields it sends.
-
-| Method | Endpoint                | Auth       | Description                                                                   |
-| ------ | ----------------------- | ---------- | ----------------------------------------------------------------------------- |
-| GET    | `/products`             | none       | List products                                                                 |
-| POST   | `/products/search`      | none       | Search with filters, or read a batch of ids                                   |
-| GET    | `/products/facets`      | none       | Catalogue facets: categories and tags, counted                                |
-| GET    | `/products/:id`         | none       | Single product detail; `translations` (every language) for `read:Translation` |
-| POST   | `/products`             | permission | Create product                                                                |
-| PUT    | `/products/:id`         | permission | Replace a product                                                             |
-| PATCH  | `/products/:id`         | permission | Update the fields sent                                                        |
-| DELETE | `/products/:id`         | permission | Soft-delete a product                                                         |
-| POST   | `/products/:id/restore` | permission | Undo a soft delete                                                            |
-| DELETE | `/products/:id/hard`    | permission | Delete for good                                                               |
-
-## Cart
-
-Per-user. Items are scoped to the authenticated user.
-
-| Method | Endpoint                 | Auth | Description                                   |
-| ------ | ------------------------ | ---- | --------------------------------------------- |
-| GET    | `/cart`                  | user | Get current cart, with its shipping options   |
-| GET    | `/cart/summary`          | user | Cart totals only                              |
-| POST   | `/cart/items`            | user | Add item to cart (grows a line already there) |
-| PATCH  | `/cart/items/:productId` | user | Set an item's exact quantity                  |
-| DELETE | `/cart/items/:productId` | user | Remove item from cart                         |
-| DELETE | `/cart/items`            | user | Clear the entire cart                         |
-| PUT    | `/cart/shipping-method`  | user | Choose (or clear) the shipping method         |
-| POST   | `/cart/checkout`         | user | Checkout → create order                       |
-| POST   | `/cart/reorder/:orderId` | user | Copy a past order back into the cart          |
-
-## Orders
-
-Regular users see only their own orders. A permission is needed to write to any order.
-
-| Method | Endpoint                                 | Auth       | Description                                 |
-| ------ | ---------------------------------------- | ---------- | ------------------------------------------- |
-| GET    | `/orders`                                | user       | List own orders                             |
-| POST   | `/orders/search`                         | user       | Search own orders                           |
-| GET    | `/orders/:id`                            | user       | Single order detail                         |
-| GET    | `/orders/:id/invoice`                    | user       | Download invoice PDF                        |
-| GET    | `/orders/:id/credit-notes`               | user       | List the order's credit notes               |
-| GET    | `/orders/:id/credit-notes/:creditNoteId` | user       | Download one credit note PDF                |
-| POST   | `/orders`                                | permission | Create order manually                       |
-| PUT    | `/orders/:id`                            | permission | Replace an order                            |
-| PATCH  | `/orders/:id`                            | permission | Update the fields sent                      |
-| POST   | `/orders/:id/cancel`                     | user       | Cancel an order that may still be cancelled |
-| POST   | `/orders/:id/override-status`            | permission | Move an order to a status by hand           |
-| DELETE | `/orders/:id`                            | permission | Soft-delete an order                        |
-
-## Users (admin)
-
-Full user management. Self-service actions (`GET /account`, `DELETE /account`) live under `/account`.
-
-| Method | Endpoint             | Auth       | Description            |
-| ------ | -------------------- | ---------- | ---------------------- |
-| GET    | `/users`             | permission | List all users         |
-| POST   | `/users/search`      | permission | Search users           |
-| GET    | `/users/:id`         | permission | Single user detail     |
-| POST   | `/users`             | permission | Create user            |
-| PUT    | `/users/:id`         | permission | Replace a user         |
-| PATCH  | `/users/:id`         | permission | Update the fields sent |
-| DELETE | `/users/:id`         | permission | Soft-delete a user     |
-| POST   | `/users/:id/restore` | permission | Undo a soft delete     |
-
-## Tasks
-
-Contact messages from any visitor, triaged by staff.
-
-| Method | Endpoint        | Auth       | Description              |
-| ------ | --------------- | ---------- | ------------------------ |
-| POST   | `/tasks`        | none       | Submit a contact form    |
-| GET    | `/tasks`        | permission | List all tasks           |
-| POST   | `/tasks/search` | permission | Search tasks             |
-| PATCH  | `/tasks/:id`    | permission | Update the task's status |
-| DELETE | `/tasks/:id`    | permission | Delete a task            |
-
-## SSE
-
-Observability metrics stream. The FE connects via the `createSseClient` utility. See [Realtime](../tools/realtime.md) for the full event contract.
-
-**Connection:** `http://<host>/observability/events` (or value of `VITE_API_SSE`)
-
-**Server → Client**
-
-| Event                            | Payload                       | When                              |
-| -------------------------------- | ----------------------------- | --------------------------------- |
-| `observability.metrics.snapshot` | `ObservabilityMetricsPayload` | Initial snapshot, sent on connect |
-| `observability.metrics.updated`  | `ObservabilityMetricsPayload` | Periodic metrics update           |
-| `observability.heartbeat`        | `ObservabilityMetricsPayload` | Keep-alive heartbeat              |
-
-The stream is server → client only; there is no client → server channel.
+The live stream is described in [Realtime](../tools/realtime.md) and the observability contract
+(`asyncapi.yaml`); the reads behind the Admin Dashboard are in
+[the backend's observability page](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/api/observability.md).
 
 ## Related pages
 
-- [Observability Endpoints](./observability.md)
 - [API overview](./index.md)
 - [OpenAPI Workflow](./openapi-workflow.md)
 - [Realtime](../tools/realtime.md)

@@ -102,6 +102,7 @@
         "@cypress/grep": "^7.0.0",
         "@eslint-community/eslint-plugin-eslint-comments": "^4.7.2",
         "@eslint/js": "^9.39.2",
+        "@mdit-vue/shared": "^3.0.2",
         "@stoplight/spectral-cli": "^6.15.0",
         "@stoplight/spectral-formatters": "^1.5.1",
         "@stryker-mutator/core": "^9.6.1",
