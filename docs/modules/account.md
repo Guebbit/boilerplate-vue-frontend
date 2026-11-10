@@ -88,7 +88,7 @@ Paths, route names, access and permission per screen: `src/modules/account/route
 
 #### Endpoints called
 
-Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: 'account'` or `'addresses'`). Auth is in the backend contract.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: "account"` or `"addresses"`). Auth is in the backend contract.
 
 #### Navigation entries
 

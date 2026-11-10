@@ -119,7 +119,7 @@ Paths, route names, access and permission per screen: `src/modules/observability
 
 #### Endpoints called
 
-Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: 'observability'`). Auth is in the backend contract.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: "observability"`). Auth is in the backend contract.
 
 #### Navigation entries
 

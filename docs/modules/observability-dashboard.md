@@ -51,11 +51,11 @@ feeds the realtime playground, the other screen this same module owns.
 | ------------------------------------- | ------------------------------------------------------------- | --------------------------------------------- |
 | `GET /observability/health`           | the Overview tab's status panel                               | `use-admin-observability`                     |
 | `GET /observability/metrics/overview` | the KPI tiles                                                 | `use-admin-observability`                     |
-| `GET /observability/metrics`          | the raw Prometheus exposition, shown as text                  | none: registered here, no composable calls it |
-| `GET /observability/events`           | registered here, consumed by the realtime playground's screen | none: registered here, no composable calls it |
+| `GET /observability/metrics`          | nothing: Prometheus's scrape target                           | none: registered here, no composable calls it |
+| `GET /observability/events`           | registered here, consumed by the realtime playground's screen | `use-realtime-observability`                  |
 | `GET /observability/audit`            | the Audit tab's table                                         | `use-audit-trail`                             |
 
-All five are registered through this module's manifest, so their contract validation follows the module: [why](../theory/modules.md#the-one-arrow-that-cannot-point-down). Two of the five have no composable.
+All five are registered through this module's manifest, so their contract validation follows the module: [why](../theory/modules.md#the-one-arrow-that-cannot-point-down). One of the five has no caller.
 
 ## Why `types.ts` exists here
 

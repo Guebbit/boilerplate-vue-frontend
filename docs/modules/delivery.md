@@ -129,7 +129,7 @@ This module routes to nothing. It contributes components, schemas or a store to 
 
 #### Endpoints called
 
-Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: 'delivery'`). Auth is in the backend contract.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: "delivery"`). Auth is in the backend contract.
 
 ## Files
 

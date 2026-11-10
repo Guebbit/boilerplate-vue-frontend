@@ -88,7 +88,7 @@ purpose — see the route table's own comment in `routes.ts`.
 
 #### Endpoints called
 
-Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: 'locales'`). Auth is in the backend contract.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: "locales"`). Auth is in the backend contract.
 
 #### Navigation entries
 

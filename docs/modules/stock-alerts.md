@@ -43,7 +43,7 @@ Paths, route names, access and permission per screen: `src/modules/stock-alerts/
 
 #### Endpoints called
 
-Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: 'stock-alerts'`). Auth is in the backend contract.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: "stock-alerts"`). Auth is in the backend contract.
 
 #### Slot contributions
 

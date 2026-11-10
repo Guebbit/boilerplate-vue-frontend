@@ -108,7 +108,7 @@ Paths, route names, access and permission per screen: `src/modules/inventory/rou
 
 #### Endpoints called
 
-Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: 'inventory'`). Auth is in the backend contract.
+Method, path pattern, response schema and owning module of every operation: `contracts/rest/routes.ts` (rows with `module: "inventory"`). Auth is in the backend contract.
 
 #### Navigation entries
 

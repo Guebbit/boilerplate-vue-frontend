@@ -13,7 +13,7 @@ event portal that keeps users, replaces products with events and drops the cart;
 site that keeps almost none of it. **"Which slices are in this build" has to be a configuration
 question, not a surgery question.**
 
-## The five tiers
+## The tiers
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 55}}}%%
@@ -142,7 +142,7 @@ registerLocaleContributors(collectModuleLocales(enabledModules));
 
 Each module registers its own response-schema rows, and that registration is what switches contract
 validation on for its endpoints: enable the module and its answers are checked, delete the folder and
-they are not. Every module page leaves this out and points here.
+they are not.
 
 This is the single most surprising thing in the codebase, and the thing most likely to bite: a test
 that exercises either subsystem without doing the same wiring silently measures an app with no
