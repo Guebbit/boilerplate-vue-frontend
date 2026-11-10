@@ -1,7 +1,7 @@
 // requires-module: account, delivery, inventory, orders, payments, returns
 /**
  * @module
- * CU32 · A faulty item is replaced. The customer's delivered order has a broken bowl. They open a
+ * CU35 · A faulty item is replaced. The customer's delivered order has a broken bowl. They open a
  * return for the defect and say they would like a replacement; support approves; the warehouse
  * receives it with the buyer's wish preselected. No money moves, the order is open for fulfillment
  * again on the SAME order, and the replacement ships through the ordinary door and arrives.
@@ -30,7 +30,7 @@ interface ReturnLike {
     refundAmount?: string;
 }
 
-describe('CU32 · A faulty item is replaced', () => {
+describe('CU35 · A faulty item is replaced', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();
@@ -117,7 +117,7 @@ describe('CU32 · A faulty item is replaced', () => {
                             'admin',
                             'POST',
                             `/delivery/fulfillment-orders/${open?.id ?? ''}/shipments`,
-                            { trackingCode: 'TRK-CU32-A' }
+                            { trackingCode: 'TRK-CU35-A' }
                         );
                     });
                     cy.apiAs<{ items: { id: string; status: string }[] }>(

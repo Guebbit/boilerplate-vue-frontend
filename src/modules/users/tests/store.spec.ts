@@ -424,6 +424,48 @@ describe('useUsersStore', () => {
      * which is asserted explicitly so the two stores' differing conventions stay deliberate
      * rather than becoming an accident someone "fixes" in one place.
      */
+    describe('the purchase hold flag the list and the detail share', () => {
+        /** An account under an in-force hold, as the detail read answers it. */
+        const HELD = aUser({
+            id: 'u1',
+            purchaseHold: {
+                until: '2999-01-01T00:00:00.000Z',
+                reason: 'repeated_cancellations',
+                setAt: '2026-10-19T10:00:00.000Z'
+            }
+        });
+
+        it('derives purchaseHeld from the hold a detail read carries', () => {
+            vi.mocked(orvalMutator).mockImplementationOnce((config) =>
+                Promise.resolve(parseOrvalFixture(config.method, config.url, HELD))
+            );
+            const store = useUsersStore();
+
+            return store.fetchUser('u1').then(() => {
+                expect(store.users.u1?.purchaseHeld).toBe(true);
+            });
+        });
+
+        it('clears a cached hold when a list row no longer flags it', () => {
+            const store = useUsersStore();
+            vi.mocked(orvalMutator).mockImplementationOnce((config) =>
+                Promise.resolve(parseOrvalFixture(config.method, config.url, HELD))
+            );
+
+            return store
+                .fetchUser('u1')
+                .then(() => {
+                    // Someone lifted the hold: the row carries no `purchaseHeld`.
+                    respondWithItems([{ id: 'u1', username: 'ada', email: 'ada@example.com' }]);
+                    return store.fetchPaginationUsers(1, 10, { partial: true, forced: true });
+                })
+                .then(() => {
+                    expect(store.users.u1?.purchaseHold).toBeUndefined();
+                    expect(store.users.u1?.purchaseHeld).toBeUndefined();
+                });
+        });
+    });
+
     describe('read paths', () => {
         const USER = { id: 'u1', username: 'ada', email: 'ada@example.com' };
 

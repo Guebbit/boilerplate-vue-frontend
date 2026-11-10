@@ -110,7 +110,7 @@ line per verdict. The totals equal the control's row count, per slice and in a `
 ### Leads
 
 A Lead is a code-vs-spec divergence no test asserts, whether or not a pass-1 row names it. One line
-each: file:line, fix side, and the audit that owns it (`spec-gaps`, `reachability`, `api-rfc9457`…).
+each: file:line, fix side, and the audit that owns it (`spec-gaps`, `reachability`, `api-http`…).
 Leads are not verdicts. This is where spec-gaps' `contradicted` rows land; do not hand them back.
 
 Rules:
