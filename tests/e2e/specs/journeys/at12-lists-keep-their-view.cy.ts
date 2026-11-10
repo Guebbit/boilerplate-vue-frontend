@@ -1,10 +1,10 @@
 // requires-module: account, inventory, orders, products, users, webhooks
 /**
  * @module
- * AT5 · Staff lists keep their view. The address of a staff list holds its filters, so a reload
+ * AT12 · Staff lists keep their view. The address of a staff list holds its filters, so a reload
  * and a copied link each bring back the same rows, and a page past the end shows no rows and the
  * way back to page 1, not a crash. A filter replaces the history entry on purpose, so Back leaves
- * the list rather than undoing a search. The filters themselves are AT5's other files; this one
+ * the list rather than undoing a search. The filters themselves are AT5's files; this one
  * is about what the address remembers. The stock ledger and the stock board live-filter (no search
  * button) and key their query with a prefix, so they have a describe of their own below.
  */
@@ -86,7 +86,7 @@ const CASES: readonly ListCase[] = [
     }
 ];
 
-describe('AT5 · Staff lists keep their view', () => {
+describe('AT12 · Staff lists keep their view', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();
@@ -137,7 +137,7 @@ describe('AT5 · Staff lists keep their view', () => {
         });
 });
 
-describe('AT5 · The stock board and ledger keep their view', () => {
+describe('AT12 · The stock board and ledger keep their view', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();
@@ -175,7 +175,7 @@ describe('AT5 · The stock board and ledger keep their view', () => {
         cy.subjectId('product.inStock').then((productId) => {
             cy.apiAs('admin', 'POST', `/inventory/levels/${productId}/adjust`, {
                 delta: -1,
-                note: 'AT5 view'
+                note: 'AT12 view'
             });
             cy.visit('/en/inventory');
             cy.get('[data-test=movement-reason]').should('exist');
