@@ -268,9 +268,18 @@ describe('classifyCheckoutError', () => {
         });
     });
 
-    it('does not read a 503 as a bare 500: the server did not act', () => {
+    it('does not read a body-less 503 as a bare 500: a proxy answered, not the API', () => {
         expect(classifyCheckoutError({ status: 503, errors: [] })).toEqual({ kind: 'other' });
     });
+
+    it.each(['SERVICE_UNAVAILABLE', 'QUERY_TIMEOUT'])(
+        "reads the API's own 503 (%s) like a 500, since the key would replay it",
+        (code) => {
+            expect(
+                classifyCheckoutError({ status: 503, errors: [{ code, message: 'x' }] })
+            ).toEqual({ kind: 'server-error' });
+        }
+    );
 
     it('falls back to "other" for a refusal with no dedicated response — a shipping method that is gone', () => {
         expect(

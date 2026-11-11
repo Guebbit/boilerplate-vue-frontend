@@ -175,6 +175,23 @@ describe('one Idempotency-Key, one body', () => {
         expect(second?.key).not.toBe(first?.key);
     });
 
+    it.each(['SERVICE_UNAVAILABLE', 'QUERY_TIMEOUT'])(
+        "ends after the API's own 503 (%s) when the cart is still full: the 503 is stored under the key and would be replayed",
+        async (code) => {
+            const store = await loadedStore();
+            vi.mocked(getCart).mockResolvedValue(answered(aCart([['p1', 2]])));
+            await store.fetchCart();
+            vi.mocked(apiCheckout).mockRejectedValueOnce(apiRejection(503, code));
+            vi.mocked(apiCheckout).mockResolvedValueOnce(answered(anOrder()));
+
+            await store.checkout({ notes: 'same' }).catch(() => undefined);
+            await store.checkout({ notes: 'same' });
+
+            const [first, second] = sentPairs();
+            expect(second?.key).not.toBe(first?.key);
+        }
+    );
+
     it('keeps the key after a bare 500 when the re-read fails too: nothing is known, so the retry replays', async () => {
         const store = await loadedStore();
         vi.mocked(getCart).mockRejectedValue(lostAnswer());
