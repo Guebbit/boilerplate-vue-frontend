@@ -6,7 +6,7 @@
  * on one tab empties only that tab, and a reload proves it is the server that agrees.
  *
  * - **Mine cleared**: Mine reads empty, and after a reload the Work tab still holds this spec's
- *   task notice, told apart by the task its "Open it" link points at.
+ *   task notice, told apart by the task its sentence link points at.
  * - **Work cleared**: "Clear all" empties the whole tab, seeded notices included, so after a
  *   reload the tabs are gone and the cart message is still there.
  *
@@ -26,7 +26,7 @@ const PANEL = '[data-test=notifications-panel]';
 const CART_MESSAGE = 'Removed from your cart';
 
 /**
- * This spec's own work notice: the row whose "Open it" link goes to its task. Its text is the
+ * This spec's own work notice: the row whose sentence links to its task. Its text is the
  * task's kind, shared with any other contact message, so the link is what tells it apart.
  *
  * @param taskId - the task the spec opened

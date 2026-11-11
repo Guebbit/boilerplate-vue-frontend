@@ -17023,6 +17023,7 @@ components:
       type: string
       minLength: 3
       maxLength: 3
+      format: iso-4217
       pattern: ^[A-Z]{3}$
       description: ISO 4217 alphabetic currency code, upper case (e.g. `EUR`)
     DecimalAmount:
@@ -17048,12 +17049,14 @@ components:
     Locale:
       type: string
       maxLength: 35
+      format: bcp47
       description: BCP 47 language tag, e.g. `en` or `pt-BR`. Any casing is accepted and compared case-blind; the API stores and returns the canonical spelling (`pt-BR`, `zh-Hant-TW`). Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET /locales`.
       pattern: ^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$
       example: it
     CountryCode:
       type: string
       maxLength: 2
+      format: iso-3166-alpha-2
       description: ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET /delivery/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports.
       pattern: ^[A-Z]{2}$
       example: IT

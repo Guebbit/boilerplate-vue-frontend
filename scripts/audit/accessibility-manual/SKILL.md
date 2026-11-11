@@ -34,6 +34,8 @@ Read these four, in order, and do not report anything they already gate:
    against `axe-core@^4.13.0` — which means WCAG 2.2's `target-size` (2.5.8) rule is likely
    **already** covered via the `wcag22aa` tag. Re-check the installed version and tag list
    yourself; do not trust this paragraph once it's stale.
+   Beside the tags it names `identical-links-same-purpose` (AAA, 2.4.9) explicitly, so a list of
+   links that repeat one bare label is already gated. Do not report it.
 3. `tests/e2e/specs/keyboard.cy.ts` — the exact, enumerated list of keyboard cases already
    proven with real keystrokes (skip link, drawer, menus, dialog, chips, nav focus). A custom
    interactive component NOT in that list is a real gap; one that IS in that list is not — don't

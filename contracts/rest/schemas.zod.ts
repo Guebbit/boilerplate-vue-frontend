@@ -67,8 +67,8 @@ export const GetHealthResponse = zod.strictObject({
  * this answer must exist without it, which is why the legal identity is here.
  * @summary What a client needs to boot, before it has a session
  */
-export const getConfigResponseOperatorCountryOneMax = 2;
 export const getConfigResponseOperatorCountryOneRegExp = new RegExp('^[A-Z]{2}$');
+export const getConfigResponseOperatorCountryOneMax = 2;
 export const getConfigResponseOperatorEmailOneMax = 254;
 export const GetConfigResponse = zod.strictObject({
     session: zod.strictObject({
@@ -99,9 +99,8 @@ export const GetConfigResponse = zod.strictObject({
         city: zod.string(),
         zip: zod.string(),
         country: zod
-            .string()
-            .max(getConfigResponseOperatorCountryOneMax)
-            .regex(getConfigResponseOperatorCountryOneRegExp),
+            .stringFormat('iso-3166-alpha-2', getConfigResponseOperatorCountryOneRegExp)
+            .max(getConfigResponseOperatorCountryOneMax),
         email: zod.email().max(getConfigResponseOperatorEmailOneMax),
         phone: zod.string().optional()
     }),
@@ -170,19 +169,19 @@ export const GetSecurityTxtResponse = zod.string();
  */
 export const listLocalesResponseLocalesItemIdMax = 64;
 export const listLocalesResponseLocalesItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listLocalesResponseLocalesItemTagMax = 35;
 export const listLocalesResponseLocalesItemTagRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const listLocalesResponseLocalesItemTagMax = 35;
 export const listLocalesResponseLocalesItemBaseLanguageRegExp = new RegExp('^[a-z]{2,3}$');
 export const listLocalesResponseLocalesItemAppsItemMax = 64;
 export const listLocalesResponseLocalesItemAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const listLocalesResponseLocalesItemEntryCountMin = 0;
 export const listLocalesResponseLocalesItemRevisionMin = 0;
-export const listLocalesResponseDefaultMax = 35;
 export const listLocalesResponseDefaultRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
-export const listLocalesResponseFallbackMax = 35;
+export const listLocalesResponseDefaultMax = 35;
 export const listLocalesResponseFallbackRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const listLocalesResponseFallbackMax = 35;
 export const ListLocalesResponse = zod.strictObject({
     locales: zod.array(
         zod.strictObject({
@@ -193,9 +192,8 @@ export const ListLocalesResponse = zod.strictObject({
                 .regex(listLocalesResponseLocalesItemIdRegExp)
                 .optional(),
             tag: zod
-                .string()
-                .max(listLocalesResponseLocalesItemTagMax)
-                .regex(listLocalesResponseLocalesItemTagRegExp),
+                .stringFormat('bcp47', listLocalesResponseLocalesItemTagRegExp)
+                .max(listLocalesResponseLocalesItemTagMax),
             baseLanguage: zod.string().regex(listLocalesResponseLocalesItemBaseLanguageRegExp),
             name: zod.string(),
             nativeName: zod.string(),
@@ -225,13 +223,11 @@ export const ListLocalesResponse = zod.strictObject({
         })
     ),
     default: zod
-        .string()
-        .max(listLocalesResponseDefaultMax)
-        .regex(listLocalesResponseDefaultRegExp),
+        .stringFormat('bcp47', listLocalesResponseDefaultRegExp)
+        .max(listLocalesResponseDefaultMax),
     fallback: zod
-        .string()
+        .stringFormat('bcp47', listLocalesResponseFallbackRegExp)
         .max(listLocalesResponseFallbackMax)
-        .regex(listLocalesResponseFallbackRegExp)
 });
 /**
  * Registers a language in the dynamic tier so entries can be translated into it.
@@ -242,13 +238,13 @@ export const ListLocalesResponse = zod.strictObject({
  * to the default language. It carries only the frontend app until one exists.
  * @summary Add a language
  */
-export const createLocaleBodyTagMax = 35;
 export const createLocaleBodyTagRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const createLocaleBodyTagMax = 35;
 export const createLocaleBodyNameMax = 100;
 export const createLocaleBodyNativeNameMax = 100;
 export const createLocaleBodyActiveDefault = true;
 export const CreateLocaleBody = zod.strictObject({
-    tag: zod.string().max(createLocaleBodyTagMax).regex(createLocaleBodyTagRegExp),
+    tag: zod.stringFormat('bcp47', createLocaleBodyTagRegExp).max(createLocaleBodyTagMax),
     name: zod.string().min(1).max(createLocaleBodyNameMax),
     nativeName: zod.string().min(1).max(createLocaleBodyNativeNameMax),
     direction: zod.enum(['ltr', 'rtl']).optional(),
@@ -256,8 +252,8 @@ export const CreateLocaleBody = zod.strictObject({
 });
 export const createLocaleResponseIdMax = 64;
 export const createLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const createLocaleResponseTagMax = 35;
 export const createLocaleResponseTagRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const createLocaleResponseTagMax = 35;
 export const createLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2,3}$');
 export const createLocaleResponseAppsItemMax = 64;
 export const createLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
@@ -270,7 +266,7 @@ export const CreateLocaleResponse = zod.strictObject({
         .max(createLocaleResponseIdMax)
         .regex(createLocaleResponseIdRegExp)
         .optional(),
-    tag: zod.string().max(createLocaleResponseTagMax).regex(createLocaleResponseTagRegExp),
+    tag: zod.stringFormat('bcp47', createLocaleResponseTagRegExp).max(createLocaleResponseTagMax),
     baseLanguage: zod.string().regex(createLocaleResponseBaseLanguageRegExp),
     name: zod.string(),
     nativeName: zod.string(),
@@ -343,15 +339,15 @@ export const ListLocaleAppsResponse = zod.strictObject({
  * created.
  * @summary Read a language
  */
-export const getLocalePathLocaleMax = 35;
 export const getLocalePathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const getLocalePathLocaleMax = 35;
 export const GetLocaleParams = zod.strictObject({
-    locale: zod.string().max(getLocalePathLocaleMax).regex(getLocalePathLocaleRegExp)
+    locale: zod.stringFormat('bcp47', getLocalePathLocaleRegExp).max(getLocalePathLocaleMax)
 });
 export const getLocaleResponseIdMax = 64;
 export const getLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getLocaleResponseTagMax = 35;
 export const getLocaleResponseTagRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const getLocaleResponseTagMax = 35;
 export const getLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2,3}$');
 export const getLocaleResponseAppsItemMax = 64;
 export const getLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
@@ -359,7 +355,7 @@ export const getLocaleResponseEntryCountMin = 0;
 export const getLocaleResponseRevisionMin = 0;
 export const GetLocaleResponse = zod.strictObject({
     id: zod.string().min(1).max(getLocaleResponseIdMax).regex(getLocaleResponseIdRegExp).optional(),
-    tag: zod.string().max(getLocaleResponseTagMax).regex(getLocaleResponseTagRegExp),
+    tag: zod.stringFormat('bcp47', getLocaleResponseTagRegExp).max(getLocaleResponseTagMax),
     baseLanguage: zod.string().regex(getLocaleResponseBaseLanguageRegExp),
     name: zod.string(),
     nativeName: zod.string(),
@@ -397,10 +393,10 @@ export const GetLocaleResponse = zod.strictObject({
  * /locales/{locale}/activate` and `/deactivate` move it.
  * @summary Replace a language
  */
-export const replaceLocalePathLocaleMax = 35;
 export const replaceLocalePathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const replaceLocalePathLocaleMax = 35;
 export const ReplaceLocaleParams = zod.strictObject({
-    locale: zod.string().max(replaceLocalePathLocaleMax).regex(replaceLocalePathLocaleRegExp)
+    locale: zod.stringFormat('bcp47', replaceLocalePathLocaleRegExp).max(replaceLocalePathLocaleMax)
 });
 export const replaceLocaleHeaderIfMatchMax = 200;
 export const ReplaceLocaleHeader = zod.strictObject({
@@ -415,8 +411,8 @@ export const ReplaceLocaleBody = zod.strictObject({
 });
 export const replaceLocaleResponseIdMax = 64;
 export const replaceLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const replaceLocaleResponseTagMax = 35;
 export const replaceLocaleResponseTagRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const replaceLocaleResponseTagMax = 35;
 export const replaceLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2,3}$');
 export const replaceLocaleResponseAppsItemMax = 64;
 export const replaceLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
@@ -429,7 +425,7 @@ export const ReplaceLocaleResponse = zod.strictObject({
         .max(replaceLocaleResponseIdMax)
         .regex(replaceLocaleResponseIdRegExp)
         .optional(),
-    tag: zod.string().max(replaceLocaleResponseTagMax).regex(replaceLocaleResponseTagRegExp),
+    tag: zod.stringFormat('bcp47', replaceLocaleResponseTagRegExp).max(replaceLocaleResponseTagMax),
     baseLanguage: zod.string().regex(replaceLocaleResponseBaseLanguageRegExp),
     name: zod.string(),
     nativeName: zod.string(),
@@ -467,10 +463,10 @@ export const ReplaceLocaleResponse = zod.strictObject({
  * /locales/{locale}/activate` and `/deactivate` move it.
  * @summary Edit a language
  */
-export const updateLocalePathLocaleMax = 35;
 export const updateLocalePathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const updateLocalePathLocaleMax = 35;
 export const UpdateLocaleParams = zod.strictObject({
-    locale: zod.string().max(updateLocalePathLocaleMax).regex(updateLocalePathLocaleRegExp)
+    locale: zod.stringFormat('bcp47', updateLocalePathLocaleRegExp).max(updateLocalePathLocaleMax)
 });
 export const updateLocaleHeaderIfMatchMax = 200;
 export const UpdateLocaleHeader = zod.strictObject({
@@ -485,8 +481,8 @@ export const UpdateLocaleBody = zod.strictObject({
 });
 export const updateLocaleResponseIdMax = 64;
 export const updateLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const updateLocaleResponseTagMax = 35;
 export const updateLocaleResponseTagRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const updateLocaleResponseTagMax = 35;
 export const updateLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2,3}$');
 export const updateLocaleResponseAppsItemMax = 64;
 export const updateLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
@@ -499,7 +495,7 @@ export const UpdateLocaleResponse = zod.strictObject({
         .max(updateLocaleResponseIdMax)
         .regex(updateLocaleResponseIdRegExp)
         .optional(),
-    tag: zod.string().max(updateLocaleResponseTagMax).regex(updateLocaleResponseTagRegExp),
+    tag: zod.stringFormat('bcp47', updateLocaleResponseTagRegExp).max(updateLocaleResponseTagMax),
     baseLanguage: zod.string().regex(updateLocaleResponseBaseLanguageRegExp),
     name: zod.string(),
     nativeName: zod.string(),
@@ -536,10 +532,10 @@ export const UpdateLocaleResponse = zod.strictObject({
  * the language says whether it would be accepted now.
  * @summary Remove a language
  */
-export const deleteLocalePathLocaleMax = 35;
 export const deleteLocalePathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const deleteLocalePathLocaleMax = 35;
 export const DeleteLocaleParams = zod.strictObject({
-    locale: zod.string().max(deleteLocalePathLocaleMax).regex(deleteLocalePathLocaleRegExp)
+    locale: zod.stringFormat('bcp47', deleteLocalePathLocaleRegExp).max(deleteLocalePathLocaleMax)
 });
 export const DeleteLocaleResponse = zod.void();
 /**
@@ -553,25 +549,23 @@ export const DeleteLocaleResponse = zod.void();
  * own copy out of the database.
  * @summary API message dictionary
  */
-export const getLocaleDictionaryPathLocaleMax = 35;
 export const getLocaleDictionaryPathLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const getLocaleDictionaryPathLocaleMax = 35;
 export const GetLocaleDictionaryParams = zod.strictObject({
     locale: zod
-        .string()
+        .stringFormat('bcp47', getLocaleDictionaryPathLocaleRegExp)
         .max(getLocaleDictionaryPathLocaleMax)
-        .regex(getLocaleDictionaryPathLocaleRegExp)
 });
-export const getLocaleDictionaryResponseLocaleMax = 35;
 export const getLocaleDictionaryResponseLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const getLocaleDictionaryResponseLocaleMax = 35;
 export const GetLocaleDictionaryResponse = zod.strictObject({
     locale: zod
-        .string()
-        .max(getLocaleDictionaryResponseLocaleMax)
-        .regex(getLocaleDictionaryResponseLocaleRegExp),
+        .stringFormat('bcp47', getLocaleDictionaryResponseLocaleRegExp)
+        .max(getLocaleDictionaryResponseLocaleMax),
     messages: zod.record(zod.string(), zod.unknown())
 });
 /**
@@ -602,13 +596,12 @@ export const GetLocaleDictionaryResponse = zod.strictObject({
  * shared cache.
  * @summary Client message dictionary
  */
-export const getLocaleMessagesPathLocaleMax = 35;
 export const getLocaleMessagesPathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const getLocaleMessagesPathLocaleMax = 35;
 export const GetLocaleMessagesParams = zod.strictObject({
     locale: zod
-        .string()
+        .stringFormat('bcp47', getLocaleMessagesPathLocaleRegExp)
         .max(getLocaleMessagesPathLocaleMax)
-        .regex(getLocaleMessagesPathLocaleRegExp)
 });
 export const getLocaleMessagesQueryAppMax = 64;
 export const getLocaleMessagesQueryAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
@@ -620,16 +613,15 @@ export const GetLocaleMessagesQueryParams = zod.strictObject({
         .regex(getLocaleMessagesQueryAppRegExp)
         .optional()
 });
-export const getLocaleMessagesResponseLocaleMax = 35;
 export const getLocaleMessagesResponseLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const getLocaleMessagesResponseLocaleMax = 35;
 export const getLocaleMessagesResponseRevisionMin = 0;
 export const GetLocaleMessagesResponse = zod.strictObject({
     locale: zod
-        .string()
-        .max(getLocaleMessagesResponseLocaleMax)
-        .regex(getLocaleMessagesResponseLocaleRegExp),
+        .stringFormat('bcp47', getLocaleMessagesResponseLocaleRegExp)
+        .max(getLocaleMessagesResponseLocaleMax),
     revision: zod.number().min(getLocaleMessagesResponseRevisionMin),
     messages: zod.record(zod.string(), zod.unknown())
 });
@@ -646,13 +638,12 @@ export const GetLocaleMessagesResponse = zod.strictObject({
  * listed: send it as `If-Match` on an import and a write that landed since is a 412.
  * @summary List translation entries
  */
-export const listLocaleEntriesPathLocaleMax = 35;
 export const listLocaleEntriesPathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const listLocaleEntriesPathLocaleMax = 35;
 export const ListLocaleEntriesParams = zod.strictObject({
     locale: zod
-        .string()
+        .stringFormat('bcp47', listLocaleEntriesPathLocaleRegExp)
         .max(listLocaleEntriesPathLocaleMax)
-        .regex(listLocaleEntriesPathLocaleRegExp)
 });
 export const listLocaleEntriesQueryPageDefault = 1;
 export const listLocaleEntriesQueryPageMax = 10000;
@@ -674,10 +665,10 @@ export const ListLocaleEntriesQueryParams = zod.strictObject({
 });
 export const listLocaleEntriesResponseItemsItemIdMax = 64;
 export const listLocaleEntriesResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listLocaleEntriesResponseItemsItemLocaleMax = 35;
 export const listLocaleEntriesResponseItemsItemLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const listLocaleEntriesResponseItemsItemLocaleMax = 35;
 export const listLocaleEntriesResponseItemsItemAppMax = 64;
 export const listLocaleEntriesResponseItemsItemAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const listLocaleEntriesResponseMetaPageDefault = 1;
@@ -695,9 +686,8 @@ export const ListLocaleEntriesResponse = zod.strictObject({
                 .max(listLocaleEntriesResponseItemsItemIdMax)
                 .regex(listLocaleEntriesResponseItemsItemIdRegExp),
             locale: zod
-                .string()
-                .max(listLocaleEntriesResponseItemsItemLocaleMax)
-                .regex(listLocaleEntriesResponseItemsItemLocaleRegExp),
+                .stringFormat('bcp47', listLocaleEntriesResponseItemsItemLocaleRegExp)
+                .max(listLocaleEntriesResponseItemsItemLocaleMax),
             app: zod
                 .string()
                 .min(1)
@@ -737,17 +727,16 @@ export const ListLocaleEntriesResponse = zod.strictObject({
  * /locales/{locale}/entries` answers: a write to any app moves it.
  * @summary List one app's translation entries
  */
-export const listAppLocaleEntriesPathLocaleMax = 35;
 export const listAppLocaleEntriesPathLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const listAppLocaleEntriesPathLocaleMax = 35;
 export const listAppLocaleEntriesPathAppMax = 64;
 export const listAppLocaleEntriesPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const ListAppLocaleEntriesParams = zod.strictObject({
     locale: zod
-        .string()
-        .max(listAppLocaleEntriesPathLocaleMax)
-        .regex(listAppLocaleEntriesPathLocaleRegExp),
+        .stringFormat('bcp47', listAppLocaleEntriesPathLocaleRegExp)
+        .max(listAppLocaleEntriesPathLocaleMax),
     app: zod
         .string()
         .min(1)
@@ -774,10 +763,10 @@ export const ListAppLocaleEntriesQueryParams = zod.strictObject({
 });
 export const listAppLocaleEntriesResponseItemsItemIdMax = 64;
 export const listAppLocaleEntriesResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listAppLocaleEntriesResponseItemsItemLocaleMax = 35;
 export const listAppLocaleEntriesResponseItemsItemLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const listAppLocaleEntriesResponseItemsItemLocaleMax = 35;
 export const listAppLocaleEntriesResponseItemsItemAppMax = 64;
 export const listAppLocaleEntriesResponseItemsItemAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const listAppLocaleEntriesResponseMetaPageDefault = 1;
@@ -795,9 +784,8 @@ export const ListAppLocaleEntriesResponse = zod.strictObject({
                 .max(listAppLocaleEntriesResponseItemsItemIdMax)
                 .regex(listAppLocaleEntriesResponseItemsItemIdRegExp),
             locale: zod
-                .string()
-                .max(listAppLocaleEntriesResponseItemsItemLocaleMax)
-                .regex(listAppLocaleEntriesResponseItemsItemLocaleRegExp),
+                .stringFormat('bcp47', listAppLocaleEntriesResponseItemsItemLocaleRegExp)
+                .max(listAppLocaleEntriesResponseItemsItemLocaleMax),
             app: zod
                 .string()
                 .min(1)
@@ -830,15 +818,14 @@ export const ListAppLocaleEntriesResponse = zod.strictObject({
  * rather than discovered when the tree is built.
  * @summary Add one translation entry
  */
-export const createLocaleEntryPathLocaleMax = 35;
 export const createLocaleEntryPathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const createLocaleEntryPathLocaleMax = 35;
 export const createLocaleEntryPathAppMax = 64;
 export const createLocaleEntryPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const CreateLocaleEntryParams = zod.strictObject({
     locale: zod
-        .string()
-        .max(createLocaleEntryPathLocaleMax)
-        .regex(createLocaleEntryPathLocaleRegExp),
+        .stringFormat('bcp47', createLocaleEntryPathLocaleRegExp)
+        .max(createLocaleEntryPathLocaleMax),
     app: zod.string().min(1).max(createLocaleEntryPathAppMax).regex(createLocaleEntryPathAppRegExp)
 });
 export const createLocaleEntryBodyKeyMax = 200;
@@ -849,10 +836,10 @@ export const CreateLocaleEntryBody = zod.strictObject({
 });
 export const createLocaleEntryResponseIdMax = 64;
 export const createLocaleEntryResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const createLocaleEntryResponseLocaleMax = 35;
 export const createLocaleEntryResponseLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const createLocaleEntryResponseLocaleMax = 35;
 export const createLocaleEntryResponseAppMax = 64;
 export const createLocaleEntryResponseAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const CreateLocaleEntryResponse = zod.strictObject({
@@ -862,9 +849,8 @@ export const CreateLocaleEntryResponse = zod.strictObject({
         .max(createLocaleEntryResponseIdMax)
         .regex(createLocaleEntryResponseIdRegExp),
     locale: zod
-        .string()
-        .max(createLocaleEntryResponseLocaleMax)
-        .regex(createLocaleEntryResponseLocaleRegExp),
+        .stringFormat('bcp47', createLocaleEntryResponseLocaleRegExp)
+        .max(createLocaleEntryResponseLocaleMax),
     app: zod
         .string()
         .min(1)
@@ -894,17 +880,16 @@ export const CreateLocaleEntryResponse = zod.strictObject({
  * nothing. An import that would change nothing is checked too.
  * @summary Replace every entry
  */
-export const replaceLocaleEntriesPathLocaleMax = 35;
 export const replaceLocaleEntriesPathLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const replaceLocaleEntriesPathLocaleMax = 35;
 export const replaceLocaleEntriesPathAppMax = 64;
 export const replaceLocaleEntriesPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const ReplaceLocaleEntriesParams = zod.strictObject({
     locale: zod
-        .string()
-        .max(replaceLocaleEntriesPathLocaleMax)
-        .regex(replaceLocaleEntriesPathLocaleRegExp),
+        .stringFormat('bcp47', replaceLocaleEntriesPathLocaleRegExp)
+        .max(replaceLocaleEntriesPathLocaleMax),
     app: zod
         .string()
         .min(1)
@@ -941,17 +926,16 @@ export const ReplaceLocaleEntriesResponse = zod.strictObject({
  * new version.
  * @summary Merge entries
  */
-export const updateLocaleEntriesPathLocaleMax = 35;
 export const updateLocaleEntriesPathLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const updateLocaleEntriesPathLocaleMax = 35;
 export const updateLocaleEntriesPathAppMax = 64;
 export const updateLocaleEntriesPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const UpdateLocaleEntriesParams = zod.strictObject({
     locale: zod
-        .string()
-        .max(updateLocaleEntriesPathLocaleMax)
-        .regex(updateLocaleEntriesPathLocaleRegExp),
+        .stringFormat('bcp47', updateLocaleEntriesPathLocaleRegExp)
+        .max(updateLocaleEntriesPathLocaleMax),
     app: zod
         .string()
         .min(1)
@@ -986,14 +970,16 @@ export const UpdateLocaleEntriesResponse = zod.strictObject({
  * the same 404.
  * @summary Get one translation entry
  */
-export const getLocaleEntryPathLocaleMax = 35;
 export const getLocaleEntryPathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const getLocaleEntryPathLocaleMax = 35;
 export const getLocaleEntryPathAppMax = 64;
 export const getLocaleEntryPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const getLocaleEntryPathEntryIdMax = 64;
 export const getLocaleEntryPathEntryIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const GetLocaleEntryParams = zod.strictObject({
-    locale: zod.string().max(getLocaleEntryPathLocaleMax).regex(getLocaleEntryPathLocaleRegExp),
+    locale: zod
+        .stringFormat('bcp47', getLocaleEntryPathLocaleRegExp)
+        .max(getLocaleEntryPathLocaleMax),
     app: zod.string().min(1).max(getLocaleEntryPathAppMax).regex(getLocaleEntryPathAppRegExp),
     entryId: zod
         .string()
@@ -1003,16 +989,15 @@ export const GetLocaleEntryParams = zod.strictObject({
 });
 export const getLocaleEntryResponseIdMax = 64;
 export const getLocaleEntryResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getLocaleEntryResponseLocaleMax = 35;
 export const getLocaleEntryResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const getLocaleEntryResponseLocaleMax = 35;
 export const getLocaleEntryResponseAppMax = 64;
 export const getLocaleEntryResponseAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const GetLocaleEntryResponse = zod.strictObject({
     id: zod.string().min(1).max(getLocaleEntryResponseIdMax).regex(getLocaleEntryResponseIdRegExp),
     locale: zod
-        .string()
-        .max(getLocaleEntryResponseLocaleMax)
-        .regex(getLocaleEntryResponseLocaleRegExp),
+        .stringFormat('bcp47', getLocaleEntryResponseLocaleRegExp)
+        .max(getLocaleEntryResponseLocaleMax),
     app: zod
         .string()
         .min(1)
@@ -1029,17 +1014,16 @@ export const GetLocaleEntryResponse = zod.strictObject({
  * collision checks that go with them.
  * @summary Edit one translation entry
  */
-export const replaceLocaleEntryPathLocaleMax = 35;
 export const replaceLocaleEntryPathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const replaceLocaleEntryPathLocaleMax = 35;
 export const replaceLocaleEntryPathAppMax = 64;
 export const replaceLocaleEntryPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const replaceLocaleEntryPathEntryIdMax = 64;
 export const replaceLocaleEntryPathEntryIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const ReplaceLocaleEntryParams = zod.strictObject({
     locale: zod
-        .string()
-        .max(replaceLocaleEntryPathLocaleMax)
-        .regex(replaceLocaleEntryPathLocaleRegExp),
+        .stringFormat('bcp47', replaceLocaleEntryPathLocaleRegExp)
+        .max(replaceLocaleEntryPathLocaleMax),
     app: zod
         .string()
         .min(1)
@@ -1057,10 +1041,10 @@ export const ReplaceLocaleEntryBody = zod.strictObject({
 });
 export const replaceLocaleEntryResponseIdMax = 64;
 export const replaceLocaleEntryResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const replaceLocaleEntryResponseLocaleMax = 35;
 export const replaceLocaleEntryResponseLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const replaceLocaleEntryResponseLocaleMax = 35;
 export const replaceLocaleEntryResponseAppMax = 64;
 export const replaceLocaleEntryResponseAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const ReplaceLocaleEntryResponse = zod.strictObject({
@@ -1070,9 +1054,8 @@ export const ReplaceLocaleEntryResponse = zod.strictObject({
         .max(replaceLocaleEntryResponseIdMax)
         .regex(replaceLocaleEntryResponseIdRegExp),
     locale: zod
-        .string()
-        .max(replaceLocaleEntryResponseLocaleMax)
-        .regex(replaceLocaleEntryResponseLocaleRegExp),
+        .stringFormat('bcp47', replaceLocaleEntryResponseLocaleRegExp)
+        .max(replaceLocaleEntryResponseLocaleMax),
     app: zod
         .string()
         .min(1)
@@ -1087,17 +1070,16 @@ export const ReplaceLocaleEntryResponse = zod.strictObject({
  * Removes a single key from one language. The other languages keep theirs.
  * @summary Remove one translation entry
  */
-export const deleteLocaleEntryPathLocaleMax = 35;
 export const deleteLocaleEntryPathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const deleteLocaleEntryPathLocaleMax = 35;
 export const deleteLocaleEntryPathAppMax = 64;
 export const deleteLocaleEntryPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const deleteLocaleEntryPathEntryIdMax = 64;
 export const deleteLocaleEntryPathEntryIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const DeleteLocaleEntryParams = zod.strictObject({
     locale: zod
-        .string()
-        .max(deleteLocaleEntryPathLocaleMax)
-        .regex(deleteLocaleEntryPathLocaleRegExp),
+        .stringFormat('bcp47', deleteLocaleEntryPathLocaleRegExp)
+        .max(deleteLocaleEntryPathLocaleMax),
     app: zod.string().min(1).max(deleteLocaleEntryPathAppMax).regex(deleteLocaleEntryPathAppRegExp),
     entryId: zod
         .string()
@@ -1133,10 +1115,10 @@ export const getEntityTranslationsResponseTranslationsItemEntityIdMax = 64;
 export const getEntityTranslationsResponseTranslationsItemEntityIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const getEntityTranslationsResponseTranslationsItemLocaleMax = 35;
 export const getEntityTranslationsResponseTranslationsItemLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const getEntityTranslationsResponseTranslationsItemLocaleMax = 35;
 export const getEntityTranslationsResponseTranslationsItemTranslatedByOneMax = 64;
 export const getEntityTranslationsResponseTranslationsItemTranslatedByOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -1165,9 +1147,8 @@ export const GetEntityTranslationsResponse = zod.strictObject({
                 .max(getEntityTranslationsResponseTranslationsItemEntityIdMax)
                 .regex(getEntityTranslationsResponseTranslationsItemEntityIdRegExp),
             locale: zod
-                .string()
-                .max(getEntityTranslationsResponseTranslationsItemLocaleMax)
-                .regex(getEntityTranslationsResponseTranslationsItemLocaleRegExp),
+                .stringFormat('bcp47', getEntityTranslationsResponseTranslationsItemLocaleRegExp)
+                .max(getEntityTranslationsResponseTranslationsItemLocaleMax),
             fields: zod.record(zod.string(), zod.string()),
             sourceDigest: zod.string().optional(),
             origin: zod.enum(['machine', 'human']),
@@ -1246,10 +1227,10 @@ export const replaceEntityTranslationsResponseTranslationsItemEntityIdMax = 64;
 export const replaceEntityTranslationsResponseTranslationsItemEntityIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const replaceEntityTranslationsResponseTranslationsItemLocaleMax = 35;
 export const replaceEntityTranslationsResponseTranslationsItemLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const replaceEntityTranslationsResponseTranslationsItemLocaleMax = 35;
 export const replaceEntityTranslationsResponseTranslationsItemTranslatedByOneMax = 64;
 export const replaceEntityTranslationsResponseTranslationsItemTranslatedByOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -1278,9 +1259,11 @@ export const ReplaceEntityTranslationsResponse = zod.strictObject({
                 .max(replaceEntityTranslationsResponseTranslationsItemEntityIdMax)
                 .regex(replaceEntityTranslationsResponseTranslationsItemEntityIdRegExp),
             locale: zod
-                .string()
-                .max(replaceEntityTranslationsResponseTranslationsItemLocaleMax)
-                .regex(replaceEntityTranslationsResponseTranslationsItemLocaleRegExp),
+                .stringFormat(
+                    'bcp47',
+                    replaceEntityTranslationsResponseTranslationsItemLocaleRegExp
+                )
+                .max(replaceEntityTranslationsResponseTranslationsItemLocaleMax),
             fields: zod.record(zod.string(), zod.string()),
             sourceDigest: zod.string().optional(),
             origin: zod.enum(['machine', 'human']),
@@ -1365,10 +1348,10 @@ export const updateEntityTranslationsResponseTranslationsItemEntityIdMax = 64;
 export const updateEntityTranslationsResponseTranslationsItemEntityIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const updateEntityTranslationsResponseTranslationsItemLocaleMax = 35;
 export const updateEntityTranslationsResponseTranslationsItemLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const updateEntityTranslationsResponseTranslationsItemLocaleMax = 35;
 export const updateEntityTranslationsResponseTranslationsItemTranslatedByOneMax = 64;
 export const updateEntityTranslationsResponseTranslationsItemTranslatedByOneRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -1397,9 +1380,8 @@ export const UpdateEntityTranslationsResponse = zod.strictObject({
                 .max(updateEntityTranslationsResponseTranslationsItemEntityIdMax)
                 .regex(updateEntityTranslationsResponseTranslationsItemEntityIdRegExp),
             locale: zod
-                .string()
-                .max(updateEntityTranslationsResponseTranslationsItemLocaleMax)
-                .regex(updateEntityTranslationsResponseTranslationsItemLocaleRegExp),
+                .stringFormat('bcp47', updateEntityTranslationsResponseTranslationsItemLocaleRegExp)
+                .max(updateEntityTranslationsResponseTranslationsItemLocaleMax),
             fields: zod.record(zod.string(), zod.string()),
             sourceDigest: zod.string().optional(),
             origin: zod.enum(['machine', 'human']),
@@ -1861,8 +1843,8 @@ export const CreateAnalyticsEventResponse = zod.void();
 export const getAccountResponseIdMax = 64;
 export const getAccountResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getAccountResponseEmailMax = 254;
-export const getAccountResponseLocaleMax = 35;
 export const getAccountResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const getAccountResponseLocaleMax = 35;
 export const getAccountResponsePurchaseHoldNoteMax = 500;
 export const GetAccountResponse = zod.strictObject({
     id: zod.string().min(1).max(getAccountResponseIdMax).regex(getAccountResponseIdRegExp),
@@ -1875,9 +1857,8 @@ export const GetAccountResponse = zod.strictObject({
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
     locale: zod
-        .string()
+        .stringFormat('bcp47', getAccountResponseLocaleRegExp)
         .max(getAccountResponseLocaleMax)
-        .regex(getAccountResponseLocaleRegExp)
         .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
@@ -1936,8 +1917,8 @@ export const ReplaceAccountHeader = zod.strictObject({
 });
 export const replaceAccountBodyUsernameMin = 3;
 export const replaceAccountBodyUsernameMax = 50;
-export const replaceAccountBodyLocaleOneMax = 35;
 export const replaceAccountBodyLocaleOneRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const replaceAccountBodyLocaleOneMax = 35;
 export const replaceAccountBodyPhoneMax = 32;
 export const replaceAccountBodyWebsiteMax = 2048;
 export const ReplaceAccountBody = zod.strictObject({
@@ -1945,9 +1926,8 @@ export const ReplaceAccountBody = zod.strictObject({
     locale: zod
         .union([
             zod
-                .string()
-                .max(replaceAccountBodyLocaleOneMax)
-                .regex(replaceAccountBodyLocaleOneRegExp),
+                .stringFormat('bcp47', replaceAccountBodyLocaleOneRegExp)
+                .max(replaceAccountBodyLocaleOneMax),
             zod.null()
         ])
         .optional(),
@@ -1959,8 +1939,8 @@ export const ReplaceAccountBody = zod.strictObject({
 export const replaceAccountResponseIdMax = 64;
 export const replaceAccountResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const replaceAccountResponseEmailMax = 254;
-export const replaceAccountResponseLocaleMax = 35;
 export const replaceAccountResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const replaceAccountResponseLocaleMax = 35;
 export const replaceAccountResponsePurchaseHoldNoteMax = 500;
 export const ReplaceAccountResponse = zod.strictObject({
     id: zod.string().min(1).max(replaceAccountResponseIdMax).regex(replaceAccountResponseIdRegExp),
@@ -1973,9 +1953,8 @@ export const ReplaceAccountResponse = zod.strictObject({
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
     locale: zod
-        .string()
+        .stringFormat('bcp47', replaceAccountResponseLocaleRegExp)
         .max(replaceAccountResponseLocaleMax)
-        .regex(replaceAccountResponseLocaleRegExp)
         .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
@@ -2006,8 +1985,8 @@ export const UpdateAccountHeader = zod.strictObject({
 });
 export const updateAccountBodyUsernameMin = 3;
 export const updateAccountBodyUsernameMax = 50;
-export const updateAccountBodyLocaleOneMax = 35;
 export const updateAccountBodyLocaleOneRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const updateAccountBodyLocaleOneMax = 35;
 export const updateAccountBodyPhoneMax = 32;
 export const updateAccountBodyWebsiteMax = 2048;
 export const UpdateAccountBody = zod.strictObject({
@@ -2018,7 +1997,9 @@ export const UpdateAccountBody = zod.strictObject({
         .optional(),
     locale: zod
         .union([
-            zod.string().max(updateAccountBodyLocaleOneMax).regex(updateAccountBodyLocaleOneRegExp),
+            zod
+                .stringFormat('bcp47', updateAccountBodyLocaleOneRegExp)
+                .max(updateAccountBodyLocaleOneMax),
             zod.null()
         ])
         .optional(),
@@ -2030,8 +2011,8 @@ export const UpdateAccountBody = zod.strictObject({
 export const updateAccountResponseIdMax = 64;
 export const updateAccountResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const updateAccountResponseEmailMax = 254;
-export const updateAccountResponseLocaleMax = 35;
 export const updateAccountResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const updateAccountResponseLocaleMax = 35;
 export const updateAccountResponsePurchaseHoldNoteMax = 500;
 export const UpdateAccountResponse = zod.strictObject({
     id: zod.string().min(1).max(updateAccountResponseIdMax).regex(updateAccountResponseIdRegExp),
@@ -2044,9 +2025,8 @@ export const UpdateAccountResponse = zod.strictObject({
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
     locale: zod
-        .string()
+        .stringFormat('bcp47', updateAccountResponseLocaleRegExp)
         .max(updateAccountResponseLocaleMax)
-        .regex(updateAccountResponseLocaleRegExp)
         .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
@@ -2086,10 +2066,10 @@ export const RequestEmailChangeBody = zod.strictObject({
 export const requestEmailChangeResponseIdMax = 64;
 export const requestEmailChangeResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const requestEmailChangeResponseEmailMax = 254;
-export const requestEmailChangeResponseLocaleMax = 35;
 export const requestEmailChangeResponseLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const requestEmailChangeResponseLocaleMax = 35;
 export const requestEmailChangeResponsePurchaseHoldNoteMax = 500;
 export const RequestEmailChangeResponse = zod.strictObject({
     id: zod
@@ -2106,9 +2086,8 @@ export const RequestEmailChangeResponse = zod.strictObject({
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
     locale: zod
-        .string()
+        .stringFormat('bcp47', requestEmailChangeResponseLocaleRegExp)
         .max(requestEmailChangeResponseLocaleMax)
-        .regex(requestEmailChangeResponseLocaleRegExp)
         .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
@@ -2194,10 +2173,10 @@ export const ChangePasswordBody = zod.strictObject({
 export const changePasswordResponseAccountIdMax = 64;
 export const changePasswordResponseAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const changePasswordResponseAccountEmailMax = 254;
-export const changePasswordResponseAccountLocaleMax = 35;
 export const changePasswordResponseAccountLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const changePasswordResponseAccountLocaleMax = 35;
 export const changePasswordResponseAccountPurchaseHoldNoteMax = 500;
 export const ChangePasswordResponse = zod.strictObject({
     token: zod.string().optional(),
@@ -2218,9 +2197,8 @@ export const ChangePasswordResponse = zod.strictObject({
             imageUrl: zod.string().min(1).optional(),
             thumbnailUrl: zod.string().optional(),
             locale: zod
-                .string()
+                .stringFormat('bcp47', changePasswordResponseAccountLocaleRegExp)
                 .max(changePasswordResponseAccountLocaleMax)
-                .regex(changePasswordResponseAccountLocaleRegExp)
                 .optional(),
             phone: zod.string().optional(),
             website: zod.string().optional(),
@@ -2318,8 +2296,8 @@ export const ReauthBody = zod.union([
 export const reauthResponseAccountIdMax = 64;
 export const reauthResponseAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const reauthResponseAccountEmailMax = 254;
-export const reauthResponseAccountLocaleMax = 35;
 export const reauthResponseAccountLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const reauthResponseAccountLocaleMax = 35;
 export const reauthResponseAccountPurchaseHoldNoteMax = 500;
 export const ReauthResponse = zod.strictObject({
     token: zod.string().optional(),
@@ -2340,9 +2318,8 @@ export const ReauthResponse = zod.strictObject({
             imageUrl: zod.string().min(1).optional(),
             thumbnailUrl: zod.string().optional(),
             locale: zod
-                .string()
+                .stringFormat('bcp47', reauthResponseAccountLocaleRegExp)
                 .max(reauthResponseAccountLocaleMax)
-                .regex(reauthResponseAccountLocaleRegExp)
                 .optional(),
             phone: zod.string().optional(),
             website: zod.string().optional(),
@@ -2473,8 +2450,8 @@ export const listAddressesResponseAddressesItemFullNameMax = 100;
 export const listAddressesResponseAddressesItemStreetMax = 200;
 export const listAddressesResponseAddressesItemCityMax = 100;
 export const listAddressesResponseAddressesItemZipMax = 20;
-export const listAddressesResponseAddressesItemCountryMax = 2;
 export const listAddressesResponseAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const listAddressesResponseAddressesItemCountryMax = 2;
 export const listAddressesResponseAddressesItemPhoneMax = 32;
 export const ListAddressesResponse = zod.strictObject({
     addresses: zod.array(
@@ -2490,9 +2467,8 @@ export const ListAddressesResponse = zod.strictObject({
             city: zod.string().min(1).max(listAddressesResponseAddressesItemCityMax),
             zip: zod.string().min(1).max(listAddressesResponseAddressesItemZipMax),
             country: zod
-                .string()
-                .max(listAddressesResponseAddressesItemCountryMax)
-                .regex(listAddressesResponseAddressesItemCountryRegExp),
+                .stringFormat('iso-3166-alpha-2', listAddressesResponseAddressesItemCountryRegExp)
+                .max(listAddressesResponseAddressesItemCountryMax),
             phone: zod.string().min(1).max(listAddressesResponseAddressesItemPhoneMax).optional(),
             default: zod.boolean()
         })
@@ -2519,8 +2495,8 @@ export const createAddressBodyFullNameMax = 100;
 export const createAddressBodyStreetMax = 200;
 export const createAddressBodyCityMax = 100;
 export const createAddressBodyZipMax = 20;
-export const createAddressBodyCountryMax = 2;
 export const createAddressBodyCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const createAddressBodyCountryMax = 2;
 export const createAddressBodyPhoneMax = 32;
 export const CreateAddressBody = zod.strictObject({
     label: zod.string().min(1).max(createAddressBodyLabelMax).optional(),
@@ -2528,7 +2504,9 @@ export const CreateAddressBody = zod.strictObject({
     street: zod.string().min(1).max(createAddressBodyStreetMax),
     city: zod.string().min(1).max(createAddressBodyCityMax),
     zip: zod.string().min(1).max(createAddressBodyZipMax),
-    country: zod.string().max(createAddressBodyCountryMax).regex(createAddressBodyCountryRegExp),
+    country: zod
+        .stringFormat('iso-3166-alpha-2', createAddressBodyCountryRegExp)
+        .max(createAddressBodyCountryMax),
     phone: zod.string().min(1).max(createAddressBodyPhoneMax).optional(),
     default: zod.boolean().optional()
 });
@@ -2538,8 +2516,8 @@ export const createAddressResponseFullNameMax = 100;
 export const createAddressResponseStreetMax = 200;
 export const createAddressResponseCityMax = 100;
 export const createAddressResponseZipMax = 20;
-export const createAddressResponseCountryMax = 2;
 export const createAddressResponseCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const createAddressResponseCountryMax = 2;
 export const createAddressResponsePhoneMax = 32;
 export const CreateAddressResponse = zod.strictObject({
     id: zod.string().min(1).max(createAddressResponseIdMax).regex(createAddressResponseIdRegExp),
@@ -2549,9 +2527,8 @@ export const CreateAddressResponse = zod.strictObject({
     city: zod.string().min(1).max(createAddressResponseCityMax),
     zip: zod.string().min(1).max(createAddressResponseZipMax),
     country: zod
-        .string()
-        .max(createAddressResponseCountryMax)
-        .regex(createAddressResponseCountryRegExp),
+        .stringFormat('iso-3166-alpha-2', createAddressResponseCountryRegExp)
+        .max(createAddressResponseCountryMax),
     phone: zod.string().min(1).max(createAddressResponsePhoneMax).optional(),
     default: zod.boolean()
 });
@@ -2574,8 +2551,8 @@ export const getAddressResponseFullNameMax = 100;
 export const getAddressResponseStreetMax = 200;
 export const getAddressResponseCityMax = 100;
 export const getAddressResponseZipMax = 20;
-export const getAddressResponseCountryMax = 2;
 export const getAddressResponseCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const getAddressResponseCountryMax = 2;
 export const getAddressResponsePhoneMax = 32;
 export const GetAddressResponse = zod.strictObject({
     id: zod.string().min(1).max(getAddressResponseIdMax).regex(getAddressResponseIdRegExp),
@@ -2584,7 +2561,9 @@ export const GetAddressResponse = zod.strictObject({
     street: zod.string().min(1).max(getAddressResponseStreetMax),
     city: zod.string().min(1).max(getAddressResponseCityMax),
     zip: zod.string().min(1).max(getAddressResponseZipMax),
-    country: zod.string().max(getAddressResponseCountryMax).regex(getAddressResponseCountryRegExp),
+    country: zod
+        .stringFormat('iso-3166-alpha-2', getAddressResponseCountryRegExp)
+        .max(getAddressResponseCountryMax),
     phone: zod.string().min(1).max(getAddressResponsePhoneMax).optional(),
     default: zod.boolean()
 });
@@ -2606,8 +2585,8 @@ export const replaceAddressBodyFullNameMax = 100;
 export const replaceAddressBodyStreetMax = 200;
 export const replaceAddressBodyCityMax = 100;
 export const replaceAddressBodyZipMax = 20;
-export const replaceAddressBodyCountryMax = 2;
 export const replaceAddressBodyCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const replaceAddressBodyCountryMax = 2;
 export const replaceAddressBodyPhoneOneMax = 32;
 export const ReplaceAddressBody = zod.strictObject({
     label: zod.string().min(1).max(replaceAddressBodyLabelMax).nullish(),
@@ -2615,7 +2594,9 @@ export const ReplaceAddressBody = zod.strictObject({
     street: zod.string().min(1).max(replaceAddressBodyStreetMax),
     city: zod.string().min(1).max(replaceAddressBodyCityMax),
     zip: zod.string().min(1).max(replaceAddressBodyZipMax),
-    country: zod.string().max(replaceAddressBodyCountryMax).regex(replaceAddressBodyCountryRegExp),
+    country: zod
+        .stringFormat('iso-3166-alpha-2', replaceAddressBodyCountryRegExp)
+        .max(replaceAddressBodyCountryMax),
     phone: zod
         .union([zod.string().min(1).max(replaceAddressBodyPhoneOneMax), zod.null()])
         .optional()
@@ -2626,8 +2607,8 @@ export const replaceAddressResponseFullNameMax = 100;
 export const replaceAddressResponseStreetMax = 200;
 export const replaceAddressResponseCityMax = 100;
 export const replaceAddressResponseZipMax = 20;
-export const replaceAddressResponseCountryMax = 2;
 export const replaceAddressResponseCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const replaceAddressResponseCountryMax = 2;
 export const replaceAddressResponsePhoneMax = 32;
 export const ReplaceAddressResponse = zod.strictObject({
     id: zod.string().min(1).max(replaceAddressResponseIdMax).regex(replaceAddressResponseIdRegExp),
@@ -2637,9 +2618,8 @@ export const ReplaceAddressResponse = zod.strictObject({
     city: zod.string().min(1).max(replaceAddressResponseCityMax),
     zip: zod.string().min(1).max(replaceAddressResponseZipMax),
     country: zod
-        .string()
-        .max(replaceAddressResponseCountryMax)
-        .regex(replaceAddressResponseCountryRegExp),
+        .stringFormat('iso-3166-alpha-2', replaceAddressResponseCountryRegExp)
+        .max(replaceAddressResponseCountryMax),
     phone: zod.string().min(1).max(replaceAddressResponsePhoneMax).optional(),
     default: zod.boolean()
 });
@@ -2661,8 +2641,8 @@ export const updateAddressBodyFullNameMax = 100;
 export const updateAddressBodyStreetMax = 200;
 export const updateAddressBodyCityMax = 100;
 export const updateAddressBodyZipMax = 20;
-export const updateAddressBodyCountryMax = 2;
 export const updateAddressBodyCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const updateAddressBodyCountryMax = 2;
 export const updateAddressBodyPhoneOneMax = 32;
 export const UpdateAddressBody = zod.strictObject({
     label: zod.string().min(1).max(updateAddressBodyLabelMax).nullish(),
@@ -2671,9 +2651,8 @@ export const UpdateAddressBody = zod.strictObject({
     city: zod.string().min(1).max(updateAddressBodyCityMax).optional(),
     zip: zod.string().min(1).max(updateAddressBodyZipMax).optional(),
     country: zod
-        .string()
+        .stringFormat('iso-3166-alpha-2', updateAddressBodyCountryRegExp)
         .max(updateAddressBodyCountryMax)
-        .regex(updateAddressBodyCountryRegExp)
         .optional(),
     phone: zod.union([zod.string().min(1).max(updateAddressBodyPhoneOneMax), zod.null()]).optional()
 });
@@ -2683,8 +2662,8 @@ export const updateAddressResponseFullNameMax = 100;
 export const updateAddressResponseStreetMax = 200;
 export const updateAddressResponseCityMax = 100;
 export const updateAddressResponseZipMax = 20;
-export const updateAddressResponseCountryMax = 2;
 export const updateAddressResponseCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const updateAddressResponseCountryMax = 2;
 export const updateAddressResponsePhoneMax = 32;
 export const UpdateAddressResponse = zod.strictObject({
     id: zod.string().min(1).max(updateAddressResponseIdMax).regex(updateAddressResponseIdRegExp),
@@ -2694,9 +2673,8 @@ export const UpdateAddressResponse = zod.strictObject({
     city: zod.string().min(1).max(updateAddressResponseCityMax),
     zip: zod.string().min(1).max(updateAddressResponseZipMax),
     country: zod
-        .string()
-        .max(updateAddressResponseCountryMax)
-        .regex(updateAddressResponseCountryRegExp),
+        .stringFormat('iso-3166-alpha-2', updateAddressResponseCountryRegExp)
+        .max(updateAddressResponseCountryMax),
     phone: zod.string().min(1).max(updateAddressResponsePhoneMax).optional(),
     default: zod.boolean()
 });
@@ -2733,8 +2711,8 @@ export const setDefaultAddressResponseFullNameMax = 100;
 export const setDefaultAddressResponseStreetMax = 200;
 export const setDefaultAddressResponseCityMax = 100;
 export const setDefaultAddressResponseZipMax = 20;
-export const setDefaultAddressResponseCountryMax = 2;
 export const setDefaultAddressResponseCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const setDefaultAddressResponseCountryMax = 2;
 export const setDefaultAddressResponsePhoneMax = 32;
 export const SetDefaultAddressResponse = zod.strictObject({
     id: zod
@@ -2748,9 +2726,8 @@ export const SetDefaultAddressResponse = zod.strictObject({
     city: zod.string().min(1).max(setDefaultAddressResponseCityMax),
     zip: zod.string().min(1).max(setDefaultAddressResponseZipMax),
     country: zod
-        .string()
-        .max(setDefaultAddressResponseCountryMax)
-        .regex(setDefaultAddressResponseCountryRegExp),
+        .stringFormat('iso-3166-alpha-2', setDefaultAddressResponseCountryRegExp)
+        .max(setDefaultAddressResponseCountryMax),
     phone: zod.string().min(1).max(setDefaultAddressResponsePhoneMax).optional(),
     default: zod.boolean()
 });
@@ -2814,10 +2791,10 @@ export const LoginBody = zod.strictObject({
 export const loginResponseOneAccountIdMax = 64;
 export const loginResponseOneAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const loginResponseOneAccountEmailMax = 254;
-export const loginResponseOneAccountLocaleMax = 35;
 export const loginResponseOneAccountLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const loginResponseOneAccountLocaleMax = 35;
 export const loginResponseOneAccountPurchaseHoldNoteMax = 500;
 export const loginResponseTwoMethodsItemResendAfterMin = 0;
 export const LoginResponse = zod.union([
@@ -2840,9 +2817,8 @@ export const LoginResponse = zod.union([
                 imageUrl: zod.string().min(1).optional(),
                 thumbnailUrl: zod.string().optional(),
                 locale: zod
-                    .string()
+                    .stringFormat('bcp47', loginResponseOneAccountLocaleRegExp)
                     .max(loginResponseOneAccountLocaleMax)
-                    .regex(loginResponseOneAccountLocaleRegExp)
                     .optional(),
                 phone: zod.string().optional(),
                 website: zod.string().optional(),
@@ -2933,10 +2909,10 @@ export const LoginRestoreBody = zod.strictObject({
 export const loginRestoreResponseAccountIdMax = 64;
 export const loginRestoreResponseAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const loginRestoreResponseAccountEmailMax = 254;
-export const loginRestoreResponseAccountLocaleMax = 35;
 export const loginRestoreResponseAccountLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const loginRestoreResponseAccountLocaleMax = 35;
 export const loginRestoreResponseAccountPurchaseHoldNoteMax = 500;
 export const LoginRestoreResponse = zod.strictObject({
     token: zod.string().optional(),
@@ -2957,9 +2933,8 @@ export const LoginRestoreResponse = zod.strictObject({
             imageUrl: zod.string().min(1).optional(),
             thumbnailUrl: zod.string().optional(),
             locale: zod
-                .string()
+                .stringFormat('bcp47', loginRestoreResponseAccountLocaleRegExp)
                 .max(loginRestoreResponseAccountLocaleMax)
-                .regex(loginRestoreResponseAccountLocaleRegExp)
                 .optional(),
             phone: zod.string().optional(),
             website: zod.string().optional(),
@@ -3052,8 +3027,8 @@ export const SignupBody = zod.strictObject({
 export const signupResponseIdMax = 64;
 export const signupResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const signupResponseEmailMax = 254;
-export const signupResponseLocaleMax = 35;
 export const signupResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const signupResponseLocaleMax = 35;
 export const signupResponsePurchaseHoldNoteMax = 500;
 export const SignupResponse = zod.strictObject({
     id: zod.string().min(1).max(signupResponseIdMax).regex(signupResponseIdRegExp),
@@ -3065,7 +3040,10 @@ export const SignupResponse = zod.strictObject({
     pendingEmail: zod.email().optional(),
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
-    locale: zod.string().max(signupResponseLocaleMax).regex(signupResponseLocaleRegExp).optional(),
+    locale: zod
+        .stringFormat('bcp47', signupResponseLocaleRegExp)
+        .max(signupResponseLocaleMax)
+        .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
     analyticsConsent: zod.boolean().optional(),
@@ -3206,10 +3184,10 @@ export const GetAccountExportResponse = zod.strictObject({
 export const downloadAccountExportResponseProfileIdMax = 64;
 export const downloadAccountExportResponseProfileIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseProfileEmailMax = 254;
-export const downloadAccountExportResponseProfileLocaleMax = 35;
 export const downloadAccountExportResponseProfileLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const downloadAccountExportResponseProfileLocaleMax = 35;
 export const downloadAccountExportResponseProfilePurchaseHoldNoteMax = 500;
 export const downloadAccountExportResponseAuditLogItemActionRegExp = new RegExp(
     '^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$'
@@ -3223,8 +3201,8 @@ export const downloadAccountExportResponseAddressesItemFullNameMax = 100;
 export const downloadAccountExportResponseAddressesItemStreetMax = 200;
 export const downloadAccountExportResponseAddressesItemCityMax = 100;
 export const downloadAccountExportResponseAddressesItemZipMax = 20;
-export const downloadAccountExportResponseAddressesItemCountryMax = 2;
 export const downloadAccountExportResponseAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const downloadAccountExportResponseAddressesItemCountryMax = 2;
 export const downloadAccountExportResponseAddressesItemPhoneMax = 32;
 export const downloadAccountExportResponseTasksItemIdMax = 64;
 export const downloadAccountExportResponseTasksItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -3255,10 +3233,10 @@ export const downloadAccountExportResponseOrdersItemItemsItemProductSkuMax = 64;
 export const downloadAccountExportResponseOrdersItemItemsItemProductWeightMin = 0;
 export const downloadAccountExportResponseOrdersItemItemsItemProductTaxRateMin = 0;
 export const downloadAccountExportResponseOrdersItemItemsItemProductTaxRateMax = 1;
-export const downloadAccountExportResponseOrdersItemItemsItemLocaleMax = 35;
 export const downloadAccountExportResponseOrdersItemItemsItemLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const downloadAccountExportResponseOrdersItemItemsItemLocaleMax = 35;
 export const downloadAccountExportResponseOrdersItemItemsItemTaxAmountRegExp = new RegExp(
     '^\\d+(\\.\\d+)?$'
 );
@@ -3273,9 +3251,9 @@ export const downloadAccountExportResponseOrdersItemTotalPriceRegExp = new RegEx
     '^\\d+(\\.\\d+)?$'
 );
 export const downloadAccountExportResponseOrdersItemTotalPriceMax = 32;
+export const downloadAccountExportResponseOrdersItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const downloadAccountExportResponseOrdersItemCurrencyOneMin = 3;
 export const downloadAccountExportResponseOrdersItemCurrencyOneMax = 3;
-export const downloadAccountExportResponseOrdersItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const downloadAccountExportResponseOrdersItemNetTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const downloadAccountExportResponseOrdersItemNetTotalMax = 32;
 export const downloadAccountExportResponseOrdersItemTaxTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -3309,19 +3287,19 @@ export const downloadAccountExportResponseOrdersItemShippingAddressFullNameMax =
 export const downloadAccountExportResponseOrdersItemShippingAddressStreetMax = 200;
 export const downloadAccountExportResponseOrdersItemShippingAddressCityMax = 100;
 export const downloadAccountExportResponseOrdersItemShippingAddressZipMax = 20;
-export const downloadAccountExportResponseOrdersItemShippingAddressCountryMax = 2;
 export const downloadAccountExportResponseOrdersItemShippingAddressCountryRegExp = new RegExp(
     '^[A-Z]{2}$'
 );
+export const downloadAccountExportResponseOrdersItemShippingAddressCountryMax = 2;
 export const downloadAccountExportResponseOrdersItemShippingAddressPhoneMax = 32;
 export const downloadAccountExportResponseOrdersItemBillingAddressFullNameMax = 100;
 export const downloadAccountExportResponseOrdersItemBillingAddressStreetMax = 200;
 export const downloadAccountExportResponseOrdersItemBillingAddressCityMax = 100;
 export const downloadAccountExportResponseOrdersItemBillingAddressZipMax = 20;
-export const downloadAccountExportResponseOrdersItemBillingAddressCountryMax = 2;
 export const downloadAccountExportResponseOrdersItemBillingAddressCountryRegExp = new RegExp(
     '^[A-Z]{2}$'
 );
+export const downloadAccountExportResponseOrdersItemBillingAddressCountryMax = 2;
 export const downloadAccountExportResponseOrdersItemBillingAddressPhoneMax = 32;
 export const downloadAccountExportResponseOrderTimelineItemOneOneOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemOneOneOrderIdRegExp = new RegExp(
@@ -3431,11 +3409,11 @@ export const downloadAccountExportResponseOrderTimelineItemEightTwoDataAmountReg
     '^-?\\d+(\\.\\d+)?$'
 );
 export const downloadAccountExportResponseOrderTimelineItemEightTwoDataAmountMax = 32;
-export const downloadAccountExportResponseOrderTimelineItemEightTwoDataCurrencyMin = 3;
-export const downloadAccountExportResponseOrderTimelineItemEightTwoDataCurrencyMax = 3;
 export const downloadAccountExportResponseOrderTimelineItemEightTwoDataCurrencyRegExp = new RegExp(
     '^[A-Z]{3}$'
 );
+export const downloadAccountExportResponseOrderTimelineItemEightTwoDataCurrencyMin = 3;
+export const downloadAccountExportResponseOrderTimelineItemEightTwoDataCurrencyMax = 3;
 export const downloadAccountExportResponseOrderTimelineItemNineOneOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemNineOneOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -3456,11 +3434,11 @@ export const downloadAccountExportResponseOrderTimelineItemNineTwoDataAmountRegE
     '^-?\\d+(\\.\\d+)?$'
 );
 export const downloadAccountExportResponseOrderTimelineItemNineTwoDataAmountMax = 32;
-export const downloadAccountExportResponseOrderTimelineItemNineTwoDataCurrencyMin = 3;
-export const downloadAccountExportResponseOrderTimelineItemNineTwoDataCurrencyMax = 3;
 export const downloadAccountExportResponseOrderTimelineItemNineTwoDataCurrencyRegExp = new RegExp(
     '^[A-Z]{3}$'
 );
+export const downloadAccountExportResponseOrderTimelineItemNineTwoDataCurrencyMin = 3;
+export const downloadAccountExportResponseOrderTimelineItemNineTwoDataCurrencyMax = 3;
 export const downloadAccountExportResponseOrderTimelineItemOnezeroOneOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemOnezeroOneOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -3477,10 +3455,10 @@ export const downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataAmountR
     '^-?\\d+(\\.\\d+)?$'
 );
 export const downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataAmountMax = 32;
-export const downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataCurrencyMin = 3;
-export const downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataCurrencyMax = 3;
 export const downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataCurrencyRegExp =
     new RegExp('^[A-Z]{3}$');
+export const downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataCurrencyMin = 3;
+export const downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataCurrencyMax = 3;
 export const downloadAccountExportResponseOrderTimelineItemOneoneOneOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemOneoneOneOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -3629,10 +3607,10 @@ export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataReturnI
 export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataRefundAmountRegExp =
     new RegExp('^-?\\d+(\\.\\d+)?$');
 export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataRefundAmountMax = 32;
-export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyMin = 3;
-export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyMax = 3;
 export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyRegExp =
     new RegExp('^[A-Z]{3}$');
+export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyMin = 3;
+export const downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyMax = 3;
 export const downloadAccountExportResponseOrderTimelineItemTwozeroOneOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemTwozeroOneOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -3651,10 +3629,10 @@ export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataReturnI
 export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataRefundAmountRegExp =
     new RegExp('^-?\\d+(\\.\\d+)?$');
 export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataRefundAmountMax = 32;
-export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataCurrencyMin = 3;
-export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataCurrencyMax = 3;
 export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataCurrencyRegExp =
     new RegExp('^[A-Z]{3}$');
+export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataCurrencyMin = 3;
+export const downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataCurrencyMax = 3;
 export const downloadAccountExportResponseOrderTimelineItemTwooneOneOrderIdMax = 64;
 export const downloadAccountExportResponseOrderTimelineItemTwooneOneOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -3727,9 +3705,9 @@ export const downloadAccountExportResponsePaymentsItemOrderIdRegExp = new RegExp
 );
 export const downloadAccountExportResponsePaymentsItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const downloadAccountExportResponsePaymentsItemAmountMax = 32;
+export const downloadAccountExportResponsePaymentsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const downloadAccountExportResponsePaymentsItemCurrencyMin = 3;
 export const downloadAccountExportResponsePaymentsItemCurrencyMax = 3;
-export const downloadAccountExportResponsePaymentsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const downloadAccountExportResponsePaymentsItemAmountRefundedRegExp = new RegExp(
     '^\\d+(\\.\\d+)?$'
 );
@@ -3742,11 +3720,11 @@ export const downloadAccountExportResponsePaymentsItemRefundsItemAmountRegExp = 
     '^\\d+(\\.\\d+)?$'
 );
 export const downloadAccountExportResponsePaymentsItemRefundsItemAmountMax = 32;
-export const downloadAccountExportResponsePaymentsItemRefundsItemCurrencyOneMin = 3;
-export const downloadAccountExportResponsePaymentsItemRefundsItemCurrencyOneMax = 3;
 export const downloadAccountExportResponsePaymentsItemRefundsItemCurrencyOneRegExp = new RegExp(
     '^[A-Z]{3}$'
 );
+export const downloadAccountExportResponsePaymentsItemRefundsItemCurrencyOneMin = 3;
+export const downloadAccountExportResponsePaymentsItemRefundsItemCurrencyOneMax = 3;
 export const downloadAccountExportResponsePaymentsItemRefundsItemReturnIdMax = 64;
 export const downloadAccountExportResponsePaymentsItemRefundsItemReturnIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -3756,11 +3734,11 @@ export const downloadAccountExportResponseInvoicingInvoicesItemOrderIdMax = 64;
 export const downloadAccountExportResponseInvoicingInvoicesItemOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseInvoicingInvoicesItemCurrencyMin = 3;
-export const downloadAccountExportResponseInvoicingInvoicesItemCurrencyMax = 3;
 export const downloadAccountExportResponseInvoicingInvoicesItemCurrencyRegExp = new RegExp(
     '^[A-Z]{3}$'
 );
+export const downloadAccountExportResponseInvoicingInvoicesItemCurrencyMin = 3;
+export const downloadAccountExportResponseInvoicingInvoicesItemCurrencyMax = 3;
 export const downloadAccountExportResponseInvoicingInvoicesItemGrandTotalRegExp = new RegExp(
     '^\\d+(\\.\\d+)?$'
 );
@@ -3769,11 +3747,11 @@ export const downloadAccountExportResponseInvoicingCreditNotesItemOrderIdMax = 6
 export const downloadAccountExportResponseInvoicingCreditNotesItemOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseInvoicingCreditNotesItemCurrencyMin = 3;
-export const downloadAccountExportResponseInvoicingCreditNotesItemCurrencyMax = 3;
 export const downloadAccountExportResponseInvoicingCreditNotesItemCurrencyRegExp = new RegExp(
     '^[A-Z]{3}$'
 );
+export const downloadAccountExportResponseInvoicingCreditNotesItemCurrencyMin = 3;
+export const downloadAccountExportResponseInvoicingCreditNotesItemCurrencyMax = 3;
 export const downloadAccountExportResponseInvoicingCreditNotesItemGrandTotalRegExp = new RegExp(
     '^\\d+(\\.\\d+)?$'
 );
@@ -3796,10 +3774,10 @@ export const downloadAccountExportResponseShipmentsItemDestinationFullNameMax = 
 export const downloadAccountExportResponseShipmentsItemDestinationStreetMax = 200;
 export const downloadAccountExportResponseShipmentsItemDestinationCityMax = 100;
 export const downloadAccountExportResponseShipmentsItemDestinationZipMax = 20;
-export const downloadAccountExportResponseShipmentsItemDestinationCountryMax = 2;
 export const downloadAccountExportResponseShipmentsItemDestinationCountryRegExp = new RegExp(
     '^[A-Z]{2}$'
 );
+export const downloadAccountExportResponseShipmentsItemDestinationCountryMax = 2;
 export const downloadAccountExportResponseShipmentsItemDestinationPhoneMax = 32;
 export const downloadAccountExportResponseShipmentsItemLostMessageMax = 500;
 export const downloadAccountExportResponseShipmentsItemLostNoteMax = 1000;
@@ -4024,9 +4002,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
         imageUrl: zod.string().min(1).optional(),
         thumbnailUrl: zod.string().optional(),
         locale: zod
-            .string()
+            .stringFormat('bcp47', downloadAccountExportResponseProfileLocaleRegExp)
             .max(downloadAccountExportResponseProfileLocaleMax)
-            .regex(downloadAccountExportResponseProfileLocaleRegExp)
             .optional(),
         phone: zod.string().optional(),
         website: zod.string().optional(),
@@ -4114,9 +4091,11 @@ export const DownloadAccountExportResponse = zod.strictObject({
             city: zod.string().min(1).max(downloadAccountExportResponseAddressesItemCityMax),
             zip: zod.string().min(1).max(downloadAccountExportResponseAddressesItemZipMax),
             country: zod
-                .string()
-                .max(downloadAccountExportResponseAddressesItemCountryMax)
-                .regex(downloadAccountExportResponseAddressesItemCountryRegExp),
+                .stringFormat(
+                    'iso-3166-alpha-2',
+                    downloadAccountExportResponseAddressesItemCountryRegExp
+                )
+                .max(downloadAccountExportResponseAddressesItemCountryMax),
             phone: zod
                 .string()
                 .min(1)
@@ -4297,9 +4276,11 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     }),
                     quantity: zod.number().min(1),
                     locale: zod
-                        .string()
-                        .max(downloadAccountExportResponseOrdersItemItemsItemLocaleMax)
-                        .regex(downloadAccountExportResponseOrdersItemItemsItemLocaleRegExp),
+                        .stringFormat(
+                            'bcp47',
+                            downloadAccountExportResponseOrdersItemItemsItemLocaleRegExp
+                        )
+                        .max(downloadAccountExportResponseOrdersItemItemsItemLocaleMax),
                     backorderedQuantity: zod.number().min(1).optional(),
                     promisedAt: zod.iso.date().optional(),
                     promiseDated: zod.boolean().optional(),
@@ -4331,10 +4312,9 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .stringFormat('decimal', downloadAccountExportResponseOrdersItemTotalPriceRegExp)
                 .max(downloadAccountExportResponseOrdersItemTotalPriceMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', downloadAccountExportResponseOrdersItemCurrencyOneRegExp)
                 .min(downloadAccountExportResponseOrdersItemCurrencyOneMin)
-                .max(downloadAccountExportResponseOrdersItemCurrencyOneMax)
-                .regex(downloadAccountExportResponseOrdersItemCurrencyOneRegExp),
+                .max(downloadAccountExportResponseOrdersItemCurrencyOneMax),
             termsVersion: zod.string().optional(),
             netTotal: zod
                 .stringFormat('decimal', downloadAccountExportResponseOrdersItemNetTotalRegExp)
@@ -4404,9 +4384,11 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .min(1)
                         .max(downloadAccountExportResponseOrdersItemShippingAddressZipMax),
                     country: zod
-                        .string()
-                        .max(downloadAccountExportResponseOrdersItemShippingAddressCountryMax)
-                        .regex(downloadAccountExportResponseOrdersItemShippingAddressCountryRegExp),
+                        .stringFormat(
+                            'iso-3166-alpha-2',
+                            downloadAccountExportResponseOrdersItemShippingAddressCountryRegExp
+                        )
+                        .max(downloadAccountExportResponseOrdersItemShippingAddressCountryMax),
                     phone: zod
                         .string()
                         .min(1)
@@ -4433,9 +4415,11 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .min(1)
                         .max(downloadAccountExportResponseOrdersItemBillingAddressZipMax),
                     country: zod
-                        .string()
-                        .max(downloadAccountExportResponseOrdersItemBillingAddressCountryMax)
-                        .regex(downloadAccountExportResponseOrdersItemBillingAddressCountryRegExp),
+                        .stringFormat(
+                            'iso-3166-alpha-2',
+                            downloadAccountExportResponseOrdersItemBillingAddressCountryRegExp
+                        )
+                        .max(downloadAccountExportResponseOrdersItemBillingAddressCountryMax),
                     phone: zod
                         .string()
                         .min(1)
@@ -4705,12 +4689,12 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         )
                         .max(downloadAccountExportResponseOrderTimelineItemEightTwoDataAmountMax),
                     currency: zod
-                        .string()
-                        .min(downloadAccountExportResponseOrderTimelineItemEightTwoDataCurrencyMin)
-                        .max(downloadAccountExportResponseOrderTimelineItemEightTwoDataCurrencyMax)
-                        .regex(
+                        .stringFormat(
+                            'iso-4217',
                             downloadAccountExportResponseOrderTimelineItemEightTwoDataCurrencyRegExp
-                        ),
+                        )
+                        .min(downloadAccountExportResponseOrderTimelineItemEightTwoDataCurrencyMin)
+                        .max(downloadAccountExportResponseOrderTimelineItemEightTwoDataCurrencyMax),
                     reason: zod.string()
                 })
             }),
@@ -4749,12 +4733,12 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         )
                         .max(downloadAccountExportResponseOrderTimelineItemNineTwoDataAmountMax),
                     currency: zod
-                        .string()
-                        .min(downloadAccountExportResponseOrderTimelineItemNineTwoDataCurrencyMin)
-                        .max(downloadAccountExportResponseOrderTimelineItemNineTwoDataCurrencyMax)
-                        .regex(
+                        .stringFormat(
+                            'iso-4217',
                             downloadAccountExportResponseOrderTimelineItemNineTwoDataCurrencyRegExp
-                        ),
+                        )
+                        .min(downloadAccountExportResponseOrderTimelineItemNineTwoDataCurrencyMin)
+                        .max(downloadAccountExportResponseOrderTimelineItemNineTwoDataCurrencyMax),
                     reason: zod.string(),
                     failureReason: zod.string()
                 })
@@ -4791,15 +4775,15 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         )
                         .max(downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataAmountMax),
                     currency: zod
-                        .string()
+                        .stringFormat(
+                            'iso-4217',
+                            downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataCurrencyRegExp
+                        )
                         .min(
                             downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataCurrencyMin
                         )
                         .max(
                             downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataCurrencyMax
-                        )
-                        .regex(
-                            downloadAccountExportResponseOrderTimelineItemOnezeroTwoDataCurrencyRegExp
                         )
                 })
             }),
@@ -5132,15 +5116,15 @@ export const DownloadAccountExportResponse = zod.strictObject({
                             downloadAccountExportResponseOrderTimelineItemOnenineTwoDataRefundAmountMax
                         ),
                     currency: zod
-                        .string()
+                        .stringFormat(
+                            'iso-4217',
+                            downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyRegExp
+                        )
                         .min(
                             downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyMin
                         )
                         .max(
                             downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyMax
-                        )
-                        .regex(
-                            downloadAccountExportResponseOrderTimelineItemOnenineTwoDataCurrencyRegExp
                         )
                 })
             }),
@@ -5183,15 +5167,15 @@ export const DownloadAccountExportResponse = zod.strictObject({
                             downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataRefundAmountMax
                         ),
                     currency: zod
-                        .string()
+                        .stringFormat(
+                            'iso-4217',
+                            downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataCurrencyRegExp
+                        )
                         .min(
                             downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataCurrencyMin
                         )
                         .max(
                             downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataCurrencyMax
-                        )
-                        .regex(
-                            downloadAccountExportResponseOrderTimelineItemTwozeroTwoDataCurrencyRegExp
                         ),
                     remedy: zod.string().optional()
                 })
@@ -5355,10 +5339,9 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .stringFormat('decimal', downloadAccountExportResponsePaymentsItemAmountRegExp)
                 .max(downloadAccountExportResponsePaymentsItemAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', downloadAccountExportResponsePaymentsItemCurrencyRegExp)
                 .min(downloadAccountExportResponsePaymentsItemCurrencyMin)
-                .max(downloadAccountExportResponsePaymentsItemCurrencyMax)
-                .regex(downloadAccountExportResponsePaymentsItemCurrencyRegExp),
+                .max(downloadAccountExportResponsePaymentsItemCurrencyMax),
             amountRefunded: zod
                 .stringFormat(
                     'decimal',
@@ -5379,12 +5362,12 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         )
                         .max(downloadAccountExportResponsePaymentsItemRefundsItemAmountMax),
                     currency: zod
-                        .string()
-                        .min(downloadAccountExportResponsePaymentsItemRefundsItemCurrencyOneMin)
-                        .max(downloadAccountExportResponsePaymentsItemRefundsItemCurrencyOneMax)
-                        .regex(
+                        .stringFormat(
+                            'iso-4217',
                             downloadAccountExportResponsePaymentsItemRefundsItemCurrencyOneRegExp
-                        ),
+                        )
+                        .min(downloadAccountExportResponsePaymentsItemRefundsItemCurrencyOneMin)
+                        .max(downloadAccountExportResponsePaymentsItemRefundsItemCurrencyOneMax),
                     status: zod.enum(['pending', 'succeeded', 'failed']),
                     reason: zod.enum([
                         'cancellation',
@@ -5448,10 +5431,12 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 number: zod.string(),
                 issuedAt: zod.iso.datetime({ offset: true }),
                 currency: zod
-                    .string()
+                    .stringFormat(
+                        'iso-4217',
+                        downloadAccountExportResponseInvoicingInvoicesItemCurrencyRegExp
+                    )
                     .min(downloadAccountExportResponseInvoicingInvoicesItemCurrencyMin)
-                    .max(downloadAccountExportResponseInvoicingInvoicesItemCurrencyMax)
-                    .regex(downloadAccountExportResponseInvoicingInvoicesItemCurrencyRegExp),
+                    .max(downloadAccountExportResponseInvoicingInvoicesItemCurrencyMax),
                 grandTotal: zod
                     .stringFormat(
                         'decimal',
@@ -5470,10 +5455,12 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 number: zod.string(),
                 issuedAt: zod.iso.datetime({ offset: true }),
                 currency: zod
-                    .string()
+                    .stringFormat(
+                        'iso-4217',
+                        downloadAccountExportResponseInvoicingCreditNotesItemCurrencyRegExp
+                    )
                     .min(downloadAccountExportResponseInvoicingCreditNotesItemCurrencyMin)
-                    .max(downloadAccountExportResponseInvoicingCreditNotesItemCurrencyMax)
-                    .regex(downloadAccountExportResponseInvoicingCreditNotesItemCurrencyRegExp),
+                    .max(downloadAccountExportResponseInvoicingCreditNotesItemCurrencyMax),
                 grandTotal: zod
                     .stringFormat(
                         'decimal',
@@ -5533,9 +5520,11 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .min(1)
                         .max(downloadAccountExportResponseShipmentsItemDestinationZipMax),
                     country: zod
-                        .string()
-                        .max(downloadAccountExportResponseShipmentsItemDestinationCountryMax)
-                        .regex(downloadAccountExportResponseShipmentsItemDestinationCountryRegExp),
+                        .stringFormat(
+                            'iso-3166-alpha-2',
+                            downloadAccountExportResponseShipmentsItemDestinationCountryRegExp
+                        )
+                        .max(downloadAccountExportResponseShipmentsItemDestinationCountryMax),
                     phone: zod
                         .string()
                         .min(1)
@@ -6283,10 +6272,10 @@ export const LoginTwoFactorBody = zod.strictObject({
 export const loginTwoFactorResponseOneAccountIdMax = 64;
 export const loginTwoFactorResponseOneAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const loginTwoFactorResponseOneAccountEmailMax = 254;
-export const loginTwoFactorResponseOneAccountLocaleMax = 35;
 export const loginTwoFactorResponseOneAccountLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const loginTwoFactorResponseOneAccountLocaleMax = 35;
 export const loginTwoFactorResponseOneAccountPurchaseHoldNoteMax = 500;
 export const LoginTwoFactorResponse = zod.union([
     zod.strictObject({
@@ -6308,9 +6297,8 @@ export const LoginTwoFactorResponse = zod.union([
                 imageUrl: zod.string().min(1).optional(),
                 thumbnailUrl: zod.string().optional(),
                 locale: zod
-                    .string()
+                    .stringFormat('bcp47', loginTwoFactorResponseOneAccountLocaleRegExp)
                     .max(loginTwoFactorResponseOneAccountLocaleMax)
-                    .regex(loginTwoFactorResponseOneAccountLocaleRegExp)
                     .optional(),
                 phone: zod.string().optional(),
                 website: zod.string().optional(),
@@ -6494,10 +6482,10 @@ export const DisableTwoFactorBody = zod.strictObject({
 export const disableTwoFactorResponseAccountIdMax = 64;
 export const disableTwoFactorResponseAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const disableTwoFactorResponseAccountEmailMax = 254;
-export const disableTwoFactorResponseAccountLocaleMax = 35;
 export const disableTwoFactorResponseAccountLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const disableTwoFactorResponseAccountLocaleMax = 35;
 export const disableTwoFactorResponseAccountPurchaseHoldNoteMax = 500;
 export const DisableTwoFactorResponse = zod.strictObject({
     token: zod.string().optional(),
@@ -6518,9 +6506,8 @@ export const DisableTwoFactorResponse = zod.strictObject({
             imageUrl: zod.string().min(1).optional(),
             thumbnailUrl: zod.string().optional(),
             locale: zod
-                .string()
+                .stringFormat('bcp47', disableTwoFactorResponseAccountLocaleRegExp)
                 .max(disableTwoFactorResponseAccountLocaleMax)
-                .regex(disableTwoFactorResponseAccountLocaleRegExp)
                 .optional(),
             phone: zod.string().optional(),
             website: zod.string().optional(),
@@ -6589,10 +6576,10 @@ export const RemoveTwoFactorMethodBody = zod.strictObject({
 export const removeTwoFactorMethodResponseAccountIdMax = 64;
 export const removeTwoFactorMethodResponseAccountIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const removeTwoFactorMethodResponseAccountEmailMax = 254;
-export const removeTwoFactorMethodResponseAccountLocaleMax = 35;
 export const removeTwoFactorMethodResponseAccountLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const removeTwoFactorMethodResponseAccountLocaleMax = 35;
 export const removeTwoFactorMethodResponseAccountPurchaseHoldNoteMax = 500;
 export const RemoveTwoFactorMethodResponse = zod.strictObject({
     token: zod.string().optional(),
@@ -6613,9 +6600,8 @@ export const RemoveTwoFactorMethodResponse = zod.strictObject({
             imageUrl: zod.string().min(1).optional(),
             thumbnailUrl: zod.string().optional(),
             locale: zod
-                .string()
+                .stringFormat('bcp47', removeTwoFactorMethodResponseAccountLocaleRegExp)
                 .max(removeTwoFactorMethodResponseAccountLocaleMax)
-                .regex(removeTwoFactorMethodResponseAccountLocaleRegExp)
                 .optional(),
             phone: zod.string().optional(),
             website: zod.string().optional(),
@@ -6866,20 +6852,23 @@ export const createUserBodyUsernameMin = 3;
 export const createUserBodyUsernameMax = 50;
 export const createUserBodyRoleMax = 64;
 export const createUserBodyActiveDefault = true;
-export const createUserBodyLocaleMax = 35;
 export const createUserBodyLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const createUserBodyLocaleMax = 35;
 export const CreateUserBody = zod.strictObject({
     email: zod.email().max(createUserBodyEmailMax),
     username: zod.string().min(createUserBodyUsernameMin).max(createUserBodyUsernameMax),
     role: zod.string().min(1).max(createUserBodyRoleMax).optional(),
     active: zod.boolean().default(createUserBodyActiveDefault),
-    locale: zod.string().max(createUserBodyLocaleMax).regex(createUserBodyLocaleRegExp).optional()
+    locale: zod
+        .stringFormat('bcp47', createUserBodyLocaleRegExp)
+        .max(createUserBodyLocaleMax)
+        .optional()
 });
 export const createUserResponseIdMax = 64;
 export const createUserResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createUserResponseEmailMax = 254;
-export const createUserResponseLocaleMax = 35;
 export const createUserResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const createUserResponseLocaleMax = 35;
 export const createUserResponsePurchaseHoldNoteMax = 500;
 export const CreateUserResponse = zod.strictObject({
     id: zod.string().min(1).max(createUserResponseIdMax).regex(createUserResponseIdRegExp),
@@ -6892,9 +6881,8 @@ export const CreateUserResponse = zod.strictObject({
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
     locale: zod
-        .string()
+        .stringFormat('bcp47', createUserResponseLocaleRegExp)
         .max(createUserResponseLocaleMax)
-        .regex(createUserResponseLocaleRegExp)
         .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
@@ -6941,8 +6929,8 @@ export const GetUserByIdParams = zod.strictObject({
 export const getUserByIdResponseIdMax = 64;
 export const getUserByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getUserByIdResponseEmailMax = 254;
-export const getUserByIdResponseLocaleMax = 35;
 export const getUserByIdResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const getUserByIdResponseLocaleMax = 35;
 export const getUserByIdResponsePurchaseHoldNoteMax = 500;
 export const GetUserByIdResponse = zod.strictObject({
     id: zod.string().min(1).max(getUserByIdResponseIdMax).regex(getUserByIdResponseIdRegExp),
@@ -6955,9 +6943,8 @@ export const GetUserByIdResponse = zod.strictObject({
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
     locale: zod
-        .string()
+        .stringFormat('bcp47', getUserByIdResponseLocaleRegExp)
         .max(getUserByIdResponseLocaleMax)
-        .regex(getUserByIdResponseLocaleRegExp)
         .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
@@ -7007,8 +6994,8 @@ export const ReplaceUserByIdHeader = zod.strictObject({
 });
 export const replaceUserByIdBodyUsernameMin = 3;
 export const replaceUserByIdBodyUsernameMax = 50;
-export const replaceUserByIdBodyLocaleOneMax = 35;
 export const replaceUserByIdBodyLocaleOneRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const replaceUserByIdBodyLocaleOneMax = 35;
 export const replaceUserByIdBodyPhoneMax = 32;
 export const replaceUserByIdBodyWebsiteMax = 2048;
 export const ReplaceUserByIdBody = zod.strictObject({
@@ -7017,9 +7004,8 @@ export const ReplaceUserByIdBody = zod.strictObject({
     locale: zod
         .union([
             zod
-                .string()
-                .max(replaceUserByIdBodyLocaleOneMax)
-                .regex(replaceUserByIdBodyLocaleOneRegExp),
+                .stringFormat('bcp47', replaceUserByIdBodyLocaleOneRegExp)
+                .max(replaceUserByIdBodyLocaleOneMax),
             zod.null()
         ])
         .optional(),
@@ -7029,10 +7015,10 @@ export const ReplaceUserByIdBody = zod.strictObject({
 export const replaceUserByIdResponseIdMax = 64;
 export const replaceUserByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const replaceUserByIdResponseEmailMax = 254;
-export const replaceUserByIdResponseLocaleMax = 35;
 export const replaceUserByIdResponseLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const replaceUserByIdResponseLocaleMax = 35;
 export const replaceUserByIdResponsePurchaseHoldNoteMax = 500;
 export const ReplaceUserByIdResponse = zod.strictObject({
     id: zod
@@ -7049,9 +7035,8 @@ export const ReplaceUserByIdResponse = zod.strictObject({
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
     locale: zod
-        .string()
+        .stringFormat('bcp47', replaceUserByIdResponseLocaleRegExp)
         .max(replaceUserByIdResponseLocaleMax)
-        .regex(replaceUserByIdResponseLocaleRegExp)
         .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
@@ -7101,8 +7086,8 @@ export const UpdateUserByIdHeader = zod.strictObject({
 });
 export const updateUserByIdBodyUsernameMin = 3;
 export const updateUserByIdBodyUsernameMax = 50;
-export const updateUserByIdBodyLocaleOneMax = 35;
 export const updateUserByIdBodyLocaleOneRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const updateUserByIdBodyLocaleOneMax = 35;
 export const updateUserByIdBodyPhoneMax = 32;
 export const updateUserByIdBodyWebsiteMax = 2048;
 export const UpdateUserByIdBody = zod.strictObject({
@@ -7115,9 +7100,8 @@ export const UpdateUserByIdBody = zod.strictObject({
     locale: zod
         .union([
             zod
-                .string()
-                .max(updateUserByIdBodyLocaleOneMax)
-                .regex(updateUserByIdBodyLocaleOneRegExp),
+                .stringFormat('bcp47', updateUserByIdBodyLocaleOneRegExp)
+                .max(updateUserByIdBodyLocaleOneMax),
             zod.null()
         ])
         .optional(),
@@ -7127,8 +7111,8 @@ export const UpdateUserByIdBody = zod.strictObject({
 export const updateUserByIdResponseIdMax = 64;
 export const updateUserByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const updateUserByIdResponseEmailMax = 254;
-export const updateUserByIdResponseLocaleMax = 35;
 export const updateUserByIdResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const updateUserByIdResponseLocaleMax = 35;
 export const updateUserByIdResponsePurchaseHoldNoteMax = 500;
 export const UpdateUserByIdResponse = zod.strictObject({
     id: zod.string().min(1).max(updateUserByIdResponseIdMax).regex(updateUserByIdResponseIdRegExp),
@@ -7141,9 +7125,8 @@ export const UpdateUserByIdResponse = zod.strictObject({
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
     locale: zod
-        .string()
+        .stringFormat('bcp47', updateUserByIdResponseLocaleRegExp)
         .max(updateUserByIdResponseLocaleMax)
-        .regex(updateUserByIdResponseLocaleRegExp)
         .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
@@ -7208,10 +7191,10 @@ export const RestoreUserByIdParams = zod.strictObject({
 export const restoreUserByIdResponseIdMax = 64;
 export const restoreUserByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const restoreUserByIdResponseEmailMax = 254;
-export const restoreUserByIdResponseLocaleMax = 35;
 export const restoreUserByIdResponseLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const restoreUserByIdResponseLocaleMax = 35;
 export const restoreUserByIdResponsePurchaseHoldNoteMax = 500;
 export const RestoreUserByIdResponse = zod.strictObject({
     id: zod
@@ -7228,9 +7211,8 @@ export const RestoreUserByIdResponse = zod.strictObject({
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
     locale: zod
-        .string()
+        .stringFormat('bcp47', restoreUserByIdResponseLocaleRegExp)
         .max(restoreUserByIdResponseLocaleMax)
-        .regex(restoreUserByIdResponseLocaleRegExp)
         .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
@@ -8673,9 +8655,9 @@ export const listProductsResponseItemsItemIdMax = 64;
 export const listProductsResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listProductsResponseItemsItemPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const listProductsResponseItemsItemPriceMax = 32;
+export const listProductsResponseItemsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const listProductsResponseItemsItemCurrencyOneMin = 3;
 export const listProductsResponseItemsItemCurrencyOneMax = 3;
-export const listProductsResponseItemsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const listProductsResponseItemsItemSkuMax = 64;
 export const listProductsResponseItemsItemOnHandMin = 0;
 export const listProductsResponseItemsItemReservedMin = 0;
@@ -8703,10 +8685,9 @@ export const ListProductsResponse = zod.strictObject({
                 .stringFormat('decimal', listProductsResponseItemsItemPriceRegExp)
                 .max(listProductsResponseItemsItemPriceMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', listProductsResponseItemsItemCurrencyOneRegExp)
                 .min(listProductsResponseItemsItemCurrencyOneMin)
-                .max(listProductsResponseItemsItemCurrencyOneMax)
-                .regex(listProductsResponseItemsItemCurrencyOneRegExp),
+                .max(listProductsResponseItemsItemCurrencyOneMax),
             taxClass: zod.enum(['reduced', 'zero']).optional(),
             rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional(),
             sku: zod.string().min(1).max(listProductsResponseItemsItemSkuMax).optional(),
@@ -8832,9 +8813,9 @@ export const createProductResponseIdMax = 64;
 export const createProductResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createProductResponsePriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const createProductResponsePriceMax = 32;
+export const createProductResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const createProductResponseCurrencyOneMin = 3;
 export const createProductResponseCurrencyOneMax = 3;
-export const createProductResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const createProductResponseSkuMax = 64;
 export const createProductResponseOnHandMin = 0;
 export const createProductResponseReservedMin = 0;
@@ -8850,10 +8831,9 @@ export const CreateProductResponse = zod.strictObject({
         .stringFormat('decimal', createProductResponsePriceRegExp)
         .max(createProductResponsePriceMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', createProductResponseCurrencyOneRegExp)
         .min(createProductResponseCurrencyOneMin)
-        .max(createProductResponseCurrencyOneMax)
-        .regex(createProductResponseCurrencyOneRegExp),
+        .max(createProductResponseCurrencyOneMax),
     taxClass: zod.enum(['reduced', 'zero']).optional(),
     rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional(),
     sku: zod.string().min(1).max(createProductResponseSkuMax).optional(),
@@ -8928,9 +8908,9 @@ export const getProductByIdResponseIdMax = 64;
 export const getProductByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getProductByIdResponsePriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const getProductByIdResponsePriceMax = 32;
+export const getProductByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getProductByIdResponseCurrencyOneMin = 3;
 export const getProductByIdResponseCurrencyOneMax = 3;
-export const getProductByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getProductByIdResponseSkuMax = 64;
 export const getProductByIdResponseOnHandMin = 0;
 export const getProductByIdResponseReservedMin = 0;
@@ -8946,10 +8926,9 @@ export const GetProductByIdResponse = zod.strictObject({
         .stringFormat('decimal', getProductByIdResponsePriceRegExp)
         .max(getProductByIdResponsePriceMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', getProductByIdResponseCurrencyOneRegExp)
         .min(getProductByIdResponseCurrencyOneMin)
-        .max(getProductByIdResponseCurrencyOneMax)
-        .regex(getProductByIdResponseCurrencyOneRegExp),
+        .max(getProductByIdResponseCurrencyOneMax),
     taxClass: zod.enum(['reduced', 'zero']).optional(),
     rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional(),
     sku: zod.string().min(1).max(getProductByIdResponseSkuMax).optional(),
@@ -9064,9 +9043,9 @@ export const replaceProductByIdResponseIdMax = 64;
 export const replaceProductByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const replaceProductByIdResponsePriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const replaceProductByIdResponsePriceMax = 32;
+export const replaceProductByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const replaceProductByIdResponseCurrencyOneMin = 3;
 export const replaceProductByIdResponseCurrencyOneMax = 3;
-export const replaceProductByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const replaceProductByIdResponseSkuMax = 64;
 export const replaceProductByIdResponseOnHandMin = 0;
 export const replaceProductByIdResponseReservedMin = 0;
@@ -9086,10 +9065,9 @@ export const ReplaceProductByIdResponse = zod.strictObject({
         .stringFormat('decimal', replaceProductByIdResponsePriceRegExp)
         .max(replaceProductByIdResponsePriceMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', replaceProductByIdResponseCurrencyOneRegExp)
         .min(replaceProductByIdResponseCurrencyOneMin)
-        .max(replaceProductByIdResponseCurrencyOneMax)
-        .regex(replaceProductByIdResponseCurrencyOneRegExp),
+        .max(replaceProductByIdResponseCurrencyOneMax),
     taxClass: zod.enum(['reduced', 'zero']).optional(),
     rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional(),
     sku: zod.string().min(1).max(replaceProductByIdResponseSkuMax).optional(),
@@ -9219,9 +9197,9 @@ export const updateProductByIdResponseIdMax = 64;
 export const updateProductByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const updateProductByIdResponsePriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const updateProductByIdResponsePriceMax = 32;
+export const updateProductByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const updateProductByIdResponseCurrencyOneMin = 3;
 export const updateProductByIdResponseCurrencyOneMax = 3;
-export const updateProductByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const updateProductByIdResponseSkuMax = 64;
 export const updateProductByIdResponseOnHandMin = 0;
 export const updateProductByIdResponseReservedMin = 0;
@@ -9241,10 +9219,9 @@ export const UpdateProductByIdResponse = zod.strictObject({
         .stringFormat('decimal', updateProductByIdResponsePriceRegExp)
         .max(updateProductByIdResponsePriceMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', updateProductByIdResponseCurrencyOneRegExp)
         .min(updateProductByIdResponseCurrencyOneMin)
-        .max(updateProductByIdResponseCurrencyOneMax)
-        .regex(updateProductByIdResponseCurrencyOneRegExp),
+        .max(updateProductByIdResponseCurrencyOneMax),
     taxClass: zod.enum(['reduced', 'zero']).optional(),
     rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional(),
     sku: zod.string().min(1).max(updateProductByIdResponseSkuMax).optional(),
@@ -9319,9 +9296,9 @@ export const restoreProductByIdResponseIdMax = 64;
 export const restoreProductByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const restoreProductByIdResponsePriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const restoreProductByIdResponsePriceMax = 32;
+export const restoreProductByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const restoreProductByIdResponseCurrencyOneMin = 3;
 export const restoreProductByIdResponseCurrencyOneMax = 3;
-export const restoreProductByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const restoreProductByIdResponseSkuMax = 64;
 export const restoreProductByIdResponseOnHandMin = 0;
 export const restoreProductByIdResponseReservedMin = 0;
@@ -9341,10 +9318,9 @@ export const RestoreProductByIdResponse = zod.strictObject({
         .stringFormat('decimal', restoreProductByIdResponsePriceRegExp)
         .max(restoreProductByIdResponsePriceMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', restoreProductByIdResponseCurrencyOneRegExp)
         .min(restoreProductByIdResponseCurrencyOneMin)
-        .max(restoreProductByIdResponseCurrencyOneMax)
-        .regex(restoreProductByIdResponseCurrencyOneRegExp),
+        .max(restoreProductByIdResponseCurrencyOneMax),
     taxClass: zod.enum(['reduced', 'zero']).optional(),
     rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional(),
     sku: zod.string().min(1).max(restoreProductByIdResponseSkuMax).optional(),
@@ -9469,9 +9445,9 @@ export const searchProductsResponseItemsItemIdMax = 64;
 export const searchProductsResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const searchProductsResponseItemsItemPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const searchProductsResponseItemsItemPriceMax = 32;
+export const searchProductsResponseItemsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const searchProductsResponseItemsItemCurrencyOneMin = 3;
 export const searchProductsResponseItemsItemCurrencyOneMax = 3;
-export const searchProductsResponseItemsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const searchProductsResponseItemsItemSkuMax = 64;
 export const searchProductsResponseItemsItemOnHandMin = 0;
 export const searchProductsResponseItemsItemReservedMin = 0;
@@ -9499,10 +9475,9 @@ export const SearchProductsResponse = zod.strictObject({
                 .stringFormat('decimal', searchProductsResponseItemsItemPriceRegExp)
                 .max(searchProductsResponseItemsItemPriceMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', searchProductsResponseItemsItemCurrencyOneRegExp)
                 .min(searchProductsResponseItemsItemCurrencyOneMin)
-                .max(searchProductsResponseItemsItemCurrencyOneMax)
-                .regex(searchProductsResponseItemsItemCurrencyOneRegExp),
+                .max(searchProductsResponseItemsItemCurrencyOneMax),
             taxClass: zod.enum(['reduced', 'zero']).optional(),
             rateType: zod.enum(['standard', 'zero_rated', 'exempt']).optional(),
             sku: zod.string().min(1).max(searchProductsResponseItemsItemSkuMax).optional(),
@@ -9578,9 +9553,9 @@ export const getCartResponseSummaryShippingCostRegExp = new RegExp('^\\d+(\\.\\d
 export const getCartResponseSummaryShippingCostMax = 32;
 export const getCartResponseSummaryTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const getCartResponseSummaryTotalPriceMax = 32;
+export const getCartResponseSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getCartResponseSummaryCurrencyOneMin = 3;
 export const getCartResponseSummaryCurrencyOneMax = 3;
-export const getCartResponseSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getCartResponseShippingOptionsItemPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const getCartResponseShippingOptionsItemPriceMax = 32;
 export const GetCartResponse = zod.strictObject({
@@ -9617,10 +9592,9 @@ export const GetCartResponse = zod.strictObject({
             .stringFormat('decimal', getCartResponseSummaryTotalPriceRegExp)
             .max(getCartResponseSummaryTotalPriceMax),
         currency: zod
-            .string()
+            .stringFormat('iso-4217', getCartResponseSummaryCurrencyOneRegExp)
             .min(getCartResponseSummaryCurrencyOneMin)
             .max(getCartResponseSummaryCurrencyOneMax)
-            .regex(getCartResponseSummaryCurrencyOneRegExp)
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
@@ -9675,9 +9649,9 @@ export const addCartItemResponseSummaryShippingCostRegExp = new RegExp('^\\d+(\\
 export const addCartItemResponseSummaryShippingCostMax = 32;
 export const addCartItemResponseSummaryTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const addCartItemResponseSummaryTotalPriceMax = 32;
+export const addCartItemResponseSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const addCartItemResponseSummaryCurrencyOneMin = 3;
 export const addCartItemResponseSummaryCurrencyOneMax = 3;
-export const addCartItemResponseSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const addCartItemResponseShippingOptionsItemPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const addCartItemResponseShippingOptionsItemPriceMax = 32;
 export const AddCartItemResponse = zod.strictObject({
@@ -9714,10 +9688,9 @@ export const AddCartItemResponse = zod.strictObject({
             .stringFormat('decimal', addCartItemResponseSummaryTotalPriceRegExp)
             .max(addCartItemResponseSummaryTotalPriceMax),
         currency: zod
-            .string()
+            .stringFormat('iso-4217', addCartItemResponseSummaryCurrencyOneRegExp)
             .min(addCartItemResponseSummaryCurrencyOneMin)
             .max(addCartItemResponseSummaryCurrencyOneMax)
-            .regex(addCartItemResponseSummaryCurrencyOneRegExp)
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
@@ -9749,9 +9722,9 @@ export const clearCartResponseSummaryShippingCostRegExp = new RegExp('^\\d+(\\.\
 export const clearCartResponseSummaryShippingCostMax = 32;
 export const clearCartResponseSummaryTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const clearCartResponseSummaryTotalPriceMax = 32;
+export const clearCartResponseSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const clearCartResponseSummaryCurrencyOneMin = 3;
 export const clearCartResponseSummaryCurrencyOneMax = 3;
-export const clearCartResponseSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const clearCartResponseShippingOptionsItemPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const clearCartResponseShippingOptionsItemPriceMax = 32;
 export const ClearCartResponse = zod.strictObject({
@@ -9788,10 +9761,9 @@ export const ClearCartResponse = zod.strictObject({
             .stringFormat('decimal', clearCartResponseSummaryTotalPriceRegExp)
             .max(clearCartResponseSummaryTotalPriceMax),
         currency: zod
-            .string()
+            .stringFormat('iso-4217', clearCartResponseSummaryCurrencyOneRegExp)
             .min(clearCartResponseSummaryCurrencyOneMin)
             .max(clearCartResponseSummaryCurrencyOneMax)
-            .regex(clearCartResponseSummaryCurrencyOneRegExp)
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
@@ -9844,9 +9816,9 @@ export const updateCartItemByProductIdResponseSummaryTotalPriceRegExp = new RegE
     '^\\d+(\\.\\d+)?$'
 );
 export const updateCartItemByProductIdResponseSummaryTotalPriceMax = 32;
+export const updateCartItemByProductIdResponseSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const updateCartItemByProductIdResponseSummaryCurrencyOneMin = 3;
 export const updateCartItemByProductIdResponseSummaryCurrencyOneMax = 3;
-export const updateCartItemByProductIdResponseSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const updateCartItemByProductIdResponseShippingOptionsItemPriceRegExp = new RegExp(
     '^\\d+(\\.\\d+)?$'
 );
@@ -9885,10 +9857,9 @@ export const UpdateCartItemByProductIdResponse = zod.strictObject({
             .stringFormat('decimal', updateCartItemByProductIdResponseSummaryTotalPriceRegExp)
             .max(updateCartItemByProductIdResponseSummaryTotalPriceMax),
         currency: zod
-            .string()
+            .stringFormat('iso-4217', updateCartItemByProductIdResponseSummaryCurrencyOneRegExp)
             .min(updateCartItemByProductIdResponseSummaryCurrencyOneMin)
             .max(updateCartItemByProductIdResponseSummaryCurrencyOneMax)
-            .regex(updateCartItemByProductIdResponseSummaryCurrencyOneRegExp)
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
@@ -9940,9 +9911,9 @@ export const deleteCartItemByProductIdResponseSummaryTotalPriceRegExp = new RegE
     '^\\d+(\\.\\d+)?$'
 );
 export const deleteCartItemByProductIdResponseSummaryTotalPriceMax = 32;
+export const deleteCartItemByProductIdResponseSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const deleteCartItemByProductIdResponseSummaryCurrencyOneMin = 3;
 export const deleteCartItemByProductIdResponseSummaryCurrencyOneMax = 3;
-export const deleteCartItemByProductIdResponseSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const deleteCartItemByProductIdResponseShippingOptionsItemPriceRegExp = new RegExp(
     '^\\d+(\\.\\d+)?$'
 );
@@ -9981,10 +9952,9 @@ export const DeleteCartItemByProductIdResponse = zod.strictObject({
             .stringFormat('decimal', deleteCartItemByProductIdResponseSummaryTotalPriceRegExp)
             .max(deleteCartItemByProductIdResponseSummaryTotalPriceMax),
         currency: zod
-            .string()
+            .stringFormat('iso-4217', deleteCartItemByProductIdResponseSummaryCurrencyOneRegExp)
             .min(deleteCartItemByProductIdResponseSummaryCurrencyOneMin)
             .max(deleteCartItemByProductIdResponseSummaryCurrencyOneMax)
-            .regex(deleteCartItemByProductIdResponseSummaryCurrencyOneRegExp)
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
@@ -10029,9 +9999,9 @@ export const setCartShippingMethodResponseSummaryShippingCostRegExp = new RegExp
 export const setCartShippingMethodResponseSummaryShippingCostMax = 32;
 export const setCartShippingMethodResponseSummaryTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const setCartShippingMethodResponseSummaryTotalPriceMax = 32;
+export const setCartShippingMethodResponseSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const setCartShippingMethodResponseSummaryCurrencyOneMin = 3;
 export const setCartShippingMethodResponseSummaryCurrencyOneMax = 3;
-export const setCartShippingMethodResponseSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const setCartShippingMethodResponseShippingOptionsItemPriceRegExp = new RegExp(
     '^\\d+(\\.\\d+)?$'
 );
@@ -10070,10 +10040,9 @@ export const SetCartShippingMethodResponse = zod.strictObject({
             .stringFormat('decimal', setCartShippingMethodResponseSummaryTotalPriceRegExp)
             .max(setCartShippingMethodResponseSummaryTotalPriceMax),
         currency: zod
-            .string()
+            .stringFormat('iso-4217', setCartShippingMethodResponseSummaryCurrencyOneRegExp)
             .min(setCartShippingMethodResponseSummaryCurrencyOneMin)
             .max(setCartShippingMethodResponseSummaryCurrencyOneMax)
-            .regex(setCartShippingMethodResponseSummaryCurrencyOneRegExp)
     }),
     shipping: zod.strictObject({
         required: zod.boolean(),
@@ -10106,9 +10075,9 @@ export const getCartSummaryResponseShippingCostRegExp = new RegExp('^\\d+(\\.\\d
 export const getCartSummaryResponseShippingCostMax = 32;
 export const getCartSummaryResponseTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const getCartSummaryResponseTotalPriceMax = 32;
+export const getCartSummaryResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getCartSummaryResponseCurrencyOneMin = 3;
 export const getCartSummaryResponseCurrencyOneMax = 3;
-export const getCartSummaryResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const GetCartSummaryResponse = zod.strictObject({
     itemsCount: zod.number().min(getCartSummaryResponseItemsCountMin),
     totalQuantity: zod.number().min(getCartSummaryResponseTotalQuantityMin),
@@ -10122,10 +10091,9 @@ export const GetCartSummaryResponse = zod.strictObject({
         .stringFormat('decimal', getCartSummaryResponseTotalPriceRegExp)
         .max(getCartSummaryResponseTotalPriceMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', getCartSummaryResponseCurrencyOneRegExp)
         .min(getCartSummaryResponseCurrencyOneMin)
         .max(getCartSummaryResponseCurrencyOneMax)
-        .regex(getCartSummaryResponseCurrencyOneRegExp)
 });
 /**
  * Converts the authenticated user's current cart into a new order. Needs a critically fresh session (`401 REAUTH_REQUIRED`), asked after the verified-address key, so a caller who can never pass is refused first. The cart is cleared upon success. The request names the total the buyer was shown (`expectedTotal`); a checkout that would charge anything else is refused with 409 `CART_TOTAL_CHANGED` and the new total, before any stock is held. Optional order notes can be supplied in the request body. Answers 201 with the created order itself as the body — the same shape `POST /orders` answers — and its `Location`. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
@@ -10145,9 +10113,9 @@ export const CheckoutHeader = zod.strictObject({
 });
 export const checkoutBodyExpectedTotalAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const checkoutBodyExpectedTotalAmountMax = 32;
+export const checkoutBodyExpectedTotalCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const checkoutBodyExpectedTotalCurrencyOneMin = 3;
 export const checkoutBodyExpectedTotalCurrencyOneMax = 3;
-export const checkoutBodyExpectedTotalCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const checkoutBodyNotesMax = 1000;
 export const checkoutBodyAddressIdOneMax = 64;
 export const checkoutBodyAddressIdOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -10160,10 +10128,9 @@ export const CheckoutBody = zod.strictObject({
             .stringFormat('decimal', checkoutBodyExpectedTotalAmountRegExp)
             .max(checkoutBodyExpectedTotalAmountMax),
         currency: zod
-            .string()
+            .stringFormat('iso-4217', checkoutBodyExpectedTotalCurrencyOneRegExp)
             .min(checkoutBodyExpectedTotalCurrencyOneMin)
             .max(checkoutBodyExpectedTotalCurrencyOneMax)
-            .regex(checkoutBodyExpectedTotalCurrencyOneRegExp)
     }),
     notes: zod.string().min(1).max(checkoutBodyNotesMax).optional(),
     addressId: zod
@@ -10194,10 +10161,10 @@ export const checkoutResponseItemsItemProductSkuMax = 64;
 export const checkoutResponseItemsItemProductWeightMin = 0;
 export const checkoutResponseItemsItemProductTaxRateMin = 0;
 export const checkoutResponseItemsItemProductTaxRateMax = 1;
-export const checkoutResponseItemsItemLocaleMax = 35;
 export const checkoutResponseItemsItemLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const checkoutResponseItemsItemLocaleMax = 35;
 export const checkoutResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const checkoutResponseItemsItemTaxAmountMax = 32;
 export const checkoutResponseItemsItemNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -10206,9 +10173,9 @@ export const checkoutResponseTotalItemsMin = 0;
 export const checkoutResponseTotalQuantityMin = 0;
 export const checkoutResponseTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const checkoutResponseTotalPriceMax = 32;
+export const checkoutResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const checkoutResponseCurrencyOneMin = 3;
 export const checkoutResponseCurrencyOneMax = 3;
-export const checkoutResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const checkoutResponseNetTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const checkoutResponseNetTotalMax = 32;
 export const checkoutResponseTaxTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -10230,15 +10197,15 @@ export const checkoutResponseShippingAddressFullNameMax = 100;
 export const checkoutResponseShippingAddressStreetMax = 200;
 export const checkoutResponseShippingAddressCityMax = 100;
 export const checkoutResponseShippingAddressZipMax = 20;
-export const checkoutResponseShippingAddressCountryMax = 2;
 export const checkoutResponseShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const checkoutResponseShippingAddressCountryMax = 2;
 export const checkoutResponseShippingAddressPhoneMax = 32;
 export const checkoutResponseBillingAddressFullNameMax = 100;
 export const checkoutResponseBillingAddressStreetMax = 200;
 export const checkoutResponseBillingAddressCityMax = 100;
 export const checkoutResponseBillingAddressZipMax = 20;
-export const checkoutResponseBillingAddressCountryMax = 2;
 export const checkoutResponseBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const checkoutResponseBillingAddressCountryMax = 2;
 export const checkoutResponseBillingAddressPhoneMax = 32;
 export const CheckoutResponse = zod.strictObject({
     id: zod.string().min(1).max(checkoutResponseIdMax).regex(checkoutResponseIdRegExp),
@@ -10283,9 +10250,8 @@ export const CheckoutResponse = zod.strictObject({
             }),
             quantity: zod.number().min(1),
             locale: zod
-                .string()
-                .max(checkoutResponseItemsItemLocaleMax)
-                .regex(checkoutResponseItemsItemLocaleRegExp),
+                .stringFormat('bcp47', checkoutResponseItemsItemLocaleRegExp)
+                .max(checkoutResponseItemsItemLocaleMax),
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
@@ -10309,10 +10275,9 @@ export const CheckoutResponse = zod.strictObject({
         .stringFormat('decimal', checkoutResponseTotalPriceRegExp)
         .max(checkoutResponseTotalPriceMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', checkoutResponseCurrencyOneRegExp)
         .min(checkoutResponseCurrencyOneMin)
-        .max(checkoutResponseCurrencyOneMax)
-        .regex(checkoutResponseCurrencyOneRegExp),
+        .max(checkoutResponseCurrencyOneMax),
     termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', checkoutResponseNetTotalRegExp)
@@ -10353,9 +10318,8 @@ export const CheckoutResponse = zod.strictObject({
             city: zod.string().min(1).max(checkoutResponseShippingAddressCityMax),
             zip: zod.string().min(1).max(checkoutResponseShippingAddressZipMax),
             country: zod
-                .string()
-                .max(checkoutResponseShippingAddressCountryMax)
-                .regex(checkoutResponseShippingAddressCountryRegExp),
+                .stringFormat('iso-3166-alpha-2', checkoutResponseShippingAddressCountryRegExp)
+                .max(checkoutResponseShippingAddressCountryMax),
             phone: zod.string().min(1).max(checkoutResponseShippingAddressPhoneMax).optional()
         })
         .optional(),
@@ -10366,9 +10330,8 @@ export const CheckoutResponse = zod.strictObject({
             city: zod.string().min(1).max(checkoutResponseBillingAddressCityMax),
             zip: zod.string().min(1).max(checkoutResponseBillingAddressZipMax),
             country: zod
-                .string()
-                .max(checkoutResponseBillingAddressCountryMax)
-                .regex(checkoutResponseBillingAddressCountryRegExp),
+                .stringFormat('iso-3166-alpha-2', checkoutResponseBillingAddressCountryRegExp)
+                .max(checkoutResponseBillingAddressCountryMax),
             phone: zod.string().min(1).max(checkoutResponseBillingAddressPhoneMax).optional()
         })
         .optional(),
@@ -10439,9 +10402,9 @@ export const reorderResponseCartSummaryShippingCostRegExp = new RegExp('^\\d+(\\
 export const reorderResponseCartSummaryShippingCostMax = 32;
 export const reorderResponseCartSummaryTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const reorderResponseCartSummaryTotalPriceMax = 32;
+export const reorderResponseCartSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const reorderResponseCartSummaryCurrencyOneMin = 3;
 export const reorderResponseCartSummaryCurrencyOneMax = 3;
-export const reorderResponseCartSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const reorderResponseCartShippingOptionsItemPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const reorderResponseCartShippingOptionsItemPriceMax = 32;
 export const reorderResponseLinesItemProductIdMax = 64;
@@ -10482,10 +10445,9 @@ export const ReorderResponse = zod.strictObject({
                 .stringFormat('decimal', reorderResponseCartSummaryTotalPriceRegExp)
                 .max(reorderResponseCartSummaryTotalPriceMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', reorderResponseCartSummaryCurrencyOneRegExp)
                 .min(reorderResponseCartSummaryCurrencyOneMin)
                 .max(reorderResponseCartSummaryCurrencyOneMax)
-                .regex(reorderResponseCartSummaryCurrencyOneRegExp)
         }),
         shipping: zod.strictObject({
             required: zod.boolean(),
@@ -10749,9 +10711,9 @@ export const listOrdersResponseItemsItemIdMax = 64;
 export const listOrdersResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listOrdersResponseItemsItemTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const listOrdersResponseItemsItemTotalPriceMax = 32;
+export const listOrdersResponseItemsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const listOrdersResponseItemsItemCurrencyMin = 3;
 export const listOrdersResponseItemsItemCurrencyMax = 3;
-export const listOrdersResponseItemsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const listOrdersResponseMetaPageDefault = 1;
 export const listOrdersResponseMetaPageMax = 10000;
 export const listOrdersResponseMetaPageSizeDefault = 10;
@@ -10788,10 +10750,9 @@ export const ListOrdersResponse = zod.strictObject({
                 .stringFormat('decimal', listOrdersResponseItemsItemTotalPriceRegExp)
                 .max(listOrdersResponseItemsItemTotalPriceMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', listOrdersResponseItemsItemCurrencyRegExp)
                 .min(listOrdersResponseItemsItemCurrencyMin)
-                .max(listOrdersResponseItemsItemCurrencyMax)
-                .regex(listOrdersResponseItemsItemCurrencyRegExp),
+                .max(listOrdersResponseItemsItemCurrencyMax),
             paidAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true }).optional(),
             deletedAt: zod.string().optional(),
@@ -10886,10 +10847,10 @@ export const createOrderResponseItemsItemProductSkuMax = 64;
 export const createOrderResponseItemsItemProductWeightMin = 0;
 export const createOrderResponseItemsItemProductTaxRateMin = 0;
 export const createOrderResponseItemsItemProductTaxRateMax = 1;
-export const createOrderResponseItemsItemLocaleMax = 35;
 export const createOrderResponseItemsItemLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const createOrderResponseItemsItemLocaleMax = 35;
 export const createOrderResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const createOrderResponseItemsItemTaxAmountMax = 32;
 export const createOrderResponseItemsItemNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -10898,9 +10859,9 @@ export const createOrderResponseTotalItemsMin = 0;
 export const createOrderResponseTotalQuantityMin = 0;
 export const createOrderResponseTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const createOrderResponseTotalPriceMax = 32;
+export const createOrderResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const createOrderResponseCurrencyOneMin = 3;
 export const createOrderResponseCurrencyOneMax = 3;
-export const createOrderResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const createOrderResponseNetTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const createOrderResponseNetTotalMax = 32;
 export const createOrderResponseTaxTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -10922,15 +10883,15 @@ export const createOrderResponseShippingAddressFullNameMax = 100;
 export const createOrderResponseShippingAddressStreetMax = 200;
 export const createOrderResponseShippingAddressCityMax = 100;
 export const createOrderResponseShippingAddressZipMax = 20;
-export const createOrderResponseShippingAddressCountryMax = 2;
 export const createOrderResponseShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const createOrderResponseShippingAddressCountryMax = 2;
 export const createOrderResponseShippingAddressPhoneMax = 32;
 export const createOrderResponseBillingAddressFullNameMax = 100;
 export const createOrderResponseBillingAddressStreetMax = 200;
 export const createOrderResponseBillingAddressCityMax = 100;
 export const createOrderResponseBillingAddressZipMax = 20;
-export const createOrderResponseBillingAddressCountryMax = 2;
 export const createOrderResponseBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const createOrderResponseBillingAddressCountryMax = 2;
 export const createOrderResponseBillingAddressPhoneMax = 32;
 export const CreateOrderResponse = zod.strictObject({
     id: zod.string().min(1).max(createOrderResponseIdMax).regex(createOrderResponseIdRegExp),
@@ -10975,9 +10936,8 @@ export const CreateOrderResponse = zod.strictObject({
             }),
             quantity: zod.number().min(1),
             locale: zod
-                .string()
-                .max(createOrderResponseItemsItemLocaleMax)
-                .regex(createOrderResponseItemsItemLocaleRegExp),
+                .stringFormat('bcp47', createOrderResponseItemsItemLocaleRegExp)
+                .max(createOrderResponseItemsItemLocaleMax),
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
@@ -11001,10 +10961,9 @@ export const CreateOrderResponse = zod.strictObject({
         .stringFormat('decimal', createOrderResponseTotalPriceRegExp)
         .max(createOrderResponseTotalPriceMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', createOrderResponseCurrencyOneRegExp)
         .min(createOrderResponseCurrencyOneMin)
-        .max(createOrderResponseCurrencyOneMax)
-        .regex(createOrderResponseCurrencyOneRegExp),
+        .max(createOrderResponseCurrencyOneMax),
     termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', createOrderResponseNetTotalRegExp)
@@ -11045,9 +11004,8 @@ export const CreateOrderResponse = zod.strictObject({
             city: zod.string().min(1).max(createOrderResponseShippingAddressCityMax),
             zip: zod.string().min(1).max(createOrderResponseShippingAddressZipMax),
             country: zod
-                .string()
-                .max(createOrderResponseShippingAddressCountryMax)
-                .regex(createOrderResponseShippingAddressCountryRegExp),
+                .stringFormat('iso-3166-alpha-2', createOrderResponseShippingAddressCountryRegExp)
+                .max(createOrderResponseShippingAddressCountryMax),
             phone: zod.string().min(1).max(createOrderResponseShippingAddressPhoneMax).optional()
         })
         .optional(),
@@ -11058,9 +11016,8 @@ export const CreateOrderResponse = zod.strictObject({
             city: zod.string().min(1).max(createOrderResponseBillingAddressCityMax),
             zip: zod.string().min(1).max(createOrderResponseBillingAddressZipMax),
             country: zod
-                .string()
-                .max(createOrderResponseBillingAddressCountryMax)
-                .regex(createOrderResponseBillingAddressCountryRegExp),
+                .stringFormat('iso-3166-alpha-2', createOrderResponseBillingAddressCountryRegExp)
+                .max(createOrderResponseBillingAddressCountryMax),
             phone: zod.string().min(1).max(createOrderResponseBillingAddressPhoneMax).optional()
         })
         .optional(),
@@ -11193,9 +11150,9 @@ export const searchOrdersResponseItemsItemIdMax = 64;
 export const searchOrdersResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const searchOrdersResponseItemsItemTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const searchOrdersResponseItemsItemTotalPriceMax = 32;
+export const searchOrdersResponseItemsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const searchOrdersResponseItemsItemCurrencyMin = 3;
 export const searchOrdersResponseItemsItemCurrencyMax = 3;
-export const searchOrdersResponseItemsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const searchOrdersResponseMetaPageDefault = 1;
 export const searchOrdersResponseMetaPageMax = 10000;
 export const searchOrdersResponseMetaPageSizeDefault = 10;
@@ -11232,10 +11189,9 @@ export const SearchOrdersResponse = zod.strictObject({
                 .stringFormat('decimal', searchOrdersResponseItemsItemTotalPriceRegExp)
                 .max(searchOrdersResponseItemsItemTotalPriceMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', searchOrdersResponseItemsItemCurrencyRegExp)
                 .min(searchOrdersResponseItemsItemCurrencyMin)
-                .max(searchOrdersResponseItemsItemCurrencyMax)
-                .regex(searchOrdersResponseItemsItemCurrencyRegExp),
+                .max(searchOrdersResponseItemsItemCurrencyMax),
             paidAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true }).optional(),
             deletedAt: zod.string().optional(),
@@ -11297,10 +11253,10 @@ export const getOrderByIdResponseItemsItemProductSkuMax = 64;
 export const getOrderByIdResponseItemsItemProductWeightMin = 0;
 export const getOrderByIdResponseItemsItemProductTaxRateMin = 0;
 export const getOrderByIdResponseItemsItemProductTaxRateMax = 1;
-export const getOrderByIdResponseItemsItemLocaleMax = 35;
 export const getOrderByIdResponseItemsItemLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const getOrderByIdResponseItemsItemLocaleMax = 35;
 export const getOrderByIdResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const getOrderByIdResponseItemsItemTaxAmountMax = 32;
 export const getOrderByIdResponseItemsItemNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -11309,9 +11265,9 @@ export const getOrderByIdResponseTotalItemsMin = 0;
 export const getOrderByIdResponseTotalQuantityMin = 0;
 export const getOrderByIdResponseTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const getOrderByIdResponseTotalPriceMax = 32;
+export const getOrderByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getOrderByIdResponseCurrencyOneMin = 3;
 export const getOrderByIdResponseCurrencyOneMax = 3;
-export const getOrderByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getOrderByIdResponseNetTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const getOrderByIdResponseNetTotalMax = 32;
 export const getOrderByIdResponseTaxTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -11333,15 +11289,15 @@ export const getOrderByIdResponseShippingAddressFullNameMax = 100;
 export const getOrderByIdResponseShippingAddressStreetMax = 200;
 export const getOrderByIdResponseShippingAddressCityMax = 100;
 export const getOrderByIdResponseShippingAddressZipMax = 20;
-export const getOrderByIdResponseShippingAddressCountryMax = 2;
 export const getOrderByIdResponseShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const getOrderByIdResponseShippingAddressCountryMax = 2;
 export const getOrderByIdResponseShippingAddressPhoneMax = 32;
 export const getOrderByIdResponseBillingAddressFullNameMax = 100;
 export const getOrderByIdResponseBillingAddressStreetMax = 200;
 export const getOrderByIdResponseBillingAddressCityMax = 100;
 export const getOrderByIdResponseBillingAddressZipMax = 20;
-export const getOrderByIdResponseBillingAddressCountryMax = 2;
 export const getOrderByIdResponseBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const getOrderByIdResponseBillingAddressCountryMax = 2;
 export const getOrderByIdResponseBillingAddressPhoneMax = 32;
 export const GetOrderByIdResponse = zod.strictObject({
     id: zod.string().min(1).max(getOrderByIdResponseIdMax).regex(getOrderByIdResponseIdRegExp),
@@ -11386,9 +11342,8 @@ export const GetOrderByIdResponse = zod.strictObject({
             }),
             quantity: zod.number().min(1),
             locale: zod
-                .string()
-                .max(getOrderByIdResponseItemsItemLocaleMax)
-                .regex(getOrderByIdResponseItemsItemLocaleRegExp),
+                .stringFormat('bcp47', getOrderByIdResponseItemsItemLocaleRegExp)
+                .max(getOrderByIdResponseItemsItemLocaleMax),
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
@@ -11412,10 +11367,9 @@ export const GetOrderByIdResponse = zod.strictObject({
         .stringFormat('decimal', getOrderByIdResponseTotalPriceRegExp)
         .max(getOrderByIdResponseTotalPriceMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', getOrderByIdResponseCurrencyOneRegExp)
         .min(getOrderByIdResponseCurrencyOneMin)
-        .max(getOrderByIdResponseCurrencyOneMax)
-        .regex(getOrderByIdResponseCurrencyOneRegExp),
+        .max(getOrderByIdResponseCurrencyOneMax),
     termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', getOrderByIdResponseNetTotalRegExp)
@@ -11456,9 +11410,8 @@ export const GetOrderByIdResponse = zod.strictObject({
             city: zod.string().min(1).max(getOrderByIdResponseShippingAddressCityMax),
             zip: zod.string().min(1).max(getOrderByIdResponseShippingAddressZipMax),
             country: zod
-                .string()
-                .max(getOrderByIdResponseShippingAddressCountryMax)
-                .regex(getOrderByIdResponseShippingAddressCountryRegExp),
+                .stringFormat('iso-3166-alpha-2', getOrderByIdResponseShippingAddressCountryRegExp)
+                .max(getOrderByIdResponseShippingAddressCountryMax),
             phone: zod.string().min(1).max(getOrderByIdResponseShippingAddressPhoneMax).optional()
         })
         .optional(),
@@ -11469,9 +11422,8 @@ export const GetOrderByIdResponse = zod.strictObject({
             city: zod.string().min(1).max(getOrderByIdResponseBillingAddressCityMax),
             zip: zod.string().min(1).max(getOrderByIdResponseBillingAddressZipMax),
             country: zod
-                .string()
-                .max(getOrderByIdResponseBillingAddressCountryMax)
-                .regex(getOrderByIdResponseBillingAddressCountryRegExp),
+                .stringFormat('iso-3166-alpha-2', getOrderByIdResponseBillingAddressCountryRegExp)
+                .max(getOrderByIdResponseBillingAddressCountryMax),
             phone: zod.string().min(1).max(getOrderByIdResponseBillingAddressPhoneMax).optional()
         })
         .optional(),
@@ -11542,10 +11494,10 @@ export const replaceOrderByIdResponseItemsItemProductSkuMax = 64;
 export const replaceOrderByIdResponseItemsItemProductWeightMin = 0;
 export const replaceOrderByIdResponseItemsItemProductTaxRateMin = 0;
 export const replaceOrderByIdResponseItemsItemProductTaxRateMax = 1;
-export const replaceOrderByIdResponseItemsItemLocaleMax = 35;
 export const replaceOrderByIdResponseItemsItemLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const replaceOrderByIdResponseItemsItemLocaleMax = 35;
 export const replaceOrderByIdResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const replaceOrderByIdResponseItemsItemTaxAmountMax = 32;
 export const replaceOrderByIdResponseItemsItemNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -11554,9 +11506,9 @@ export const replaceOrderByIdResponseTotalItemsMin = 0;
 export const replaceOrderByIdResponseTotalQuantityMin = 0;
 export const replaceOrderByIdResponseTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const replaceOrderByIdResponseTotalPriceMax = 32;
+export const replaceOrderByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const replaceOrderByIdResponseCurrencyOneMin = 3;
 export const replaceOrderByIdResponseCurrencyOneMax = 3;
-export const replaceOrderByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const replaceOrderByIdResponseNetTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const replaceOrderByIdResponseNetTotalMax = 32;
 export const replaceOrderByIdResponseTaxTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -11580,15 +11532,15 @@ export const replaceOrderByIdResponseShippingAddressFullNameMax = 100;
 export const replaceOrderByIdResponseShippingAddressStreetMax = 200;
 export const replaceOrderByIdResponseShippingAddressCityMax = 100;
 export const replaceOrderByIdResponseShippingAddressZipMax = 20;
-export const replaceOrderByIdResponseShippingAddressCountryMax = 2;
 export const replaceOrderByIdResponseShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const replaceOrderByIdResponseShippingAddressCountryMax = 2;
 export const replaceOrderByIdResponseShippingAddressPhoneMax = 32;
 export const replaceOrderByIdResponseBillingAddressFullNameMax = 100;
 export const replaceOrderByIdResponseBillingAddressStreetMax = 200;
 export const replaceOrderByIdResponseBillingAddressCityMax = 100;
 export const replaceOrderByIdResponseBillingAddressZipMax = 20;
-export const replaceOrderByIdResponseBillingAddressCountryMax = 2;
 export const replaceOrderByIdResponseBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const replaceOrderByIdResponseBillingAddressCountryMax = 2;
 export const replaceOrderByIdResponseBillingAddressPhoneMax = 32;
 export const ReplaceOrderByIdResponse = zod.strictObject({
     id: zod
@@ -11644,9 +11596,8 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
             }),
             quantity: zod.number().min(1),
             locale: zod
-                .string()
-                .max(replaceOrderByIdResponseItemsItemLocaleMax)
-                .regex(replaceOrderByIdResponseItemsItemLocaleRegExp),
+                .stringFormat('bcp47', replaceOrderByIdResponseItemsItemLocaleRegExp)
+                .max(replaceOrderByIdResponseItemsItemLocaleMax),
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
@@ -11670,10 +11621,9 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
         .stringFormat('decimal', replaceOrderByIdResponseTotalPriceRegExp)
         .max(replaceOrderByIdResponseTotalPriceMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', replaceOrderByIdResponseCurrencyOneRegExp)
         .min(replaceOrderByIdResponseCurrencyOneMin)
-        .max(replaceOrderByIdResponseCurrencyOneMax)
-        .regex(replaceOrderByIdResponseCurrencyOneRegExp),
+        .max(replaceOrderByIdResponseCurrencyOneMax),
     termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', replaceOrderByIdResponseNetTotalRegExp)
@@ -11714,9 +11664,11 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
             city: zod.string().min(1).max(replaceOrderByIdResponseShippingAddressCityMax),
             zip: zod.string().min(1).max(replaceOrderByIdResponseShippingAddressZipMax),
             country: zod
-                .string()
-                .max(replaceOrderByIdResponseShippingAddressCountryMax)
-                .regex(replaceOrderByIdResponseShippingAddressCountryRegExp),
+                .stringFormat(
+                    'iso-3166-alpha-2',
+                    replaceOrderByIdResponseShippingAddressCountryRegExp
+                )
+                .max(replaceOrderByIdResponseShippingAddressCountryMax),
             phone: zod
                 .string()
                 .min(1)
@@ -11731,9 +11683,11 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
             city: zod.string().min(1).max(replaceOrderByIdResponseBillingAddressCityMax),
             zip: zod.string().min(1).max(replaceOrderByIdResponseBillingAddressZipMax),
             country: zod
-                .string()
-                .max(replaceOrderByIdResponseBillingAddressCountryMax)
-                .regex(replaceOrderByIdResponseBillingAddressCountryRegExp),
+                .stringFormat(
+                    'iso-3166-alpha-2',
+                    replaceOrderByIdResponseBillingAddressCountryRegExp
+                )
+                .max(replaceOrderByIdResponseBillingAddressCountryMax),
             phone: zod
                 .string()
                 .min(1)
@@ -11808,10 +11762,10 @@ export const updateOrderByIdResponseItemsItemProductSkuMax = 64;
 export const updateOrderByIdResponseItemsItemProductWeightMin = 0;
 export const updateOrderByIdResponseItemsItemProductTaxRateMin = 0;
 export const updateOrderByIdResponseItemsItemProductTaxRateMax = 1;
-export const updateOrderByIdResponseItemsItemLocaleMax = 35;
 export const updateOrderByIdResponseItemsItemLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const updateOrderByIdResponseItemsItemLocaleMax = 35;
 export const updateOrderByIdResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const updateOrderByIdResponseItemsItemTaxAmountMax = 32;
 export const updateOrderByIdResponseItemsItemNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -11820,9 +11774,9 @@ export const updateOrderByIdResponseTotalItemsMin = 0;
 export const updateOrderByIdResponseTotalQuantityMin = 0;
 export const updateOrderByIdResponseTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const updateOrderByIdResponseTotalPriceMax = 32;
+export const updateOrderByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const updateOrderByIdResponseCurrencyOneMin = 3;
 export const updateOrderByIdResponseCurrencyOneMax = 3;
-export const updateOrderByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const updateOrderByIdResponseNetTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const updateOrderByIdResponseNetTotalMax = 32;
 export const updateOrderByIdResponseTaxTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -11846,15 +11800,15 @@ export const updateOrderByIdResponseShippingAddressFullNameMax = 100;
 export const updateOrderByIdResponseShippingAddressStreetMax = 200;
 export const updateOrderByIdResponseShippingAddressCityMax = 100;
 export const updateOrderByIdResponseShippingAddressZipMax = 20;
-export const updateOrderByIdResponseShippingAddressCountryMax = 2;
 export const updateOrderByIdResponseShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const updateOrderByIdResponseShippingAddressCountryMax = 2;
 export const updateOrderByIdResponseShippingAddressPhoneMax = 32;
 export const updateOrderByIdResponseBillingAddressFullNameMax = 100;
 export const updateOrderByIdResponseBillingAddressStreetMax = 200;
 export const updateOrderByIdResponseBillingAddressCityMax = 100;
 export const updateOrderByIdResponseBillingAddressZipMax = 20;
-export const updateOrderByIdResponseBillingAddressCountryMax = 2;
 export const updateOrderByIdResponseBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const updateOrderByIdResponseBillingAddressCountryMax = 2;
 export const updateOrderByIdResponseBillingAddressPhoneMax = 32;
 export const UpdateOrderByIdResponse = zod.strictObject({
     id: zod
@@ -11910,9 +11864,8 @@ export const UpdateOrderByIdResponse = zod.strictObject({
             }),
             quantity: zod.number().min(1),
             locale: zod
-                .string()
-                .max(updateOrderByIdResponseItemsItemLocaleMax)
-                .regex(updateOrderByIdResponseItemsItemLocaleRegExp),
+                .stringFormat('bcp47', updateOrderByIdResponseItemsItemLocaleRegExp)
+                .max(updateOrderByIdResponseItemsItemLocaleMax),
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
@@ -11936,10 +11889,9 @@ export const UpdateOrderByIdResponse = zod.strictObject({
         .stringFormat('decimal', updateOrderByIdResponseTotalPriceRegExp)
         .max(updateOrderByIdResponseTotalPriceMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', updateOrderByIdResponseCurrencyOneRegExp)
         .min(updateOrderByIdResponseCurrencyOneMin)
-        .max(updateOrderByIdResponseCurrencyOneMax)
-        .regex(updateOrderByIdResponseCurrencyOneRegExp),
+        .max(updateOrderByIdResponseCurrencyOneMax),
     termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', updateOrderByIdResponseNetTotalRegExp)
@@ -11980,9 +11932,11 @@ export const UpdateOrderByIdResponse = zod.strictObject({
             city: zod.string().min(1).max(updateOrderByIdResponseShippingAddressCityMax),
             zip: zod.string().min(1).max(updateOrderByIdResponseShippingAddressZipMax),
             country: zod
-                .string()
-                .max(updateOrderByIdResponseShippingAddressCountryMax)
-                .regex(updateOrderByIdResponseShippingAddressCountryRegExp),
+                .stringFormat(
+                    'iso-3166-alpha-2',
+                    updateOrderByIdResponseShippingAddressCountryRegExp
+                )
+                .max(updateOrderByIdResponseShippingAddressCountryMax),
             phone: zod
                 .string()
                 .min(1)
@@ -11997,9 +11951,11 @@ export const UpdateOrderByIdResponse = zod.strictObject({
             city: zod.string().min(1).max(updateOrderByIdResponseBillingAddressCityMax),
             zip: zod.string().min(1).max(updateOrderByIdResponseBillingAddressZipMax),
             country: zod
-                .string()
-                .max(updateOrderByIdResponseBillingAddressCountryMax)
-                .regex(updateOrderByIdResponseBillingAddressCountryRegExp),
+                .stringFormat(
+                    'iso-3166-alpha-2',
+                    updateOrderByIdResponseBillingAddressCountryRegExp
+                )
+                .max(updateOrderByIdResponseBillingAddressCountryMax),
             phone: zod.string().min(1).max(updateOrderByIdResponseBillingAddressPhoneMax).optional()
         })
         .optional(),
@@ -12080,10 +12036,10 @@ export const restoreOrderByIdResponseItemsItemProductSkuMax = 64;
 export const restoreOrderByIdResponseItemsItemProductWeightMin = 0;
 export const restoreOrderByIdResponseItemsItemProductTaxRateMin = 0;
 export const restoreOrderByIdResponseItemsItemProductTaxRateMax = 1;
-export const restoreOrderByIdResponseItemsItemLocaleMax = 35;
 export const restoreOrderByIdResponseItemsItemLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const restoreOrderByIdResponseItemsItemLocaleMax = 35;
 export const restoreOrderByIdResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const restoreOrderByIdResponseItemsItemTaxAmountMax = 32;
 export const restoreOrderByIdResponseItemsItemNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -12092,9 +12048,9 @@ export const restoreOrderByIdResponseTotalItemsMin = 0;
 export const restoreOrderByIdResponseTotalQuantityMin = 0;
 export const restoreOrderByIdResponseTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const restoreOrderByIdResponseTotalPriceMax = 32;
+export const restoreOrderByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const restoreOrderByIdResponseCurrencyOneMin = 3;
 export const restoreOrderByIdResponseCurrencyOneMax = 3;
-export const restoreOrderByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const restoreOrderByIdResponseNetTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const restoreOrderByIdResponseNetTotalMax = 32;
 export const restoreOrderByIdResponseTaxTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -12118,15 +12074,15 @@ export const restoreOrderByIdResponseShippingAddressFullNameMax = 100;
 export const restoreOrderByIdResponseShippingAddressStreetMax = 200;
 export const restoreOrderByIdResponseShippingAddressCityMax = 100;
 export const restoreOrderByIdResponseShippingAddressZipMax = 20;
-export const restoreOrderByIdResponseShippingAddressCountryMax = 2;
 export const restoreOrderByIdResponseShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const restoreOrderByIdResponseShippingAddressCountryMax = 2;
 export const restoreOrderByIdResponseShippingAddressPhoneMax = 32;
 export const restoreOrderByIdResponseBillingAddressFullNameMax = 100;
 export const restoreOrderByIdResponseBillingAddressStreetMax = 200;
 export const restoreOrderByIdResponseBillingAddressCityMax = 100;
 export const restoreOrderByIdResponseBillingAddressZipMax = 20;
-export const restoreOrderByIdResponseBillingAddressCountryMax = 2;
 export const restoreOrderByIdResponseBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const restoreOrderByIdResponseBillingAddressCountryMax = 2;
 export const restoreOrderByIdResponseBillingAddressPhoneMax = 32;
 export const RestoreOrderByIdResponse = zod.strictObject({
     id: zod
@@ -12182,9 +12138,8 @@ export const RestoreOrderByIdResponse = zod.strictObject({
             }),
             quantity: zod.number().min(1),
             locale: zod
-                .string()
-                .max(restoreOrderByIdResponseItemsItemLocaleMax)
-                .regex(restoreOrderByIdResponseItemsItemLocaleRegExp),
+                .stringFormat('bcp47', restoreOrderByIdResponseItemsItemLocaleRegExp)
+                .max(restoreOrderByIdResponseItemsItemLocaleMax),
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
@@ -12208,10 +12163,9 @@ export const RestoreOrderByIdResponse = zod.strictObject({
         .stringFormat('decimal', restoreOrderByIdResponseTotalPriceRegExp)
         .max(restoreOrderByIdResponseTotalPriceMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', restoreOrderByIdResponseCurrencyOneRegExp)
         .min(restoreOrderByIdResponseCurrencyOneMin)
-        .max(restoreOrderByIdResponseCurrencyOneMax)
-        .regex(restoreOrderByIdResponseCurrencyOneRegExp),
+        .max(restoreOrderByIdResponseCurrencyOneMax),
     termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', restoreOrderByIdResponseNetTotalRegExp)
@@ -12252,9 +12206,11 @@ export const RestoreOrderByIdResponse = zod.strictObject({
             city: zod.string().min(1).max(restoreOrderByIdResponseShippingAddressCityMax),
             zip: zod.string().min(1).max(restoreOrderByIdResponseShippingAddressZipMax),
             country: zod
-                .string()
-                .max(restoreOrderByIdResponseShippingAddressCountryMax)
-                .regex(restoreOrderByIdResponseShippingAddressCountryRegExp),
+                .stringFormat(
+                    'iso-3166-alpha-2',
+                    restoreOrderByIdResponseShippingAddressCountryRegExp
+                )
+                .max(restoreOrderByIdResponseShippingAddressCountryMax),
             phone: zod
                 .string()
                 .min(1)
@@ -12269,9 +12225,11 @@ export const RestoreOrderByIdResponse = zod.strictObject({
             city: zod.string().min(1).max(restoreOrderByIdResponseBillingAddressCityMax),
             zip: zod.string().min(1).max(restoreOrderByIdResponseBillingAddressZipMax),
             country: zod
-                .string()
-                .max(restoreOrderByIdResponseBillingAddressCountryMax)
-                .regex(restoreOrderByIdResponseBillingAddressCountryRegExp),
+                .stringFormat(
+                    'iso-3166-alpha-2',
+                    restoreOrderByIdResponseBillingAddressCountryRegExp
+                )
+                .max(restoreOrderByIdResponseBillingAddressCountryMax),
             phone: zod
                 .string()
                 .min(1)
@@ -12357,10 +12315,10 @@ export const cancelOrderByIdResponseItemsItemProductSkuMax = 64;
 export const cancelOrderByIdResponseItemsItemProductWeightMin = 0;
 export const cancelOrderByIdResponseItemsItemProductTaxRateMin = 0;
 export const cancelOrderByIdResponseItemsItemProductTaxRateMax = 1;
-export const cancelOrderByIdResponseItemsItemLocaleMax = 35;
 export const cancelOrderByIdResponseItemsItemLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const cancelOrderByIdResponseItemsItemLocaleMax = 35;
 export const cancelOrderByIdResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const cancelOrderByIdResponseItemsItemTaxAmountMax = 32;
 export const cancelOrderByIdResponseItemsItemNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -12369,9 +12327,9 @@ export const cancelOrderByIdResponseTotalItemsMin = 0;
 export const cancelOrderByIdResponseTotalQuantityMin = 0;
 export const cancelOrderByIdResponseTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const cancelOrderByIdResponseTotalPriceMax = 32;
+export const cancelOrderByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const cancelOrderByIdResponseCurrencyOneMin = 3;
 export const cancelOrderByIdResponseCurrencyOneMax = 3;
-export const cancelOrderByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const cancelOrderByIdResponseNetTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const cancelOrderByIdResponseNetTotalMax = 32;
 export const cancelOrderByIdResponseTaxTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -12395,15 +12353,15 @@ export const cancelOrderByIdResponseShippingAddressFullNameMax = 100;
 export const cancelOrderByIdResponseShippingAddressStreetMax = 200;
 export const cancelOrderByIdResponseShippingAddressCityMax = 100;
 export const cancelOrderByIdResponseShippingAddressZipMax = 20;
-export const cancelOrderByIdResponseShippingAddressCountryMax = 2;
 export const cancelOrderByIdResponseShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const cancelOrderByIdResponseShippingAddressCountryMax = 2;
 export const cancelOrderByIdResponseShippingAddressPhoneMax = 32;
 export const cancelOrderByIdResponseBillingAddressFullNameMax = 100;
 export const cancelOrderByIdResponseBillingAddressStreetMax = 200;
 export const cancelOrderByIdResponseBillingAddressCityMax = 100;
 export const cancelOrderByIdResponseBillingAddressZipMax = 20;
-export const cancelOrderByIdResponseBillingAddressCountryMax = 2;
 export const cancelOrderByIdResponseBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const cancelOrderByIdResponseBillingAddressCountryMax = 2;
 export const cancelOrderByIdResponseBillingAddressPhoneMax = 32;
 export const CancelOrderByIdResponse = zod.strictObject({
     id: zod
@@ -12459,9 +12417,8 @@ export const CancelOrderByIdResponse = zod.strictObject({
             }),
             quantity: zod.number().min(1),
             locale: zod
-                .string()
-                .max(cancelOrderByIdResponseItemsItemLocaleMax)
-                .regex(cancelOrderByIdResponseItemsItemLocaleRegExp),
+                .stringFormat('bcp47', cancelOrderByIdResponseItemsItemLocaleRegExp)
+                .max(cancelOrderByIdResponseItemsItemLocaleMax),
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
@@ -12485,10 +12442,9 @@ export const CancelOrderByIdResponse = zod.strictObject({
         .stringFormat('decimal', cancelOrderByIdResponseTotalPriceRegExp)
         .max(cancelOrderByIdResponseTotalPriceMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', cancelOrderByIdResponseCurrencyOneRegExp)
         .min(cancelOrderByIdResponseCurrencyOneMin)
-        .max(cancelOrderByIdResponseCurrencyOneMax)
-        .regex(cancelOrderByIdResponseCurrencyOneRegExp),
+        .max(cancelOrderByIdResponseCurrencyOneMax),
     termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', cancelOrderByIdResponseNetTotalRegExp)
@@ -12529,9 +12485,11 @@ export const CancelOrderByIdResponse = zod.strictObject({
             city: zod.string().min(1).max(cancelOrderByIdResponseShippingAddressCityMax),
             zip: zod.string().min(1).max(cancelOrderByIdResponseShippingAddressZipMax),
             country: zod
-                .string()
-                .max(cancelOrderByIdResponseShippingAddressCountryMax)
-                .regex(cancelOrderByIdResponseShippingAddressCountryRegExp),
+                .stringFormat(
+                    'iso-3166-alpha-2',
+                    cancelOrderByIdResponseShippingAddressCountryRegExp
+                )
+                .max(cancelOrderByIdResponseShippingAddressCountryMax),
             phone: zod
                 .string()
                 .min(1)
@@ -12546,9 +12504,11 @@ export const CancelOrderByIdResponse = zod.strictObject({
             city: zod.string().min(1).max(cancelOrderByIdResponseBillingAddressCityMax),
             zip: zod.string().min(1).max(cancelOrderByIdResponseBillingAddressZipMax),
             country: zod
-                .string()
-                .max(cancelOrderByIdResponseBillingAddressCountryMax)
-                .regex(cancelOrderByIdResponseBillingAddressCountryRegExp),
+                .stringFormat(
+                    'iso-3166-alpha-2',
+                    cancelOrderByIdResponseBillingAddressCountryRegExp
+                )
+                .max(cancelOrderByIdResponseBillingAddressCountryMax),
             phone: zod.string().min(1).max(cancelOrderByIdResponseBillingAddressPhoneMax).optional()
         })
         .optional(),
@@ -12618,10 +12578,10 @@ export const overrideOrderStatusResponseItemsItemProductSkuMax = 64;
 export const overrideOrderStatusResponseItemsItemProductWeightMin = 0;
 export const overrideOrderStatusResponseItemsItemProductTaxRateMin = 0;
 export const overrideOrderStatusResponseItemsItemProductTaxRateMax = 1;
-export const overrideOrderStatusResponseItemsItemLocaleMax = 35;
 export const overrideOrderStatusResponseItemsItemLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const overrideOrderStatusResponseItemsItemLocaleMax = 35;
 export const overrideOrderStatusResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const overrideOrderStatusResponseItemsItemTaxAmountMax = 32;
 export const overrideOrderStatusResponseItemsItemNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -12630,9 +12590,9 @@ export const overrideOrderStatusResponseTotalItemsMin = 0;
 export const overrideOrderStatusResponseTotalQuantityMin = 0;
 export const overrideOrderStatusResponseTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const overrideOrderStatusResponseTotalPriceMax = 32;
+export const overrideOrderStatusResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const overrideOrderStatusResponseCurrencyOneMin = 3;
 export const overrideOrderStatusResponseCurrencyOneMax = 3;
-export const overrideOrderStatusResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const overrideOrderStatusResponseNetTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const overrideOrderStatusResponseNetTotalMax = 32;
 export const overrideOrderStatusResponseTaxTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -12660,15 +12620,15 @@ export const overrideOrderStatusResponseShippingAddressFullNameMax = 100;
 export const overrideOrderStatusResponseShippingAddressStreetMax = 200;
 export const overrideOrderStatusResponseShippingAddressCityMax = 100;
 export const overrideOrderStatusResponseShippingAddressZipMax = 20;
-export const overrideOrderStatusResponseShippingAddressCountryMax = 2;
 export const overrideOrderStatusResponseShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const overrideOrderStatusResponseShippingAddressCountryMax = 2;
 export const overrideOrderStatusResponseShippingAddressPhoneMax = 32;
 export const overrideOrderStatusResponseBillingAddressFullNameMax = 100;
 export const overrideOrderStatusResponseBillingAddressStreetMax = 200;
 export const overrideOrderStatusResponseBillingAddressCityMax = 100;
 export const overrideOrderStatusResponseBillingAddressZipMax = 20;
-export const overrideOrderStatusResponseBillingAddressCountryMax = 2;
 export const overrideOrderStatusResponseBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const overrideOrderStatusResponseBillingAddressCountryMax = 2;
 export const overrideOrderStatusResponseBillingAddressPhoneMax = 32;
 export const OverrideOrderStatusResponse = zod.strictObject({
     id: zod
@@ -12724,9 +12684,8 @@ export const OverrideOrderStatusResponse = zod.strictObject({
             }),
             quantity: zod.number().min(1),
             locale: zod
-                .string()
-                .max(overrideOrderStatusResponseItemsItemLocaleMax)
-                .regex(overrideOrderStatusResponseItemsItemLocaleRegExp),
+                .stringFormat('bcp47', overrideOrderStatusResponseItemsItemLocaleRegExp)
+                .max(overrideOrderStatusResponseItemsItemLocaleMax),
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
@@ -12750,10 +12709,9 @@ export const OverrideOrderStatusResponse = zod.strictObject({
         .stringFormat('decimal', overrideOrderStatusResponseTotalPriceRegExp)
         .max(overrideOrderStatusResponseTotalPriceMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', overrideOrderStatusResponseCurrencyOneRegExp)
         .min(overrideOrderStatusResponseCurrencyOneMin)
-        .max(overrideOrderStatusResponseCurrencyOneMax)
-        .regex(overrideOrderStatusResponseCurrencyOneRegExp),
+        .max(overrideOrderStatusResponseCurrencyOneMax),
     termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', overrideOrderStatusResponseNetTotalRegExp)
@@ -12797,9 +12755,11 @@ export const OverrideOrderStatusResponse = zod.strictObject({
             city: zod.string().min(1).max(overrideOrderStatusResponseShippingAddressCityMax),
             zip: zod.string().min(1).max(overrideOrderStatusResponseShippingAddressZipMax),
             country: zod
-                .string()
-                .max(overrideOrderStatusResponseShippingAddressCountryMax)
-                .regex(overrideOrderStatusResponseShippingAddressCountryRegExp),
+                .stringFormat(
+                    'iso-3166-alpha-2',
+                    overrideOrderStatusResponseShippingAddressCountryRegExp
+                )
+                .max(overrideOrderStatusResponseShippingAddressCountryMax),
             phone: zod
                 .string()
                 .min(1)
@@ -12814,9 +12774,11 @@ export const OverrideOrderStatusResponse = zod.strictObject({
             city: zod.string().min(1).max(overrideOrderStatusResponseBillingAddressCityMax),
             zip: zod.string().min(1).max(overrideOrderStatusResponseBillingAddressZipMax),
             country: zod
-                .string()
-                .max(overrideOrderStatusResponseBillingAddressCountryMax)
-                .regex(overrideOrderStatusResponseBillingAddressCountryRegExp),
+                .stringFormat(
+                    'iso-3166-alpha-2',
+                    overrideOrderStatusResponseBillingAddressCountryRegExp
+                )
+                .max(overrideOrderStatusResponseBillingAddressCountryMax),
             phone: zod
                 .string()
                 .min(1)
@@ -12886,9 +12848,9 @@ export const ListOrderCreditNotesParams = zod.strictObject({
 });
 export const listOrderCreditNotesResponseItemsItemIdMax = 64;
 export const listOrderCreditNotesResponseItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listOrderCreditNotesResponseItemsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const listOrderCreditNotesResponseItemsItemCurrencyOneMin = 3;
 export const listOrderCreditNotesResponseItemsItemCurrencyOneMax = 3;
-export const listOrderCreditNotesResponseItemsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const listOrderCreditNotesResponseItemsItemGrandTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const listOrderCreditNotesResponseItemsItemGrandTotalMax = 32;
 export const listOrderCreditNotesResponseItemsItemRefundIdMax = 64;
@@ -12904,10 +12866,9 @@ export const ListOrderCreditNotesResponse = zod.strictObject({
             number: zod.string(),
             issuedAt: zod.iso.datetime({ offset: true }),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', listOrderCreditNotesResponseItemsItemCurrencyOneRegExp)
                 .min(listOrderCreditNotesResponseItemsItemCurrencyOneMin)
-                .max(listOrderCreditNotesResponseItemsItemCurrencyOneMax)
-                .regex(listOrderCreditNotesResponseItemsItemCurrencyOneRegExp),
+                .max(listOrderCreditNotesResponseItemsItemCurrencyOneMax),
             grandTotal: zod
                 .stringFormat('decimal', listOrderCreditNotesResponseItemsItemGrandTotalRegExp)
                 .max(listOrderCreditNotesResponseItemsItemGrandTotalMax),
@@ -12953,9 +12914,9 @@ export const listOrderPaymentsResponseItemsItemUserIdMax = 64;
 export const listOrderPaymentsResponseItemsItemUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listOrderPaymentsResponseItemsItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const listOrderPaymentsResponseItemsItemAmountMax = 32;
+export const listOrderPaymentsResponseItemsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const listOrderPaymentsResponseItemsItemCurrencyOneMin = 3;
 export const listOrderPaymentsResponseItemsItemCurrencyOneMax = 3;
-export const listOrderPaymentsResponseItemsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const listOrderPaymentsResponseItemsItemAmountRefundedRegExp = new RegExp(
     '^\\d+(\\.\\d+)?$'
 );
@@ -12966,11 +12927,11 @@ export const listOrderPaymentsResponseItemsItemRefundsItemAmountRegExp = new Reg
     '^\\d+(\\.\\d+)?$'
 );
 export const listOrderPaymentsResponseItemsItemRefundsItemAmountMax = 32;
-export const listOrderPaymentsResponseItemsItemRefundsItemCurrencyOneMin = 3;
-export const listOrderPaymentsResponseItemsItemRefundsItemCurrencyOneMax = 3;
 export const listOrderPaymentsResponseItemsItemRefundsItemCurrencyOneRegExp = new RegExp(
     '^[A-Z]{3}$'
 );
+export const listOrderPaymentsResponseItemsItemRefundsItemCurrencyOneMin = 3;
+export const listOrderPaymentsResponseItemsItemRefundsItemCurrencyOneMax = 3;
 export const listOrderPaymentsResponseItemsItemRefundsItemReturnIdMax = 64;
 export const listOrderPaymentsResponseItemsItemRefundsItemReturnIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -12982,11 +12943,11 @@ export const listOrderPaymentsResponseItemsItemDisputesItemAmountRegExp = new Re
     '^\\d+(\\.\\d+)?$'
 );
 export const listOrderPaymentsResponseItemsItemDisputesItemAmountMax = 32;
-export const listOrderPaymentsResponseItemsItemDisputesItemCurrencyMin = 3;
-export const listOrderPaymentsResponseItemsItemDisputesItemCurrencyMax = 3;
 export const listOrderPaymentsResponseItemsItemDisputesItemCurrencyRegExp = new RegExp(
     '^[A-Z]{3}$'
 );
+export const listOrderPaymentsResponseItemsItemDisputesItemCurrencyMin = 3;
+export const listOrderPaymentsResponseItemsItemDisputesItemCurrencyMax = 3;
 export const listOrderPaymentsResponseItemsItemActionsSettleRefundByHandItemMax = 64;
 export const listOrderPaymentsResponseItemsItemActionsSettleRefundByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -13018,10 +12979,9 @@ export const ListOrderPaymentsResponse = zod.strictObject({
                 .stringFormat('decimal', listOrderPaymentsResponseItemsItemAmountRegExp)
                 .max(listOrderPaymentsResponseItemsItemAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', listOrderPaymentsResponseItemsItemCurrencyOneRegExp)
                 .min(listOrderPaymentsResponseItemsItemCurrencyOneMin)
-                .max(listOrderPaymentsResponseItemsItemCurrencyOneMax)
-                .regex(listOrderPaymentsResponseItemsItemCurrencyOneRegExp),
+                .max(listOrderPaymentsResponseItemsItemCurrencyOneMax),
             amountRefunded: zod
                 .stringFormat('decimal', listOrderPaymentsResponseItemsItemAmountRefundedRegExp)
                 .max(listOrderPaymentsResponseItemsItemAmountRefundedMax),
@@ -13039,10 +12999,12 @@ export const ListOrderPaymentsResponse = zod.strictObject({
                         )
                         .max(listOrderPaymentsResponseItemsItemRefundsItemAmountMax),
                     currency: zod
-                        .string()
+                        .stringFormat(
+                            'iso-4217',
+                            listOrderPaymentsResponseItemsItemRefundsItemCurrencyOneRegExp
+                        )
                         .min(listOrderPaymentsResponseItemsItemRefundsItemCurrencyOneMin)
-                        .max(listOrderPaymentsResponseItemsItemRefundsItemCurrencyOneMax)
-                        .regex(listOrderPaymentsResponseItemsItemRefundsItemCurrencyOneRegExp),
+                        .max(listOrderPaymentsResponseItemsItemRefundsItemCurrencyOneMax),
                     status: zod.enum(['pending', 'succeeded', 'failed']),
                     reason: zod.enum([
                         'cancellation',
@@ -13154,10 +13116,12 @@ export const ListOrderPaymentsResponse = zod.strictObject({
                             )
                             .max(listOrderPaymentsResponseItemsItemDisputesItemAmountMax),
                         currency: zod
-                            .string()
+                            .stringFormat(
+                                'iso-4217',
+                                listOrderPaymentsResponseItemsItemDisputesItemCurrencyRegExp
+                            )
                             .min(listOrderPaymentsResponseItemsItemDisputesItemCurrencyMin)
-                            .max(listOrderPaymentsResponseItemsItemDisputesItemCurrencyMax)
-                            .regex(listOrderPaymentsResponseItemsItemDisputesItemCurrencyRegExp),
+                            .max(listOrderPaymentsResponseItemsItemDisputesItemCurrencyMax),
                         evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
                         fundsWithdrawn: zod.boolean(),
                         openedAt: zod.iso.datetime({ offset: true }),
@@ -13230,18 +13194,18 @@ export const recordOrderPaymentResponseUserIdMax = 64;
 export const recordOrderPaymentResponseUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const recordOrderPaymentResponseAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const recordOrderPaymentResponseAmountMax = 32;
+export const recordOrderPaymentResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const recordOrderPaymentResponseCurrencyOneMin = 3;
 export const recordOrderPaymentResponseCurrencyOneMax = 3;
-export const recordOrderPaymentResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const recordOrderPaymentResponseAmountRefundedRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const recordOrderPaymentResponseAmountRefundedMax = 32;
 export const recordOrderPaymentResponseRefundsItemIdMax = 64;
 export const recordOrderPaymentResponseRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const recordOrderPaymentResponseRefundsItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const recordOrderPaymentResponseRefundsItemAmountMax = 32;
+export const recordOrderPaymentResponseRefundsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const recordOrderPaymentResponseRefundsItemCurrencyOneMin = 3;
 export const recordOrderPaymentResponseRefundsItemCurrencyOneMax = 3;
-export const recordOrderPaymentResponseRefundsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const recordOrderPaymentResponseRefundsItemReturnIdMax = 64;
 export const recordOrderPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const recordOrderPaymentResponseEmailMax = 254;
@@ -13249,9 +13213,9 @@ export const recordOrderPaymentResponseReferenceMax = 120;
 export const recordOrderPaymentResponseCardLast4RegExp = new RegExp('^\\d{4}$');
 export const recordOrderPaymentResponseDisputesItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const recordOrderPaymentResponseDisputesItemAmountMax = 32;
+export const recordOrderPaymentResponseDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const recordOrderPaymentResponseDisputesItemCurrencyMin = 3;
 export const recordOrderPaymentResponseDisputesItemCurrencyMax = 3;
-export const recordOrderPaymentResponseDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const recordOrderPaymentResponseActionsSettleRefundByHandItemMax = 64;
 export const recordOrderPaymentResponseActionsSettleRefundByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -13281,10 +13245,9 @@ export const RecordOrderPaymentResponse = zod.strictObject({
         .stringFormat('decimal', recordOrderPaymentResponseAmountRegExp)
         .max(recordOrderPaymentResponseAmountMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', recordOrderPaymentResponseCurrencyOneRegExp)
         .min(recordOrderPaymentResponseCurrencyOneMin)
-        .max(recordOrderPaymentResponseCurrencyOneMax)
-        .regex(recordOrderPaymentResponseCurrencyOneRegExp),
+        .max(recordOrderPaymentResponseCurrencyOneMax),
     amountRefunded: zod
         .stringFormat('decimal', recordOrderPaymentResponseAmountRefundedRegExp)
         .max(recordOrderPaymentResponseAmountRefundedMax),
@@ -13299,10 +13262,9 @@ export const RecordOrderPaymentResponse = zod.strictObject({
                 .stringFormat('decimal', recordOrderPaymentResponseRefundsItemAmountRegExp)
                 .max(recordOrderPaymentResponseRefundsItemAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', recordOrderPaymentResponseRefundsItemCurrencyOneRegExp)
                 .min(recordOrderPaymentResponseRefundsItemCurrencyOneMin)
-                .max(recordOrderPaymentResponseRefundsItemCurrencyOneMax)
-                .regex(recordOrderPaymentResponseRefundsItemCurrencyOneRegExp),
+                .max(recordOrderPaymentResponseRefundsItemCurrencyOneMax),
             status: zod.enum(['pending', 'succeeded', 'failed']),
             reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
             returnId: zod
@@ -13402,10 +13364,9 @@ export const RecordOrderPaymentResponse = zod.strictObject({
                     .stringFormat('decimal', recordOrderPaymentResponseDisputesItemAmountRegExp)
                     .max(recordOrderPaymentResponseDisputesItemAmountMax),
                 currency: zod
-                    .string()
+                    .stringFormat('iso-4217', recordOrderPaymentResponseDisputesItemCurrencyRegExp)
                     .min(recordOrderPaymentResponseDisputesItemCurrencyMin)
-                    .max(recordOrderPaymentResponseDisputesItemCurrencyMax)
-                    .regex(recordOrderPaymentResponseDisputesItemCurrencyRegExp),
+                    .max(recordOrderPaymentResponseDisputesItemCurrencyMax),
                 evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
                 fundsWithdrawn: zod.boolean(),
                 openedAt: zod.iso.datetime({ offset: true }),
@@ -13460,10 +13421,10 @@ export const processOrderResponseItemsItemProductSkuMax = 64;
 export const processOrderResponseItemsItemProductWeightMin = 0;
 export const processOrderResponseItemsItemProductTaxRateMin = 0;
 export const processOrderResponseItemsItemProductTaxRateMax = 1;
-export const processOrderResponseItemsItemLocaleMax = 35;
 export const processOrderResponseItemsItemLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const processOrderResponseItemsItemLocaleMax = 35;
 export const processOrderResponseItemsItemTaxAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const processOrderResponseItemsItemTaxAmountMax = 32;
 export const processOrderResponseItemsItemNetAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -13472,9 +13433,9 @@ export const processOrderResponseTotalItemsMin = 0;
 export const processOrderResponseTotalQuantityMin = 0;
 export const processOrderResponseTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const processOrderResponseTotalPriceMax = 32;
+export const processOrderResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const processOrderResponseCurrencyOneMin = 3;
 export const processOrderResponseCurrencyOneMax = 3;
-export const processOrderResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const processOrderResponseNetTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const processOrderResponseNetTotalMax = 32;
 export const processOrderResponseTaxTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -13496,15 +13457,15 @@ export const processOrderResponseShippingAddressFullNameMax = 100;
 export const processOrderResponseShippingAddressStreetMax = 200;
 export const processOrderResponseShippingAddressCityMax = 100;
 export const processOrderResponseShippingAddressZipMax = 20;
-export const processOrderResponseShippingAddressCountryMax = 2;
 export const processOrderResponseShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const processOrderResponseShippingAddressCountryMax = 2;
 export const processOrderResponseShippingAddressPhoneMax = 32;
 export const processOrderResponseBillingAddressFullNameMax = 100;
 export const processOrderResponseBillingAddressStreetMax = 200;
 export const processOrderResponseBillingAddressCityMax = 100;
 export const processOrderResponseBillingAddressZipMax = 20;
-export const processOrderResponseBillingAddressCountryMax = 2;
 export const processOrderResponseBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const processOrderResponseBillingAddressCountryMax = 2;
 export const processOrderResponseBillingAddressPhoneMax = 32;
 export const ProcessOrderResponse = zod.strictObject({
     id: zod.string().min(1).max(processOrderResponseIdMax).regex(processOrderResponseIdRegExp),
@@ -13549,9 +13510,8 @@ export const ProcessOrderResponse = zod.strictObject({
             }),
             quantity: zod.number().min(1),
             locale: zod
-                .string()
-                .max(processOrderResponseItemsItemLocaleMax)
-                .regex(processOrderResponseItemsItemLocaleRegExp),
+                .stringFormat('bcp47', processOrderResponseItemsItemLocaleRegExp)
+                .max(processOrderResponseItemsItemLocaleMax),
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
@@ -13575,10 +13535,9 @@ export const ProcessOrderResponse = zod.strictObject({
         .stringFormat('decimal', processOrderResponseTotalPriceRegExp)
         .max(processOrderResponseTotalPriceMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', processOrderResponseCurrencyOneRegExp)
         .min(processOrderResponseCurrencyOneMin)
-        .max(processOrderResponseCurrencyOneMax)
-        .regex(processOrderResponseCurrencyOneRegExp),
+        .max(processOrderResponseCurrencyOneMax),
     termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', processOrderResponseNetTotalRegExp)
@@ -13619,9 +13578,8 @@ export const ProcessOrderResponse = zod.strictObject({
             city: zod.string().min(1).max(processOrderResponseShippingAddressCityMax),
             zip: zod.string().min(1).max(processOrderResponseShippingAddressZipMax),
             country: zod
-                .string()
-                .max(processOrderResponseShippingAddressCountryMax)
-                .regex(processOrderResponseShippingAddressCountryRegExp),
+                .stringFormat('iso-3166-alpha-2', processOrderResponseShippingAddressCountryRegExp)
+                .max(processOrderResponseShippingAddressCountryMax),
             phone: zod.string().min(1).max(processOrderResponseShippingAddressPhoneMax).optional()
         })
         .optional(),
@@ -13632,9 +13590,8 @@ export const ProcessOrderResponse = zod.strictObject({
             city: zod.string().min(1).max(processOrderResponseBillingAddressCityMax),
             zip: zod.string().min(1).max(processOrderResponseBillingAddressZipMax),
             country: zod
-                .string()
-                .max(processOrderResponseBillingAddressCountryMax)
-                .regex(processOrderResponseBillingAddressCountryRegExp),
+                .stringFormat('iso-3166-alpha-2', processOrderResponseBillingAddressCountryRegExp)
+                .max(processOrderResponseBillingAddressCountryMax),
             phone: zod.string().min(1).max(processOrderResponseBillingAddressPhoneMax).optional()
         })
         .optional(),
@@ -13794,8 +13751,8 @@ export const listOrderShipmentsResponseItemsItemDestinationFullNameMax = 100;
 export const listOrderShipmentsResponseItemsItemDestinationStreetMax = 200;
 export const listOrderShipmentsResponseItemsItemDestinationCityMax = 100;
 export const listOrderShipmentsResponseItemsItemDestinationZipMax = 20;
-export const listOrderShipmentsResponseItemsItemDestinationCountryMax = 2;
 export const listOrderShipmentsResponseItemsItemDestinationCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const listOrderShipmentsResponseItemsItemDestinationCountryMax = 2;
 export const listOrderShipmentsResponseItemsItemDestinationPhoneMax = 32;
 export const listOrderShipmentsResponseItemsItemLostMessageMax = 500;
 export const listOrderShipmentsResponseItemsItemLostNoteMax = 1000;
@@ -13850,9 +13807,11 @@ export const ListOrderShipmentsResponse = zod.strictObject({
                         .min(1)
                         .max(listOrderShipmentsResponseItemsItemDestinationZipMax),
                     country: zod
-                        .string()
-                        .max(listOrderShipmentsResponseItemsItemDestinationCountryMax)
-                        .regex(listOrderShipmentsResponseItemsItemDestinationCountryRegExp),
+                        .stringFormat(
+                            'iso-3166-alpha-2',
+                            listOrderShipmentsResponseItemsItemDestinationCountryRegExp
+                        )
+                        .max(listOrderShipmentsResponseItemsItemDestinationCountryMax),
                     phone: zod
                         .string()
                         .min(1)
@@ -13923,28 +13882,27 @@ export const CreateRefundHeader = zod.strictObject({
 });
 export const createRefundBodyAmountRegExp = new RegExp('^-?\\d+(\\.\\d+)?$');
 export const createRefundBodyAmountMax = 32;
+export const createRefundBodyCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const createRefundBodyCurrencyOneMin = 3;
 export const createRefundBodyCurrencyOneMax = 3;
-export const createRefundBodyCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const CreateRefundBody = zod.strictObject({
     amount: zod
         .stringFormat('decimal', createRefundBodyAmountRegExp)
         .max(createRefundBodyAmountMax)
         .optional(),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', createRefundBodyCurrencyOneRegExp)
         .min(createRefundBodyCurrencyOneMin)
         .max(createRefundBodyCurrencyOneMax)
-        .regex(createRefundBodyCurrencyOneRegExp)
         .optional()
 });
 export const createRefundResponseIdMax = 64;
 export const createRefundResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createRefundResponseAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const createRefundResponseAmountMax = 32;
+export const createRefundResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const createRefundResponseCurrencyOneMin = 3;
 export const createRefundResponseCurrencyOneMax = 3;
-export const createRefundResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const createRefundResponseReturnIdMax = 64;
 export const createRefundResponseReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const CreateRefundResponse = zod.strictObject({
@@ -13953,10 +13911,9 @@ export const CreateRefundResponse = zod.strictObject({
         .stringFormat('decimal', createRefundResponseAmountRegExp)
         .max(createRefundResponseAmountMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', createRefundResponseCurrencyOneRegExp)
         .min(createRefundResponseCurrencyOneMin)
-        .max(createRefundResponseCurrencyOneMax)
-        .regex(createRefundResponseCurrencyOneRegExp),
+        .max(createRefundResponseCurrencyOneMax),
     status: zod.enum(['pending', 'succeeded', 'failed']),
     reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
     returnId: zod
@@ -14001,9 +13958,9 @@ export const getRefundResponseIdMax = 64;
 export const getRefundResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getRefundResponseAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const getRefundResponseAmountMax = 32;
+export const getRefundResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getRefundResponseCurrencyOneMin = 3;
 export const getRefundResponseCurrencyOneMax = 3;
-export const getRefundResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getRefundResponseReturnIdMax = 64;
 export const getRefundResponseReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const GetRefundResponse = zod.strictObject({
@@ -14012,10 +13969,9 @@ export const GetRefundResponse = zod.strictObject({
         .stringFormat('decimal', getRefundResponseAmountRegExp)
         .max(getRefundResponseAmountMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', getRefundResponseCurrencyOneRegExp)
         .min(getRefundResponseCurrencyOneMin)
-        .max(getRefundResponseCurrencyOneMax)
-        .regex(getRefundResponseCurrencyOneRegExp),
+        .max(getRefundResponseCurrencyOneMax),
     status: zod.enum(['pending', 'succeeded', 'failed']),
     reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
     returnId: zod
@@ -14061,18 +14017,18 @@ export const getPaymentResponseUserIdMax = 64;
 export const getPaymentResponseUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getPaymentResponseAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const getPaymentResponseAmountMax = 32;
+export const getPaymentResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getPaymentResponseCurrencyOneMin = 3;
 export const getPaymentResponseCurrencyOneMax = 3;
-export const getPaymentResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getPaymentResponseAmountRefundedRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const getPaymentResponseAmountRefundedMax = 32;
 export const getPaymentResponseRefundsItemIdMax = 64;
 export const getPaymentResponseRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getPaymentResponseRefundsItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const getPaymentResponseRefundsItemAmountMax = 32;
+export const getPaymentResponseRefundsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getPaymentResponseRefundsItemCurrencyOneMin = 3;
 export const getPaymentResponseRefundsItemCurrencyOneMax = 3;
-export const getPaymentResponseRefundsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getPaymentResponseRefundsItemReturnIdMax = 64;
 export const getPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getPaymentResponseEmailMax = 254;
@@ -14080,9 +14036,9 @@ export const getPaymentResponseReferenceMax = 120;
 export const getPaymentResponseCardLast4RegExp = new RegExp('^\\d{4}$');
 export const getPaymentResponseDisputesItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const getPaymentResponseDisputesItemAmountMax = 32;
+export const getPaymentResponseDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getPaymentResponseDisputesItemCurrencyMin = 3;
 export const getPaymentResponseDisputesItemCurrencyMax = 3;
-export const getPaymentResponseDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getPaymentResponseActionsSettleRefundByHandItemMax = 64;
 export const getPaymentResponseActionsSettleRefundByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getPaymentResponseActionsCancelRefundItemMax = 64;
@@ -14104,10 +14060,9 @@ export const GetPaymentResponse = zod.strictObject({
         .stringFormat('decimal', getPaymentResponseAmountRegExp)
         .max(getPaymentResponseAmountMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', getPaymentResponseCurrencyOneRegExp)
         .min(getPaymentResponseCurrencyOneMin)
-        .max(getPaymentResponseCurrencyOneMax)
-        .regex(getPaymentResponseCurrencyOneRegExp),
+        .max(getPaymentResponseCurrencyOneMax),
     amountRefunded: zod
         .stringFormat('decimal', getPaymentResponseAmountRefundedRegExp)
         .max(getPaymentResponseAmountRefundedMax),
@@ -14122,10 +14077,9 @@ export const GetPaymentResponse = zod.strictObject({
                 .stringFormat('decimal', getPaymentResponseRefundsItemAmountRegExp)
                 .max(getPaymentResponseRefundsItemAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', getPaymentResponseRefundsItemCurrencyOneRegExp)
                 .min(getPaymentResponseRefundsItemCurrencyOneMin)
-                .max(getPaymentResponseRefundsItemCurrencyOneMax)
-                .regex(getPaymentResponseRefundsItemCurrencyOneRegExp),
+                .max(getPaymentResponseRefundsItemCurrencyOneMax),
             status: zod.enum(['pending', 'succeeded', 'failed']),
             reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
             returnId: zod
@@ -14225,10 +14179,9 @@ export const GetPaymentResponse = zod.strictObject({
                     .stringFormat('decimal', getPaymentResponseDisputesItemAmountRegExp)
                     .max(getPaymentResponseDisputesItemAmountMax),
                 currency: zod
-                    .string()
+                    .stringFormat('iso-4217', getPaymentResponseDisputesItemCurrencyRegExp)
                     .min(getPaymentResponseDisputesItemCurrencyMin)
-                    .max(getPaymentResponseDisputesItemCurrencyMax)
-                    .regex(getPaymentResponseDisputesItemCurrencyRegExp),
+                    .max(getPaymentResponseDisputesItemCurrencyMax),
                 evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
                 fundsWithdrawn: zod.boolean(),
                 openedAt: zod.iso.datetime({ offset: true }),
@@ -14299,18 +14252,18 @@ export const confirmPaymentResponseUserIdMax = 64;
 export const confirmPaymentResponseUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const confirmPaymentResponseAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const confirmPaymentResponseAmountMax = 32;
+export const confirmPaymentResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const confirmPaymentResponseCurrencyOneMin = 3;
 export const confirmPaymentResponseCurrencyOneMax = 3;
-export const confirmPaymentResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const confirmPaymentResponseAmountRefundedRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const confirmPaymentResponseAmountRefundedMax = 32;
 export const confirmPaymentResponseRefundsItemIdMax = 64;
 export const confirmPaymentResponseRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const confirmPaymentResponseRefundsItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const confirmPaymentResponseRefundsItemAmountMax = 32;
+export const confirmPaymentResponseRefundsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const confirmPaymentResponseRefundsItemCurrencyOneMin = 3;
 export const confirmPaymentResponseRefundsItemCurrencyOneMax = 3;
-export const confirmPaymentResponseRefundsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const confirmPaymentResponseRefundsItemReturnIdMax = 64;
 export const confirmPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const confirmPaymentResponseEmailMax = 254;
@@ -14318,9 +14271,9 @@ export const confirmPaymentResponseReferenceMax = 120;
 export const confirmPaymentResponseCardLast4RegExp = new RegExp('^\\d{4}$');
 export const confirmPaymentResponseDisputesItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const confirmPaymentResponseDisputesItemAmountMax = 32;
+export const confirmPaymentResponseDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const confirmPaymentResponseDisputesItemCurrencyMin = 3;
 export const confirmPaymentResponseDisputesItemCurrencyMax = 3;
-export const confirmPaymentResponseDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const confirmPaymentResponseActionsSettleRefundByHandItemMax = 64;
 export const confirmPaymentResponseActionsSettleRefundByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -14344,10 +14297,9 @@ export const ConfirmPaymentResponse = zod.strictObject({
         .stringFormat('decimal', confirmPaymentResponseAmountRegExp)
         .max(confirmPaymentResponseAmountMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', confirmPaymentResponseCurrencyOneRegExp)
         .min(confirmPaymentResponseCurrencyOneMin)
-        .max(confirmPaymentResponseCurrencyOneMax)
-        .regex(confirmPaymentResponseCurrencyOneRegExp),
+        .max(confirmPaymentResponseCurrencyOneMax),
     amountRefunded: zod
         .stringFormat('decimal', confirmPaymentResponseAmountRefundedRegExp)
         .max(confirmPaymentResponseAmountRefundedMax),
@@ -14362,10 +14314,9 @@ export const ConfirmPaymentResponse = zod.strictObject({
                 .stringFormat('decimal', confirmPaymentResponseRefundsItemAmountRegExp)
                 .max(confirmPaymentResponseRefundsItemAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', confirmPaymentResponseRefundsItemCurrencyOneRegExp)
                 .min(confirmPaymentResponseRefundsItemCurrencyOneMin)
-                .max(confirmPaymentResponseRefundsItemCurrencyOneMax)
-                .regex(confirmPaymentResponseRefundsItemCurrencyOneRegExp),
+                .max(confirmPaymentResponseRefundsItemCurrencyOneMax),
             status: zod.enum(['pending', 'succeeded', 'failed']),
             reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
             returnId: zod
@@ -14465,10 +14416,9 @@ export const ConfirmPaymentResponse = zod.strictObject({
                     .stringFormat('decimal', confirmPaymentResponseDisputesItemAmountRegExp)
                     .max(confirmPaymentResponseDisputesItemAmountMax),
                 currency: zod
-                    .string()
+                    .stringFormat('iso-4217', confirmPaymentResponseDisputesItemCurrencyRegExp)
                     .min(confirmPaymentResponseDisputesItemCurrencyMin)
-                    .max(confirmPaymentResponseDisputesItemCurrencyMax)
-                    .regex(confirmPaymentResponseDisputesItemCurrencyRegExp),
+                    .max(confirmPaymentResponseDisputesItemCurrencyMax),
                 evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
                 fundsWithdrawn: zod.boolean(),
                 openedAt: zod.iso.datetime({ offset: true }),
@@ -14517,18 +14467,18 @@ export const syncPaymentResponseUserIdMax = 64;
 export const syncPaymentResponseUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const syncPaymentResponseAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const syncPaymentResponseAmountMax = 32;
+export const syncPaymentResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const syncPaymentResponseCurrencyOneMin = 3;
 export const syncPaymentResponseCurrencyOneMax = 3;
-export const syncPaymentResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const syncPaymentResponseAmountRefundedRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const syncPaymentResponseAmountRefundedMax = 32;
 export const syncPaymentResponseRefundsItemIdMax = 64;
 export const syncPaymentResponseRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const syncPaymentResponseRefundsItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const syncPaymentResponseRefundsItemAmountMax = 32;
+export const syncPaymentResponseRefundsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const syncPaymentResponseRefundsItemCurrencyOneMin = 3;
 export const syncPaymentResponseRefundsItemCurrencyOneMax = 3;
-export const syncPaymentResponseRefundsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const syncPaymentResponseRefundsItemReturnIdMax = 64;
 export const syncPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const syncPaymentResponseEmailMax = 254;
@@ -14536,9 +14486,9 @@ export const syncPaymentResponseReferenceMax = 120;
 export const syncPaymentResponseCardLast4RegExp = new RegExp('^\\d{4}$');
 export const syncPaymentResponseDisputesItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const syncPaymentResponseDisputesItemAmountMax = 32;
+export const syncPaymentResponseDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const syncPaymentResponseDisputesItemCurrencyMin = 3;
 export const syncPaymentResponseDisputesItemCurrencyMax = 3;
-export const syncPaymentResponseDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const syncPaymentResponseActionsSettleRefundByHandItemMax = 64;
 export const syncPaymentResponseActionsSettleRefundByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -14562,10 +14512,9 @@ export const SyncPaymentResponse = zod.strictObject({
         .stringFormat('decimal', syncPaymentResponseAmountRegExp)
         .max(syncPaymentResponseAmountMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', syncPaymentResponseCurrencyOneRegExp)
         .min(syncPaymentResponseCurrencyOneMin)
-        .max(syncPaymentResponseCurrencyOneMax)
-        .regex(syncPaymentResponseCurrencyOneRegExp),
+        .max(syncPaymentResponseCurrencyOneMax),
     amountRefunded: zod
         .stringFormat('decimal', syncPaymentResponseAmountRefundedRegExp)
         .max(syncPaymentResponseAmountRefundedMax),
@@ -14580,10 +14529,9 @@ export const SyncPaymentResponse = zod.strictObject({
                 .stringFormat('decimal', syncPaymentResponseRefundsItemAmountRegExp)
                 .max(syncPaymentResponseRefundsItemAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', syncPaymentResponseRefundsItemCurrencyOneRegExp)
                 .min(syncPaymentResponseRefundsItemCurrencyOneMin)
-                .max(syncPaymentResponseRefundsItemCurrencyOneMax)
-                .regex(syncPaymentResponseRefundsItemCurrencyOneRegExp),
+                .max(syncPaymentResponseRefundsItemCurrencyOneMax),
             status: zod.enum(['pending', 'succeeded', 'failed']),
             reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
             returnId: zod
@@ -14683,10 +14631,9 @@ export const SyncPaymentResponse = zod.strictObject({
                     .stringFormat('decimal', syncPaymentResponseDisputesItemAmountRegExp)
                     .max(syncPaymentResponseDisputesItemAmountMax),
                 currency: zod
-                    .string()
+                    .stringFormat('iso-4217', syncPaymentResponseDisputesItemCurrencyRegExp)
                     .min(syncPaymentResponseDisputesItemCurrencyMin)
-                    .max(syncPaymentResponseDisputesItemCurrencyMax)
-                    .regex(syncPaymentResponseDisputesItemCurrencyRegExp),
+                    .max(syncPaymentResponseDisputesItemCurrencyMax),
                 evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
                 fundsWithdrawn: zod.boolean(),
                 openedAt: zod.iso.datetime({ offset: true }),
@@ -14738,9 +14685,9 @@ export const receivePaymentWebhookBodyRefundRefMax = 200;
 export const receivePaymentWebhookBodyDisputeDisputeRefMax = 200;
 export const receivePaymentWebhookBodyDisputeAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const receivePaymentWebhookBodyDisputeAmountMax = 32;
+export const receivePaymentWebhookBodyDisputeCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const receivePaymentWebhookBodyDisputeCurrencyOneMin = 3;
 export const receivePaymentWebhookBodyDisputeCurrencyOneMax = 3;
-export const receivePaymentWebhookBodyDisputeCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const receivePaymentWebhookBodyDisputeDashboardUrlMax = 500;
 export const ReceivePaymentWebhookBody = zod.strictObject({
     id: zod.string().max(receivePaymentWebhookBodyIdMax),
@@ -14778,10 +14725,9 @@ export const ReceivePaymentWebhookBody = zod.strictObject({
                 .stringFormat('decimal', receivePaymentWebhookBodyDisputeAmountRegExp)
                 .max(receivePaymentWebhookBodyDisputeAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', receivePaymentWebhookBodyDisputeCurrencyOneRegExp)
                 .min(receivePaymentWebhookBodyDisputeCurrencyOneMin)
-                .max(receivePaymentWebhookBodyDisputeCurrencyOneMax)
-                .regex(receivePaymentWebhookBodyDisputeCurrencyOneRegExp),
+                .max(receivePaymentWebhookBodyDisputeCurrencyOneMax),
             evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
             fundsWithdrawn: zod.boolean(),
             observedAt: zod.iso.datetime({ offset: true }),
@@ -14799,9 +14745,9 @@ export const ReceivePaymentWebhookResponse = zod.void();
  */
 export const listShippingMethodsResponseMethodsItemPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const listShippingMethodsResponseMethodsItemPriceMax = 32;
+export const listShippingMethodsResponseMethodsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const listShippingMethodsResponseMethodsItemCurrencyOneMin = 3;
 export const listShippingMethodsResponseMethodsItemCurrencyOneMax = 3;
-export const listShippingMethodsResponseMethodsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const listShippingMethodsResponseMethodsItemFreeAboveRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const listShippingMethodsResponseMethodsItemFreeAboveMax = 32;
 export const listShippingMethodsResponseMethodsItemMinWeightMin = 0;
@@ -14814,10 +14760,9 @@ export const ListShippingMethodsResponse = zod.strictObject({
                 .stringFormat('decimal', listShippingMethodsResponseMethodsItemPriceRegExp)
                 .max(listShippingMethodsResponseMethodsItemPriceMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', listShippingMethodsResponseMethodsItemCurrencyOneRegExp)
                 .min(listShippingMethodsResponseMethodsItemCurrencyOneMin)
-                .max(listShippingMethodsResponseMethodsItemCurrencyOneMax)
-                .regex(listShippingMethodsResponseMethodsItemCurrencyOneRegExp),
+                .max(listShippingMethodsResponseMethodsItemCurrencyOneMax),
             freeAbove: zod
                 .stringFormat('decimal', listShippingMethodsResponseMethodsItemFreeAboveRegExp)
                 .max(listShippingMethodsResponseMethodsItemFreeAboveMax)
@@ -15136,8 +15081,8 @@ export const shipFulfillmentOrderResponseDestinationFullNameMax = 100;
 export const shipFulfillmentOrderResponseDestinationStreetMax = 200;
 export const shipFulfillmentOrderResponseDestinationCityMax = 100;
 export const shipFulfillmentOrderResponseDestinationZipMax = 20;
-export const shipFulfillmentOrderResponseDestinationCountryMax = 2;
 export const shipFulfillmentOrderResponseDestinationCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const shipFulfillmentOrderResponseDestinationCountryMax = 2;
 export const shipFulfillmentOrderResponseDestinationPhoneMax = 32;
 export const shipFulfillmentOrderResponseLostMessageMax = 500;
 export const shipFulfillmentOrderResponseLostNoteMax = 1000;
@@ -15178,9 +15123,11 @@ export const ShipFulfillmentOrderResponse = zod.strictObject({
             city: zod.string().min(1).max(shipFulfillmentOrderResponseDestinationCityMax),
             zip: zod.string().min(1).max(shipFulfillmentOrderResponseDestinationZipMax),
             country: zod
-                .string()
-                .max(shipFulfillmentOrderResponseDestinationCountryMax)
-                .regex(shipFulfillmentOrderResponseDestinationCountryRegExp),
+                .stringFormat(
+                    'iso-3166-alpha-2',
+                    shipFulfillmentOrderResponseDestinationCountryRegExp
+                )
+                .max(shipFulfillmentOrderResponseDestinationCountryMax),
             phone: zod
                 .string()
                 .min(1)
@@ -15245,8 +15192,8 @@ export const fulfillFulfillmentOrderResponseDestinationFullNameMax = 100;
 export const fulfillFulfillmentOrderResponseDestinationStreetMax = 200;
 export const fulfillFulfillmentOrderResponseDestinationCityMax = 100;
 export const fulfillFulfillmentOrderResponseDestinationZipMax = 20;
-export const fulfillFulfillmentOrderResponseDestinationCountryMax = 2;
 export const fulfillFulfillmentOrderResponseDestinationCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const fulfillFulfillmentOrderResponseDestinationCountryMax = 2;
 export const fulfillFulfillmentOrderResponseDestinationPhoneMax = 32;
 export const fulfillFulfillmentOrderResponseLostMessageMax = 500;
 export const fulfillFulfillmentOrderResponseLostNoteMax = 1000;
@@ -15290,9 +15237,11 @@ export const FulfillFulfillmentOrderResponse = zod.strictObject({
             city: zod.string().min(1).max(fulfillFulfillmentOrderResponseDestinationCityMax),
             zip: zod.string().min(1).max(fulfillFulfillmentOrderResponseDestinationZipMax),
             country: zod
-                .string()
-                .max(fulfillFulfillmentOrderResponseDestinationCountryMax)
-                .regex(fulfillFulfillmentOrderResponseDestinationCountryRegExp),
+                .stringFormat(
+                    'iso-3166-alpha-2',
+                    fulfillFulfillmentOrderResponseDestinationCountryRegExp
+                )
+                .max(fulfillFulfillmentOrderResponseDestinationCountryMax),
             phone: zod
                 .string()
                 .min(1)
@@ -15492,8 +15441,8 @@ export const getShipmentResponseDestinationFullNameMax = 100;
 export const getShipmentResponseDestinationStreetMax = 200;
 export const getShipmentResponseDestinationCityMax = 100;
 export const getShipmentResponseDestinationZipMax = 20;
-export const getShipmentResponseDestinationCountryMax = 2;
 export const getShipmentResponseDestinationCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const getShipmentResponseDestinationCountryMax = 2;
 export const getShipmentResponseDestinationPhoneMax = 32;
 export const getShipmentResponseLostMessageMax = 500;
 export const getShipmentResponseLostNoteMax = 1000;
@@ -15530,9 +15479,8 @@ export const GetShipmentResponse = zod.strictObject({
             city: zod.string().min(1).max(getShipmentResponseDestinationCityMax),
             zip: zod.string().min(1).max(getShipmentResponseDestinationZipMax),
             country: zod
-                .string()
-                .max(getShipmentResponseDestinationCountryMax)
-                .regex(getShipmentResponseDestinationCountryRegExp),
+                .stringFormat('iso-3166-alpha-2', getShipmentResponseDestinationCountryRegExp)
+                .max(getShipmentResponseDestinationCountryMax),
             phone: zod.string().min(1).max(getShipmentResponseDestinationPhoneMax).optional()
         })
         .optional(),
@@ -15577,8 +15525,8 @@ export const updateShipmentResponseDestinationFullNameMax = 100;
 export const updateShipmentResponseDestinationStreetMax = 200;
 export const updateShipmentResponseDestinationCityMax = 100;
 export const updateShipmentResponseDestinationZipMax = 20;
-export const updateShipmentResponseDestinationCountryMax = 2;
 export const updateShipmentResponseDestinationCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const updateShipmentResponseDestinationCountryMax = 2;
 export const updateShipmentResponseDestinationPhoneMax = 32;
 export const updateShipmentResponseLostMessageMax = 500;
 export const updateShipmentResponseLostNoteMax = 1000;
@@ -15615,9 +15563,8 @@ export const UpdateShipmentResponse = zod.strictObject({
             city: zod.string().min(1).max(updateShipmentResponseDestinationCityMax),
             zip: zod.string().min(1).max(updateShipmentResponseDestinationZipMax),
             country: zod
-                .string()
-                .max(updateShipmentResponseDestinationCountryMax)
-                .regex(updateShipmentResponseDestinationCountryRegExp),
+                .stringFormat('iso-3166-alpha-2', updateShipmentResponseDestinationCountryRegExp)
+                .max(updateShipmentResponseDestinationCountryMax),
             phone: zod.string().min(1).max(updateShipmentResponseDestinationPhoneMax).optional()
         })
         .optional(),
@@ -15660,8 +15607,8 @@ export const deliverShipmentResponseDestinationFullNameMax = 100;
 export const deliverShipmentResponseDestinationStreetMax = 200;
 export const deliverShipmentResponseDestinationCityMax = 100;
 export const deliverShipmentResponseDestinationZipMax = 20;
-export const deliverShipmentResponseDestinationCountryMax = 2;
 export const deliverShipmentResponseDestinationCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const deliverShipmentResponseDestinationCountryMax = 2;
 export const deliverShipmentResponseDestinationPhoneMax = 32;
 export const deliverShipmentResponseLostMessageMax = 500;
 export const deliverShipmentResponseLostNoteMax = 1000;
@@ -15702,9 +15649,8 @@ export const DeliverShipmentResponse = zod.strictObject({
             city: zod.string().min(1).max(deliverShipmentResponseDestinationCityMax),
             zip: zod.string().min(1).max(deliverShipmentResponseDestinationZipMax),
             country: zod
-                .string()
-                .max(deliverShipmentResponseDestinationCountryMax)
-                .regex(deliverShipmentResponseDestinationCountryRegExp),
+                .stringFormat('iso-3166-alpha-2', deliverShipmentResponseDestinationCountryRegExp)
+                .max(deliverShipmentResponseDestinationCountryMax),
             phone: zod.string().min(1).max(deliverShipmentResponseDestinationPhoneMax).optional()
         })
         .optional(),
@@ -15882,9 +15828,9 @@ export const createReturnResponseIdMax = 64;
 export const createReturnResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createReturnResponseOrderIdMax = 64;
 export const createReturnResponseOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createReturnResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const createReturnResponseCurrencyOneMin = 3;
 export const createReturnResponseCurrencyOneMax = 3;
-export const createReturnResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const createReturnResponseFulfillmentOrderIdMax = 64;
 export const createReturnResponseFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createReturnResponseNoteMax = 1000;
@@ -15909,10 +15855,9 @@ export const CreateReturnResponse = zod.strictObject({
         .regex(createReturnResponseOrderIdRegExp),
     orderNumber: zod.string(),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', createReturnResponseCurrencyOneRegExp)
         .min(createReturnResponseCurrencyOneMin)
-        .max(createReturnResponseCurrencyOneMax)
-        .regex(createReturnResponseCurrencyOneRegExp),
+        .max(createReturnResponseCurrencyOneMax),
     status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled']),
     reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
     kind: zod.enum(['return', 'cancellation']),
@@ -15990,9 +15935,9 @@ export const GetReturnOptionsQueryParams = zod.strictObject({
 });
 export const getReturnOptionsResponseOrderIdMax = 64;
 export const getReturnOptionsResponseOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getReturnOptionsResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getReturnOptionsResponseCurrencyOneMin = 3;
 export const getReturnOptionsResponseCurrencyOneMax = 3;
-export const getReturnOptionsResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getReturnOptionsResponseReturnableItemProductIdMax = 64;
 export const getReturnOptionsResponseReturnableItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getReturnOptionsResponseCancelableItemFulfillmentOrderIdMax = 64;
@@ -16018,10 +15963,9 @@ export const GetReturnOptionsResponse = zod.strictObject({
         .max(getReturnOptionsResponseOrderIdMax)
         .regex(getReturnOptionsResponseOrderIdRegExp),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', getReturnOptionsResponseCurrencyOneRegExp)
         .min(getReturnOptionsResponseCurrencyOneMin)
-        .max(getReturnOptionsResponseCurrencyOneMax)
-        .regex(getReturnOptionsResponseCurrencyOneRegExp),
+        .max(getReturnOptionsResponseCurrencyOneMax),
     reasons: zod.array(zod.enum(['withdrawal', 'defective', 'wrong_item', 'other'])).optional(),
     exceptions: zod.array(zod.enum(['withdrawal', 'defective', 'wrong_item', 'other'])),
     returnable: zod.array(
@@ -16078,9 +16022,9 @@ export const getReturnByIdResponseIdMax = 64;
 export const getReturnByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getReturnByIdResponseOrderIdMax = 64;
 export const getReturnByIdResponseOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getReturnByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getReturnByIdResponseCurrencyOneMin = 3;
 export const getReturnByIdResponseCurrencyOneMax = 3;
-export const getReturnByIdResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getReturnByIdResponseFulfillmentOrderIdMax = 64;
 export const getReturnByIdResponseFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getReturnByIdResponseNoteMax = 1000;
@@ -16105,10 +16049,9 @@ export const GetReturnByIdResponse = zod.strictObject({
         .regex(getReturnByIdResponseOrderIdRegExp),
     orderNumber: zod.string(),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', getReturnByIdResponseCurrencyOneRegExp)
         .min(getReturnByIdResponseCurrencyOneMin)
-        .max(getReturnByIdResponseCurrencyOneMax)
-        .regex(getReturnByIdResponseCurrencyOneRegExp),
+        .max(getReturnByIdResponseCurrencyOneMax),
     status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled']),
     reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
     kind: zod.enum(['return', 'cancellation']),
@@ -16184,9 +16127,9 @@ export const approveReturnResponseIdMax = 64;
 export const approveReturnResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const approveReturnResponseOrderIdMax = 64;
 export const approveReturnResponseOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const approveReturnResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const approveReturnResponseCurrencyOneMin = 3;
 export const approveReturnResponseCurrencyOneMax = 3;
-export const approveReturnResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const approveReturnResponseFulfillmentOrderIdMax = 64;
 export const approveReturnResponseFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const approveReturnResponseNoteMax = 1000;
@@ -16211,10 +16154,9 @@ export const ApproveReturnResponse = zod.strictObject({
         .regex(approveReturnResponseOrderIdRegExp),
     orderNumber: zod.string(),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', approveReturnResponseCurrencyOneRegExp)
         .min(approveReturnResponseCurrencyOneMin)
-        .max(approveReturnResponseCurrencyOneMax)
-        .regex(approveReturnResponseCurrencyOneRegExp),
+        .max(approveReturnResponseCurrencyOneMax),
     status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled']),
     reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
     kind: zod.enum(['return', 'cancellation']),
@@ -16295,9 +16237,9 @@ export const declineReturnResponseIdMax = 64;
 export const declineReturnResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const declineReturnResponseOrderIdMax = 64;
 export const declineReturnResponseOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const declineReturnResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const declineReturnResponseCurrencyOneMin = 3;
 export const declineReturnResponseCurrencyOneMax = 3;
-export const declineReturnResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const declineReturnResponseFulfillmentOrderIdMax = 64;
 export const declineReturnResponseFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const declineReturnResponseNoteMax = 1000;
@@ -16322,10 +16264,9 @@ export const DeclineReturnResponse = zod.strictObject({
         .regex(declineReturnResponseOrderIdRegExp),
     orderNumber: zod.string(),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', declineReturnResponseCurrencyOneRegExp)
         .min(declineReturnResponseCurrencyOneMin)
-        .max(declineReturnResponseCurrencyOneMax)
-        .regex(declineReturnResponseCurrencyOneRegExp),
+        .max(declineReturnResponseCurrencyOneMax),
     status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled']),
     reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
     kind: zod.enum(['return', 'cancellation']),
@@ -16438,9 +16379,9 @@ export const receiveReturnResponseIdMax = 64;
 export const receiveReturnResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const receiveReturnResponseOrderIdMax = 64;
 export const receiveReturnResponseOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const receiveReturnResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const receiveReturnResponseCurrencyOneMin = 3;
 export const receiveReturnResponseCurrencyOneMax = 3;
-export const receiveReturnResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const receiveReturnResponseFulfillmentOrderIdMax = 64;
 export const receiveReturnResponseFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const receiveReturnResponseNoteMax = 1000;
@@ -16465,10 +16406,9 @@ export const ReceiveReturnResponse = zod.strictObject({
         .regex(receiveReturnResponseOrderIdRegExp),
     orderNumber: zod.string(),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', receiveReturnResponseCurrencyOneRegExp)
         .min(receiveReturnResponseCurrencyOneMin)
-        .max(receiveReturnResponseCurrencyOneMax)
-        .regex(receiveReturnResponseCurrencyOneRegExp),
+        .max(receiveReturnResponseCurrencyOneMax),
     status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled']),
     reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
     kind: zod.enum(['return', 'cancellation']),
@@ -17884,15 +17824,17 @@ export const RevokeApiKeyResponse = zod.void();
  * `actions.activate` says whether it would be accepted.
  * @summary Switch a language on
  */
-export const activateLocalePathLocaleMax = 35;
 export const activateLocalePathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const activateLocalePathLocaleMax = 35;
 export const ActivateLocaleParams = zod.strictObject({
-    locale: zod.string().max(activateLocalePathLocaleMax).regex(activateLocalePathLocaleRegExp)
+    locale: zod
+        .stringFormat('bcp47', activateLocalePathLocaleRegExp)
+        .max(activateLocalePathLocaleMax)
 });
 export const activateLocaleResponseIdMax = 64;
 export const activateLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const activateLocaleResponseTagMax = 35;
 export const activateLocaleResponseTagRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const activateLocaleResponseTagMax = 35;
 export const activateLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2,3}$');
 export const activateLocaleResponseAppsItemMax = 64;
 export const activateLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
@@ -17905,7 +17847,9 @@ export const ActivateLocaleResponse = zod.strictObject({
         .max(activateLocaleResponseIdMax)
         .regex(activateLocaleResponseIdRegExp)
         .optional(),
-    tag: zod.string().max(activateLocaleResponseTagMax).regex(activateLocaleResponseTagRegExp),
+    tag: zod
+        .stringFormat('bcp47', activateLocaleResponseTagRegExp)
+        .max(activateLocaleResponseTagMax),
     baseLanguage: zod.string().regex(activateLocaleResponseBaseLanguageRegExp),
     name: zod.string(),
     nativeName: zod.string(),
@@ -17945,15 +17889,17 @@ export const ActivateLocaleResponse = zod.strictObject({
  * `actions.deactivate` says whether it would be accepted.
  * @summary Switch a language off
  */
-export const deactivateLocalePathLocaleMax = 35;
 export const deactivateLocalePathLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const deactivateLocalePathLocaleMax = 35;
 export const DeactivateLocaleParams = zod.strictObject({
-    locale: zod.string().max(deactivateLocalePathLocaleMax).regex(deactivateLocalePathLocaleRegExp)
+    locale: zod
+        .stringFormat('bcp47', deactivateLocalePathLocaleRegExp)
+        .max(deactivateLocalePathLocaleMax)
 });
 export const deactivateLocaleResponseIdMax = 64;
 export const deactivateLocaleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const deactivateLocaleResponseTagMax = 35;
 export const deactivateLocaleResponseTagRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const deactivateLocaleResponseTagMax = 35;
 export const deactivateLocaleResponseBaseLanguageRegExp = new RegExp('^[a-z]{2,3}$');
 export const deactivateLocaleResponseAppsItemMax = 64;
 export const deactivateLocaleResponseAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
@@ -17966,7 +17912,9 @@ export const DeactivateLocaleResponse = zod.strictObject({
         .max(deactivateLocaleResponseIdMax)
         .regex(deactivateLocaleResponseIdRegExp)
         .optional(),
-    tag: zod.string().max(deactivateLocaleResponseTagMax).regex(deactivateLocaleResponseTagRegExp),
+    tag: zod
+        .stringFormat('bcp47', deactivateLocaleResponseTagRegExp)
+        .max(deactivateLocaleResponseTagMax),
     baseLanguage: zod.string().regex(deactivateLocaleResponseBaseLanguageRegExp),
     name: zod.string(),
     nativeName: zod.string(),
@@ -18032,8 +17980,8 @@ export const AssignUserRoleBody = zod.strictObject({
 export const assignUserRoleResponseIdMax = 64;
 export const assignUserRoleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const assignUserRoleResponseEmailMax = 254;
-export const assignUserRoleResponseLocaleMax = 35;
 export const assignUserRoleResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const assignUserRoleResponseLocaleMax = 35;
 export const assignUserRoleResponsePurchaseHoldNoteMax = 500;
 export const AssignUserRoleResponse = zod.strictObject({
     id: zod.string().min(1).max(assignUserRoleResponseIdMax).regex(assignUserRoleResponseIdRegExp),
@@ -18046,9 +17994,8 @@ export const AssignUserRoleResponse = zod.strictObject({
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
     locale: zod
-        .string()
+        .stringFormat('bcp47', assignUserRoleResponseLocaleRegExp)
         .max(assignUserRoleResponseLocaleMax)
-        .regex(assignUserRoleResponseLocaleRegExp)
         .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
@@ -18095,8 +18042,8 @@ export const RevokeUserRoleParams = zod.strictObject({
 export const revokeUserRoleResponseIdMax = 64;
 export const revokeUserRoleResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const revokeUserRoleResponseEmailMax = 254;
-export const revokeUserRoleResponseLocaleMax = 35;
 export const revokeUserRoleResponseLocaleRegExp = new RegExp('^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$');
+export const revokeUserRoleResponseLocaleMax = 35;
 export const revokeUserRoleResponsePurchaseHoldNoteMax = 500;
 export const RevokeUserRoleResponse = zod.strictObject({
     id: zod.string().min(1).max(revokeUserRoleResponseIdMax).regex(revokeUserRoleResponseIdRegExp),
@@ -18109,9 +18056,8 @@ export const RevokeUserRoleResponse = zod.strictObject({
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
     locale: zod
-        .string()
+        .stringFormat('bcp47', revokeUserRoleResponseLocaleRegExp)
         .max(revokeUserRoleResponseLocaleMax)
-        .regex(revokeUserRoleResponseLocaleRegExp)
         .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
@@ -18167,10 +18113,10 @@ export const PlaceUserPurchaseHoldBody = zod.strictObject({
 export const placeUserPurchaseHoldResponseIdMax = 64;
 export const placeUserPurchaseHoldResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const placeUserPurchaseHoldResponseEmailMax = 254;
-export const placeUserPurchaseHoldResponseLocaleMax = 35;
 export const placeUserPurchaseHoldResponseLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const placeUserPurchaseHoldResponseLocaleMax = 35;
 export const placeUserPurchaseHoldResponsePurchaseHoldNoteMax = 500;
 export const PlaceUserPurchaseHoldResponse = zod.strictObject({
     id: zod
@@ -18187,9 +18133,8 @@ export const PlaceUserPurchaseHoldResponse = zod.strictObject({
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
     locale: zod
-        .string()
+        .stringFormat('bcp47', placeUserPurchaseHoldResponseLocaleRegExp)
         .max(placeUserPurchaseHoldResponseLocaleMax)
-        .regex(placeUserPurchaseHoldResponseLocaleRegExp)
         .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
@@ -18240,10 +18185,10 @@ export const LiftUserPurchaseHoldParams = zod.strictObject({
 export const liftUserPurchaseHoldResponseIdMax = 64;
 export const liftUserPurchaseHoldResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const liftUserPurchaseHoldResponseEmailMax = 254;
-export const liftUserPurchaseHoldResponseLocaleMax = 35;
 export const liftUserPurchaseHoldResponseLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const liftUserPurchaseHoldResponseLocaleMax = 35;
 export const liftUserPurchaseHoldResponsePurchaseHoldNoteMax = 500;
 export const LiftUserPurchaseHoldResponse = zod.strictObject({
     id: zod
@@ -18260,9 +18205,8 @@ export const LiftUserPurchaseHoldResponse = zod.strictObject({
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
     locale: zod
-        .string()
+        .stringFormat('bcp47', liftUserPurchaseHoldResponseLocaleRegExp)
         .max(liftUserPurchaseHoldResponseLocaleMax)
-        .regex(liftUserPurchaseHoldResponseLocaleRegExp)
         .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
@@ -18309,10 +18253,10 @@ export const ActivateUserByIdParams = zod.strictObject({
 export const activateUserByIdResponseIdMax = 64;
 export const activateUserByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const activateUserByIdResponseEmailMax = 254;
-export const activateUserByIdResponseLocaleMax = 35;
 export const activateUserByIdResponseLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const activateUserByIdResponseLocaleMax = 35;
 export const activateUserByIdResponsePurchaseHoldNoteMax = 500;
 export const ActivateUserByIdResponse = zod.strictObject({
     id: zod
@@ -18329,9 +18273,8 @@ export const ActivateUserByIdResponse = zod.strictObject({
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
     locale: zod
-        .string()
+        .stringFormat('bcp47', activateUserByIdResponseLocaleRegExp)
         .max(activateUserByIdResponseLocaleMax)
-        .regex(activateUserByIdResponseLocaleRegExp)
         .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
@@ -18378,10 +18321,10 @@ export const DeactivateUserByIdParams = zod.strictObject({
 export const deactivateUserByIdResponseIdMax = 64;
 export const deactivateUserByIdResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const deactivateUserByIdResponseEmailMax = 254;
-export const deactivateUserByIdResponseLocaleMax = 35;
 export const deactivateUserByIdResponseLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const deactivateUserByIdResponseLocaleMax = 35;
 export const deactivateUserByIdResponsePurchaseHoldNoteMax = 500;
 export const DeactivateUserByIdResponse = zod.strictObject({
     id: zod
@@ -18398,9 +18341,8 @@ export const DeactivateUserByIdResponse = zod.strictObject({
     imageUrl: zod.string().min(1).optional(),
     thumbnailUrl: zod.string().optional(),
     locale: zod
-        .string()
+        .stringFormat('bcp47', deactivateUserByIdResponseLocaleRegExp)
         .max(deactivateUserByIdResponseLocaleMax)
-        .regex(deactivateUserByIdResponseLocaleRegExp)
         .optional(),
     phone: zod.string().optional(),
     website: zod.string().optional(),
@@ -18480,9 +18422,9 @@ export const mergeCartResponseCartSummaryShippingCostRegExp = new RegExp('^\\d+(
 export const mergeCartResponseCartSummaryShippingCostMax = 32;
 export const mergeCartResponseCartSummaryTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const mergeCartResponseCartSummaryTotalPriceMax = 32;
+export const mergeCartResponseCartSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const mergeCartResponseCartSummaryCurrencyOneMin = 3;
 export const mergeCartResponseCartSummaryCurrencyOneMax = 3;
-export const mergeCartResponseCartSummaryCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const mergeCartResponseCartShippingOptionsItemPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const mergeCartResponseCartShippingOptionsItemPriceMax = 32;
 export const mergeCartResponseLinesItemProductIdMax = 64;
@@ -18523,10 +18465,9 @@ export const MergeCartResponse = zod.strictObject({
                 .stringFormat('decimal', mergeCartResponseCartSummaryTotalPriceRegExp)
                 .max(mergeCartResponseCartSummaryTotalPriceMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', mergeCartResponseCartSummaryCurrencyOneRegExp)
                 .min(mergeCartResponseCartSummaryCurrencyOneMin)
                 .max(mergeCartResponseCartSummaryCurrencyOneMax)
-                .regex(mergeCartResponseCartSummaryCurrencyOneRegExp)
         }),
         shipping: zod.strictObject({
             required: zod.boolean(),
@@ -18741,9 +18682,9 @@ export const getOrderTimelineResponseItemsItemEightTwoDataAmountRegExp = new Reg
     '^-?\\d+(\\.\\d+)?$'
 );
 export const getOrderTimelineResponseItemsItemEightTwoDataAmountMax = 32;
+export const getOrderTimelineResponseItemsItemEightTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getOrderTimelineResponseItemsItemEightTwoDataCurrencyMin = 3;
 export const getOrderTimelineResponseItemsItemEightTwoDataCurrencyMax = 3;
-export const getOrderTimelineResponseItemsItemEightTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getOrderTimelineResponseItemsItemNineOneIdMax = 64;
 export const getOrderTimelineResponseItemsItemNineOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getOrderTimelineResponseItemsItemNineOneActorOneMax = 64;
@@ -18758,9 +18699,9 @@ export const getOrderTimelineResponseItemsItemNineTwoDataAmountRegExp = new RegE
     '^-?\\d+(\\.\\d+)?$'
 );
 export const getOrderTimelineResponseItemsItemNineTwoDataAmountMax = 32;
+export const getOrderTimelineResponseItemsItemNineTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getOrderTimelineResponseItemsItemNineTwoDataCurrencyMin = 3;
 export const getOrderTimelineResponseItemsItemNineTwoDataCurrencyMax = 3;
-export const getOrderTimelineResponseItemsItemNineTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getOrderTimelineResponseItemsItemOnezeroOneIdMax = 64;
 export const getOrderTimelineResponseItemsItemOnezeroOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getOrderTimelineResponseItemsItemOnezeroOneActorOneMax = 64;
@@ -18771,11 +18712,11 @@ export const getOrderTimelineResponseItemsItemOnezeroTwoDataAmountRegExp = new R
     '^-?\\d+(\\.\\d+)?$'
 );
 export const getOrderTimelineResponseItemsItemOnezeroTwoDataAmountMax = 32;
-export const getOrderTimelineResponseItemsItemOnezeroTwoDataCurrencyMin = 3;
-export const getOrderTimelineResponseItemsItemOnezeroTwoDataCurrencyMax = 3;
 export const getOrderTimelineResponseItemsItemOnezeroTwoDataCurrencyRegExp = new RegExp(
     '^[A-Z]{3}$'
 );
+export const getOrderTimelineResponseItemsItemOnezeroTwoDataCurrencyMin = 3;
+export const getOrderTimelineResponseItemsItemOnezeroTwoDataCurrencyMax = 3;
 export const getOrderTimelineResponseItemsItemOneoneOneIdMax = 64;
 export const getOrderTimelineResponseItemsItemOneoneOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getOrderTimelineResponseItemsItemOneoneOneActorOneMax = 64;
@@ -18882,11 +18823,11 @@ export const getOrderTimelineResponseItemsItemOnenineTwoDataRefundAmountRegExp =
     '^-?\\d+(\\.\\d+)?$'
 );
 export const getOrderTimelineResponseItemsItemOnenineTwoDataRefundAmountMax = 32;
-export const getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyMin = 3;
-export const getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyMax = 3;
 export const getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyRegExp = new RegExp(
     '^[A-Z]{3}$'
 );
+export const getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyMin = 3;
+export const getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyMax = 3;
 export const getOrderTimelineResponseItemsItemTwozeroOneIdMax = 64;
 export const getOrderTimelineResponseItemsItemTwozeroOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getOrderTimelineResponseItemsItemTwozeroOneActorOneMax = 64;
@@ -18901,11 +18842,11 @@ export const getOrderTimelineResponseItemsItemTwozeroTwoDataRefundAmountRegExp =
     '^-?\\d+(\\.\\d+)?$'
 );
 export const getOrderTimelineResponseItemsItemTwozeroTwoDataRefundAmountMax = 32;
-export const getOrderTimelineResponseItemsItemTwozeroTwoDataCurrencyMin = 3;
-export const getOrderTimelineResponseItemsItemTwozeroTwoDataCurrencyMax = 3;
 export const getOrderTimelineResponseItemsItemTwozeroTwoDataCurrencyRegExp = new RegExp(
     '^[A-Z]{3}$'
 );
+export const getOrderTimelineResponseItemsItemTwozeroTwoDataCurrencyMin = 3;
+export const getOrderTimelineResponseItemsItemTwozeroTwoDataCurrencyMax = 3;
 export const getOrderTimelineResponseItemsItemTwooneOneIdMax = 64;
 export const getOrderTimelineResponseItemsItemTwooneOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getOrderTimelineResponseItemsItemTwooneOneActorOneMax = 64;
@@ -19148,10 +19089,12 @@ export const GetOrderTimelineResponse = zod.strictObject({
                         )
                         .max(getOrderTimelineResponseItemsItemEightTwoDataAmountMax),
                     currency: zod
-                        .string()
+                        .stringFormat(
+                            'iso-4217',
+                            getOrderTimelineResponseItemsItemEightTwoDataCurrencyRegExp
+                        )
                         .min(getOrderTimelineResponseItemsItemEightTwoDataCurrencyMin)
-                        .max(getOrderTimelineResponseItemsItemEightTwoDataCurrencyMax)
-                        .regex(getOrderTimelineResponseItemsItemEightTwoDataCurrencyRegExp),
+                        .max(getOrderTimelineResponseItemsItemEightTwoDataCurrencyMax),
                     reason: zod.string()
                 })
             }),
@@ -19183,10 +19126,12 @@ export const GetOrderTimelineResponse = zod.strictObject({
                         )
                         .max(getOrderTimelineResponseItemsItemNineTwoDataAmountMax),
                     currency: zod
-                        .string()
+                        .stringFormat(
+                            'iso-4217',
+                            getOrderTimelineResponseItemsItemNineTwoDataCurrencyRegExp
+                        )
                         .min(getOrderTimelineResponseItemsItemNineTwoDataCurrencyMin)
-                        .max(getOrderTimelineResponseItemsItemNineTwoDataCurrencyMax)
-                        .regex(getOrderTimelineResponseItemsItemNineTwoDataCurrencyRegExp),
+                        .max(getOrderTimelineResponseItemsItemNineTwoDataCurrencyMax),
                     reason: zod.string(),
                     failureReason: zod.string()
                 })
@@ -19218,10 +19163,12 @@ export const GetOrderTimelineResponse = zod.strictObject({
                         )
                         .max(getOrderTimelineResponseItemsItemOnezeroTwoDataAmountMax),
                     currency: zod
-                        .string()
+                        .stringFormat(
+                            'iso-4217',
+                            getOrderTimelineResponseItemsItemOnezeroTwoDataCurrencyRegExp
+                        )
                         .min(getOrderTimelineResponseItemsItemOnezeroTwoDataCurrencyMin)
                         .max(getOrderTimelineResponseItemsItemOnezeroTwoDataCurrencyMax)
-                        .regex(getOrderTimelineResponseItemsItemOnezeroTwoDataCurrencyRegExp)
                 })
             }),
             zod.strictObject({
@@ -19470,10 +19417,12 @@ export const GetOrderTimelineResponse = zod.strictObject({
                         )
                         .max(getOrderTimelineResponseItemsItemOnenineTwoDataRefundAmountMax),
                     currency: zod
-                        .string()
+                        .stringFormat(
+                            'iso-4217',
+                            getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyRegExp
+                        )
                         .min(getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyMin)
                         .max(getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyMax)
-                        .regex(getOrderTimelineResponseItemsItemOnenineTwoDataCurrencyRegExp)
                 })
             }),
             zod.strictObject({
@@ -19504,10 +19453,12 @@ export const GetOrderTimelineResponse = zod.strictObject({
                         )
                         .max(getOrderTimelineResponseItemsItemTwozeroTwoDataRefundAmountMax),
                     currency: zod
-                        .string()
+                        .stringFormat(
+                            'iso-4217',
+                            getOrderTimelineResponseItemsItemTwozeroTwoDataCurrencyRegExp
+                        )
                         .min(getOrderTimelineResponseItemsItemTwozeroTwoDataCurrencyMin)
-                        .max(getOrderTimelineResponseItemsItemTwozeroTwoDataCurrencyMax)
-                        .regex(getOrderTimelineResponseItemsItemTwozeroTwoDataCurrencyRegExp),
+                        .max(getOrderTimelineResponseItemsItemTwozeroTwoDataCurrencyMax),
                     remedy: zod.string().optional()
                 })
             }),
@@ -19698,9 +19649,9 @@ export const addOrderNoteResponseEightTwoDataRefundIdMax = 64;
 export const addOrderNoteResponseEightTwoDataRefundIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const addOrderNoteResponseEightTwoDataAmountRegExp = new RegExp('^-?\\d+(\\.\\d+)?$');
 export const addOrderNoteResponseEightTwoDataAmountMax = 32;
+export const addOrderNoteResponseEightTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const addOrderNoteResponseEightTwoDataCurrencyMin = 3;
 export const addOrderNoteResponseEightTwoDataCurrencyMax = 3;
-export const addOrderNoteResponseEightTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const addOrderNoteResponseNineOneIdMax = 64;
 export const addOrderNoteResponseNineOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const addOrderNoteResponseNineOneActorOneMax = 64;
@@ -19709,18 +19660,18 @@ export const addOrderNoteResponseNineTwoDataRefundIdMax = 64;
 export const addOrderNoteResponseNineTwoDataRefundIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const addOrderNoteResponseNineTwoDataAmountRegExp = new RegExp('^-?\\d+(\\.\\d+)?$');
 export const addOrderNoteResponseNineTwoDataAmountMax = 32;
+export const addOrderNoteResponseNineTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const addOrderNoteResponseNineTwoDataCurrencyMin = 3;
 export const addOrderNoteResponseNineTwoDataCurrencyMax = 3;
-export const addOrderNoteResponseNineTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const addOrderNoteResponseOnezeroOneIdMax = 64;
 export const addOrderNoteResponseOnezeroOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const addOrderNoteResponseOnezeroOneActorOneMax = 64;
 export const addOrderNoteResponseOnezeroOneActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const addOrderNoteResponseOnezeroTwoDataAmountRegExp = new RegExp('^-?\\d+(\\.\\d+)?$');
 export const addOrderNoteResponseOnezeroTwoDataAmountMax = 32;
+export const addOrderNoteResponseOnezeroTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const addOrderNoteResponseOnezeroTwoDataCurrencyMin = 3;
 export const addOrderNoteResponseOnezeroTwoDataCurrencyMax = 3;
-export const addOrderNoteResponseOnezeroTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const addOrderNoteResponseOneoneOneIdMax = 64;
 export const addOrderNoteResponseOneoneOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const addOrderNoteResponseOneoneOneActorOneMax = 64;
@@ -19795,9 +19746,9 @@ export const addOrderNoteResponseOnenineTwoDataRefundAmountRegExp = new RegExp(
     '^-?\\d+(\\.\\d+)?$'
 );
 export const addOrderNoteResponseOnenineTwoDataRefundAmountMax = 32;
+export const addOrderNoteResponseOnenineTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const addOrderNoteResponseOnenineTwoDataCurrencyMin = 3;
 export const addOrderNoteResponseOnenineTwoDataCurrencyMax = 3;
-export const addOrderNoteResponseOnenineTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const addOrderNoteResponseTwozeroOneIdMax = 64;
 export const addOrderNoteResponseTwozeroOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const addOrderNoteResponseTwozeroOneActorOneMax = 64;
@@ -19808,9 +19759,9 @@ export const addOrderNoteResponseTwozeroTwoDataRefundAmountRegExp = new RegExp(
     '^-?\\d+(\\.\\d+)?$'
 );
 export const addOrderNoteResponseTwozeroTwoDataRefundAmountMax = 32;
+export const addOrderNoteResponseTwozeroTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const addOrderNoteResponseTwozeroTwoDataCurrencyMin = 3;
 export const addOrderNoteResponseTwozeroTwoDataCurrencyMax = 3;
-export const addOrderNoteResponseTwozeroTwoDataCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const addOrderNoteResponseTwooneOneIdMax = 64;
 export const addOrderNoteResponseTwooneOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const addOrderNoteResponseTwooneOneActorOneMax = 64;
@@ -20014,10 +19965,9 @@ export const AddOrderNoteResponse = zod.union([
                 .stringFormat('decimal', addOrderNoteResponseEightTwoDataAmountRegExp)
                 .max(addOrderNoteResponseEightTwoDataAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', addOrderNoteResponseEightTwoDataCurrencyRegExp)
                 .min(addOrderNoteResponseEightTwoDataCurrencyMin)
-                .max(addOrderNoteResponseEightTwoDataCurrencyMax)
-                .regex(addOrderNoteResponseEightTwoDataCurrencyRegExp),
+                .max(addOrderNoteResponseEightTwoDataCurrencyMax),
             reason: zod.string()
         })
     }),
@@ -20046,10 +19996,9 @@ export const AddOrderNoteResponse = zod.union([
                 .stringFormat('decimal', addOrderNoteResponseNineTwoDataAmountRegExp)
                 .max(addOrderNoteResponseNineTwoDataAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', addOrderNoteResponseNineTwoDataCurrencyRegExp)
                 .min(addOrderNoteResponseNineTwoDataCurrencyMin)
-                .max(addOrderNoteResponseNineTwoDataCurrencyMax)
-                .regex(addOrderNoteResponseNineTwoDataCurrencyRegExp),
+                .max(addOrderNoteResponseNineTwoDataCurrencyMax),
             reason: zod.string(),
             failureReason: zod.string()
         })
@@ -20078,10 +20027,9 @@ export const AddOrderNoteResponse = zod.union([
                 .stringFormat('decimal', addOrderNoteResponseOnezeroTwoDataAmountRegExp)
                 .max(addOrderNoteResponseOnezeroTwoDataAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', addOrderNoteResponseOnezeroTwoDataCurrencyRegExp)
                 .min(addOrderNoteResponseOnezeroTwoDataCurrencyMin)
                 .max(addOrderNoteResponseOnezeroTwoDataCurrencyMax)
-                .regex(addOrderNoteResponseOnezeroTwoDataCurrencyRegExp)
         })
     }),
     zod.strictObject({
@@ -20317,10 +20265,9 @@ export const AddOrderNoteResponse = zod.union([
                 .stringFormat('decimal', addOrderNoteResponseOnenineTwoDataRefundAmountRegExp)
                 .max(addOrderNoteResponseOnenineTwoDataRefundAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', addOrderNoteResponseOnenineTwoDataCurrencyRegExp)
                 .min(addOrderNoteResponseOnenineTwoDataCurrencyMin)
                 .max(addOrderNoteResponseOnenineTwoDataCurrencyMax)
-                .regex(addOrderNoteResponseOnenineTwoDataCurrencyRegExp)
         })
     }),
     zod.strictObject({
@@ -20348,10 +20295,9 @@ export const AddOrderNoteResponse = zod.union([
                 .stringFormat('decimal', addOrderNoteResponseTwozeroTwoDataRefundAmountRegExp)
                 .max(addOrderNoteResponseTwozeroTwoDataRefundAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', addOrderNoteResponseTwozeroTwoDataCurrencyRegExp)
                 .min(addOrderNoteResponseTwozeroTwoDataCurrencyMin)
-                .max(addOrderNoteResponseTwozeroTwoDataCurrencyMax)
-                .regex(addOrderNoteResponseTwozeroTwoDataCurrencyRegExp),
+                .max(addOrderNoteResponseTwozeroTwoDataCurrencyMax),
             remedy: zod.string().optional()
         })
     }),
@@ -20493,8 +20439,8 @@ export const correctOrderShippingAddressBodyOneFullNameMax = 100;
 export const correctOrderShippingAddressBodyOneStreetMax = 200;
 export const correctOrderShippingAddressBodyOneCityMax = 100;
 export const correctOrderShippingAddressBodyOneZipMax = 20;
-export const correctOrderShippingAddressBodyOneCountryMax = 2;
 export const correctOrderShippingAddressBodyOneCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const correctOrderShippingAddressBodyOneCountryMax = 2;
 export const correctOrderShippingAddressBodyOnePhoneMax = 32;
 export const CorrectOrderShippingAddressBody = zod.strictObject({
     fullName: zod.string().min(1).max(correctOrderShippingAddressBodyOneFullNameMax),
@@ -20502,9 +20448,8 @@ export const CorrectOrderShippingAddressBody = zod.strictObject({
     city: zod.string().min(1).max(correctOrderShippingAddressBodyOneCityMax),
     zip: zod.string().min(1).max(correctOrderShippingAddressBodyOneZipMax),
     country: zod
-        .string()
-        .max(correctOrderShippingAddressBodyOneCountryMax)
-        .regex(correctOrderShippingAddressBodyOneCountryRegExp),
+        .stringFormat('iso-3166-alpha-2', correctOrderShippingAddressBodyOneCountryRegExp)
+        .max(correctOrderShippingAddressBodyOneCountryMax),
     phone: zod.string().min(1).max(correctOrderShippingAddressBodyOnePhoneMax).optional()
 });
 export const correctOrderShippingAddressResponseIdMax = 64;
@@ -20525,10 +20470,10 @@ export const correctOrderShippingAddressResponseItemsItemProductSkuMax = 64;
 export const correctOrderShippingAddressResponseItemsItemProductWeightMin = 0;
 export const correctOrderShippingAddressResponseItemsItemProductTaxRateMin = 0;
 export const correctOrderShippingAddressResponseItemsItemProductTaxRateMax = 1;
-export const correctOrderShippingAddressResponseItemsItemLocaleMax = 35;
 export const correctOrderShippingAddressResponseItemsItemLocaleRegExp = new RegExp(
     '^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$'
 );
+export const correctOrderShippingAddressResponseItemsItemLocaleMax = 35;
 export const correctOrderShippingAddressResponseItemsItemTaxAmountRegExp = new RegExp(
     '^\\d+(\\.\\d+)?$'
 );
@@ -20541,9 +20486,9 @@ export const correctOrderShippingAddressResponseTotalItemsMin = 0;
 export const correctOrderShippingAddressResponseTotalQuantityMin = 0;
 export const correctOrderShippingAddressResponseTotalPriceRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const correctOrderShippingAddressResponseTotalPriceMax = 32;
+export const correctOrderShippingAddressResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const correctOrderShippingAddressResponseCurrencyOneMin = 3;
 export const correctOrderShippingAddressResponseCurrencyOneMax = 3;
-export const correctOrderShippingAddressResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const correctOrderShippingAddressResponseNetTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const correctOrderShippingAddressResponseNetTotalMax = 32;
 export const correctOrderShippingAddressResponseTaxTotalRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -20575,19 +20520,19 @@ export const correctOrderShippingAddressResponseShippingAddressFullNameMax = 100
 export const correctOrderShippingAddressResponseShippingAddressStreetMax = 200;
 export const correctOrderShippingAddressResponseShippingAddressCityMax = 100;
 export const correctOrderShippingAddressResponseShippingAddressZipMax = 20;
-export const correctOrderShippingAddressResponseShippingAddressCountryMax = 2;
 export const correctOrderShippingAddressResponseShippingAddressCountryRegExp = new RegExp(
     '^[A-Z]{2}$'
 );
+export const correctOrderShippingAddressResponseShippingAddressCountryMax = 2;
 export const correctOrderShippingAddressResponseShippingAddressPhoneMax = 32;
 export const correctOrderShippingAddressResponseBillingAddressFullNameMax = 100;
 export const correctOrderShippingAddressResponseBillingAddressStreetMax = 200;
 export const correctOrderShippingAddressResponseBillingAddressCityMax = 100;
 export const correctOrderShippingAddressResponseBillingAddressZipMax = 20;
-export const correctOrderShippingAddressResponseBillingAddressCountryMax = 2;
 export const correctOrderShippingAddressResponseBillingAddressCountryRegExp = new RegExp(
     '^[A-Z]{2}$'
 );
+export const correctOrderShippingAddressResponseBillingAddressCountryMax = 2;
 export const correctOrderShippingAddressResponseBillingAddressPhoneMax = 32;
 export const CorrectOrderShippingAddressResponse = zod.strictObject({
     id: zod
@@ -20648,9 +20593,8 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
             }),
             quantity: zod.number().min(1),
             locale: zod
-                .string()
-                .max(correctOrderShippingAddressResponseItemsItemLocaleMax)
-                .regex(correctOrderShippingAddressResponseItemsItemLocaleRegExp),
+                .stringFormat('bcp47', correctOrderShippingAddressResponseItemsItemLocaleRegExp)
+                .max(correctOrderShippingAddressResponseItemsItemLocaleMax),
             backorderedQuantity: zod.number().min(1).optional(),
             promisedAt: zod.iso.date().optional(),
             promiseDated: zod.boolean().optional(),
@@ -20680,10 +20624,9 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
         .stringFormat('decimal', correctOrderShippingAddressResponseTotalPriceRegExp)
         .max(correctOrderShippingAddressResponseTotalPriceMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', correctOrderShippingAddressResponseCurrencyOneRegExp)
         .min(correctOrderShippingAddressResponseCurrencyOneMin)
-        .max(correctOrderShippingAddressResponseCurrencyOneMax)
-        .regex(correctOrderShippingAddressResponseCurrencyOneRegExp),
+        .max(correctOrderShippingAddressResponseCurrencyOneMax),
     termsVersion: zod.string().optional(),
     netTotal: zod
         .stringFormat('decimal', correctOrderShippingAddressResponseNetTotalRegExp)
@@ -20742,9 +20685,11 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
                 .max(correctOrderShippingAddressResponseShippingAddressCityMax),
             zip: zod.string().min(1).max(correctOrderShippingAddressResponseShippingAddressZipMax),
             country: zod
-                .string()
-                .max(correctOrderShippingAddressResponseShippingAddressCountryMax)
-                .regex(correctOrderShippingAddressResponseShippingAddressCountryRegExp),
+                .stringFormat(
+                    'iso-3166-alpha-2',
+                    correctOrderShippingAddressResponseShippingAddressCountryRegExp
+                )
+                .max(correctOrderShippingAddressResponseShippingAddressCountryMax),
             phone: zod
                 .string()
                 .min(1)
@@ -20765,9 +20710,11 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
             city: zod.string().min(1).max(correctOrderShippingAddressResponseBillingAddressCityMax),
             zip: zod.string().min(1).max(correctOrderShippingAddressResponseBillingAddressZipMax),
             country: zod
-                .string()
-                .max(correctOrderShippingAddressResponseBillingAddressCountryMax)
-                .regex(correctOrderShippingAddressResponseBillingAddressCountryRegExp),
+                .stringFormat(
+                    'iso-3166-alpha-2',
+                    correctOrderShippingAddressResponseBillingAddressCountryRegExp
+                )
+                .max(correctOrderShippingAddressResponseBillingAddressCountryMax),
             phone: zod
                 .string()
                 .min(1)
@@ -20885,18 +20832,18 @@ export const listPaymentsResponseItemsItemUserIdMax = 64;
 export const listPaymentsResponseItemsItemUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listPaymentsResponseItemsItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const listPaymentsResponseItemsItemAmountMax = 32;
+export const listPaymentsResponseItemsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const listPaymentsResponseItemsItemCurrencyOneMin = 3;
 export const listPaymentsResponseItemsItemCurrencyOneMax = 3;
-export const listPaymentsResponseItemsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const listPaymentsResponseItemsItemAmountRefundedRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const listPaymentsResponseItemsItemAmountRefundedMax = 32;
 export const listPaymentsResponseItemsItemRefundsItemIdMax = 64;
 export const listPaymentsResponseItemsItemRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listPaymentsResponseItemsItemRefundsItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const listPaymentsResponseItemsItemRefundsItemAmountMax = 32;
+export const listPaymentsResponseItemsItemRefundsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const listPaymentsResponseItemsItemRefundsItemCurrencyOneMin = 3;
 export const listPaymentsResponseItemsItemRefundsItemCurrencyOneMax = 3;
-export const listPaymentsResponseItemsItemRefundsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const listPaymentsResponseItemsItemRefundsItemReturnIdMax = 64;
 export const listPaymentsResponseItemsItemRefundsItemReturnIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -20906,9 +20853,9 @@ export const listPaymentsResponseItemsItemReferenceMax = 120;
 export const listPaymentsResponseItemsItemCardLast4RegExp = new RegExp('^\\d{4}$');
 export const listPaymentsResponseItemsItemDisputesItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const listPaymentsResponseItemsItemDisputesItemAmountMax = 32;
+export const listPaymentsResponseItemsItemDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const listPaymentsResponseItemsItemDisputesItemCurrencyMin = 3;
 export const listPaymentsResponseItemsItemDisputesItemCurrencyMax = 3;
-export const listPaymentsResponseItemsItemDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const listPaymentsResponseItemsItemActionsSettleRefundByHandItemMax = 64;
 export const listPaymentsResponseItemsItemActionsSettleRefundByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -20946,10 +20893,9 @@ export const ListPaymentsResponse = zod.strictObject({
                 .stringFormat('decimal', listPaymentsResponseItemsItemAmountRegExp)
                 .max(listPaymentsResponseItemsItemAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', listPaymentsResponseItemsItemCurrencyOneRegExp)
                 .min(listPaymentsResponseItemsItemCurrencyOneMin)
-                .max(listPaymentsResponseItemsItemCurrencyOneMax)
-                .regex(listPaymentsResponseItemsItemCurrencyOneRegExp),
+                .max(listPaymentsResponseItemsItemCurrencyOneMax),
             amountRefunded: zod
                 .stringFormat('decimal', listPaymentsResponseItemsItemAmountRefundedRegExp)
                 .max(listPaymentsResponseItemsItemAmountRefundedMax),
@@ -20967,10 +20913,12 @@ export const ListPaymentsResponse = zod.strictObject({
                         )
                         .max(listPaymentsResponseItemsItemRefundsItemAmountMax),
                     currency: zod
-                        .string()
+                        .stringFormat(
+                            'iso-4217',
+                            listPaymentsResponseItemsItemRefundsItemCurrencyOneRegExp
+                        )
                         .min(listPaymentsResponseItemsItemRefundsItemCurrencyOneMin)
-                        .max(listPaymentsResponseItemsItemRefundsItemCurrencyOneMax)
-                        .regex(listPaymentsResponseItemsItemRefundsItemCurrencyOneRegExp),
+                        .max(listPaymentsResponseItemsItemRefundsItemCurrencyOneMax),
                     status: zod.enum(['pending', 'succeeded', 'failed']),
                     reason: zod.enum([
                         'cancellation',
@@ -21079,10 +21027,12 @@ export const ListPaymentsResponse = zod.strictObject({
                             )
                             .max(listPaymentsResponseItemsItemDisputesItemAmountMax),
                         currency: zod
-                            .string()
+                            .stringFormat(
+                                'iso-4217',
+                                listPaymentsResponseItemsItemDisputesItemCurrencyRegExp
+                            )
                             .min(listPaymentsResponseItemsItemDisputesItemCurrencyMin)
-                            .max(listPaymentsResponseItemsItemDisputesItemCurrencyMax)
-                            .regex(listPaymentsResponseItemsItemDisputesItemCurrencyRegExp),
+                            .max(listPaymentsResponseItemsItemDisputesItemCurrencyMax),
                         evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
                         fundsWithdrawn: zod.boolean(),
                         openedAt: zod.iso.datetime({ offset: true }),
@@ -21151,18 +21101,18 @@ export const createPaymentResponseUserIdMax = 64;
 export const createPaymentResponseUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createPaymentResponseAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const createPaymentResponseAmountMax = 32;
+export const createPaymentResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const createPaymentResponseCurrencyOneMin = 3;
 export const createPaymentResponseCurrencyOneMax = 3;
-export const createPaymentResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const createPaymentResponseAmountRefundedRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const createPaymentResponseAmountRefundedMax = 32;
 export const createPaymentResponseRefundsItemIdMax = 64;
 export const createPaymentResponseRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createPaymentResponseRefundsItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const createPaymentResponseRefundsItemAmountMax = 32;
+export const createPaymentResponseRefundsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const createPaymentResponseRefundsItemCurrencyOneMin = 3;
 export const createPaymentResponseRefundsItemCurrencyOneMax = 3;
-export const createPaymentResponseRefundsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const createPaymentResponseRefundsItemReturnIdMax = 64;
 export const createPaymentResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createPaymentResponseEmailMax = 254;
@@ -21170,9 +21120,9 @@ export const createPaymentResponseReferenceMax = 120;
 export const createPaymentResponseCardLast4RegExp = new RegExp('^\\d{4}$');
 export const createPaymentResponseDisputesItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const createPaymentResponseDisputesItemAmountMax = 32;
+export const createPaymentResponseDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const createPaymentResponseDisputesItemCurrencyMin = 3;
 export const createPaymentResponseDisputesItemCurrencyMax = 3;
-export const createPaymentResponseDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const createPaymentResponseActionsSettleRefundByHandItemMax = 64;
 export const createPaymentResponseActionsSettleRefundByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -21196,10 +21146,9 @@ export const CreatePaymentResponse = zod.strictObject({
         .stringFormat('decimal', createPaymentResponseAmountRegExp)
         .max(createPaymentResponseAmountMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', createPaymentResponseCurrencyOneRegExp)
         .min(createPaymentResponseCurrencyOneMin)
-        .max(createPaymentResponseCurrencyOneMax)
-        .regex(createPaymentResponseCurrencyOneRegExp),
+        .max(createPaymentResponseCurrencyOneMax),
     amountRefunded: zod
         .stringFormat('decimal', createPaymentResponseAmountRefundedRegExp)
         .max(createPaymentResponseAmountRefundedMax),
@@ -21214,10 +21163,9 @@ export const CreatePaymentResponse = zod.strictObject({
                 .stringFormat('decimal', createPaymentResponseRefundsItemAmountRegExp)
                 .max(createPaymentResponseRefundsItemAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', createPaymentResponseRefundsItemCurrencyOneRegExp)
                 .min(createPaymentResponseRefundsItemCurrencyOneMin)
-                .max(createPaymentResponseRefundsItemCurrencyOneMax)
-                .regex(createPaymentResponseRefundsItemCurrencyOneRegExp),
+                .max(createPaymentResponseRefundsItemCurrencyOneMax),
             status: zod.enum(['pending', 'succeeded', 'failed']),
             reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
             returnId: zod
@@ -21317,10 +21265,9 @@ export const CreatePaymentResponse = zod.strictObject({
                     .stringFormat('decimal', createPaymentResponseDisputesItemAmountRegExp)
                     .max(createPaymentResponseDisputesItemAmountMax),
                 currency: zod
-                    .string()
+                    .stringFormat('iso-4217', createPaymentResponseDisputesItemCurrencyRegExp)
                     .min(createPaymentResponseDisputesItemCurrencyMin)
-                    .max(createPaymentResponseDisputesItemCurrencyMax)
-                    .regex(createPaymentResponseDisputesItemCurrencyRegExp),
+                    .max(createPaymentResponseDisputesItemCurrencyMax),
                 evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
                 fundsWithdrawn: zod.boolean(),
                 openedAt: zod.iso.datetime({ offset: true }),
@@ -21426,9 +21373,9 @@ export const searchPaymentsResponseItemsItemUserIdMax = 64;
 export const searchPaymentsResponseItemsItemUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const searchPaymentsResponseItemsItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const searchPaymentsResponseItemsItemAmountMax = 32;
+export const searchPaymentsResponseItemsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const searchPaymentsResponseItemsItemCurrencyOneMin = 3;
 export const searchPaymentsResponseItemsItemCurrencyOneMax = 3;
-export const searchPaymentsResponseItemsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const searchPaymentsResponseItemsItemAmountRefundedRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const searchPaymentsResponseItemsItemAmountRefundedMax = 32;
 export const searchPaymentsResponseItemsItemRefundsItemIdMax = 64;
@@ -21437,9 +21384,9 @@ export const searchPaymentsResponseItemsItemRefundsItemAmountRegExp = new RegExp
     '^\\d+(\\.\\d+)?$'
 );
 export const searchPaymentsResponseItemsItemRefundsItemAmountMax = 32;
+export const searchPaymentsResponseItemsItemRefundsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const searchPaymentsResponseItemsItemRefundsItemCurrencyOneMin = 3;
 export const searchPaymentsResponseItemsItemRefundsItemCurrencyOneMax = 3;
-export const searchPaymentsResponseItemsItemRefundsItemCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const searchPaymentsResponseItemsItemRefundsItemReturnIdMax = 64;
 export const searchPaymentsResponseItemsItemRefundsItemReturnIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -21451,9 +21398,9 @@ export const searchPaymentsResponseItemsItemDisputesItemAmountRegExp = new RegEx
     '^\\d+(\\.\\d+)?$'
 );
 export const searchPaymentsResponseItemsItemDisputesItemAmountMax = 32;
+export const searchPaymentsResponseItemsItemDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const searchPaymentsResponseItemsItemDisputesItemCurrencyMin = 3;
 export const searchPaymentsResponseItemsItemDisputesItemCurrencyMax = 3;
-export const searchPaymentsResponseItemsItemDisputesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const searchPaymentsResponseItemsItemActionsSettleRefundByHandItemMax = 64;
 export const searchPaymentsResponseItemsItemActionsSettleRefundByHandItemRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -21491,10 +21438,9 @@ export const SearchPaymentsResponse = zod.strictObject({
                 .stringFormat('decimal', searchPaymentsResponseItemsItemAmountRegExp)
                 .max(searchPaymentsResponseItemsItemAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', searchPaymentsResponseItemsItemCurrencyOneRegExp)
                 .min(searchPaymentsResponseItemsItemCurrencyOneMin)
-                .max(searchPaymentsResponseItemsItemCurrencyOneMax)
-                .regex(searchPaymentsResponseItemsItemCurrencyOneRegExp),
+                .max(searchPaymentsResponseItemsItemCurrencyOneMax),
             amountRefunded: zod
                 .stringFormat('decimal', searchPaymentsResponseItemsItemAmountRefundedRegExp)
                 .max(searchPaymentsResponseItemsItemAmountRefundedMax),
@@ -21512,10 +21458,12 @@ export const SearchPaymentsResponse = zod.strictObject({
                         )
                         .max(searchPaymentsResponseItemsItemRefundsItemAmountMax),
                     currency: zod
-                        .string()
+                        .stringFormat(
+                            'iso-4217',
+                            searchPaymentsResponseItemsItemRefundsItemCurrencyOneRegExp
+                        )
                         .min(searchPaymentsResponseItemsItemRefundsItemCurrencyOneMin)
-                        .max(searchPaymentsResponseItemsItemRefundsItemCurrencyOneMax)
-                        .regex(searchPaymentsResponseItemsItemRefundsItemCurrencyOneRegExp),
+                        .max(searchPaymentsResponseItemsItemRefundsItemCurrencyOneMax),
                     status: zod.enum(['pending', 'succeeded', 'failed']),
                     reason: zod.enum([
                         'cancellation',
@@ -21627,10 +21575,12 @@ export const SearchPaymentsResponse = zod.strictObject({
                             )
                             .max(searchPaymentsResponseItemsItemDisputesItemAmountMax),
                         currency: zod
-                            .string()
+                            .stringFormat(
+                                'iso-4217',
+                                searchPaymentsResponseItemsItemDisputesItemCurrencyRegExp
+                            )
                             .min(searchPaymentsResponseItemsItemDisputesItemCurrencyMin)
-                            .max(searchPaymentsResponseItemsItemDisputesItemCurrencyMax)
-                            .regex(searchPaymentsResponseItemsItemDisputesItemCurrencyRegExp),
+                            .max(searchPaymentsResponseItemsItemDisputesItemCurrencyMax),
                         evidenceDueBy: zod.iso.datetime({ offset: true }).optional(),
                         fundsWithdrawn: zod.boolean(),
                         openedAt: zod.iso.datetime({ offset: true }),
@@ -21714,9 +21664,9 @@ export const listRefundsResponseItemsItemOrderIdMax = 64;
 export const listRefundsResponseItemsItemOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listRefundsResponseItemsItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const listRefundsResponseItemsItemAmountMax = 32;
+export const listRefundsResponseItemsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const listRefundsResponseItemsItemCurrencyMin = 3;
 export const listRefundsResponseItemsItemCurrencyMax = 3;
-export const listRefundsResponseItemsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const listRefundsResponseItemsItemReturnIdMax = 64;
 export const listRefundsResponseItemsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listRefundsResponseMetaPageDefault = 1;
@@ -21747,10 +21697,9 @@ export const ListRefundsResponse = zod.strictObject({
                 .stringFormat('decimal', listRefundsResponseItemsItemAmountRegExp)
                 .max(listRefundsResponseItemsItemAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', listRefundsResponseItemsItemCurrencyRegExp)
                 .min(listRefundsResponseItemsItemCurrencyMin)
-                .max(listRefundsResponseItemsItemCurrencyMax)
-                .regex(listRefundsResponseItemsItemCurrencyRegExp),
+                .max(listRefundsResponseItemsItemCurrencyMax),
             status: zod.enum(['pending', 'succeeded', 'failed']),
             reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
             returnId: zod
@@ -21810,9 +21759,9 @@ export const listPaymentAttentionResponseItemsItemAlreadyRefundedRegExp = new Re
 export const listPaymentAttentionResponseItemsItemAlreadyRefundedMax = 32;
 export const listPaymentAttentionResponseItemsItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const listPaymentAttentionResponseItemsItemAmountMax = 32;
+export const listPaymentAttentionResponseItemsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const listPaymentAttentionResponseItemsItemCurrencyMin = 3;
 export const listPaymentAttentionResponseItemsItemCurrencyMax = 3;
-export const listPaymentAttentionResponseItemsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const listPaymentAttentionResponseItemsItemExceedsByRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const listPaymentAttentionResponseItemsItemExceedsByMax = 32;
 export const ListPaymentAttentionResponse = zod.strictObject({
@@ -21855,10 +21804,9 @@ export const ListPaymentAttentionResponse = zod.strictObject({
                 .stringFormat('decimal', listPaymentAttentionResponseItemsItemAmountRegExp)
                 .max(listPaymentAttentionResponseItemsItemAmountMax),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', listPaymentAttentionResponseItemsItemCurrencyRegExp)
                 .min(listPaymentAttentionResponseItemsItemCurrencyMin)
-                .max(listPaymentAttentionResponseItemsItemCurrencyMax)
-                .regex(listPaymentAttentionResponseItemsItemCurrencyRegExp),
+                .max(listPaymentAttentionResponseItemsItemCurrencyMax),
             failureReason: zod
                 .enum([
                     'declined',
@@ -21915,9 +21863,9 @@ export const settleRefundByHandResponseIdMax = 64;
 export const settleRefundByHandResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const settleRefundByHandResponseAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const settleRefundByHandResponseAmountMax = 32;
+export const settleRefundByHandResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const settleRefundByHandResponseCurrencyOneMin = 3;
 export const settleRefundByHandResponseCurrencyOneMax = 3;
-export const settleRefundByHandResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const settleRefundByHandResponseReturnIdMax = 64;
 export const settleRefundByHandResponseReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const SettleRefundByHandResponse = zod.strictObject({
@@ -21930,10 +21878,9 @@ export const SettleRefundByHandResponse = zod.strictObject({
         .stringFormat('decimal', settleRefundByHandResponseAmountRegExp)
         .max(settleRefundByHandResponseAmountMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', settleRefundByHandResponseCurrencyOneRegExp)
         .min(settleRefundByHandResponseCurrencyOneMin)
-        .max(settleRefundByHandResponseCurrencyOneMax)
-        .regex(settleRefundByHandResponseCurrencyOneRegExp),
+        .max(settleRefundByHandResponseCurrencyOneMax),
     status: zod.enum(['pending', 'succeeded', 'failed']),
     reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
     returnId: zod
@@ -21999,9 +21946,9 @@ export const cancelRefundResponseIdMax = 64;
 export const cancelRefundResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const cancelRefundResponseAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const cancelRefundResponseAmountMax = 32;
+export const cancelRefundResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const cancelRefundResponseCurrencyOneMin = 3;
 export const cancelRefundResponseCurrencyOneMax = 3;
-export const cancelRefundResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const cancelRefundResponseReturnIdMax = 64;
 export const cancelRefundResponseReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const CancelRefundResponse = zod.strictObject({
@@ -22010,10 +21957,9 @@ export const CancelRefundResponse = zod.strictObject({
         .stringFormat('decimal', cancelRefundResponseAmountRegExp)
         .max(cancelRefundResponseAmountMax),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', cancelRefundResponseCurrencyOneRegExp)
         .min(cancelRefundResponseCurrencyOneMin)
-        .max(cancelRefundResponseCurrencyOneMax)
-        .regex(cancelRefundResponseCurrencyOneRegExp),
+        .max(cancelRefundResponseCurrencyOneMax),
     status: zod.enum(['pending', 'succeeded', 'failed']),
     reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment', 'external']),
     returnId: zod
@@ -22193,8 +22139,8 @@ export const markShipmentLostResponseDestinationFullNameMax = 100;
 export const markShipmentLostResponseDestinationStreetMax = 200;
 export const markShipmentLostResponseDestinationCityMax = 100;
 export const markShipmentLostResponseDestinationZipMax = 20;
-export const markShipmentLostResponseDestinationCountryMax = 2;
 export const markShipmentLostResponseDestinationCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const markShipmentLostResponseDestinationCountryMax = 2;
 export const markShipmentLostResponseDestinationPhoneMax = 32;
 export const markShipmentLostResponseLostMessageMax = 500;
 export const markShipmentLostResponseLostNoteMax = 1000;
@@ -22235,9 +22181,8 @@ export const MarkShipmentLostResponse = zod.strictObject({
             city: zod.string().min(1).max(markShipmentLostResponseDestinationCityMax),
             zip: zod.string().min(1).max(markShipmentLostResponseDestinationZipMax),
             country: zod
-                .string()
-                .max(markShipmentLostResponseDestinationCountryMax)
-                .regex(markShipmentLostResponseDestinationCountryRegExp),
+                .stringFormat('iso-3166-alpha-2', markShipmentLostResponseDestinationCountryRegExp)
+                .max(markShipmentLostResponseDestinationCountryMax),
             phone: zod.string().min(1).max(markShipmentLostResponseDestinationPhoneMax).optional()
         })
         .optional(),
@@ -22274,9 +22219,9 @@ export const closeReturnResponseIdMax = 64;
 export const closeReturnResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const closeReturnResponseOrderIdMax = 64;
 export const closeReturnResponseOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const closeReturnResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const closeReturnResponseCurrencyOneMin = 3;
 export const closeReturnResponseCurrencyOneMax = 3;
-export const closeReturnResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const closeReturnResponseFulfillmentOrderIdMax = 64;
 export const closeReturnResponseFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const closeReturnResponseNoteMax = 1000;
@@ -22301,10 +22246,9 @@ export const CloseReturnResponse = zod.strictObject({
         .regex(closeReturnResponseOrderIdRegExp),
     orderNumber: zod.string(),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', closeReturnResponseCurrencyOneRegExp)
         .min(closeReturnResponseCurrencyOneMin)
-        .max(closeReturnResponseCurrencyOneMax)
-        .regex(closeReturnResponseCurrencyOneRegExp),
+        .max(closeReturnResponseCurrencyOneMax),
     status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled']),
     reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
     kind: zod.enum(['return', 'cancellation']),
@@ -22386,9 +22330,9 @@ export const cancelReturnResponseIdMax = 64;
 export const cancelReturnResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const cancelReturnResponseOrderIdMax = 64;
 export const cancelReturnResponseOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const cancelReturnResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const cancelReturnResponseCurrencyOneMin = 3;
 export const cancelReturnResponseCurrencyOneMax = 3;
-export const cancelReturnResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const cancelReturnResponseFulfillmentOrderIdMax = 64;
 export const cancelReturnResponseFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const cancelReturnResponseNoteMax = 1000;
@@ -22413,10 +22357,9 @@ export const CancelReturnResponse = zod.strictObject({
         .regex(cancelReturnResponseOrderIdRegExp),
     orderNumber: zod.string(),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', cancelReturnResponseCurrencyOneRegExp)
         .min(cancelReturnResponseCurrencyOneMin)
-        .max(cancelReturnResponseCurrencyOneMax)
-        .regex(cancelReturnResponseCurrencyOneRegExp),
+        .max(cancelReturnResponseCurrencyOneMax),
     status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled']),
     reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
     kind: zod.enum(['return', 'cancellation']),
@@ -22504,9 +22447,9 @@ export const recordProofOfSendingResponseIdMax = 64;
 export const recordProofOfSendingResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const recordProofOfSendingResponseOrderIdMax = 64;
 export const recordProofOfSendingResponseOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const recordProofOfSendingResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const recordProofOfSendingResponseCurrencyOneMin = 3;
 export const recordProofOfSendingResponseCurrencyOneMax = 3;
-export const recordProofOfSendingResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const recordProofOfSendingResponseFulfillmentOrderIdMax = 64;
 export const recordProofOfSendingResponseFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const recordProofOfSendingResponseNoteMax = 1000;
@@ -22535,10 +22478,9 @@ export const RecordProofOfSendingResponse = zod.strictObject({
         .regex(recordProofOfSendingResponseOrderIdRegExp),
     orderNumber: zod.string(),
     currency: zod
-        .string()
+        .stringFormat('iso-4217', recordProofOfSendingResponseCurrencyOneRegExp)
         .min(recordProofOfSendingResponseCurrencyOneMin)
-        .max(recordProofOfSendingResponseCurrencyOneMax)
-        .regex(recordProofOfSendingResponseCurrencyOneRegExp),
+        .max(recordProofOfSendingResponseCurrencyOneMax),
     status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed', 'canceled']),
     reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
     kind: zod.enum(['return', 'cancellation']),
@@ -22615,9 +22557,9 @@ export const GetSalesStatsQueryParams = zod.strictObject({
     interval: zod.enum(['day', 'week', 'month']).default(getSalesStatsQueryIntervalDefault)
 });
 export const getSalesStatsResponsePeriodIntervalDefault = `day`;
+export const getSalesStatsResponseCurrenciesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getSalesStatsResponseCurrenciesItemCurrencyMin = 3;
 export const getSalesStatsResponseCurrenciesItemCurrencyMax = 3;
-export const getSalesStatsResponseCurrenciesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getSalesStatsResponseCurrenciesItemTotalsOrdersMin = 0;
 export const getSalesStatsResponseCurrenciesItemTotalsUnitsOrderedMin = 0;
 export const getSalesStatsResponseCurrenciesItemTotalsUnitsReversedMin = 0;
@@ -22750,10 +22692,9 @@ export const GetSalesStatsResponse = zod.strictObject({
     currencies: zod.array(
         zod.strictObject({
             currency: zod
-                .string()
+                .stringFormat('iso-4217', getSalesStatsResponseCurrenciesItemCurrencyRegExp)
                 .min(getSalesStatsResponseCurrenciesItemCurrencyMin)
-                .max(getSalesStatsResponseCurrenciesItemCurrencyMax)
-                .regex(getSalesStatsResponseCurrenciesItemCurrencyRegExp),
+                .max(getSalesStatsResponseCurrenciesItemCurrencyMax),
             totals: zod.strictObject({
                 orders: zod.number().min(getSalesStatsResponseCurrenciesItemTotalsOrdersMin),
                 unitsOrdered: zod
@@ -22978,9 +22919,9 @@ export const GetProductStatsQueryParams = zod.strictObject({
 export const getProductStatsResponsePeriodIntervalDefault = `day`;
 export const getProductStatsResponseProductsItemProductIdMax = 64;
 export const getProductStatsResponseProductsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getProductStatsResponseProductsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getProductStatsResponseProductsItemCurrencyMin = 3;
 export const getProductStatsResponseProductsItemCurrencyMax = 3;
-export const getProductStatsResponseProductsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getProductStatsResponseProductsItemUnitsOrderedMin = 0;
 export const getProductStatsResponseProductsItemUnitsReversedMin = 0;
 export const getProductStatsResponseProductsItemNetSalesRegExp = new RegExp('^-?\\d+(\\.\\d+)?$');
@@ -23007,10 +22948,9 @@ export const GetProductStatsResponse = zod.strictObject({
                 .regex(getProductStatsResponseProductsItemProductIdRegExp),
             title: zod.string(),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', getProductStatsResponseProductsItemCurrencyRegExp)
                 .min(getProductStatsResponseProductsItemCurrencyMin)
-                .max(getProductStatsResponseProductsItemCurrencyMax)
-                .regex(getProductStatsResponseProductsItemCurrencyRegExp),
+                .max(getProductStatsResponseProductsItemCurrencyMax),
             unitsOrdered: zod.number().min(getProductStatsResponseProductsItemUnitsOrderedMin),
             unitsReversed: zod.number().min(getProductStatsResponseProductsItemUnitsReversedMin),
             netUnits: zod.number(),
@@ -23082,9 +23022,9 @@ export const GetCategoryStatsQueryParams = zod.strictObject({
     to: zod.iso.date()
 });
 export const getCategoryStatsResponsePeriodIntervalDefault = `day`;
+export const getCategoryStatsResponseCategoriesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getCategoryStatsResponseCategoriesItemCurrencyMin = 3;
 export const getCategoryStatsResponseCategoriesItemCurrencyMax = 3;
-export const getCategoryStatsResponseCategoriesItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getCategoryStatsResponseCategoriesItemUnitsOrderedMin = 0;
 export const getCategoryStatsResponseCategoriesItemNetSalesRegExp = new RegExp(
     '^-?\\d+(\\.\\d+)?$'
@@ -23107,10 +23047,9 @@ export const GetCategoryStatsResponse = zod.strictObject({
         zod.strictObject({
             category: zod.string(),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', getCategoryStatsResponseCategoriesItemCurrencyRegExp)
                 .min(getCategoryStatsResponseCategoriesItemCurrencyMin)
-                .max(getCategoryStatsResponseCategoriesItemCurrencyMax)
-                .regex(getCategoryStatsResponseCategoriesItemCurrencyRegExp),
+                .max(getCategoryStatsResponseCategoriesItemCurrencyMax),
             unitsOrdered: zod.number().min(getCategoryStatsResponseCategoriesItemUnitsOrderedMin),
             netSales: zod
                 .stringFormat('decimal', getCategoryStatsResponseCategoriesItemNetSalesRegExp)
@@ -23127,9 +23066,9 @@ export const GetPaymentMixStatsQueryParams = zod.strictObject({
     to: zod.iso.date()
 });
 export const getPaymentMixStatsResponsePeriodIntervalDefault = `day`;
+export const getPaymentMixStatsResponseRowsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getPaymentMixStatsResponseRowsItemCurrencyMin = 3;
 export const getPaymentMixStatsResponseRowsItemCurrencyMax = 3;
-export const getPaymentMixStatsResponseRowsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getPaymentMixStatsResponseRowsItemPaymentsMin = 0;
 export const getPaymentMixStatsResponseRowsItemAmountRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const getPaymentMixStatsResponseRowsItemAmountMax = 32;
@@ -23151,10 +23090,9 @@ export const GetPaymentMixStatsResponse = zod.strictObject({
             method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
             provider: zod.string(),
             currency: zod
-                .string()
+                .stringFormat('iso-4217', getPaymentMixStatsResponseRowsItemCurrencyRegExp)
                 .min(getPaymentMixStatsResponseRowsItemCurrencyMin)
-                .max(getPaymentMixStatsResponseRowsItemCurrencyMax)
-                .regex(getPaymentMixStatsResponseRowsItemCurrencyRegExp),
+                .max(getPaymentMixStatsResponseRowsItemCurrencyMax),
             payments: zod.number().min(getPaymentMixStatsResponseRowsItemPaymentsMin),
             amount: zod
                 .stringFormat('decimal', getPaymentMixStatsResponseRowsItemAmountRegExp)
@@ -23178,9 +23116,9 @@ export const getOperationsStatsResponseCancellationRateMax = 1;
 export const getOperationsStatsResponseReturnsUnitsOrderedMin = 0;
 export const getOperationsStatsResponseReturnsUnitsReturnedMin = 0;
 export const getOperationsStatsResponseReturnsRateMin = 0;
+export const getOperationsStatsResponseRefundsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getOperationsStatsResponseRefundsItemCurrencyMin = 3;
 export const getOperationsStatsResponseRefundsItemCurrencyMax = 3;
-export const getOperationsStatsResponseRefundsItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getOperationsStatsResponseRefundsItemInvoicedRegExp = new RegExp('^\\d+(\\.\\d+)?$');
 export const getOperationsStatsResponseRefundsItemInvoicedMax = 32;
 export const getOperationsStatsResponseRefundsItemCreditedRegExp = new RegExp('^\\d+(\\.\\d+)?$');
@@ -23215,10 +23153,9 @@ export const GetOperationsStatsResponse = zod.strictObject({
     refunds: zod.array(
         zod.strictObject({
             currency: zod
-                .string()
+                .stringFormat('iso-4217', getOperationsStatsResponseRefundsItemCurrencyRegExp)
                 .min(getOperationsStatsResponseRefundsItemCurrencyMin)
-                .max(getOperationsStatsResponseRefundsItemCurrencyMax)
-                .regex(getOperationsStatsResponseRefundsItemCurrencyRegExp),
+                .max(getOperationsStatsResponseRefundsItemCurrencyMax),
             invoiced: zod
                 .stringFormat('decimal', getOperationsStatsResponseRefundsItemInvoicedRegExp)
                 .max(getOperationsStatsResponseRefundsItemInvoicedMax),
@@ -23268,9 +23205,9 @@ export const GetCustomerStatsResponse = zod.strictObject({
  * A snapshot, not a period: bank transfers awaiting money (count, amount incl. VAT, the nearest `payBy`) and paid orders not yet shipped. Needs `read:Stats`.
  * @summary What is waiting right now (staff)
  */
+export const getPipelineStatsResponseAwaitingTransfersItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getPipelineStatsResponseAwaitingTransfersItemCurrencyMin = 3;
 export const getPipelineStatsResponseAwaitingTransfersItemCurrencyMax = 3;
-export const getPipelineStatsResponseAwaitingTransfersItemCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getPipelineStatsResponseAwaitingTransfersItemCountMin = 0;
 export const getPipelineStatsResponseAwaitingTransfersItemAmountRegExp = new RegExp(
     '^\\d+(\\.\\d+)?$'
@@ -23281,10 +23218,12 @@ export const GetPipelineStatsResponse = zod.strictObject({
     awaitingTransfers: zod.array(
         zod.strictObject({
             currency: zod
-                .string()
+                .stringFormat(
+                    'iso-4217',
+                    getPipelineStatsResponseAwaitingTransfersItemCurrencyRegExp
+                )
                 .min(getPipelineStatsResponseAwaitingTransfersItemCurrencyMin)
-                .max(getPipelineStatsResponseAwaitingTransfersItemCurrencyMax)
-                .regex(getPipelineStatsResponseAwaitingTransfersItemCurrencyRegExp),
+                .max(getPipelineStatsResponseAwaitingTransfersItemCurrencyMax),
             count: zod.number().min(getPipelineStatsResponseAwaitingTransfersItemCountMin),
             amount: zod
                 .stringFormat('decimal', getPipelineStatsResponseAwaitingTransfersItemAmountRegExp)
@@ -25488,27 +25427,25 @@ export const DeleteNotificationByIdResponse = zod.void();
  * The shop's commerce settings: the one currency every price is quoted in, the countries the shop ships to, where returned goods go, who pays the postage and the backorder promise in days. The shop's time zone (an IANA name) is published so a screen can name the calendar a promised day belongs to. Who runs the site (the legal identity) and the Terms version are on `GET /config`. Public and cheap to read; it never changes without a redeploy. Not published: the bank-transfer details, which travel on each order.
  * @summary The shop's commerce settings (currency, ship-to countries, return address)
  */
+export const getShopResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getShopResponseCurrencyOneMin = 3;
 export const getShopResponseCurrencyOneMax = 3;
-export const getShopResponseCurrencyOneRegExp = new RegExp('^[A-Z]{3}$');
 export const getShopResponseMinorUnitsMin = 0;
 export const getShopResponseMinorUnitsMax = 4;
-export const getShopResponseShipToCountriesItemMax = 2;
 export const getShopResponseShipToCountriesItemRegExp = new RegExp('^[A-Z]{2}$');
-export const getShopResponseReturnAddressCountryMax = 2;
+export const getShopResponseShipToCountriesItemMax = 2;
 export const getShopResponseReturnAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const getShopResponseReturnAddressCountryMax = 2;
 export const GetShopResponse = zod.strictObject({
     currency: zod
-        .string()
+        .stringFormat('iso-4217', getShopResponseCurrencyOneRegExp)
         .min(getShopResponseCurrencyOneMin)
-        .max(getShopResponseCurrencyOneMax)
-        .regex(getShopResponseCurrencyOneRegExp),
+        .max(getShopResponseCurrencyOneMax),
     minorUnits: zod.number().min(getShopResponseMinorUnitsMin).max(getShopResponseMinorUnitsMax),
     shipToCountries: zod.array(
         zod
-            .string()
+            .stringFormat('iso-3166-alpha-2', getShopResponseShipToCountriesItemRegExp)
             .max(getShopResponseShipToCountriesItemMax)
-            .regex(getShopResponseShipToCountriesItemRegExp)
     ),
     returnAddress: zod.strictObject({
         name: zod.string().optional(),
@@ -25516,9 +25453,8 @@ export const GetShopResponse = zod.strictObject({
         city: zod.string(),
         zip: zod.string(),
         country: zod
-            .string()
+            .stringFormat('iso-3166-alpha-2', getShopResponseReturnAddressCountryRegExp)
             .max(getShopResponseReturnAddressCountryMax)
-            .regex(getShopResponseReturnAddressCountryRegExp)
     }),
     returnPostagePayer: zod.enum(['consumer', 'shop']),
     backorderPromiseDays: zod.number().min(1),

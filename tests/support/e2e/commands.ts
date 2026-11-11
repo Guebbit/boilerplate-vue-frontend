@@ -1006,6 +1006,13 @@ const AXE_RULE_TAGS = [
     'best-practice'
 ] as const;
 
+/**
+ * Rules switched on by name, outside the pinned tags.
+ * `identical-links-same-purpose` is WCAG 2.4.9 (AAA): two links with the same text must go to
+ * the same place. It keeps a list of notices (or any list) from repeating one bare "Open it".
+ */
+const AXE_EXTRA_RULES = { 'identical-links-same-purpose': { enabled: true } } as const;
+
 /** Where every finding lands, blocking or not — see `a11y-task.ts`. */
 const A11Y_REPORT_TASK = 'recordA11yViolations';
 
@@ -1050,7 +1057,8 @@ Cypress.Commands.add('checkPageA11y', (context?: string) => {
     cy.injectAxe();
     cy.checkA11y(
         undefined,
-        { runOnly: { type: 'tag', values: [...AXE_RULE_TAGS] } },
+        // `rules` wins over `runOnly`, so this one AAA rule runs beside the pinned tags.
+        { runOnly: { type: 'tag', values: [...AXE_RULE_TAGS] }, rules: AXE_EXTRA_RULES },
         (violations) => {
             for (const { id, impact, nodes, help } of violations)
                 cy.log(`${label} ${impact}: ${id} — ${help} (${nodes.length} node(s))`);
