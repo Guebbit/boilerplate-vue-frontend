@@ -165,12 +165,12 @@ export type ImageRemoval = null;
 export type ThumbnailUrl = string;
 
 export interface PaginationMeta {
-    page: Page;
-    pageSize: PageSize;
-    /** @minimum 0 */
-    totalItems: number;
-    /** @minimum 0 */
-    totalPages: number;
+  page: Page;
+  pageSize: PageSize;
+  /** @minimum 0 */
+  totalItems: number;
+  /** @minimum 0 */
+  totalPages: number;
 }
 
 /**
@@ -179,193 +179,196 @@ export interface PaginationMeta {
 export type ErrorItemDetails = { [key: string]: unknown };
 
 export interface ErrorItem {
-    /** Stable machine-readable error code. An error that names no cause of its own gets the official RFC 9110 name of its status, in UPPER_SNAKE (404 `NOT_FOUND`, 422 `UNPROCESSABLE_CONTENT`, 500 `INTERNAL_SERVER_ERROR`); a 4xx whose name is not catalogued is `CLIENT_ERROR`, a 5xx other than 503 is `INTERNAL_SERVER_ERROR`. */
-    code: string;
-    /** Human-readable error detail */
-    message: string;
-    /** Optional structured metadata for programmatic handling. Any refusal about one request field names it in `details.field`, whatever its `code`: a dotted path into the body (`shippingAddress.zip`), so a client can show the message under that input. A 429 names its wait in `details.retryAfter` (whole seconds, the `Retry-After` value) and, when a budget refused, that budget's name in `details.policy`. */
-    details?: ErrorItemDetails;
+  /** Stable machine-readable error code. An error that names no cause of its own gets the official RFC 9110 name of its status, in UPPER_SNAKE (404 `NOT_FOUND`, 422 `UNPROCESSABLE_CONTENT`, 500 `INTERNAL_SERVER_ERROR`); a 4xx whose name is not catalogued is `CLIENT_ERROR`, a 5xx other than 503 is `INTERNAL_SERVER_ERROR`. */
+  code: string;
+  /** Human-readable error detail */
+  message: string;
+  /** Optional structured metadata for programmatic handling. Any refusal about one request field names it in `details.field`, whatever its `code`: a dotted path into the body (`shippingAddress.zip`), so a client can show the message under that input. A 429 names its wait in `details.retryAfter` (whole seconds, the `Retry-After` value) and, when a budget refused, that budget's name in `details.policy`. */
+  details?: ErrorItemDetails;
 }
 
 /**
  * Always `about:blank` (RFC 9457 section 4.2.1): the status says what happened. The machine key is `errors[].code`, never a URI per code.
  */
-export type ProblemType = (typeof ProblemType)[keyof typeof ProblemType];
+export type ProblemType = typeof ProblemType[keyof typeof ProblemType];
+
 
 export const ProblemType = {
-    'about:blank': 'about:blank'
+  'about:blank': 'about:blank',
 } as const;
 
 export interface Problem {
-    /** Always `about:blank` (RFC 9457 section 4.2.1): the status says what happened. The machine key is `errors[].code`, never a URI per code. */
-    type: ProblemType;
-    /** The English RFC 9110 phrase for `status` (`Not Found`, `Content Too Large`). Never translated. */
-    title: string;
-    /**
+  /** Always `about:blank` (RFC 9457 section 4.2.1): the status says what happened. The machine key is `errors[].code`, never a URI per code. */
+  type: ProblemType;
+  /** The English RFC 9110 phrase for `status` (`Not Found`, `Content Too Large`). Never translated. */
+  title: string;
+  /**
      * The HTTP status, repeated so it survives a proxy that rewrites the status line.
      * @minimum 400
      * @maximum 599
      */
-    status: number;
-    /** The sentence a user may read, in the request's language (`Accept-Language`): the one error's message, or the status's generic text when there are several. */
-    detail: string;
-    /** `urn:uuid:` and the request id, the id `x-request-id` carries. Quote it in a support request; it identifies this occurrence, never a URL. */
-    instance?: string;
-    /**
+  status: number;
+  /** The sentence a user may read, in the request's language (`Accept-Language`): the one error's message, or the status's generic text when there are several. */
+  detail: string;
+  /** `urn:uuid:` and the request id, the id `x-request-id` carries. Quote it in a support request; it identifies this occurrence, never a URL. */
+  instance?: string;
+  /**
      * Structured machine-friendly errors; branch on `code`, never on `message`.
      * @minItems 1
      */
-    errors: ErrorItem[];
+  errors: ErrorItem[];
 }
 
-export type PurchaseHoldReason = (typeof PurchaseHoldReason)[keyof typeof PurchaseHoldReason];
+export type PurchaseHoldReason = typeof PurchaseHoldReason[keyof typeof PurchaseHoldReason];
+
 
 export const PurchaseHoldReason = {
-    repeated_cancellations: 'repeated_cancellations',
-    staff: 'staff'
+  repeated_cancellations: 'repeated_cancellations',
+  staff: 'staff',
 } as const;
 
 export interface PurchaseHold {
-    /** When checkout opens again without anyone acting. For `repeated_cancellations` it is the instant the counted cancellations fall back under the limit, so the oldest one counted plus the window, but at most 7 days after the hold was placed; staff can lift it earlier. A `staff` hold has no maximum. */
-    until: string;
-    reason: PurchaseHoldReason;
-    /**
+  /** When checkout opens again without anyone acting. For `repeated_cancellations` it is the instant the counted cancellations fall back under the limit, so the oldest one counted plus the window, but at most 7 days after the hold was placed; staff can lift it earlier. A `staff` hold has no maximum. */
+  until: string;
+  reason: PurchaseHoldReason;
+  /**
      * Staff text shown to the buyer with the refusal. Absent on an automatic hold.
      * @maxLength 500
      */
-    note?: string;
-    setAt: string;
+  note?: string;
+  setAt: string;
 }
 
 export interface Account {
-    id: Id;
-    email: Email;
-    username: string;
-    role?: string;
-    active?: boolean;
-    verifiedAt?: string;
-    readonly pendingEmail?: string;
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
-    locale?: Locale;
-    phone?: string;
-    website?: string;
-    analyticsConsent?: boolean;
-    analyticsConsentAt?: string;
-    termsAcceptedAt?: string;
-    termsVersion?: string;
-    twoFactorEnabledAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    deletedAt?: string;
-    purchaseHold?: PurchaseHold;
+  id: Id;
+  email: Email;
+  username: string;
+  role?: string;
+  active?: boolean;
+  verifiedAt?: string;
+  readonly pendingEmail?: string;
+  imageUrl?: ImageUrl;
+  thumbnailUrl?: ThumbnailUrl;
+  locale?: Locale;
+  phone?: string;
+  website?: string;
+  analyticsConsent?: boolean;
+  analyticsConsentAt?: string;
+  termsAcceptedAt?: string;
+  termsVersion?: string;
+  twoFactorEnabledAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string;
+  purchaseHold?: PurchaseHold;
 }
 
 /**
  * The deployment's `NODE_SESSION_MODE`.
  */
-export type SessionConfigMode = (typeof SessionConfigMode)[keyof typeof SessionConfigMode];
+export type SessionConfigMode = typeof SessionConfigMode[keyof typeof SessionConfigMode];
+
 
 export const SessionConfigMode = {
-    jwt: 'jwt',
-    cookie: 'cookie'
+  jwt: 'jwt',
+  cookie: 'cookie',
 } as const;
 
 /**
  * How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own.
  */
 export type SessionConfigLifetimeSeconds = {
-    /** @minimum 1 */
-    short: number;
-    /** @minimum 1 */
-    medium: number;
-    /** @minimum 1 */
-    long: number;
+  /** @minimum 1 */
+  short: number;
+  /** @minimum 1 */
+  medium: number;
+  /** @minimum 1 */
+  long: number;
 };
 
 export interface SessionConfig {
-    /** The deployment's `NODE_SESSION_MODE`. */
-    mode: SessionConfigMode;
-    /** How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own. */
-    lifetimeSeconds: SessionConfigLifetimeSeconds;
-    /**
+  /** The deployment's `NODE_SESSION_MODE`. */
+  mode: SessionConfigMode;
+  /** How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own. */
+  lifetimeSeconds: SessionConfigLifetimeSeconds;
+  /**
      * The longest a staff or admin session lives from sign-in, whatever the tier (`NODE_SESSION_LIFETIME_STAFF`). Absent when the cap is off.
      * @minimum 1
      */
-    staffLifetimeSeconds?: number;
+  staffLifetimeSeconds?: number;
 }
 
 /**
  * Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused.
  */
-export type AntibotRungsEmailPolicy =
-    (typeof AntibotRungsEmailPolicy)[keyof typeof AntibotRungsEmailPolicy];
+export type AntibotRungsEmailPolicy = typeof AntibotRungsEmailPolicy[keyof typeof AntibotRungsEmailPolicy];
+
 
 export const AntibotRungsEmailPolicy = {
-    off: 'off',
-    disposable: 'disposable',
-    mx: 'mx'
+  off: 'off',
+  disposable: 'disposable',
+  mx: 'mx',
 } as const;
 
 /**
  * Every rung's status, not just rung 3's provider — one answer to "what is active on this deployment" instead of asking each rung to publish its own.
  */
 export interface AntibotRungs {
-    /** Rung 1 — always `true`. The identity/address/address-block budgets have no off switch. */
-    identityBudgets: boolean;
-    /** Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused. */
-    emailPolicy: AntibotRungsEmailPolicy;
+  /** Rung 1 — always `true`. The identity/address/address-block budgets have no off switch. */
+  identityBudgets: boolean;
+  /** Rung 2's active posture (`NODE_ANTIBOT_EMAIL_POLICY`). `off`, the default, means no address is ever refused. */
+  emailPolicy: AntibotRungsEmailPolicy;
 }
 
 /**
  * What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.
  */
-export type AntibotConfigParameters = { [key: string]: string };
+export type AntibotConfigParameters = {[key: string]: string};
 
 export interface AntibotConfig {
-    /** The active implementation's name (`none` by default). `none` means no challenge is required — send no token. */
-    provider: string;
-    /** What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser. */
-    parameters: AntibotConfigParameters;
-    rungs: AntibotRungs;
+  /** The active implementation's name (`none` by default). `none` means no challenge is required — send no token. */
+  provider: string;
+  /** What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser. */
+  parameters: AntibotConfigParameters;
+  rungs: AntibotRungs;
 }
 
 /**
  * Who runs the site: the provider identity a visitor is entitled to before any sale or signup (e-Commerce Directive Art. 5(1), GDPR Art. 13(1)(a)). Set once by the deployment in `NODE_LEGAL_*`; the footer, the Terms, the Legal notice and the Privacy page print it.
  */
 export interface Operator {
-    /** The operator's name, as registered (`NODE_LEGAL_NAME`). */
-    legalName: string;
-    /** VAT identification number (`NODE_LEGAL_VAT_NUMBER`); absent below the registration threshold. */
-    vatNumber?: string;
-    /** The commercial register the operator is entered in (`NODE_LEGAL_TRADE_REGISTER`); absent for an operator in none. */
-    tradeRegister?: string;
-    /** The operator's number in that register (`NODE_LEGAL_REGISTRATION_NUMBER`); absent when there is no register. */
-    registrationNumber?: string;
-    /** Street and number of the postal address (`NODE_LEGAL_STREET`). */
-    street: string;
-    /** City of the postal address (`NODE_LEGAL_CITY`). */
-    city: string;
-    /** Postal code of the postal address (`NODE_LEGAL_ZIP`). */
-    zip: string;
-    /** Country of the postal address, ISO-3166 alpha-2 (`NODE_LEGAL_COUNTRY`). Also the shop's VAT jurisdiction. */
-    country: CountryCode;
-    /** Where a visitor writes to (`NODE_LEGAL_EMAIL`, or the support address when unset). */
-    email: Email;
-    /** Telephone number (`NODE_LEGAL_PHONE`); absent when none is set. A deployment with the shop always sets it. */
-    phone?: string;
+  /** The operator's name, as registered (`NODE_LEGAL_NAME`). */
+  legalName: string;
+  /** VAT identification number (`NODE_LEGAL_VAT_NUMBER`); absent below the registration threshold. */
+  vatNumber?: string;
+  /** The commercial register the operator is entered in (`NODE_LEGAL_TRADE_REGISTER`); absent for an operator in none. */
+  tradeRegister?: string;
+  /** The operator's number in that register (`NODE_LEGAL_REGISTRATION_NUMBER`); absent when there is no register. */
+  registrationNumber?: string;
+  /** Street and number of the postal address (`NODE_LEGAL_STREET`). */
+  street: string;
+  /** City of the postal address (`NODE_LEGAL_CITY`). */
+  city: string;
+  /** Postal code of the postal address (`NODE_LEGAL_ZIP`). */
+  zip: string;
+  /** Country of the postal address, ISO-3166 alpha-2 (`NODE_LEGAL_COUNTRY`). Also the shop's VAT jurisdiction. */
+  country: CountryCode;
+  /** Where a visitor writes to (`NODE_LEGAL_EMAIL`, or the support address when unset). */
+  email: Email;
+  /** Telephone number (`NODE_LEGAL_PHONE`); absent when none is set. A deployment with the shop always sets it. */
+  phone?: string;
 }
 
 export interface Config {
-    session: SessionConfig;
-    /** Registry names this deployment holds OAuth credentials for, e.g. `["google", "github"]`. Empty when none are configured. */
-    oauthProviders: string[];
-    antibot: AntibotConfig;
-    /** The one customer-facing support address. The contact form's mail goes there and customers' replies come back to it; show it as "write to us at". */
-    supportEmail: string;
-    operator: Operator;
-    /** Which text of the Terms is in force (`1` by default). An account stores the version it accepted beside the date (`User.termsVersion`). */
-    termsVersion: string;
+  session: SessionConfig;
+  /** Registry names this deployment holds OAuth credentials for, e.g. `["google", "github"]`. Empty when none are configured. */
+  oauthProviders: string[];
+  antibot: AntibotConfig;
+  /** The one customer-facing support address. The contact form's mail goes there and customers' replies come back to it; show it as "write to us at". */
+  supportEmail: string;
+  operator: Operator;
+  /** Which text of the Terms is in force (`1` by default). An account stores the version it accepted beside the date (`User.termsVersion`). */
+  termsVersion: string;
 }
 
 export type PackedRulesItemItem = string | 0 | 1 | { [key: string]: unknown };
@@ -401,14 +404,14 @@ export type PackedRules = PackedRulesItemItem[][];
  * is shown a button that answers 403.
  */
 export interface Abilities {
-    /**
+  /**
      * `true` when the caller holds a staff role that grants nothing yet because no
      * authenticator app is armed. The rules above are then the account's customer
      * ones; a client shows an "enrol to use your staff tools" prompt instead of
      * a staff menu. `false` for everyone else.
      */
-    secondFactorRequired: boolean;
-    /**
+  secondFactorRequired: boolean;
+  /**
      * The tenant-scope roles this caller may assign through `POST`/`PUT`/`PATCH
      * /users`, in the order `shared/rules/authorization-roles.yaml` declares them.
      * Computed by the same rule as the `403`/`422` those writes answer, so a role
@@ -416,147 +419,149 @@ export interface Abilities {
      * caller who may grant nothing. It has NO
      * AUTHORITY: the write is re-checked server-side.
      */
-    grantableRoles: string[];
-    /**
+  grantableRoles: string[];
+  /**
      * The shop `tenant`'s rules are about. Absent when the caller has no tenant
      * membership at all — a pure platform operator administers the installation
      * rather than acting inside one shop.
      */
-    tenantId?: string;
-    /**
+  tenantId?: string;
+  /**
      * What the caller may do INSIDE their shop. Empty for a caller with no tenant
      * membership.
      */
-    tenant: PackedRules;
-    /**
+  tenant: PackedRules;
+  /**
      * What the caller may do ACROSS the installation — health, metrics, the
      * operational audit. Empty for everyone but a platform operator, which is
      * most callers: an operator is not a super-member and holds no shop's keys.
      */
-    platform: PackedRules;
-    /**
+  platform: PackedRules;
+  /**
      * The permission model's own version, bumped when the RULES change rather than
      * when a role does. A client caches these; this is what tells it the cache is
      * about a different model, not merely a different person. One number for both
      * lists — the keys file they are declared in is one file.
      * @minimum 1
      */
-    version: number;
+  version: number;
 }
 
 export interface SessionActivity {
-    /** When the session last saw a real request — now, for a touch. */
-    lastActiveAt: string;
-    /**
+  /** When the session last saw a real request — now, for a touch. */
+  lastActiveAt: string;
+  /**
      * How long the session may then sit unused before it ends. Absent when no idle timeout applies to this account (a shopper, or the timeout is switched off).
      * @minimum 1
      */
-    idleTimeoutSeconds?: number;
+  idleTimeoutSeconds?: number;
 }
 
 export interface AccountView {
-    id: Id;
-    email: Email;
-    username: string;
-    role?: string;
-    active?: boolean;
-    verifiedAt?: string;
-    readonly pendingEmail?: string;
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
-    locale?: Locale;
-    phone?: string;
-    website?: string;
-    analyticsConsent?: boolean;
-    analyticsConsentAt?: string;
-    termsAcceptedAt?: string;
-    termsVersion?: string;
-    twoFactorEnabledAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    deletedAt?: string;
-    purchaseHold?: PurchaseHold;
-    abilities: Abilities;
-    activity: SessionActivity;
+  id: Id;
+  email: Email;
+  username: string;
+  role?: string;
+  active?: boolean;
+  verifiedAt?: string;
+  readonly pendingEmail?: string;
+  imageUrl?: ImageUrl;
+  thumbnailUrl?: ThumbnailUrl;
+  locale?: Locale;
+  phone?: string;
+  website?: string;
+  analyticsConsent?: boolean;
+  analyticsConsentAt?: string;
+  termsAcceptedAt?: string;
+  termsVersion?: string;
+  twoFactorEnabledAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string;
+  purchaseHold?: PurchaseHold;
+  abilities: Abilities;
+  activity: SessionActivity;
 }
 
 /**
  * What the requesting caller may do to this account, one flag per endpoint. Each is the route's permission key AND the protection of staff accounts: an account that holds a staff role is `false` for all of them unless the caller holds `assign:Role`, the caller's own account and an API key's minter included. A flag also reads the account's state, so a control never offers a move the server would refuse with a 409.
  */
 export interface UserActions {
-    /** Whether `PUT`/`PATCH /users/{id}` would be accepted for the profile fields — `update:User`, and the account is not a staff account the caller may not manage. Never covers a credential: no caller changes another person's email, password or second factor. */
-    update: boolean;
-    /** Whether `POST /users/{id}/assign-role` would be accepted — the caller holds `assign:Role` and the account is not deleted. The role already held is the client's to hide: naming it answers 409. The caller's own account is judged like any other. */
-    assignRole: boolean;
-    /** Whether `POST /users/{id}/revoke-role` would be accepted — the caller holds `assign:Role`, the account is not deleted, and it holds a staff role to take away. */
-    revokeRole: boolean;
-    /** Whether `DELETE /users/{id}` would soft-delete the account — `delete:User`, the account is not a staff account the caller may not manage, and it is not deleted already. */
-    delete: boolean;
-    /** Whether `DELETE /users/{id}/hard` would erase the account for good — `delete:User`, and the account is not a staff account the caller may not manage. A soft-deleted account can be erased. */
-    hardDelete: boolean;
-    /** Whether `POST /users/{id}/restore` would be accepted — `delete:User`, the account is not a staff account the caller may not manage, and it is soft-deleted. */
-    restore: boolean;
-    /** Whether `POST /users/{id}/place-purchase-hold` would be accepted — `ban:User`, and the account is not a staff account the caller may not manage. A hold can be placed again with a new end date or note to replace it; the client hides the control for the value already in force. */
-    placePurchaseHold: boolean;
-    /** Whether `POST /users/{id}/lift-purchase-hold` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and there is a hold or a review flag to clear. */
-    liftPurchaseHold: boolean;
-    /** Whether `POST /users/{id}/activate` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and it is deactivated. */
-    activate: boolean;
-    /** Whether `POST /users/{id}/deactivate` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and it is active. Deactivating ends every session of the account. */
-    deactivate: boolean;
+  /** Whether `PUT`/`PATCH /users/{id}` would be accepted for the profile fields — `update:User`, and the account is not a staff account the caller may not manage. Never covers a credential: no caller changes another person's email, password or second factor. */
+  update: boolean;
+  /** Whether `POST /users/{id}/assign-role` would be accepted — the caller holds `assign:Role` and the account is not deleted. The role already held is the client's to hide: naming it answers 409. The caller's own account is judged like any other. */
+  assignRole: boolean;
+  /** Whether `POST /users/{id}/revoke-role` would be accepted — the caller holds `assign:Role`, the account is not deleted, and it holds a staff role to take away. */
+  revokeRole: boolean;
+  /** Whether `DELETE /users/{id}` would soft-delete the account — `delete:User`, the account is not a staff account the caller may not manage, and it is not deleted already. */
+  delete: boolean;
+  /** Whether `DELETE /users/{id}/hard` would erase the account for good — `delete:User`, and the account is not a staff account the caller may not manage. A soft-deleted account can be erased. */
+  hardDelete: boolean;
+  /** Whether `POST /users/{id}/restore` would be accepted — `delete:User`, the account is not a staff account the caller may not manage, and it is soft-deleted. */
+  restore: boolean;
+  /** Whether `POST /users/{id}/place-purchase-hold` would be accepted — `ban:User`, and the account is not a staff account the caller may not manage. A hold can be placed again with a new end date or note to replace it; the client hides the control for the value already in force. */
+  placePurchaseHold: boolean;
+  /** Whether `POST /users/{id}/lift-purchase-hold` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and there is a hold or a review flag to clear. */
+  liftPurchaseHold: boolean;
+  /** Whether `POST /users/{id}/activate` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and it is deactivated. */
+  activate: boolean;
+  /** Whether `POST /users/{id}/deactivate` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and it is active. Deactivating ends every session of the account. */
+  deactivate: boolean;
 }
 
 export interface User {
-    id: Id;
-    email: Email;
-    username: string;
-    role?: string;
-    active?: boolean;
-    verifiedAt?: string;
-    readonly pendingEmail?: string;
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
-    locale?: Locale;
-    phone?: string;
-    website?: string;
-    analyticsConsent?: boolean;
-    analyticsConsentAt?: string;
-    termsAcceptedAt?: string;
-    termsVersion?: string;
-    twoFactorEnabledAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    deletedAt?: string;
-    purchaseHold?: PurchaseHold;
-    actions: UserActions;
-    /** When the account is erased, after its owner asked to delete it. Present only on such a row, and `deletedAt` is then the request time. Staff may restore it until then (`POST /users/{id}/restore`). */
-    purgeAt?: string;
-    /** When the shop's rule flagged this account for staff review after repeated cancellations. Staff view only (`/users` reads). Cleared when staff set or lift a hold. */
-    purchaseHoldFlaggedAt?: string;
+  id: Id;
+  email: Email;
+  username: string;
+  role?: string;
+  active?: boolean;
+  verifiedAt?: string;
+  readonly pendingEmail?: string;
+  imageUrl?: ImageUrl;
+  thumbnailUrl?: ThumbnailUrl;
+  locale?: Locale;
+  phone?: string;
+  website?: string;
+  analyticsConsent?: boolean;
+  analyticsConsentAt?: string;
+  termsAcceptedAt?: string;
+  termsVersion?: string;
+  twoFactorEnabledAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string;
+  purchaseHold?: PurchaseHold;
+  actions: UserActions;
+  /** When the account is erased, after its owner asked to delete it. Present only on such a row, and `deletedAt` is then the request time. Staff may restore it until then (`POST /users/{id}/restore`). */
+  purgeAt?: string;
+  /** When the shop's rule flagged this account for staff review after repeated cancellations. Staff view only (`/users` reads). Cleared when staff set or lift a hold. */
+  purchaseHoldFlaggedAt?: string;
 }
 
 /**
  * Liveness indicator. Always `ok` when the process is answering.
  */
-export type HealthPingStatus = (typeof HealthPingStatus)[keyof typeof HealthPingStatus];
+export type HealthPingStatus = typeof HealthPingStatus[keyof typeof HealthPingStatus];
+
 
 export const HealthPingStatus = {
-    ok: 'ok'
+  ok: 'ok',
 } as const;
 
 export interface HealthPing {
-    /** Liveness indicator. Always `ok` when the process is answering. */
-    status: HealthPingStatus;
+  /** Liveness indicator. Always `ok` when the process is answering. */
+  status: HealthPingStatus;
 }
 
 /**
  * Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.
  */
-export type LocaleDirection = (typeof LocaleDirection)[keyof typeof LocaleDirection];
+export type LocaleDirection = typeof LocaleDirection[keyof typeof LocaleDirection];
+
 
 export const LocaleDirection = {
-    ltr: 'ltr',
-    rtl: 'rtl'
+  ltr: 'ltr',
+  rtl: 'rtl',
 } as const;
 
 /**
@@ -580,37 +585,38 @@ export type LocaleApp = string;
 /**
  * Which tier a language came from — deployed files, the database, or both.
  */
-export type LocaleSource = (typeof LocaleSource)[keyof typeof LocaleSource];
+export type LocaleSource = typeof LocaleSource[keyof typeof LocaleSource];
+
 
 export const LocaleSource = {
-    static: 'static',
-    dynamic: 'dynamic',
-    both: 'both'
+  static: 'static',
+  dynamic: 'dynamic',
+  both: 'both',
 } as const;
 
 /**
  * Why `actions.delete` is false for a caller who holds `delete:Locale` and could otherwise act. `fallback`: the deployment's fallback language can never be deleted. Absent when the caller lacks the permission (the control is hidden, not explained) or when `delete` is true.
  */
-export type LanguageDeleteBlockedReason =
-    (typeof LanguageDeleteBlockedReason)[keyof typeof LanguageDeleteBlockedReason];
+export type LanguageDeleteBlockedReason = typeof LanguageDeleteBlockedReason[keyof typeof LanguageDeleteBlockedReason];
+
 
 export const LanguageDeleteBlockedReason = {
-    fallback: 'fallback'
+  fallback: 'fallback',
 } as const;
 
 /**
  * What THIS caller may do to THIS language right now, so a client never restates the rules. A caller without the permission, and a language with no registered row (a deployed file alone), get every flag `false`. Served only on reads that are not shared between callers: a visitor's `GET /locales` carries all `false`.
  */
 export interface LanguageActions {
-    /** Whether `PUT` or `PATCH /locales/{locale}` would be accepted: the caller holds `update:Locale` and a registered row exists. */
-    update: boolean;
-    /** Whether `POST /locales/{locale}/activate` would be accepted: `update` and the language is off. */
-    activate: boolean;
-    /** Whether `POST /locales/{locale}/deactivate` would be accepted: `update`, the language is on, and it is not the deployment's fallback. */
-    deactivate: boolean;
-    /** Whether `DELETE /locales/{locale}` would be accepted: the caller holds `delete:Locale`, a registered row exists, and it is not the deployment's fallback. */
-    delete: boolean;
-    deleteBlocked?: LanguageDeleteBlockedReason;
+  /** Whether `PUT` or `PATCH /locales/{locale}` would be accepted: the caller holds `update:Locale` and a registered row exists. */
+  update: boolean;
+  /** Whether `POST /locales/{locale}/activate` would be accepted: `update` and the language is off. */
+  activate: boolean;
+  /** Whether `POST /locales/{locale}/deactivate` would be accepted: `update`, the language is on, and it is not the deployment's fallback. */
+  deactivate: boolean;
+  /** Whether `DELETE /locales/{locale}` would be accepted: the caller holds `delete:Locale`, a registered row exists, and it is not the deployment's fallback. */
+  delete: boolean;
+  deleteBlocked?: LanguageDeleteBlockedReason;
 }
 
 /**
@@ -618,115 +624,116 @@ export interface LanguageActions {
  * A language that exists only as a deployed file has no row, hence no `id` and no timestamps, and every `actions` flag is `false`. Its existence means entries can be translated into it and a client can download the result. A language with a row that is switched on is served too: a request in it is answered in it.
  */
 export interface Language {
-    id?: Id;
-    tag: Locale;
-    /**
+  id?: Id;
+  tag: Locale;
+  /**
      * The ISO 639 language code at the front of `tag` (two or three letters, lower-case) — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.
      * Derived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.
      * @pattern ^[a-z]{2,3}$
      */
-    baseLanguage: string;
-    /** English name, for an admin list. */
-    name: string;
-    /** The language's own name, for a client's language picker. */
-    nativeName: string;
-    direction: LocaleDirection;
-    active: boolean;
-    /**
+  baseLanguage: string;
+  /** English name, for an admin list. */
+  name: string;
+  /** The language's own name, for a client's language picker. */
+  nativeName: string;
+  direction: LocaleDirection;
+  active: boolean;
+  /**
      * Which apps have words in this language. Without it a client seeing `es` in the list cannot tell whether the API has its own Spanish wording for error messages (the backend app), or whether it may download a Spanish UI dictionary (a frontend app). Those are different questions; a request in the language is answered either way.
      * @minItems 1
      */
-    apps: LocaleApp[];
-    source: LocaleSource;
-    /** @minimum 0 */
-    entryCount: number;
-    /** @minimum 0 */
-    revision: number;
-    actions: LanguageActions;
-    createdAt?: string;
-    updatedAt?: string;
+  apps: LocaleApp[];
+  source: LocaleSource;
+  /** @minimum 0 */
+  entryCount: number;
+  /** @minimum 0 */
+  revision: number;
+  actions: LanguageActions;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /**
  * Which languages a deployment offers, and what each of them can do. Runtime state, not contract state: it is derived from the dictionaries actually deployed and the rows actually stored, so it cannot be an enum here.
  */
 export interface LocaleCapabilities {
-    /** Every language, ordered by tag so the response is stable. */
-    locales: Language[];
-    default: Locale;
-    fallback: Locale;
+  /** Every language, ordered by tag so the response is stable. */
+  locales: Language[];
+  default: Locale;
+  fallback: Locale;
 }
 
 export interface CreateLocaleRequest {
-    tag: Locale;
-    /**
+  tag: Locale;
+  /**
      * @minLength 1
      * @maxLength 100
      */
-    name: string;
-    /**
+  name: string;
+  /**
      * @minLength 1
      * @maxLength 100
      */
-    nativeName: string;
-    direction?: LocaleDirection;
-    active?: boolean;
+  nativeName: string;
+  direction?: LocaleDirection;
+  active?: boolean;
 }
 
 /**
  * What an app is. `backend` is this API's own copy, applied internally and never served; `frontend` is a client's copy, downloadable per language.
  */
-export type LocaleAppKind = (typeof LocaleAppKind)[keyof typeof LocaleAppKind];
+export type LocaleAppKind = typeof LocaleAppKind[keyof typeof LocaleAppKind];
+
 
 export const LocaleAppKind = {
-    frontend: 'frontend',
-    backend: 'backend'
+  frontend: 'frontend',
+  backend: 'backend',
 } as const;
 
 /**
  * One app as the registry describes it.
  */
 export interface LocaleAppDescriptor {
-    id: LocaleApp;
-    /** A human name, for an admin screen. */
-    label: string;
-    kind: LocaleAppKind;
+  id: LocaleApp;
+  /** A human name, for an admin screen. */
+  label: string;
+  kind: LocaleAppKind;
 }
 
 export interface LocaleApps {
-    /** @minItems 1 */
-    apps: LocaleAppDescriptor[];
+  /** @minItems 1 */
+  apps: LocaleAppDescriptor[];
 }
 
 export interface ReplaceLocaleRequest {
-    /**
+  /**
      * @minLength 1
      * @maxLength 100
      */
-    name: string;
-    /**
+  name: string;
+  /**
      * @minLength 1
      * @maxLength 100
      */
-    nativeName: string;
-    direction: LocaleDirection;
+  nativeName: string;
+  direction: LocaleDirection;
 }
 
 /**
  * Every field optional: an omitted one means "leave it alone", never "clear it". The tag is absent by design — see the operation description.
  */
 export interface UpdateLocaleRequest {
-    /**
+  /**
      * @minLength 1
      * @maxLength 100
      */
-    name?: string;
-    /**
+  name?: string;
+  /**
      * @minLength 1
      * @maxLength 100
      */
-    nativeName?: string;
-    direction?: LocaleDirection;
+  nativeName?: string;
+  direction?: LocaleDirection;
 }
 
 /**
@@ -738,9 +745,9 @@ export type LocaleDictionaryMessages = { [key: string]: unknown };
  * The API's OWN message dictionary for one language — its API-response copy and nothing else. It is never a client's UI dictionary: the two are authored and deployed in separate repositories, and mixing them would put view copy in the API's keyspace. A client that wants these merges them under a namespace it reserves for the API, never at the root.
  */
 export interface LocaleDictionary {
-    locale: Locale;
-    /** Nested key/value dictionary, the same shape the API loads. */
-    messages: LocaleDictionaryMessages;
+  locale: Locale;
+  /** Nested key/value dictionary, the same shape the API loads. */
+  messages: LocaleDictionaryMessages;
 }
 
 /**
@@ -752,11 +759,11 @@ export type LocaleMessagesMessages = { [key: string]: unknown };
  * The CLIENT's dictionary for one language, built from the stored entries. Same nested shape as `LocaleDictionary` on purpose — a client merges both with one code path rather than two — and a completely separate keyspace, because the two are authored by different people for different surfaces.
  */
 export interface LocaleMessages {
-    locale: Locale;
-    /** @minimum 0 */
-    revision: number;
-    /** Flat dotted keys expanded into a tree: `products.list.title` becomes `products.list.title`, nested. Empty for a language with no entries yet, which is a legitimate state and not a 404. */
-    messages: LocaleMessagesMessages;
+  locale: Locale;
+  /** @minimum 0 */
+  revision: number;
+  /** Flat dotted keys expanded into a tree: `products.list.title` becomes `products.list.title`, nested. Empty for a language with no entries yet, which is a legitimate state and not a 404. */
+  messages: LocaleMessagesMessages;
 }
 
 /**
@@ -764,19 +771,19 @@ export interface LocaleMessages {
  * `app` is part of the identity, not a label on it: two apps may both declare a top-level `generic`, so `generic.error-internal-server-error` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other.
  */
 export interface LocaleEntry {
-    id: Id;
-    locale: Locale;
-    app: LocaleApp;
-    /** Flat and dotted. Stored AS A STRING, and never as a path INTO a nested structure: a store that interprets the dots reads three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting. */
-    key: string;
-    value: string;
-    createdAt?: string;
-    updatedAt?: string;
+  id: Id;
+  locale: Locale;
+  app: LocaleApp;
+  /** Flat and dotted. Stored AS A STRING, and never as a path INTO a nested structure: a store that interprets the dots reads three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting. */
+  key: string;
+  value: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface LocaleEntriesResponse {
-    items: LocaleEntry[];
-    meta: PaginationMeta;
+  items: LocaleEntry[];
+  meta: PaginationMeta;
 }
 
 /**
@@ -784,65 +791,65 @@ export interface LocaleEntriesResponse {
  * A key is 1 to 200 characters once trimmed, and two keys that are the same once trimmed are a 409. A key is refused when it is a strict prefix of another key in the same batch, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.
  * A key that no dictionary defines is ACCEPTED. Entries add keys as well as override them, and for `app` rows this API could not check anyway — that keyspace belongs to the client and lives in another repository. So a typo saves cleanly and then renders nowhere: harmless, invisible, and yours to notice.
  */
-export type ReplaceLocaleEntriesRequestEntries = { [key: string]: string };
+export type ReplaceLocaleEntriesRequestEntries = {[key: string]: string};
 
 /**
  * The COMPLETE set of entries for this language IN THE APP the URI names. Anything already stored under that app and not named here is deleted; the other apps are untouched.
  * The app is the path's, once for the batch rather than per row, so a replace cannot half-apply across dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.
  */
 export interface ReplaceLocaleEntriesRequest {
-    /**
+  /**
      * Translation key to text. Strings only: a `null` has no meaning under `PUT`, which already deletes whatever it does not name, and is a 422.
      * A key is 1 to 200 characters once trimmed, and two keys that are the same once trimmed are a 409. A key is refused when it is a strict prefix of another key in the same batch, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.
      * A key that no dictionary defines is ACCEPTED. Entries add keys as well as override them, and for `app` rows this API could not check anyway — that keyspace belongs to the client and lives in another repository. So a typo saves cleanly and then renders nowhere: harmless, invisible, and yours to notice.
      */
-    entries: ReplaceLocaleEntriesRequestEntries;
+  entries: ReplaceLocaleEntriesRequestEntries;
 }
 
 /**
  * What an import actually did, counted rather than implied. `removed` counts the stored keys the import deleted: those a `PUT` did not name, or a `PATCH` set to `null`.
  */
 export interface LocaleImportResult {
-    /** @minimum 0 */
-    created: number;
-    /** @minimum 0 */
-    updated: number;
-    /** @minimum 0 */
-    removed: number;
-    /** @minimum 0 */
-    revision: number;
+  /** @minimum 0 */
+  created: number;
+  /** @minimum 0 */
+  updated: number;
+  /** @minimum 0 */
+  removed: number;
+  /** @minimum 0 */
+  revision: number;
 }
 
 export interface CreateLocaleEntryRequest {
-    /**
+  /**
      * @minLength 1
      * @maxLength 200
      */
-    key: string;
-    /** @maxLength 2000 */
-    value: string;
+  key: string;
+  /** @maxLength 2000 */
+  value: string;
 }
 
 /**
  * Translation key to text, or to `null` to delete it. A `null` for a key that is not stored is a no-op, not an error. An empty map changes nothing and answers 200.
  * A key is 1 to 200 characters once trimmed, and two keys that are the same once trimmed are a 409. A key being written (a string) is refused when it is a strict prefix of a key that will remain, or has one as a prefix — `products.list` alongside `products.list.title`; a key being deleted is not part of that check. The rationale and the "undefined keys are accepted" rule are on `ReplaceLocaleEntriesRequest`.
  */
-export type UpdateLocaleEntriesRequestEntries = { [key: string]: string | null };
+export type UpdateLocaleEntriesRequestEntries = {[key: string]: string | null};
 
 /**
  * Entries to change in the app the URI names, as a JSON merge patch (RFC 7396) over the app's key-to-text map. A string upserts that key, `null` deletes it, and a key the map does not name is left exactly as it was.
  */
 export interface UpdateLocaleEntriesRequest {
-    /**
+  /**
      * Translation key to text, or to `null` to delete it. A `null` for a key that is not stored is a no-op, not an error. An empty map changes nothing and answers 200.
      * A key is 1 to 200 characters once trimmed, and two keys that are the same once trimmed are a 409. A key being written (a string) is refused when it is a strict prefix of a key that will remain, or has one as a prefix — `products.list` alongside `products.list.title`; a key being deleted is not part of that check. The rationale and the "undefined keys are accepted" rule are on `ReplaceLocaleEntriesRequest`.
      */
-    entries: UpdateLocaleEntriesRequestEntries;
+  entries: UpdateLocaleEntriesRequestEntries;
 }
 
 export interface ReplaceLocaleEntryRequest {
-    /** @maxLength 2000 */
-    value: string;
+  /** @maxLength 2000 */
+  value: string;
 }
 
 /**
@@ -855,129 +862,127 @@ export type TranslatableEntityType = string;
 /**
  * What produced this row's current `fields` — what a reviewer needs to prioritise. There is no workflow gate behind it: a `human` write is live immediately, same as a `machine` one.
  */
-export type TranslationOrigin = (typeof TranslationOrigin)[keyof typeof TranslationOrigin];
+export type TranslationOrigin = typeof TranslationOrigin[keyof typeof TranslationOrigin];
+
 
 export const TranslationOrigin = {
-    machine: 'machine',
-    human: 'human'
+  machine: 'machine',
+  human: 'human',
 } as const;
 
 /**
  * Field name to translated value — `{ title, description }` for a product. Keys are validated against the `translatables` registry entry for `entityType`, never against this contract, since the field set differs per entity and this schema stays generic on purpose.
  */
-export type TranslationFields = { [key: string]: string };
+export type TranslationFields = {[key: string]: string};
 
 /**
  * One entity's words in one language. Unique on (entityType, entityId, locale) — the fallback-locale row is not a special case, it is simply the row whose `locale` equals this deployment's `NODE_FALLBACK_LOCALE`.
  */
 export interface Translation {
-    id: Id;
-    entityType: TranslatableEntityType;
-    entityId: Id;
-    locale: Locale;
-    /** Field name to translated value — `{ title, description }` for a product. Keys are validated against the `translatables` registry entry for `entityType`, never against this contract, since the field set differs per entity and this schema stays generic on purpose. */
-    fields: TranslationFields;
-    /** Hash of the fallback-locale row's `fields` at the moment this row was translated. A mismatch means the source has changed since — stale, not wrong. Absent on the fallback-locale row itself, which is never stale relative to its own content. */
-    sourceDigest?: string;
-    origin: TranslationOrigin;
-    /** The `translator` who last wrote this row, for the audit trail. */
-    translatedBy?: Id;
-    createdAt: string;
-    updatedAt: string;
+  id: Id;
+  entityType: TranslatableEntityType;
+  entityId: Id;
+  locale: Locale;
+  /** Field name to translated value — `{ title, description }` for a product. Keys are validated against the `translatables` registry entry for `entityType`, never against this contract, since the field set differs per entity and this schema stays generic on purpose. */
+  fields: TranslationFields;
+  /** Hash of the fallback-locale row's `fields` at the moment this row was translated. A mismatch means the source has changed since — stale, not wrong. Absent on the fallback-locale row itself, which is never stale relative to its own content. */
+  sourceDigest?: string;
+  origin: TranslationOrigin;
+  /** The `translator` who last wrote this row, for the audit trail. */
+  translatedBy?: Id;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
  * Every locale one entity has a row for, in one response — the shape the admin translation screen for that entity reads and writes as a whole.
  */
 export interface EntityTranslations {
-    entityType: TranslatableEntityType;
-    entityId: Id;
-    translations: Translation[];
-    /** Every field name the `translatables` registry declares for this `entityType` — the field set the generic translation screen offers, so it is never limited to whatever fields the fetched rows happen to carry already. */
-    fields: string[];
+  entityType: TranslatableEntityType;
+  entityId: Id;
+  translations: Translation[];
+  /** Every field name the `translatables` registry declares for this `entityType` — the field set the generic translation screen offers, so it is never limited to whatever fields the fetched rows happen to carry already. */
+  fields: string[];
 }
 
 /**
  * The locale's WHOLE set of fields. Every key MUST be one the `translatables` registry declares for this `entityType`; an unknown key is a 422, not a silently dropped one. Empty is a 422 too — enforced at write time, not by this schema, since `minProperties` is not something the generated client validates. A declared field this object leaves out is cleared: a PUT states the whole locale.
  */
-export type ReplaceEntityTranslationsEntryFields = { [key: string]: string };
+export type ReplaceEntityTranslationsEntryFields = {[key: string]: string};
 
 /**
  * One locale's words for one entity. `origin` defaults to `human` — the door this write shape is exposed on is the `translator`'s, and a machine-produced draft is the exception, not the rule.
  */
 export interface ReplaceEntityTranslationsEntry {
-    /** The locale's WHOLE set of fields. Every key MUST be one the `translatables` registry declares for this `entityType`; an unknown key is a 422, not a silently dropped one. Empty is a 422 too — enforced at write time, not by this schema, since `minProperties` is not something the generated client validates. A declared field this object leaves out is cleared: a PUT states the whole locale. */
-    fields: ReplaceEntityTranslationsEntryFields;
-    origin?: TranslationOrigin;
+  /** The locale's WHOLE set of fields. Every key MUST be one the `translatables` registry declares for this `entityType`; an unknown key is a 422, not a silently dropped one. Empty is a 422 too — enforced at write time, not by this schema, since `minProperties` is not something the generated client validates. A declared field this object leaves out is cleared: a PUT states the whole locale. */
+  fields: ReplaceEntityTranslationsEntryFields;
+  origin?: TranslationOrigin;
 }
 
 /**
  * One or more locales for one entity, keyed by locale tag. See the operation description for what an object, a `null`, and an absent key each mean. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on. A `PUT` deletes the stored locales it leaves out, drafts included.
  */
-export interface ReplaceEntityTranslationsRequest {
-    [key: string]: ReplaceEntityTranslationsEntry | null;
-}
+export interface ReplaceEntityTranslationsRequest {[key: string]: ReplaceEntityTranslationsEntry | null}
 
 /**
  * Each key MUST be one the `translatables` registry declares for this `entityType`. A string sets that field, `null` clears it, a field left out keeps what it has. An empty object is a 422 — enforced at write time.
  */
-export type UpdateEntityTranslationsEntryFields = { [key: string]: string | null };
+export type UpdateEntityTranslationsEntryFields = {[key: string]: string | null};
 
 /**
  * One locale's changes for one entity. `origin` is required: a merge patch has no default to apply to a member it leaves out, and stating who produced the text keeps a machine import from being filed as human work. `PUT` defaults it to `human`.
  */
 export interface UpdateEntityTranslationsEntry {
-    /** Each key MUST be one the `translatables` registry declares for this `entityType`. A string sets that field, `null` clears it, a field left out keeps what it has. An empty object is a 422 — enforced at write time. */
-    fields: UpdateEntityTranslationsEntryFields;
-    origin: TranslationOrigin;
+  /** Each key MUST be one the `translatables` registry declares for this `entityType`. A string sets that field, `null` clears it, a field left out keeps what it has. An empty object is a 422 — enforced at write time. */
+  fields: UpdateEntityTranslationsEntryFields;
+  origin: TranslationOrigin;
 }
 
 /**
  * One or more locales for one entity, keyed by locale tag. See the operation description for what an object, a `null`, and an absent key each mean.
  */
-export interface UpdateEntityTranslationsRequest {
-    [key: string]: UpdateEntityTranslationsEntry | null;
-}
+export interface UpdateEntityTranslationsRequest {[key: string]: UpdateEntityTranslationsEntry | null}
 
 /**
  * One backing service's state, in the four words this payload uses for all of them.
  * `disabled` means "not configured in this deployment" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a start period, during which "not yet" and "broken" look identical on the wire and mean opposite things.
  */
-export type DependencyStatus = (typeof DependencyStatus)[keyof typeof DependencyStatus];
+export type DependencyStatus = typeof DependencyStatus[keyof typeof DependencyStatus];
+
 
 export const DependencyStatus = {
-    ready: 'ready',
-    connecting: 'connecting',
-    unavailable: 'unavailable',
-    disabled: 'disabled'
+  ready: 'ready',
+  connecting: 'connecting',
+  unavailable: 'unavailable',
+  disabled: 'disabled',
 } as const;
 
 export interface ObservabilityDependency {
-    status: DependencyStatus;
+  status: DependencyStatus;
 }
 
 /**
  * Every backing service this process needs, read from the connection state each adapter already maintains. No I/O: a health endpoint that opens sockets is polled every few seconds by every replica forever, and becomes an amplifier pointed at the infrastructure it reports on.
  */
 export interface ObservabilityHealthDependencies {
-    database: ObservabilityDependency;
-    cache: ObservabilityDependency;
-    queue: ObservabilityDependency;
+  database: ObservabilityDependency;
+  cache: ObservabilityDependency;
+  queue: ObservabilityDependency;
 }
 
-export type ObservabilityHealthTelemetryAnalyticsProvider =
-    (typeof ObservabilityHealthTelemetryAnalyticsProvider)[keyof typeof ObservabilityHealthTelemetryAnalyticsProvider];
+export type ObservabilityHealthTelemetryAnalyticsProvider = typeof ObservabilityHealthTelemetryAnalyticsProvider[keyof typeof ObservabilityHealthTelemetryAnalyticsProvider];
+
 
 export const ObservabilityHealthTelemetryAnalyticsProvider = {
-    umami: 'umami',
-    posthog: 'posthog',
-    none: 'none'
+  umami: 'umami',
+  posthog: 'posthog',
+  none: 'none',
 } as const;
 
 export type ObservabilityHealthTelemetryAnalytics = {
-    provider: ObservabilityHealthTelemetryAnalyticsProvider;
-    /** Whether the selected provider has the credentials it needs. `none` is always true: collecting nothing is its configuration. */
-    configured: boolean;
+  provider: ObservabilityHealthTelemetryAnalyticsProvider;
+  /** Whether the selected provider has the credentials it needs. `none` is always true: collecting nothing is its configuration. */
+  configured: boolean;
 };
 
 /**
@@ -985,11 +990,11 @@ export type ObservabilityHealthTelemetryAnalytics = {
  * Deliberately not part of `status`: these are destinations this service writes to, and losing one costs visibility rather than capability. An unreachable Loki does not make a checkout fail, so it must not colour the dot a dashboard shows for "can this instance serve traffic".
  */
 export interface ObservabilityHealthTelemetry {
-    loki: boolean;
-    otel: boolean;
-    umami: boolean;
-    faro: boolean;
-    analytics: ObservabilityHealthTelemetryAnalytics;
+  loki: boolean;
+  otel: boolean;
+  umami: boolean;
+  faro: boolean;
+  analytics: ObservabilityHealthTelemetryAnalytics;
 }
 
 /**
@@ -997,22 +1002,22 @@ export interface ObservabilityHealthTelemetry {
  * Bytes rather than megabytes because the conversion is a presentation decision and a lossy one: a rounded megabyte cannot express the 400 KB move between two polls that a leak hunter is looking for. The same four fields, in the same units and the same order, are on the SSE payload in this module's `asyncapi.yaml`, which declares them again rather than sharing this schema. The stream's unit test parses the real frame with the generated schema, so the two cannot drift unnoticed.
  */
 export interface ProcessMemory {
-    /** @minimum 0 */
-    rss: number;
-    /** @minimum 0 */
-    heapUsed: number;
-    /** @minimum 0 */
-    heapTotal: number;
-    /** @minimum 0 */
-    external: number;
+  /** @minimum 0 */
+  rss: number;
+  /** @minimum 0 */
+  heapUsed: number;
+  /** @minimum 0 */
+  heapTotal: number;
+  /** @minimum 0 */
+  external: number;
 }
 
 export interface ObservabilityHealthSystem {
-    platform: string;
-    /** @minimum 1 */
-    cpuCount: number;
-    /** @items.minimum 0 */
-    loadAvg: number[];
+  platform: string;
+  /** @minimum 1 */
+  cpuCount: number;
+  /** @items.minimum 0 */
+  loadAvg: number[];
 }
 
 /**
@@ -1020,148 +1025,148 @@ export interface ObservabilityHealthSystem {
  * Not part of `status`, same reasoning as `telemetry`: a job that has not run recently costs staleness, not this instance's ability to serve a request — see docs/reference/ops.md#scheduled-jobs.
  */
 export interface ObservabilityHealthJob {
-    name: string;
-    lastSuccessAt?: string;
-    lastError?: string;
+  name: string;
+  lastSuccessAt?: string;
+  lastError?: string;
 }
 
 /**
  * One worker queue's current dead-letter depth, read live off the broker (`src/infrastructure/adapters/queue.ts#parkedCounts`) — the CURRENT count, unlike `queue_jobs_dead_lettered_total`'s Prometheus counter, which only ever grows. Absent entirely, not zero-filled, when the queue is disabled or unreachable: the broker is what would answer, and there is nothing to read a count off.
  */
 export interface ObservabilityHealthQueue {
-    /** The queue this dead-letter count belongs to. */
-    name: string;
-    /** @minimum 0 */
-    parked: number;
+  /** The queue this dead-letter count belongs to. */
+  name: string;
+  /** @minimum 0 */
+  parked: number;
 }
 
 /**
  * READINESS: `ok` when every dependency is `ready` or `disabled`, `degraded` otherwise. Which part is missing is `dependencies`' job to say.
  * This is not liveness. `GET /livez` answers that, and is what the container HEALTHCHECK probes — an orchestrator restarts on liveness, and restarting this process would not bring a downed Redis back.
  */
-export type ObservabilityHealthStatus =
-    (typeof ObservabilityHealthStatus)[keyof typeof ObservabilityHealthStatus];
+export type ObservabilityHealthStatus = typeof ObservabilityHealthStatus[keyof typeof ObservabilityHealthStatus];
+
 
 export const ObservabilityHealthStatus = {
-    ok: 'ok',
-    degraded: 'degraded'
+  ok: 'ok',
+  degraded: 'degraded',
 } as const;
 
 export interface ObservabilityHealth {
-    /**
+  /**
      * READINESS: `ok` when every dependency is `ready` or `disabled`, `degraded` otherwise. Which part is missing is `dependencies`' job to say.
      * This is not liveness. `GET /livez` answers that, and is what the container HEALTHCHECK probes — an orchestrator restarts on liveness, and restarting this process would not bring a downed Redis back.
      */
-    status: ObservabilityHealthStatus;
-    environment: string;
-    service: string;
-    /** The version of the language runtime serving this API, as that runtime reports it. Diagnostic only — what is actually deployed right now, which is the question a release leaves open. */
-    runtimeVersion: string;
-    /** @minimum 0 */
-    uptimeSeconds: number;
-    dependencies: ObservabilityHealthDependencies;
-    telemetry?: ObservabilityHealthTelemetry;
-    memory?: ProcessMemory;
-    system?: ObservabilityHealthSystem;
-    /** Every lease-guarded job that has attempted to run at least once. See `ObservabilityHealthJob`. */
-    jobs?: ObservabilityHealthJob[];
-    /** Every worker queue's current dead-letter depth. Empty when the queue is disabled or unreachable, never zero-filled — see `ObservabilityHealthQueue`. */
-    queues?: ObservabilityHealthQueue[];
-    timestamp: string;
+  status: ObservabilityHealthStatus;
+  environment: string;
+  service: string;
+  /** The version of the language runtime serving this API, as that runtime reports it. Diagnostic only — what is actually deployed right now, which is the question a release leaves open. */
+  runtimeVersion: string;
+  /** @minimum 0 */
+  uptimeSeconds: number;
+  dependencies: ObservabilityHealthDependencies;
+  telemetry?: ObservabilityHealthTelemetry;
+  memory?: ProcessMemory;
+  system?: ObservabilityHealthSystem;
+  /** Every lease-guarded job that has attempted to run at least once. See `ObservabilityHealthJob`. */
+  jobs?: ObservabilityHealthJob[];
+  /** Every worker queue's current dead-letter depth. Empty when the queue is disabled or unreachable, never zero-filled — see `ObservabilityHealthQueue`. */
+  queues?: ObservabilityHealthQueue[];
+  timestamp: string;
 }
 
 export interface ObservabilityMetricsLatency {
-    /** Median latency in ms */
-    p50: number;
-    /** 95th-percentile latency in ms */
-    p95: number;
+  /** Median latency in ms */
+  p50: number;
+  /** 95th-percentile latency in ms */
+  p95: number;
 }
 
 export type ObservabilityMetricsSummaryHttp = {
-    /** @minimum 0 */
-    totalRequests: number;
-    /** @minimum 0 */
-    totalErrors: number;
-    /**
+  /** @minimum 0 */
+  totalRequests: number;
+  /** @minimum 0 */
+  totalErrors: number;
+  /**
      * Fraction of requests that returned 4xx/5xx
      * @minimum 0
      * @maximum 1
      */
-    errorRate: number;
-    /** @minimum 0 */
-    inFlight: number;
-    latencyMs: ObservabilityMetricsLatency;
+  errorRate: number;
+  /** @minimum 0 */
+  inFlight: number;
+  latencyMs: ObservabilityMetricsLatency;
 };
 
 export type ObservabilityMetricsSummaryAuth = {
-    /** @minimum 0 */
-    loginSuccess?: number;
-    /** @minimum 0 */
-    loginFailure?: number;
-    /** @minimum 0 */
-    signupSuccess?: number;
+  /** @minimum 0 */
+  loginSuccess?: number;
+  /** @minimum 0 */
+  loginFailure?: number;
+  /** @minimum 0 */
+  signupSuccess?: number;
 };
 
 export type ObservabilityMetricsSummaryBusiness = {
-    /** @minimum 0 */
-    checkoutSuccess?: number;
-    /** @minimum 0 */
-    ordersCreated?: number;
-    /** @minimum 0 */
-    lowStockProducts?: number;
-    /** @minimum 0 */
-    reservedUnits?: number;
+  /** @minimum 0 */
+  checkoutSuccess?: number;
+  /** @minimum 0 */
+  ordersCreated?: number;
+  /** @minimum 0 */
+  lowStockProducts?: number;
+  /** @minimum 0 */
+  reservedUnits?: number;
 };
 
 export type ObservabilityMetricsSummaryDatabase = {
-    /** @minimum 0 */
-    queriesTotal?: number;
-    /** @minimum 0 */
-    errorsTotal?: number;
+  /** @minimum 0 */
+  queriesTotal?: number;
+  /** @minimum 0 */
+  errorsTotal?: number;
 };
 
 export type ObservabilityMetricsSummaryProcess = {
-    /** @minimum 0 */
-    uptimeSeconds?: number;
-    memory?: ProcessMemory;
+  /** @minimum 0 */
+  uptimeSeconds?: number;
+  memory?: ProcessMemory;
 };
 
 export interface ObservabilityMetricsSummary {
-    http: ObservabilityMetricsSummaryHttp;
-    auth: ObservabilityMetricsSummaryAuth;
-    business?: ObservabilityMetricsSummaryBusiness;
-    database: ObservabilityMetricsSummaryDatabase;
-    process: ObservabilityMetricsSummaryProcess;
-    timestamp: string;
+  http: ObservabilityMetricsSummaryHttp;
+  auth: ObservabilityMetricsSummaryAuth;
+  business?: ObservabilityMetricsSummaryBusiness;
+  database: ObservabilityMetricsSummaryDatabase;
+  process: ObservabilityMetricsSummaryProcess;
+  timestamp: string;
 }
 
-export type AuditEntryItemActorRole =
-    (typeof AuditEntryItemActorRole)[keyof typeof AuditEntryItemActorRole];
+export type AuditEntryItemActorRole = typeof AuditEntryItemActorRole[keyof typeof AuditEntryItemActorRole];
+
 
 export const AuditEntryItemActorRole = {
-    admin: 'admin',
-    user: 'user',
-    anonymous: 'anonymous',
-    system: 'system'
+  admin: 'admin',
+  user: 'user',
+  anonymous: 'anonymous',
+  system: 'system',
 } as const;
 
 /**
  * Which world this action happened in — a shop or the installation.
  */
-export type AuditEntryItemActorScope =
-    (typeof AuditEntryItemActorScope)[keyof typeof AuditEntryItemActorScope];
+export type AuditEntryItemActorScope = typeof AuditEntryItemActorScope[keyof typeof AuditEntryItemActorScope];
+
 
 export const AuditEntryItemActorScope = {
-    tenant: 'tenant',
-    platform: 'platform'
+  tenant: 'tenant',
+  platform: 'platform',
 } as const;
 
-export type AuditEntryItemOutcome =
-    (typeof AuditEntryItemOutcome)[keyof typeof AuditEntryItemOutcome];
+export type AuditEntryItemOutcome = typeof AuditEntryItemOutcome[keyof typeof AuditEntryItemOutcome];
+
 
 export const AuditEntryItemOutcome = {
-    success: 'success',
-    failure: 'failure'
+  success: 'success',
+  failure: 'failure',
 } as const;
 
 /**
@@ -1179,39 +1184,40 @@ export const AuditEntryItemOutcome = {
  */
 export type AuditEntryItemMetadata = { [key: string]: unknown };
 
-export type AuditEntryItemLevel = (typeof AuditEntryItemLevel)[keyof typeof AuditEntryItemLevel];
+export type AuditEntryItemLevel = typeof AuditEntryItemLevel[keyof typeof AuditEntryItemLevel];
+
 
 export const AuditEntryItemLevel = {
-    info: 'info',
-    warn: 'warn'
+  info: 'info',
+  warn: 'warn',
 } as const;
 
 export interface AuditEntryItem {
-    actorUserId: string;
-    /** The API key the action was done with. Absent when a person did it themselves. */
-    actorCredentialId?: string;
-    actorRole: AuditEntryItemActorRole;
-    /** The tenant role behind actorRole, e.g. moderator. Absent when the request never resolved one. */
-    actorRoleName?: string;
-    /** Which world this action happened in — a shop or the installation. */
-    actorScope: AuditEntryItemActorScope;
-    /**
+  actorUserId: string;
+  /** The API key the action was done with. Absent when a person did it themselves. */
+  actorCredentialId?: string;
+  actorRole: AuditEntryItemActorRole;
+  /** The tenant role behind actorRole, e.g. moderator. Absent when the request never resolved one. */
+  actorRoleName?: string;
+  /** Which world this action happened in — a shop or the installation. */
+  actorScope: AuditEntryItemActorScope;
+  /**
      * Dot-notation action name (e.g. order.created)
      * @pattern ^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$
      */
-    action: string;
-    outcome: AuditEntryItemOutcome;
-    /** The caller address as recorded. The platform trail (`GET /observability/audit`) answers a keyed digest instead: `hmac:` and 12 hex characters. */
-    ip?: string;
-    userAgent?: string;
-    requestId?: string;
-    /** @pattern ^[0-9a-f]{32}$ */
-    traceId?: string;
-    targetType?: string;
-    targetId?: string;
-    /** The person whose data the row is about, when that is not the actor: set on a staff read of someone's record. Absent for a guest's order and for actions that are not about a person. */
-    subjectId?: string;
-    /**
+  action: string;
+  outcome: AuditEntryItemOutcome;
+  /** The caller address as recorded. The platform trail (`GET /observability/audit`) answers a keyed digest instead: `hmac:` and 12 hex characters. */
+  ip?: string;
+  userAgent?: string;
+  requestId?: string;
+  /** @pattern ^[0-9a-f]{32}$ */
+  traceId?: string;
+  targetType?: string;
+  targetId?: string;
+  /** The person whose data the row is about, when that is not the actor: set on a staff read of someone's record. Absent for a guest's order and for actions that are not about a person. */
+  subjectId?: string;
+  /**
      * What the action carried. Open on purpose: each action adds its own keys, and a
      * declared-properties object would be validated closed by the generated schema.
      * Keys with a fixed meaning across actions:
@@ -1224,191 +1230,191 @@ export interface AuditEntryItem {
      *   fields that moved, by NAME only. The trail is never scrubbed on erasure, so
      *   their values never enter it.
      */
-    metadata?: AuditEntryItemMetadata;
-    timestamp: string;
-    level: AuditEntryItemLevel;
+  metadata?: AuditEntryItemMetadata;
+  timestamp: string;
+  level: AuditEntryItemLevel;
 }
 
 export interface AuditLogsResponse {
-    items: AuditEntryItem[];
-    meta: PaginationMeta;
+  items: AuditEntryItem[];
+  meta: PaginationMeta;
 }
 
 export interface AuditEntriesResponse {
-    items: AuditEntryItem[];
-    meta: PaginationMeta;
+  items: AuditEntryItem[];
+  meta: PaginationMeta;
 }
 
 /**
  * What the solver needs to derive the key the challenge asks for.
  */
 export interface AntibotChallengeParameters {
-    /** Key-derivation function, e.g. `PBKDF2/SHA-256`. */
-    algorithm: string;
-    nonce: string;
-    salt: string;
-    /** Iteration count — how much work solving takes. */
-    cost: number;
-    keyLength: number;
-    keyPrefix: string;
-    keySignature?: string;
-    memoryCost?: number;
-    parallelism?: number;
-    /** Unix seconds after which the challenge is refused, solved or not. */
-    expiresAt?: number;
+  /** Key-derivation function, e.g. `PBKDF2/SHA-256`. */
+  algorithm: string;
+  nonce: string;
+  salt: string;
+  /** Iteration count — how much work solving takes. */
+  cost: number;
+  keyLength: number;
+  keyPrefix: string;
+  keySignature?: string;
+  memoryCost?: number;
+  parallelism?: number;
+  /** Unix seconds after which the challenge is refused, solved or not. */
+  expiresAt?: number;
 }
 
 /**
  * ALTCHA's challenge shape — the only self-hosted provider shipped. Another one would change this schema, which is the point of declaring it rather than leaving it free-form.
  */
 export interface AntibotChallenge {
-    parameters: AntibotChallengeParameters;
-    /** HMAC over the parameters, proving this server issued them. */
-    signature: string;
+  parameters: AntibotChallengeParameters;
+  /** HMAC over the parameters, proving this server issued them. */
+  signature: string;
 }
 
-export type ProductViewedEventEvent =
-    (typeof ProductViewedEventEvent)[keyof typeof ProductViewedEventEvent];
+export type ProductViewedEventEvent = typeof ProductViewedEventEvent[keyof typeof ProductViewedEventEvent];
+
 
 export const ProductViewedEventEvent = {
-    product_viewed: 'product_viewed'
+  product_viewed: 'product_viewed',
 } as const;
 
 export interface ProductViewedEvent {
-    event: ProductViewedEventEvent;
-    /** The product whose page was opened. */
-    productId: Id;
+  event: ProductViewedEventEvent;
+  /** The product whose page was opened. */
+  productId: Id;
 }
 
-export type ProductsSearchedEventEvent =
-    (typeof ProductsSearchedEventEvent)[keyof typeof ProductsSearchedEventEvent];
+export type ProductsSearchedEventEvent = typeof ProductsSearchedEventEvent[keyof typeof ProductsSearchedEventEvent];
+
 
 export const ProductsSearchedEventEvent = {
-    products_searched: 'products_searched'
+  products_searched: 'products_searched',
 } as const;
 
 export interface ProductsSearchedEvent {
-    event: ProductsSearchedEventEvent;
-    /** The free-text term searched for, when there was one. */
-    text?: Text;
-    /**
+  event: ProductsSearchedEventEvent;
+  /** The free-text term searched for, when there was one. */
+  text?: Text;
+  /**
      * How many products the search found.
      * @minimum 0
      * @maximum 100000
      */
-    resultCount: number;
-    page: Page;
+  resultCount: number;
+  page: Page;
 }
 
 export type AnalyticsEventRequest = ProductViewedEvent | ProductsSearchedEvent;
 
 export interface ReplaceAccountRequest {
-    /**
+  /**
      * @minLength 3
      * @maxLength 50
      */
-    username: string;
-    locale?: Locale | null;
-    imageUrl?: ImageRemoval;
-    /**
+  username: string;
+  locale?: Locale | null;
+  imageUrl?: ImageRemoval;
+  /**
      * @minLength 1
      * @maxLength 32
      * @nullable
      */
-    phone?: string | null;
-    /**
+  phone?: string | null;
+  /**
      * @minLength 1
      * @maxLength 2048
      * @nullable
      */
-    website?: string | null;
-    analyticsConsent: boolean;
+  website?: string | null;
+  analyticsConsent: boolean;
 }
 
 export interface ReplaceAccountRequestMultipart {
-    /**
+  /**
      * @minLength 3
      * @maxLength 50
      */
-    username: string;
-    locale?: string;
-    /** Optional user profile image */
-    imageUpload?: Blob;
-    /**
+  username: string;
+  locale?: string;
+  /** Optional user profile image */
+  imageUpload?: Blob;
+  /**
      * @minLength 1
      * @maxLength 32
      */
-    phone?: string;
-    /**
+  phone?: string;
+  /**
      * @minLength 1
      * @maxLength 2048
      */
-    website?: string;
-    analyticsConsent: boolean;
+  website?: string;
+  analyticsConsent: boolean;
 }
 
 export interface AccountDeletion {
-    /** When the deletion was asked for, and the account locked. */
-    requestedAt: string;
-    /** When the account is erased unless restored before. At most one calendar month after `requestedAt`, at 00:00 UTC at the latest. */
-    purgeAt: string;
+  /** When the deletion was asked for, and the account locked. */
+  requestedAt: string;
+  /** When the account is erased unless restored before. At most one calendar month after `requestedAt`, at 00:00 UTC at the latest. */
+  purgeAt: string;
 }
 
 export interface UpdateAccountRequest {
-    /**
+  /**
      * @minLength 3
      * @maxLength 50
      */
-    username?: string;
-    locale?: Locale | null;
-    imageUrl?: ImageRemoval;
-    /**
+  username?: string;
+  locale?: Locale | null;
+  imageUrl?: ImageRemoval;
+  /**
      * @minLength 1
      * @maxLength 32
      * @nullable
      */
-    phone?: string | null;
-    /**
+  phone?: string | null;
+  /**
      * @minLength 1
      * @maxLength 2048
      * @nullable
      */
-    website?: string | null;
-    analyticsConsent?: boolean;
+  website?: string | null;
+  analyticsConsent?: boolean;
 }
 
 export interface UpdateAccountRequestMultipart {
-    /**
+  /**
      * @minLength 3
      * @maxLength 50
      */
-    username?: string;
-    locale?: string;
-    /** Optional user profile image */
-    imageUpload?: Blob;
-    /**
+  username?: string;
+  locale?: string;
+  /** Optional user profile image */
+  imageUpload?: Blob;
+  /**
      * @minLength 1
      * @maxLength 32
      */
-    phone?: string;
-    /**
+  phone?: string;
+  /**
      * @minLength 1
      * @maxLength 2048
      */
-    website?: string;
-    analyticsConsent?: boolean;
+  website?: string;
+  analyticsConsent?: boolean;
 }
 
 export interface RequestEmailChangeRequest {
-    email: Email;
+  email: Email;
 }
 
 export interface EmailVerificationRequested {
-    /**
+  /**
      * Seconds before another verification email may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the server.
      * @minimum 0
      */
-    resendAfter: number;
+  resendAfter: number;
 }
 
 /**
@@ -1426,265 +1432,268 @@ export type Password = string;
 export type PasswordNew = string;
 
 export interface ChangePasswordRequest {
-    currentPassword: Password;
-    password: PasswordNew;
-    passwordConfirm: Password;
+  currentPassword: Password;
+  password: PasswordNew;
+  passwordConfirm: Password;
 }
 
 export interface AuthTokens {
-    /** The access JWT — `jwt` mode only. Absent in `cookie` mode, where a browser holds no credential it can read. */
-    token?: string;
-    /** The `ses_…` session id, to send back as `Authorization: Bearer ses_…`. Present only for a `cookie`-mode login that asked for `transport: bearer` (or a re-proof by such a client); that login sets no session cookie (the `__Host-device` cookie is still set). */
-    sessionToken?: string;
-    /** The signed-in account, with its abilities and idle clock — exactly what `GET /account` answers, so a sign-in needs no follow-up read. Present on the answers that START a session (login, its second step, restore); absent on a re-mint after a password or factor change. */
-    account?: AccountView;
+  /** The access JWT — `jwt` mode only. Absent in `cookie` mode, where a browser holds no credential it can read. */
+  token?: string;
+  /** The `ses_…` session id, to send back as `Authorization: Bearer ses_…`. Present only for a `cookie`-mode login that asked for `transport: bearer` (or a re-proof by such a client); that login sets no session cookie (the `__Host-device` cookie is still set). */
+  sessionToken?: string;
+  /** The signed-in account, with its abilities and idle clock — exactly what `GET /account` answers, so a sign-in needs no follow-up read. Present on the answers that START a session (login, its second step, restore); absent on a re-mint after a password or factor change. */
+  account?: AccountView;
 }
 
 export interface PasswordCheckRequest {
-    /**
+  /**
      * A CANDIDATE password, not `PasswordNew` — this runs while someone is still typing, so it accepts anything non-empty rather than the contract's own composition rule.
      * @minLength 1
      * @maxLength 128
      */
-    password: string;
+  password: string;
 }
 
 export interface PasswordCheck {
-    /** Whether the candidate matches a known-breached password — the bundled list or, when enabled, the HIBP range lookup. Advisory: the four password-SET paths are the actual gate, not this field. */
-    breached: boolean;
-    /**
+  /** Whether the candidate matches a known-breached password — the bundled list or, when enabled, the HIBP range lookup. Advisory: the four password-SET paths are the actual gate, not this field. */
+  breached: boolean;
+  /**
      * How many times HIBP has seen this exact password. Present only when HIBP is what caught it — never for a bundled-list hit, and never when rung 2 is disabled or unreachable.
      * @minimum 0
      */
-    count?: number;
+  count?: number;
 }
 
 /**
  * One way to re-authenticate. `password` proves the account password; `email` proves control of the account's verified address with a mailed code.
  */
-export type ReauthMethod = (typeof ReauthMethod)[keyof typeof ReauthMethod];
+export type ReauthMethod = typeof ReauthMethod[keyof typeof ReauthMethod];
+
 
 export const ReauthMethod = {
-    password: 'password',
-    email: 'email'
+  password: 'password',
+  email: 'email',
 } as const;
 
 export interface ReauthMethods {
-    /** The methods this account can use now, in the order to offer them. Empty means none can. */
-    methods: ReauthMethod[];
+  /** The methods this account can use now, in the order to offer them. Empty means none can. */
+  methods: ReauthMethod[];
 }
 
-export type ReauthPasswordRequestMethod =
-    (typeof ReauthPasswordRequestMethod)[keyof typeof ReauthPasswordRequestMethod];
+export type ReauthPasswordRequestMethod = typeof ReauthPasswordRequestMethod[keyof typeof ReauthPasswordRequestMethod];
+
 
 export const ReauthPasswordRequestMethod = {
-    password: 'password'
+  password: 'password',
 } as const;
 
 export interface ReauthPasswordRequest {
-    method: ReauthPasswordRequestMethod;
-    password: Password;
-    /**
+  method: ReauthPasswordRequestMethod;
+  password: Password;
+  /**
      * A code from an armed second factor, or an unused backup code. Required to pass an identity route (changing the email or password, deleting the account) when the account has 2FA armed; the `401 REAUTH_REQUIRED` that asks for it carries `details.methods` of `[otp]`. Answers 422 when the account has no second factor armed.
      * @minLength 1
      * @maxLength 64
      */
-    otp?: string;
+  otp?: string;
 }
 
-export type ReauthEmailRequestMethod =
-    (typeof ReauthEmailRequestMethod)[keyof typeof ReauthEmailRequestMethod];
+export type ReauthEmailRequestMethod = typeof ReauthEmailRequestMethod[keyof typeof ReauthEmailRequestMethod];
+
 
 export const ReauthEmailRequestMethod = {
-    email: 'email'
+  email: 'email',
 } as const;
 
 export interface ReauthEmailRequest {
-    method: ReauthEmailRequestMethod;
-    /**
+  method: ReauthEmailRequestMethod;
+  /**
      * The code from `POST /account/reauth/methods/email/send`.
      * @minLength 1
      * @maxLength 64
      */
-    code: string;
-    /**
+  code: string;
+  /**
      * A code from an armed second factor, or an unused backup code. Required to pass an identity route (changing the email or password, deleting the account) when the account has 2FA armed; the `401 REAUTH_REQUIRED` that asks for it carries `details.methods` of `[otp]`. Answers 422 when the account has no second factor armed.
      * @minLength 1
      * @maxLength 64
      */
-    otp?: string;
+  otp?: string;
 }
 
 export type ReauthRequest = ReauthPasswordRequest | ReauthEmailRequest;
 
 export interface Session {
-    id: Id;
-    /** When this sign-in happened. It is the session's, not the current token's: refreshing or re-proving the password does not move it. */
-    createdAt: string;
-    /** When the session ends, whatever its "remember me" tier. */
-    expiration: string;
-    /** When this session last made a request. Absent until it makes one, which is what makes an idle session visible as idle in the list. */
-    lastUsedAt?: string;
-    /** A coarse label for the browser and system that signed in, such as "Firefox on Linux", read from the User-Agent at the sign-in. Present in `cookie` mode only, and absent for a client that names neither (a script, `curl`). */
-    device?: string;
-    /** Whether this session is the one making the request, matched through its own cookie or `ses_…` bearer. Always `false` for a caller authenticating by an access token alone — a `jwt`-mode access token does not identify a session. */
-    current: boolean;
+  id: Id;
+  /** When this sign-in happened. It is the session's, not the current token's: refreshing or re-proving the password does not move it. */
+  createdAt: string;
+  /** When the session ends, whatever its "remember me" tier. */
+  expiration: string;
+  /** When this session last made a request. Absent until it makes one, which is what makes an idle session visible as idle in the list. */
+  lastUsedAt?: string;
+  /** A coarse label for the browser and system that signed in, such as "Firefox on Linux", read from the User-Agent at the sign-in. Present in `cookie` mode only, and absent for a client that names neither (a script, `curl`). */
+  device?: string;
+  /** Whether this session is the one making the request, matched through its own cookie or `ses_…` bearer. Always `false` for a caller authenticating by an access token alone — a `jwt`-mode access token does not identify a session. */
+  current: boolean;
 }
 
 export interface SessionsResponse {
-    sessions: Session[];
+  sessions: Session[];
 }
 
 export interface Address {
-    id: Id;
-    /** The caller's own name for the entry — "home", "office". */
-    label?: string;
-    fullName: AddressFullName;
-    street: AddressStreet;
-    city: AddressCity;
-    zip: AddressZip;
-    country: CountryCode;
-    phone?: AddressPhone;
-    default: boolean;
+  id: Id;
+  /** The caller's own name for the entry — "home", "office". */
+  label?: string;
+  fullName: AddressFullName;
+  street: AddressStreet;
+  city: AddressCity;
+  zip: AddressZip;
+  country: CountryCode;
+  phone?: AddressPhone;
+  default: boolean;
 }
 
 export interface AddressesResponse {
-    addresses: Address[];
+  addresses: Address[];
 }
 
 export interface CreateAddressRequest {
-    /**
+  /**
      * @minLength 1
      * @maxLength 50
      */
-    label?: string;
-    fullName: AddressFullName;
-    street: AddressStreet;
-    city: AddressCity;
-    zip: AddressZip;
-    country: CountryCode;
-    phone?: AddressPhone;
-    default?: boolean;
+  label?: string;
+  fullName: AddressFullName;
+  street: AddressStreet;
+  city: AddressCity;
+  zip: AddressZip;
+  country: CountryCode;
+  phone?: AddressPhone;
+  default?: boolean;
 }
 
 export interface ReplaceAddressRequest {
-    /**
+  /**
      * @minLength 1
      * @maxLength 50
      * @nullable
      */
-    label?: string | null;
-    fullName: AddressFullName;
-    street: AddressStreet;
-    city: AddressCity;
-    zip: AddressZip;
-    country: CountryCode;
-    phone?: AddressPhone | null;
+  label?: string | null;
+  fullName: AddressFullName;
+  street: AddressStreet;
+  city: AddressCity;
+  zip: AddressZip;
+  country: CountryCode;
+  phone?: AddressPhone | null;
 }
 
 export interface UpdateAddressRequest {
-    /**
+  /**
      * @minLength 1
      * @maxLength 50
      * @nullable
      */
-    label?: string | null;
-    fullName?: AddressFullName;
-    street?: AddressStreet;
-    city?: AddressCity;
-    zip?: AddressZip;
-    country?: CountryCode;
-    phone?: AddressPhone | null;
+  label?: string | null;
+  fullName?: AddressFullName;
+  street?: AddressStreet;
+  city?: AddressCity;
+  zip?: AddressZip;
+  country?: CountryCode;
+  phone?: AddressPhone | null;
 }
 
 export interface VerifyEmailConfirmRequest {
-    /**
+  /**
      * One-time email verification token (NOT a JWT).
      * @minLength 1
      * @maxLength 128
      */
-    token: string;
+  token: string;
 }
 
 export interface AccountRestoreRequest {
-    /**
+  /**
      * One-time account restore token (NOT a JWT).
      * @minLength 1
      * @maxLength 128
      */
-    token: string;
+  token: string;
 }
 
 /**
  * The "remember me" choice, sized by the deployment (`short`, `medium`, `long`). Ticked: the refresh cookie persists for that tier. Omitted: a browser-session cookie (gone when the browser closes) whose token still lives for the `short` tier server-side. Refresh rotation, reauth and a password change keep the choice.
  */
-export type RememberTier = (typeof RememberTier)[keyof typeof RememberTier];
+export type RememberTier = typeof RememberTier[keyof typeof RememberTier];
+
 
 export const RememberTier = {
-    short: 'short',
-    medium: 'medium',
-    long: 'long'
+  short: 'short',
+  medium: 'medium',
+  long: 'long',
 } as const;
 
 /**
  * How a `cookie`-mode login hands its credential back. `cookie` (the default): the HttpOnly `__Host-session` cookie, nothing in the body — what a browser wants. `bearer`: no session cookie is set (the `__Host-device` cookie still is, as on any login) and the body returns the `ses_…` id as `sessionToken`, for a client with no cookie jar (a script, a mobile app). Ignored in `jwt` mode, which always sets its refresh cookie and returns an access token.
  */
-export type SessionTransport = (typeof SessionTransport)[keyof typeof SessionTransport];
+export type SessionTransport = typeof SessionTransport[keyof typeof SessionTransport];
+
 
 export const SessionTransport = {
-    cookie: 'cookie',
-    bearer: 'bearer'
+  cookie: 'cookie',
+  bearer: 'bearer',
 } as const;
 
 export interface LoginRequest {
-    email: Email;
-    password: Password;
-    remember?: RememberTier;
-    transport?: SessionTransport;
+  email: Email;
+  password: Password;
+  remember?: RememberTier;
+  transport?: SessionTransport;
 }
 
 export interface TwoFactorMethodSummary {
-    /** Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it. */
-    method: string;
-    /** Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a "send me a code" button for the former and nothing for the latter. */
-    delivers: boolean;
-    /** Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods. */
-    target?: string;
-    /** When this factor was armed. Absent while its enrollment is still pending confirmation. */
-    enrolledAt?: string;
-    /**
+  /** Wire name of the factor — `totp`, `email`. A string rather than an enum on purpose: a deployment that gains a channel must not need a new contract to name it. */
+  method: string;
+  /** Whether the server sends the code (email, SMS) or the caller reads it off their own device (TOTP). A client renders a "send me a code" button for the former and nothing for the latter. */
+  delivers: boolean;
+  /** Where a delivered code goes, MASKED by the server — never a full address, so no client has to decide how to redact one. Absent for device methods. */
+  target?: string;
+  /** When this factor was armed. Absent while its enrollment is still pending confirmation. */
+  enrolledAt?: string;
+  /**
      * Seconds between two deliveries of this method. Absent for device methods.
      * @minimum 0
      */
-    resendAfter?: number;
-    /** Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`. */
-    enrollable?: boolean;
-    /** Why `enrollable` is false — a translated sentence a client can show as-is. */
-    reason?: string;
+  resendAfter?: number;
+  /** Whether this account may add this method right now. Only meaningful in `TwoFactorStatus.available`; `false` comes with `reason`. */
+  enrollable?: boolean;
+  /** Why `enrollable` is false — a translated sentence a client can show as-is. */
+  reason?: string;
 }
 
 export interface MfaChallenge {
-    /** Always true — the credential check passed, but a second factor is required before a session is issued. */
-    mfaRequired: true;
-    /** A claim check for this half-finished login, not a code — nothing is sent to the user to obtain it. Submit it, with a code, to POST /account/login/2fa, or to POST /account/login/2fa/send to have a code delivered first. */
-    challenge: string;
-    /** When the challenge stops being accepted. Longer for an account with a delivered method armed, since the code has to survive an email round-trip. */
-    expiresAt: string;
-    /** The factors armed on this account, in the order a client should offer them. */
-    methods: TwoFactorMethodSummary[];
-    /** Which of `methods` to offer first — the cheapest one for the user, which is a device method when there is one. */
-    defaultMethod?: string;
+  /** Always true — the credential check passed, but a second factor is required before a session is issued. */
+  mfaRequired: true;
+  /** A claim check for this half-finished login, not a code — nothing is sent to the user to obtain it. Submit it, with a code, to POST /account/login/2fa, or to POST /account/login/2fa/send to have a code delivered first. */
+  challenge: string;
+  /** When the challenge stops being accepted. Longer for an account with a delivered method armed, since the code has to survive an email round-trip. */
+  expiresAt: string;
+  /** The factors armed on this account, in the order a client should offer them. */
+  methods: TwoFactorMethodSummary[];
+  /** Which of `methods` to offer first — the cheapest one for the user, which is a device method when there is one. */
+  defaultMethod?: string;
 }
 
 export interface DeletionPending {
-    /** Always true. The credentials checked out, but the account is inside the grace of its own deletion, so no session is issued until the owner chooses to restore it. */
-    deletionPending: true;
-    /** A claim check recording how the sign-in was proven (password, and the second factor when armed). Submit it to `POST /account/login/restore`. */
-    challenge: string;
-    /** When the challenge stops being accepted. Signing in again earns a new one. */
-    expiresAt: string;
-    /** When the account is erased unless restored before. */
-    purgeAt: string;
+  /** Always true. The credentials checked out, but the account is inside the grace of its own deletion, so no session is issued until the owner chooses to restore it. */
+  deletionPending: true;
+  /** A claim check recording how the sign-in was proven (password, and the second factor when armed). Submit it to `POST /account/login/restore`. */
+  challenge: string;
+  /** When the challenge stops being accepted. Signing in again earns a new one. */
+  expiresAt: string;
+  /** When the account is erased unless restored before. */
+  purgeAt: string;
 }
 
 /**
@@ -1693,96 +1702,97 @@ export interface DeletionPending {
 export type LoginOutcome = AuthTokens | MfaChallenge | DeletionPending;
 
 export interface LoginRestoreRequest {
-    /**
+  /**
      * The `DeletionPending` challenge. Omit it for an OAuth-originated sign-in — that challenge was never sent to the client, and this endpoint reads it from the httpOnly cookie the callback set instead.
      * @minLength 1
      * @maxLength 128
      */
-    challenge?: string;
-    remember?: RememberTier;
-    transport?: SessionTransport;
+  challenge?: string;
+  remember?: RememberTier;
+  transport?: SessionTransport;
 }
 
 export interface SignupRequest {
-    email: Email;
-    /**
+  email: Email;
+  /**
      * @minLength 3
      * @maxLength 50
      */
-    username: string;
-    password: PasswordNew;
-    passwordConfirm: Password;
-    termsAccepted: true;
-    analyticsConsent?: boolean;
+  username: string;
+  password: PasswordNew;
+  passwordConfirm: Password;
+  termsAccepted: true;
+  analyticsConsent?: boolean;
 }
 
 export interface PasswordResetRequest {
-    email: Email;
+  email: Email;
 }
 
 export interface PasswordResetConfirmRequest {
-    /**
+  /**
      * One-time password reset token (NOT a JWT).
      * @minLength 1
      * @maxLength 128
      */
-    token: string;
-    password: PasswordNew;
-    passwordConfirm: Password;
-    /** Required when the account holds no Terms record, as an account an administrator created does not. Ignored otherwise. */
-    termsAccepted?: true;
+  token: string;
+  password: PasswordNew;
+  passwordConfirm: Password;
+  /** Required when the account holds no Terms record, as an account an administrator created does not. Ignored otherwise. */
+  termsAccepted?: true;
 }
 
 export interface RefreshTokenResponse {
-    /** New access JWT */
-    token: string;
-    /** The caller's abilities as they stand now, so a role granted mid-session shows within one refresh. */
-    abilities: Abilities;
+  /** New access JWT */
+  token: string;
+  /** The caller's abilities as they stand now, so a role granted mid-session shows within one refresh. */
+  abilities: Abilities;
 }
 
 /**
  * `building` until the background job settles, then `ready` or `failed`. A `building` export older than the build limit reads as `failed`. Asking again after `ready` or `failed` replaces the export with a new `building` one.
  */
-export type AccountExportStatus = (typeof AccountExportStatus)[keyof typeof AccountExportStatus];
+export type AccountExportStatus = typeof AccountExportStatus[keyof typeof AccountExportStatus];
+
 
 export const AccountExportStatus = {
-    building: 'building',
-    ready: 'ready',
-    failed: 'failed'
+  building: 'building',
+  ready: 'ready',
+  failed: 'failed',
 } as const;
 
 /**
  * What the caller may do with the export right now.
  */
 export type AccountExportActions = {
-    /** `GET /account/export/file` will answer the file: the export is `ready`. */
-    download: boolean;
-    /** `POST /account/export` would start a new build. `false` while one is `building`: asking then only returns that one. */
-    request: boolean;
+  /** `GET /account/export/file` will answer the file: the export is `ready`. */
+  download: boolean;
+  /** `POST /account/export` would start a new build. `false` while one is `building`: asking then only returns that one. */
+  request: boolean;
 };
 
 /**
  * The caller's data export and where it stands. `POST /account/export` answers it (always `building`) and `GET /account/export` reads it.
  */
 export interface AccountExport {
-    id: Id;
-    /** `building` until the background job settles, then `ready` or `failed`. A `building` export older than the build limit reads as `failed`. Asking again after `ready` or `failed` replaces the export with a new `building` one. */
-    status: AccountExportStatus;
-    createdAt: string;
-    /** When the file is deleted: the retention (`NODE_ACCOUNT_EXPORT_TTL_DAYS`) counted from the moment the build finished. Present only when `status` is `ready`. */
-    expiresAt?: string;
-    /** What the caller may do with the export right now. */
-    actions: AccountExportActions;
+  id: Id;
+  /** `building` until the background job settles, then `ready` or `failed`. A `building` export older than the build limit reads as `failed`. Asking again after `ready` or `failed` replaces the export with a new `building` one. */
+  status: AccountExportStatus;
+  createdAt: string;
+  /** When the file is deleted: the retention (`NODE_ACCOUNT_EXPORT_TTL_DAYS`) counted from the moment the build finished. Present only when `status` is `ready`. */
+  expiresAt?: string;
+  /** What the caller may do with the export right now. */
+  actions: AccountExportActions;
 }
 
 export interface AuditConsultation {
-    timestamp: string;
-    /** The kind of record opened, e.g. order. */
-    targetType: string;
-    /** The record opened. */
-    targetId: string;
-    /** Why staff open this kind of record, e.g. handling your order. */
-    purpose: string;
+  timestamp: string;
+  /** The kind of record opened, e.g. order. */
+  targetType: string;
+  /** The record opened. */
+  targetId: string;
+  /** Why staff open this kind of record, e.g. handling your order. */
+  purpose: string;
 }
 
 /**
@@ -1793,155 +1803,160 @@ export interface AuditConsultation {
  * the orders CSV export names none.
  */
 export interface AuditConsultations {
-    /**
+  /**
      * How many days back the list reaches (`NODE_AUDIT_RETENTION_DAYS`).
      * @minimum 1
      */
-    windowDays: number;
-    entries: AuditConsultation[];
+  windowDays: number;
+  entries: AuditConsultation[];
 }
 
 export interface ExportSession {
-    id: Id;
-    createdAt: string;
-    expiration: string;
-    lastUsedAt?: string;
-    /** The coarse device label stored at sign-in (`cookie` mode only). */
-    device?: string;
+  id: Id;
+  createdAt: string;
+  expiration: string;
+  lastUsedAt?: string;
+  /** The coarse device label stored at sign-in (`cookie` mode only). */
+  device?: string;
 }
 
 export interface ExportLinkedProvider {
-    /** Registry name of the provider, e.g. `google`. */
-    provider: string;
-    /** The provider's own stable identifier for the account (its `sub`), an online identifier under GDPR Art. 4(1). */
-    providerId: string;
-    connectedAt: string;
+  /** Registry name of the provider, e.g. `google`. */
+  provider: string;
+  /** The provider's own stable identifier for the account (its `sub`), an online identifier under GDPR Art. 4(1). */
+  providerId: string;
+  connectedAt: string;
 }
 
 export interface ExportTwoFactorMethod {
-    /** Wire name of the factor, e.g. `totp` or `email`. */
-    method: string;
-    /** When the factor was armed. */
-    enrolledAt: string;
+  /** Wire name of the factor, e.g. `totp` or `email`. */
+  method: string;
+  /** When the factor was armed. */
+  enrolledAt: string;
 }
 
 export interface ExportSignInMethods {
-    /** The identity providers linked to the account. */
-    providers: ExportLinkedProvider[];
-    /** The second factors armed on the account. A setup never confirmed is left out. */
-    twoFactor: ExportTwoFactorMethod[];
+  /** The identity providers linked to the account. */
+  providers: ExportLinkedProvider[];
+  /** The second factors armed on the account. A setup never confirmed is left out. */
+  twoFactor: ExportTwoFactorMethod[];
 }
 
-export type TaskCategory = (typeof TaskCategory)[keyof typeof TaskCategory];
+export type TaskCategory = typeof TaskCategory[keyof typeof TaskCategory];
+
 
 export const TaskCategory = {
-    account: 'account',
-    privacy: 'privacy',
-    other: 'other',
-    order: 'order',
-    cancellation: 'cancellation',
-    return: 'return',
-    payment: 'payment'
+  account: 'account',
+  privacy: 'privacy',
+  other: 'other',
+  order: 'order',
+  cancellation: 'cancellation',
+  return: 'return',
+  payment: 'payment',
 } as const;
 
-export type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus];
+export type TaskStatus = typeof TaskStatus[keyof typeof TaskStatus];
+
 
 export const TaskStatus = {
-    new: 'new',
-    in_progress: 'in_progress',
-    resolved: 'resolved',
-    spam: 'spam'
+  new: 'new',
+  in_progress: 'in_progress',
+  resolved: 'resolved',
+  spam: 'spam',
 } as const;
 
 export interface ExportTaskNote {
-    body: string;
-    at: string;
+  body: string;
+  at: string;
 }
 
 export interface ExportTask {
-    id: Id;
-    name?: string;
-    email: Email;
-    subject: string;
-    message: string;
-    category?: TaskCategory;
-    orderNumber?: string;
-    status: TaskStatus;
-    notes: ExportTaskNote[];
-    respondedAt?: string;
-    createdAt?: string;
+  id: Id;
+  name?: string;
+  email: Email;
+  subject: string;
+  message: string;
+  category?: TaskCategory;
+  orderNumber?: string;
+  status: TaskStatus;
+  notes: ExportTaskNote[];
+  respondedAt?: string;
+  createdAt?: string;
 }
 
-export type TaskKind = (typeof TaskKind)[keyof typeof TaskKind];
+export type TaskKind = typeof TaskKind[keyof typeof TaskKind];
+
 
 export const TaskKind = {
-    contact: 'contact',
-    account_review: 'account_review',
-    export_failed: 'export_failed',
-    manual_refund_owed: 'manual_refund_owed',
-    refund_refused: 'refund_refused',
-    amount_mismatch: 'amount_mismatch',
-    dispute: 'dispute',
-    dispute_awaiting_bank: 'dispute_awaiting_bank',
-    refund_reversed: 'refund_reversed',
-    paid_without_hold: 'paid_without_hold',
-    consent_due: 'consent_due'
+  contact: 'contact',
+  account_review: 'account_review',
+  export_failed: 'export_failed',
+  manual_refund_owed: 'manual_refund_owed',
+  refund_refused: 'refund_refused',
+  amount_mismatch: 'amount_mismatch',
+  dispute: 'dispute',
+  dispute_awaiting_bank: 'dispute_awaiting_bank',
+  refund_reversed: 'refund_reversed',
+  paid_without_hold: 'paid_without_hold',
+  consent_due: 'consent_due',
 } as const;
 
-export type TaskLinkType = (typeof TaskLinkType)[keyof typeof TaskLinkType];
+export type TaskLinkType = typeof TaskLinkType[keyof typeof TaskLinkType];
+
 
 export const TaskLinkType = {
-    user: 'user',
-    export: 'export',
-    order: 'order',
-    payment: 'payment',
-    refund: 'refund',
-    fulfillment_order: 'fulfillment_order'
+  user: 'user',
+  export: 'export',
+  order: 'order',
+  payment: 'payment',
+  refund: 'refund',
+  fulfillment_order: 'fulfillment_order',
 } as const;
 
 /**
  * The record a system task is about.
  */
 export interface TaskLink {
-    type: TaskLinkType;
-    id: string;
+  type: TaskLinkType;
+  id: string;
 }
 
-export type TaskResolution = (typeof TaskResolution)[keyof typeof TaskResolution];
+export type TaskResolution = typeof TaskResolution[keyof typeof TaskResolution];
+
 
 export const TaskResolution = {
-    staff: 'staff',
-    cleared: 'cleared',
-    spam: 'spam'
+  staff: 'staff',
+  cleared: 'cleared',
+  spam: 'spam',
 } as const;
 
 export interface ExportSystemTask {
-    id: Id;
-    kind: TaskKind;
-    subject: string;
-    message: string;
-    link?: TaskLink;
-    routeSet: string;
-    status: TaskStatus;
-    resolution?: TaskResolution;
-    notes: ExportTaskNote[];
-    dueAt?: string;
-    lastSeenAt?: string;
-    /** @minimum 1 */
-    seenCount?: number;
-    respondedAt?: string;
-    closedAt?: string;
-    createdAt?: string;
+  id: Id;
+  kind: TaskKind;
+  subject: string;
+  message: string;
+  link?: TaskLink;
+  routeSet: string;
+  status: TaskStatus;
+  resolution?: TaskResolution;
+  notes: ExportTaskNote[];
+  dueAt?: string;
+  lastSeenAt?: string;
+  /** @minimum 1 */
+  seenCount?: number;
+  respondedAt?: string;
+  closedAt?: string;
+  createdAt?: string;
 }
 
 export interface CartItem {
-    productId: Id;
-    /** @minimum 1 */
-    quantity: number;
+  productId: Id;
+  /** @minimum 1 */
+  quantity: number;
 }
 
 export interface WishlistExportItem {
-    productId: Id;
+  productId: Id;
 }
 
 /**
@@ -1959,853 +1974,834 @@ export type ReleaseDate = string;
 /**
  * WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%.
  */
-export type RateType = (typeof RateType)[keyof typeof RateType];
+export type RateType = typeof RateType[keyof typeof RateType];
+
 
 export const RateType = {
-    standard: 'standard',
-    zero_rated: 'zero_rated',
-    exempt: 'exempt'
+  standard: 'standard',
+  zero_rated: 'zero_rated',
+  exempt: 'exempt',
 } as const;
 
 export interface OrderLineProduct {
-    id: Id;
-    title: string;
-    /** Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`. */
-    price: NonNegativeDecimalAmount;
-    description?: string;
-    requiresShipping?: boolean;
-    noWithdrawal?: boolean;
-    sku?: Sku;
-    /** @minimum 0 */
-    weight?: number;
-    releaseDate?: ReleaseDate;
-    /** The line was sold before its release date, frozen at checkout. `delivery` reads it, never the catalogue, to decide which fulfillment order the line belongs to: a bank transfer may be paid a week after the order was placed. */
-    preorder?: boolean;
-    categories?: string[];
-    tags?: string[];
-    createdAt?: string;
-    updatedAt?: string;
-    deletedAt?: string;
-    /**
+  id: Id;
+  title: string;
+  /** Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`. */
+  price: NonNegativeDecimalAmount;
+  description?: string;
+  requiresShipping?: boolean;
+  noWithdrawal?: boolean;
+  sku?: Sku;
+  /** @minimum 0 */
+  weight?: number;
+  releaseDate?: ReleaseDate;
+  /** The line was sold before its release date, frozen at checkout. `delivery` reads it, never the catalogue, to decide which fulfillment order the line belongs to: a bank transfer may be paid a week after the order was placed. */
+  preorder?: boolean;
+  categories?: string[];
+  tags?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string;
+  /**
      * The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.
      * @minimum 0
      * @maximum 1
      */
-    taxRate: number;
-    rateType?: RateType;
+  taxRate: number;
+  rateType?: RateType;
 }
 
 export interface OrderLineCurrent {
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
+  imageUrl?: ImageUrl;
+  thumbnailUrl?: ThumbnailUrl;
 }
 
 export interface OrderItem {
-    product: OrderLineProduct;
-    /** @minimum 1 */
-    quantity: number;
-    locale: Locale;
-    /**
+  product: OrderLineProduct;
+  /** @minimum 1 */
+  quantity: number;
+  locale: Locale;
+  /**
      * How many of `quantity` were owed rather than on the shelf when the order was placed. Absent when the shelf covered the whole line.
      * @minimum 1
      */
-    backorderedQuantity?: number;
-    /** The day the owed units were promised, a day on the shop's calendar (`Shop.timeZone`): the product's `restockDate`, or the day the order was placed plus 30 days when it had none. Present with `backorderedQuantity` and frozen with it, so a later change to the catalogue moves no promise. */
-    promisedAt?: string;
-    /** Whether `promisedAt` was a date the product named. `false` means the buyer was promised delivery "within 30 days" of the order. Present with `promisedAt`. */
-    promiseDated?: boolean;
-    /** The product's picture, resolved live — absent when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`. */
-    current?: OrderLineCurrent;
-    /** VAT included in this line's total, at its own frozen `taxRate`. */
-    readonly taxAmount: NonNegativeDecimalAmount;
-    /** This line's total excluding VAT — `price × quantity` minus `taxAmount`. */
-    readonly netAmount: NonNegativeDecimalAmount;
+  backorderedQuantity?: number;
+  /** The day the owed units were promised, a day on the shop's calendar (`Shop.timeZone`): the product's `restockDate`, or the day the order was placed plus 30 days when it had none. Present with `backorderedQuantity` and frozen with it, so a later change to the catalogue moves no promise. */
+  promisedAt?: string;
+  /** Whether `promisedAt` was a date the product named. `false` means the buyer was promised delivery "within 30 days" of the order. Present with `promisedAt`. */
+  promiseDated?: boolean;
+  /** The product's picture, resolved live — absent when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`. */
+  current?: OrderLineCurrent;
+  /** VAT included in this line's total, at its own frozen `taxRate`. */
+  readonly taxAmount: NonNegativeDecimalAmount;
+  /** This line's total excluding VAT — `price × quantity` minus `taxAmount`. */
+  readonly netAmount: NonNegativeDecimalAmount;
 }
 
 export interface OrderTaxSummaryRow {
-    /**
+  /**
      * The decimal rate this row is for (`0.22` for 22%) — never repeated across rows.
      * @minimum 0
      */
-    rate: number;
-    netAmount: NonNegativeDecimalAmount;
-    taxAmount: NonNegativeDecimalAmount;
-    /** `netAmount + taxAmount`, not re-derived from a price. */
-    grossAmount: NonNegativeDecimalAmount;
+  rate: number;
+  netAmount: NonNegativeDecimalAmount;
+  taxAmount: NonNegativeDecimalAmount;
+  /** `netAmount + taxAmount`, not re-derived from a price. */
+  grossAmount: NonNegativeDecimalAmount;
 }
 
 export interface OrderAddress {
-    fullName: AddressFullName;
-    street: AddressStreet;
-    city: AddressCity;
-    zip: AddressZip;
-    country: CountryCode;
-    phone?: AddressPhone;
+  fullName: AddressFullName;
+  street: AddressStreet;
+  city: AddressCity;
+  zip: AddressZip;
+  country: CountryCode;
+  phone?: AddressPhone;
 }
 
 /**
  * How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.
  */
-export type PaymentMethodId = (typeof PaymentMethodId)[keyof typeof PaymentMethodId];
+export type PaymentMethodId = typeof PaymentMethodId[keyof typeof PaymentMethodId];
+
 
 export const PaymentMethodId = {
-    card: 'card',
-    bank_transfer: 'bank_transfer'
+  card: 'card',
+  bank_transfer: 'bank_transfer',
 } as const;
 
 /**
  * Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`.
  */
-export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
+export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
+
 
 export const OrderStatus = {
-    pending: 'pending',
-    paid: 'paid',
-    processing: 'processing',
-    shipped: 'shipped',
-    delivered: 'delivered',
-    canceled: 'canceled'
+  pending: 'pending',
+  paid: 'paid',
+  processing: 'processing',
+  shipped: 'shipped',
+  delivered: 'delivered',
+  canceled: 'canceled',
 } as const;
 
 /**
  * Where the order's MONEY stands, beside `status` — Shopify's `financial_status`. `unpaid` until a payment lands; `paid`; then `partially_refunded` once some but not all of it went back, and `refunded` once all of it did. Read-only: `payments` stamps the refund states, `orders` derives the first two.
  */
-export type OrderPaymentStatus = (typeof OrderPaymentStatus)[keyof typeof OrderPaymentStatus];
+export type OrderPaymentStatus = typeof OrderPaymentStatus[keyof typeof OrderPaymentStatus];
+
 
 export const OrderPaymentStatus = {
-    unpaid: 'unpaid',
-    paid: 'paid',
-    partially_refunded: 'partially_refunded',
-    refunded: 'refunded'
+  unpaid: 'unpaid',
+  paid: 'paid',
+  partially_refunded: 'partially_refunded',
+  refunded: 'refunded',
 } as const;
 
 /**
  * Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from the status and the fulfillment summary delivery reports. First match wins: `fulfilled` once everything arrived; `shipped` once everything has left; `partially_fulfilled` once something left and more remains; `on_hold` while every remaining unit is held back; `in_progress` while being prepared; `unfulfilled` before work starts, and for a pending or canceled order. Read-only.
  */
-export type OrderFulfillmentStatus =
-    (typeof OrderFulfillmentStatus)[keyof typeof OrderFulfillmentStatus];
+export type OrderFulfillmentStatus = typeof OrderFulfillmentStatus[keyof typeof OrderFulfillmentStatus];
+
 
 export const OrderFulfillmentStatus = {
-    unfulfilled: 'unfulfilled',
-    in_progress: 'in_progress',
-    on_hold: 'on_hold',
-    partially_fulfilled: 'partially_fulfilled',
-    shipped: 'shipped',
-    fulfilled: 'fulfilled'
+  unfulfilled: 'unfulfilled',
+  in_progress: 'in_progress',
+  on_hold: 'on_hold',
+  partially_fulfilled: 'partially_fulfilled',
+  shipped: 'shipped',
+  fulfilled: 'fulfilled',
 } as const;
 
 /**
  * Where any return on the order stands — Shopify's `returnStatus`. `none` when no return holds goods; `requested` while one awaits staff; `in_progress` once approved and awaiting its goods; `partially_returned` / `returned` once received goods cover some / every unit on the order. Read-only: `returns` stamps it, and `delivered` stays terminal — a return is its own object, not an order status.
  */
-export type OrderReturnStatus = (typeof OrderReturnStatus)[keyof typeof OrderReturnStatus];
+export type OrderReturnStatus = typeof OrderReturnStatus[keyof typeof OrderReturnStatus];
+
 
 export const OrderReturnStatus = {
-    none: 'none',
-    requested: 'requested',
-    in_progress: 'in_progress',
-    partially_returned: 'partially_returned',
-    returned: 'returned'
+  none: 'none',
+  requested: 'requested',
+  in_progress: 'in_progress',
+  partially_returned: 'partially_returned',
+  returned: 'returned',
 } as const;
 
 export interface ExportOrder {
-    id: Id;
-    userId?: Id;
-    email: Email;
-    items: OrderItem[];
-    /**
+  id: Id;
+  userId?: Id;
+  email: Email;
+  items: OrderItem[];
+  /**
      * Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
      * @minimum 0
      */
-    totalItems: number;
-    /**
+  totalItems: number;
+  /**
      * Sum of `quantity` across every line item.
      * @minimum 0
      */
-    totalQuantity: number;
-    /** Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method. */
-    totalPrice: NonNegativeDecimalAmount;
-    /** ISO-4217 currency code this order was priced in (e.g. EUR). */
-    readonly currency: CurrencyCode;
-    /** The Terms version in force when the buyer placed the order at checkout; absent on staff-placed orders. */
-    readonly termsVersion?: string;
-    /** Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. */
-    readonly netTotal: NonNegativeDecimalAmount;
-    /** Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. */
-    readonly taxTotal: NonNegativeDecimalAmount;
-    /** Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping. */
-    readonly shippingNetAmount: NonNegativeDecimalAmount;
-    /** Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping. */
-    readonly shippingTaxAmount: NonNegativeDecimalAmount;
-    /** One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines. */
-    readonly taxSummary: readonly OrderTaxSummaryRow[];
-    /** Optional order notes */
-    notes?: string;
-    /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
-    shippingMethod?: string;
-    /** What that method cost at checkout time — a later rate change cannot re-price history. */
-    shippingCost?: NonNegativeDecimalAmount;
-    shippingAddress?: OrderAddress;
-    billingAddress?: OrderAddress;
-    paymentMethod?: PaymentMethodId;
-    payBy?: string;
-    readonly orderNumber: string;
-    status: OrderStatus;
-    paymentStatus: OrderPaymentStatus;
-    fulfillmentStatus: OrderFulfillmentStatus;
-    returnStatus: OrderReturnStatus;
-    /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
-    readonly withdrawUntil?: string;
-    paidAt?: string;
-    createdAt?: string;
-    /** When staff or the buyer last edited the order or moved its status. Reports from payments, delivery and returns don't move it. */
-    updatedAt?: string;
-    deletedAt?: string;
+  totalQuantity: number;
+  /** Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method. */
+  totalPrice: NonNegativeDecimalAmount;
+  /** ISO-4217 currency code this order was priced in (e.g. EUR). */
+  readonly currency: CurrencyCode;
+  /** The Terms version in force when the buyer placed the order at checkout; absent on staff-placed orders. */
+  readonly termsVersion?: string;
+  /** Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. */
+  readonly netTotal: NonNegativeDecimalAmount;
+  /** Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. */
+  readonly taxTotal: NonNegativeDecimalAmount;
+  /** Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping. */
+  readonly shippingNetAmount: NonNegativeDecimalAmount;
+  /** Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping. */
+  readonly shippingTaxAmount: NonNegativeDecimalAmount;
+  /** One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines. */
+  readonly taxSummary: readonly OrderTaxSummaryRow[];
+  /** Optional order notes */
+  notes?: string;
+  /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
+  shippingMethod?: string;
+  /** What that method cost at checkout time — a later rate change cannot re-price history. */
+  shippingCost?: NonNegativeDecimalAmount;
+  shippingAddress?: OrderAddress;
+  billingAddress?: OrderAddress;
+  paymentMethod?: PaymentMethodId;
+  payBy?: string;
+  readonly orderNumber: string;
+  status: OrderStatus;
+  paymentStatus: OrderPaymentStatus;
+  fulfillmentStatus: OrderFulfillmentStatus;
+  returnStatus: OrderReturnStatus;
+  /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
+  readonly withdrawUntil?: string;
+  paidAt?: string;
+  createdAt?: string;
+  /** When staff or the buyer last edited the order or moved its status. Reports from payments, delivery and returns don't move it. */
+  updatedAt?: string;
+  deletedAt?: string;
 }
 
 /**
  * Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both.
  */
-export type OrderTimelineExportEntryBaseAudience =
-    (typeof OrderTimelineExportEntryBaseAudience)[keyof typeof OrderTimelineExportEntryBaseAudience];
+export type OrderTimelineExportEntryBaseAudience = typeof OrderTimelineExportEntryBaseAudience[keyof typeof OrderTimelineExportEntryBaseAudience];
+
 
 export const OrderTimelineExportEntryBaseAudience = {
-    buyer: 'buyer',
-    staff: 'staff'
+  buyer: 'buyer',
+  staff: 'staff',
 } as const;
 
 export interface OrderTimelineExportEntryBase {
-    orderId: Id;
-    id: Id;
-    at: string;
-    /** Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both. */
-    audience: OrderTimelineExportEntryBaseAudience;
-    /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
-    actor?: Id;
+  orderId: Id;
+  id: Id;
+  at: string;
+  /** Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both. */
+  audience: OrderTimelineExportEntryBaseAudience;
+  /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
+  actor?: Id;
 }
 
 /**
  * No data: the type says everything. Closed and empty.
  */
-export interface OrderTimelineDataNone {
-    [key: string]: unknown;
-}
+export interface OrderTimelineDataNone { [key: string]: unknown }
 
-export type OrderTimelineExportEntryPlainType =
-    (typeof OrderTimelineExportEntryPlainType)[keyof typeof OrderTimelineExportEntryPlainType];
+export type OrderTimelineExportEntryPlainType = typeof OrderTimelineExportEntryPlainType[keyof typeof OrderTimelineExportEntryPlainType];
+
 
 export const OrderTimelineExportEntryPlainType = {
-    created: 'created',
-    processing: 'processing',
-    shipped: 'shipped',
-    address_corrected: 'address_corrected'
+  created: 'created',
+  processing: 'processing',
+  shipped: 'shipped',
+  address_corrected: 'address_corrected',
 } as const;
 
 export type OrderTimelineExportEntryPlain = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryPlainType;
-    data: OrderTimelineDataNone;
+  type: OrderTimelineExportEntryPlainType;
+  data: OrderTimelineDataNone;
 };
 
 /**
  * What was overridden. Only the status today.
  */
-export type OrderTimelineDataStatusOverriddenMode =
-    (typeof OrderTimelineDataStatusOverriddenMode)[keyof typeof OrderTimelineDataStatusOverriddenMode];
+export type OrderTimelineDataStatusOverriddenMode = typeof OrderTimelineDataStatusOverriddenMode[keyof typeof OrderTimelineDataStatusOverriddenMode];
+
 
 export const OrderTimelineDataStatusOverriddenMode = {
-    status: 'status'
+  status: 'status',
 } as const;
 
 /**
  * A staff member moved the status by hand. `text` (on the entry) is their reason.
  */
 export interface OrderTimelineDataStatusOverridden {
-    /** What was overridden. Only the status today. */
-    mode: OrderTimelineDataStatusOverriddenMode;
-    from: OrderStatus;
-    to: OrderStatus;
+  /** What was overridden. Only the status today. */
+  mode: OrderTimelineDataStatusOverriddenMode;
+  from: OrderStatus;
+  to: OrderStatus;
 }
 
-export type OrderTimelineExportEntryStatusOverriddenType =
-    (typeof OrderTimelineExportEntryStatusOverriddenType)[keyof typeof OrderTimelineExportEntryStatusOverriddenType];
+export type OrderTimelineExportEntryStatusOverriddenType = typeof OrderTimelineExportEntryStatusOverriddenType[keyof typeof OrderTimelineExportEntryStatusOverriddenType];
+
 
 export const OrderTimelineExportEntryStatusOverriddenType = {
-    status_overridden: 'status_overridden'
+  status_overridden: 'status_overridden',
 } as const;
 
 export type OrderTimelineExportEntryStatusOverridden = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryStatusOverriddenType;
-    data: OrderTimelineDataStatusOverridden;
-    /** Free text staff wrote with the change: the override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
-    text?: string;
+  type: OrderTimelineExportEntryStatusOverriddenType;
+  data: OrderTimelineDataStatusOverridden;
+  /** Free text staff wrote with the change: the override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
+  text?: string;
 };
 
-export type OrderTimelineExportEntryNoteAddedType =
-    (typeof OrderTimelineExportEntryNoteAddedType)[keyof typeof OrderTimelineExportEntryNoteAddedType];
+export type OrderTimelineExportEntryNoteAddedType = typeof OrderTimelineExportEntryNoteAddedType[keyof typeof OrderTimelineExportEntryNoteAddedType];
+
 
 export const OrderTimelineExportEntryNoteAddedType = {
-    note_added: 'note_added'
+  note_added: 'note_added',
 } as const;
 
 export type OrderTimelineExportEntryNoteAdded = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryNoteAddedType;
-    data: OrderTimelineDataNone;
-    /** What staff wrote. Absent once it was deleted, the order's personal data was erased, or `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS` passed; the row stays. */
-    text?: string;
+  type: OrderTimelineExportEntryNoteAddedType;
+  data: OrderTimelineDataNone;
+  /** What staff wrote. Absent once it was deleted, the order's personal data was erased, or `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS` passed; the row stays. */
+  text?: string;
 };
 
 /**
  * The order was paid.
  */
 export interface OrderTimelineDataPaid {
-    /** How it was paid, as the payment row records it (`PaymentMethod` in `payments`, or an offline method). Absent when unknown. */
-    method?: string;
+  /** How it was paid, as the payment row records it (`PaymentMethod` in `payments`, or an offline method). Absent when unknown. */
+  method?: string;
 }
 
-export type OrderTimelineExportEntryPaidType =
-    (typeof OrderTimelineExportEntryPaidType)[keyof typeof OrderTimelineExportEntryPaidType];
+export type OrderTimelineExportEntryPaidType = typeof OrderTimelineExportEntryPaidType[keyof typeof OrderTimelineExportEntryPaidType];
+
 
 export const OrderTimelineExportEntryPaidType = {
-    paid: 'paid'
+  paid: 'paid',
 } as const;
 
 export type OrderTimelineExportEntryPaid = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryPaidType;
-    data: OrderTimelineDataPaid;
+  type: OrderTimelineExportEntryPaidType;
+  data: OrderTimelineDataPaid;
 };
 
 /**
  * The last shipment arrived.
  */
 export interface OrderTimelineDataDelivered {
-    /** When the withdrawal window closes; frozen at the first delivery. */
-    withdrawUntil: string;
+  /** When the withdrawal window closes; frozen at the first delivery. */
+  withdrawUntil: string;
 }
 
-export type OrderTimelineExportEntryDeliveredType =
-    (typeof OrderTimelineExportEntryDeliveredType)[keyof typeof OrderTimelineExportEntryDeliveredType];
+export type OrderTimelineExportEntryDeliveredType = typeof OrderTimelineExportEntryDeliveredType[keyof typeof OrderTimelineExportEntryDeliveredType];
+
 
 export const OrderTimelineExportEntryDeliveredType = {
-    delivered: 'delivered'
+  delivered: 'delivered',
 } as const;
 
 export type OrderTimelineExportEntryDelivered = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryDeliveredType;
-    data: OrderTimelineDataDelivered;
+  type: OrderTimelineExportEntryDeliveredType;
+  data: OrderTimelineDataDelivered;
 };
 
 /**
  * Who: the buyer, a staff member, a withdrawal, or the system (`reservation_expired`, `erasure`, `payment_mismatch`, `lost`).
  */
-export type OrderTimelineDataCanceledBy =
-    (typeof OrderTimelineDataCanceledBy)[keyof typeof OrderTimelineDataCanceledBy];
+export type OrderTimelineDataCanceledBy = typeof OrderTimelineDataCanceledBy[keyof typeof OrderTimelineDataCanceledBy];
+
 
 export const OrderTimelineDataCanceledBy = {
-    customer: 'customer',
-    admin: 'admin',
-    withdrawal: 'withdrawal',
-    system: 'system'
+  customer: 'customer',
+  admin: 'admin',
+  withdrawal: 'withdrawal',
+  system: 'system',
 } as const;
 
 /**
  * Why. `lost`: a lost parcel refunded with nothing ever delivered.
  */
-export type OrderTimelineDataCanceledCause =
-    (typeof OrderTimelineDataCanceledCause)[keyof typeof OrderTimelineDataCanceledCause];
+export type OrderTimelineDataCanceledCause = typeof OrderTimelineDataCanceledCause[keyof typeof OrderTimelineDataCanceledCause];
+
 
 export const OrderTimelineDataCanceledCause = {
-    customer: 'customer',
-    operator: 'operator',
-    withdrawal: 'withdrawal',
-    reservation_expired: 'reservation_expired',
-    erasure: 'erasure',
-    payment_mismatch: 'payment_mismatch',
-    lost: 'lost'
+  customer: 'customer',
+  operator: 'operator',
+  withdrawal: 'withdrawal',
+  reservation_expired: 'reservation_expired',
+  erasure: 'erasure',
+  payment_mismatch: 'payment_mismatch',
+  lost: 'lost',
 } as const;
 
 /**
  * The order was canceled.
  */
 export interface OrderTimelineDataCanceled {
-    /** Who: the buyer, a staff member, a withdrawal, or the system (`reservation_expired`, `erasure`, `payment_mismatch`, `lost`). */
-    by: OrderTimelineDataCanceledBy;
-    /** Why. `lost`: a lost parcel refunded with nothing ever delivered. */
-    cause: OrderTimelineDataCanceledCause;
-    /** Whether the cancel returned the money. */
-    refund: boolean;
+  /** Who: the buyer, a staff member, a withdrawal, or the system (`reservation_expired`, `erasure`, `payment_mismatch`, `lost`). */
+  by: OrderTimelineDataCanceledBy;
+  /** Why. `lost`: a lost parcel refunded with nothing ever delivered. */
+  cause: OrderTimelineDataCanceledCause;
+  /** Whether the cancel returned the money. */
+  refund: boolean;
 }
 
-export type OrderTimelineExportEntryCanceledType =
-    (typeof OrderTimelineExportEntryCanceledType)[keyof typeof OrderTimelineExportEntryCanceledType];
+export type OrderTimelineExportEntryCanceledType = typeof OrderTimelineExportEntryCanceledType[keyof typeof OrderTimelineExportEntryCanceledType];
+
 
 export const OrderTimelineExportEntryCanceledType = {
-    canceled: 'canceled'
+  canceled: 'canceled',
 } as const;
 
 export type OrderTimelineExportEntryCanceled = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryCanceledType;
-    data: OrderTimelineDataCanceled;
+  type: OrderTimelineExportEntryCanceledType;
+  data: OrderTimelineDataCanceled;
 };
 
 /**
  * The provider declined a payment. The provider's wording is never copied.
  */
 export interface OrderTimelineDataPaymentDeclined {
-    paymentId: Id;
+  paymentId: Id;
 }
 
-export type OrderTimelineExportEntryPaymentDeclinedType =
-    (typeof OrderTimelineExportEntryPaymentDeclinedType)[keyof typeof OrderTimelineExportEntryPaymentDeclinedType];
+export type OrderTimelineExportEntryPaymentDeclinedType = typeof OrderTimelineExportEntryPaymentDeclinedType[keyof typeof OrderTimelineExportEntryPaymentDeclinedType];
+
 
 export const OrderTimelineExportEntryPaymentDeclinedType = {
-    payment_declined: 'payment_declined'
+  payment_declined: 'payment_declined',
 } as const;
 
 export type OrderTimelineExportEntryPaymentDeclined = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryPaymentDeclinedType;
-    data: OrderTimelineDataPaymentDeclined;
+  type: OrderTimelineExportEntryPaymentDeclinedType;
+  data: OrderTimelineDataPaymentDeclined;
 };
 
 /**
  * A refund opened, settled or voided.
  */
 export interface OrderTimelineDataRefund {
-    refundId: Id;
-    amount: DecimalAmount;
-    currency: CurrencyCode;
-    /** The refund's closed reason code (`RefundReason` in `payments`). */
-    reason: string;
+  refundId: Id;
+  amount: DecimalAmount;
+  currency: CurrencyCode;
+  /** The refund's closed reason code (`RefundReason` in `payments`). */
+  reason: string;
 }
 
-export type OrderTimelineExportEntryRefundType =
-    (typeof OrderTimelineExportEntryRefundType)[keyof typeof OrderTimelineExportEntryRefundType];
+export type OrderTimelineExportEntryRefundType = typeof OrderTimelineExportEntryRefundType[keyof typeof OrderTimelineExportEntryRefundType];
+
 
 export const OrderTimelineExportEntryRefundType = {
-    refund_issued: 'refund_issued',
-    refund_settled: 'refund_settled',
-    refund_canceled: 'refund_canceled'
+  refund_issued: 'refund_issued',
+  refund_settled: 'refund_settled',
+  refund_canceled: 'refund_canceled',
 } as const;
 
 export type OrderTimelineExportEntryRefund = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryRefundType;
-    data: OrderTimelineDataRefund;
+  type: OrderTimelineExportEntryRefundType;
+  data: OrderTimelineDataRefund;
 };
 
 /**
  * A refund the provider refused, or took back after it settled.
  */
 export interface OrderTimelineDataRefundFailure {
-    refundId: Id;
-    amount: DecimalAmount;
-    currency: CurrencyCode;
-    /** The refund's closed reason code (`RefundReason` in `payments`). */
-    reason: string;
-    /** Why the provider refused (`RefundFailureReason` in `payments`). */
-    failureReason: string;
+  refundId: Id;
+  amount: DecimalAmount;
+  currency: CurrencyCode;
+  /** The refund's closed reason code (`RefundReason` in `payments`). */
+  reason: string;
+  /** Why the provider refused (`RefundFailureReason` in `payments`). */
+  failureReason: string;
 }
 
-export type OrderTimelineExportEntryRefundFailureType =
-    (typeof OrderTimelineExportEntryRefundFailureType)[keyof typeof OrderTimelineExportEntryRefundFailureType];
+export type OrderTimelineExportEntryRefundFailureType = typeof OrderTimelineExportEntryRefundFailureType[keyof typeof OrderTimelineExportEntryRefundFailureType];
+
 
 export const OrderTimelineExportEntryRefundFailureType = {
-    refund_failed: 'refund_failed',
-    refund_reversed: 'refund_reversed'
+  refund_failed: 'refund_failed',
+  refund_reversed: 'refund_reversed',
 } as const;
 
 export type OrderTimelineExportEntryRefundFailure = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryRefundFailureType;
-    data: OrderTimelineDataRefundFailure;
+  type: OrderTimelineExportEntryRefundFailureType;
+  data: OrderTimelineDataRefundFailure;
 };
 
 /**
  * A payment dispute opened or reached a closed status.
  */
 export interface OrderTimelineDataDispute {
-    /** The provider's reference for the dispute. */
-    disputeId: string;
-    /** `DisputeKind` in `payments`. */
-    kind: string;
-    /** `DisputeStatus` in `payments`. */
-    status: string;
-    /** `DisputeReason` in `payments`. */
-    reason: string;
-    amount: DecimalAmount;
-    currency: CurrencyCode;
+  /** The provider's reference for the dispute. */
+  disputeId: string;
+  /** `DisputeKind` in `payments`. */
+  kind: string;
+  /** `DisputeStatus` in `payments`. */
+  status: string;
+  /** `DisputeReason` in `payments`. */
+  reason: string;
+  amount: DecimalAmount;
+  currency: CurrencyCode;
 }
 
-export type OrderTimelineExportEntryDisputeType =
-    (typeof OrderTimelineExportEntryDisputeType)[keyof typeof OrderTimelineExportEntryDisputeType];
+export type OrderTimelineExportEntryDisputeType = typeof OrderTimelineExportEntryDisputeType[keyof typeof OrderTimelineExportEntryDisputeType];
+
 
 export const OrderTimelineExportEntryDisputeType = {
-    dispute_opened: 'dispute_opened',
-    dispute_closed: 'dispute_closed'
+  dispute_opened: 'dispute_opened',
+  dispute_closed: 'dispute_closed',
 } as const;
 
 export type OrderTimelineExportEntryDispute = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryDisputeType;
-    data: OrderTimelineDataDispute;
+  type: OrderTimelineExportEntryDisputeType;
+  data: OrderTimelineDataDispute;
 };
 
 /**
  * A shipment left.
  */
 export interface OrderTimelineDataShipmentShipped {
-    shipmentId: Id;
-    fulfillmentOrderId: Id;
-    /**
+  shipmentId: Id;
+  fulfillmentOrderId: Id;
+  /**
      * The shipment's 1-based position within the order.
      * @minimum 1
      */
-    number: number;
-    /** Absent when none was given. */
-    trackingCode?: string;
+  number: number;
+  /** Absent when none was given. */
+  trackingCode?: string;
 }
 
-export type OrderTimelineExportEntryShipmentShippedType =
-    (typeof OrderTimelineExportEntryShipmentShippedType)[keyof typeof OrderTimelineExportEntryShipmentShippedType];
+export type OrderTimelineExportEntryShipmentShippedType = typeof OrderTimelineExportEntryShipmentShippedType[keyof typeof OrderTimelineExportEntryShipmentShippedType];
+
 
 export const OrderTimelineExportEntryShipmentShippedType = {
-    shipment_shipped: 'shipment_shipped'
+  shipment_shipped: 'shipment_shipped',
 } as const;
 
 export type OrderTimelineExportEntryShipmentShipped = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryShipmentShippedType;
-    data: OrderTimelineDataShipmentShipped;
+  type: OrderTimelineExportEntryShipmentShippedType;
+  data: OrderTimelineDataShipmentShipped;
 };
 
 /**
  * A shipment arrived.
  */
 export interface OrderTimelineDataShipmentDelivered {
-    shipmentId: Id;
-    fulfillmentOrderId: Id;
-    /**
+  shipmentId: Id;
+  fulfillmentOrderId: Id;
+  /**
      * The shipment's 1-based position within the order.
      * @minimum 1
      */
-    number: number;
+  number: number;
 }
 
-export type OrderTimelineExportEntryShipmentDeliveredType =
-    (typeof OrderTimelineExportEntryShipmentDeliveredType)[keyof typeof OrderTimelineExportEntryShipmentDeliveredType];
+export type OrderTimelineExportEntryShipmentDeliveredType = typeof OrderTimelineExportEntryShipmentDeliveredType[keyof typeof OrderTimelineExportEntryShipmentDeliveredType];
+
 
 export const OrderTimelineExportEntryShipmentDeliveredType = {
-    shipment_delivered: 'shipment_delivered'
+  shipment_delivered: 'shipment_delivered',
 } as const;
 
 export type OrderTimelineExportEntryShipmentDelivered = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryShipmentDeliveredType;
-    data: OrderTimelineDataShipmentDelivered;
+  type: OrderTimelineExportEntryShipmentDeliveredType;
+  data: OrderTimelineDataShipmentDelivered;
 };
 
 /**
  * A shipment will not arrive.
  */
 export interface OrderTimelineDataShipmentLost {
-    shipmentId: Id;
-    fulfillmentOrderId: Id;
-    /**
+  shipmentId: Id;
+  fulfillmentOrderId: Id;
+  /**
      * The shipment's 1-based position within the order.
      * @minimum 1
      */
-    number: number;
-    /** `ShipmentLostReason` in `delivery`. */
-    reason: string;
+  number: number;
+  /** `ShipmentLostReason` in `delivery`. */
+  reason: string;
 }
 
-export type OrderTimelineExportEntryShipmentLostType =
-    (typeof OrderTimelineExportEntryShipmentLostType)[keyof typeof OrderTimelineExportEntryShipmentLostType];
+export type OrderTimelineExportEntryShipmentLostType = typeof OrderTimelineExportEntryShipmentLostType[keyof typeof OrderTimelineExportEntryShipmentLostType];
+
 
 export const OrderTimelineExportEntryShipmentLostType = {
-    shipment_lost: 'shipment_lost'
+  shipment_lost: 'shipment_lost',
 } as const;
 
 export type OrderTimelineExportEntryShipmentLost = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryShipmentLostType;
-    data: OrderTimelineDataShipmentLost;
+  type: OrderTimelineExportEntryShipmentLostType;
+  data: OrderTimelineDataShipmentLost;
 };
 
 /**
  * A fulfillment order was put on hold.
  */
 export interface OrderTimelineDataFulfillmentHeld {
-    fulfillmentOrderId?: Id;
-    /** `FulfillmentHoldReason` in `delivery`. */
-    reason: string;
+  fulfillmentOrderId?: Id;
+  /** `FulfillmentHoldReason` in `delivery`. */
+  reason: string;
 }
 
-export type OrderTimelineExportEntryFulfillmentHeldType =
-    (typeof OrderTimelineExportEntryFulfillmentHeldType)[keyof typeof OrderTimelineExportEntryFulfillmentHeldType];
+export type OrderTimelineExportEntryFulfillmentHeldType = typeof OrderTimelineExportEntryFulfillmentHeldType[keyof typeof OrderTimelineExportEntryFulfillmentHeldType];
+
 
 export const OrderTimelineExportEntryFulfillmentHeldType = {
-    fulfillment_held: 'fulfillment_held'
+  fulfillment_held: 'fulfillment_held',
 } as const;
 
 export type OrderTimelineExportEntryFulfillmentHeld = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryFulfillmentHeldType;
-    data: OrderTimelineDataFulfillmentHeld;
+  type: OrderTimelineExportEntryFulfillmentHeldType;
+  data: OrderTimelineDataFulfillmentHeld;
 };
 
 /**
  * What the row is about is one fulfillment order.
  */
 export interface OrderTimelineDataFulfillmentOrderRef {
-    fulfillmentOrderId: Id;
+  fulfillmentOrderId: Id;
 }
 
-export type OrderTimelineExportEntryFulfillmentOrderRefType =
-    (typeof OrderTimelineExportEntryFulfillmentOrderRefType)[keyof typeof OrderTimelineExportEntryFulfillmentOrderRefType];
+export type OrderTimelineExportEntryFulfillmentOrderRefType = typeof OrderTimelineExportEntryFulfillmentOrderRefType[keyof typeof OrderTimelineExportEntryFulfillmentOrderRefType];
+
 
 export const OrderTimelineExportEntryFulfillmentOrderRefType = {
-    fulfillment_released: 'fulfillment_released',
-    remainder_canceled: 'remainder_canceled'
+  fulfillment_released: 'fulfillment_released',
+  remainder_canceled: 'remainder_canceled',
 } as const;
 
 export type OrderTimelineExportEntryFulfillmentOrderRef = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryFulfillmentOrderRefType;
-    data: OrderTimelineDataFulfillmentOrderRef;
+  type: OrderTimelineExportEntryFulfillmentOrderRefType;
+  data: OrderTimelineDataFulfillmentOrderRef;
 };
 
 /**
  * A return was opened.
  */
 export interface OrderTimelineDataReturnRequested {
-    returnId: Id;
-    /** `ReturnReason` in `returns`. */
-    reason: string;
+  returnId: Id;
+  /** `ReturnReason` in `returns`. */
+  reason: string;
 }
 
-export type OrderTimelineExportEntryReturnRequestedType =
-    (typeof OrderTimelineExportEntryReturnRequestedType)[keyof typeof OrderTimelineExportEntryReturnRequestedType];
+export type OrderTimelineExportEntryReturnRequestedType = typeof OrderTimelineExportEntryReturnRequestedType[keyof typeof OrderTimelineExportEntryReturnRequestedType];
+
 
 export const OrderTimelineExportEntryReturnRequestedType = {
-    return_requested: 'return_requested'
+  return_requested: 'return_requested',
 } as const;
 
 export type OrderTimelineExportEntryReturnRequested = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryReturnRequestedType;
-    data: OrderTimelineDataReturnRequested;
+  type: OrderTimelineExportEntryReturnRequestedType;
+  data: OrderTimelineDataReturnRequested;
 };
 
 /**
  * A return was approved.
  */
 export interface OrderTimelineDataReturnApproved {
-    returnId: Id;
-    /** `ReturnReason` in `returns`. Present when the return was opened already approved (a withdrawal, or one staff opened). */
-    reason?: string;
+  returnId: Id;
+  /** `ReturnReason` in `returns`. Present when the return was opened already approved (a withdrawal, or one staff opened). */
+  reason?: string;
 }
 
-export type OrderTimelineExportEntryReturnApprovedType =
-    (typeof OrderTimelineExportEntryReturnApprovedType)[keyof typeof OrderTimelineExportEntryReturnApprovedType];
+export type OrderTimelineExportEntryReturnApprovedType = typeof OrderTimelineExportEntryReturnApprovedType[keyof typeof OrderTimelineExportEntryReturnApprovedType];
+
 
 export const OrderTimelineExportEntryReturnApprovedType = {
-    return_approved: 'return_approved'
+  return_approved: 'return_approved',
 } as const;
 
 export type OrderTimelineExportEntryReturnApproved = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryReturnApprovedType;
-    data: OrderTimelineDataReturnApproved;
+  type: OrderTimelineExportEntryReturnApprovedType;
+  data: OrderTimelineDataReturnApproved;
 };
 
 /**
  * What the row is about is one return.
  */
 export interface OrderTimelineDataReturnRef {
-    returnId: Id;
+  returnId: Id;
 }
 
-export type OrderTimelineExportEntryReturnRefType =
-    (typeof OrderTimelineExportEntryReturnRefType)[keyof typeof OrderTimelineExportEntryReturnRefType];
+export type OrderTimelineExportEntryReturnRefType = typeof OrderTimelineExportEntryReturnRefType[keyof typeof OrderTimelineExportEntryReturnRefType];
+
 
 export const OrderTimelineExportEntryReturnRefType = {
-    return_declined: 'return_declined',
-    return_canceled: 'return_canceled',
-    proof_of_sending_recorded: 'proof_of_sending_recorded'
+  return_declined: 'return_declined',
+  return_canceled: 'return_canceled',
+  proof_of_sending_recorded: 'proof_of_sending_recorded',
 } as const;
 
 export type OrderTimelineExportEntryReturnRef = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryReturnRefType;
-    data: OrderTimelineDataReturnRef;
+  type: OrderTimelineExportEntryReturnRefType;
+  data: OrderTimelineDataReturnRef;
 };
 
 /**
  * The returned goods were checked in.
  */
 export interface OrderTimelineDataReturnReceived {
-    returnId: Id;
-    refundAmount: DecimalAmount;
-    currency: CurrencyCode;
+  returnId: Id;
+  refundAmount: DecimalAmount;
+  currency: CurrencyCode;
 }
 
-export type OrderTimelineExportEntryReturnReceivedType =
-    (typeof OrderTimelineExportEntryReturnReceivedType)[keyof typeof OrderTimelineExportEntryReturnReceivedType];
+export type OrderTimelineExportEntryReturnReceivedType = typeof OrderTimelineExportEntryReturnReceivedType[keyof typeof OrderTimelineExportEntryReturnReceivedType];
+
 
 export const OrderTimelineExportEntryReturnReceivedType = {
-    return_received: 'return_received'
+  return_received: 'return_received',
 } as const;
 
 export type OrderTimelineExportEntryReturnReceived = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryReturnReceivedType;
-    data: OrderTimelineDataReturnReceived;
+  type: OrderTimelineExportEntryReturnReceivedType;
+  data: OrderTimelineDataReturnReceived;
 };
 
 /**
  * A return was closed, refunded or settled.
  */
 export interface OrderTimelineDataReturnClosed {
-    returnId: Id;
-    refundAmount: DecimalAmount;
-    currency: CurrencyCode;
-    /** `ReturnRemedy` in `returns`. Absent when none was chosen. */
-    remedy?: string;
+  returnId: Id;
+  refundAmount: DecimalAmount;
+  currency: CurrencyCode;
+  /** `ReturnRemedy` in `returns`. Absent when none was chosen. */
+  remedy?: string;
 }
 
-export type OrderTimelineExportEntryReturnClosedType =
-    (typeof OrderTimelineExportEntryReturnClosedType)[keyof typeof OrderTimelineExportEntryReturnClosedType];
+export type OrderTimelineExportEntryReturnClosedType = typeof OrderTimelineExportEntryReturnClosedType[keyof typeof OrderTimelineExportEntryReturnClosedType];
+
 
 export const OrderTimelineExportEntryReturnClosedType = {
-    return_closed: 'return_closed'
+  return_closed: 'return_closed',
 } as const;
 
 export type OrderTimelineExportEntryReturnClosed = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryReturnClosedType;
-    data: OrderTimelineDataReturnClosed;
+  type: OrderTimelineExportEntryReturnClosedType;
+  data: OrderTimelineDataReturnClosed;
 };
 
 /**
  * The order's invoice was issued.
  */
 export interface OrderTimelineDataInvoiceIssued {
-    invoiceId: Id;
-    /** The invoice number. */
-    number: string;
+  invoiceId: Id;
+  /** The invoice number. */
+  number: string;
 }
 
-export type OrderTimelineExportEntryInvoiceIssuedType =
-    (typeof OrderTimelineExportEntryInvoiceIssuedType)[keyof typeof OrderTimelineExportEntryInvoiceIssuedType];
+export type OrderTimelineExportEntryInvoiceIssuedType = typeof OrderTimelineExportEntryInvoiceIssuedType[keyof typeof OrderTimelineExportEntryInvoiceIssuedType];
+
 
 export const OrderTimelineExportEntryInvoiceIssuedType = {
-    invoice_issued: 'invoice_issued'
+  invoice_issued: 'invoice_issued',
 } as const;
 
 export type OrderTimelineExportEntryInvoiceIssued = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryInvoiceIssuedType;
-    data: OrderTimelineDataInvoiceIssued;
+  type: OrderTimelineExportEntryInvoiceIssuedType;
+  data: OrderTimelineDataInvoiceIssued;
 };
 
 /**
  * A credit note corrected the invoice for a refund.
  */
 export interface OrderTimelineDataCreditNoteIssued {
-    creditNoteId: Id;
-    /** The credit note number. */
-    number: string;
-    refundId: Id;
+  creditNoteId: Id;
+  /** The credit note number. */
+  number: string;
+  refundId: Id;
 }
 
-export type OrderTimelineExportEntryCreditNoteIssuedType =
-    (typeof OrderTimelineExportEntryCreditNoteIssuedType)[keyof typeof OrderTimelineExportEntryCreditNoteIssuedType];
+export type OrderTimelineExportEntryCreditNoteIssuedType = typeof OrderTimelineExportEntryCreditNoteIssuedType[keyof typeof OrderTimelineExportEntryCreditNoteIssuedType];
+
 
 export const OrderTimelineExportEntryCreditNoteIssuedType = {
-    credit_note_issued: 'credit_note_issued'
+  credit_note_issued: 'credit_note_issued',
 } as const;
 
 export type OrderTimelineExportEntryCreditNoteIssued = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryCreditNoteIssuedType;
-    data: OrderTimelineDataCreditNoteIssued;
+  type: OrderTimelineExportEntryCreditNoteIssuedType;
+  data: OrderTimelineDataCreditNoteIssued;
 };
 
 /**
  * A preorder's release date moved.
  */
 export interface OrderTimelineDataReleaseDateMoved {
-    fulfillmentOrderId: Id;
-    /** The shop's day expected before. Absent when there was no date. */
-    from?: string;
-    /** The shop's day expected now. Absent when the date was removed. */
-    to?: string;
+  fulfillmentOrderId: Id;
+  /** The shop's day expected before. Absent when there was no date. */
+  from?: string;
+  /** The shop's day expected now. Absent when the date was removed. */
+  to?: string;
 }
 
-export type OrderTimelineExportEntryReleaseDateMovedType =
-    (typeof OrderTimelineExportEntryReleaseDateMovedType)[keyof typeof OrderTimelineExportEntryReleaseDateMovedType];
+export type OrderTimelineExportEntryReleaseDateMovedType = typeof OrderTimelineExportEntryReleaseDateMovedType[keyof typeof OrderTimelineExportEntryReleaseDateMovedType];
+
 
 export const OrderTimelineExportEntryReleaseDateMovedType = {
-    release_date_moved: 'release_date_moved'
+  release_date_moved: 'release_date_moved',
 } as const;
 
 export type OrderTimelineExportEntryReleaseDateMoved = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryReleaseDateMovedType;
-    data: OrderTimelineDataReleaseDateMoved;
+  type: OrderTimelineExportEntryReleaseDateMovedType;
+  data: OrderTimelineDataReleaseDateMoved;
 };
 
 /**
  * The buyer was told a preorder is late.
  */
 export interface OrderTimelineDataDelayNoticeSent {
-    fulfillmentOrderId: Id;
-    /** Why the notice went out: `moved` or `due` (`FulfillmentOrderDelayed` in `delivery`). */
-    reason: string;
-    /** The shop's day now expected. Absent when there is no date yet. */
-    expectedAt?: string;
+  fulfillmentOrderId: Id;
+  /** Why the notice went out: `moved` or `due` (`FulfillmentOrderDelayed` in `delivery`). */
+  reason: string;
+  /** The shop's day now expected. Absent when there is no date yet. */
+  expectedAt?: string;
 }
 
-export type OrderTimelineExportEntryDelayNoticeSentType =
-    (typeof OrderTimelineExportEntryDelayNoticeSentType)[keyof typeof OrderTimelineExportEntryDelayNoticeSentType];
+export type OrderTimelineExportEntryDelayNoticeSentType = typeof OrderTimelineExportEntryDelayNoticeSentType[keyof typeof OrderTimelineExportEntryDelayNoticeSentType];
+
 
 export const OrderTimelineExportEntryDelayNoticeSentType = {
-    delay_notice_sent: 'delay_notice_sent'
+  delay_notice_sent: 'delay_notice_sent',
 } as const;
 
 export type OrderTimelineExportEntryDelayNoticeSent = OrderTimelineExportEntryBase & {
-    type: OrderTimelineExportEntryDelayNoticeSentType;
-    data: OrderTimelineDataDelayNoticeSent;
+  type: OrderTimelineExportEntryDelayNoticeSentType;
+  data: OrderTimelineDataDelayNoticeSent;
 };
 
-export type OrderTimelineExportEntry =
-    | OrderTimelineExportEntryPlain
-    | OrderTimelineExportEntryStatusOverridden
-    | OrderTimelineExportEntryNoteAdded
-    | OrderTimelineExportEntryPaid
-    | OrderTimelineExportEntryDelivered
-    | OrderTimelineExportEntryCanceled
-    | OrderTimelineExportEntryPaymentDeclined
-    | OrderTimelineExportEntryRefund
-    | OrderTimelineExportEntryRefundFailure
-    | OrderTimelineExportEntryDispute
-    | OrderTimelineExportEntryShipmentShipped
-    | OrderTimelineExportEntryShipmentDelivered
-    | OrderTimelineExportEntryShipmentLost
-    | OrderTimelineExportEntryFulfillmentHeld
-    | OrderTimelineExportEntryFulfillmentOrderRef
-    | OrderTimelineExportEntryReturnRequested
-    | OrderTimelineExportEntryReturnApproved
-    | OrderTimelineExportEntryReturnRef
-    | OrderTimelineExportEntryReturnReceived
-    | OrderTimelineExportEntryReturnClosed
-    | OrderTimelineExportEntryInvoiceIssued
-    | OrderTimelineExportEntryCreditNoteIssued
-    | OrderTimelineExportEntryReleaseDateMoved
-    | OrderTimelineExportEntryDelayNoticeSent;
+export type OrderTimelineExportEntry = OrderTimelineExportEntryPlain | OrderTimelineExportEntryStatusOverridden | OrderTimelineExportEntryNoteAdded | OrderTimelineExportEntryPaid | OrderTimelineExportEntryDelivered | OrderTimelineExportEntryCanceled | OrderTimelineExportEntryPaymentDeclined | OrderTimelineExportEntryRefund | OrderTimelineExportEntryRefundFailure | OrderTimelineExportEntryDispute | OrderTimelineExportEntryShipmentShipped | OrderTimelineExportEntryShipmentDelivered | OrderTimelineExportEntryShipmentLost | OrderTimelineExportEntryFulfillmentHeld | OrderTimelineExportEntryFulfillmentOrderRef | OrderTimelineExportEntryReturnRequested | OrderTimelineExportEntryReturnApproved | OrderTimelineExportEntryReturnRef | OrderTimelineExportEntryReturnReceived | OrderTimelineExportEntryReturnClosed | OrderTimelineExportEntryInvoiceIssued | OrderTimelineExportEntryCreditNoteIssued | OrderTimelineExportEntryReleaseDateMoved | OrderTimelineExportEntryDelayNoticeSent;
 
-export type RefundStatus = (typeof RefundStatus)[keyof typeof RefundStatus];
+export type RefundStatus = typeof RefundStatus[keyof typeof RefundStatus];
+
 
 export const RefundStatus = {
-    pending: 'pending',
-    succeeded: 'succeeded',
-    failed: 'failed'
+  pending: 'pending',
+  succeeded: 'succeeded',
+  failed: 'failed',
 } as const;
 
 /**
  * Why the money went back. `cancellation` — the order was canceled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to; `late_payment` — the money arrived after the order could no longer be paid (its stock reservation had expired or it was canceled), so the sale was lost and the money went back. The buyer is mailed it like a cancellation's refund. `external` — the refund was made in the payment provider's own dashboard, not here: the application found it and recorded it so the credit note, the buyer's mail and the order's state follow; it is `succeeded` from the start and carries the provider's own amount and date.
  */
-export type RefundReason = (typeof RefundReason)[keyof typeof RefundReason];
+export type RefundReason = typeof RefundReason[keyof typeof RefundReason];
+
 
 export const RefundReason = {
-    cancellation: 'cancellation',
-    goodwill: 'goodwill',
-    return: 'return',
-    late_payment: 'late_payment',
-    external: 'external'
+  cancellation: 'cancellation',
+  goodwill: 'goodwill',
+  return: 'return',
+  late_payment: 'late_payment',
+  external: 'external',
 } as const;
 
 /**
@@ -2814,1216 +2810,1200 @@ export const RefundReason = {
  * `disputed`: the buyer's bank took the money back in a dispute (chargeback). It is final like the refusals above, and it is not offered for hand settlement while the chargeback is open: the bank already returned the money. Once the chargeback is lost for an amount that covers the refund, the refund may be marked returned (the bank paid the buyer); once the dispute is decided in the shop's favour the refund may only be canceled.
  * `canceled` is not a refusal: staff voided the refund (`POST /payments/{id}/refunds/{refundId}/cancel`). Nothing was sent, it is never retried and it can neither be settled by hand nor canceled again.
  */
-export type RefundFailureReason = (typeof RefundFailureReason)[keyof typeof RefundFailureReason];
+export type RefundFailureReason = typeof RefundFailureReason[keyof typeof RefundFailureReason];
+
 
 export const RefundFailureReason = {
-    declined: 'declined',
-    insufficient_funds: 'insufficient_funds',
-    expired_or_canceled_card: 'expired_or_canceled_card',
-    lost_or_stolen_card: 'lost_or_stolen_card',
-    provider_removed: 'provider_removed',
-    provider_unavailable: 'provider_unavailable',
-    unknown: 'unknown',
-    canceled: 'canceled',
-    disputed: 'disputed'
+  declined: 'declined',
+  insufficient_funds: 'insufficient_funds',
+  expired_or_canceled_card: 'expired_or_canceled_card',
+  lost_or_stolen_card: 'lost_or_stolen_card',
+  provider_removed: 'provider_removed',
+  provider_unavailable: 'provider_unavailable',
+  unknown: 'unknown',
+  canceled: 'canceled',
+  disputed: 'disputed',
 } as const;
 
 /**
  * One attempt to give money back — a record per attempt, not a field on the payment. The idempotency key is stored but never published. The provider's refund id and a failed refund's `failureReason` go to staff only (`display:Payment`); the provider's own error wording stays in the logs.
  */
 export interface Refund {
-    id: Id;
-    /** The amount returned, in the payment's own `currency`. */
-    amount: NonNegativeDecimalAmount;
-    /** ISO-4217 currency code, copied from the payment. */
-    currency: CurrencyCode;
-    /** `pending` while the provider is being asked (or, on a hand-paid payment, until an operator reports the money back); `failed` when it refused — the sweep retries it with the same idempotency key unless the refusal is final, and an operator may report it returned by hand when the money provably did not move (see `RefundFailureReason`); `succeeded` once the money is confirmed back, or reported back by the operator. A `failed` refund with `failureReason: canceled` was voided by staff and is closed for good. */
-    status: RefundStatus;
-    reason: RefundReason;
-    returnId?: Id;
-    /** When the refund succeeded. Absent while it has not. */
-    settledAt?: string;
-    /** `true` when an operator reported this refund's money returned outside the application (`POST /payments/{id}/refunds/{refundId}/settle`): a hand-paid payment's refund, or a card refund the provider refused. Per refund. Absent otherwise. */
-    settledByHand?: boolean;
-    /** The provider's id for the refund (Stripe's `re_…`). Staff only. */
-    providerRefundRef?: string;
-    /** Staff only (`display:Payment`). */
-    failureReason?: RefundFailureReason;
-    /** `true` while this refund is open and the money cannot go back to the card: the provider refused it for good, or took it back after settling it. The buyer is emailed to agree how they would like to receive it, at no cost to them (Consumer Rights Directive Art. 13(1)), and the order page says so instead of "retried automatically". Carries no reason: that stays staff-only. Absent otherwise. */
-    owedAnotherWay?: boolean;
-    /** When the provider took this refund back (a bank sent the money back, or the provider reported the refund failed). Set once; a reversed refund is `failed` again, counts against what is left, and is owed another way: an operator pays it and presses mark-returned (`actions.settleRefundByHand`). The credit note issued when it first settled stays. Absent otherwise. */
-    reversedAt?: string;
-    createdAt: string;
+  id: Id;
+  /** The amount returned, in the payment's own `currency`. */
+  amount: NonNegativeDecimalAmount;
+  /** ISO-4217 currency code, copied from the payment. */
+  currency: CurrencyCode;
+  /** `pending` while the provider is being asked (or, on a hand-paid payment, until an operator reports the money back); `failed` when it refused — the sweep retries it with the same idempotency key unless the refusal is final, and an operator may report it returned by hand when the money provably did not move (see `RefundFailureReason`); `succeeded` once the money is confirmed back, or reported back by the operator. A `failed` refund with `failureReason: canceled` was voided by staff and is closed for good. */
+  status: RefundStatus;
+  reason: RefundReason;
+  returnId?: Id;
+  /** When the refund succeeded. Absent while it has not. */
+  settledAt?: string;
+  /** `true` when an operator reported this refund's money returned outside the application (`POST /payments/{id}/refunds/{refundId}/settle`): a hand-paid payment's refund, or a card refund the provider refused. Per refund. Absent otherwise. */
+  settledByHand?: boolean;
+  /** The provider's id for the refund (Stripe's `re_…`). Staff only. */
+  providerRefundRef?: string;
+  /** Staff only (`display:Payment`). */
+  failureReason?: RefundFailureReason;
+  /** `true` while this refund is open and the money cannot go back to the card: the provider refused it for good, or took it back after settling it. The buyer is emailed to agree how they would like to receive it, at no cost to them (Consumer Rights Directive Art. 13(1)), and the order page says so instead of "retried automatically". Carries no reason: that stays staff-only. Absent otherwise. */
+  owedAnotherWay?: boolean;
+  /** When the provider took this refund back (a bank sent the money back, or the provider reported the refund failed). Set once; a reversed refund is `failed` again, counts against what is left, and is owed another way: an operator pays it and presses mark-returned (`actions.settleRefundByHand`). The credit note issued when it first settled stays. Absent otherwise. */
+  reversedAt?: string;
+  createdAt: string;
 }
 
-export type ExportPaymentStatus = (typeof ExportPaymentStatus)[keyof typeof ExportPaymentStatus];
+export type ExportPaymentStatus = typeof ExportPaymentStatus[keyof typeof ExportPaymentStatus];
+
 
 export const ExportPaymentStatus = {
-    requires_confirmation: 'requires_confirmation',
-    requires_action: 'requires_action',
-    processing: 'processing',
-    succeeded: 'succeeded',
-    declined: 'declined',
-    canceled: 'canceled'
+  requires_confirmation: 'requires_confirmation',
+  requires_action: 'requires_action',
+  processing: 'processing',
+  succeeded: 'succeeded',
+  declined: 'declined',
+  canceled: 'canceled',
 } as const;
 
 export interface ExportPayment {
-    id: Id;
-    orderId: Id;
-    amount: NonNegativeDecimalAmount;
-    currency: CurrencyCode;
-    amountRefunded: NonNegativeDecimalAmount;
-    refunds: Refund[];
-    status: ExportPaymentStatus;
-    provider: string;
-    /** @pattern ^\d{4}$ */
-    cardLast4?: string;
-    createdAt?: string;
-    updatedAt?: string;
+  id: Id;
+  orderId: Id;
+  amount: NonNegativeDecimalAmount;
+  currency: CurrencyCode;
+  amountRefunded: NonNegativeDecimalAmount;
+  refunds: Refund[];
+  status: ExportPaymentStatus;
+  provider: string;
+  /** @pattern ^\d{4}$ */
+  cardLast4?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ExportInvoiceDocument {
-    orderId: Id;
-    number: string;
-    issuedAt: string;
-    currency: CurrencyCode;
-    grandTotal: NonNegativeDecimalAmount;
+  orderId: Id;
+  number: string;
+  issuedAt: string;
+  currency: CurrencyCode;
+  grandTotal: NonNegativeDecimalAmount;
 }
 
 /**
  * The tail of the order's lifecycle, as the carrier sees it. `lost`: staff reported the parcel lost or damaged in transit, so its units are open again; it can still become `delivered` if it turns up and nothing was shipped or canceled meanwhile.
  */
-export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
+export type ShipmentStatus = typeof ShipmentStatus[keyof typeof ShipmentStatus];
+
 
 export const ShipmentStatus = {
-    shipped: 'shipped',
-    delivered: 'delivered',
-    lost: 'lost'
+  shipped: 'shipped',
+  delivered: 'delivered',
+  lost: 'lost',
 } as const;
 
 /**
  * One product in a shipment.
  */
 export interface ShipmentLine {
-    productId: Id;
-    title: string;
-    /** @minimum 1 */
-    quantity: number;
+  productId: Id;
+  title: string;
+  /** @minimum 1 */
+  quantity: number;
 }
 
 /**
  * Why the parcel will not arrive. `lost`: the carrier lost it. `damaged`: it was damaged in transit, reported before its arrival was recorded (damage found after the buyer has the goods is a return).
  */
-export type ShipmentLostReason = (typeof ShipmentLostReason)[keyof typeof ShipmentLostReason];
+export type ShipmentLostReason = typeof ShipmentLostReason[keyof typeof ShipmentLostReason];
+
 
 export const ShipmentLostReason = {
-    lost: 'lost',
-    damaged: 'damaged'
+  lost: 'lost',
+  damaged: 'damaged',
 } as const;
 
 /**
  * A shipment as an account export carries it — the record, without the caller's `actions`.
  */
 export interface ExportShipment {
-    id: Id;
-    orderId: Id;
-    fulfillmentOrderId: Id;
-    /** @minimum 1 */
-    number: number;
-    trackingCode?: string;
-    status: ShipmentStatus;
-    lines: ShipmentLine[];
-    /** Where this parcel went — the order's shipping address as it stood when the shipment was cut, so a later correction of the order's address never rewrites it. Absent for a pickup, a digital fulfillment, and once the order's own address has been scrubbed. */
-    destination?: OrderAddress;
-    shippedAt: string;
-    deliveredAt?: string;
-    /** When staff reported it lost or damaged. Kept as history when the parcel turns up and is then delivered. */
-    lostAt?: string;
-    lostReason?: ShipmentLostReason;
-    /**
+  id: Id;
+  orderId: Id;
+  fulfillmentOrderId: Id;
+  /** @minimum 1 */
+  number: number;
+  trackingCode?: string;
+  status: ShipmentStatus;
+  lines: ShipmentLine[];
+  /** Where this parcel went — the order's shipping address as it stood when the shipment was cut, so a later correction of the order's address never rewrites it. Absent for a pickup, a digital fulfillment, and once the order's own address has been scrubbed. */
+  destination?: OrderAddress;
+  shippedAt: string;
+  deliveredAt?: string;
+  /** When staff reported it lost or damaged. Kept as history when the parcel turns up and is then delivered. */
+  lostAt?: string;
+  lostReason?: ShipmentLostReason;
+  /**
      * What staff wrote for the buyer when they reported the loss; never reaped.
      * @maxLength 500
      */
-    lostMessage?: string;
-    /**
+  lostMessage?: string;
+  /**
      * Staff's free text about the loss. Reaped with the other free text.
      * @maxLength 1000
      */
-    lostNote?: string;
+  lostNote?: string;
 }
 
 /**
  * `digital` when no line rides in a parcel; its act is `fulfill`, not a shipment.
  */
-export type FulfillmentOrderKind = (typeof FulfillmentOrderKind)[keyof typeof FulfillmentOrderKind];
+export type FulfillmentOrderKind = typeof FulfillmentOrderKind[keyof typeof FulfillmentOrderKind];
+
 
 export const FulfillmentOrderKind = {
-    physical: 'physical',
-    digital: 'digital'
+  physical: 'physical',
+  digital: 'digital',
 } as const;
 
 /**
  * Where a fulfillment order stands (Shopify's names). `open` until something ships; `in_progress` once part of it has shipped and lines remain; `on_hold` while staff, or the stock it awaits, holds it back; `closed` once nothing remains and something shipped from it; `canceled` once nothing remains and nothing ever shipped from it.
  */
-export type FulfillmentOrderStatus =
-    (typeof FulfillmentOrderStatus)[keyof typeof FulfillmentOrderStatus];
+export type FulfillmentOrderStatus = typeof FulfillmentOrderStatus[keyof typeof FulfillmentOrderStatus];
+
 
 export const FulfillmentOrderStatus = {
-    open: 'open',
-    in_progress: 'in_progress',
-    on_hold: 'on_hold',
-    closed: 'closed',
-    canceled: 'canceled'
+  open: 'open',
+  in_progress: 'in_progress',
+  on_hold: 'on_hold',
+  closed: 'closed',
+  canceled: 'canceled',
 } as const;
 
 /**
  * One product on a fulfillment order, with how much has shipped, been canceled and still remains.
  */
 export interface FulfillmentOrderLine {
-    productId: Id;
-    /** The product's title as the order froze it. */
-    title: string;
-    /**
+  productId: Id;
+  /** The product's title as the order froze it. */
+  title: string;
+  /**
      * Units this fulfillment order carries.
      * @minimum 1
      */
-    quantity: number;
-    /** @minimum 0 */
-    shippedQuantity: number;
-    /**
+  quantity: number;
+  /** @minimum 0 */
+  shippedQuantity: number;
+  /**
      * Units canceled before they shipped — a remainder cancel.
      * @minimum 0
      */
-    canceledQuantity: number;
-    /**
+  canceledQuantity: number;
+  /**
      * `quantity − shippedQuantity − canceledQuantity`, computed here so no client counts.
      * @minimum 0
      */
-    remaining: number;
+  remaining: number;
 }
 
 /**
  * What a hold means to the BUYER, whatever staff's reason: `awaiting_stock` (the goods are not here yet), `check_address` (the buyer can act: the address needs a look), `delayed` (held for a check, said plainly). A reason that must stay quiet, such as `high_risk`, reads as `delayed`, so a notice never reveals a screening result. The reason itself (`FulfillmentHoldReason`) is staff's.
  */
-export type FulfillmentHoldNotice =
-    (typeof FulfillmentHoldNotice)[keyof typeof FulfillmentHoldNotice];
+export type FulfillmentHoldNotice = typeof FulfillmentHoldNotice[keyof typeof FulfillmentHoldNotice];
+
 
 export const FulfillmentHoldNotice = {
-    awaiting_stock: 'awaiting_stock',
-    check_address: 'check_address',
-    delayed: 'delayed'
+  awaiting_stock: 'awaiting_stock',
+  check_address: 'check_address',
+  delayed: 'delayed',
 } as const;
 
 /**
  * Why a fulfillment order is on hold (Shopify's hold reasons). `awaiting_stock` is set only by the allocation of stock, and released only by it; the other three are staff's.
  */
-export type FulfillmentHoldReason =
-    (typeof FulfillmentHoldReason)[keyof typeof FulfillmentHoldReason];
+export type FulfillmentHoldReason = typeof FulfillmentHoldReason[keyof typeof FulfillmentHoldReason];
+
 
 export const FulfillmentHoldReason = {
-    awaiting_stock: 'awaiting_stock',
-    incorrect_address: 'incorrect_address',
-    high_risk: 'high_risk',
-    other: 'other'
+  awaiting_stock: 'awaiting_stock',
+  incorrect_address: 'incorrect_address',
+  high_risk: 'high_risk',
+  other: 'other',
 } as const;
 
 /**
  * Who canceled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `order`: the whole order was canceled. `found`: the lost parcel turned up, so the units owed for it are no longer owed (no refund).
  */
-export type FulfillmentCancelReason =
-    (typeof FulfillmentCancelReason)[keyof typeof FulfillmentCancelReason];
+export type FulfillmentCancelReason = typeof FulfillmentCancelReason[keyof typeof FulfillmentCancelReason];
+
 
 export const FulfillmentCancelReason = {
-    buyer: 'buyer',
-    staff: 'staff',
-    order: 'order',
-    found: 'found'
+  buyer: 'buyer',
+  staff: 'staff',
+  order: 'order',
+  found: 'found',
 } as const;
 
 /**
  * A fulfillment order as an account export carries it, with staff's hold note (their assessment of the buyer is the buyer's data) and without who wrote it.
  */
 export interface ExportFulfillmentOrder {
-    id: Id;
-    orderId: Id;
-    /** @minimum 1 */
-    number: number;
-    kind: FulfillmentOrderKind;
-    status: FulfillmentOrderStatus;
-    lines: FulfillmentOrderLine[];
-    holdNotice?: FulfillmentHoldNotice;
-    /** @maxLength 500 */
-    holdMessage?: string;
-    holdReason?: FulfillmentHoldReason;
-    /**
+  id: Id;
+  orderId: Id;
+  /** @minimum 1 */
+  number: number;
+  kind: FulfillmentOrderKind;
+  status: FulfillmentOrderStatus;
+  lines: FulfillmentOrderLine[];
+  holdNotice?: FulfillmentHoldNotice;
+  /** @maxLength 500 */
+  holdMessage?: string;
+  holdReason?: FulfillmentHoldReason;
+  /**
      * Staff's free text about the hold. Present until the retention sweep unsets it.
      * @maxLength 1000
      */
-    holdNote?: string;
-    /** The day promised when ordering, a day on the shop's calendar (`Shop.timeZone`). */
-    agreedAt?: string;
-    /** The day now expected, a day on the shop's calendar (`Shop.timeZone`). */
-    expectedAt?: string;
-    /** When the buyer was last told the date had moved or would be missed. */
-    lastNoticeAt?: string;
-    cancelReason?: FulfillmentCancelReason;
+  holdNote?: string;
+  /** The day promised when ordering, a day on the shop's calendar (`Shop.timeZone`). */
+  agreedAt?: string;
+  /** The day now expected, a day on the shop's calendar (`Shop.timeZone`). */
+  expectedAt?: string;
+  /** When the buyer was last told the date had moved or would be missed. */
+  lastNoticeAt?: string;
+  cancelReason?: FulfillmentCancelReason;
 }
 
 /**
  * Where a return stands: `requested → approved → received → closed`, or `requested → declined`, or `approved → canceled` (the goods never came). `canceled` is final and is not `closed`: it holds no units and counts as no goods back. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`.
  */
-export type ReturnStatus = (typeof ReturnStatus)[keyof typeof ReturnStatus];
+export type ReturnStatus = typeof ReturnStatus[keyof typeof ReturnStatus];
+
 
 export const ReturnStatus = {
-    requested: 'requested',
-    approved: 'approved',
-    declined: 'declined',
-    received: 'received',
-    closed: 'closed',
-    canceled: 'canceled'
+  requested: 'requested',
+  approved: 'approved',
+  declined: 'declined',
+  received: 'received',
+  closed: 'closed',
+  canceled: 'canceled',
 } as const;
 
 /**
  * Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
  */
-export type ReturnReason = (typeof ReturnReason)[keyof typeof ReturnReason];
+export type ReturnReason = typeof ReturnReason[keyof typeof ReturnReason];
+
 
 export const ReturnReason = {
-    withdrawal: 'withdrawal',
-    defective: 'defective',
-    wrong_item: 'wrong_item',
-    other: 'other'
+  withdrawal: 'withdrawal',
+  defective: 'defective',
+  wrong_item: 'wrong_item',
+  other: 'other',
 } as const;
 
 /**
  * Why staff declined, as a code the buyer reads in their own language and a shop can count: `return_period_ended` — past the window; `not_returnable` — exempt from returns (an Art. 16 exception) or sold as final sale; `no_defect_found` — a guarantee claim where the goods conform; `other` — see the message.
  */
-export type ReturnDeclineReason = (typeof ReturnDeclineReason)[keyof typeof ReturnDeclineReason];
+export type ReturnDeclineReason = typeof ReturnDeclineReason[keyof typeof ReturnDeclineReason];
+
 
 export const ReturnDeclineReason = {
-    return_period_ended: 'return_period_ended',
-    not_returnable: 'not_returnable',
-    no_defect_found: 'no_defect_found',
-    other: 'other'
+  return_period_ended: 'return_period_ended',
+  not_returnable: 'not_returnable',
+  no_defect_found: 'no_defect_found',
+  other: 'other',
 } as const;
 
 export type ExportReturnLinesItem = {
-    productId: Id;
-    /** @minimum 1 */
-    quantity: number;
-    title: string;
+  productId: Id;
+  /** @minimum 1 */
+  quantity: number;
+  title: string;
 };
 
 export interface ExportReturn {
-    id: Id;
-    orderId: Id;
-    status: ReturnStatus;
-    reason: ReturnReason;
-    note?: string;
-    declineReason?: ReturnDeclineReason;
-    declineMessage?: string;
-    lines: ExportReturnLinesItem[];
-    createdAt?: string;
+  id: Id;
+  orderId: Id;
+  status: ReturnStatus;
+  reason: ReturnReason;
+  note?: string;
+  declineReason?: ReturnDeclineReason;
+  declineMessage?: string;
+  lines: ExportReturnLinesItem[];
+  createdAt?: string;
 }
 
 /**
  * Whether the credential works right now, decided by the server. `revoked` and `expired` are final. `suspended` means the person who minted it can no longer sign in (banned, soft-deleted or erased): the key is refused with 401 and comes back by itself if they do. Checked in that order, so a revoked key never reads as `suspended`.
  */
-export type ApiKeyStatus = (typeof ApiKeyStatus)[keyof typeof ApiKeyStatus];
+export type ApiKeyStatus = typeof ApiKeyStatus[keyof typeof ApiKeyStatus];
+
 
 export const ApiKeyStatus = {
-    active: 'active',
-    expired: 'expired',
-    revoked: 'revoked',
-    suspended: 'suspended'
+  active: 'active',
+  expired: 'expired',
+  revoked: 'revoked',
+  suspended: 'suspended',
 } as const;
 
 export interface ExportApiKey {
-    id: Id;
-    name: string;
-    publicPrefix: string;
-    status: ApiKeyStatus;
-    /** @minItems 1 */
-    permissions: string[];
-    lastUsedAt?: string;
-    expiresAt: string;
-    revokedAt?: string;
-    createdAt: string;
-    updatedAt: string;
+  id: Id;
+  name: string;
+  publicPrefix: string;
+  status: ApiKeyStatus;
+  /** @minItems 1 */
+  permissions: string[];
+  lastUsedAt?: string;
+  expiresAt: string;
+  revokedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type ExampleStatus = (typeof ExampleStatus)[keyof typeof ExampleStatus];
+export type ExampleStatus = typeof ExampleStatus[keyof typeof ExampleStatus];
+
 
 export const ExampleStatus = {
-    draft: 'draft',
-    published: 'published',
-    archived: 'archived'
+  draft: 'draft',
+  published: 'published',
+  archived: 'archived',
 } as const;
 
 export interface ExportExample {
-    id: Id;
-    title: string;
-    body: string;
-    status: ExampleStatus;
-    userId: Id;
-    ownerName: string;
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
-    publishedAt?: string;
-    createdAt: string;
-    updatedAt?: string;
+  id: Id;
+  title: string;
+  body: string;
+  status: ExampleStatus;
+  userId: Id;
+  ownerName: string;
+  imageUrl?: ImageUrl;
+  thumbnailUrl?: ThumbnailUrl;
+  publishedAt?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 /**
  * Whose message this is. `own`: about the caller as a person or buyer. `staff`: a work notice sent because the caller's role does that work, not because it concerns them.
  */
-export type NotificationAudience = (typeof NotificationAudience)[keyof typeof NotificationAudience];
+export type NotificationAudience = typeof NotificationAudience[keyof typeof NotificationAudience];
+
 
 export const NotificationAudience = {
-    own: 'own',
-    staff: 'staff'
+  own: 'own',
+  staff: 'staff',
 } as const;
 
 /**
  * A webhook subscription was switched off after repeated delivery failures.
  */
 export interface WebhookDisabledParams {
-    subscriptionId: Id;
+  subscriptionId: Id;
 }
 
 /**
  * Meaning, not look — a client picks the colour. The four words most notification APIs share (Ant Design, Atlassian flags).
  */
-export type NotificationSeverity = (typeof NotificationSeverity)[keyof typeof NotificationSeverity];
+export type NotificationSeverity = typeof NotificationSeverity[keyof typeof NotificationSeverity];
+
 
 export const NotificationSeverity = {
-    info: 'info',
-    success: 'success',
-    warning: 'warning',
-    error: 'error'
+  info: 'info',
+  success: 'success',
+  warning: 'warning',
+  error: 'error',
 } as const;
 
-export type NotificationStaffWebhookDisabledCode =
-    (typeof NotificationStaffWebhookDisabledCode)[keyof typeof NotificationStaffWebhookDisabledCode];
+export type NotificationStaffWebhookDisabledCode = typeof NotificationStaffWebhookDisabledCode[keyof typeof NotificationStaffWebhookDisabledCode];
+
 
 export const NotificationStaffWebhookDisabledCode = {
-    'notificationsstaffwebhook-disabled': 'notifications.staff.webhook-disabled'
+  'notificationsstaffwebhook-disabled': 'notifications.staff.webhook-disabled',
 } as const;
 
 /**
  * A webhook subscription was switched off after repeated failures; staff who manage webhooks fix the endpoint and re-enable it.
  */
 export interface NotificationStaffWebhookDisabled {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffWebhookDisabledCode;
-    params: WebhookDisabledParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffWebhookDisabledCode;
+  params: WebhookDisabledParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
 /**
  * A task opened in the caller's jurisdiction. Ids and closed codes only: the task page has the rest, and no visitor text travels in a notice.
  */
 export interface TaskOpenedParams {
-    taskId: Id;
-    /** The task's kind (`contact`, `account_review`, ...). */
-    kind: string;
-    /** A contact task's category, when the visitor chose one. */
-    category?: string;
-    /** The staff screen that does the work, when the opener named one: a path under the staff frontend's locale (`orders/<id>`), opaque to this module. A reader opens it when their role can; absent means the to-do's own page. */
-    work?: string;
+  taskId: Id;
+  /** The task's kind (`contact`, `account_review`, ...). */
+  kind: string;
+  /** A contact task's category, when the visitor chose one. */
+  category?: string;
+  /** The staff screen that does the work, when the opener named one: a path under the staff frontend's locale (`orders/<id>`), opaque to this module. A reader opens it when their role can; absent means the to-do's own page. */
+  work?: string;
 }
 
-export type NotificationStaffTaskOpenedCode =
-    (typeof NotificationStaffTaskOpenedCode)[keyof typeof NotificationStaffTaskOpenedCode];
+export type NotificationStaffTaskOpenedCode = typeof NotificationStaffTaskOpenedCode[keyof typeof NotificationStaffTaskOpenedCode];
+
 
 export const NotificationStaffTaskOpenedCode = {
-    'notificationsstafftask-opened': 'notifications.staff.task-opened'
+  'notificationsstafftask-opened': 'notifications.staff.task-opened',
 } as const;
 
 /**
  * A task opened in a jurisdiction the caller works; whoever holds its permission set takes it.
  */
 export interface NotificationStaffTaskOpened {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffTaskOpenedCode;
-    params: TaskOpenedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffTaskOpenedCode;
+  params: TaskOpenedParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationStaffTaskOverdueCode =
-    (typeof NotificationStaffTaskOverdueCode)[keyof typeof NotificationStaffTaskOverdueCode];
+export type NotificationStaffTaskOverdueCode = typeof NotificationStaffTaskOverdueCode[keyof typeof NotificationStaffTaskOverdueCode];
+
 
 export const NotificationStaffTaskOverdueCode = {
-    'notificationsstafftask-overdue': 'notifications.staff.task-overdue'
+  'notificationsstafftask-overdue': 'notifications.staff.task-overdue',
 } as const;
 
 /**
  * An open task in a jurisdiction the caller works passed its due date; said once per task.
  */
 export interface NotificationStaffTaskOverdue {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffTaskOverdueCode;
-    params: TaskOpenedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffTaskOverdueCode;
+  params: TaskOpenedParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationStaffTaskDueSoonCode =
-    (typeof NotificationStaffTaskDueSoonCode)[keyof typeof NotificationStaffTaskDueSoonCode];
+export type NotificationStaffTaskDueSoonCode = typeof NotificationStaffTaskDueSoonCode[keyof typeof NotificationStaffTaskDueSoonCode];
+
 
 export const NotificationStaffTaskDueSoonCode = {
-    'notificationsstafftask-due-soon': 'notifications.staff.task-due-soon'
+  'notificationsstafftask-due-soon': 'notifications.staff.task-due-soon',
 } as const;
 
 /**
  * An open task in a jurisdiction the caller works is three days from its due date; said once per task, never for a contact message.
  */
 export interface NotificationStaffTaskDueSoon {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffTaskDueSoonCode;
-    params: TaskOpenedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffTaskDueSoonCode;
+  params: TaskOpenedParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
 /**
  * A task was given to the caller by someone else.
  */
 export interface TaskAssignedParams {
-    taskId: Id;
-    /** The task's kind. */
-    kind: string;
+  taskId: Id;
+  /** The task's kind. */
+  kind: string;
 }
 
-export type NotificationStaffTaskAssignedCode =
-    (typeof NotificationStaffTaskAssignedCode)[keyof typeof NotificationStaffTaskAssignedCode];
+export type NotificationStaffTaskAssignedCode = typeof NotificationStaffTaskAssignedCode[keyof typeof NotificationStaffTaskAssignedCode];
+
 
 export const NotificationStaffTaskAssignedCode = {
-    'notificationsstafftask-assigned': 'notifications.staff.task-assigned'
+  'notificationsstafftask-assigned': 'notifications.staff.task-assigned',
 } as const;
 
 /**
  * A colleague gave the caller a task.
  */
 export interface NotificationStaffTaskAssigned {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffTaskAssignedCode;
-    params: TaskAssignedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffTaskAssignedCode;
+  params: TaskAssignedParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
 /**
  * A domain event parked as dead. The name and the record it was about, the payload stays in the outbox.
  */
 export interface OutboxDeadParams {
-    /** The domain event's name (`order.paid`). */
-    eventName: string;
-    /** What the event was about (an order or account id). */
-    aggregateId: string;
+  /** The domain event's name (`order.paid`). */
+  eventName: string;
+  /** What the event was about (an order or account id). */
+  aggregateId: string;
 }
 
-export type NotificationStaffOutboxDeadCode =
-    (typeof NotificationStaffOutboxDeadCode)[keyof typeof NotificationStaffOutboxDeadCode];
+export type NotificationStaffOutboxDeadCode = typeof NotificationStaffOutboxDeadCode[keyof typeof NotificationStaffOutboxDeadCode];
+
 
 export const NotificationStaffOutboxDeadCode = {
-    'notificationsstaffoutbox-dead': 'notifications.staff.outbox-dead'
+  'notificationsstaffoutbox-dead': 'notifications.staff.outbox-dead',
 } as const;
 
 /**
  * A domain event could not be delivered after every retry and was parked; administrators look at the record it names.
  */
 export interface NotificationStaffOutboxDead {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffOutboxDeadCode;
-    params: OutboxDeadParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffOutboxDeadCode;
+  params: OutboxDeadParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationFulfillmentHeldCode =
-    (typeof NotificationFulfillmentHeldCode)[keyof typeof NotificationFulfillmentHeldCode];
+export type NotificationFulfillmentHeldCode = typeof NotificationFulfillmentHeldCode[keyof typeof NotificationFulfillmentHeldCode];
+
 
 export const NotificationFulfillmentHeldCode = {
-    'shop-tasksfulfillment-held': 'shop-tasks.fulfillment-held'
+  'shop-tasksfulfillment-held': 'shop-tasks.fulfillment-held',
 } as const;
 
-export type FulfillmentHeldParamsNotice =
-    (typeof FulfillmentHeldParamsNotice)[keyof typeof FulfillmentHeldParamsNotice];
+export type FulfillmentHeldParamsNotice = typeof FulfillmentHeldParamsNotice[keyof typeof FulfillmentHeldParamsNotice];
+
 
 export const FulfillmentHeldParamsNotice = {
-    check_address: 'check_address',
-    delayed: 'delayed'
+  check_address: 'check_address',
+  delayed: 'delayed',
 } as const;
 
 /**
  * What the buyer needs to read a hold notice: which order and fulfillment order, whether the address needs a look (`check_address`) or the order is only `delayed`, and the sentence staff wrote for them, if any. Never staff's reason.
  */
 export interface FulfillmentHeldParams {
-    orderId: Id;
-    /** The order's number as the buyer knows it (`2026-000041`), shown as `#…`. */
-    orderNumber: string;
-    fulfillmentOrderId: Id;
-    notice: FulfillmentHeldParamsNotice;
-    /** @maxLength 500 */
-    message?: string;
+  orderId: Id;
+  /** The order's number as the buyer knows it (`2026-000041`), shown as `#…`. */
+  orderNumber: string;
+  fulfillmentOrderId: Id;
+  notice: FulfillmentHeldParamsNotice;
+  /** @maxLength 500 */
+  message?: string;
 }
 
 /**
  * Part of an order the caller bought is held back, and they can act (check the address) or have a message from the shop.
  */
 export interface NotificationFulfillmentHeld {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationFulfillmentHeldCode;
-    params: FulfillmentHeldParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationFulfillmentHeldCode;
+  params: FulfillmentHeldParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationShipmentLostCode =
-    (typeof NotificationShipmentLostCode)[keyof typeof NotificationShipmentLostCode];
+export type NotificationShipmentLostCode = typeof NotificationShipmentLostCode[keyof typeof NotificationShipmentLostCode];
+
 
 export const NotificationShipmentLostCode = {
-    'shop-tasksshipment-lost': 'shop-tasks.shipment-lost'
+  'shop-tasksshipment-lost': 'shop-tasks.shipment-lost',
 } as const;
 
-export type ShipmentLostParamsReason =
-    (typeof ShipmentLostParamsReason)[keyof typeof ShipmentLostParamsReason];
+export type ShipmentLostParamsReason = typeof ShipmentLostParamsReason[keyof typeof ShipmentLostParamsReason];
+
 
 export const ShipmentLostParamsReason = {
-    lost: 'lost',
-    damaged: 'damaged'
+  lost: 'lost',
+  damaged: 'damaged',
 } as const;
 
 /**
  * What the buyer needs to read a lost-parcel notice: which order and shipment, whether it was lost or damaged in transit, the sentence staff wrote for them if any, and the units the shelf could not cover again with the date they are now expected (absent when everything is being sent again from the shelf).
  */
 export interface ShipmentLostParams {
-    orderId: Id;
-    /** The order's number as the buyer knows it (`2026-000041`), shown as `#…`. */
-    orderNumber: string;
-    shipmentId: Id;
-    reason: ShipmentLostParamsReason;
-    /** @maxLength 500 */
-    message?: string;
-    /** The titles of the products still to be restocked, as the order froze them. */
-    owed?: string[];
-    /** The day the owed units are expected, a day on the shop's calendar (`Shop.timeZone`). */
-    expectedAt?: string;
+  orderId: Id;
+  /** The order's number as the buyer knows it (`2026-000041`), shown as `#…`. */
+  orderNumber: string;
+  shipmentId: Id;
+  reason: ShipmentLostParamsReason;
+  /** @maxLength 500 */
+  message?: string;
+  /** The titles of the products still to be restocked, as the order froze them. */
+  owed?: string[];
+  /** The day the owed units are expected, a day on the shop's calendar (`Shop.timeZone`). */
+  expectedAt?: string;
 }
 
 /**
  * A parcel the caller was waiting for was reported lost or damaged in transit; the shop sends it again or refunds.
  */
 export interface NotificationShipmentLost {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationShipmentLostCode;
-    params: ShipmentLostParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationShipmentLostCode;
+  params: ShipmentLostParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationStockAlertCode =
-    (typeof NotificationStockAlertCode)[keyof typeof NotificationStockAlertCode];
+export type NotificationStockAlertCode = typeof NotificationStockAlertCode[keyof typeof NotificationStockAlertCode];
+
 
 export const NotificationStockAlertCode = {
-    'shop-tasksstock-alert': 'shop-tasks.stock-alert'
+  'shop-tasksstock-alert': 'shop-tasks.stock-alert',
 } as const;
 
-export interface ProductTitles {
-    [key: string]: string;
-}
+export interface ProductTitles {[key: string]: string}
 
 export interface CartLineRemovedParams {
-    productId: Id;
-    titles: ProductTitles;
+  productId: Id;
+  titles: ProductTitles;
 }
 
 /**
  * A product the caller asked to be told about can be ordered again. Sent once, then the request is gone.
  */
 export interface NotificationStockAlert {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStockAlertCode;
-    params: CartLineRemovedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStockAlertCode;
+  params: CartLineRemovedParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationFulfillmentDelayedCode =
-    (typeof NotificationFulfillmentDelayedCode)[keyof typeof NotificationFulfillmentDelayedCode];
+export type NotificationFulfillmentDelayedCode = typeof NotificationFulfillmentDelayedCode[keyof typeof NotificationFulfillmentDelayedCode];
+
 
 export const NotificationFulfillmentDelayedCode = {
-    'shop-tasksfulfillment-delayed': 'shop-tasks.fulfillment-delayed'
+  'shop-tasksfulfillment-delayed': 'shop-tasks.fulfillment-delayed',
 } as const;
 
 /**
  * What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised and the date now expected (absent when there is none).
  */
 export interface FulfillmentDelayedParams {
-    orderId: Id;
-    /** The order's number as the buyer knows it (`2026-000041`), shown as `#…`. */
-    orderNumber: string;
-    fulfillmentOrderId: Id;
-    /** The waiting products' titles, as the order froze them. */
-    titles: string[];
-    /** The day promised, a day on the shop's calendar (`Shop.timeZone`). */
-    agreedAt: string;
-    /** The day now expected, a day on the shop's calendar (`Shop.timeZone`). */
-    expectedAt?: string;
+  orderId: Id;
+  /** The order's number as the buyer knows it (`2026-000041`), shown as `#…`. */
+  orderNumber: string;
+  fulfillmentOrderId: Id;
+  /** The waiting products' titles, as the order froze them. */
+  titles: string[];
+  /** The day promised, a day on the shop's calendar (`Shop.timeZone`). */
+  agreedAt: string;
+  /** The day now expected, a day on the shop's calendar (`Shop.timeZone`). */
+  expectedAt?: string;
 }
 
 /**
  * A preorder the caller paid for will arrive later than promised; cancelling is open and silence keeps waiting.
  */
 export interface NotificationFulfillmentDelayed {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationFulfillmentDelayedCode;
-    params: FulfillmentDelayedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationFulfillmentDelayedCode;
+  params: FulfillmentDelayedParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationCartLineRemovedCode =
-    (typeof NotificationCartLineRemovedCode)[keyof typeof NotificationCartLineRemovedCode];
+export type NotificationCartLineRemovedCode = typeof NotificationCartLineRemovedCode[keyof typeof NotificationCartLineRemovedCode];
+
 
 export const NotificationCartLineRemovedCode = {
-    'shop-taskscart-line-removed': 'shop-tasks.cart-line-removed'
+  'shop-taskscart-line-removed': 'shop-tasks.cart-line-removed',
 } as const;
 
 /**
  * A product left the catalogue and left the caller's cart with it.
  */
 export interface NotificationCartLineRemoved {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationCartLineRemovedCode;
-    params: CartLineRemovedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationCartLineRemovedCode;
+  params: CartLineRemovedParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationWishlistItemRemovedCode =
-    (typeof NotificationWishlistItemRemovedCode)[keyof typeof NotificationWishlistItemRemovedCode];
+export type NotificationWishlistItemRemovedCode = typeof NotificationWishlistItemRemovedCode[keyof typeof NotificationWishlistItemRemovedCode];
+
 
 export const NotificationWishlistItemRemovedCode = {
-    'shop-taskswishlist-item-removed': 'shop-tasks.wishlist-item-removed'
+  'shop-taskswishlist-item-removed': 'shop-tasks.wishlist-item-removed',
 } as const;
 
 /**
  * A product left the catalogue and left the caller's wishlist with it.
  */
 export interface NotificationWishlistItemRemoved {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationWishlistItemRemovedCode;
-    params: CartLineRemovedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationWishlistItemRemovedCode;
+  params: CartLineRemovedParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationCartMergeRefusedCode =
-    (typeof NotificationCartMergeRefusedCode)[keyof typeof NotificationCartMergeRefusedCode];
+export type NotificationCartMergeRefusedCode = typeof NotificationCartMergeRefusedCode[keyof typeof NotificationCartMergeRefusedCode];
+
 
 export const NotificationCartMergeRefusedCode = {
-    'shop-taskscart-merge-refused': 'shop-tasks.cart-merge-refused'
+  'shop-taskscart-merge-refused': 'shop-tasks.cart-merge-refused',
 } as const;
 
 export type CartMergeRefusedParamsLinesItem = {
-    productId: Id;
-    /** @minimum 1 */
-    requested: number;
-    titles: ProductTitles;
+  productId: Id;
+  /** @minimum 1 */
+  requested: number;
+  titles: ProductTitles;
 };
 
 export interface CartMergeRefusedParams {
-    /** The guest-cart lines `POST /cart/merge` could not add at all (`removed` or `cart_full`). */
-    lines: CartMergeRefusedParamsLinesItem[];
+  /** The guest-cart lines `POST /cart/merge` could not add at all (`removed` or `cart_full`). */
+  lines: CartMergeRefusedParamsLinesItem[];
 }
 
 /**
  * Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available or the cart was full.
  */
 export interface NotificationCartMergeRefused {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationCartMergeRefusedCode;
-    params: CartMergeRefusedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationCartMergeRefusedCode;
+  params: CartMergeRefusedParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationStaffPurchaseHoldPlacedCode =
-    (typeof NotificationStaffPurchaseHoldPlacedCode)[keyof typeof NotificationStaffPurchaseHoldPlacedCode];
+export type NotificationStaffPurchaseHoldPlacedCode = typeof NotificationStaffPurchaseHoldPlacedCode[keyof typeof NotificationStaffPurchaseHoldPlacedCode];
+
 
 export const NotificationStaffPurchaseHoldPlacedCode = {
-    'shop-tasksstaffpurchase-hold-placed': 'shop-tasks.staff.purchase-hold-placed'
+  'shop-tasksstaffpurchase-hold-placed': 'shop-tasks.staff.purchase-hold-placed',
 } as const;
 
 /**
  * The shop's rule paused a buyer's checkout. Ids and instants only: the account's own page has the rest.
  */
 export interface PurchaseHoldPlacedParams {
-    userId: Id;
-    /** When the pause ends by itself. */
-    until: string;
+  userId: Id;
+  /** When the pause ends by itself. */
+  until: string;
 }
 
 /**
  * A buyer's checkout was paused by the shop's cancellation rule; staff who can ban decide whether to step in.
  */
 export interface NotificationStaffPurchaseHoldPlaced {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffPurchaseHoldPlacedCode;
-    params: PurchaseHoldPlacedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffPurchaseHoldPlacedCode;
+  params: PurchaseHoldPlacedParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationStaffReturnRequestedCode =
-    (typeof NotificationStaffReturnRequestedCode)[keyof typeof NotificationStaffReturnRequestedCode];
+export type NotificationStaffReturnRequestedCode = typeof NotificationStaffReturnRequestedCode[keyof typeof NotificationStaffReturnRequestedCode];
+
 
 export const NotificationStaffReturnRequestedCode = {
-    'shop-tasksstaffreturn-requested': 'shop-tasks.staff.return-requested'
+  'shop-tasksstaffreturn-requested': 'shop-tasks.staff.return-requested',
 } as const;
 
 /**
  * A return request is waiting for a decision. Ids only, the return's page has the rest.
  */
 export interface ReturnRequestedParams {
-    returnId: Id;
-    orderId: Id;
-    /** The order's number as the buyer knows it (`2026-000041`), shown as `#…`. */
-    orderNumber: string;
+  returnId: Id;
+  orderId: Id;
+  /** The order's number as the buyer knows it (`2026-000041`), shown as `#…`. */
+  orderNumber: string;
 }
 
 /**
  * A buyer asked to return goods; staff who decide returns take it.
  */
 export interface NotificationStaffReturnRequested {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffReturnRequestedCode;
-    params: ReturnRequestedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffReturnRequestedCode;
+  params: ReturnRequestedParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationStaffOutcomeUnknownCode =
-    (typeof NotificationStaffOutcomeUnknownCode)[keyof typeof NotificationStaffOutcomeUnknownCode];
+export type NotificationStaffOutcomeUnknownCode = typeof NotificationStaffOutcomeUnknownCode[keyof typeof NotificationStaffOutcomeUnknownCode];
+
 
 export const NotificationStaffOutcomeUnknownCode = {
-    'shop-tasksstaffoutcome-unknown': 'shop-tasks.staff.outcome-unknown'
+  'shop-tasksstaffoutcome-unknown': 'shop-tasks.staff.outcome-unknown',
 } as const;
 
 /**
  * Which write it was.
  */
-export type OutcomeUnknownParamsOperation =
-    (typeof OutcomeUnknownParamsOperation)[keyof typeof OutcomeUnknownParamsOperation];
+export type OutcomeUnknownParamsOperation = typeof OutcomeUnknownParamsOperation[keyof typeof OutcomeUnknownParamsOperation];
+
 
 export const OutcomeUnknownParamsOperation = {
-    refund: 'refund',
-    'receive-stock': 'receive-stock',
-    'adjust-stock': 'adjust-stock',
-    ship: 'ship'
+  refund: 'refund',
+  'receive-stock': 'receive-stock',
+  'adjust-stock': 'adjust-stock',
+  ship: 'ship',
 } as const;
 
 /**
  * A do-not-retry write whose first attempt never reported an outcome. Nothing was run again; staff read the subject back and decide.
  */
 export interface OutcomeUnknownParams {
-    /** Which write it was. */
-    operation: OutcomeUnknownParamsOperation;
-    /** The order's id for a refund or a ship, the product's id for a stock movement. */
-    subjectId: Id;
-    /** The order's number as the buyer knows it (`2026-000041`, shown as `#…`) for a refund or a ship, the product's name for a stock movement. */
-    subjectName: string;
-    /** When the first attempt began. */
-    since: string;
+  /** Which write it was. */
+  operation: OutcomeUnknownParamsOperation;
+  /** The order's id for a refund or a ship, the product's id for a stock movement. */
+  subjectId: Id;
+  /** The order's number as the buyer knows it (`2026-000041`, shown as `#…`) for a refund or a ship, the product's name for a stock movement. */
+  subjectName: string;
+  /** When the first attempt began. */
+  since: string;
 }
 
 /**
  * A refund, a ship or a stock movement began and never reported how it ended; staff who do that work check the result.
  */
 export interface NotificationStaffOutcomeUnknown {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffOutcomeUnknownCode;
-    params: OutcomeUnknownParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffOutcomeUnknownCode;
+  params: OutcomeUnknownParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationStaffTransfersDueCode =
-    (typeof NotificationStaffTransfersDueCode)[keyof typeof NotificationStaffTransfersDueCode];
+export type NotificationStaffTransfersDueCode = typeof NotificationStaffTransfersDueCode[keyof typeof NotificationStaffTransfersDueCode];
+
 
 export const NotificationStaffTransfersDueCode = {
-    'shop-tasksstafftransfers-due': 'shop-tasks.staff.transfers-due'
+  'shop-tasksstafftransfers-due': 'shop-tasks.staff.transfers-due',
 } as const;
 
 /**
  * A summary row of how many items need the reader today. The screen it points at lists them.
  */
 export interface WorkCountParams {
-    /** @minimum 1 */
-    count: number;
-    /** The staff list that shows what the count is of, filtered to it: a path under the staff frontend's locale, query included (`sales/orders?status=paid`). */
-    work: string;
+  /** @minimum 1 */
+  count: number;
+  /** The staff list that shows what the count is of, filtered to it: a path under the staff frontend's locale, query included (`sales/orders?status=paid`). */
+  work: string;
 }
 
 /**
  * Bank transfers still unpaid whose pay-by date is near.
  */
 export interface NotificationStaffTransfersDue {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffTransfersDueCode;
-    params: WorkCountParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffTransfersDueCode;
+  params: WorkCountParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationStaffPreordersLateCode =
-    (typeof NotificationStaffPreordersLateCode)[keyof typeof NotificationStaffPreordersLateCode];
+export type NotificationStaffPreordersLateCode = typeof NotificationStaffPreordersLateCode[keyof typeof NotificationStaffPreordersLateCode];
+
 
 export const NotificationStaffPreordersLateCode = {
-    'shop-tasksstaffpreorders-late': 'shop-tasks.staff.preorders-late'
+  'shop-tasksstaffpreorders-late': 'shop-tasks.staff.preorders-late',
 } as const;
 
 /**
  * Preorders and backorders past their expected date with units still owed.
  */
 export interface NotificationStaffPreordersLate {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffPreordersLateCode;
-    params: WorkCountParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffPreordersLateCode;
+  params: WorkCountParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationStaffDeliveryHoldsOpenCode =
-    (typeof NotificationStaffDeliveryHoldsOpenCode)[keyof typeof NotificationStaffDeliveryHoldsOpenCode];
+export type NotificationStaffDeliveryHoldsOpenCode = typeof NotificationStaffDeliveryHoldsOpenCode[keyof typeof NotificationStaffDeliveryHoldsOpenCode];
+
 
 export const NotificationStaffDeliveryHoldsOpenCode = {
-    'shop-tasksstaffdelivery-holds-open': 'shop-tasks.staff.delivery-holds-open'
+  'shop-tasksstaffdelivery-holds-open': 'shop-tasks.staff.delivery-holds-open',
 } as const;
 
 /**
  * Fulfillment orders held for a reason other than waiting for stock, for longer than the shop allows.
  */
 export interface NotificationStaffDeliveryHoldsOpen {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffDeliveryHoldsOpenCode;
-    params: WorkCountParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffDeliveryHoldsOpenCode;
+  params: WorkCountParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationStaffReturnsAwaitingGoodsCode =
-    (typeof NotificationStaffReturnsAwaitingGoodsCode)[keyof typeof NotificationStaffReturnsAwaitingGoodsCode];
+export type NotificationStaffReturnsAwaitingGoodsCode = typeof NotificationStaffReturnsAwaitingGoodsCode[keyof typeof NotificationStaffReturnsAwaitingGoodsCode];
+
 
 export const NotificationStaffReturnsAwaitingGoodsCode = {
-    'shop-tasksstaffreturns-awaiting-goods': 'shop-tasks.staff.returns-awaiting-goods'
+  'shop-tasksstaffreturns-awaiting-goods': 'shop-tasks.staff.returns-awaiting-goods',
 } as const;
 
 /**
  * Approved returns, withdrawals and faulty or wrong items, still with neither goods nor proof of sending long after the buyer's days to send them ran out.
  */
 export interface NotificationStaffReturnsAwaitingGoods {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffReturnsAwaitingGoodsCode;
-    params: WorkCountParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffReturnsAwaitingGoodsCode;
+  params: WorkCountParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationStaffReturnsUndecidedCode =
-    (typeof NotificationStaffReturnsUndecidedCode)[keyof typeof NotificationStaffReturnsUndecidedCode];
+export type NotificationStaffReturnsUndecidedCode = typeof NotificationStaffReturnsUndecidedCode[keyof typeof NotificationStaffReturnsUndecidedCode];
+
 
 export const NotificationStaffReturnsUndecidedCode = {
-    'shop-tasksstaffreturns-undecided': 'shop-tasks.staff.returns-undecided'
+  'shop-tasksstaffreturns-undecided': 'shop-tasks.staff.returns-undecided',
 } as const;
 
 /**
  * Return requests still awaiting a decision after the shop reminder time.
  */
 export interface NotificationStaffReturnsUndecided {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffReturnsUndecidedCode;
-    params: WorkCountParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffReturnsUndecidedCode;
+  params: WorkCountParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationStaffLowStockCode =
-    (typeof NotificationStaffLowStockCode)[keyof typeof NotificationStaffLowStockCode];
+export type NotificationStaffLowStockCode = typeof NotificationStaffLowStockCode[keyof typeof NotificationStaffLowStockCode];
+
 
 export const NotificationStaffLowStockCode = {
-    'shop-tasksstafflow-stock': 'shop-tasks.staff.low-stock'
+  'shop-tasksstafflow-stock': 'shop-tasks.staff.low-stock',
 } as const;
 
 /**
  * Products at or under the low-stock threshold.
  */
 export interface NotificationStaffLowStock {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffLowStockCode;
-    params: WorkCountParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffLowStockCode;
+  params: WorkCountParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationStaffUnshippedCode =
-    (typeof NotificationStaffUnshippedCode)[keyof typeof NotificationStaffUnshippedCode];
+export type NotificationStaffUnshippedCode = typeof NotificationStaffUnshippedCode[keyof typeof NotificationStaffUnshippedCode];
+
 
 export const NotificationStaffUnshippedCode = {
-    'shop-tasksstaffunshipped': 'shop-tasks.staff.unshipped'
+  'shop-tasksstaffunshipped': 'shop-tasks.staff.unshipped',
 } as const;
 
 /**
  * Paid orders not handed to a carrier for longer than the shop allows.
  */
 export interface NotificationStaffUnshipped {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffUnshippedCode;
-    params: WorkCountParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffUnshippedCode;
+  params: WorkCountParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationStaffAwaitingTrackingCode =
-    (typeof NotificationStaffAwaitingTrackingCode)[keyof typeof NotificationStaffAwaitingTrackingCode];
+export type NotificationStaffAwaitingTrackingCode = typeof NotificationStaffAwaitingTrackingCode[keyof typeof NotificationStaffAwaitingTrackingCode];
+
 
 export const NotificationStaffAwaitingTrackingCode = {
-    'shop-tasksstaffawaiting-tracking': 'shop-tasks.staff.awaiting-tracking'
+  'shop-tasksstaffawaiting-tracking': 'shop-tasks.staff.awaiting-tracking',
 } as const;
 
 /**
  * Shipped parcels on a tracked method that still have no tracking code.
  */
 export interface NotificationStaffAwaitingTracking {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffAwaitingTrackingCode;
-    params: WorkCountParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffAwaitingTrackingCode;
+  params: WorkCountParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationStaffUndeliveredCode =
-    (typeof NotificationStaffUndeliveredCode)[keyof typeof NotificationStaffUndeliveredCode];
+export type NotificationStaffUndeliveredCode = typeof NotificationStaffUndeliveredCode[keyof typeof NotificationStaffUndeliveredCode];
+
 
 export const NotificationStaffUndeliveredCode = {
-    'shop-tasksstaffundelivered': 'shop-tasks.staff.undelivered'
+  'shop-tasksstaffundelivered': 'shop-tasks.staff.undelivered',
 } as const;
 
 /**
  * Parcels shipped and never marked arrived, the buyer withdrawal window and guarantee have not started.
  */
 export interface NotificationStaffUndelivered {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffUndeliveredCode;
-    params: WorkCountParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffUndeliveredCode;
+  params: WorkCountParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type NotificationStaffStaleRefundsCode =
-    (typeof NotificationStaffStaleRefundsCode)[keyof typeof NotificationStaffStaleRefundsCode];
+export type NotificationStaffStaleRefundsCode = typeof NotificationStaffStaleRefundsCode[keyof typeof NotificationStaffStaleRefundsCode];
+
 
 export const NotificationStaffStaleRefundsCode = {
-    'shop-tasksstaffstale-refunds': 'shop-tasks.staff.stale-refunds'
+  'shop-tasksstaffstale-refunds': 'shop-tasks.staff.stale-refunds',
 } as const;
 
 /**
  * Provider refunds open past the attention threshold.
  */
 export interface NotificationStaffStaleRefunds {
-    id: Id;
-    audience: NotificationAudience;
-    code: NotificationStaffStaleRefundsCode;
-    params: WorkCountParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
+  id: Id;
+  audience: NotificationAudience;
+  code: NotificationStaffStaleRefundsCode;
+  params: WorkCountParams;
+  severity: NotificationSeverity;
+  /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+  readAt?: string;
+  createdAt: string;
 }
 
-export type Notification =
-    | NotificationStaffWebhookDisabled
-    | NotificationStaffTaskOpened
-    | NotificationStaffTaskOverdue
-    | NotificationStaffTaskDueSoon
-    | NotificationStaffTaskAssigned
-    | NotificationStaffOutboxDead
-    | NotificationFulfillmentHeld
-    | NotificationShipmentLost
-    | NotificationStockAlert
-    | NotificationFulfillmentDelayed
-    | NotificationCartLineRemoved
-    | NotificationWishlistItemRemoved
-    | NotificationCartMergeRefused
-    | NotificationStaffPurchaseHoldPlaced
-    | NotificationStaffReturnRequested
-    | NotificationStaffOutcomeUnknown
-    | NotificationStaffTransfersDue
-    | NotificationStaffPreordersLate
-    | NotificationStaffDeliveryHoldsOpen
-    | NotificationStaffReturnsAwaitingGoods
-    | NotificationStaffReturnsUndecided
-    | NotificationStaffLowStock
-    | NotificationStaffUnshipped
-    | NotificationStaffAwaitingTracking
-    | NotificationStaffUndelivered
-    | NotificationStaffStaleRefunds;
+export type Notification = NotificationStaffWebhookDisabled | NotificationStaffTaskOpened | NotificationStaffTaskOverdue | NotificationStaffTaskDueSoon | NotificationStaffTaskAssigned | NotificationStaffOutboxDead | NotificationFulfillmentHeld | NotificationShipmentLost | NotificationStockAlert | NotificationFulfillmentDelayed | NotificationCartLineRemoved | NotificationWishlistItemRemoved | NotificationCartMergeRefused | NotificationStaffPurchaseHoldPlaced | NotificationStaffReturnRequested | NotificationStaffOutcomeUnknown | NotificationStaffTransfersDue | NotificationStaffPreordersLate | NotificationStaffDeliveryHoldsOpen | NotificationStaffReturnsAwaitingGoods | NotificationStaffReturnsUndecided | NotificationStaffLowStock | NotificationStaffUnshipped | NotificationStaffAwaitingTracking | NotificationStaffUndelivered | NotificationStaffStaleRefunds;
 
 /**
  * One work notice this account received as staff, without the facts it named.
  */
 export interface StaffNoticeExport {
-    code: string;
-    createdAt: string;
-    readAt?: string;
+  code: string;
+  createdAt: string;
+  readAt?: string;
 }
 
 export interface StockAlert {
-    productId: Id;
-    createdAt: string;
+  productId: Id;
+  createdAt: string;
 }
 
 export type AccountExportResponseInvoicing = {
-    invoices: ExportInvoiceDocument[];
-    creditNotes: ExportInvoiceDocument[];
+  invoices: ExportInvoiceDocument[];
+  creditNotes: ExportInvoiceDocument[];
 };
 
-export type AccountExportResponseRolesItemScope =
-    (typeof AccountExportResponseRolesItemScope)[keyof typeof AccountExportResponseRolesItemScope];
+export type AccountExportResponseRolesItemScope = typeof AccountExportResponseRolesItemScope[keyof typeof AccountExportResponseRolesItemScope];
+
 
 export const AccountExportResponseRolesItemScope = {
-    tenant: 'tenant',
-    platform: 'platform'
+  tenant: 'tenant',
+  platform: 'platform',
 } as const;
 
 export type AccountExportResponseRolesItem = {
-    role: string;
-    scope: AccountExportResponseRolesItemScope;
+  role: string;
+  scope: AccountExportResponseRolesItemScope;
 };
 
 export interface AccountExportResponse {
-    exportedAt: string;
-    profile: Account;
-    auditLog: AuditEntryItem[];
-    consultations: AuditConsultations;
-    sessions: ExportSession[];
-    addresses: Address[];
-    signInMethods: ExportSignInMethods;
-    /** The contact messages this person owns: what they sent while signed in, plus what was sent under their verified email address. Staff notes are included without their author. Always present, empty when there are none. */
-    tasks: ExportTask[];
-    /** The tasks the system opened about this person (a refund owed, an account under review, an export that failed). Every field except the staff who handled them. Always present, empty when there are none. */
-    systemTasks: ExportSystemTask[];
-    cart: CartItem[];
-    wishlist: WishlistExportItem[];
-    orders: ExportOrder[];
-    orderTimeline: OrderTimelineExportEntry[];
-    payments: ExportPayment[];
-    invoicing: AccountExportResponseInvoicing;
-    shipments: ExportShipment[];
-    fulfillmentOrders: ExportFulfillmentOrder[];
-    returns: ExportReturn[];
-    apiKeys: ExportApiKey[];
-    roles: AccountExportResponseRolesItem[];
-    examples: ExportExample[];
-    notifications: Notification[];
-    staffNotifications: StaffNoticeExport[];
-    stockAlerts: StockAlert[];
+  exportedAt: string;
+  profile: Account;
+  auditLog: AuditEntryItem[];
+  consultations: AuditConsultations;
+  sessions: ExportSession[];
+  addresses: Address[];
+  signInMethods: ExportSignInMethods;
+  /** The contact messages this person owns: what they sent while signed in, plus what was sent under their verified email address. Staff notes are included without their author. Always present, empty when there are none. */
+  tasks: ExportTask[];
+  /** The tasks the system opened about this person (a refund owed, an account under review, an export that failed). Every field except the staff who handled them. Always present, empty when there are none. */
+  systemTasks: ExportSystemTask[];
+  cart: CartItem[];
+  wishlist: WishlistExportItem[];
+  orders: ExportOrder[];
+  orderTimeline: OrderTimelineExportEntry[];
+  payments: ExportPayment[];
+  invoicing: AccountExportResponseInvoicing;
+  shipments: ExportShipment[];
+  fulfillmentOrders: ExportFulfillmentOrder[];
+  returns: ExportReturn[];
+  apiKeys: ExportApiKey[];
+  roles: AccountExportResponseRolesItem[];
+  examples: ExportExample[];
+  notifications: Notification[];
+  staffNotifications: StaffNoticeExport[];
+  stockAlerts: StockAlert[];
 }
 
 export interface LoginTwoFactorRequest {
-    /**
+  /**
      * The challenge token from POST /account/login. Omit it for an OAuth-originated login — that challenge was never sent to the client, and this endpoint reads it from the httpOnly cookie the callback set instead.
      * @minLength 1
      * @maxLength 128
      */
-    challenge?: string;
-    /**
+  challenge?: string;
+  /**
      * A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's.
      * @minLength 1
      * @maxLength 64
      */
-    code: string;
-    remember?: RememberTier;
-    transport?: SessionTransport;
+  code: string;
+  remember?: RememberTier;
+  transport?: SessionTransport;
 }
 
 /**
@@ -4032,146 +4012,147 @@ export interface LoginTwoFactorRequest {
 export type LoginTwoFactorOutcome = AuthTokens | DeletionPending;
 
 export interface TwoFactorSendRequest {
-    /**
+  /**
      * The challenge token from POST /account/login. Omit it for an OAuth-originated login — see LoginTwoFactorRequest.challenge.
      * @minLength 1
      * @maxLength 128
      */
-    challenge?: string;
-    /**
+  challenge?: string;
+  /**
      * Which armed delivered method to send through — a `method` from the challenge's own `methods` list whose `delivers` is true.
      * @maxLength 32
      */
-    method: string;
+  method: string;
 }
 
 export interface TwoFactorDelivery {
-    /** The method the code went through, echoed back. */
-    method: string;
-    /** Masked destination — enough for the user to recognise the mailbox, not enough to learn a new address from. */
-    sentTo: string;
-    /**
+  /** The method the code went through, echoed back. */
+  method: string;
+  /** Masked destination — enough for the user to recognise the mailbox, not enough to learn a new address from. */
+  sentTo: string;
+  /**
      * Seconds before another code may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the rate limiter.
      * @minimum 0
      */
-    resendAfter: number;
-    /** When this code stops being accepted. */
-    expiresAt: string;
+  resendAfter: number;
+  /** When this code stops being accepted. */
+  expiresAt: string;
 }
 
 export interface TwoFactorStatus {
-    /** Whether a login on this account is challenged for a second factor. True exactly when `methods` holds at least one armed entry. */
-    enabled: boolean;
-    /** The factors armed on this account, plus any enrollment still pending confirmation. */
-    methods: TwoFactorMethodSummary[];
-    /** What this account could still add. A method this deployment cannot reach at all is absent; one the account is not yet eligible for is present with `enrollable: false` and a `reason`. */
-    available: TwoFactorMethodSummary[];
-    /**
+  /** Whether a login on this account is challenged for a second factor. True exactly when `methods` holds at least one armed entry. */
+  enabled: boolean;
+  /** The factors armed on this account, plus any enrollment still pending confirmation. */
+  methods: TwoFactorMethodSummary[];
+  /** What this account could still add. A method this deployment cannot reach at all is absent; one the account is not yet eligible for is present with `enrollable: false` and a `reason`. */
+  available: TwoFactorMethodSummary[];
+  /**
      * How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery.
      * @minimum 0
      */
-    backupCodesRemaining: number;
+  backupCodesRemaining: number;
 }
 
 export interface TwoFactorSetupRequest {
-    /**
+  /**
      * A code from any armed method, or an unused backup code. Required once any factor is armed — a replace, or adding a second method — and ignored for the account's first factor.
      * @minLength 1
      * @maxLength 64
      */
-    code?: string;
+  code?: string;
 }
 
 export interface TwoFactorSetup {
-    /** The method being enrolled, echoed back. */
-    method: string;
-    /** Which half of this object to read. True — a code was just sent, see `sentTo`. False — enroll from `secret`/`otpauthUri`. */
-    delivers: boolean;
-    /** A device method's secret, base32-encoded, shown once for manual entry as a fallback to scanning. Absent when `delivers`. */
-    secret?: string;
-    /** An otpauth:// URI the client renders as a QR code — this API generates no image, so the secret crosses the wire once rather than twice. Absent when `delivers`. */
-    otpauthUri?: string;
-    /** Masked destination the enrollment code just went to. Absent unless `delivers`. */
-    sentTo?: string;
-    /**
+  /** The method being enrolled, echoed back. */
+  method: string;
+  /** Which half of this object to read. True — a code was just sent, see `sentTo`. False — enroll from `secret`/`otpauthUri`. */
+  delivers: boolean;
+  /** A device method's secret, base32-encoded, shown once for manual entry as a fallback to scanning. Absent when `delivers`. */
+  secret?: string;
+  /** An otpauth:// URI the client renders as a QR code — this API generates no image, so the secret crosses the wire once rather than twice. Absent when `delivers`. */
+  otpauthUri?: string;
+  /** Masked destination the enrollment code just went to. Absent unless `delivers`. */
+  sentTo?: string;
+  /**
      * Seconds before another code may be requested. Absent unless `delivers`.
      * @minimum 0
      */
-    resendAfter?: number;
-    /** When the delivered code stops being accepted. Absent unless `delivers`. */
-    expiresAt?: string;
+  resendAfter?: number;
+  /** When the delivered code stops being accepted. Absent unless `delivers`. */
+  expiresAt?: string;
 }
 
 export interface TwoFactorConfirmRequest {
-    /**
+  /**
      * The code for the method being armed — read off the device, or received through its channel. A backup code is NOT accepted here: the point of this call is to prove the new factor works.
      * @minLength 1
      * @maxLength 64
      */
-    code: string;
+  code: string;
 }
 
 export interface TwoFactorConfirmed {
-    /** The method just armed, echoed back. */
-    method: string;
-    /** One-time recovery codes, in the clear, shown exactly once and never retrievable again. Present ONLY when this was the first factor the account armed — they recover the account, not the method, so a second factor mints none. */
-    backupCodes?: string[];
-    /**
+  /** The method just armed, echoed back. */
+  method: string;
+  /** One-time recovery codes, in the clear, shown exactly once and never retrievable again. Present ONLY when this was the first factor the account armed — they recover the account, not the method, so a second factor mints none. */
+  backupCodes?: string[];
+  /**
      * How many unused backup codes the account now holds.
      * @minimum 0
      */
-    backupCodesRemaining: number;
-    /** The replacement `ses_…` id, for a bearer client of a `cookie`-mode deployment: arming a factor revoked every session, this one included, and the old id no longer works. Absent otherwise (a browser's cookie was refreshed in place). */
-    sessionToken?: string;
+  backupCodesRemaining: number;
+  /** The replacement `ses_…` id, for a bearer client of a `cookie`-mode deployment: arming a factor revoked every session, this one included, and the old id no longer works. Absent otherwise (a browser's cookie was refreshed in place). */
+  sessionToken?: string;
 }
 
 export interface TwoFactorCodeRequest {
-    /**
+  /**
      * A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.
      * @minLength 1
      * @maxLength 64
      */
-    code: string;
+  code: string;
 }
 
 export interface TwoFactorBackupCodesRegenerated {
-    /** The account's new one-time recovery codes, in the clear, shown exactly once — the old set no longer verifies. */
-    backupCodes: string[];
-    /**
+  /** The account's new one-time recovery codes, in the clear, shown exactly once — the old set no longer verifies. */
+  backupCodes: string[];
+  /**
      * How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate.
      * @minimum 0
      */
-    backupCodesRemaining: number;
+  backupCodesRemaining: number;
 }
 
 export interface OAuthLink {
-    /** Registry name of the linked provider, e.g. `google`. */
-    provider: string;
-    /** When the account was linked to this provider. */
-    connectedAt: string;
+  /** Registry name of the linked provider, e.g. `google`. */
+  provider: string;
+  /** When the account was linked to this provider. */
+  connectedAt: string;
 }
 
 export interface OAuthLinks {
-    links: OAuthLink[];
+  links: OAuthLink[];
 }
 
 export interface OAuthLinkStart {
-    /**
+  /**
      * The provider's consent screen, with the state and PKCE challenge of this attempt. Navigate the browser to it.
      * @maxLength 2048
      */
-    authorizeUrl: string;
+  authorizeUrl: string;
 }
 
-export type UserSortItem = (typeof UserSortItem)[keyof typeof UserSortItem];
+export type UserSortItem = typeof UserSortItem[keyof typeof UserSortItem];
+
 
 export const UserSortItem = {
-    createdAt: 'createdAt',
-    '-createdAt': '-createdAt',
-    email: 'email',
-    '-email': '-email',
-    username: 'username',
-    '-username': '-username'
+  createdAt: 'createdAt',
+  '-createdAt': '-createdAt',
+  email: 'email',
+  '-email': '-email',
+  username: 'username',
+  '-username': '-username',
 } as const;
 
 /**
@@ -4181,180 +4162,181 @@ export const UserSortItem = {
 export type UserSort = UserSortItem[];
 
 export interface UserListItem {
-    id: Id;
-    email: Email;
-    username: string;
-    /** The staff role this account holds, by name. Absent for a plain customer. */
-    role?: string;
-    active?: boolean;
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
-    /** Present, as `true`, only while a purchase hold is in force. Its reason, end and note are on `GET /users/{id}`. */
-    purchaseHeld?: true;
-    /** When the shop's rule flagged this account for staff review. Absent once staff set or lift a hold. */
-    purchaseHoldFlaggedAt?: string;
-    /** When the account is erased, after its owner asked to delete it. Absent otherwise. */
-    purgeAt?: string;
-    createdAt?: string;
-    deletedAt?: string;
-    actions: UserActions;
+  id: Id;
+  email: Email;
+  username: string;
+  /** The staff role this account holds, by name. Absent for a plain customer. */
+  role?: string;
+  active?: boolean;
+  imageUrl?: ImageUrl;
+  thumbnailUrl?: ThumbnailUrl;
+  /** Present, as `true`, only while a purchase hold is in force. Its reason, end and note are on `GET /users/{id}`. */
+  purchaseHeld?: true;
+  /** When the shop's rule flagged this account for staff review. Absent once staff set or lift a hold. */
+  purchaseHoldFlaggedAt?: string;
+  /** When the account is erased, after its owner asked to delete it. Absent otherwise. */
+  purgeAt?: string;
+  createdAt?: string;
+  deletedAt?: string;
+  actions: UserActions;
 }
 
 export interface UsersResponse {
-    items: UserListItem[];
-    meta: PaginationMeta;
+  items: UserListItem[];
+  meta: PaginationMeta;
 }
 
 export interface CreateUserRequest {
-    email: Email;
-    /**
+  email: Email;
+  /**
      * @minLength 3
      * @maxLength 50
      */
-    username: string;
-    /**
+  username: string;
+  /**
      * @minLength 1
      * @maxLength 64
      */
-    role?: string;
-    active?: boolean;
-    locale?: Locale;
+  role?: string;
+  active?: boolean;
+  locale?: Locale;
 }
 
 export interface CreateUserRequestMultipart {
-    email: Email;
-    /**
+  email: Email;
+  /**
      * @minLength 3
      * @maxLength 50
      */
-    username: string;
-    /**
+  username: string;
+  /**
      * @minLength 1
      * @maxLength 64
      */
-    role?: string;
-    active?: boolean;
-    /** Optional user profile image */
-    imageUpload?: Blob;
-    locale?: Locale;
+  role?: string;
+  active?: boolean;
+  /** Optional user profile image */
+  imageUpload?: Blob;
+  locale?: Locale;
 }
 
 export interface ReplaceUserByIdRequest {
-    /**
+  /**
      * @minLength 3
      * @maxLength 50
      */
-    username: string;
-    imageUrl?: ImageRemoval;
-    locale?: Locale | null;
-    /**
+  username: string;
+  imageUrl?: ImageRemoval;
+  locale?: Locale | null;
+  /**
      * @minLength 1
      * @maxLength 32
      * @nullable
      */
-    phone?: string | null;
-    /**
+  phone?: string | null;
+  /**
      * @minLength 1
      * @maxLength 2048
      * @nullable
      */
-    website?: string | null;
+  website?: string | null;
 }
 
 export interface ReplaceUserByIdRequestMultipart {
-    /**
+  /**
      * @minLength 3
      * @maxLength 50
      */
-    username: string;
-    /** Optional user profile image */
-    imageUpload?: Blob;
-    locale?: string;
-    /**
+  username: string;
+  /** Optional user profile image */
+  imageUpload?: Blob;
+  locale?: string;
+  /**
      * @minLength 1
      * @maxLength 32
      */
-    phone?: string;
-    /**
+  phone?: string;
+  /**
      * @minLength 1
      * @maxLength 2048
      */
-    website?: string;
+  website?: string;
 }
 
 export interface UpdateUserByIdRequest {
-    /**
+  /**
      * @minLength 3
      * @maxLength 50
      */
-    username?: string;
-    imageUrl?: ImageRemoval;
-    locale?: Locale | null;
-    /**
+  username?: string;
+  imageUrl?: ImageRemoval;
+  locale?: Locale | null;
+  /**
      * @minLength 1
      * @maxLength 32
      * @nullable
      */
-    phone?: string | null;
-    /**
+  phone?: string | null;
+  /**
      * @minLength 1
      * @maxLength 2048
      * @nullable
      */
-    website?: string | null;
+  website?: string | null;
 }
 
 export interface UpdateUserByIdRequestMultipart {
-    /**
+  /**
      * @minLength 3
      * @maxLength 50
      */
-    username?: string;
-    /** Optional user profile image */
-    imageUpload?: Blob;
-    locale?: string;
-    /**
+  username?: string;
+  /** Optional user profile image */
+  imageUpload?: Blob;
+  locale?: string;
+  /**
      * @minLength 1
      * @maxLength 32
      */
-    phone?: string;
-    /**
+  phone?: string;
+  /**
      * @minLength 1
      * @maxLength 2048
      */
-    website?: string;
+  website?: string;
 }
 
 export interface SearchUsersRequest {
-    page?: Page;
-    pageSize?: PageSize;
-    sort?: UserSort;
-    text?: Text;
-    /**
+  page?: Page;
+  pageSize?: PageSize;
+  sort?: UserSort;
+  text?: Text;
+  /**
      * @minItems 1
      * @maxItems 100
      */
-    id?: Id[];
-    email?: Email;
-    /** @maxLength 50 */
-    username?: string;
-    active?: boolean;
-    deleted?: boolean;
-    purchaseHold?: true;
-    purchaseHoldReview?: true;
+  id?: Id[];
+  email?: Email;
+  /** @maxLength 50 */
+  username?: string;
+  active?: boolean;
+  deleted?: boolean;
+  purchaseHold?: true;
+  purchaseHoldReview?: true;
 }
 
-export type TaskSortItem = (typeof TaskSortItem)[keyof typeof TaskSortItem];
+export type TaskSortItem = typeof TaskSortItem[keyof typeof TaskSortItem];
+
 
 export const TaskSortItem = {
-    createdAt: 'createdAt',
-    '-createdAt': '-createdAt',
-    dueAt: 'dueAt',
-    '-dueAt': '-dueAt',
-    status: 'status',
-    '-status': '-status',
-    email: 'email',
-    '-email': '-email'
+  createdAt: 'createdAt',
+  '-createdAt': '-createdAt',
+  dueAt: 'dueAt',
+  '-dueAt': '-dueAt',
+  status: 'status',
+  '-status': '-status',
+  email: 'email',
+  '-email': '-email',
 } as const;
 
 /**
@@ -4363,11 +4345,12 @@ export const TaskSortItem = {
  */
 export type TaskSort = TaskSortItem[];
 
-export type TaskSource = (typeof TaskSource)[keyof typeof TaskSource];
+export type TaskSource = typeof TaskSource[keyof typeof TaskSource];
+
 
 export const TaskSource = {
-    visitor: 'visitor',
-    system: 'system'
+  visitor: 'visitor',
+  system: 'system',
 } as const;
 
 /**
@@ -4380,191 +4363,192 @@ export type TaskAssigneeFilter = string;
  * What the requesting caller may do to this task, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the right to work the task (and its route set, for a system task) and a status the act can run from. `assign` covers taking it and assigning someone else.
  */
 export interface TaskActions {
-    /** Whether `POST /tasks/{id}/resolve` would be accepted. */
-    resolve: boolean;
-    /** Whether `POST /tasks/{id}/mark-spam` would be accepted. */
-    markSpam: boolean;
-    /** Whether `POST /tasks/{id}/reopen` would be accepted. */
-    reopen: boolean;
-    /** Whether `POST /tasks/{id}/assign` would be accepted. Stays true for a task someone holds, since a new person replaces them. */
-    assign: boolean;
-    /** Whether `POST /tasks/{id}/unassign` would be accepted, which needs an assignee, in any status. */
-    unassign: boolean;
-    /** Whether `POST /tasks/{id}/notes` would be accepted. */
-    note: boolean;
-    /** Whether `DELETE /tasks/{id}` would be accepted. */
-    delete: boolean;
+  /** Whether `POST /tasks/{id}/resolve` would be accepted. */
+  resolve: boolean;
+  /** Whether `POST /tasks/{id}/mark-spam` would be accepted. */
+  markSpam: boolean;
+  /** Whether `POST /tasks/{id}/reopen` would be accepted. */
+  reopen: boolean;
+  /** Whether `POST /tasks/{id}/assign` would be accepted. Stays true for a task someone holds, since a new person replaces them. */
+  assign: boolean;
+  /** Whether `POST /tasks/{id}/unassign` would be accepted, which needs an assignee, in any status. */
+  unassign: boolean;
+  /** Whether `POST /tasks/{id}/notes` would be accepted. */
+  note: boolean;
+  /** Whether `DELETE /tasks/{id}` would be accepted. */
+  delete: boolean;
 }
 
 export interface TaskListItem {
-    id: Id;
-    source: TaskSource;
-    kind: TaskKind;
-    name?: string;
-    /** The sender's address. Present on a visitor task, absent on a system one. */
-    email?: Email;
-    subject: string;
-    /**
+  id: Id;
+  source: TaskSource;
+  kind: TaskKind;
+  name?: string;
+  /** The sender's address. Present on a visitor task, absent on a system one. */
+  email?: Email;
+  subject: string;
+  /**
      * The message cut to 160 characters, ending in `…` when it was longer. The whole message is `GET /tasks/{id}`.
      * @maxLength 160
      */
-    messagePreview: string;
-    category?: TaskCategory;
-    /** The order the visitor said this is about, as they typed it. Not checked against any order. */
-    orderNumber?: string;
-    assigneeId?: Id;
-    /** The assignee's username. */
-    assigneeName?: string;
-    dueAt?: string;
-    /** Open and past `dueAt`, computed at read time. */
-    overdue: boolean;
-    readonly status: TaskStatus;
-    respondedAt?: string;
-    createdAt: string;
-    actions: TaskActions;
+  messagePreview: string;
+  category?: TaskCategory;
+  /** The order the visitor said this is about, as they typed it. Not checked against any order. */
+  orderNumber?: string;
+  assigneeId?: Id;
+  /** The assignee's username. */
+  assigneeName?: string;
+  dueAt?: string;
+  /** Open and past `dueAt`, computed at read time. */
+  overdue: boolean;
+  readonly status: TaskStatus;
+  respondedAt?: string;
+  createdAt: string;
+  actions: TaskActions;
 }
 
 export interface TasksResponse {
-    items: TaskListItem[];
-    meta: PaginationMeta;
+  items: TaskListItem[];
+  meta: PaginationMeta;
 }
 
 export interface CreateContactTaskRequest {
-    /**
+  /**
      * @minLength 1
      * @maxLength 120
      */
-    name?: string;
-    email: Email;
-    /**
+  name?: string;
+  email: Email;
+  /**
      * @minLength 1
      * @maxLength 200
      */
-    subject: string;
-    /**
+  subject: string;
+  /**
      * @minLength 1
      * @maxLength 5000
      */
-    message: string;
-    category?: TaskCategory;
-    /**
+  message: string;
+  category?: TaskCategory;
+  /**
      * The order the visitor says this is about, free text. Not checked against any order.
      * @minLength 1
      * @maxLength 40
      */
-    orderNumber?: string;
-    /**
+  orderNumber?: string;
+  /**
      * Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `Task`, which does not declare it.
      * @maxLength 200
      */
-    website?: string;
+  website?: string;
 }
 
 export interface SearchTasksRequest {
-    page?: Page;
-    pageSize?: PageSize;
-    sort?: TaskSort;
-    text?: Text;
-    status?: TaskStatus;
-    category?: TaskCategory;
-    source?: TaskSource;
-    kind?: TaskKind;
-    assignee?: TaskAssigneeFilter;
-    overdue?: boolean;
-    email?: Email;
+  page?: Page;
+  pageSize?: PageSize;
+  sort?: TaskSort;
+  text?: Text;
+  status?: TaskStatus;
+  category?: TaskCategory;
+  source?: TaskSource;
+  kind?: TaskKind;
+  assignee?: TaskAssigneeFilter;
+  overdue?: boolean;
+  email?: Email;
 }
 
 /**
  * Counts over the caller's jurisdiction.
  */
 export interface TaskSummary {
-    /** @minimum 0 */
-    open: number;
-    /** @minimum 0 */
-    mine: number;
-    /** @minimum 0 */
-    overdue: number;
-    /** @minimum 0 */
-    unassigned: number;
+  /** @minimum 0 */
+  open: number;
+  /** @minimum 0 */
+  mine: number;
+  /** @minimum 0 */
+  overdue: number;
+  /** @minimum 0 */
+  unassigned: number;
 }
 
 export interface TaskNote {
-    /** Absent once the author's account is erased. */
-    authorId?: Id;
-    body: string;
-    at: string;
+  /** Absent once the author's account is erased. */
+  authorId?: Id;
+  body: string;
+  at: string;
 }
 
 /**
  * An earlier task about the same record.
  */
 export interface TaskRef {
-    id: Id;
-    kind?: TaskKind;
-    status: TaskStatus;
-    createdAt: string;
+  id: Id;
+  kind?: TaskKind;
+  status: TaskStatus;
+  createdAt: string;
 }
 
 export interface Task {
-    id: Id;
-    source: TaskSource;
-    kind: TaskKind;
-    name?: string;
-    /** The account the sender was signed in as; absent for an anonymous sender. On a system task, the account the situation is about. */
-    subjectId?: Id;
-    /** The sender's address. Present on a visitor task, absent on a system one. */
-    email?: Email;
-    subject: string;
-    message: string;
-    category?: TaskCategory;
-    /** The order the visitor said this is about, as they typed it. Not checked against any order. */
-    orderNumber?: string;
-    link?: TaskLink;
-    /** The permission set that works this task, frozen when it opened. */
-    routeSet: string;
-    assigneeId?: Id;
-    /** The assignee's username. */
-    assigneeName?: string;
-    notes: TaskNote[];
-    /** When it falls overdue. Kept across a reopen. */
-    dueAt?: string;
-    /** Open and past `dueAt`, computed at read time. */
-    overdue: boolean;
-    lastSeenAt?: string;
-    /** @minimum 1 */
-    seenCount?: number;
-    readonly status: TaskStatus;
-    closedAt?: string;
-    resolution?: TaskResolution;
-    respondedAt?: string;
-    /** Present on `GET /tasks/{id}` only. */
-    earlierTasks?: TaskRef[];
-    actions: TaskActions;
-    createdAt: string;
-    updatedAt?: string;
+  id: Id;
+  source: TaskSource;
+  kind: TaskKind;
+  name?: string;
+  /** The account the sender was signed in as; absent for an anonymous sender. On a system task, the account the situation is about. */
+  subjectId?: Id;
+  /** The sender's address. Present on a visitor task, absent on a system one. */
+  email?: Email;
+  subject: string;
+  message: string;
+  category?: TaskCategory;
+  /** The order the visitor said this is about, as they typed it. Not checked against any order. */
+  orderNumber?: string;
+  link?: TaskLink;
+  /** The permission set that works this task, frozen when it opened. */
+  routeSet: string;
+  assigneeId?: Id;
+  /** The assignee's username. */
+  assigneeName?: string;
+  notes: TaskNote[];
+  /** When it falls overdue. Kept across a reopen. */
+  dueAt?: string;
+  /** Open and past `dueAt`, computed at read time. */
+  overdue: boolean;
+  lastSeenAt?: string;
+  /** @minimum 1 */
+  seenCount?: number;
+  readonly status: TaskStatus;
+  closedAt?: string;
+  resolution?: TaskResolution;
+  respondedAt?: string;
+  /** Present on `GET /tasks/{id}` only. */
+  earlierTasks?: TaskRef[];
+  actions: TaskActions;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface AssignTaskRequest {
-    userId: Id;
+  userId: Id;
 }
 
 export interface CreateTaskNoteRequest {
-    /**
+  /**
      * @minLength 1
      * @maxLength 5000
      */
-    body: string;
+  body: string;
 }
 
-export type ProductSortItem = (typeof ProductSortItem)[keyof typeof ProductSortItem];
+export type ProductSortItem = typeof ProductSortItem[keyof typeof ProductSortItem];
+
 
 export const ProductSortItem = {
-    createdAt: 'createdAt',
-    '-createdAt': '-createdAt',
-    price: 'price',
-    '-price': '-price',
-    title: 'title',
-    '-title': '-title'
+  createdAt: 'createdAt',
+  '-createdAt': '-createdAt',
+  price: 'price',
+  '-price': '-price',
+  title: 'title',
+  '-title': '-title',
 } as const;
 
 /**
@@ -4576,11 +4560,12 @@ export type ProductSort = ProductSortItem[];
 /**
  * A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate.
  */
-export type TaxClass = (typeof TaxClass)[keyof typeof TaxClass];
+export type TaxClass = typeof TaxClass[keyof typeof TaxClass];
+
 
 export const TaxClass = {
-    reduced: 'reduced',
-    zero: 'zero'
+  reduced: 'reduced',
+  zero: 'zero',
 } as const;
 
 /**
@@ -4592,378 +4577,372 @@ export type RestockDate = string;
  * What THIS caller may do to THIS product right now, so a client never restates the rules. A caller answered from the cache shared with every guest gets every flag `false`: only a caller who sees more than a guest (`display:Product`) is answered fresh, and only they can read a `true`.
  */
 export interface ProductActions {
-    /** Whether `PUT` or `PATCH /products/{id}` would be accepted: the caller holds `update:Product` AND `update:Translation`. */
-    update: boolean;
-    /** Whether `DELETE /products/{id}` (a soft delete) would be accepted: the caller holds `delete:Product` and the product is not already deleted. */
-    delete: boolean;
-    /** Whether `POST /products/{id}/restore` would be accepted: the caller holds `delete:Product` and the product is soft-deleted (a live one answers 409 `PRODUCT_NOT_DELETED`). */
-    restore: boolean;
-    /** Whether `DELETE /products/{id}/hard` would be accepted: the caller holds `delete:Product`. */
-    hardDelete: boolean;
+  /** Whether `PUT` or `PATCH /products/{id}` would be accepted: the caller holds `update:Product` AND `update:Translation`. */
+  update: boolean;
+  /** Whether `DELETE /products/{id}` (a soft delete) would be accepted: the caller holds `delete:Product` and the product is not already deleted. */
+  delete: boolean;
+  /** Whether `POST /products/{id}/restore` would be accepted: the caller holds `delete:Product` and the product is soft-deleted (a live one answers 409 `PRODUCT_NOT_DELETED`). */
+  restore: boolean;
+  /** Whether `DELETE /products/{id}/hard` would be accepted: the caller holds `delete:Product`. */
+  hardDelete: boolean;
 }
 
 export interface ProductTranslationFields {
-    title: string;
-    description?: string;
+  title: string;
+  description?: string;
 }
 
 /**
  * Every language the product has a row for, drafts included, keyed by locale: the editor's form fills one tab per entry. Present only on `GET /products/{id}` and only for a caller holding `read:Translation`; every other read, and every other caller, gets the resolved `title`/`description` alone.
  */
-export type ProductTranslations = { [key: string]: ProductTranslationFields };
+export type ProductTranslations = {[key: string]: ProductTranslationFields};
 
 export interface Product {
-    id: Id;
-    title: string;
-    /** Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around. */
-    price: NonNegativeDecimalAmount;
-    /** ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting. */
-    readonly currency: CurrencyCode;
-    taxClass?: TaxClass;
-    rateType?: RateType;
-    sku?: Sku;
-    /** Something is for sale. `false` renders as out of stock — the catalogue still lists the product, and checkout is what refuses it (`CART_INSUFFICIENT_STOCK`). For a `preorder` it reads the allowance, not the shelf: `true` while any of it is left, `false` the day it is full (or was never set). */
-    readonly inStock: boolean;
-    /** What is left is at or under the shop's low-stock threshold (`NODE_LOW_STOCK_THRESHOLD`) while something is still for sale. Never true together with `inStock` false. */
-    readonly lowStock: boolean;
-    /**
+  id: Id;
+  title: string;
+  /** Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around. */
+  price: NonNegativeDecimalAmount;
+  /** ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting. */
+  readonly currency: CurrencyCode;
+  taxClass?: TaxClass;
+  rateType?: RateType;
+  sku?: Sku;
+  /** Something is for sale. `false` renders as out of stock — the catalogue still lists the product, and checkout is what refuses it (`CART_INSUFFICIENT_STOCK`). For a `preorder` it reads the allowance, not the shelf: `true` while any of it is left, `false` the day it is full (or was never set). */
+  readonly inStock: boolean;
+  /** What is left is at or under the shop's low-stock threshold (`NODE_LOW_STOCK_THRESHOLD`) while something is still for sale. Never true together with `inStock` false. */
+  readonly lowStock: boolean;
+  /**
      * Units physically present, whether or not they are spoken for. Only for a caller holding `read:StockLevel`.
      * @minimum 0
      */
-    readonly onHand?: number;
-    /**
+  readonly onHand?: number;
+  /**
      * Units held by an open order — present, but not for sale. Only for a caller holding `read:StockLevel`.
      * @minimum 0
      */
-    readonly reserved?: number;
-    /**
+  readonly reserved?: number;
+  /**
      * Units a customer may actually buy, derived from the two counters above. For a `preorder` it is what is left of the preorder allowance instead (the shelf is empty by definition). Only for a caller holding `read:StockLevel`.
      * @minimum 0
      */
-    readonly available?: number;
-    description?: string;
-    active?: boolean;
-    purchasable?: boolean;
-    releaseDate?: ReleaseDate;
-    allowBackorder?: boolean;
-    restockDate?: RestockDate;
-    /** A shopper can order it right now: visible, on sale, and something to order (shelf units, room in a preorder's allowance, or an open backorder). The one answer behind the add-to-cart button and "notify me", so a client never re-derives it from the other flags. */
-    readonly buyable: boolean;
-    /** The product is on sale before its release date: buyers can order it now and it ships from `releaseDate`. */
-    readonly preorder?: boolean;
-    /** The product may be ordered while its shelf is empty: the units arrive by `restockDate`, or within 30 days when there is none. Always shown with that promise. */
-    readonly backorder?: boolean;
-    requiresShipping?: boolean;
-    noWithdrawal?: boolean;
-    /** @minimum 0 */
-    weight?: number;
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
-    categories?: string[];
-    tags?: string[];
-    createdAt?: string;
-    updatedAt?: string;
-    deletedAt?: string;
-    actions: ProductActions;
-    /** Every language the product has a row for, drafts included, keyed by locale: the editor's form fills one tab per entry. Present only on `GET /products/{id}` and only for a caller holding `read:Translation`; every other read, and every other caller, gets the resolved `title`/`description` alone. */
-    translations?: ProductTranslations;
+  readonly available?: number;
+  description?: string;
+  active?: boolean;
+  purchasable?: boolean;
+  releaseDate?: ReleaseDate;
+  allowBackorder?: boolean;
+  restockDate?: RestockDate;
+  /** A shopper can order it right now: visible, on sale, and something to order (shelf units, room in a preorder's allowance, or an open backorder). The one answer behind the add-to-cart button and "notify me", so a client never re-derives it from the other flags. */
+  readonly buyable: boolean;
+  /** The product is on sale before its release date: buyers can order it now and it ships from `releaseDate`. */
+  readonly preorder?: boolean;
+  /** The product may be ordered while its shelf is empty: the units arrive by `restockDate`, or within 30 days when there is none. Always shown with that promise. */
+  readonly backorder?: boolean;
+  requiresShipping?: boolean;
+  noWithdrawal?: boolean;
+  /** @minimum 0 */
+  weight?: number;
+  imageUrl?: ImageUrl;
+  thumbnailUrl?: ThumbnailUrl;
+  categories?: string[];
+  tags?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string;
+  actions: ProductActions;
+  /** Every language the product has a row for, drafts included, keyed by locale: the editor's form fills one tab per entry. Present only on `GET /products/{id}` and only for a caller holding `read:Translation`; every other read, and every other caller, gets the resolved `title`/`description` alone. */
+  translations?: ProductTranslations;
 }
 
 export interface ProductsResponse {
-    items: Product[];
-    meta: PaginationMeta;
+  items: Product[];
+  meta: PaginationMeta;
 }
 
 export interface ProductTranslationFieldsWrite {
-    /**
+  /**
      * @minLength 5
      * @maxLength 200
      */
-    title: string;
-    /**
+  title: string;
+  /**
      * @minLength 1
      * @maxLength 10000
      */
-    description?: string;
+  description?: string;
 }
 
 /**
  * One or more locales, keyed by BCP 47 tag, each stated whole. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on.
  */
-export interface ProductTranslationsCreate {
-    [key: string]: ProductTranslationFieldsWrite;
-}
+export interface ProductTranslationsCreate {[key: string]: ProductTranslationFieldsWrite}
 
 export interface CreateProductRequest {
-    translations: ProductTranslationsCreate;
-    /** Gross — VAT included. Same convention as `Product.price`. */
-    price: NonNegativeDecimalAmount;
-    taxClass?: TaxClass;
-    rateType?: RateType;
-    sku?: Sku;
-    active?: boolean;
-    purchasable?: boolean;
-    releaseDate?: ReleaseDate;
-    allowBackorder?: boolean;
-    restockDate?: RestockDate;
-    requiresShipping?: boolean;
-    noWithdrawal?: boolean;
-    /**
+  translations: ProductTranslationsCreate;
+  /** Gross — VAT included. Same convention as `Product.price`. */
+  price: NonNegativeDecimalAmount;
+  taxClass?: TaxClass;
+  rateType?: RateType;
+  sku?: Sku;
+  active?: boolean;
+  purchasable?: boolean;
+  releaseDate?: ReleaseDate;
+  allowBackorder?: boolean;
+  restockDate?: RestockDate;
+  requiresShipping?: boolean;
+  noWithdrawal?: boolean;
+  /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
      */
-    weight?: number;
-    /**
+  weight?: number;
+  /**
      * @items.minLength 1
      * @items.maxLength 100
      */
-    categories?: string[];
-    /**
+  categories?: string[];
+  /**
      * @items.minLength 1
      * @items.maxLength 50
      */
-    tags?: string[];
+  tags?: string[];
 }
 
 export interface CreateProductRequestMultipart {
-    /**
+  /**
      * JSON-encoded `ProductTranslationsWrite`.
      * @maxLength 100000
      */
-    translations: string;
-    /** Gross — VAT included. Same convention as `Product.price`. */
-    price: NonNegativeDecimalAmount;
-    taxClass?: TaxClass;
-    rateType?: RateType;
-    sku?: Sku;
-    active?: boolean;
-    purchasable?: boolean;
-    releaseDate?: string;
-    allowBackorder?: boolean;
-    restockDate?: string;
-    requiresShipping?: boolean;
-    noWithdrawal?: boolean;
-    /**
+  translations: string;
+  /** Gross — VAT included. Same convention as `Product.price`. */
+  price: NonNegativeDecimalAmount;
+  taxClass?: TaxClass;
+  rateType?: RateType;
+  sku?: Sku;
+  active?: boolean;
+  purchasable?: boolean;
+  releaseDate?: string;
+  allowBackorder?: boolean;
+  restockDate?: string;
+  requiresShipping?: boolean;
+  noWithdrawal?: boolean;
+  /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
      */
-    weight?: number;
-    /** Optional product image */
-    imageUpload?: Blob;
-    /**
+  weight?: number;
+  /** Optional product image */
+  imageUpload?: Blob;
+  /**
      * @items.minLength 1
      * @items.maxLength 100
      */
-    categories?: string[];
-    /**
+  categories?: string[];
+  /**
      * @items.minLength 1
      * @items.maxLength 50
      */
-    tags?: string[];
+  tags?: string[];
 }
 
 export interface FacetCount {
-    name: string;
-    /** @minimum 1 */
-    count: number;
+  name: string;
+  /** @minimum 1 */
+  count: number;
 }
 
 export interface CatalogFacetsResponse {
-    categories: FacetCount[];
-    tags: FacetCount[];
+  categories: FacetCount[];
+  tags: FacetCount[];
 }
 
 /**
  * One or more locales, keyed by BCP 47 tag, each stated WHOLE: a `PUT` replaces the set, so a stored locale this map omits is deleted and a `description` a locale omits is cleared, drafts included. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on `PUT`. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on.
  */
-export interface ProductTranslationsWrite {
-    [key: string]: ProductTranslationFieldsWrite | null;
-}
+export interface ProductTranslationsWrite {[key: string]: ProductTranslationFieldsWrite | null}
 
 export interface ReplaceProductRequest {
-    translations: ProductTranslationsWrite;
-    /** Gross — VAT included. Same convention as `Product.price`. */
-    price: NonNegativeDecimalAmount;
-    taxClass?: TaxClass | null;
-    rateType?: RateType | null;
-    sku?: Sku | null;
-    active: boolean;
-    purchasable: boolean;
-    releaseDate?: ReleaseDate | null;
-    allowBackorder: boolean;
-    restockDate?: RestockDate | null;
-    requiresShipping: boolean;
-    noWithdrawal: boolean;
-    /**
+  translations: ProductTranslationsWrite;
+  /** Gross — VAT included. Same convention as `Product.price`. */
+  price: NonNegativeDecimalAmount;
+  taxClass?: TaxClass | null;
+  rateType?: RateType | null;
+  sku?: Sku | null;
+  active: boolean;
+  purchasable: boolean;
+  releaseDate?: ReleaseDate | null;
+  allowBackorder: boolean;
+  restockDate?: RestockDate | null;
+  requiresShipping: boolean;
+  noWithdrawal: boolean;
+  /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
      * @nullable
      */
-    weight?: number | null;
-    imageUrl?: ImageRemoval;
-    /**
+  weight?: number | null;
+  imageUrl?: ImageRemoval;
+  /**
      * @items.minLength 1
      * @items.maxLength 100
      */
-    categories: string[];
-    /**
+  categories: string[];
+  /**
      * @items.minLength 1
      * @items.maxLength 50
      */
-    tags: string[];
+  tags: string[];
 }
 
 export interface ReplaceProductRequestMultipart {
-    /**
+  /**
      * JSON-encoded `ProductTranslationsWrite`.
      * @maxLength 100000
      */
-    translations: string;
-    /** Gross — VAT included. Same convention as `Product.price`. */
-    price: NonNegativeDecimalAmount;
-    taxClass?: string;
-    rateType?: string;
-    sku?: string;
-    active: boolean;
-    purchasable: boolean;
-    releaseDate?: string;
-    allowBackorder: boolean;
-    restockDate?: string;
-    requiresShipping: boolean;
-    noWithdrawal: boolean;
-    /**
+  translations: string;
+  /** Gross — VAT included. Same convention as `Product.price`. */
+  price: NonNegativeDecimalAmount;
+  taxClass?: string;
+  rateType?: string;
+  sku?: string;
+  active: boolean;
+  purchasable: boolean;
+  releaseDate?: string;
+  allowBackorder: boolean;
+  restockDate?: string;
+  requiresShipping: boolean;
+  noWithdrawal: boolean;
+  /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
      */
-    weight?: number;
-    /** Optional product image */
-    imageUpload?: Blob;
-    /**
+  weight?: number;
+  /** Optional product image */
+  imageUpload?: Blob;
+  /**
      * @items.minLength 1
      * @items.maxLength 100
      */
-    categories: string[];
-    /**
+  categories: string[];
+  /**
      * @items.minLength 1
      * @items.maxLength 50
      */
-    tags: string[];
+  tags: string[];
 }
 
 export interface ProductTranslationFieldsPatch {
-    /**
+  /**
      * A title is never cleared — an empty locale is deleted with the locale's own `null`.
      * @minLength 5
      * @maxLength 200
      */
-    title?: string;
-    /**
+  title?: string;
+  /**
      * A string sets the description, `null` clears it, absent keeps it. `""` is a 422.
      * @minLength 1
      * @maxLength 10000
      * @nullable
      */
-    description?: string | null;
+  description?: string | null;
 }
 
 /**
  * One or more locales, keyed by BCP 47 tag. A key absent from this map leaves that locale untouched; a key mapped to an object merges into it field by field (the fields it names change, the others keep what they have); a key mapped to null deletes it. An empty object is an error. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST NOT be null. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on.
  */
-export interface ProductTranslationsPatch {
-    [key: string]: ProductTranslationFieldsPatch | null;
-}
+export interface ProductTranslationsPatch {[key: string]: ProductTranslationFieldsPatch | null}
 
 export interface UpdateProductRequest {
-    translations?: ProductTranslationsPatch;
-    /** Gross — VAT included. Same convention as `Product.price`. */
-    price?: NonNegativeDecimalAmount;
-    taxClass?: TaxClass | null;
-    rateType?: RateType | null;
-    sku?: Sku | null;
-    active?: boolean;
-    purchasable?: boolean;
-    releaseDate?: ReleaseDate | null;
-    allowBackorder?: boolean;
-    restockDate?: RestockDate | null;
-    requiresShipping?: boolean;
-    noWithdrawal?: boolean;
-    /**
+  translations?: ProductTranslationsPatch;
+  /** Gross — VAT included. Same convention as `Product.price`. */
+  price?: NonNegativeDecimalAmount;
+  taxClass?: TaxClass | null;
+  rateType?: RateType | null;
+  sku?: Sku | null;
+  active?: boolean;
+  purchasable?: boolean;
+  releaseDate?: ReleaseDate | null;
+  allowBackorder?: boolean;
+  restockDate?: RestockDate | null;
+  requiresShipping?: boolean;
+  noWithdrawal?: boolean;
+  /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
      * @nullable
      */
-    weight?: number | null;
-    imageUrl?: ImageRemoval;
-    /**
+  weight?: number | null;
+  imageUrl?: ImageRemoval;
+  /**
      * @items.minLength 1
      * @items.maxLength 100
      */
-    categories?: string[];
-    /**
+  categories?: string[];
+  /**
      * @items.minLength 1
      * @items.maxLength 50
      */
-    tags?: string[];
+  tags?: string[];
 }
 
 export interface UpdateProductRequestMultipart {
-    /**
+  /**
      * JSON-encoded `ProductTranslationsPatch`.
      * @maxLength 100000
      */
-    translations?: string;
-    /** Gross — VAT included. Same convention as `Product.price`. */
-    price?: NonNegativeDecimalAmount;
-    taxClass?: string;
-    rateType?: string;
-    sku?: string;
-    active?: boolean;
-    purchasable?: boolean;
-    releaseDate?: string;
-    allowBackorder?: boolean;
-    restockDate?: string;
-    requiresShipping?: boolean;
-    noWithdrawal?: boolean;
-    /**
+  translations?: string;
+  /** Gross — VAT included. Same convention as `Product.price`. */
+  price?: NonNegativeDecimalAmount;
+  taxClass?: string;
+  rateType?: string;
+  sku?: string;
+  active?: boolean;
+  purchasable?: boolean;
+  releaseDate?: string;
+  allowBackorder?: boolean;
+  restockDate?: string;
+  requiresShipping?: boolean;
+  noWithdrawal?: boolean;
+  /**
      * Grams. Absent counts as 0 for shipping-method filtering.
      * @minimum 0
      */
-    weight?: number;
-    /** Optional product image */
-    imageUpload?: Blob;
-    /**
+  weight?: number;
+  /** Optional product image */
+  imageUpload?: Blob;
+  /**
      * @items.minLength 1
      * @items.maxLength 100
      */
-    categories?: string[];
-    /**
+  categories?: string[];
+  /**
      * @items.minLength 1
      * @items.maxLength 50
      */
-    tags?: string[];
+  tags?: string[];
 }
 
 export interface SearchProductsRequest {
-    page?: Page;
-    pageSize?: PageSize;
-    sort?: ProductSort;
-    text?: Text;
-    /**
+  page?: Page;
+  pageSize?: PageSize;
+  sort?: ProductSort;
+  text?: Text;
+  /**
      * @minItems 1
      * @maxItems 100
      */
-    id?: Id[];
-    priceMin?: NonNegativeDecimalAmount;
-    priceMax?: NonNegativeDecimalAmount;
-    /** @maxLength 200 */
-    category?: string;
-    /** @maxLength 200 */
-    tag?: string;
-    /** @maxLength 200 */
-    title?: string;
-    active?: boolean;
-    purchasable?: boolean;
-    deleted?: boolean;
+  id?: Id[];
+  priceMin?: NonNegativeDecimalAmount;
+  priceMax?: NonNegativeDecimalAmount;
+  /** @maxLength 200 */
+  category?: string;
+  /** @maxLength 200 */
+  tag?: string;
+  /** @maxLength 200 */
+  title?: string;
+  active?: boolean;
+  purchasable?: boolean;
+  deleted?: boolean;
 }
 
 /**
@@ -4981,83 +4960,84 @@ export interface SearchProductsRequest {
  *
  * Never a number: exact stock stays behind `read:StockLevel`.
  */
-export type LineAvailability = (typeof LineAvailability)[keyof typeof LineAvailability];
+export type LineAvailability = typeof LineAvailability[keyof typeof LineAvailability];
+
 
 export const LineAvailability = {
-    in_stock: 'in_stock',
-    preorder: 'preorder',
-    backorder: 'backorder',
-    insufficient_stock: 'insufficient_stock',
-    out_of_stock: 'out_of_stock',
-    unavailable: 'unavailable',
-    removed: 'removed'
+  in_stock: 'in_stock',
+  preorder: 'preorder',
+  backorder: 'backorder',
+  insufficient_stock: 'insufficient_stock',
+  out_of_stock: 'out_of_stock',
+  unavailable: 'unavailable',
+  removed: 'removed',
 } as const;
 
 /**
  * One line of the basket as the cart answers it: the stored line plus whether it can be bought as it stands. Not `CartItem`, which stays the bare stored line the export and the order request use.
  */
 export interface CartResponseItem {
-    productId: Id;
-    /** @minimum 1 */
-    quantity: number;
-    availability: LineAvailability;
-    /** Whether the line can hold one more unit: `quantity` is below the shop's per-line ceiling (`NODE_CART_LINE_MAX_QUANTITY`). Stock plays no part, as for `POST /cart/items`. A client disables its "+" on `false` instead of copying the ceiling. */
-    canIncrease: boolean;
+  productId: Id;
+  /** @minimum 1 */
+  quantity: number;
+  availability: LineAvailability;
+  /** Whether the line can hold one more unit: `quantity` is below the shop's per-line ceiling (`NODE_CART_LINE_MAX_QUANTITY`). Stock plays no part, as for `POST /cart/items`. A client disables its "+" on `false` instead of copying the ceiling. */
+  canIncrease: boolean;
 }
 
 export interface CartSummaryResponse {
-    /**
+  /**
      * Number of distinct cart lines/items
      * @minimum 0
      */
-    itemsCount: number;
-    /**
+  itemsCount: number;
+  /**
      * Sum of quantities across all items
      * @minimum 0
      */
-    totalQuantity: number;
-    /** Sum of item prices * quantity. Gross — VAT included, same as each product's own `price` — before shipping. There are no discounts to net out. */
-    itemsTotal: NonNegativeDecimalAmount;
-    /** What the cart's chosen shipping method (`PUT /cart/shipping-method`) costs against `itemsTotal` right now (free-above thresholds included). `0` with no method chosen, a digital-only basket, or a method that no longer fits the basket's weight — the same real-time pricing `POST /cart/checkout` freezes onto the order, priced early so a shopper sees the true total before paying. */
-    shippingCost: NonNegativeDecimalAmount;
-    /** itemsTotal + shippingCost */
-    totalPrice: NonNegativeDecimalAmount;
-    /** ISO-4217 currency code (e.g. USD) */
-    currency: CurrencyCode;
+  totalQuantity: number;
+  /** Sum of item prices * quantity. Gross — VAT included, same as each product's own `price` — before shipping. There are no discounts to net out. */
+  itemsTotal: NonNegativeDecimalAmount;
+  /** What the cart's chosen shipping method (`PUT /cart/shipping-method`) costs against `itemsTotal` right now (free-above thresholds included). `0` with no method chosen, a digital-only basket, or a method that no longer fits the basket's weight — the same real-time pricing `POST /cart/checkout` freezes onto the order, priced early so a shopper sees the true total before paying. */
+  shippingCost: NonNegativeDecimalAmount;
+  /** itemsTotal + shippingCost */
+  totalPrice: NonNegativeDecimalAmount;
+  /** ISO-4217 currency code (e.g. USD) */
+  currency: CurrencyCode;
 }
 
 /**
  * One shipping method as it applies to THIS basket right now — a narrowed, already-priced projection of `GET /delivery/methods`' `ShippingMethod`, so a client never re-derives what it costs or whether it fits.
  */
 export interface CartShippingOption {
-    /** Matches a `ShippingMethod.id` from `GET /delivery/methods`. */
-    id: string;
-    /** What this method costs against `summary.itemsTotal` right now (free-above thresholds included) — the same figure `PUT /cart/shipping-method` would freeze into `summary.shippingCost` if chosen. */
-    price: NonNegativeDecimalAmount;
-    /** Whether choosing this method requires a shipping address. */
-    requiresAddress: boolean;
-    /** Whether a parcel sent by this method carries a tracking code. */
-    tracked: boolean;
+  /** Matches a `ShippingMethod.id` from `GET /delivery/methods`. */
+  id: string;
+  /** What this method costs against `summary.itemsTotal` right now (free-above thresholds included) — the same figure `PUT /cart/shipping-method` would freeze into `summary.shippingCost` if chosen. */
+  price: NonNegativeDecimalAmount;
+  /** Whether choosing this method requires a shipping address. */
+  requiresAddress: boolean;
+  /** Whether a parcel sent by this method carries a tracking code. */
+  tracked: boolean;
 }
 
 /**
  * What this basket needs from shipping, and what it may choose from — replaces a client computing its own basket weight and free-above math against the unfiltered `GET /delivery/methods` catalogue.
  */
 export interface CartShipping {
-    /** Whether this basket needs a shipping method at all — `false` for an all-digital cart, which `PUT /cart/shipping-method` and checkout both refuse a method against (`CART_SHIPPING_NOT_APPLICABLE`). */
-    required: boolean;
-    /** The cart's chosen shipping method (`PUT /cart/shipping-method`). Absent when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket's weight — the same "reads as none" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`). */
-    selected?: string;
-    /** Every method that currently fits this basket, already priced against `summary.itemsTotal` — empty whenever `required` is `false`. `GET /delivery/methods` remains the full, unfiltered catalogue this is drawn from. */
-    options: CartShippingOption[];
+  /** Whether this basket needs a shipping method at all — `false` for an all-digital cart, which `PUT /cart/shipping-method` and checkout both refuse a method against (`CART_SHIPPING_NOT_APPLICABLE`). */
+  required: boolean;
+  /** The cart's chosen shipping method (`PUT /cart/shipping-method`). Absent when none is chosen, when `required` is `false`, or once the stored choice no longer fits the basket's weight — the same "reads as none" state checkout itself falls back to (`CART_SHIPPING_METHOD_REQUIRED`). */
+  selected?: string;
+  /** Every method that currently fits this basket, already priced against `summary.itemsTotal` — empty whenever `required` is `false`. `GET /delivery/methods` remains the full, unfiltered catalogue this is drawn from. */
+  options: CartShippingOption[];
 }
 
 export interface CartResponse {
-    items: CartResponseItem[];
-    summary: CartSummaryResponse;
-    shipping: CartShipping;
-    /** Whether every line can be bought as it stands (each line's `availability` is `in_stock`, `preorder` or `backorder`) and the cart is not empty. Checkout refuses the others (`CART_INSUFFICIENT_STOCK`, `CART_PRODUCT_UNAVAILABLE`); a shipping method and an address are separate steps and not part of this. */
-    checkoutable: boolean;
+  items: CartResponseItem[];
+  summary: CartSummaryResponse;
+  shipping: CartShipping;
+  /** Whether every line can be bought as it stands (each line's `availability` is `in_stock`, `preorder` or `backorder`) and the cart is not empty. Checkout refuses the others (`CART_INSUFFICIENT_STOCK`, `CART_PRODUCT_UNAVAILABLE`); a shipping method and an address are separate steps and not part of this. */
+  checkoutable: boolean;
 }
 
 /**
@@ -5068,151 +5048,151 @@ export interface CartResponse {
 export type CartQuantity = number;
 
 export interface AddCartItemRequest {
-    productId: Id;
-    quantity: CartQuantity;
+  productId: Id;
+  quantity: CartQuantity;
 }
 
 export interface UpdateCartItemByProductIdRequest {
-    quantity: CartQuantity;
+  quantity: CartQuantity;
 }
 
 export interface SetCartShippingMethodRequest {
-    /**
+  /**
      * Which shipping method (see `GET /delivery/methods`) the cart plans to ship by. `null` clears the choice. An id that matches no method refuses with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`; one that does not apply to the basket refuses with 409 (`CART_SHIPPING_NOT_APPLICABLE`, `CART_SHIPPING_METHOD_WEIGHT`).
      * @minLength 1
      * @maxLength 64
      * @nullable
      */
-    shippingMethodId: string | null;
+  shippingMethodId: string | null;
 }
 
 /**
  * An order total as the buyer saw it, or as the checkout would charge it. Checkout compares by minor units, so `"71"` and `"71.00"` are the same total.
  */
 export interface ExpectedTotal {
-    /** The total at the places of `currency` (EUR 71.00 is `"71.00"`). */
-    amount: NonNegativeDecimalAmount;
-    /** The ISO-4217 code the total is priced in. */
-    currency: CurrencyCode;
+  /** The total at the places of `currency` (EUR 71.00 is `"71.00"`). */
+  amount: NonNegativeDecimalAmount;
+  /** The ISO-4217 code the total is priced in. */
+  currency: CurrencyCode;
 }
 
 export interface CheckoutRequest {
-    expectedTotal: ExpectedTotal;
-    /**
+  expectedTotal: ExpectedTotal;
+  /**
      * Optional order notes. Left out when there are none; an empty string is a 422.
      * @minLength 1
      * @maxLength 1000
      */
-    notes?: string;
-    /** Which of the caller's saved addresses to SHIP to — meaningful only when a line ships to an address. Omitted, the default address is used; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. A method with `requiresAddress: true` and no address resolved refuses with 422, `errors[].code` `CART_ADDRESS_REQUIRED`. Sent for a basket that ships to no address (all-digital, or a pickup method) it refuses with 409, `CART_ADDRESS_NOT_APPLICABLE`. The shipping method itself is not part of this request — it is the cart's own choice, set ahead of time via `PUT /cart/shipping-method`. */
-    addressId?: Id;
-    /** Which of the caller's saved addresses the order is INVOICED to (the order's `billingAddress`). Omitted, it is "same as the shipping address" when one was resolved, otherwise the default address; with neither the checkout refuses with 422, `errors[].code` `CART_BILLING_ADDRESS_REQUIRED`. An all-digital checkout asks for this one only. An id that matches none of the caller's addresses refuses with 404, `CART_ADDRESS_NOT_FOUND`. Unlike the shipping address, billing is not held to `NODE_SHIP_TO_COUNTRIES`. */
-    billingAddressId?: Id;
-    /** How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the payment's `nextAction` carries the transfer instructions. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`. That includes the default: a request that names no method asks for `card`, so a deployment with no card provider refuses it the same way. */
-    paymentMethod?: PaymentMethodId;
+  notes?: string;
+  /** Which of the caller's saved addresses to SHIP to — meaningful only when a line ships to an address. Omitted, the default address is used; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. A method with `requiresAddress: true` and no address resolved refuses with 422, `errors[].code` `CART_ADDRESS_REQUIRED`. Sent for a basket that ships to no address (all-digital, or a pickup method) it refuses with 409, `CART_ADDRESS_NOT_APPLICABLE`. The shipping method itself is not part of this request — it is the cart's own choice, set ahead of time via `PUT /cart/shipping-method`. */
+  addressId?: Id;
+  /** Which of the caller's saved addresses the order is INVOICED to (the order's `billingAddress`). Omitted, it is "same as the shipping address" when one was resolved, otherwise the default address; with neither the checkout refuses with 422, `errors[].code` `CART_BILLING_ADDRESS_REQUIRED`. An all-digital checkout asks for this one only. An id that matches none of the caller's addresses refuses with 404, `CART_ADDRESS_NOT_FOUND`. Unlike the shipping address, billing is not held to `NODE_SHIP_TO_COUNTRIES`. */
+  billingAddressId?: Id;
+  /** How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the payment's `nextAction` carries the transfer instructions. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`. That includes the default: a request that names no method asks for `card`, so a deployment with no card provider refuses it the same way. */
+  paymentMethod?: PaymentMethodId;
 }
 
 /**
  * Why the buyer's withdrawal button is not offered, first reason that applies. `all_excluded`: every line is goods Art. 16 CRD takes the right of withdrawal away from (made to order, perishable), so there is nothing to withdraw from — an unpaid or paid order can still be canceled with the ordinary cancel. `window_closed`: the withdrawal period ended. `nothing_left`: every unit is already back with the shop.
  */
-export type WithdrawBlockedReason =
-    (typeof WithdrawBlockedReason)[keyof typeof WithdrawBlockedReason];
+export type WithdrawBlockedReason = typeof WithdrawBlockedReason[keyof typeof WithdrawBlockedReason];
+
 
 export const WithdrawBlockedReason = {
-    all_excluded: 'all_excluded',
-    window_closed: 'window_closed',
-    nothing_left: 'nothing_left'
+  all_excluded: 'all_excluded',
+  window_closed: 'window_closed',
+  nothing_left: 'nothing_left',
 } as const;
 
 /**
  * What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree. Pay is the BUYER's (reading an order is not owning it); an operator who holds the key moves any order, a staff member's own included.
  */
 export interface OrderActions {
-    /** Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further — and only while nothing has shipped: once any shipment left, what remains is canceled one fulfillment order at a time (`POST /returns`, `kind: cancellation`). */
-    cancel: boolean;
-    /** Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not a status move any request makes: a client starts the flow with `POST /payments` and the provider's yes does the rest. */
-    pay: boolean;
-    /** Whether `POST /orders/{id}/payments` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment and the caller holds the key that records one. A buyer's own step is `pay`; a buyer who is staff may also record. */
-    recordPayment: boolean;
-    /** Whether `POST /orders/{id}/process` would be accepted for this caller. `paid → processing` is `system`-only in the lifecycle, reached only by reporting the fact through `delivery`'s own door. */
-    process: boolean;
-    /** The statuses `POST /orders/{id}/override-status` would accept as a destination for this caller right now — empty for anyone without `override:Order`, or once the order has left every overridable status. */
-    overrideStatus: OrderStatus[];
-    /** Whether `PUT /orders/{id}/shipping-address` would be accepted for this caller: they hold `update:Order`, the order has a shipping address, and units remain to send. */
-    correctAddress: boolean;
-    /** Whether the "withdraw from contract here" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`. A mixed order is not a reason to hide it: before dispatch the withdrawal takes the eligible goods (the whole order while it is unpaid or paid, the eligible shipment groups once it is `processing`); only an order made wholly of excluded goods is blocked. */
-    withdraw: boolean;
-    /** Why `withdraw` is `false`, for the order's own buyer on an order that is otherwise withdrawable. Absent when `withdraw` is `true`, for anyone who is not the buyer, and for an order whose status offers no withdrawal (canceled). A client shows the button disabled with this reason rather than hiding it. */
-    withdrawBlocked?: WithdrawBlockedReason;
-    /** Whether `DELETE /orders/{id}` would be accepted for this caller: the caller holds `delete:Order`, the order is `canceled` and not already hidden. */
-    delete: boolean;
-    /** Whether `DELETE /orders/{id}?hardDelete=true` would be accepted for this caller: the caller holds `delete:Order`, and the order is `canceled`, was never paid (a paid order's invoice must survive it) and holds no money recorded after the cancel (a late payment and its refund still point at it). */
-    hardDelete: boolean;
-    /** Whether `POST /orders/{id}/restore` would be accepted for this caller: the caller holds `delete:Order` and the order is soft-deleted (`deletedAt` is set). */
-    restore: boolean;
-    /** Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`. */
-    invoice: boolean;
+  /** Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further — and only while nothing has shipped: once any shipment left, what remains is canceled one fulfillment order at a time (`POST /returns`, `kind: cancellation`). */
+  cancel: boolean;
+  /** Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not a status move any request makes: a client starts the flow with `POST /payments` and the provider's yes does the rest. */
+  pay: boolean;
+  /** Whether `POST /orders/{id}/payments` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment and the caller holds the key that records one. A buyer's own step is `pay`; a buyer who is staff may also record. */
+  recordPayment: boolean;
+  /** Whether `POST /orders/{id}/process` would be accepted for this caller. `paid → processing` is `system`-only in the lifecycle, reached only by reporting the fact through `delivery`'s own door. */
+  process: boolean;
+  /** The statuses `POST /orders/{id}/override-status` would accept as a destination for this caller right now — empty for anyone without `override:Order`, or once the order has left every overridable status. */
+  overrideStatus: OrderStatus[];
+  /** Whether `PUT /orders/{id}/shipping-address` would be accepted for this caller: they hold `update:Order`, the order has a shipping address, and units remain to send. */
+  correctAddress: boolean;
+  /** Whether the "withdraw from contract here" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`. A mixed order is not a reason to hide it: before dispatch the withdrawal takes the eligible goods (the whole order while it is unpaid or paid, the eligible shipment groups once it is `processing`); only an order made wholly of excluded goods is blocked. */
+  withdraw: boolean;
+  /** Why `withdraw` is `false`, for the order's own buyer on an order that is otherwise withdrawable. Absent when `withdraw` is `true`, for anyone who is not the buyer, and for an order whose status offers no withdrawal (canceled). A client shows the button disabled with this reason rather than hiding it. */
+  withdrawBlocked?: WithdrawBlockedReason;
+  /** Whether `DELETE /orders/{id}` would be accepted for this caller: the caller holds `delete:Order`, the order is `canceled` and not already hidden. */
+  delete: boolean;
+  /** Whether `DELETE /orders/{id}?hardDelete=true` would be accepted for this caller: the caller holds `delete:Order`, and the order is `canceled`, was never paid (a paid order's invoice must survive it) and holds no money recorded after the cancel (a late payment and its refund still point at it). */
+  hardDelete: boolean;
+  /** Whether `POST /orders/{id}/restore` would be accepted for this caller: the caller holds `delete:Order` and the order is soft-deleted (`deletedAt` is set). */
+  restore: boolean;
+  /** Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`. */
+  invoice: boolean;
 }
 
 export interface Order {
-    id: Id;
-    userId?: Id;
-    email: Email;
-    items: OrderItem[];
-    /**
+  id: Id;
+  userId?: Id;
+  email: Email;
+  items: OrderItem[];
+  /**
      * Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
      * @minimum 0
      */
-    totalItems: number;
-    /**
+  totalItems: number;
+  /**
      * Sum of `quantity` across every line item.
      * @minimum 0
      */
-    totalQuantity: number;
-    /** Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method. */
-    totalPrice: NonNegativeDecimalAmount;
-    /** ISO-4217 currency code this order was priced in (e.g. EUR). */
-    readonly currency: CurrencyCode;
-    /** The Terms version in force when the buyer placed the order at checkout; absent on staff-placed orders. */
-    readonly termsVersion?: string;
-    /** Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. */
-    readonly netTotal: NonNegativeDecimalAmount;
-    /** Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. */
-    readonly taxTotal: NonNegativeDecimalAmount;
-    /** Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping. */
-    readonly shippingNetAmount: NonNegativeDecimalAmount;
-    /** Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping. */
-    readonly shippingTaxAmount: NonNegativeDecimalAmount;
-    /** One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines. */
-    readonly taxSummary: readonly OrderTaxSummaryRow[];
-    /** Optional order notes */
-    notes?: string;
-    /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
-    shippingMethod?: string;
-    /** What that method cost at checkout time — a later rate change cannot re-price history. */
-    shippingCost?: NonNegativeDecimalAmount;
-    shippingAddress?: OrderAddress;
-    billingAddress?: OrderAddress;
-    paymentMethod?: PaymentMethodId;
-    payBy?: string;
-    readonly orderNumber: string;
-    status: OrderStatus;
-    paymentStatus: OrderPaymentStatus;
-    fulfillmentStatus: OrderFulfillmentStatus;
-    returnStatus: OrderReturnStatus;
-    actions: OrderActions;
-    /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
-    readonly withdrawUntil?: string;
-    paidAt?: string;
-    createdAt?: string;
-    /** When staff or the buyer last edited the order or moved its status. Reports from payments, delivery and returns don't move it. */
-    updatedAt?: string;
-    deletedAt?: string;
+  totalQuantity: number;
+  /** Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method. */
+  totalPrice: NonNegativeDecimalAmount;
+  /** ISO-4217 currency code this order was priced in (e.g. EUR). */
+  readonly currency: CurrencyCode;
+  /** The Terms version in force when the buyer placed the order at checkout; absent on staff-placed orders. */
+  readonly termsVersion?: string;
+  /** Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here. */
+  readonly netTotal: NonNegativeDecimalAmount;
+  /** Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers. */
+  readonly taxTotal: NonNegativeDecimalAmount;
+  /** Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping. */
+  readonly shippingNetAmount: NonNegativeDecimalAmount;
+  /** Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping. */
+  readonly shippingTaxAmount: NonNegativeDecimalAmount;
+  /** One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines. */
+  readonly taxSummary: readonly OrderTaxSummaryRow[];
+  /** Optional order notes */
+  notes?: string;
+  /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
+  shippingMethod?: string;
+  /** What that method cost at checkout time — a later rate change cannot re-price history. */
+  shippingCost?: NonNegativeDecimalAmount;
+  shippingAddress?: OrderAddress;
+  billingAddress?: OrderAddress;
+  paymentMethod?: PaymentMethodId;
+  payBy?: string;
+  readonly orderNumber: string;
+  status: OrderStatus;
+  paymentStatus: OrderPaymentStatus;
+  fulfillmentStatus: OrderFulfillmentStatus;
+  returnStatus: OrderReturnStatus;
+  actions: OrderActions;
+  /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
+  readonly withdrawUntil?: string;
+  paidAt?: string;
+  createdAt?: string;
+  /** When staff or the buyer last edited the order or moved its status. Reports from payments, delivery and returns don't move it. */
+  updatedAt?: string;
+  deletedAt?: string;
 }
 
 export interface ReorderRequest {
-    /** One of the caller's own orders */
-    orderId: Id;
+  /** One of the caller's own orders */
+  orderId: Id;
 }
 
 /**
@@ -5224,63 +5204,65 @@ export interface ReorderRequest {
  *   that is merely sold out, or taken off sale, is NOT removed: it is added and
  *   flagged through `availability`.
  */
-export type MergeLineReason = (typeof MergeLineReason)[keyof typeof MergeLineReason];
+export type MergeLineReason = typeof MergeLineReason[keyof typeof MergeLineReason];
+
 
 export const MergeLineReason = {
-    summed: 'summed',
-    capped: 'capped',
-    cart_full: 'cart_full',
-    removed: 'removed'
+  summed: 'summed',
+  capped: 'capped',
+  cart_full: 'cart_full',
+  removed: 'removed',
 } as const;
 
 export interface MergeLineResult {
-    productId: Id;
-    /**
+  productId: Id;
+  /**
      * What the guest line (or the order line) asked for.
      * @minimum 1
      */
-    requested: number;
-    /**
+  requested: number;
+  /**
      * What the cart holds for this product after the merge or reorder.
      * @minimum 0
      */
-    resulting: number;
-    reason?: MergeLineReason;
-    availability: LineAvailability;
+  resulting: number;
+  reason?: MergeLineReason;
+  availability: LineAvailability;
 }
 
 export interface ReorderResponse {
-    cart: CartResponse;
-    /** One result per order line, in the order's own order. */
-    lines: MergeLineResult[];
+  cart: CartResponse;
+  /** One result per order line, in the order's own order. */
+  lines: MergeLineResult[];
 }
 
 export interface WishlistItem {
-    productId: Id;
-    availability: LineAvailability;
+  productId: Id;
+  availability: LineAvailability;
 }
 
 export interface WishlistResponse {
-    items: WishlistItem[];
+  items: WishlistItem[];
 }
 
 export interface CreateWishlistItemRequest {
-    productId: Id;
+  productId: Id;
 }
 
-export type OrderSortItem = (typeof OrderSortItem)[keyof typeof OrderSortItem];
+export type OrderSortItem = typeof OrderSortItem[keyof typeof OrderSortItem];
+
 
 export const OrderSortItem = {
-    createdAt: 'createdAt',
-    '-createdAt': '-createdAt',
-    status: 'status',
-    '-status': '-status',
-    email: 'email',
-    '-email': '-email',
-    payBy: 'payBy',
-    '-payBy': '-payBy',
-    paidAt: 'paidAt',
-    '-paidAt': '-paidAt'
+  createdAt: 'createdAt',
+  '-createdAt': '-createdAt',
+  status: 'status',
+  '-status': '-status',
+  email: 'email',
+  '-email': '-email',
+  payBy: 'payBy',
+  '-payBy': '-payBy',
+  paidAt: 'paidAt',
+  '-paidAt': '-paidAt',
 } as const;
 
 /**
@@ -5292,169 +5274,170 @@ export type OrderSort = OrderSortItem[];
 /**
  * What `fulfillmentStatus` accepts: every `OrderFulfillmentStatus` value, plus the filter-only `awaiting_shipment` — paid or processing, so goods still owed, none or some already sent (Shopify's `unfulfilled` inside `status=open`). No order carries it, so responses keep `OrderFulfillmentStatus`.
  */
-export type OrderFulfillmentFilter =
-    (typeof OrderFulfillmentFilter)[keyof typeof OrderFulfillmentFilter];
+export type OrderFulfillmentFilter = typeof OrderFulfillmentFilter[keyof typeof OrderFulfillmentFilter];
+
 
 export const OrderFulfillmentFilter = {
-    awaiting_shipment: 'awaiting_shipment',
-    unfulfilled: 'unfulfilled',
-    in_progress: 'in_progress',
-    on_hold: 'on_hold',
-    partially_fulfilled: 'partially_fulfilled',
-    shipped: 'shipped',
-    fulfilled: 'fulfilled'
+  awaiting_shipment: 'awaiting_shipment',
+  unfulfilled: 'unfulfilled',
+  in_progress: 'in_progress',
+  on_hold: 'on_hold',
+  partially_fulfilled: 'partially_fulfilled',
+  shipped: 'shipped',
+  fulfilled: 'fulfilled',
 } as const;
 
 export interface OrderListItem {
-    id: Id;
-    orderNumber: string;
-    status: OrderStatus;
-    paymentStatus: OrderPaymentStatus;
-    fulfillmentStatus: OrderFulfillmentStatus;
-    returnStatus: OrderReturnStatus;
-    totalPrice: NonNegativeDecimalAmount;
-    currency: CurrencyCode;
-    /** When the order reached `paid`. Absent while unpaid. */
-    paidAt?: string;
-    createdAt?: string;
-    /** Present only on a soft-deleted order, which only staff list. */
-    deletedAt?: string;
-    actions: OrderActions;
+  id: Id;
+  orderNumber: string;
+  status: OrderStatus;
+  paymentStatus: OrderPaymentStatus;
+  fulfillmentStatus: OrderFulfillmentStatus;
+  returnStatus: OrderReturnStatus;
+  totalPrice: NonNegativeDecimalAmount;
+  currency: CurrencyCode;
+  /** When the order reached `paid`. Absent while unpaid. */
+  paidAt?: string;
+  createdAt?: string;
+  /** Present only on a soft-deleted order, which only staff list. */
+  deletedAt?: string;
+  actions: OrderActions;
 }
 
 export interface OrdersResponse {
-    items: OrderListItem[];
-    meta: PaginationMeta;
+  items: OrderListItem[];
+  meta: PaginationMeta;
 }
 
 export interface OrderLineInput {
-    productId: Id;
-    /**
+  productId: Id;
+  /**
      * @minimum 1
      * @maximum 999999
      */
-    quantity: number;
+  quantity: number;
 }
 
 /**
  * Create a new order.
  */
 export interface CreateOrderRequest {
-    userId: Id;
-    email: Email;
-    /**
+  userId: Id;
+  email: Email;
+  /**
      * @minItems 1
      * @maxItems 1000
      */
-    items: OrderLineInput[];
+  items: OrderLineInput[];
 }
 
 export interface SearchOrdersRequest {
-    page?: Page;
-    pageSize?: PageSize;
-    sort?: OrderSort;
-    /**
+  page?: Page;
+  pageSize?: PageSize;
+  sort?: OrderSort;
+  /**
      * @minItems 1
      * @maxItems 100
      */
-    id?: Id[];
-    userId?: Id;
-    productId?: Id;
-    email?: Email;
-    /**
+  id?: Id[];
+  userId?: Id;
+  productId?: Id;
+  email?: Email;
+  /**
      * The order's number as the customer quotes it; a leading `#`, spaces and an unpadded sequence are tolerated; anything else finds nothing.
      * @maxLength 32
      */
-    orderNumber?: string;
-    status?: OrderStatus;
-    fulfillmentStatus?: OrderFulfillmentFilter;
-    paymentMethod?: PaymentMethodId;
-    deleted?: boolean;
-    createdFrom?: string;
-    createdTo?: string;
-    paidFrom?: string;
-    paidTo?: string;
-    paymentStatus?: OrderPaymentStatus;
-    returnStatus?: OrderReturnStatus;
+  orderNumber?: string;
+  status?: OrderStatus;
+  fulfillmentStatus?: OrderFulfillmentFilter;
+  paymentMethod?: PaymentMethodId;
+  deleted?: boolean;
+  createdFrom?: string;
+  createdTo?: string;
+  paidFrom?: string;
+  paidTo?: string;
+  paymentStatus?: OrderPaymentStatus;
+  returnStatus?: OrderReturnStatus;
 }
 
 export interface ReplaceOrderByIdRequest {
-    email: Email;
+  email: Email;
 }
 
 export interface UpdateOrderByIdRequest {
-    email?: Email;
+  email?: Email;
 }
 
 /**
  * The operator's choice of whether the money goes back with the cancellation. Ignored for a customer, who is always refunded. Omit the body entirely for the default.
  */
 export interface CancelOrderRequest {
-    /** `false` cancels and releases the stock without returning the money — a replacement going out, a correction, or a refund handled separately through `POST /payments/{id}/refunds`. */
-    refund?: boolean;
+  /** `false` cancels and releases the stock without returning the money — a replacement going out, a correction, or a refund handled separately through `POST /payments/{id}/refunds`. */
+  refund?: boolean;
 }
 
 export interface StatusOverrideRequest {
-    /** Must be `processing`, `shipped` or `delivered`, and forward of the order's current status — every other value is a 409. */
-    to: OrderStatus;
-    /**
+  /** Must be `processing`, `shipped` or `delivered`, and forward of the order's current status — every other value is a 409. */
+  to: OrderStatus;
+  /**
      * Why the normal door didn't apply. Recorded on the order's timeline, never optional.
      * @minLength 1
      * @maxLength 1000
      */
-    reason: string;
+  reason: string;
 }
 
 export interface CreditNoteSummary {
-    id: Id;
-    /** The credit note's own number, in its own yearly series. */
-    number: string;
-    issuedAt: string;
-    /** ISO-4217 currency code (e.g. EUR) */
-    currency: CurrencyCode;
-    /** The gross amount this credit note reverses. */
-    grandTotal: NonNegativeDecimalAmount;
-    refundId: Id;
+  id: Id;
+  /** The credit note's own number, in its own yearly series. */
+  number: string;
+  issuedAt: string;
+  /** ISO-4217 currency code (e.g. EUR) */
+  currency: CurrencyCode;
+  /** The gross amount this credit note reverses. */
+  grandTotal: NonNegativeDecimalAmount;
+  refundId: Id;
 }
 
 export interface CreditNotesResponse {
-    items: CreditNoteSummary[];
+  items: CreditNoteSummary[];
 }
 
 /**
  * The label a payment shows, derived from the stored status and its refund records (Shopify's `displayFinancialStatus`). `incomplete` — awaiting confirmation or action; `pending` — processing; `succeeded` — paid, no refund record; `refund_pending` — any refund still pending or failed (wins over the next two); `partially_refunded` — paid with at least one settled refund; `refunded` — fully returned (every unit of `amount`, no refund still open); `failed` — declined; `canceled` — the order was canceled before the payment settled.
  */
-export type PaymentDisplayStatus = (typeof PaymentDisplayStatus)[keyof typeof PaymentDisplayStatus];
+export type PaymentDisplayStatus = typeof PaymentDisplayStatus[keyof typeof PaymentDisplayStatus];
+
 
 export const PaymentDisplayStatus = {
-    incomplete: 'incomplete',
-    pending: 'pending',
-    succeeded: 'succeeded',
-    refund_pending: 'refund_pending',
-    partially_refunded: 'partially_refunded',
-    refunded: 'refunded',
-    failed: 'failed',
-    canceled: 'canceled'
+  incomplete: 'incomplete',
+  pending: 'pending',
+  succeeded: 'succeeded',
+  refund_pending: 'refund_pending',
+  partially_refunded: 'partially_refunded',
+  refunded: 'refunded',
+  failed: 'failed',
+  canceled: 'canceled',
 } as const;
 
-export type PaymentBankTransferActionType =
-    (typeof PaymentBankTransferActionType)[keyof typeof PaymentBankTransferActionType];
+export type PaymentBankTransferActionType = typeof PaymentBankTransferActionType[keyof typeof PaymentBankTransferActionType];
+
 
 export const PaymentBankTransferActionType = {
-    bank_transfer: 'bank_transfer'
+  bank_transfer: 'bank_transfer',
 } as const;
 
 export interface PaymentBankTransferAction {
-    type: PaymentBankTransferActionType;
-    beneficiary: string;
-    /** Grouped into blocks of four, the way a bank's own transfer form shows one. */
-    iban: string;
-    /** Absent when the deployment has not configured one. */
-    bic?: string;
-    /** The ISO 11649 "RF" creditor reference of this payment — what the buyer writes into the transfer's description, so an operator can match the incoming money back via `GET /payments?transferReference=`. A malformed or unmatched reference finds nothing; a raw order id is not a reference. */
-    reference: string;
-    /** When the order's stock hold ends. Past it, with no money received, the order is canceled. */
-    payBy: string;
+  type: PaymentBankTransferActionType;
+  beneficiary: string;
+  /** Grouped into blocks of four, the way a bank's own transfer form shows one. */
+  iban: string;
+  /** Absent when the deployment has not configured one. */
+  bic?: string;
+  /** The ISO 11649 "RF" creditor reference of this payment — what the buyer writes into the transfer's description, so an operator can match the incoming money back via `GET /payments?transferReference=`. A malformed or unmatched reference finds nothing; a raw order id is not a reference. */
+  reference: string;
+  /** When the order's stock hold ends. Past it, with no money received, the order is canceled. */
+  payBy: string;
 }
 
 export type PaymentNextAction = PaymentBankTransferAction;
@@ -5462,566 +5445,572 @@ export type PaymentNextAction = PaymentBankTransferAction;
 /**
  * `inquiry` — the bank asks for information before taking any money (Stripe's `warning_*` states); refunds stay allowed, and a full refund ends it. `chargeback` — the bank took the money back and the shop may send evidence.
  */
-export type DisputeKind = (typeof DisputeKind)[keyof typeof DisputeKind];
+export type DisputeKind = typeof DisputeKind[keyof typeof DisputeKind];
+
 
 export const DisputeKind = {
-    inquiry: 'inquiry',
-    chargeback: 'chargeback'
+  inquiry: 'inquiry',
+  chargeback: 'chargeback',
 } as const;
 
 /**
  * `needs_response` — waiting for the shop's evidence; `under_review` — evidence sent, the bank decides; `won` — decided for the shop (funds reinstated); `lost` — decided against it; `accepted` — the shop gave up and accepted the chargeback; `closed` — an inquiry that ended without a charge. `needs_response` and `under_review` are open. A closed dispute can still flip (a late win, a second chargeback).
  */
-export type DisputeStatus = (typeof DisputeStatus)[keyof typeof DisputeStatus];
+export type DisputeStatus = typeof DisputeStatus[keyof typeof DisputeStatus];
+
 
 export const DisputeStatus = {
-    needs_response: 'needs_response',
-    under_review: 'under_review',
-    won: 'won',
-    lost: 'lost',
-    accepted: 'accepted',
-    closed: 'closed'
+  needs_response: 'needs_response',
+  under_review: 'under_review',
+  won: 'won',
+  lost: 'lost',
+  accepted: 'accepted',
+  closed: 'closed',
 } as const;
 
 /**
  * Why the buyer's bank says the charge is disputed — Stripe's closed list, which an adapter for another provider maps its own codes onto.
  */
-export type DisputeReason = (typeof DisputeReason)[keyof typeof DisputeReason];
+export type DisputeReason = typeof DisputeReason[keyof typeof DisputeReason];
+
 
 export const DisputeReason = {
-    bank_cannot_process: 'bank_cannot_process',
-    check_returned: 'check_returned',
-    credit_not_processed: 'credit_not_processed',
-    customer_initiated: 'customer_initiated',
-    debit_not_authorized: 'debit_not_authorized',
-    duplicate: 'duplicate',
-    fraudulent: 'fraudulent',
-    general: 'general',
-    incorrect_account_details: 'incorrect_account_details',
-    insufficient_funds: 'insufficient_funds',
-    product_not_received: 'product_not_received',
-    product_unacceptable: 'product_unacceptable',
-    subscription_canceled: 'subscription_canceled',
-    unrecognized: 'unrecognized'
+  bank_cannot_process: 'bank_cannot_process',
+  check_returned: 'check_returned',
+  credit_not_processed: 'credit_not_processed',
+  customer_initiated: 'customer_initiated',
+  debit_not_authorized: 'debit_not_authorized',
+  duplicate: 'duplicate',
+  fraudulent: 'fraudulent',
+  general: 'general',
+  incorrect_account_details: 'incorrect_account_details',
+  insufficient_funds: 'insufficient_funds',
+  product_not_received: 'product_not_received',
+  product_unacceptable: 'product_unacceptable',
+  subscription_canceled: 'subscription_canceled',
+  unrecognized: 'unrecognized',
 } as const;
 
 /**
  * A dispute on a payment, as the last delivery left it. Staff only. Answered in the provider's dashboard: this API shows it and alerts, it never sends evidence.
  */
 export interface Dispute {
-    /** The provider's dispute id. */
-    disputeRef: string;
-    kind: DisputeKind;
-    status: DisputeStatus;
-    reason: DisputeReason;
-    amount: NonNegativeDecimalAmount;
-    currency: CurrencyCode;
-    evidenceDueBy?: string;
-    fundsWithdrawn: boolean;
-    /** The provider's time of the first report of this dispute. */
-    openedAt: string;
-    /** When it last reached a closed status (`won`, `lost`, `accepted`, `closed`). Absent while open, and cleared if a closed one reopens. */
-    closedAt?: string;
-    /** The provider's time of the newest report applied. */
-    observedAt: string;
-    dashboardUrl?: string;
+  /** The provider's dispute id. */
+  disputeRef: string;
+  kind: DisputeKind;
+  status: DisputeStatus;
+  reason: DisputeReason;
+  amount: NonNegativeDecimalAmount;
+  currency: CurrencyCode;
+  evidenceDueBy?: string;
+  fundsWithdrawn: boolean;
+  /** The provider's time of the first report of this dispute. */
+  openedAt: string;
+  /** When it last reached a closed status (`won`, `lost`, `accepted`, `closed`). Absent while open, and cleared if a closed one reopens. */
+  closedAt?: string;
+  /** The provider's time of the newest report applied. */
+  observedAt: string;
+  dashboardUrl?: string;
 }
 
 /**
  * What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself. Every response that carries a payment carries these, including the answer to each write, so a client never has to re-read to learn the next step.
  */
 export interface PaymentActions {
-    /** Whether the buyer may start or retry paying — the payment is awaiting confirmation or retryable after a decline (then `POST /payments/{id}/confirm`), or it is a bank transfer still waiting for its money and a card provider is configured (then `POST /payments` takes it over with a card), AND the order can still reach `paid`, AND the caller is the payer and holds `checkout:Cart` (staff reading the payment are never offered it). An in-flight payment is deliberately not payable: its next step is `sync`. */
-    pay: boolean;
-    /** Whether the buyer may finish at the provider with `POST /payments/{id}/sync` — the payment is `requires_action` or `processing`, it went through the provider, and the caller is the payer holding `checkout:Cart`. Narrower than the route on purpose: the route also accepts a payment that is awaiting confirmation or was declined, whose next step is `pay`. Never true together with `pay`. */
-    sync: boolean;
-    /** Whether `POST /payments/{id}/refunds` would be accepted: the caller holds `create:Refund`, the payment is `succeeded` and something is left to refund. False once nothing is left (fully refunded, or the rest already asked back, or a lost chargeback took the rest) or a chargeback is open on the payment (`PAYMENT_DISPUTED`), which is what greys the control out rather than letting the operator discover it by clicking. A refund still open counts against what is left but does not hide the control while money remains. On a hand-paid payment the refund only opens a record; `settleRefundByHand` confirms it. */
-    refund: boolean;
-    /** The ids of the refunds this caller may mark as returned with `POST /payments/{id}/refunds/{refundId}/settle`: the caller holds `create:Refund`, the payment is `succeeded`, and the refund is either a hand-paid payment's `pending` one or a card refund `failed` with a reason that proves the money did not move (`RefundFailureReason`). The server decides; a client never rebuilds this rule. An array because the route takes a target; empty when there is none. */
-    settleRefundByHand: Id[];
-    /** The ids of the refunds this caller may void with `POST /payments/{id}/refunds/{refundId}/cancel`: the same set as `settleRefundByHand` (money that provably did not move), so a hand-paid `pending` refund or a card refund refused for a clear reason. The server decides. Empty when there is none. */
-    cancelRefund: Id[];
+  /** Whether the buyer may start or retry paying — the payment is awaiting confirmation or retryable after a decline (then `POST /payments/{id}/confirm`), or it is a bank transfer still waiting for its money and a card provider is configured (then `POST /payments` takes it over with a card), AND the order can still reach `paid`, AND the caller is the payer and holds `checkout:Cart` (staff reading the payment are never offered it). An in-flight payment is deliberately not payable: its next step is `sync`. */
+  pay: boolean;
+  /** Whether the buyer may finish at the provider with `POST /payments/{id}/sync` — the payment is `requires_action` or `processing`, it went through the provider, and the caller is the payer holding `checkout:Cart`. Narrower than the route on purpose: the route also accepts a payment that is awaiting confirmation or was declined, whose next step is `pay`. Never true together with `pay`. */
+  sync: boolean;
+  /** Whether `POST /payments/{id}/refunds` would be accepted: the caller holds `create:Refund`, the payment is `succeeded` and something is left to refund. False once nothing is left (fully refunded, or the rest already asked back, or a lost chargeback took the rest) or a chargeback is open on the payment (`PAYMENT_DISPUTED`), which is what greys the control out rather than letting the operator discover it by clicking. A refund still open counts against what is left but does not hide the control while money remains. On a hand-paid payment the refund only opens a record; `settleRefundByHand` confirms it. */
+  refund: boolean;
+  /** The ids of the refunds this caller may mark as returned with `POST /payments/{id}/refunds/{refundId}/settle`: the caller holds `create:Refund`, the payment is `succeeded`, and the refund is either a hand-paid payment's `pending` one or a card refund `failed` with a reason that proves the money did not move (`RefundFailureReason`). The server decides; a client never rebuilds this rule. An array because the route takes a target; empty when there is none. */
+  settleRefundByHand: Id[];
+  /** The ids of the refunds this caller may void with `POST /payments/{id}/refunds/{refundId}/cancel`: the same set as `settleRefundByHand` (money that provably did not move), so a hand-paid `pending` refund or a card refund refused for a clear reason. The server decides. Empty when there is none. */
+  cancelRefund: Id[];
 }
 
 /**
  * The provider-facing lifecycle. A refunded payment, whole or in part, stays `succeeded`: `displayStatus` and `amountRefunded` say how much went back. `canceled` means the order was canceled and the provider confirmed the intent closed; money that still arrives on it is settled and returned. `requires_action` means the buyer has something to do: the bank wants a challenge answered in the browser (3-D Secure), or a bank transfer is waiting to be sent (`nextAction` says how) — and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions
  */
-export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus];
+export type PaymentStatus = typeof PaymentStatus[keyof typeof PaymentStatus];
+
 
 export const PaymentStatus = {
-    requires_confirmation: 'requires_confirmation',
-    requires_action: 'requires_action',
-    processing: 'processing',
-    succeeded: 'succeeded',
-    declined: 'declined',
-    canceled: 'canceled'
+  requires_confirmation: 'requires_confirmation',
+  requires_action: 'requires_action',
+  processing: 'processing',
+  succeeded: 'succeeded',
+  declined: 'declined',
+  canceled: 'canceled',
 } as const;
 
 /**
  * How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /orders/{id}/payments`, from what the admin chose there.
  */
-export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod];
+export type PaymentMethod = typeof PaymentMethod[keyof typeof PaymentMethod];
+
 
 export const PaymentMethod = {
-    card: 'card',
-    bank_transfer: 'bank_transfer',
-    cash: 'cash',
-    other: 'other'
+  card: 'card',
+  bank_transfer: 'bank_transfer',
+  cash: 'cash',
+  other: 'other',
 } as const;
 
 export interface Payment {
-    id: Id;
-    orderId: Id;
-    userId?: Id;
-    /** The order's total as the intent froze it. Always at the currency's own places, rounded half-up at the point of calculation. If the provider reports a success for a different amount or currency, the payment reads `succeeded` with what ARRIVED here, its order is canceled and the money is returned. */
-    amount: NonNegativeDecimalAmount;
-    /** ISO-4217 currency code (e.g. EUR) */
-    currency: CurrencyCode;
-    /** How much of `amount` has been asked back, pending and succeeded together — the same reading as Stripe's `amount_refunded`. Counted when a refund is opened, so two racing partial refunds cannot return more than was paid. */
-    amountRefunded: NonNegativeDecimalAmount;
-    /** One record per refund attempt, oldest first. */
-    refunds: Refund[];
-    /** The provider-facing lifecycle. A refunded payment, whole or in part, stays `succeeded`: `displayStatus` and `amountRefunded` say how much went back. `canceled` means the order was canceled and the provider confirmed the intent closed; money that still arrives on it is settled and returned. `requires_action` means the buyer has something to do: the bank wants a challenge answered in the browser (3-D Secure), or a bank transfer is waiting to be sent (`nextAction` says how) — and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions */
-    status: PaymentStatus;
-    displayStatus: PaymentDisplayStatus;
-    nextAction?: PaymentNextAction;
-    /** The provider's own id for the payment intent (Stripe's `pi_…`). Sent only to a caller holding `display:Payment`, so support can look the payment up at the provider; never to the payer. Absent on a `manual` payment. */
-    providerRef?: string;
-    /** The order's number. Present on `GET /payments` rows only. */
-    orderNumber?: string;
-    /** The order's customer email. Present on `GET /payments` rows only. */
-    email?: Email;
-    /** Which provider implementation handled it — the name the deployment registered (`NODE_PAYMENT_PROVIDER`), or `manual` for a payment recorded by hand (`POST /orders/{id}/payments`). */
-    provider: string;
-    /** How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /orders/{id}/payments`, from what the admin chose there. */
-    method: PaymentMethod;
-    /**
+  id: Id;
+  orderId: Id;
+  userId?: Id;
+  /** The order's total as the intent froze it. Always at the currency's own places, rounded half-up at the point of calculation. If the provider reports a success for a different amount or currency, the payment reads `succeeded` with what ARRIVED here, its order is canceled and the money is returned. */
+  amount: NonNegativeDecimalAmount;
+  /** ISO-4217 currency code (e.g. EUR) */
+  currency: CurrencyCode;
+  /** How much of `amount` has been asked back, pending and succeeded together — the same reading as Stripe's `amount_refunded`. Counted when a refund is opened, so two racing partial refunds cannot return more than was paid. */
+  amountRefunded: NonNegativeDecimalAmount;
+  /** One record per refund attempt, oldest first. */
+  refunds: Refund[];
+  /** The provider-facing lifecycle. A refunded payment, whole or in part, stays `succeeded`: `displayStatus` and `amountRefunded` say how much went back. `canceled` means the order was canceled and the provider confirmed the intent closed; money that still arrives on it is settled and returned. `requires_action` means the buyer has something to do: the bank wants a challenge answered in the browser (3-D Secure), or a bank transfer is waiting to be sent (`nextAction` says how) — and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions */
+  status: PaymentStatus;
+  displayStatus: PaymentDisplayStatus;
+  nextAction?: PaymentNextAction;
+  /** The provider's own id for the payment intent (Stripe's `pi_…`). Sent only to a caller holding `display:Payment`, so support can look the payment up at the provider; never to the payer. Absent on a `manual` payment. */
+  providerRef?: string;
+  /** The order's number. Present on `GET /payments` rows only. */
+  orderNumber?: string;
+  /** The order's customer email. Present on `GET /payments` rows only. */
+  email?: Email;
+  /** Which provider implementation handled it — the name the deployment registered (`NODE_PAYMENT_PROVIDER`), or `manual` for a payment recorded by hand (`POST /orders/{id}/payments`). */
+  provider: string;
+  /** How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /orders/{id}/payments`, from what the admin chose there. */
+  method: PaymentMethod;
+  /**
      * Free text identifying an offline payment — a bank transaction id, a receipt number. Set only by `POST /orders/{id}/payments`; absent from a card payment.
      * @maxLength 120
      */
-    reference?: string;
-    /** When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST /orders/{id}/payments`; absent from a card payment. */
-    receivedAt?: string;
-    /** Returned by `POST /payments` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response. */
-    clientSecret?: string;
-    /**
+  reference?: string;
+  /** When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST /orders/{id}/payments`; absent from a card payment. */
+  receivedAt?: string;
+  /** Returned by `POST /payments` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response. */
+  clientSecret?: string;
+  /**
      * The only card digits a payment system may remember. Survives a refund — refunding does not clear it.
      * @pattern ^\d{4}$
      */
-    cardLast4?: string;
-    /** Disputes the buyer's bank opened on this card payment, oldest first. Sent only to a caller holding `display:Payment`. A payment with none omits the field. An open chargeback blocks refunds (`actions.refund` is false and the refund door answers 409 `PAYMENT_DISPUTED`); a lost one shrinks what is left to refund by its amount. `displayStatus` does not change: a dispute is a separate fact. */
-    disputes?: Dispute[];
-    actions: PaymentActions;
-    createdAt?: string;
-    updatedAt?: string;
+  cardLast4?: string;
+  /** Disputes the buyer's bank opened on this card payment, oldest first. Sent only to a caller holding `display:Payment`. A payment with none omits the field. An open chargeback blocks refunds (`actions.refund` is false and the refund door answers 409 `PAYMENT_DISPUTED`); a lost one shrinks what is left to refund by its amount. `displayStatus` does not change: a dispute is a separate fact. */
+  disputes?: Dispute[];
+  actions: PaymentActions;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface OrderPaymentsResponse {
-    items: Payment[];
+  items: Payment[];
 }
 
 /**
  * How the money arrived. `card` is not offered here — that path is `POST /payments`.
  */
-export type RecordOfflinePaymentRequestMethod =
-    (typeof RecordOfflinePaymentRequestMethod)[keyof typeof RecordOfflinePaymentRequestMethod];
+export type RecordOfflinePaymentRequestMethod = typeof RecordOfflinePaymentRequestMethod[keyof typeof RecordOfflinePaymentRequestMethod];
+
 
 export const RecordOfflinePaymentRequestMethod = {
-    bank_transfer: 'bank_transfer',
-    cash: 'cash',
-    other: 'other'
+  bank_transfer: 'bank_transfer',
+  cash: 'cash',
+  other: 'other',
 } as const;
 
 export interface RecordOfflinePaymentRequest {
-    /** How the money arrived. `card` is not offered here — that path is `POST /payments`. */
-    method: RecordOfflinePaymentRequestMethod;
-    /**
+  /** How the money arrived. `card` is not offered here — that path is `POST /payments`. */
+  method: RecordOfflinePaymentRequestMethod;
+  /**
      * A bank transaction id, a receipt number — whatever ties this record to the money.
      * @minLength 1
      * @maxLength 120
      */
-    reference?: string;
-    /** When the money arrived. Must not be in the future. Defaults to now. */
-    receivedAt?: string;
+  reference?: string;
+  /** When the money arrived. Must not be in the future. Defaults to now. */
+  receivedAt?: string;
 }
 
 /**
  * What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `update:Shipment`.
  */
 export interface FulfillmentOrderActions {
-    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining, on an order that is `processing` — or `paid`, for a caller who also holds `start:Shipment`. */
-    ship: boolean;
-    /** Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open, on an order that is `processing` or `paid` (the latter needs `start:Shipment` too). */
-    fulfill: boolean;
-    /** Whether `POST /delivery/fulfillment-orders/{id}/hold` would be accepted. */
-    hold: boolean;
-    /** Whether `POST /delivery/fulfillment-orders/{id}/release` would be accepted — never for `awaiting_stock`. */
-    release: boolean;
+  /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining, on an order that is `processing` — or `paid`, for a caller who also holds `start:Shipment`. */
+  ship: boolean;
+  /** Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open, on an order that is `processing` or `paid` (the latter needs `start:Shipment` too). */
+  fulfill: boolean;
+  /** Whether `POST /delivery/fulfillment-orders/{id}/hold` would be accepted. */
+  hold: boolean;
+  /** Whether `POST /delivery/fulfillment-orders/{id}/release` would be accepted — never for `awaiting_stock`. */
+  release: boolean;
 }
 
 /**
  * A group of an order's lines that should leave together, made by rule when the order is paid (Shopify's `FulfillmentOrder`). One order, one payment, one invoice, as many fulfillment orders as the rule makes.
  */
 export interface FulfillmentOrder {
-    id: Id;
-    orderId: Id;
-    /**
+  id: Id;
+  orderId: Id;
+  /**
      * 1-based position within the order — `#1` is the one that ships now.
      * @minimum 1
      */
-    number: number;
-    kind: FulfillmentOrderKind;
-    status: FulfillmentOrderStatus;
-    lines: FulfillmentOrderLine[];
-    holdNotice?: FulfillmentHoldNotice;
-    /**
+  number: number;
+  kind: FulfillmentOrderKind;
+  status: FulfillmentOrderStatus;
+  lines: FulfillmentOrderLine[];
+  holdNotice?: FulfillmentHoldNotice;
+  /**
      * What staff wrote for the buyer about the hold. Everyone who reads the fulfillment order sees it.
      * @maxLength 500
      */
-    holdMessage?: string;
-    holdReason?: FulfillmentHoldReason;
-    /**
+  holdMessage?: string;
+  holdReason?: FulfillmentHoldReason;
+  /**
      * Staff's free text about the hold. Left out for anyone who cannot update fulfillment.
      * @maxLength 1000
      */
-    holdNote?: string;
-    /** The day promised when ordering, frozen from the line snapshot (CRD Art. 18). A day on the shop's calendar (`Shop.timeZone`); stored as the UTC instant of its midnight. */
-    agreedAt?: string;
-    /** The shop-calendar day it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected. */
-    expectedAt?: string;
-    /** When the buyer was last told the date had moved or would be missed. */
-    lastNoticeAt?: string;
-    cancelReason?: FulfillmentCancelReason;
-    actions: FulfillmentOrderActions;
-    createdAt: string;
-    updatedAt?: string;
+  holdNote?: string;
+  /** The day promised when ordering, frozen from the line snapshot (CRD Art. 18). A day on the shop's calendar (`Shop.timeZone`); stored as the UTC instant of its midnight. */
+  agreedAt?: string;
+  /** The shop-calendar day it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected. */
+  expectedAt?: string;
+  /** When the buyer was last told the date had moved or would be missed. */
+  lastNoticeAt?: string;
+  cancelReason?: FulfillmentCancelReason;
+  actions: FulfillmentOrderActions;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface OrderFulfillmentOrdersResponse {
-    items: FulfillmentOrder[];
+  items: FulfillmentOrder[];
 }
 
 /**
  * What the requesting caller may do to this shipment, decided by the server.
  */
 export interface ShipmentActions {
-    /** Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`, or `lost` with every unit on it still open (see the operation). */
-    deliver: boolean;
-    /** Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — any physical shipment, shipped, delivered or lost. */
-    update: boolean;
-    /** Whether `POST /delivery/shipments/{id}/mark-lost` would be accepted — a physical shipment still `shipped`, on an order that is `processing` or `shipped`. */
-    markLost: boolean;
+  /** Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`, or `lost` with every unit on it still open (see the operation). */
+  deliver: boolean;
+  /** Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — any physical shipment, shipped, delivered or lost. */
+  update: boolean;
+  /** Whether `POST /delivery/shipments/{id}/mark-lost` would be accepted — a physical shipment still `shipped`, on an order that is `processing` or `shipped`. */
+  markLost: boolean;
 }
 
 /**
  * What actually left, at one time, with one tracking code (Shopify's `Fulfillment`). Born `shipped`; a digital fulfillment is born `delivered`. A parcel that will not arrive becomes `lost`; one that turns up after all becomes `delivered`.
  */
 export interface Shipment {
-    id: Id;
-    orderId: Id;
-    fulfillmentOrderId: Id;
-    /**
+  id: Id;
+  orderId: Id;
+  fulfillmentOrderId: Id;
+  /**
      * 1-based position within the order, in the order shipments were cut.
      * @minimum 1
      */
-    number: number;
-    /** The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false), and for a digital fulfillment. */
-    trackingCode?: string;
-    status: ShipmentStatus;
-    lines: ShipmentLine[];
-    /** Where this parcel went — the order's shipping address as it stood when the shipment was cut, so a later correction of the order's address never rewrites it. Absent for a pickup, a digital fulfillment, and once the order's own address has been scrubbed. */
-    destination?: OrderAddress;
-    /** Whether an admin status override cut this shipment. */
-    forced: boolean;
-    /** Whether the parcel left on a `tracked` method, is still `shipped` and has no tracking code yet (tracked, still waiting for it). Read-only, decided by the server. */
-    awaitingTracking: boolean;
-    shippedAt: string;
-    deliveredAt?: string;
-    /** When staff reported it lost or damaged. Kept as history when the parcel turns up and is then delivered. */
-    lostAt?: string;
-    lostReason?: ShipmentLostReason;
-    /**
+  number: number;
+  /** The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false), and for a digital fulfillment. */
+  trackingCode?: string;
+  status: ShipmentStatus;
+  lines: ShipmentLine[];
+  /** Where this parcel went — the order's shipping address as it stood when the shipment was cut, so a later correction of the order's address never rewrites it. Absent for a pickup, a digital fulfillment, and once the order's own address has been scrubbed. */
+  destination?: OrderAddress;
+  /** Whether an admin status override cut this shipment. */
+  forced: boolean;
+  /** Whether the parcel left on a `tracked` method, is still `shipped` and has no tracking code yet (tracked, still waiting for it). Read-only, decided by the server. */
+  awaitingTracking: boolean;
+  shippedAt: string;
+  deliveredAt?: string;
+  /** When staff reported it lost or damaged. Kept as history when the parcel turns up and is then delivered. */
+  lostAt?: string;
+  lostReason?: ShipmentLostReason;
+  /**
      * What staff wrote for the buyer when they reported the loss. Everyone who reads the shipment sees it.
      * @maxLength 500
      */
-    lostMessage?: string;
-    /**
+  lostMessage?: string;
+  /**
      * Staff's free text about the loss. Left out for anyone who cannot update fulfillment.
      * @maxLength 1000
      */
-    lostNote?: string;
-    actions: ShipmentActions;
-    createdAt?: string;
-    updatedAt?: string;
+  lostNote?: string;
+  actions: ShipmentActions;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface OrderShipmentsResponse {
-    items: Shipment[];
+  items: Shipment[];
 }
 
 export interface PaymentMethodOption {
-    id: PaymentMethodId;
-    /**
+  id: PaymentMethodId;
+  /**
      * How long checkout holds stock for an order choosing this method (`NODE_BANK_TRANSFER_HOLD_HOURS`). Present on `bank_transfer` only — `card`'s hold is `NODE_RESERVATION_TTL_MINUTES`, a different unit, owned by `inventory` rather than a deployment choice this module makes.
      * @minimum 0
      */
-    holdHours?: number;
+  holdHours?: number;
 }
 
 export interface PaymentMethodsResponse {
-    methods: PaymentMethodOption[];
+  methods: PaymentMethodOption[];
 }
 
 export interface RefundPaymentRequest {
-    /** How much to return, a decimal in the payment's own currency. Absent means everything still refundable. */
-    amount?: DecimalAmount;
-    /** ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one. */
-    currency?: CurrencyCode;
+  /** How much to return, a decimal in the payment's own currency. Absent means everything still refundable. */
+  amount?: DecimalAmount;
+  /** ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one. */
+  currency?: CurrencyCode;
 }
 
 export interface ConfirmPaymentRequest {
-    /**
+  /**
      * The provider's opaque handle for the payment method, produced in the BROWSER by the provider's own widget. Never a card number — a card number reaching this API would put the whole deployment in the heavyweight PCI bracket, which is the reason this field is shaped the way it is. Must contain a letter, so a card number (digits, with or without dashes) is a 422, never forwarded.
      * @minLength 3
      * @maxLength 255
      * @pattern ^[\d_-]*[A-Za-z][\w-]*$
      */
-    paymentMethodRef: string;
+  paymentMethodRef: string;
 }
 
 /**
  * One dispute as the provider reports it, inside a webhook delivery. It is not re-read: some providers cannot be asked about a dispute, so the body of a verified delivery is the state. A report is applied only if `observedAt` is newer than the one already stored for the same `disputeRef`, so an out-of-order delivery changes nothing.
  */
 export interface DisputeReport {
-    /**
+  /**
      * The provider's dispute id (Stripe's `dp_…`). One dispute per id on a payment.
      * @maxLength 200
      */
-    disputeRef: string;
-    kind: DisputeKind;
-    status: DisputeStatus;
-    reason: DisputeReason;
-    /** The disputed amount, in `currency`. */
-    amount: NonNegativeDecimalAmount;
-    /** ISO-4217 code, upper case. */
-    currency: CurrencyCode;
-    /** When the provider stops accepting evidence. Absent when it gave no deadline. */
-    evidenceDueBy?: string;
-    /** Whether the bank has taken the money out of the shop's balance (`false` for an inquiry, and again after a win reinstated it). */
-    fundsWithdrawn: boolean;
-    /** The provider's own time for this event, which orders deliveries. */
-    observedAt: string;
-    /**
+  disputeRef: string;
+  kind: DisputeKind;
+  status: DisputeStatus;
+  reason: DisputeReason;
+  /** The disputed amount, in `currency`. */
+  amount: NonNegativeDecimalAmount;
+  /** ISO-4217 code, upper case. */
+  currency: CurrencyCode;
+  /** When the provider stops accepting evidence. Absent when it gave no deadline. */
+  evidenceDueBy?: string;
+  /** Whether the bank has taken the money out of the shop's balance (`false` for an inquiry, and again after a win reinstated it). */
+  fundsWithdrawn: boolean;
+  /** The provider's own time for this event, which orders deliveries. */
+  observedAt: string;
+  /**
      * Where staff answer the dispute, in the provider's dashboard.
      * @maxLength 500
      */
-    dashboardUrl?: string;
+  dashboardUrl?: string;
 }
 
 /**
  * One delivery, in this module's normalised shape: which event it is, which intent it names and, for a refund event (`refund.created`, `refund.updated`, `refund.failed`, `charge.refunded`), which refund, and nothing about what happened — except a dispute event (`charge.dispute.created`, `.updated`, `.closed`), which carries the dispute's own state because a provider such as Adyen cannot be asked about one. A refund made in the provider's own dashboard arrives the same way and is imported. A real provider sends its OWN event shape and its implementation of the provider port translates it into this. The outcome is never read from the body: once the delivery is authenticated, the server asks the provider for the payment's state, because providers do not guarantee the order events arrive in.
  */
 export interface PaymentWebhookEvent {
-    /**
+  /**
      * The provider's event id, logged. A retry settles nothing twice because each effect is a conditional write, not because the id is remembered.
      * @maxLength 200
      */
-    id: string;
-    /**
+  id: string;
+  /**
      * Which intent the event is about. Absent for an event this API ignores.
      * @maxLength 200
      */
-    providerRef?: string;
-    /**
+  providerRef?: string;
+  /**
      * Which refund the event is about, when it is about one (Stripe's `refund.updated`, `refund.failed`, `charge.refunded`). Still only a pointer: the server re-reads that refund's own status from the provider, so a refund that settled and then bounced is noticed even days later.
      * @maxLength 200
      */
-    refundRef?: string;
-    dispute?: DisputeReport;
+  refundRef?: string;
+  dispute?: DisputeReport;
 }
 
 export interface ShippingMethod {
-    /** Stable id, frozen onto orders at checkout (standard, express, pickup). */
-    id: string;
-    /** Flat rate, in `currency`. */
-    price: NonNegativeDecimalAmount;
-    /** ISO-4217 currency code (e.g. EUR) — this deployment's `NODE_DEFAULT_CURRENCY`. */
-    currency: CurrencyCode;
-    /** Items total at which this method becomes free. Absent — it never does. */
-    freeAbove?: NonNegativeDecimalAmount;
-    /** Whether the carrier gives a code the buyer can follow for a parcel sent by this method. Looked up live by the order's shippingMethod id — not frozen at checkout. The code may be added at ship time or later. */
-    tracked: boolean;
-    /** Whether this method needs a shipping address to deliver to (a courier does; a counter pickup does not). Checkout enforces it — a basket needing shipping refuses with `CART_ADDRESS_REQUIRED` when the chosen method requires one and none is on file. */
-    requiresAddress: boolean;
-    /**
+  /** Stable id, frozen onto orders at checkout (standard, express, pickup). */
+  id: string;
+  /** Flat rate, in `currency`. */
+  price: NonNegativeDecimalAmount;
+  /** ISO-4217 currency code (e.g. EUR) — this deployment's `NODE_DEFAULT_CURRENCY`. */
+  currency: CurrencyCode;
+  /** Items total at which this method becomes free. Absent — it never does. */
+  freeAbove?: NonNegativeDecimalAmount;
+  /** Whether the carrier gives a code the buyer can follow for a parcel sent by this method. Looked up live by the order's shippingMethod id — not frozen at checkout. The code may be added at ship time or later. */
+  tracked: boolean;
+  /** Whether this method needs a shipping address to deliver to (a courier does; a counter pickup does not). Checkout enforces it — a basket needing shipping refuses with `CART_ADDRESS_REQUIRED` when the chosen method requires one and none is on file. */
+  requiresAddress: boolean;
+  /**
      * Grams. Absent means no floor. Enforced server-side — `PUT /cart/shipping-method` refuses a basket that doesn't reach it, and checkout refuses one chosen outside its range.
      * @minimum 0
      */
-    minWeight?: number;
-    /**
+  minWeight?: number;
+  /**
      * Grams. Absent means no ceiling. Enforced the same way as minWeight.
      * @minimum 0
      */
-    maxWeight?: number;
+  maxWeight?: number;
 }
 
 export interface ShippingMethodsResponse {
-    methods: ShippingMethod[];
+  methods: ShippingMethod[];
 }
 
 /**
  * Where a preorder's fulfillment order stands, as the board reads it. `waiting`: paid, held for stock. `allocated`: stock is set aside for it, not all shipped. `shipped`: nothing remains and something shipped. `canceled`: nothing remains and nothing shipped; `cancelReason` says who.
  */
-export type PreorderFulfillmentState =
-    (typeof PreorderFulfillmentState)[keyof typeof PreorderFulfillmentState];
+export type PreorderFulfillmentState = typeof PreorderFulfillmentState[keyof typeof PreorderFulfillmentState];
+
 
 export const PreorderFulfillmentState = {
-    waiting: 'waiting',
-    allocated: 'allocated',
-    shipped: 'shipped',
-    canceled: 'canceled'
+  waiting: 'waiting',
+  allocated: 'allocated',
+  shipped: 'shipped',
+  canceled: 'canceled',
 } as const;
 
 /**
  * Who the order belongs to, as the order itself carries it.
  */
 export interface PreorderBuyer {
-    userId?: Id;
-    email: Email;
+  userId?: Id;
+  email: Email;
 }
 
 /**
  * One fulfillment order of a preorder, with its buyer and what the board needs to judge it.
  */
 export interface PreorderFulfillmentOrder {
-    id: Id;
-    orderId: Id;
-    orderNumber: string;
-    /** @minimum 1 */
-    number: number;
-    status: FulfillmentOrderStatus;
-    state: PreorderFulfillmentState;
-    lines: FulfillmentOrderLine[];
-    buyer: PreorderBuyer;
-    /** When the order was paid. The payment's instant, which is also the queue key stock is allocated by (`inventory` stamps the hold in the same transaction). */
-    paidAt?: string;
-    /** The day promised when ordering, a day on the shop's calendar (`Shop.timeZone`). */
-    agreedAt?: string;
-    /** The day now expected, a day on the shop's calendar (`Shop.timeZone`). */
-    expectedAt?: string;
-    /**
+  id: Id;
+  orderId: Id;
+  orderNumber: string;
+  /** @minimum 1 */
+  number: number;
+  status: FulfillmentOrderStatus;
+  state: PreorderFulfillmentState;
+  lines: FulfillmentOrderLine[];
+  buyer: PreorderBuyer;
+  /** When the order was paid. The payment's instant, which is also the queue key stock is allocated by (`inventory` stamps the hold in the same transaction). */
+  paidAt?: string;
+  /** The day promised when ordering, a day on the shop's calendar (`Shop.timeZone`). */
+  agreedAt?: string;
+  /** The day now expected, a day on the shop's calendar (`Shop.timeZone`). */
+  expectedAt?: string;
+  /**
      * Whole days between the date promised and the date expected; `0` when it has not slipped.
      * @minimum 0
      */
-    slippedDays: number;
-    /** The expected date has passed and units remain. */
-    late: boolean;
-    /** Nothing remains, something shipped, and every shipment arrived. */
-    delivered: boolean;
-    holdReason?: FulfillmentHoldReason;
-    lastNoticeAt?: string;
-    cancelReason?: FulfillmentCancelReason;
-    createdAt: string;
+  slippedDays: number;
+  /** The expected date has passed and units remain. */
+  late: boolean;
+  /** Nothing remains, something shipped, and every shipment arrived. */
+  delivered: boolean;
+  holdReason?: FulfillmentHoldReason;
+  lastNoticeAt?: string;
+  cancelReason?: FulfillmentCancelReason;
+  createdAt: string;
 }
 
 export interface PreorderFulfillmentOrdersResponse {
-    items: PreorderFulfillmentOrder[];
-    meta: PaginationMeta;
+  items: PreorderFulfillmentOrder[];
+  meta: PaginationMeta;
 }
 
 /**
  * One product's preorder units across every fulfillment order made from it. `paid` is every unit paid for, so `waiting + allocated + shipped + canceled` equals it. `late` is a subset: units remaining on fulfillment orders whose expected date has passed.
  */
 export interface PreorderProductSummary {
-    productId: Id;
-    /** As the earliest order froze it. */
-    title: string;
-    /** The earliest day any buyer was promised, a day on the shop's calendar (`Shop.timeZone`). */
-    firstAgreedAt: string;
-    /** @minimum 0 */
-    paid: number;
-    /** @minimum 0 */
-    waiting: number;
-    /** @minimum 0 */
-    allocated: number;
-    /** @minimum 0 */
-    shipped: number;
-    /** @minimum 0 */
-    canceled: number;
-    /** @minimum 0 */
-    late: number;
+  productId: Id;
+  /** As the earliest order froze it. */
+  title: string;
+  /** The earliest day any buyer was promised, a day on the shop's calendar (`Shop.timeZone`). */
+  firstAgreedAt: string;
+  /** @minimum 0 */
+  paid: number;
+  /** @minimum 0 */
+  waiting: number;
+  /** @minimum 0 */
+  allocated: number;
+  /** @minimum 0 */
+  shipped: number;
+  /** @minimum 0 */
+  canceled: number;
+  /** @minimum 0 */
+  late: number;
 }
 
 export interface PreorderProductSummariesResponse {
-    items: PreorderProductSummary[];
-    meta: PaginationMeta;
+  items: PreorderProductSummary[];
+  meta: PaginationMeta;
 }
 
 export type ShipFulfillmentOrderRequestLinesItem = {
-    productId: Id;
-    /** @minimum 1 */
-    quantity: number;
+  productId: Id;
+  /** @minimum 1 */
+  quantity: number;
 };
 
 export interface ShipFulfillmentOrderRequest {
-    /**
+  /**
      * What ships, per product. Absent means everything that remains on the fulfillment order.
      * @minItems 1
      */
-    lines?: ShipFulfillmentOrderRequestLinesItem[];
-    /**
+  lines?: ShipFulfillmentOrderRequestLinesItem[];
+  /**
      * The carrier's handle on the parcel. Optional — for a tracked method, add it now or later with `PATCH /delivery/shipments/{id}`.
      * @minLength 1
      * @maxLength 100
      */
-    trackingCode?: string;
+  trackingCode?: string;
 }
 
 /**
  * Why it is held. `awaiting_stock` is not staff's to give.
  */
-export type HoldFulfillmentOrderRequestReason =
-    (typeof HoldFulfillmentOrderRequestReason)[keyof typeof HoldFulfillmentOrderRequestReason];
+export type HoldFulfillmentOrderRequestReason = typeof HoldFulfillmentOrderRequestReason[keyof typeof HoldFulfillmentOrderRequestReason];
+
 
 export const HoldFulfillmentOrderRequestReason = {
-    incorrect_address: 'incorrect_address',
-    high_risk: 'high_risk',
-    other: 'other'
+  incorrect_address: 'incorrect_address',
+  high_risk: 'high_risk',
+  other: 'other',
 } as const;
 
 export interface HoldFulfillmentOrderRequest {
-    /** Why it is held. `awaiting_stock` is not staff's to give. */
-    reason: HoldFulfillmentOrderRequestReason;
-    /**
+  /** Why it is held. `awaiting_stock` is not staff's to give. */
+  reason: HoldFulfillmentOrderRequestReason;
+  /**
      * Free text for the staff who read the hold later; reaped with the other free text.
      * @minLength 1
      * @maxLength 1000
      */
-    note?: string;
-    /**
+  note?: string;
+  /**
      * A sentence for the buyer, shown on their order and mailed with the hold. Separate from `note`, which they never see. A hold for `incorrect_address` or with a message is mailed; a bare one is not.
      * @minLength 1
      * @maxLength 500
      */
-    message?: string;
+  message?: string;
 }
 
 export interface UpdateShipmentRequest {
-    /**
+  /**
      * The tracking code to set — the first one for a parcel that left without, or a correction.
      * @minLength 1
      * @maxLength 100
      */
-    trackingCode?: string;
+  trackingCode?: string;
 }
 
-export type ReturnSortItem = (typeof ReturnSortItem)[keyof typeof ReturnSortItem];
+export type ReturnSortItem = typeof ReturnSortItem[keyof typeof ReturnSortItem];
+
 
 export const ReturnSortItem = {
-    createdAt: 'createdAt',
-    '-createdAt': '-createdAt',
-    status: 'status',
-    '-status': '-status'
+  createdAt: 'createdAt',
+  '-createdAt': '-createdAt',
+  status: 'status',
+  '-status': '-status',
 } as const;
 
 /**
@@ -6033,369 +6022,373 @@ export type ReturnSort = ReturnSortItem[];
 /**
  * What the record is: `return` — goods that left coming back; `cancellation` — the unshipped remainder of one fulfillment order, canceled and refunded, closed when made.
  */
-export type ReturnKind = (typeof ReturnKind)[keyof typeof ReturnKind];
+export type ReturnKind = typeof ReturnKind[keyof typeof ReturnKind];
+
 
 export const ReturnKind = {
-    return: 'return',
-    cancellation: 'cancellation'
+  return: 'return',
+  cancellation: 'cancellation',
 } as const;
 
 /**
  * What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the key that names the act and a status the act can run from.
  */
 export interface ReturnActions {
-    /** Whether `POST /returns/{id}/approve` would be accepted. */
-    approve: boolean;
-    /** Whether `POST /returns/{id}/decline` would be accepted. */
-    decline: boolean;
-    /** Whether `POST /returns/{id}/receive` would be accepted. */
-    receive: boolean;
-    /** Whether `POST /returns/{id}/proof-of-sending` would be accepted. */
-    recordProof: boolean;
-    /** Whether `POST /returns/{id}/close` would be accepted. */
-    close: boolean;
-    /** Whether `POST /returns/{id}/cancel` would be accepted. */
-    cancel: boolean;
+  /** Whether `POST /returns/{id}/approve` would be accepted. */
+  approve: boolean;
+  /** Whether `POST /returns/{id}/decline` would be accepted. */
+  decline: boolean;
+  /** Whether `POST /returns/{id}/receive` would be accepted. */
+  receive: boolean;
+  /** Whether `POST /returns/{id}/proof-of-sending` would be accepted. */
+  recordProof: boolean;
+  /** Whether `POST /returns/{id}/close` would be accepted. */
+  close: boolean;
+  /** Whether `POST /returns/{id}/cancel` would be accepted. */
+  cancel: boolean;
 }
 
 export interface ReturnListItem {
-    id: Id;
-    orderId: Id;
-    /** The order's human number. */
-    orderNumber: string;
-    status: ReturnStatus;
-    reason: ReturnReason;
-    kind: ReturnKind;
-    requestedAt: string;
-    createdAt: string;
-    actions: ReturnActions;
+  id: Id;
+  orderId: Id;
+  /** The order's human number. */
+  orderNumber: string;
+  status: ReturnStatus;
+  reason: ReturnReason;
+  kind: ReturnKind;
+  requestedAt: string;
+  createdAt: string;
+  actions: ReturnActions;
 }
 
 export interface ReturnsResponse {
-    items: ReturnListItem[];
-    meta: PaginationMeta;
+  items: ReturnListItem[];
+  meta: PaginationMeta;
 }
 
 /**
  * How the buyer stated a withdrawal outside the shop, as staff record it.
  */
-export type StaffStatementChannel =
-    (typeof StaffStatementChannel)[keyof typeof StaffStatementChannel];
+export type StaffStatementChannel = typeof StaffStatementChannel[keyof typeof StaffStatementChannel];
+
 
 export const StaffStatementChannel = {
-    phone: 'phone',
-    email: 'email',
-    letter: 'letter',
-    other: 'other'
+  phone: 'phone',
+  email: 'email',
+  letter: 'letter',
+  other: 'other',
 } as const;
 
 /**
  * What the buyer is given for a faulty or wrong item (Directive 2019/771 Art. 13): `repair` and `replace` come first and the buyer chooses; `refund` is the money back. Choosing `repair` extends the guarantee by 12 months (Directive 2024/1799). Only a `defective` or `wrong_item` return has a choice; every other reason is refunded.
  */
-export type ReturnRemedy = (typeof ReturnRemedy)[keyof typeof ReturnRemedy];
+export type ReturnRemedy = typeof ReturnRemedy[keyof typeof ReturnRemedy];
+
 
 export const ReturnRemedy = {
-    refund: 'refund',
-    replace: 'replace',
-    repair: 'repair'
+  refund: 'refund',
+  replace: 'replace',
+  repair: 'repair',
 } as const;
 
 export type CreateReturnRequestLinesItem = {
-    productId: Id;
-    /** @minimum 1 */
-    quantity: number;
+  productId: Id;
+  /** @minimum 1 */
+  quantity: number;
 };
 
 export interface CreateReturnRequest {
-    orderId: Id;
-    reason: ReturnReason;
-    /**
+  orderId: Id;
+  reason: ReturnReason;
+  /**
      * @minLength 1
      * @maxLength 1000
      */
-    note?: string;
-    kind?: ReturnKind;
-    /** Required exactly when `kind` is `cancellation` — the fulfillment order whose remainder is canceled. */
-    fulfillmentOrderId?: Id;
-    /** Staff only: when the buyer asked, or for a withdrawal when they stated it (Art. 11(2) judges timing on the day it was sent). Required for a staff withdrawal, optional otherwise (default now). Never in the future, never before the order was made. The buyer does not send it. */
-    requestedAt?: string;
-    statedVia?: StaffStatementChannel;
-    /** What the buyer would like for a faulty or wrong item: a repair, a replacement or the money back. Only for `defective` and `wrong_item` (422 `RETURN_REMEDY_INVALID` otherwise). Staff decide at receipt; the buyer is told that choosing repair extends the guarantee by 12 months. */
-    preferredRemedy?: ReturnRemedy;
-    /**
+  note?: string;
+  kind?: ReturnKind;
+  /** Required exactly when `kind` is `cancellation` — the fulfillment order whose remainder is canceled. */
+  fulfillmentOrderId?: Id;
+  /** Staff only: when the buyer asked, or for a withdrawal when they stated it (Art. 11(2) judges timing on the day it was sent). Required for a staff withdrawal, optional otherwise (default now). Never in the future, never before the order was made. The buyer does not send it. */
+  requestedAt?: string;
+  statedVia?: StaffStatementChannel;
+  /** What the buyer would like for a faulty or wrong item: a repair, a replacement or the money back. Only for `defective` and `wrong_item` (422 `RETURN_REMEDY_INVALID` otherwise). Staff decide at receipt; the buyer is told that choosing repair extends the guarantee by 12 months. */
+  preferredRemedy?: ReturnRemedy;
+  /**
      * What comes back. Absent means everything on the order that is still left to return — the usual shape of a withdrawal. Not allowed on a `cancellation`: the whole remainder is its lines.
      * @minItems 1
      */
-    lines?: CreateReturnRequestLinesItem[];
+  lines?: CreateReturnRequestLinesItem[];
 }
 
 /**
  * One line of a return — a snapshot of what is coming back, so it reads the same later.
  */
 export interface ReturnLine {
-    productId: Id;
-    /** @minimum 1 */
-    quantity: number;
-    /** The product's title as the order froze it. */
-    title: string;
-    /** The gross unit price the order froze. */
-    unitPrice: NonNegativeDecimalAmount;
-    /**
+  productId: Id;
+  /** @minimum 1 */
+  quantity: number;
+  /** The product's title as the order froze it. */
+  title: string;
+  /** The gross unit price the order froze. */
+  unitPrice: NonNegativeDecimalAmount;
+  /**
      * How many of the `quantity` went back on sale when the goods were received. Set at receipt, never more than `quantity`; absent before then.
      * @minimum 0
      */
-    restocked?: number;
+  restocked?: number;
 }
 
 /**
  * Who pays to send returned goods back: the customer, or the shop. The shop's setting is `NODE_RETURN_POSTAGE_PAYER`; a return freezes the value it was opened under.
  */
-export type ReturnPostagePayer = (typeof ReturnPostagePayer)[keyof typeof ReturnPostagePayer];
+export type ReturnPostagePayer = typeof ReturnPostagePayer[keyof typeof ReturnPostagePayer];
+
 
 export const ReturnPostagePayer = {
-    consumer: 'consumer',
-    shop: 'shop'
+  consumer: 'consumer',
+  shop: 'shop',
 } as const;
 
 /**
  * How the buyer stated a withdrawal. `online` is the shop's own button; the rest are what staff record.
  */
-export type ReturnStatementChannel =
-    (typeof ReturnStatementChannel)[keyof typeof ReturnStatementChannel];
+export type ReturnStatementChannel = typeof ReturnStatementChannel[keyof typeof ReturnStatementChannel];
+
 
 export const ReturnStatementChannel = {
-    online: 'online',
-    phone: 'phone',
-    email: 'email',
-    letter: 'letter',
-    other: 'other'
+  online: 'online',
+  phone: 'phone',
+  email: 'email',
+  letter: 'letter',
+  other: 'other',
 } as const;
 
 /**
  * Who opened the return — the order's buyer, or staff on the buyer's behalf.
  */
-export type ReturnOpenedBy = (typeof ReturnOpenedBy)[keyof typeof ReturnOpenedBy];
+export type ReturnOpenedBy = typeof ReturnOpenedBy[keyof typeof ReturnOpenedBy];
+
 
 export const ReturnOpenedBy = {
-    buyer: 'buyer',
-    staff: 'staff'
+  buyer: 'buyer',
+  staff: 'staff',
 } as const;
 
 /**
  * A rule staff waived when they opened the return for a buyer: `window_closed` — the reason's deadline had passed when the buyer asked; `excluded_goods` — a line is goods Art. 16 takes the right of withdrawal away from.
  */
-export type ReturnPolicyException =
-    (typeof ReturnPolicyException)[keyof typeof ReturnPolicyException];
+export type ReturnPolicyException = typeof ReturnPolicyException[keyof typeof ReturnPolicyException];
+
 
 export const ReturnPolicyException = {
-    window_closed: 'window_closed',
-    excluded_goods: 'excluded_goods'
+  window_closed: 'window_closed',
+  excluded_goods: 'excluded_goods',
 } as const;
 
 export interface Return {
-    id: Id;
-    orderId: Id;
-    /** The order's human number. */
-    orderNumber: string;
-    /** ISO-4217 code of the order's own currency. */
-    currency: CurrencyCode;
-    status: ReturnStatus;
-    reason: ReturnReason;
-    kind: ReturnKind;
-    fulfillmentOrderId?: Id;
-    /**
+  id: Id;
+  orderId: Id;
+  /** The order's human number. */
+  orderNumber: string;
+  /** ISO-4217 code of the order's own currency. */
+  currency: CurrencyCode;
+  status: ReturnStatus;
+  reason: ReturnReason;
+  kind: ReturnKind;
+  fulfillmentOrderId?: Id;
+  /**
      * What the customer wrote. Free text.
      * @maxLength 1000
      */
-    note?: string;
-    /** What is coming back — or, for a `cancellation`, the remainder that was canceled. Empty on a withdrawal before dispatch — no goods are expected. */
-    lines: ReturnLine[];
-    /** Who pays to send the goods back — frozen when the return was opened, from the shop's configuration, so it is what the customer was told beforehand (Art. 14(1)). */
-    returnPostage: ReturnPostagePayer;
-    /** When the buyer asked (or, for a withdrawal, stated it). The server sets it for the buyer; staff may backdate it to the day the buyer actually phoned or wrote. The deadline is judged on it. */
-    requestedAt: string;
-    statedVia?: ReturnStatementChannel;
-    openedBy: ReturnOpenedBy;
-    /** What staff waived when they opened it. Empty when the buyer opened it, or nothing was waived. */
-    policyExceptions: ReturnPolicyException[];
-    declineReason?: ReturnDeclineReason;
-    /**
+  note?: string;
+  /** What is coming back — or, for a `cancellation`, the remainder that was canceled. Empty on a withdrawal before dispatch — no goods are expected. */
+  lines: ReturnLine[];
+  /** Who pays to send the goods back — frozen when the return was opened, from the shop's configuration, so it is what the customer was told beforehand (Art. 14(1)). */
+  returnPostage: ReturnPostagePayer;
+  /** When the buyer asked (or, for a withdrawal, stated it). The server sets it for the buyer; staff may backdate it to the day the buyer actually phoned or wrote. The deadline is judged on it. */
+  requestedAt: string;
+  statedVia?: ReturnStatementChannel;
+  openedBy: ReturnOpenedBy;
+  /** What staff waived when they opened it. Empty when the buyer opened it, or nothing was waived. */
+  policyExceptions: ReturnPolicyException[];
+  declineReason?: ReturnDeclineReason;
+  /**
      * What staff wrote to the buyer beside the reason code; required when the code is `other`. Free text, so `reap:returns` unsets it after the retention window; the code stays.
      * @maxLength 500
      */
-    declineMessage?: string;
-    /** When staff decided it — or, for a withdrawal, when it was opened already approved. */
-    decidedAt?: string;
-    /** What the buyer asked for when they opened a `defective` or `wrong_item` return. A wish, not a promise: staff choose the `remedy` when the goods arrive. */
-    preferredRemedy?: ReturnRemedy;
-    /** When the goods arrived and went back on sale. */
-    receivedAt?: string;
-    /** What staff gave when the goods arrived. Absent until then, and on a return born closed. `replace` and `repair` close the return with no money moving and hand its units back to the buyer, so they are returnable again. */
-    remedy?: ReturnRemedy;
-    /** An amount kept back from the refund for handling damage (Art. 14(2)), entered when the goods were received. Absent when nothing was kept. */
-    handlingDeduction?: NonNegativeDecimalAmount;
-    /** What the customer is owed for this return, fixed when the goods were received, or when the proof of sending opened the refund of a withdrawal. */
-    refundAmount?: NonNegativeDecimalAmount;
-    /** The date on the carrier's proof of sending, as staff recorded it. Absent until a proof is recorded. */
-    proofOfSendingAt?: string;
-    /**
+  declineMessage?: string;
+  /** When staff decided it — or, for a withdrawal, when it was opened already approved. */
+  decidedAt?: string;
+  /** What the buyer asked for when they opened a `defective` or `wrong_item` return. A wish, not a promise: staff choose the `remedy` when the goods arrive. */
+  preferredRemedy?: ReturnRemedy;
+  /** When the goods arrived and went back on sale. */
+  receivedAt?: string;
+  /** What staff gave when the goods arrived. Absent until then, and on a return born closed. `replace` and `repair` close the return with no money moving and hand its units back to the buyer, so they are returnable again. */
+  remedy?: ReturnRemedy;
+  /** An amount kept back from the refund for handling damage (Art. 14(2)), entered when the goods were received. Absent when nothing was kept. */
+  handlingDeduction?: NonNegativeDecimalAmount;
+  /** What the customer is owed for this return, fixed when the goods were received, or when the proof of sending opened the refund of a withdrawal. */
+  refundAmount?: NonNegativeDecimalAmount;
+  /** The date on the carrier's proof of sending, as staff recorded it. Absent until a proof is recorded. */
+  proofOfSendingAt?: string;
+  /**
      * The carrier named on the proof of sending. Present with `proofOfSendingAt`.
      * @maxLength 200
      */
-    proofCarrier?: string;
-    /**
+  proofCarrier?: string;
+  /**
      * The carrier document's reference (a tracking or receipt number). Present with `proofOfSendingAt`.
      * @maxLength 200
      */
-    proofReference?: string;
-    /** When the money went back and the return finished. */
-    closedAt?: string;
-    /** When staff canceled the return. Present only on a `canceled` return. */
-    canceledAt?: string;
-    actions: ReturnActions;
-    createdAt: string;
-    updatedAt?: string;
+  proofReference?: string;
+  /** When the money went back and the return finished. */
+  closedAt?: string;
+  /** When staff canceled the return. Present only on a `canceled` return. */
+  canceledAt?: string;
+  actions: ReturnActions;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface ReturnOptionLine {
-    productId: Id;
-    title: string;
-    /** @minimum 1 */
-    quantity: number;
-    /** Whether the right of withdrawal reaches this line. False for goods Art. 16 excludes (made to order, perishable): only `defective` or `wrong_item` may name them, and a request that names them with another reason is a 422. */
-    withdrawable: boolean;
+  productId: Id;
+  title: string;
+  /** @minimum 1 */
+  quantity: number;
+  /** Whether the right of withdrawal reaches this line. False for goods Art. 16 excludes (made to order, perishable): only `defective` or `wrong_item` may name them, and a request that names them with another reason is a 422. */
+  withdrawable: boolean;
 }
 
 /**
  * A line of the remainder a cancel would take, which is what has not shipped, per product.
  */
 export interface CancelOptionLine {
-    productId: Id;
-    title: string;
-    /** @minimum 1 */
-    quantity: number;
+  productId: Id;
+  title: string;
+  /** @minimum 1 */
+  quantity: number;
 }
 
 /**
  * A fulfillment order with a remainder that can still be canceled, and what cancelling it would refund.
  */
 export interface CancelableFulfillmentOrder {
-    fulfillmentOrderId: Id;
-    /** @minimum 1 */
-    number: number;
-    lines: CancelOptionLine[];
-    /** What the cancel would refund, in `ReturnOptions.currency` — the lines plus `shippingRefund`. */
-    refundAmount: NonNegativeDecimalAmount;
-    /** The delivery inside `refundAmount` — non-zero only when this cancel takes the last unit of the order. */
-    shippingRefund: NonNegativeDecimalAmount;
-    /** Whether THIS caller may cancel this remainder, so a client offers only a door that opens. The order's buyer: within the withdrawal window, and only when the remainder holds no goods excluded from withdrawal (Art. 16). Anyone else: holding `create:Refund`. */
-    cancel: boolean;
+  fulfillmentOrderId: Id;
+  /** @minimum 1 */
+  number: number;
+  lines: CancelOptionLine[];
+  /** What the cancel would refund, in `ReturnOptions.currency` — the lines plus `shippingRefund`. */
+  refundAmount: NonNegativeDecimalAmount;
+  /** The delivery inside `refundAmount` — non-zero only when this cancel takes the last unit of the order. */
+  shippingRefund: NonNegativeDecimalAmount;
+  /** Whether THIS caller may cancel this remainder, so a client offers only a door that opens. The order's buyer: within the withdrawal window, and only when the remainder holds no goods excluded from withdrawal (Art. 16). Anyone else: holding `create:Refund`. */
+  cancel: boolean;
 }
 
 export interface ReturnOptions {
-    orderId: Id;
-    /** ISO-4217 code of the order's own currency. */
-    currency: CurrencyCode;
-    /** The reasons THIS caller can still name, so a client offers no door that is shut. The buyer's are the ones whose deadline is open: empty once every deadline has passed. `withdrawal` and `other` last for the withdrawal period; `defective` and `wrong_item` for two years from delivery (the legal guarantee of conformity), made-to-order goods included. Staff holding `update:Return` get every reason: they open a return, or record a withdrawal, for the buyer. */
-    reasons?: ReturnReason[];
-    /** For staff, the non-withdrawal reasons that are past their deadline now: opening a return for one is recorded as an exception (`window_closed`). Empty for the buyer. A preview: the server judges the deadline on `requestedAt` when it opens. */
-    exceptions: ReturnReason[];
-    /** Per product, what has shipped and not yet been returned. Empty unless `reasons` is not. Goods excluded from withdrawal (Art. 16) are listed to the buyer only while a `defective` or `wrong_item` reason is open, and to staff always; they carry `withdrawable: false`. */
-    returnable: ReturnOptionLine[];
-    cancelable: CancelableFulfillmentOrder[];
+  orderId: Id;
+  /** ISO-4217 code of the order's own currency. */
+  currency: CurrencyCode;
+  /** The reasons THIS caller can still name, so a client offers no door that is shut. The buyer's are the ones whose deadline is open: empty once every deadline has passed. `withdrawal` and `other` last for the withdrawal period; `defective` and `wrong_item` for two years from delivery (the legal guarantee of conformity), made-to-order goods included. Staff holding `update:Return` get every reason: they open a return, or record a withdrawal, for the buyer. */
+  reasons?: ReturnReason[];
+  /** For staff, the non-withdrawal reasons that are past their deadline now: opening a return for one is recorded as an exception (`window_closed`). Empty for the buyer. A preview: the server judges the deadline on `requestedAt` when it opens. */
+  exceptions: ReturnReason[];
+  /** Per product, what has shipped and not yet been returned. Empty unless `reasons` is not. Goods excluded from withdrawal (Art. 16) are listed to the buyer only while a `defective` or `wrong_item` reason is open, and to staff always; they carry `withdrawable: false`. */
+  returnable: ReturnOptionLine[];
+  cancelable: CancelableFulfillmentOrder[];
 }
 
 export interface DeclineReturnRequest {
-    reason: ReturnDeclineReason;
-    /**
+  reason: ReturnDeclineReason;
+  /**
      * Text for the buyer, mailed beside the reason. Required when `reason` is `other` ("other" alone tells the buyer nothing); optional otherwise.
      * @minLength 1
      * @maxLength 500
      */
-    message?: string;
+  message?: string;
 }
 
 export type ReceiveReturnRequestLinesItem = {
-    productId: Id;
-    /** @minimum 0 */
-    restock: number;
+  productId: Id;
+  /** @minimum 0 */
+  restock: number;
 };
 
 export interface ReceiveReturnRequest {
-    /** What the buyer is given. Absent means `refund`. `replace` and `repair` are for a `defective` or `wrong_item` return only (422 `RETURN_REMEDY_INVALID` otherwise). */
-    remedy?: ReturnRemedy;
-    /** Handling damage to keep back from the refund (Art. 14(2)), a decimal in the return's currency. Absent means none. More than the refund is worth is refused, and so is any amount on a `defective` or `wrong_item` return (a guarantee remedy is free of charge). */
-    handlingDeduction?: NonNegativeDecimalAmount;
-    /** How many units of each returned product go back on sale. A product not listed goes back in full, and absent `lines` puts everything back. A unit that is broken is set to 0. An unknown or repeated product, or a count over the line's quantity, is refused. */
-    lines?: ReceiveReturnRequestLinesItem[];
+  /** What the buyer is given. Absent means `refund`. `replace` and `repair` are for a `defective` or `wrong_item` return only (422 `RETURN_REMEDY_INVALID` otherwise). */
+  remedy?: ReturnRemedy;
+  /** Handling damage to keep back from the refund (Art. 14(2)), a decimal in the return's currency. Absent means none. More than the refund is worth is refused, and so is any amount on a `defective` or `wrong_item` return (a guarantee remedy is free of charge). */
+  handlingDeduction?: NonNegativeDecimalAmount;
+  /** How many units of each returned product go back on sale. A product not listed goes back in full, and absent `lines` puts everything back. A unit that is broken is set to 0. An unknown or repeated product, or a count over the line's quantity, is refused. */
+  lines?: ReceiveReturnRequestLinesItem[];
 }
 
 export interface InventoryLevel {
-    productId: Id;
-    /** Carried so the board reads as a list of products rather than of ids. */
-    title: string;
-    /** @minimum 0 */
-    onHand: number;
-    /** @minimum 0 */
-    reserved: number;
-    /** @minimum 0 */
-    available: number;
-    /**
+  productId: Id;
+  /** Carried so the board reads as a list of products rather than of ids. */
+  title: string;
+  /** @minimum 0 */
+  onHand: number;
+  /** @minimum 0 */
+  reserved: number;
+  /** @minimum 0 */
+  available: number;
+  /**
      * How many units may be backordered at once. `0` means it is closed; absent means there is no cap.
      * @minimum 0
      */
-    backorderLimit?: number;
-    /**
+  backorderLimit?: number;
+  /**
      * Preorder units outstanding against the limit, paid or not, until stock arrives and is allocated to them.
      * @minimum 0
      */
-    backordered: number;
+  backordered: number;
 }
 
 export interface InventoryLevelsResponse {
-    items: InventoryLevel[];
-    meta: PaginationMeta;
+  items: InventoryLevel[];
+  meta: PaginationMeta;
 }
 
 export interface PreorderLevel {
-    productId: Id;
-    title: string;
-    releaseDate?: ReleaseDate;
-    /**
+  productId: Id;
+  title: string;
+  releaseDate?: ReleaseDate;
+  /**
      * The cap on owed units. Absent means there is no cap.
      * @minimum 0
      */
-    backorderLimit?: number;
-    /**
+  backorderLimit?: number;
+  /**
      * Outstanding units, `held + paid`. Drops when stock is allocated, so it is not "units sold".
      * @minimum 0
      */
-    backordered: number;
-    /**
+  backordered: number;
+  /**
      * Outstanding units on orders still unpaid. They free themselves when the hold expires.
      * @minimum 0
      */
-    held: number;
-    /**
+  held: number;
+  /**
      * Outstanding units on paid orders, waiting for stock oldest payment first.
      * @minimum 0
      */
-    paid: number;
-    /**
+  paid: number;
+  /**
      * `backorderLimit - backordered`, never below zero: how many more may be ordered. Absent when there is no number to show: no cap (the row has no `backorderLimit` either), or the product is neither a preorder nor open to backorder, so its cap promises nothing.
      * @minimum 0
      */
-    left?: number;
-    /**
+  left?: number;
+  /**
      * Lifetime units claimed through `backorder` movements in the ledger, given back or not.
      * @minimum 0
      */
-    ordered: number;
+  ordered: number;
 }
 
 export interface PreorderLevelsResponse {
-    items: PreorderLevel[];
-    meta: PaginationMeta;
+  items: PreorderLevel[];
+  meta: PaginationMeta;
 }
 
 /**
@@ -6412,82 +6405,83 @@ export interface PreorderLevelsResponse {
  *
  * `release` and `expire` of a preorder claim give back the allowance (`backordered` down) instead of `reserved`.
  */
-export type StockMovementReason = (typeof StockMovementReason)[keyof typeof StockMovementReason];
+export type StockMovementReason = typeof StockMovementReason[keyof typeof StockMovementReason];
+
 
 export const StockMovementReason = {
-    reserve: 'reserve',
-    ship: 'ship',
-    release: 'release',
-    expire: 'expire',
-    receive: 'receive',
-    adjust: 'adjust',
-    restock: 'restock',
-    backorder: 'backorder',
-    owed: 'owed',
-    allocate: 'allocate'
+  reserve: 'reserve',
+  ship: 'ship',
+  release: 'release',
+  expire: 'expire',
+  receive: 'receive',
+  adjust: 'adjust',
+  restock: 'restock',
+  backorder: 'backorder',
+  owed: 'owed',
+  allocate: 'allocate',
 } as const;
 
 export interface StockMovement {
-    id: Id;
-    productId: Id;
-    reason: StockMovementReason;
-    onHandDelta: number;
-    reservedDelta: number;
-    backorderedDelta: number;
-    /** The order the movement belongs to, when one does. */
-    reference?: string;
-    /** Why an adjustment was made — the operator's own words. */
-    note?: string;
-    createdAt?: string;
-    updatedAt?: string;
+  id: Id;
+  productId: Id;
+  reason: StockMovementReason;
+  onHandDelta: number;
+  reservedDelta: number;
+  backorderedDelta: number;
+  /** The order the movement belongs to, when one does. */
+  reference?: string;
+  /** Why an adjustment was made — the operator's own words. */
+  note?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface StockMovementsResponse {
-    items: StockMovement[];
-    meta: PaginationMeta;
+  items: StockMovement[];
+  meta: PaginationMeta;
 }
 
 export interface ReceiptRequest {
-    /**
+  /**
      * How many units arrived. Strictly positive — a delivery that removes units is an adjustment.
      * @minimum 1
      */
-    quantity: number;
-    /**
+  quantity: number;
+  /**
      * Optional — the supplier, the delivery note number, whatever the operator wants on the row.
      * @minLength 1
      * @maxLength 1000
      */
-    note?: string;
+  note?: string;
 }
 
 export interface AdjustmentRequest {
-    /** Signed and non-zero (0 is a 422 naming `delta`). Negative is shrinkage or damage; positive is a miscount found in your favour. */
-    delta: number;
-    /**
+  /** Signed and non-zero (0 is a 422 naming `delta`). Negative is shrinkage or damage; positive is a miscount found in your favour. */
+  delta: number;
+  /**
      * Why. An unexplained correction is the thing an audit is looking for.
      * @minLength 1
      * @maxLength 1000
      */
-    note?: string;
+  note?: string;
 }
 
 export interface ReservationSweepResponse {
-    /**
+  /**
      * How many holds this run released.
      * @minimum 0
      */
-    expired: number;
+  expired: number;
 }
 
-export type WebhookSubscriptionSortItem =
-    (typeof WebhookSubscriptionSortItem)[keyof typeof WebhookSubscriptionSortItem];
+export type WebhookSubscriptionSortItem = typeof WebhookSubscriptionSortItem[keyof typeof WebhookSubscriptionSortItem];
+
 
 export const WebhookSubscriptionSortItem = {
-    createdAt: 'createdAt',
-    '-createdAt': '-createdAt',
-    url: 'url',
-    '-url': '-url'
+  createdAt: 'createdAt',
+  '-createdAt': '-createdAt',
+  url: 'url',
+  '-url': '-url',
 } as const;
 
 /**
@@ -6500,262 +6494,265 @@ export type WebhookSubscriptionSort = WebhookSubscriptionSortItem[];
  * One event name from `GET /webhooks/events`, or `*` for every event.
  * @maxLength 100
  */
-export type WebhookEventFilter = (typeof WebhookEventFilter)[keyof typeof WebhookEventFilter];
+export type WebhookEventFilter = typeof WebhookEventFilter[keyof typeof WebhookEventFilter];
+
 
 export const WebhookEventFilter = {
-    ordercreated: 'order.created',
-    orderpaid: 'order.paid',
-    ordercanceled: 'order.canceled',
-    orderredacted: 'order.redacted',
-    shipmentshipped: 'shipment.shipped',
-    shipmentdelivered: 'shipment.delivered',
-    shipmentlost: 'shipment.lost',
-    paymentsucceeded: 'payment.succeeded',
-    paymentfailed: 'payment.failed',
-    paymentrefunded: 'payment.refunded',
-    paymentrefund_failed: 'payment.refund_failed',
-    paymentrefund_reversed: 'payment.refund_reversed',
-    paymentdispute_opened: 'payment.dispute_opened',
-    paymentdispute_updated: 'payment.dispute_updated',
-    returnrequested: 'return.requested',
-    returnreceived: 'return.received',
-    returnclosed: 'return.closed',
-    examplepublished: 'example.published',
-    usererased: 'user.erased',
-    userupdated: 'user.updated',
-    '*': '*'
+  ordercreated: 'order.created',
+  orderpaid: 'order.paid',
+  ordercanceled: 'order.canceled',
+  orderredacted: 'order.redacted',
+  shipmentshipped: 'shipment.shipped',
+  shipmentdelivered: 'shipment.delivered',
+  shipmentlost: 'shipment.lost',
+  paymentsucceeded: 'payment.succeeded',
+  paymentfailed: 'payment.failed',
+  paymentrefunded: 'payment.refunded',
+  paymentrefund_failed: 'payment.refund_failed',
+  paymentrefund_reversed: 'payment.refund_reversed',
+  paymentdispute_opened: 'payment.dispute_opened',
+  paymentdispute_updated: 'payment.dispute_updated',
+  returnrequested: 'return.requested',
+  returnreceived: 'return.received',
+  returnclosed: 'return.closed',
+  examplepublished: 'example.published',
+  usererased: 'user.erased',
+  userupdated: 'user.updated',
+  '*': '*',
 } as const;
 
 export interface WebhookRetiringSecret {
-    /** A ring entry's id, one of `secretIds`. */
-    id: string;
-    /** When this secret stops signing deliveries — the end of its overlap window (`NODE_WEBHOOK_SECRET_OVERLAP_HOURS` after its successor was minted), unless it is dropped sooner. */
-    retiresAt: string;
+  /** A ring entry's id, one of `secretIds`. */
+  id: string;
+  /** When this secret stops signing deliveries — the end of its overlap window (`NODE_WEBHOOK_SECRET_OVERLAP_HOURS` after its successor was minted), unless it is dropped sooner. */
+  retiresAt: string;
 }
 
 export interface WebhookSubscriptionActions {
-    /** Whether `PUT` or `PATCH /webhooks/subscriptions/{id}` would be accepted. */
-    update: boolean;
-    /** Whether `DELETE /webhooks/subscriptions/{id}` would be accepted. */
-    delete: boolean;
-    /** Whether `POST /webhooks/subscriptions/{id}/enable` would be accepted — false while it is already enabled. */
-    enable: boolean;
-    /** Whether `POST /webhooks/subscriptions/{id}/disable` would be accepted — false while it is already disabled. */
-    disable: boolean;
-    /** Whether `POST /webhooks/subscriptions/{id}/secrets` would be accepted — false while the stored filter names an event the caller may not read. */
-    createSecret: boolean;
-    /** Whether `DELETE /webhooks/subscriptions/{id}/secrets/{secretId}` would be accepted — false while the ring holds a single secret. */
-    deleteSecret: boolean;
+  /** Whether `PUT` or `PATCH /webhooks/subscriptions/{id}` would be accepted. */
+  update: boolean;
+  /** Whether `DELETE /webhooks/subscriptions/{id}` would be accepted. */
+  delete: boolean;
+  /** Whether `POST /webhooks/subscriptions/{id}/enable` would be accepted — false while it is already enabled. */
+  enable: boolean;
+  /** Whether `POST /webhooks/subscriptions/{id}/disable` would be accepted — false while it is already disabled. */
+  disable: boolean;
+  /** Whether `POST /webhooks/subscriptions/{id}/secrets` would be accepted — false while the stored filter names an event the caller may not read. */
+  createSecret: boolean;
+  /** Whether `DELETE /webhooks/subscriptions/{id}/secrets/{secretId}` would be accepted — false while the ring holds a single secret. */
+  deleteSecret: boolean;
 }
 
 export interface WebhookSubscription {
-    id: Id;
-    /** @pattern (?:^https://) */
-    url: string;
-    description?: string;
-    /**
+  id: Id;
+  /** @pattern (?:^https://) */
+  url: string;
+  description?: string;
+  /**
      * Names from `GET /webhooks/events` this subscription receives, or `*` for every event.
      * @minItems 1
      */
-    eventTypes: WebhookEventFilter[];
-    /** Read-only, derived — true while `disabledAt` is absent. Change it with `POST .../enable` or `POST .../disable`. */
-    enabled: boolean;
-    /** @minimum 0 */
-    consecutiveFailures: number;
-    /** When the subscription was switched off, by hand or by the auto-disable guard. Absent while it is enabled. */
-    disabledAt?: string;
-    /** Set (together with `disabledAt`) only when the auto-disable guard switched it off after sustained failures; absent for a pause by hand. */
-    autoDisabledAt?: string;
-    /** The ring's secret ids, oldest first — never the plaintext. */
-    secretIds: string[];
-    /** The ring entries that are still signing but have been superseded, with when each stops. Empty when the ring holds one secret. */
-    retiringSecrets: WebhookRetiringSecret[];
-    actions: WebhookSubscriptionActions;
-    createdAt: string;
-    updatedAt: string;
+  eventTypes: WebhookEventFilter[];
+  /** Read-only, derived — true while `disabledAt` is absent. Change it with `POST .../enable` or `POST .../disable`. */
+  enabled: boolean;
+  /** @minimum 0 */
+  consecutiveFailures: number;
+  /** When the subscription was switched off, by hand or by the auto-disable guard. Absent while it is enabled. */
+  disabledAt?: string;
+  /** Set (together with `disabledAt`) only when the auto-disable guard switched it off after sustained failures; absent for a pause by hand. */
+  autoDisabledAt?: string;
+  /** The ring's secret ids, oldest first — never the plaintext. */
+  secretIds: string[];
+  /** The ring entries that are still signing but have been superseded, with when each stops. Empty when the ring holds one secret. */
+  retiringSecrets: WebhookRetiringSecret[];
+  actions: WebhookSubscriptionActions;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface WebhookSubscriptionsResponse {
-    items: WebhookSubscription[];
-    meta: PaginationMeta;
+  items: WebhookSubscription[];
+  meta: PaginationMeta;
 }
 
 export interface CreateWebhookSubscriptionRequest {
-    /**
+  /**
      * Must be `https://`. Validated again, against the resolved IP, on every delivery.
      * @maxLength 2048
      * @pattern (?:^https://)
      */
-    url: string;
-    /**
+  url: string;
+  /**
      * @minLength 1
      * @maxLength 500
      */
-    description?: string;
-    /**
+  description?: string;
+  /**
      * A name from `GET /webhooks/events`, or `*` for every event. Any other name is a 422 naming `eventTypes`.
      * @minItems 1
      */
-    eventTypes: WebhookEventFilter[];
+  eventTypes: WebhookEventFilter[];
 }
 
 export interface WebhookSubscriptionCreated {
-    id: Id;
-    /** @pattern (?:^https://) */
-    url: string;
-    description?: string;
-    /** @minItems 1 */
-    eventTypes: WebhookEventFilter[];
-    enabled: boolean;
-    /** @minimum 0 */
-    consecutiveFailures: number;
-    disabledAt?: string;
-    autoDisabledAt?: string;
-    secretIds: string[];
-    retiringSecrets: WebhookRetiringSecret[];
-    actions: WebhookSubscriptionActions;
-    createdAt: string;
-    updatedAt: string;
-    /** The newly minted secret, in plaintext. Shown here once, on creation, and never again. */
-    secret?: string;
-    /** A rotated-in secret's plaintext, present only in the response of `POST .../secrets`. */
-    newSecret?: string;
+  id: Id;
+  /** @pattern (?:^https://) */
+  url: string;
+  description?: string;
+  /** @minItems 1 */
+  eventTypes: WebhookEventFilter[];
+  enabled: boolean;
+  /** @minimum 0 */
+  consecutiveFailures: number;
+  disabledAt?: string;
+  autoDisabledAt?: string;
+  secretIds: string[];
+  retiringSecrets: WebhookRetiringSecret[];
+  actions: WebhookSubscriptionActions;
+  createdAt: string;
+  updatedAt: string;
+  /** The newly minted secret, in plaintext. Shown here once, on creation, and never again. */
+  secret?: string;
+  /** A rotated-in secret's plaintext, present only in the response of `POST .../secrets`. */
+  newSecret?: string;
 }
 
 export interface ReplaceWebhookSubscriptionRequest {
-    /**
+  /**
      * Must be `https://` — same rule `CreateWebhookSubscriptionRequest` states.
      * @maxLength 2048
      * @pattern (?:^https://)
      */
-    url: string;
-    /**
+  url: string;
+  /**
      * @minLength 1
      * @maxLength 500
      * @nullable
      */
-    description?: string | null;
-    /**
+  description?: string | null;
+  /**
      * A name from `GET /webhooks/events`, or `*` for every event. Any other name is a 422 naming `eventTypes`.
      * @minItems 1
      */
-    eventTypes: WebhookEventFilter[];
+  eventTypes: WebhookEventFilter[];
 }
 
 export interface UpdateWebhookSubscriptionRequest {
-    /**
+  /**
      * Must be `https://` — same rule `CreateWebhookSubscriptionRequest` states.
      * @maxLength 2048
      * @pattern (?:^https://)
      */
-    url?: string;
-    /**
+  url?: string;
+  /**
      * @minLength 1
      * @maxLength 500
      * @nullable
      */
-    description?: string | null;
-    /**
+  description?: string | null;
+  /**
      * A name from `GET /webhooks/events`, or `*` for every event. Any other name is a 422 naming `eventTypes`.
      * @minItems 1
      */
-    eventTypes?: WebhookEventFilter[];
+  eventTypes?: WebhookEventFilter[];
 }
 
-export type WebhookDeliveryStatus =
-    (typeof WebhookDeliveryStatus)[keyof typeof WebhookDeliveryStatus];
+export type WebhookDeliveryStatus = typeof WebhookDeliveryStatus[keyof typeof WebhookDeliveryStatus];
+
 
 export const WebhookDeliveryStatus = {
-    pending: 'pending',
-    in_flight: 'in_flight',
-    succeeded: 'succeeded',
-    exhausted: 'exhausted'
+  pending: 'pending',
+  in_flight: 'in_flight',
+  succeeded: 'succeeded',
+  exhausted: 'exhausted',
 } as const;
 
 /**
  * The name of one event a subscription can receive, as `GET /webhooks/events` lists it.
  */
-export type WebhookEventName = (typeof WebhookEventName)[keyof typeof WebhookEventName];
+export type WebhookEventName = typeof WebhookEventName[keyof typeof WebhookEventName];
+
 
 export const WebhookEventName = {
-    ordercreated: 'order.created',
-    orderpaid: 'order.paid',
-    ordercanceled: 'order.canceled',
-    orderredacted: 'order.redacted',
-    shipmentshipped: 'shipment.shipped',
-    shipmentdelivered: 'shipment.delivered',
-    shipmentlost: 'shipment.lost',
-    paymentsucceeded: 'payment.succeeded',
-    paymentfailed: 'payment.failed',
-    paymentrefunded: 'payment.refunded',
-    paymentrefund_failed: 'payment.refund_failed',
-    paymentrefund_reversed: 'payment.refund_reversed',
-    paymentdispute_opened: 'payment.dispute_opened',
-    paymentdispute_updated: 'payment.dispute_updated',
-    returnrequested: 'return.requested',
-    returnreceived: 'return.received',
-    returnclosed: 'return.closed',
-    examplepublished: 'example.published',
-    usererased: 'user.erased',
-    userupdated: 'user.updated'
+  ordercreated: 'order.created',
+  orderpaid: 'order.paid',
+  ordercanceled: 'order.canceled',
+  orderredacted: 'order.redacted',
+  shipmentshipped: 'shipment.shipped',
+  shipmentdelivered: 'shipment.delivered',
+  shipmentlost: 'shipment.lost',
+  paymentsucceeded: 'payment.succeeded',
+  paymentfailed: 'payment.failed',
+  paymentrefunded: 'payment.refunded',
+  paymentrefund_failed: 'payment.refund_failed',
+  paymentrefund_reversed: 'payment.refund_reversed',
+  paymentdispute_opened: 'payment.dispute_opened',
+  paymentdispute_updated: 'payment.dispute_updated',
+  returnrequested: 'return.requested',
+  returnreceived: 'return.received',
+  returnclosed: 'return.closed',
+  examplepublished: 'example.published',
+  usererased: 'user.erased',
+  userupdated: 'user.updated',
 } as const;
 
 export interface WebhookDeliveryActions {
-    /** Whether `POST /webhooks/deliveries/{id}/replay` would be accepted — false while the delivery's subscription is disabled or gone, or the caller may not read the delivery's event. */
-    replay: boolean;
+  /** Whether `POST /webhooks/deliveries/{id}/replay` would be accepted — false while the delivery's subscription is disabled or gone, or the caller may not read the delivery's event. */
+  replay: boolean;
 }
 
 export interface WebhookDelivery {
-    id: Id;
-    subscriptionId: Id;
-    eventId: Id;
-    eventType: WebhookEventName;
-    /** @minimum 1 */
-    attempt: number;
-    status: WebhookDeliveryStatus;
-    /**
+  id: Id;
+  subscriptionId: Id;
+  eventId: Id;
+  eventType: WebhookEventName;
+  /** @minimum 1 */
+  attempt: number;
+  status: WebhookDeliveryStatus;
+  /**
      * @minimum 100
      * @maximum 599
      */
-    responseCode?: number;
-    /** @minimum 0 */
-    durationMs?: number;
-    error?: string;
-    nextAttemptAt?: string;
-    actions: WebhookDeliveryActions;
-    createdAt: string;
-    updatedAt: string;
+  responseCode?: number;
+  /** @minimum 0 */
+  durationMs?: number;
+  error?: string;
+  nextAttemptAt?: string;
+  actions: WebhookDeliveryActions;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface WebhookDeliveriesResponse {
-    items: WebhookDelivery[];
-    meta: PaginationMeta;
+  items: WebhookDelivery[];
+  meta: PaginationMeta;
 }
 
 export type WebhookEventCatalogEntryActions = {
-    /** Whether the caller holds the event's read rule, so may name it in a subscription filter (and `*`, which needs every event, is accepted only when all are true). */
-    subscribe: boolean;
+  /** Whether the caller holds the event's read rule, so may name it in a subscription filter (and `*`, which needs every event, is accepted only when all are true). */
+  subscribe: boolean;
 };
 
 export interface WebhookEventCatalogEntry {
-    name: WebhookEventName;
-    description?: string;
-    actions: WebhookEventCatalogEntryActions;
+  name: WebhookEventName;
+  description?: string;
+  actions: WebhookEventCatalogEntryActions;
 }
 
 export interface WebhookEventCatalogResponse {
-    items: WebhookEventCatalogEntry[];
+  items: WebhookEventCatalogEntry[];
 }
 
-export type ApiKeySortItem = (typeof ApiKeySortItem)[keyof typeof ApiKeySortItem];
+export type ApiKeySortItem = typeof ApiKeySortItem[keyof typeof ApiKeySortItem];
+
 
 export const ApiKeySortItem = {
-    createdAt: 'createdAt',
-    '-createdAt': '-createdAt',
-    expiresAt: 'expiresAt',
-    '-expiresAt': '-expiresAt',
-    lastUsedAt: 'lastUsedAt',
-    '-lastUsedAt': '-lastUsedAt'
+  createdAt: 'createdAt',
+  '-createdAt': '-createdAt',
+  expiresAt: 'expiresAt',
+  '-expiresAt': '-expiresAt',
+  lastUsedAt: 'lastUsedAt',
+  '-lastUsedAt': '-lastUsedAt',
 } as const;
 
 /**
@@ -6768,462 +6765,438 @@ export type ApiKeySort = ApiKeySortItem[];
  * What the requesting caller may do to this credential, decided by the server.
  */
 export interface ApiKeyActions {
-    /** Whether `DELETE /api-keys/{id}` would revoke this credential for this caller. False for a caller without `delete:ApiKey`, and for a credential that is revoked already (the call would change nothing). */
-    revoke: boolean;
+  /** Whether `DELETE /api-keys/{id}` would revoke this credential for this caller. False for a caller without `delete:ApiKey`, and for a credential that is revoked already (the call would change nothing). */
+  revoke: boolean;
 }
 
 export interface ApiKey {
-    id: Id;
-    name: string;
-    /** The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which. */
-    publicPrefix: string;
-    status: ApiKeyStatus;
-    /**
+  id: Id;
+  name: string;
+  /** The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which. */
+  publicPrefix: string;
+  status: ApiKeyStatus;
+  /**
      * The permission rules this credential was minted with, each spelled `<action>:<Subject>` (`display:Order`). Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
      * @minItems 1
      */
-    permissions: string[];
-    lastUsedAt?: string;
-    expiresAt: string;
-    revokedAt?: string;
-    createdAt: string;
-    updatedAt: string;
-    actions: ApiKeyActions;
+  permissions: string[];
+  lastUsedAt?: string;
+  expiresAt: string;
+  revokedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  actions: ApiKeyActions;
 }
 
 export interface ApiKeysResponse {
-    items: ApiKey[];
-    meta: PaginationMeta;
-    /** The latest `expiresAt` a mint accepts right now (one calendar year from this response). A later one is refused with 422, so a form can bound its date picker without copying the rule. */
-    maxExpiresAt: string;
+  items: ApiKey[];
+  meta: PaginationMeta;
+  /** The latest `expiresAt` a mint accepts right now (one calendar year from this response). A later one is refused with 422, so a form can bound its date picker without copying the rule. */
+  maxExpiresAt: string;
 }
 
 export interface CreateApiKeyRequest {
-    /**
+  /**
      * A caller-chosen label — what this credential is for, shown back in the list.
      * @minLength 1
      * @maxLength 200
      */
-    name: string;
-    /**
+  name: string;
+  /**
      * The permission rules to mint this credential with, each spelled `<action>:<Subject>` (`display:Order`). Must be a subset of the caller's own current permissions, or the request is refused with 422.
      * @minItems 1
      * @items.maxLength 100
      */
-    permissions: string[];
-    /** Required, and at most one year from now (422 beyond it). Once past, the credential is refused exactly like a revoked one. */
-    expiresAt: string;
+  permissions: string[];
+  /** Required, and at most one year from now (422 beyond it). Once past, the credential is refused exactly like a revoked one. */
+  expiresAt: string;
 }
 
 export interface ApiKeyCreated {
-    id: Id;
-    name: string;
-    publicPrefix: string;
-    /** @minItems 1 */
-    permissions: string[];
-    lastUsedAt?: string;
-    expiresAt: string;
-    revokedAt?: string;
-    createdAt: string;
-    updatedAt: string;
-    /** The newly minted credential, in plaintext — `sk_<prefix>_<secret>`. Shown here once, on creation, and never again. */
-    secret: string;
+  id: Id;
+  name: string;
+  publicPrefix: string;
+  /** @minItems 1 */
+  permissions: string[];
+  lastUsedAt?: string;
+  expiresAt: string;
+  revokedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  /** The newly minted credential, in plaintext — `sk_<prefix>_<secret>`. Shown here once, on creation, and never again. */
+  secret: string;
 }
 
 export interface AssignUserRoleRequest {
-    /**
+  /**
      * @minLength 1
      * @maxLength 64
      */
-    role: string;
+  role: string;
 }
 
 export interface PlacePurchaseHoldRequest {
-    /** When checkout opens again. Must be in the future. */
-    until: string;
-    /**
+  /** When checkout opens again. Must be in the future. */
+  until: string;
+  /**
      * Shown to the buyer with the refusal, so write it as if they read it (GDPR Art. 22(3): the reason and how to contest it).
      * @minLength 1
      * @maxLength 500
      */
-    note?: string;
+  note?: string;
 }
 
 export interface MergeCartRequest {
-    /**
+  /**
      * The guest cart's lines. A product listed twice is two lines, summed like two `POST /cart/items`s.
      * @minItems 1
      * @maxItems 100
      */
-    lines: AddCartItemRequest[];
+  lines: AddCartItemRequest[];
 }
 
 export interface MergeCartResponse {
-    cart: CartResponse;
-    /** One result per submitted line, in request order. */
-    lines: MergeLineResult[];
+  cart: CartResponse;
+  /** One result per submitted line, in request order. */
+  lines: MergeLineResult[];
 }
 
 /**
  * Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both.
  */
-export type OrderTimelineEntryBaseAudience =
-    (typeof OrderTimelineEntryBaseAudience)[keyof typeof OrderTimelineEntryBaseAudience];
+export type OrderTimelineEntryBaseAudience = typeof OrderTimelineEntryBaseAudience[keyof typeof OrderTimelineEntryBaseAudience];
+
 
 export const OrderTimelineEntryBaseAudience = {
-    buyer: 'buyer',
-    staff: 'staff'
+  buyer: 'buyer',
+  staff: 'staff',
 } as const;
 
 export interface OrderTimelineEntryBase {
-    id: Id;
-    at: string;
-    /** Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both. */
-    audience: OrderTimelineEntryBaseAudience;
-    /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
-    actor?: Id;
+  id: Id;
+  at: string;
+  /** Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both. */
+  audience: OrderTimelineEntryBaseAudience;
+  /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
+  actor?: Id;
 }
 
-export type OrderTimelineEntryPlainType =
-    (typeof OrderTimelineEntryPlainType)[keyof typeof OrderTimelineEntryPlainType];
+export type OrderTimelineEntryPlainType = typeof OrderTimelineEntryPlainType[keyof typeof OrderTimelineEntryPlainType];
+
 
 export const OrderTimelineEntryPlainType = {
-    created: 'created',
-    processing: 'processing',
-    shipped: 'shipped',
-    address_corrected: 'address_corrected'
+  created: 'created',
+  processing: 'processing',
+  shipped: 'shipped',
+  address_corrected: 'address_corrected',
 } as const;
 
 export type OrderTimelineEntryPlain = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryPlainType;
-    data: OrderTimelineDataNone;
+  type: OrderTimelineEntryPlainType;
+  data: OrderTimelineDataNone;
 };
 
-export type OrderTimelineEntryStatusOverriddenType =
-    (typeof OrderTimelineEntryStatusOverriddenType)[keyof typeof OrderTimelineEntryStatusOverriddenType];
+export type OrderTimelineEntryStatusOverriddenType = typeof OrderTimelineEntryStatusOverriddenType[keyof typeof OrderTimelineEntryStatusOverriddenType];
+
 
 export const OrderTimelineEntryStatusOverriddenType = {
-    status_overridden: 'status_overridden'
+  status_overridden: 'status_overridden',
 } as const;
 
 export type OrderTimelineEntryStatusOverridden = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryStatusOverriddenType;
-    data: OrderTimelineDataStatusOverridden;
-    /** Free text staff wrote with the change: the override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
-    text?: string;
+  type: OrderTimelineEntryStatusOverriddenType;
+  data: OrderTimelineDataStatusOverridden;
+  /** Free text staff wrote with the change: the override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
+  text?: string;
 };
 
-export type OrderTimelineEntryNoteAddedType =
-    (typeof OrderTimelineEntryNoteAddedType)[keyof typeof OrderTimelineEntryNoteAddedType];
+export type OrderTimelineEntryNoteAddedType = typeof OrderTimelineEntryNoteAddedType[keyof typeof OrderTimelineEntryNoteAddedType];
+
 
 export const OrderTimelineEntryNoteAddedType = {
-    note_added: 'note_added'
+  note_added: 'note_added',
 } as const;
 
 export type OrderTimelineEntryNoteAdded = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryNoteAddedType;
-    data: OrderTimelineDataNone;
-    /** What staff wrote. Absent once it was deleted, the order's personal data was erased, or `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS` passed; the row stays. */
-    text?: string;
+  type: OrderTimelineEntryNoteAddedType;
+  data: OrderTimelineDataNone;
+  /** What staff wrote. Absent once it was deleted, the order's personal data was erased, or `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS` passed; the row stays. */
+  text?: string;
 };
 
-export type OrderTimelineEntryPaidType =
-    (typeof OrderTimelineEntryPaidType)[keyof typeof OrderTimelineEntryPaidType];
+export type OrderTimelineEntryPaidType = typeof OrderTimelineEntryPaidType[keyof typeof OrderTimelineEntryPaidType];
+
 
 export const OrderTimelineEntryPaidType = {
-    paid: 'paid'
+  paid: 'paid',
 } as const;
 
 export type OrderTimelineEntryPaid = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryPaidType;
-    data: OrderTimelineDataPaid;
+  type: OrderTimelineEntryPaidType;
+  data: OrderTimelineDataPaid;
 };
 
-export type OrderTimelineEntryDeliveredType =
-    (typeof OrderTimelineEntryDeliveredType)[keyof typeof OrderTimelineEntryDeliveredType];
+export type OrderTimelineEntryDeliveredType = typeof OrderTimelineEntryDeliveredType[keyof typeof OrderTimelineEntryDeliveredType];
+
 
 export const OrderTimelineEntryDeliveredType = {
-    delivered: 'delivered'
+  delivered: 'delivered',
 } as const;
 
 export type OrderTimelineEntryDelivered = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryDeliveredType;
-    data: OrderTimelineDataDelivered;
+  type: OrderTimelineEntryDeliveredType;
+  data: OrderTimelineDataDelivered;
 };
 
-export type OrderTimelineEntryCanceledType =
-    (typeof OrderTimelineEntryCanceledType)[keyof typeof OrderTimelineEntryCanceledType];
+export type OrderTimelineEntryCanceledType = typeof OrderTimelineEntryCanceledType[keyof typeof OrderTimelineEntryCanceledType];
+
 
 export const OrderTimelineEntryCanceledType = {
-    canceled: 'canceled'
+  canceled: 'canceled',
 } as const;
 
 export type OrderTimelineEntryCanceled = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryCanceledType;
-    data: OrderTimelineDataCanceled;
+  type: OrderTimelineEntryCanceledType;
+  data: OrderTimelineDataCanceled;
 };
 
-export type OrderTimelineEntryPaymentDeclinedType =
-    (typeof OrderTimelineEntryPaymentDeclinedType)[keyof typeof OrderTimelineEntryPaymentDeclinedType];
+export type OrderTimelineEntryPaymentDeclinedType = typeof OrderTimelineEntryPaymentDeclinedType[keyof typeof OrderTimelineEntryPaymentDeclinedType];
+
 
 export const OrderTimelineEntryPaymentDeclinedType = {
-    payment_declined: 'payment_declined'
+  payment_declined: 'payment_declined',
 } as const;
 
 export type OrderTimelineEntryPaymentDeclined = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryPaymentDeclinedType;
-    data: OrderTimelineDataPaymentDeclined;
+  type: OrderTimelineEntryPaymentDeclinedType;
+  data: OrderTimelineDataPaymentDeclined;
 };
 
-export type OrderTimelineEntryRefundType =
-    (typeof OrderTimelineEntryRefundType)[keyof typeof OrderTimelineEntryRefundType];
+export type OrderTimelineEntryRefundType = typeof OrderTimelineEntryRefundType[keyof typeof OrderTimelineEntryRefundType];
+
 
 export const OrderTimelineEntryRefundType = {
-    refund_issued: 'refund_issued',
-    refund_settled: 'refund_settled',
-    refund_canceled: 'refund_canceled'
+  refund_issued: 'refund_issued',
+  refund_settled: 'refund_settled',
+  refund_canceled: 'refund_canceled',
 } as const;
 
 export type OrderTimelineEntryRefund = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryRefundType;
-    data: OrderTimelineDataRefund;
+  type: OrderTimelineEntryRefundType;
+  data: OrderTimelineDataRefund;
 };
 
-export type OrderTimelineEntryRefundFailureType =
-    (typeof OrderTimelineEntryRefundFailureType)[keyof typeof OrderTimelineEntryRefundFailureType];
+export type OrderTimelineEntryRefundFailureType = typeof OrderTimelineEntryRefundFailureType[keyof typeof OrderTimelineEntryRefundFailureType];
+
 
 export const OrderTimelineEntryRefundFailureType = {
-    refund_failed: 'refund_failed',
-    refund_reversed: 'refund_reversed'
+  refund_failed: 'refund_failed',
+  refund_reversed: 'refund_reversed',
 } as const;
 
 export type OrderTimelineEntryRefundFailure = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryRefundFailureType;
-    data: OrderTimelineDataRefundFailure;
+  type: OrderTimelineEntryRefundFailureType;
+  data: OrderTimelineDataRefundFailure;
 };
 
-export type OrderTimelineEntryDisputeType =
-    (typeof OrderTimelineEntryDisputeType)[keyof typeof OrderTimelineEntryDisputeType];
+export type OrderTimelineEntryDisputeType = typeof OrderTimelineEntryDisputeType[keyof typeof OrderTimelineEntryDisputeType];
+
 
 export const OrderTimelineEntryDisputeType = {
-    dispute_opened: 'dispute_opened',
-    dispute_closed: 'dispute_closed'
+  dispute_opened: 'dispute_opened',
+  dispute_closed: 'dispute_closed',
 } as const;
 
 export type OrderTimelineEntryDispute = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryDisputeType;
-    data: OrderTimelineDataDispute;
+  type: OrderTimelineEntryDisputeType;
+  data: OrderTimelineDataDispute;
 };
 
-export type OrderTimelineEntryShipmentShippedType =
-    (typeof OrderTimelineEntryShipmentShippedType)[keyof typeof OrderTimelineEntryShipmentShippedType];
+export type OrderTimelineEntryShipmentShippedType = typeof OrderTimelineEntryShipmentShippedType[keyof typeof OrderTimelineEntryShipmentShippedType];
+
 
 export const OrderTimelineEntryShipmentShippedType = {
-    shipment_shipped: 'shipment_shipped'
+  shipment_shipped: 'shipment_shipped',
 } as const;
 
 export type OrderTimelineEntryShipmentShipped = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryShipmentShippedType;
-    data: OrderTimelineDataShipmentShipped;
+  type: OrderTimelineEntryShipmentShippedType;
+  data: OrderTimelineDataShipmentShipped;
 };
 
-export type OrderTimelineEntryShipmentDeliveredType =
-    (typeof OrderTimelineEntryShipmentDeliveredType)[keyof typeof OrderTimelineEntryShipmentDeliveredType];
+export type OrderTimelineEntryShipmentDeliveredType = typeof OrderTimelineEntryShipmentDeliveredType[keyof typeof OrderTimelineEntryShipmentDeliveredType];
+
 
 export const OrderTimelineEntryShipmentDeliveredType = {
-    shipment_delivered: 'shipment_delivered'
+  shipment_delivered: 'shipment_delivered',
 } as const;
 
 export type OrderTimelineEntryShipmentDelivered = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryShipmentDeliveredType;
-    data: OrderTimelineDataShipmentDelivered;
+  type: OrderTimelineEntryShipmentDeliveredType;
+  data: OrderTimelineDataShipmentDelivered;
 };
 
-export type OrderTimelineEntryShipmentLostType =
-    (typeof OrderTimelineEntryShipmentLostType)[keyof typeof OrderTimelineEntryShipmentLostType];
+export type OrderTimelineEntryShipmentLostType = typeof OrderTimelineEntryShipmentLostType[keyof typeof OrderTimelineEntryShipmentLostType];
+
 
 export const OrderTimelineEntryShipmentLostType = {
-    shipment_lost: 'shipment_lost'
+  shipment_lost: 'shipment_lost',
 } as const;
 
 export type OrderTimelineEntryShipmentLost = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryShipmentLostType;
-    data: OrderTimelineDataShipmentLost;
+  type: OrderTimelineEntryShipmentLostType;
+  data: OrderTimelineDataShipmentLost;
 };
 
-export type OrderTimelineEntryFulfillmentHeldType =
-    (typeof OrderTimelineEntryFulfillmentHeldType)[keyof typeof OrderTimelineEntryFulfillmentHeldType];
+export type OrderTimelineEntryFulfillmentHeldType = typeof OrderTimelineEntryFulfillmentHeldType[keyof typeof OrderTimelineEntryFulfillmentHeldType];
+
 
 export const OrderTimelineEntryFulfillmentHeldType = {
-    fulfillment_held: 'fulfillment_held'
+  fulfillment_held: 'fulfillment_held',
 } as const;
 
 export type OrderTimelineEntryFulfillmentHeld = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryFulfillmentHeldType;
-    data: OrderTimelineDataFulfillmentHeld;
+  type: OrderTimelineEntryFulfillmentHeldType;
+  data: OrderTimelineDataFulfillmentHeld;
 };
 
-export type OrderTimelineEntryFulfillmentOrderRefType =
-    (typeof OrderTimelineEntryFulfillmentOrderRefType)[keyof typeof OrderTimelineEntryFulfillmentOrderRefType];
+export type OrderTimelineEntryFulfillmentOrderRefType = typeof OrderTimelineEntryFulfillmentOrderRefType[keyof typeof OrderTimelineEntryFulfillmentOrderRefType];
+
 
 export const OrderTimelineEntryFulfillmentOrderRefType = {
-    fulfillment_released: 'fulfillment_released',
-    remainder_canceled: 'remainder_canceled'
+  fulfillment_released: 'fulfillment_released',
+  remainder_canceled: 'remainder_canceled',
 } as const;
 
 export type OrderTimelineEntryFulfillmentOrderRef = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryFulfillmentOrderRefType;
-    data: OrderTimelineDataFulfillmentOrderRef;
+  type: OrderTimelineEntryFulfillmentOrderRefType;
+  data: OrderTimelineDataFulfillmentOrderRef;
 };
 
-export type OrderTimelineEntryReturnRequestedType =
-    (typeof OrderTimelineEntryReturnRequestedType)[keyof typeof OrderTimelineEntryReturnRequestedType];
+export type OrderTimelineEntryReturnRequestedType = typeof OrderTimelineEntryReturnRequestedType[keyof typeof OrderTimelineEntryReturnRequestedType];
+
 
 export const OrderTimelineEntryReturnRequestedType = {
-    return_requested: 'return_requested'
+  return_requested: 'return_requested',
 } as const;
 
 export type OrderTimelineEntryReturnRequested = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryReturnRequestedType;
-    data: OrderTimelineDataReturnRequested;
+  type: OrderTimelineEntryReturnRequestedType;
+  data: OrderTimelineDataReturnRequested;
 };
 
-export type OrderTimelineEntryReturnApprovedType =
-    (typeof OrderTimelineEntryReturnApprovedType)[keyof typeof OrderTimelineEntryReturnApprovedType];
+export type OrderTimelineEntryReturnApprovedType = typeof OrderTimelineEntryReturnApprovedType[keyof typeof OrderTimelineEntryReturnApprovedType];
+
 
 export const OrderTimelineEntryReturnApprovedType = {
-    return_approved: 'return_approved'
+  return_approved: 'return_approved',
 } as const;
 
 export type OrderTimelineEntryReturnApproved = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryReturnApprovedType;
-    data: OrderTimelineDataReturnApproved;
+  type: OrderTimelineEntryReturnApprovedType;
+  data: OrderTimelineDataReturnApproved;
 };
 
-export type OrderTimelineEntryReturnRefType =
-    (typeof OrderTimelineEntryReturnRefType)[keyof typeof OrderTimelineEntryReturnRefType];
+export type OrderTimelineEntryReturnRefType = typeof OrderTimelineEntryReturnRefType[keyof typeof OrderTimelineEntryReturnRefType];
+
 
 export const OrderTimelineEntryReturnRefType = {
-    return_declined: 'return_declined',
-    return_canceled: 'return_canceled',
-    proof_of_sending_recorded: 'proof_of_sending_recorded'
+  return_declined: 'return_declined',
+  return_canceled: 'return_canceled',
+  proof_of_sending_recorded: 'proof_of_sending_recorded',
 } as const;
 
 export type OrderTimelineEntryReturnRef = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryReturnRefType;
-    data: OrderTimelineDataReturnRef;
+  type: OrderTimelineEntryReturnRefType;
+  data: OrderTimelineDataReturnRef;
 };
 
-export type OrderTimelineEntryReturnReceivedType =
-    (typeof OrderTimelineEntryReturnReceivedType)[keyof typeof OrderTimelineEntryReturnReceivedType];
+export type OrderTimelineEntryReturnReceivedType = typeof OrderTimelineEntryReturnReceivedType[keyof typeof OrderTimelineEntryReturnReceivedType];
+
 
 export const OrderTimelineEntryReturnReceivedType = {
-    return_received: 'return_received'
+  return_received: 'return_received',
 } as const;
 
 export type OrderTimelineEntryReturnReceived = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryReturnReceivedType;
-    data: OrderTimelineDataReturnReceived;
+  type: OrderTimelineEntryReturnReceivedType;
+  data: OrderTimelineDataReturnReceived;
 };
 
-export type OrderTimelineEntryReturnClosedType =
-    (typeof OrderTimelineEntryReturnClosedType)[keyof typeof OrderTimelineEntryReturnClosedType];
+export type OrderTimelineEntryReturnClosedType = typeof OrderTimelineEntryReturnClosedType[keyof typeof OrderTimelineEntryReturnClosedType];
+
 
 export const OrderTimelineEntryReturnClosedType = {
-    return_closed: 'return_closed'
+  return_closed: 'return_closed',
 } as const;
 
 export type OrderTimelineEntryReturnClosed = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryReturnClosedType;
-    data: OrderTimelineDataReturnClosed;
+  type: OrderTimelineEntryReturnClosedType;
+  data: OrderTimelineDataReturnClosed;
 };
 
-export type OrderTimelineEntryInvoiceIssuedType =
-    (typeof OrderTimelineEntryInvoiceIssuedType)[keyof typeof OrderTimelineEntryInvoiceIssuedType];
+export type OrderTimelineEntryInvoiceIssuedType = typeof OrderTimelineEntryInvoiceIssuedType[keyof typeof OrderTimelineEntryInvoiceIssuedType];
+
 
 export const OrderTimelineEntryInvoiceIssuedType = {
-    invoice_issued: 'invoice_issued'
+  invoice_issued: 'invoice_issued',
 } as const;
 
 export type OrderTimelineEntryInvoiceIssued = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryInvoiceIssuedType;
-    data: OrderTimelineDataInvoiceIssued;
+  type: OrderTimelineEntryInvoiceIssuedType;
+  data: OrderTimelineDataInvoiceIssued;
 };
 
-export type OrderTimelineEntryCreditNoteIssuedType =
-    (typeof OrderTimelineEntryCreditNoteIssuedType)[keyof typeof OrderTimelineEntryCreditNoteIssuedType];
+export type OrderTimelineEntryCreditNoteIssuedType = typeof OrderTimelineEntryCreditNoteIssuedType[keyof typeof OrderTimelineEntryCreditNoteIssuedType];
+
 
 export const OrderTimelineEntryCreditNoteIssuedType = {
-    credit_note_issued: 'credit_note_issued'
+  credit_note_issued: 'credit_note_issued',
 } as const;
 
 export type OrderTimelineEntryCreditNoteIssued = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryCreditNoteIssuedType;
-    data: OrderTimelineDataCreditNoteIssued;
+  type: OrderTimelineEntryCreditNoteIssuedType;
+  data: OrderTimelineDataCreditNoteIssued;
 };
 
-export type OrderTimelineEntryReleaseDateMovedType =
-    (typeof OrderTimelineEntryReleaseDateMovedType)[keyof typeof OrderTimelineEntryReleaseDateMovedType];
+export type OrderTimelineEntryReleaseDateMovedType = typeof OrderTimelineEntryReleaseDateMovedType[keyof typeof OrderTimelineEntryReleaseDateMovedType];
+
 
 export const OrderTimelineEntryReleaseDateMovedType = {
-    release_date_moved: 'release_date_moved'
+  release_date_moved: 'release_date_moved',
 } as const;
 
 export type OrderTimelineEntryReleaseDateMoved = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryReleaseDateMovedType;
-    data: OrderTimelineDataReleaseDateMoved;
+  type: OrderTimelineEntryReleaseDateMovedType;
+  data: OrderTimelineDataReleaseDateMoved;
 };
 
-export type OrderTimelineEntryDelayNoticeSentType =
-    (typeof OrderTimelineEntryDelayNoticeSentType)[keyof typeof OrderTimelineEntryDelayNoticeSentType];
+export type OrderTimelineEntryDelayNoticeSentType = typeof OrderTimelineEntryDelayNoticeSentType[keyof typeof OrderTimelineEntryDelayNoticeSentType];
+
 
 export const OrderTimelineEntryDelayNoticeSentType = {
-    delay_notice_sent: 'delay_notice_sent'
+  delay_notice_sent: 'delay_notice_sent',
 } as const;
 
 export type OrderTimelineEntryDelayNoticeSent = OrderTimelineEntryBase & {
-    type: OrderTimelineEntryDelayNoticeSentType;
-    data: OrderTimelineDataDelayNoticeSent;
+  type: OrderTimelineEntryDelayNoticeSentType;
+  data: OrderTimelineDataDelayNoticeSent;
 };
 
-export type OrderTimelineEntry =
-    | OrderTimelineEntryPlain
-    | OrderTimelineEntryStatusOverridden
-    | OrderTimelineEntryNoteAdded
-    | OrderTimelineEntryPaid
-    | OrderTimelineEntryDelivered
-    | OrderTimelineEntryCanceled
-    | OrderTimelineEntryPaymentDeclined
-    | OrderTimelineEntryRefund
-    | OrderTimelineEntryRefundFailure
-    | OrderTimelineEntryDispute
-    | OrderTimelineEntryShipmentShipped
-    | OrderTimelineEntryShipmentDelivered
-    | OrderTimelineEntryShipmentLost
-    | OrderTimelineEntryFulfillmentHeld
-    | OrderTimelineEntryFulfillmentOrderRef
-    | OrderTimelineEntryReturnRequested
-    | OrderTimelineEntryReturnApproved
-    | OrderTimelineEntryReturnRef
-    | OrderTimelineEntryReturnReceived
-    | OrderTimelineEntryReturnClosed
-    | OrderTimelineEntryInvoiceIssued
-    | OrderTimelineEntryCreditNoteIssued
-    | OrderTimelineEntryReleaseDateMoved
-    | OrderTimelineEntryDelayNoticeSent;
+export type OrderTimelineEntry = OrderTimelineEntryPlain | OrderTimelineEntryStatusOverridden | OrderTimelineEntryNoteAdded | OrderTimelineEntryPaid | OrderTimelineEntryDelivered | OrderTimelineEntryCanceled | OrderTimelineEntryPaymentDeclined | OrderTimelineEntryRefund | OrderTimelineEntryRefundFailure | OrderTimelineEntryDispute | OrderTimelineEntryShipmentShipped | OrderTimelineEntryShipmentDelivered | OrderTimelineEntryShipmentLost | OrderTimelineEntryFulfillmentHeld | OrderTimelineEntryFulfillmentOrderRef | OrderTimelineEntryReturnRequested | OrderTimelineEntryReturnApproved | OrderTimelineEntryReturnRef | OrderTimelineEntryReturnReceived | OrderTimelineEntryReturnClosed | OrderTimelineEntryInvoiceIssued | OrderTimelineEntryCreditNoteIssued | OrderTimelineEntryReleaseDateMoved | OrderTimelineEntryDelayNoticeSent;
 
 export interface OrderTimelineResponse {
-    items: OrderTimelineEntry[];
-    meta: PaginationMeta;
+  items: OrderTimelineEntry[];
+  meta: PaginationMeta;
 }
 
 export interface CreateOrderNoteRequest {
-    /**
+  /**
      * What staff want recorded. Customers do not see it on their order, but it is included if they request their data: no phone numbers, addresses or health details.
      * @minLength 1
      * @maxLength 2000
      */
-    text: string;
+  text: string;
 }
 
 /**
@@ -7231,15 +7204,16 @@ export interface CreateOrderNoteRequest {
  */
 export type ReplaceShippingAddressRequest = OrderAddress;
 
-export type PaymentSortItem = (typeof PaymentSortItem)[keyof typeof PaymentSortItem];
+export type PaymentSortItem = typeof PaymentSortItem[keyof typeof PaymentSortItem];
+
 
 export const PaymentSortItem = {
-    createdAt: 'createdAt',
-    '-createdAt': '-createdAt',
-    amount: 'amount',
-    '-amount': '-amount',
-    payBy: 'payBy',
-    '-payBy': '-payBy'
+  createdAt: 'createdAt',
+  '-createdAt': '-createdAt',
+  amount: 'amount',
+  '-amount': '-amount',
+  payBy: 'payBy',
+  '-payBy': '-payBy',
 } as const;
 
 /**
@@ -7249,464 +7223,470 @@ export const PaymentSortItem = {
  */
 export type PaymentSort = PaymentSortItem[];
 
-export type PaymentMethodKind = (typeof PaymentMethodKind)[keyof typeof PaymentMethodKind];
+export type PaymentMethodKind = typeof PaymentMethodKind[keyof typeof PaymentMethodKind];
+
 
 export const PaymentMethodKind = {
-    card: 'card',
-    bank_transfer: 'bank_transfer',
-    cash: 'cash',
-    other: 'other'
+  card: 'card',
+  bank_transfer: 'bank_transfer',
+  cash: 'cash',
+  other: 'other',
 } as const;
 
 export interface PaymentsResponse {
-    items: Payment[];
-    meta: PaginationMeta;
+  items: Payment[];
+  meta: PaginationMeta;
 }
 
 export interface CreatePaymentRequest {
-    orderId: Id;
+  orderId: Id;
 }
 
 export interface SearchPaymentsRequest {
-    page?: Page;
-    pageSize?: PageSize;
-    sort?: PaymentSort;
-    displayStatus?: PaymentDisplayStatus;
-    method?: PaymentMethodKind;
-    /** @maxLength 64 */
-    provider?: string;
-    createdFrom?: string;
-    createdTo?: string;
-    receivedFrom?: string;
-    receivedTo?: string;
-    amountMin?: NonNegativeDecimalAmount;
-    amountMax?: NonNegativeDecimalAmount;
-    orderId?: Id;
-    /** `true` keeps only payments with a dispute still open. `false` or absent is no filter. */
-    disputed?: boolean;
-    /** @maxLength 120 */
-    reference?: string;
-    /**
+  page?: Page;
+  pageSize?: PageSize;
+  sort?: PaymentSort;
+  displayStatus?: PaymentDisplayStatus;
+  method?: PaymentMethodKind;
+  /** @maxLength 64 */
+  provider?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  receivedFrom?: string;
+  receivedTo?: string;
+  amountMin?: NonNegativeDecimalAmount;
+  amountMax?: NonNegativeDecimalAmount;
+  orderId?: Id;
+  /** `true` keeps only payments with a dispute still open. `false` or absent is no filter. */
+  disputed?: boolean;
+  /** @maxLength 120 */
+  reference?: string;
+  /**
      * The RF creditor reference of a bank transfer, in any spacing and case; a code that is not a valid reference finds nothing.
      * @maxLength 64
      */
-    transferReference?: string;
+  transferReference?: string;
 }
 
 export interface RefundListItem {
-    id: Id;
-    paymentId: Id;
-    orderId: Id;
-    amount: NonNegativeDecimalAmount;
-    currency: CurrencyCode;
-    status: RefundStatus;
-    reason: RefundReason;
-    returnId?: Id;
-    providerRefundRef?: string;
-    /** Staff only (`display:Payment`). */
-    failureReason?: RefundFailureReason;
-    settledAt?: string;
-    reversedAt?: string;
-    createdAt: string;
+  id: Id;
+  paymentId: Id;
+  orderId: Id;
+  amount: NonNegativeDecimalAmount;
+  currency: CurrencyCode;
+  status: RefundStatus;
+  reason: RefundReason;
+  returnId?: Id;
+  providerRefundRef?: string;
+  /** Staff only (`display:Payment`). */
+  failureReason?: RefundFailureReason;
+  settledAt?: string;
+  reversedAt?: string;
+  createdAt: string;
 }
 
 export interface RefundsResponse {
-    items: RefundListItem[];
-    meta: PaginationMeta;
+  items: RefundListItem[];
+  meta: PaginationMeta;
 }
 
 /**
  * `stale_refund` — a provider refund open past the threshold, still waiting for the provider's answer or its next retry; `refused_refund` — a card refund the provider refused for good (a final `RefundFailureReason`), or reported failed before it ever settled, shown at once: the money has to go back another way; `reversed_refund` — a refund the provider took back after settling it (a bank sent it back), and only that, never a refusal of an open refund, shown at once with `since` = when it was reversed: the money is owed another way, agreed with the buyer; `refund_exceeds_remaining` — a refund made in the provider's dashboard took the room an open refund here counted on: the open one is held unsent (the provider would refuse it) and `exceedsBy` says by how much. Staff cancel it or mark it returned; `manual_refund_owed` — money to hand back outside the system on a `manual` payment. Each of those is an open refund record on a payment: a cancel or a refund opens it before anything is asked of a provider, so no refund is owed without one; `dispute_needs_response` — the buyer's bank opened a dispute the shop has to answer in the provider's own dashboard before `dueBy`. It names the dispute (`disputeId`), not a refund, and says what was already refunded (`alreadyRefunded`) because that refund is the evidence for a refund-then-chargeback.
  */
-export type PaymentAttentionKind = (typeof PaymentAttentionKind)[keyof typeof PaymentAttentionKind];
+export type PaymentAttentionKind = typeof PaymentAttentionKind[keyof typeof PaymentAttentionKind];
+
 
 export const PaymentAttentionKind = {
-    stale_refund: 'stale_refund',
-    refused_refund: 'refused_refund',
-    reversed_refund: 'reversed_refund',
-    refund_exceeds_remaining: 'refund_exceeds_remaining',
-    manual_refund_owed: 'manual_refund_owed',
-    dispute_needs_response: 'dispute_needs_response'
+  stale_refund: 'stale_refund',
+  refused_refund: 'refused_refund',
+  reversed_refund: 'reversed_refund',
+  refund_exceeds_remaining: 'refund_exceeds_remaining',
+  manual_refund_owed: 'manual_refund_owed',
+  dispute_needs_response: 'dispute_needs_response',
 } as const;
 
 /**
  * Why a refund has a legal deadline. `withdrawal` — the 14 days after the shop was told of a withdrawal (Directive 2011/83/EU Art. 13(1)); `faulty` — a defective or wrong item, refunded once the goods or the proof of sending are in (Directive 2019/771 Art. 16(3)(b)).
  */
-export type RefundDueRule = (typeof RefundDueRule)[keyof typeof RefundDueRule];
+export type RefundDueRule = typeof RefundDueRule[keyof typeof RefundDueRule];
+
 
 export const RefundDueRule = {
-    withdrawal: 'withdrawal',
-    faulty: 'faulty'
+  withdrawal: 'withdrawal',
+  faulty: 'faulty',
 } as const;
 
 export interface PaymentAttentionItem {
-    kind: PaymentAttentionKind;
-    orderId: Id;
-    paymentId: Id;
-    refundId?: Id;
-    /**
+  kind: PaymentAttentionKind;
+  orderId: Id;
+  paymentId: Id;
+  refundId?: Id;
+  /**
      * The provider's dispute id, on a `dispute_needs_response` row (which has no `refundId`).
      * @maxLength 200
      */
-    disputeId?: string;
-    /** On a `dispute_needs_response` row, when the provider's evidence window closes. Absent when the provider gave none. A past date means the window has gone. */
-    dueBy?: string;
-    /** On a `dispute_needs_response` row, how much of the payment was already refunded successfully, in its currency. Above zero it is a refund-then-chargeback: send the refund as evidence. Absent when nothing was refunded. */
-    alreadyRefunded?: NonNegativeDecimalAmount;
-    amount: NonNegativeDecimalAmount;
-    currency: CurrencyCode;
-    /** Staff only (`display:Payment`). */
-    failureReason?: RefundFailureReason;
-    /** When the problem was recorded, so the page can sort by age. */
-    since: string;
-    /** On a `refund_exceeds_remaining` row, by how much this open refund overshoots what the provider can still give back, in the payment's currency. */
-    exceedsBy?: NonNegativeDecimalAmount;
-    /** The legal deadline to give the money back, stamped on the refund when it opened, on any row backed by a refund that pays for a withdrawal or a return. For a withdrawal it is the end of the shop's day, 14 days after the shop was told (Consumer Rights Directive Art. 13(1)), unless the goods or the proof of sending came later, which makes it due the moment they did; for a faulty or wrong item it is the moment the goods or the proof came. Absent for any other refund, which shows its age only. The client shows the days left; a past date means the deadline has gone. */
-    refundDueBy?: string;
-    /** Which rule `refundDueBy` follows. Present exactly when `refundDueBy` is. */
-    refundDueRule?: RefundDueRule;
+  disputeId?: string;
+  /** On a `dispute_needs_response` row, when the provider's evidence window closes. Absent when the provider gave none. A past date means the window has gone. */
+  dueBy?: string;
+  /** On a `dispute_needs_response` row, how much of the payment was already refunded successfully, in its currency. Above zero it is a refund-then-chargeback: send the refund as evidence. Absent when nothing was refunded. */
+  alreadyRefunded?: NonNegativeDecimalAmount;
+  amount: NonNegativeDecimalAmount;
+  currency: CurrencyCode;
+  /** Staff only (`display:Payment`). */
+  failureReason?: RefundFailureReason;
+  /** When the problem was recorded, so the page can sort by age. */
+  since: string;
+  /** On a `refund_exceeds_remaining` row, by how much this open refund overshoots what the provider can still give back, in the payment's currency. */
+  exceedsBy?: NonNegativeDecimalAmount;
+  /** The legal deadline to give the money back, stamped on the refund when it opened, on any row backed by a refund that pays for a withdrawal or a return. For a withdrawal it is the end of the shop's day, 14 days after the shop was told (Consumer Rights Directive Art. 13(1)), unless the goods or the proof of sending came later, which makes it due the moment they did; for a faulty or wrong item it is the moment the goods or the proof came. Absent for any other refund, which shows its age only. The client shows the days left; a past date means the deadline has gone. */
+  refundDueBy?: string;
+  /** Which rule `refundDueBy` follows. Present exactly when `refundDueBy` is. */
+  refundDueRule?: RefundDueRule;
 }
 
 export interface PaymentAttentionResponse {
-    items: PaymentAttentionItem[];
+  items: PaymentAttentionItem[];
 }
 
 export interface CancelRefundRequest {
-    /**
+  /**
      * Why the refund is voided (who refunded it elsewhere and where, or that it was a duplicate). Staff-only free text, kept in the audit row and nowhere the buyer reads.
      * @minLength 1
      * @maxLength 1000
      */
-    note: string;
+  note: string;
 }
 
 /**
  * Orders a release-date move would email, counted in orders, never fulfillment orders.
  */
 export interface ReleaseDateImpact {
-    /**
+  /**
      * Orders that would get a delay email (the date moves later or is cleared); silence always means the buyer keeps waiting, and they can cancel any time before it ships.
      * @minimum 0
      */
-    notify: number;
+  notify: number;
 }
 
 export interface MarkShipmentLostRequest {
-    reason: ShipmentLostReason;
-    /**
+  reason: ShipmentLostReason;
+  /**
      * Free text for the staff who read the record later; reaped with the other free text. The buyer never sees it.
      * @minLength 1
      * @maxLength 1000
      */
-    note?: string;
-    /**
+  note?: string;
+  /**
      * A sentence for the buyer, shown on their order and mailed with the loss notice. Separate from `note`, which they never see. Not translated.
      * @minLength 1
      * @maxLength 500
      */
-    message?: string;
+  message?: string;
 }
 
 export interface CloseReturnRequest {
-    /**
+  /**
      * Why the return is closed by hand. Optional, staff-only free text, kept in the audit row and nowhere the customer reads.
      * @minLength 1
      * @maxLength 1000
      */
-    note?: string;
+  note?: string;
 }
 
 export interface CancelReturnRequest {
-    /**
+  /**
      * Why the return is canceled. Optional, staff-only free text, kept in the audit row and nowhere the customer reads.
      * @minLength 1
      * @maxLength 500
      */
-    note?: string;
+  note?: string;
 }
 
 export interface RecordProofOfSendingRequest {
-    /** The date on the carrier's document, when the buyer handed the parcel over. Not in the future (422 `RETURN_PROOF_DATE_INVALID`). */
-    sentAt: string;
-    /**
+  /** The date on the carrier's document, when the buyer handed the parcel over. Not in the future (422 `RETURN_PROOF_DATE_INVALID`). */
+  sentAt: string;
+  /**
      * The carrier or postal provider named on the document. Plain text.
      * @minLength 1
      * @maxLength 200
      */
-    carrier: string;
-    /**
+  carrier: string;
+  /**
      * The document's reference, a tracking or receipt number. Plain text.
      * @minLength 1
      * @maxLength 200
      */
-    reference: string;
+  reference: string;
 }
 
 /**
  * The bucket size. A week starts on Monday.
  */
-export type StatsInterval = (typeof StatsInterval)[keyof typeof StatsInterval];
+export type StatsInterval = typeof StatsInterval[keyof typeof StatsInterval];
+
 
 export const StatsInterval = {
-    day: 'day',
-    week: 'week',
-    month: 'month'
+  day: 'day',
+  week: 'week',
+  month: 'month',
 } as const;
 
 export interface StatsPeriod {
-    from: string;
-    to: string;
-    interval?: StatsInterval;
-    /** The shop's IANA time zone every day and bucket edge follows. */
-    timeZone: string;
+  from: string;
+  to: string;
+  interval?: StatsInterval;
+  /** The shop's IANA time zone every day and bucket edge follows. */
+  timeZone: string;
 }
 
 export interface StatsLimits {
-    /**
+  /**
      * The most calendar days one period may cover, both ends counted.
      * @minimum 1
      */
-    maxRangeDays: number;
-    /**
+  maxRangeDays: number;
+  /**
      * The most buckets one series may hold, the first possibly starting before `from`.
      * @minimum 1
      */
-    maxBuckets: number;
+  maxBuckets: number;
 }
 
 export interface SalesFigures {
-    /**
+  /**
      * Orders paid in the period, by `paidAt`.
      * @minimum 0
      */
-    orders: number;
-    /**
+  orders: number;
+  /**
      * Units on those orders.
      * @minimum 0
      */
-    unitsOrdered: number;
-    /**
+  unitsOrdered: number;
+  /**
      * Units of returns received in the period. A cancellation is not counted, since it has no date.
      * @minimum 0
      */
-    unitsReversed: number;
-    /** `unitsOrdered` minus `unitsReversed`. */
-    netUnits: number;
-    /** Goods net of VAT on invoices issued in the period, before shipping, discounts and reversals. */
-    grossSales: NonNegativeDecimalAmount;
-    /** Always 0 until a discount exists. */
-    discounts: NonNegativeDecimalAmount;
-    /** The goods part (net of VAT) of credit notes issued in the period. */
-    reversals: NonNegativeDecimalAmount;
-    /** `grossSales` minus `discounts` minus `reversals`. */
-    netSales: DecimalAmount;
-    /** Shipping net of VAT charged minus refunded. Exact for full refunds only, since a partial credit note folds its shipping into goods. */
-    shipping: DecimalAmount;
-    /** VAT charged minus VAT refunded. */
-    taxes: DecimalAmount;
-    /** `netSales` plus `shipping` plus `taxes`. */
-    totalSales: DecimalAmount;
-    /** Credit notes issued in the period, VAT included. */
-    refunds: NonNegativeDecimalAmount;
-    /** (`grossSales` minus `discounts`) divided by `orders`; 0 with no orders. */
-    averageOrderValue: NonNegativeDecimalAmount;
+  unitsReversed: number;
+  /** `unitsOrdered` minus `unitsReversed`. */
+  netUnits: number;
+  /** Goods net of VAT on invoices issued in the period, before shipping, discounts and reversals. */
+  grossSales: NonNegativeDecimalAmount;
+  /** Always 0 until a discount exists. */
+  discounts: NonNegativeDecimalAmount;
+  /** The goods part (net of VAT) of credit notes issued in the period. */
+  reversals: NonNegativeDecimalAmount;
+  /** `grossSales` minus `discounts` minus `reversals`. */
+  netSales: DecimalAmount;
+  /** Shipping net of VAT charged minus refunded. Exact for full refunds only, since a partial credit note folds its shipping into goods. */
+  shipping: DecimalAmount;
+  /** VAT charged minus VAT refunded. */
+  taxes: DecimalAmount;
+  /** `netSales` plus `shipping` plus `taxes`. */
+  totalSales: DecimalAmount;
+  /** Credit notes issued in the period, VAT included. */
+  refunds: NonNegativeDecimalAmount;
+  /** (`grossSales` minus `discounts`) divided by `orders`; 0 with no orders. */
+  averageOrderValue: NonNegativeDecimalAmount;
 }
 
 export interface SalesBucket {
-    /** The bucket's first instant, shop-local midnight. */
-    start: string;
-    figures: SalesFigures;
+  /** The bucket's first instant, shop-local midnight. */
+  start: string;
+  figures: SalesFigures;
 }
 
 export interface SalesCurrency {
-    currency: CurrencyCode;
-    totals: SalesFigures;
-    /** The same totals over the equal-length period just before, for the "vs previous" figure. */
-    previous: SalesFigures;
-    /** Every bucket of the range, empty ones included. */
-    buckets: SalesBucket[];
+  currency: CurrencyCode;
+  totals: SalesFigures;
+  /** The same totals over the equal-length period just before, for the "vs previous" figure. */
+  previous: SalesFigures;
+  /** Every bucket of the range, empty ones included. */
+  buckets: SalesBucket[];
 }
 
 export interface SalesStats {
-    period: StatsPeriod;
-    limits: StatsLimits;
-    currencies: SalesCurrency[];
+  period: StatsPeriod;
+  limits: StatsLimits;
+  currencies: SalesCurrency[];
 }
 
 export interface ProductSalesRow {
-    productId: Id;
-    title: string;
-    currency: CurrencyCode;
-    /** @minimum 0 */
-    unitsOrdered: number;
-    /** @minimum 0 */
-    unitsReversed: number;
-    netUnits: number;
-    /** Net of VAT, from the frozen line price and rate. */
-    netSales: DecimalAmount;
+  productId: Id;
+  title: string;
+  currency: CurrencyCode;
+  /** @minimum 0 */
+  unitsOrdered: number;
+  /** @minimum 0 */
+  unitsReversed: number;
+  netUnits: number;
+  /** Net of VAT, from the frozen line price and rate. */
+  netSales: DecimalAmount;
 }
 
 export interface ProductStats {
-    period: StatsPeriod;
-    limits: StatsLimits;
-    products: ProductSalesRow[];
+  period: StatsPeriod;
+  limits: StatsLimits;
+  products: ProductSalesRow[];
 }
 
 export interface ProductSeriesBucket {
-    start: string;
-    /** @minimum 0 */
-    unitsOrdered: number;
-    /** @minimum 0 */
-    unitsReversed: number;
+  start: string;
+  /** @minimum 0 */
+  unitsOrdered: number;
+  /** @minimum 0 */
+  unitsReversed: number;
 }
 
 export interface ProductSeries {
-    period: StatsPeriod;
-    limits: StatsLimits;
-    productId: Id;
-    /** As the orders froze it; absent when the product sold nothing in the period. */
-    title?: string;
-    buckets: ProductSeriesBucket[];
+  period: StatsPeriod;
+  limits: StatsLimits;
+  productId: Id;
+  /** As the orders froze it; absent when the product sold nothing in the period. */
+  title?: string;
+  buckets: ProductSeriesBucket[];
 }
 
 export interface CategorySalesRow {
-    category: string;
-    currency: CurrencyCode;
-    /** @minimum 0 */
-    unitsOrdered: number;
-    netSales: DecimalAmount;
+  category: string;
+  currency: CurrencyCode;
+  /** @minimum 0 */
+  unitsOrdered: number;
+  netSales: DecimalAmount;
 }
 
 export interface CategoryStats {
-    period: StatsPeriod;
-    limits: StatsLimits;
-    categories: CategorySalesRow[];
+  period: StatsPeriod;
+  limits: StatsLimits;
+  categories: CategorySalesRow[];
 }
 
-export type PaymentMixRowMethod = (typeof PaymentMixRowMethod)[keyof typeof PaymentMixRowMethod];
+export type PaymentMixRowMethod = typeof PaymentMixRowMethod[keyof typeof PaymentMixRowMethod];
+
 
 export const PaymentMixRowMethod = {
-    card: 'card',
-    bank_transfer: 'bank_transfer',
-    cash: 'cash',
-    other: 'other'
+  card: 'card',
+  bank_transfer: 'bank_transfer',
+  cash: 'cash',
+  other: 'other',
 } as const;
 
 export interface PaymentMixRow {
-    method: PaymentMixRowMethod;
-    provider: string;
-    currency: CurrencyCode;
-    /** @minimum 0 */
-    payments: number;
-    amount: NonNegativeDecimalAmount;
+  method: PaymentMixRowMethod;
+  provider: string;
+  currency: CurrencyCode;
+  /** @minimum 0 */
+  payments: number;
+  amount: NonNegativeDecimalAmount;
 }
 
 export interface PaymentMix {
-    period: StatsPeriod;
-    limits: StatsLimits;
-    rows: PaymentMixRow[];
+  period: StatsPeriod;
+  limits: StatsLimits;
+  rows: PaymentMixRow[];
 }
 
 /**
  * A cohort, meaning orders placed in the period that ended canceled (a lost-and-refunded order among them), not cancellations dated by when they happened.
  */
 export type OperationsStatsCancellation = {
-    /** @minimum 0 */
-    placed: number;
-    /** @minimum 0 */
-    canceled: number;
-    /**
+  /** @minimum 0 */
+  placed: number;
+  /** @minimum 0 */
+  canceled: number;
+  /**
      * @minimum 0
      * @maximum 1
      */
-    rate: number;
+  rate: number;
 };
 
 export type OperationsStatsReturns = {
-    /** @minimum 0 */
-    unitsOrdered: number;
-    /** @minimum 0 */
-    unitsReturned: number;
-    /** @minimum 0 */
-    rate: number;
+  /** @minimum 0 */
+  unitsOrdered: number;
+  /** @minimum 0 */
+  unitsReturned: number;
+  /** @minimum 0 */
+  rate: number;
 };
 
 export type OperationsStatsRefundsItem = {
-    currency: CurrencyCode;
-    /** Invoices issued in the period, VAT included. */
-    invoiced: NonNegativeDecimalAmount;
-    /** Credit notes issued in the period, VAT included. */
-    credited: NonNegativeDecimalAmount;
-    /** @minimum 0 */
-    rate: number;
+  currency: CurrencyCode;
+  /** Invoices issued in the period, VAT included. */
+  invoiced: NonNegativeDecimalAmount;
+  /** Credit notes issued in the period, VAT included. */
+  credited: NonNegativeDecimalAmount;
+  /** @minimum 0 */
+  rate: number;
 };
 
 export interface OperationsStats {
-    period: StatsPeriod;
-    limits: StatsLimits;
-    /** A cohort, meaning orders placed in the period that ended canceled (a lost-and-refunded order among them), not cancellations dated by when they happened. */
-    cancellation: OperationsStatsCancellation;
-    returns: OperationsStatsReturns;
-    refunds: OperationsStatsRefundsItem[];
+  period: StatsPeriod;
+  limits: StatsLimits;
+  /** A cohort, meaning orders placed in the period that ended canceled (a lost-and-refunded order among them), not cancellations dated by when they happened. */
+  cancellation: OperationsStatsCancellation;
+  returns: OperationsStatsReturns;
+  refunds: OperationsStatsRefundsItem[];
 }
 
 export interface CustomerStats {
-    period: StatsPeriod;
-    limits: StatsLimits;
-    /**
+  period: StatsPeriod;
+  limits: StatsLimits;
+  /**
      * Accounts with at least one paid order in the period.
      * @minimum 0
      */
-    customers: number;
-    /**
+  customers: number;
+  /**
      * Of those, accounts whose first paid order is in the period.
      * @minimum 0
      */
-    newCustomers: number;
-    /** @minimum 0 */
-    returningCustomers: number;
-    /**
+  newCustomers: number;
+  /** @minimum 0 */
+  returningCustomers: number;
+  /**
      * @minimum 0
      * @maximum 1
      */
-    returningRate: number;
+  returningRate: number;
 }
 
 export type PipelineStatsAwaitingTransfersItem = {
-    currency: CurrencyCode;
-    /** @minimum 0 */
-    count: number;
-    amount: NonNegativeDecimalAmount;
-    nearestPayBy?: string;
+  currency: CurrencyCode;
+  /** @minimum 0 */
+  count: number;
+  amount: NonNegativeDecimalAmount;
+  nearestPayBy?: string;
 };
 
 export interface PipelineStats {
-    awaitingTransfers: PipelineStatsAwaitingTransfersItem[];
-    /**
+  awaitingTransfers: PipelineStatsAwaitingTransfersItem[];
+  /**
      * The orders `fulfillmentStatus=awaiting_shipment` lists, live.
      * @minimum 0
      */
-    paidNotShipped: number;
+  paidNotShipped: number;
 }
 
 export interface UpdateInventoryLevelRequest {
-    /**
+  /**
      * The new allowance. `0` closes it. `null` removes the cap: set a cap equal to the incoming quantity if the date must hold for everyone.
      * @minimum 0
      * @nullable
      */
-    backorderLimit?: number | null;
+  backorderLimit?: number | null;
 }
 
-export type ExampleSortItem = (typeof ExampleSortItem)[keyof typeof ExampleSortItem];
+export type ExampleSortItem = typeof ExampleSortItem[keyof typeof ExampleSortItem];
+
 
 export const ExampleSortItem = {
-    createdAt: 'createdAt',
-    '-createdAt': '-createdAt',
-    title: 'title',
-    '-title': '-title',
-    status: 'status',
-    '-status': '-status'
+  createdAt: 'createdAt',
+  '-createdAt': '-createdAt',
+  title: 'title',
+  '-title': '-title',
+  status: 'status',
+  '-status': '-status',
 } as const;
 
 /**
@@ -7719,160 +7699,160 @@ export type ExampleSort = ExampleSortItem[];
  * What the requesting caller may do to this example, decided by the server. A client renders its controls from this instead of re-implementing the lifecycle or the ownership rule: both depend on who asks, and a second copy in a separately deployed client is how the two come to disagree.
  */
 export interface ExampleActions {
-    /** Whether `POST /examples/{id}/publish` would be accepted for this caller, from the status the example holds now. */
-    publish: boolean;
-    /** Whether `POST /examples/{id}/archive` would be accepted for this caller, from the status the example holds now. */
-    archive: boolean;
-    /** Whether `POST /examples/{id}/unarchive` would be accepted for this caller, from the status the example holds now. */
-    unarchive: boolean;
-    /** Whether `PATCH`/`PUT /examples/{id}` and `PUT /examples/{id}/cover` would be accepted for this caller. */
-    update: boolean;
-    /** Whether `DELETE /examples/{id}` would be accepted for this caller. */
-    delete: boolean;
+  /** Whether `POST /examples/{id}/publish` would be accepted for this caller, from the status the example holds now. */
+  publish: boolean;
+  /** Whether `POST /examples/{id}/archive` would be accepted for this caller, from the status the example holds now. */
+  archive: boolean;
+  /** Whether `POST /examples/{id}/unarchive` would be accepted for this caller, from the status the example holds now. */
+  unarchive: boolean;
+  /** Whether `PATCH`/`PUT /examples/{id}` and `PUT /examples/{id}/cover` would be accepted for this caller. */
+  update: boolean;
+  /** Whether `DELETE /examples/{id}` would be accepted for this caller. */
+  delete: boolean;
 }
 
 export interface Example {
-    id: Id;
-    /** The title in the request's language, falling back field by field. Written through `/locales/translations/example/{id}`. */
-    title: string;
-    body: string;
-    status: ExampleStatus;
-    userId: Id;
-    /** The owner's display name. */
-    ownerName: string;
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
-    /** Stamped the first time the example is published, never moved again. */
-    publishedAt?: string;
-    createdAt: string;
-    updatedAt?: string;
-    actions: ExampleActions;
+  id: Id;
+  /** The title in the request's language, falling back field by field. Written through `/locales/translations/example/{id}`. */
+  title: string;
+  body: string;
+  status: ExampleStatus;
+  userId: Id;
+  /** The owner's display name. */
+  ownerName: string;
+  imageUrl?: ImageUrl;
+  thumbnailUrl?: ThumbnailUrl;
+  /** Stamped the first time the example is published, never moved again. */
+  publishedAt?: string;
+  createdAt: string;
+  updatedAt?: string;
+  actions: ExampleActions;
 }
 
 export interface ExamplesResponse {
-    items: Example[];
-    meta: PaginationMeta;
+  items: Example[];
+  meta: PaginationMeta;
 }
 
 export interface CreateExampleRequest {
-    /**
+  /**
      * @minLength 1
      * @maxLength 200
      */
-    title: string;
-    /**
+  title: string;
+  /**
      * @minLength 1
      * @maxLength 20000
      */
-    body: string;
+  body: string;
 }
 
 export interface SearchExamplesRequest {
-    page?: Page;
-    pageSize?: PageSize;
-    sort?: ExampleSort;
-    text?: Text;
-    status?: ExampleStatus;
+  page?: Page;
+  pageSize?: PageSize;
+  sort?: ExampleSort;
+  text?: Text;
+  status?: ExampleStatus;
 }
 
 export interface ReplaceExampleRequest {
-    /**
+  /**
      * @minLength 1
      * @maxLength 200
      */
-    title: string;
-    /**
+  title: string;
+  /**
      * @minLength 1
      * @maxLength 20000
      */
-    body: string;
+  body: string;
 }
 
 export interface UpdateExampleRequest {
-    /**
+  /**
      * @minLength 1
      * @maxLength 200
      */
-    title?: string;
-    /**
+  title?: string;
+  /**
      * @minLength 1
      * @maxLength 20000
      */
-    body?: string;
+  body?: string;
 }
 
 export interface ReplaceExampleCoverRequestMultipart {
-    imageUpload: Blob;
+  imageUpload: Blob;
 }
 
 export interface NotificationsResponse {
-    /** Newest first. */
-    items: Notification[];
+  /** Newest first. */
+  items: Notification[];
 }
 
 /**
  * Where returned goods are sent: the configured return address (`NODE_RETURN_ADDRESS_*`), or the operator's postal address when none is fully set.
  */
 export interface ShopAddress {
-    /** Who the parcel is addressed to. */
-    name?: string;
-    street: string;
-    city: string;
-    zip: string;
-    country: CountryCode;
+  /** Who the parcel is addressed to. */
+  name?: string;
+  street: string;
+  city: string;
+  zip: string;
+  country: CountryCode;
 }
 
 export interface Shop {
-    /** ISO-4217 currency code (e.g. EUR) — the shop's one currency, the same one `Product.currency` reports. */
-    currency: CurrencyCode;
-    /**
+  /** ISO-4217 currency code (e.g. EUR) — the shop's one currency, the same one `Product.currency` reports. */
+  currency: CurrencyCode;
+  /**
      * How many decimal places `currency` has (ISO 4217's "minor unit": EUR 2, JPY 0, KWD 3). A client building a price input reads it here; an amount it receives already carries its own places.
      * @minimum 0
      * @maximum 4
      */
-    minorUnits: number;
-    /** Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`) — checkout refuses a method that `requiresAddress` once the resolved address falls outside it. */
-    shipToCountries: CountryCode[];
-    returnAddress: ShopAddress;
-    returnPostagePayer: ReturnPostagePayer;
-    /**
+  minorUnits: number;
+  /** Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`) — checkout refuses a method that `requiresAddress` once the resolved address falls outside it. */
+  shipToCountries: CountryCode[];
+  returnAddress: ShopAddress;
+  returnPostagePayer: ReturnPostagePayer;
+  /**
      * Days a buyer is promised when a backorder names no restock date: "ships within N days". A legal value the server fixes (CRD Art. 18(1)), not a setting.
      * @minimum 1
      */
-    backorderPromiseDays: number;
-    /** The shop's calendar, a canonical IANA zone name such as `Europe/Rome`. The promised days (`releaseDate`, `restockDate`, `agreedAt`, `expectedAt`) are days on this calendar; they are sent and answered as plain days, so a screen never converts them. */
-    timeZone: string;
+  backorderPromiseDays: number;
+  /** The shop's calendar, a canonical IANA zone name such as `Europe/Rome`. The promised days (`releaseDate`, `restockDate`, `agreedAt`, `expectedAt`) are days on this calendar; they are sent and answered as plain days, so a screen never converts them. */
+  timeZone: string;
 }
 
 /**
  * The open work behind each staff navigation badge. Each key is present only when the caller may open the screen it counts.
  */
 export interface ShopWorkSummary {
-    /**
+  /**
      * Orders with `fulfillmentStatus=awaiting_shipment`, live — the list that value opens. Needs `display:Order`.
      * @minimum 0
      */
-    salesOrders?: number;
-    /**
+  salesOrders?: number;
+  /**
      * The rows `GET /payments/attention` lists, all its sources together (each capped at 100). Transfers still awaited are not counted: the buyer acts there. Needs `display:Payment`.
      * @minimum 0
      */
-    salesPayments?: number;
-    /**
+  salesPayments?: number;
+  /**
      * Returns waiting for a decision (`status=requested`). Needs `read:Return`.
      * @minimum 0
      */
-    returns?: number;
-    /**
+  returns?: number;
+  /**
      * Preorder fulfillment orders past their expected date (`late=true`). Needs `display:Order`.
      * @minimum 0
      */
-    salesPreorders?: number;
-    /**
+  salesPreorders?: number;
+  /**
      * Stock levels at or under the low-stock threshold (`lowOnly=true`). Needs `read:StockLevel`.
      * @minimum 0
      */
-    inventory?: number;
+  inventory?: number;
 }
 
 /**
@@ -7881,11 +7861,11 @@ export interface ShopWorkSummary {
 export type SitemapDocument = string;
 
 export interface StockAlertsResponse {
-    items: StockAlert[];
+  items: StockAlert[];
 }
 
 export interface CreateStockAlertRequest {
-    productId: Id;
+  productId: Id;
 }
 
 /**
@@ -8065,890 +8045,896 @@ export type StatsToParamParameter = string;
 export type StatsIntervalParamParameter = StatsInterval;
 
 export type GetLocaleMessagesParams = {
-    /**
-     * The id of one app — one keyspace, authored by one team. Which ids exist is
-     * configuration, listed by `GET /locales/apps`; a row naming an unknown app is
-     * refused with a 422.
-     *
-     * On a LANGUAGE it reports capability: the backend app means the API can answer
-     * requests in it, because a dictionary file is deployed; a frontend app means a
-     * client dictionary is downloadable for it.
-     *
-     * On an ENTRY it says whose dictionary that row OVERRIDES. A frontend app's rows
-     * are what `GET /locales/{locale}/messages` serves; the backend app's rows are
-     * layered over the API's own deployed files at resolution time.
-     * @minLength 1
-     * @maxLength 64
-     * @pattern ^[a-z0-9][a-z0-9-]*$
-     */
-    app?: MessagesAppQueryParamParameter;
+/**
+ * The id of one app — one keyspace, authored by one team. Which ids exist is
+ * configuration, listed by `GET /locales/apps`; a row naming an unknown app is
+ * refused with a 422.
+ *
+ * On a LANGUAGE it reports capability: the backend app means the API can answer
+ * requests in it, because a dictionary file is deployed; a frontend app means a
+ * client dictionary is downloadable for it.
+ *
+ * On an ENTRY it says whose dictionary that row OVERRIDES. A frontend app's rows
+ * are what `GET /locales/{locale}/messages` serves; the backend app's rows are
+ * layered over the API's own deployed files at resolution time.
+ * @minLength 1
+ * @maxLength 64
+ * @pattern ^[a-z0-9][a-z0-9-]*$
+ */
+app?: MessagesAppQueryParamParameter;
 };
 
 export type ListLocaleEntriesParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    /**
-     * Free-text search string
-     * @minLength 1
-     * @maxLength 200
-     */
-    text?: TextParamParameter;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+/**
+ * Free-text search string
+ * @minLength 1
+ * @maxLength 200
+ */
+text?: TextParamParameter;
 };
 
 export type ListAppLocaleEntriesParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    /**
-     * Free-text search string
-     * @minLength 1
-     * @maxLength 200
-     */
-    text?: TextParamParameter;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+/**
+ * Free-text search string
+ * @minLength 1
+ * @maxLength 200
+ */
+text?: TextParamParameter;
 };
 
 export type ListObservabilityAuditEntriesParams = {
-    /**
-     * Filter by actor user ID
-     * @maxLength 64
-     */
-    actor?: string;
-    /**
-     * Filter by action name (e.g. order.created)
-     * @maxLength 100
-     */
-    action?: string;
-    /**
-     * Filter by outcome
-     */
-    outcome?: ListObservabilityAuditEntriesOutcome;
-    /**
-     * Return events strictly after this ISO-8601 timestamp — an exclusive bound
-     */
-    since?: string;
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
+/**
+ * Filter by actor user ID
+ * @maxLength 64
+ */
+actor?: string;
+/**
+ * Filter by action name (e.g. order.created)
+ * @maxLength 100
+ */
+action?: string;
+/**
+ * Filter by outcome
+ */
+outcome?: ListObservabilityAuditEntriesOutcome;
+/**
+ * Return events strictly after this ISO-8601 timestamp — an exclusive bound
+ */
+since?: string;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
 };
 
-export type ListObservabilityAuditEntriesOutcome =
-    (typeof ListObservabilityAuditEntriesOutcome)[keyof typeof ListObservabilityAuditEntriesOutcome];
+export type ListObservabilityAuditEntriesOutcome = typeof ListObservabilityAuditEntriesOutcome[keyof typeof ListObservabilityAuditEntriesOutcome];
+
 
 export const ListObservabilityAuditEntriesOutcome = {
-    success: 'success',
-    failure: 'failure'
+  success: 'success',
+  failure: 'failure',
 } as const;
 
 export type ListAuditEntriesParams = {
-    /**
-     * Filter by actor user ID
-     * @maxLength 64
-     */
-    actor?: string;
-    /**
-     * Filter by action name (e.g. order.created)
-     * @maxLength 100
-     */
-    action?: string;
-    /**
-     * Filter by outcome
-     */
-    outcome?: ListAuditEntriesOutcome;
-    /**
-     * Filter by the id of the row the action was taken on (e.g. an order or a user)
-     * @maxLength 100
-     */
-    target?: string;
-    /**
-     * Filter by the id of the person whose data the row is about (`subjectId`), which is how "who looked at this person's data" is answered. Only staff reads of a person's record carry one.
-     * @maxLength 64
-     */
-    subject?: string;
-    /**
-     * Return events strictly after this ISO-8601 timestamp — an exclusive bound
-     */
-    since?: string;
-    /**
-     * Filter by whether the action was taken on the caller's own order. `true` keeps only the entries flagged `metadata.ownOrder`; `false` keeps the rest. Absent keeps both.
-     */
-    ownOrder?: boolean;
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
+/**
+ * Filter by actor user ID
+ * @maxLength 64
+ */
+actor?: string;
+/**
+ * Filter by action name (e.g. order.created)
+ * @maxLength 100
+ */
+action?: string;
+/**
+ * Filter by outcome
+ */
+outcome?: ListAuditEntriesOutcome;
+/**
+ * Filter by the id of the row the action was taken on (e.g. an order or a user)
+ * @maxLength 100
+ */
+target?: string;
+/**
+ * Filter by the id of the person whose data the row is about (`subjectId`), which is how "who looked at this person's data" is answered. Only staff reads of a person's record carry one.
+ * @maxLength 64
+ */
+subject?: string;
+/**
+ * Return events strictly after this ISO-8601 timestamp — an exclusive bound
+ */
+since?: string;
+/**
+ * Filter by whether the action was taken on the caller's own order. `true` keeps only the entries flagged `metadata.ownOrder`; `false` keeps the rest. Absent keeps both.
+ */
+ownOrder?: boolean;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
 };
 
-export type ListAuditEntriesOutcome =
-    (typeof ListAuditEntriesOutcome)[keyof typeof ListAuditEntriesOutcome];
+export type ListAuditEntriesOutcome = typeof ListAuditEntriesOutcome[keyof typeof ListAuditEntriesOutcome];
+
 
 export const ListAuditEntriesOutcome = {
-    success: 'success',
-    failure: 'failure'
+  success: 'success',
+  failure: 'failure',
 } as const;
 
 export type StartOAuthLinkParams = {
-    /**
-     * A same-origin relative path to come back to; anything else is dropped.
-     * @maxLength 512
-     */
-    continue?: string;
-    /**
-     * The language tag the browser comes back in.
-     * @maxLength 16
-     */
-    locale?: string;
+/**
+ * A same-origin relative path to come back to; anything else is dropped.
+ * @maxLength 512
+ */
+continue?: string;
+/**
+ * The language tag the browser comes back in.
+ * @maxLength 16
+ */
+locale?: string;
 };
 
 export type StartOAuthLoginParams = {
-    /**
-     * Same-origin relative path to send the browser back to once the login completes — the OAuth equivalent of the password-login flow's own `?continue=`. Saved as a cookie for the round trip to the provider and back; anything that is not a same-origin relative path (an absolute URL, a protocol-relative `//host/path`) is dropped silently rather than refused, since a browser navigation has nowhere to show a validation error.
-     * @maxLength 512
-     */
-    continue?: string;
-    /**
-     * The language tag (`it`, `pt-BR`) of the page the visitor started from. Saved as a cookie for the round trip and echoed back as `?locale=` on the frontend redirect, so a visitor with no `continue` target and no saved language preference lands in the language they were reading. Anything not shaped like a tag is dropped silently, like `continue`.
-     * @maxLength 35
-     */
-    locale?: string;
+/**
+ * Same-origin relative path to send the browser back to once the login completes — the OAuth equivalent of the password-login flow's own `?continue=`. Saved as a cookie for the round trip to the provider and back; anything that is not a same-origin relative path (an absolute URL, a protocol-relative `//host/path`) is dropped silently rather than refused, since a browser navigation has nowhere to show a validation error.
+ * @maxLength 512
+ */
+continue?: string;
+/**
+ * The language tag (`it`, `pt-BR`) of the page the visitor started from. Saved as a cookie for the round trip and echoed back as `?locale=` on the frontend redirect, so a visitor with no `continue` target and no saved language preference lands in the language they were reading. Anything not shaped like a tag is dropped silently, like `continue`.
+ * @maxLength 35
+ */
+locale?: string;
 };
 
 export type CompleteOAuthLoginParams = {
-    /**
-     * @maxLength 2048
-     */
-    code?: string;
-    /**
-     * @maxLength 512
-     */
-    state?: string;
-    /**
-     * Set by the provider instead of `code` when the user declines consent.
-     * @maxLength 256
-     */
-    error?: string;
+/**
+ * @maxLength 2048
+ */
+code?: string;
+/**
+ * @maxLength 512
+ */
+state?: string;
+/**
+ * Set by the provider instead of `code` when the user declines consent.
+ * @maxLength 256
+ */
+error?: string;
 };
 
 export type ListUsersParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    sort?: UserSort;
-    /**
-     * Free-text search string
-     * @minLength 1
-     * @maxLength 200
-     */
-    text?: TextParamParameter;
-    /**
-     * @minItems 1
-     * @maxItems 100
-     */
-    id?: IdParamParameter;
-    email?: Email;
-    /**
-     * @maxLength 50
-     */
-    username?: string;
-    active?: boolean;
-    /**
-     * `true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.
-     */
-    deleted?: boolean;
-    /**
-     * `true` lists only the accounts under a purchase hold right now; absent lists everyone. There is no `false`: a lifted or expired hold is not a state to search for.
-     */
-    purchaseHold?: true;
-    /**
-     * `true` lists only the accounts the shop's rule flagged for review and no staff member has acted on yet, whether or not a hold is still running. Absent lists everyone. There is no `false`.
-     */
-    purchaseHoldReview?: true;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+sort?: UserSort;
+/**
+ * Free-text search string
+ * @minLength 1
+ * @maxLength 200
+ */
+text?: TextParamParameter;
+/**
+ * @minItems 1
+ * @maxItems 100
+ */
+id?: IdParamParameter;
+email?: Email;
+/**
+ * @maxLength 50
+ */
+username?: string;
+active?: boolean;
+/**
+ * `true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.
+ */
+deleted?: boolean;
+/**
+ * `true` lists only the accounts under a purchase hold right now; absent lists everyone. There is no `false`: a lifted or expired hold is not a state to search for.
+ */
+purchaseHold?: true;
+/**
+ * `true` lists only the accounts the shop's rule flagged for review and no staff member has acted on yet, whether or not a hold is still running. Absent lists everyone. There is no `false`.
+ */
+purchaseHoldReview?: true;
 };
 
 export type DeleteUserByIdParams = {
-    /**
-     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path, a `true` from either wins.
-     */
-    hardDelete?: HardDeleteParamParameter;
+/**
+ * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path, a `true` from either wins.
+ */
+hardDelete?: HardDeleteParamParameter;
 };
 
 export type ListTasksParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    sort?: TaskSort;
-    /**
-     * Free-text search string
-     * @minLength 1
-     * @maxLength 200
-     */
-    text?: TextParamParameter;
-    email?: Email;
-    status?: TaskStatus;
-    category?: TaskCategory;
-    source?: TaskSource;
-    kind?: TaskKind;
-    /**
-     * `me`, `none` (unassigned) or a user id.
-     */
-    assignee?: TaskAssigneeFilter;
-    /**
-     * Only open tasks whose `dueAt` has passed.
-     */
-    overdue?: boolean;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+sort?: TaskSort;
+/**
+ * Free-text search string
+ * @minLength 1
+ * @maxLength 200
+ */
+text?: TextParamParameter;
+email?: Email;
+status?: TaskStatus;
+category?: TaskCategory;
+source?: TaskSource;
+kind?: TaskKind;
+/**
+ * `me`, `none` (unassigned) or a user id.
+ */
+assignee?: TaskAssigneeFilter;
+/**
+ * Only open tasks whose `dueAt` has passed.
+ */
+overdue?: boolean;
 };
 
 export type ListProductsParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    sort?: ProductSort;
-    /**
-     * Free-text search string
-     * @minLength 1
-     * @maxLength 200
-     */
-    text?: TextParamParameter;
-    /**
-     * @minItems 1
-     * @maxItems 100
-     */
-    id?: IdParamParameter;
-    /**
-     * @maxLength 200
-     */
-    category?: string;
-    /**
-     * @maxLength 200
-     */
-    tag?: string;
-    priceMin?: NonNegativeDecimalAmount;
-    priceMax?: NonNegativeDecimalAmount;
-    /**
-     * @maxLength 200
-     */
-    title?: string;
-    active?: boolean;
-    /**
-     * `true` lists only products that can be bought, `false` only the ones taken off sale. Open to every caller: an off-sale product is publicly listed.
-     */
-    purchasable?: boolean;
-    /**
-     * `true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.
-     */
-    deleted?: boolean;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+sort?: ProductSort;
+/**
+ * Free-text search string
+ * @minLength 1
+ * @maxLength 200
+ */
+text?: TextParamParameter;
+/**
+ * @minItems 1
+ * @maxItems 100
+ */
+id?: IdParamParameter;
+/**
+ * @maxLength 200
+ */
+category?: string;
+/**
+ * @maxLength 200
+ */
+tag?: string;
+priceMin?: NonNegativeDecimalAmount;
+priceMax?: NonNegativeDecimalAmount;
+/**
+ * @maxLength 200
+ */
+title?: string;
+active?: boolean;
+/**
+ * `true` lists only products that can be bought, `false` only the ones taken off sale. Open to every caller: an off-sale product is publicly listed.
+ */
+purchasable?: boolean;
+/**
+ * `true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.
+ */
+deleted?: boolean;
 };
 
 export type DeleteProductByIdParams = {
-    /**
-     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path, a `true` from either wins.
-     */
-    hardDelete?: HardDeleteParamParameter;
+/**
+ * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path, a `true` from either wins.
+ */
+hardDelete?: HardDeleteParamParameter;
 };
 
 export type ListOrdersParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    sort?: OrderSort;
-    /**
-     * @minItems 1
-     * @maxItems 100
-     */
-    id?: IdParamParameter;
-    /**
-     * Resource identifier
-     * @minLength 1
-     * @maxLength 64
-     * @pattern ^[0-9A-Za-z_-]+$
-     */
-    userId?: UserIdParamParameter;
-    /**
-     * Resource identifier
-     * @minLength 1
-     * @maxLength 64
-     * @pattern ^[0-9A-Za-z_-]+$
-     */
-    productId?: ProductIdParamParameter;
-    email?: Email;
-    /**
-     * The order's number as the customer quotes it (`2026-000041`); a leading `#`, spaces and an unpadded sequence (`#2026-41`) are tolerated. Exact and indexed. Anything that is not an order number finds nothing: an empty page, not an error. A caller holding `read:Order` alone still sees only their own orders.
-     * @maxLength 32
-     */
-    orderNumber?: OrderNumberParamParameter;
-    status?: OrderStatus;
-    /**
-     * Filter to orders whose goods stand here — any value `Order.fulfillmentStatus` carries, so `on_hold` and `partially_fulfilled` can be listed, or the one filter-only aggregate `awaiting_shipment`.
-     */
-    fulfillmentStatus?: OrderFulfillmentFilter;
-    /**
-     * Filter to orders placed with this method — the admin "awaiting transfer" view combines this with `status=pending`.
-     */
-    paymentMethod?: PaymentMethodId;
-    /**
-     * `true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.
-     */
-    deleted?: boolean;
-    createdFrom?: string;
-    createdTo?: string;
-    /**
-     * Orders paid at or after this instant. Unpaid orders never match.
-     */
-    paidFrom?: string;
-    paidTo?: string;
-    paymentStatus?: OrderPaymentStatus;
-    returnStatus?: OrderReturnStatus;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+sort?: OrderSort;
+/**
+ * @minItems 1
+ * @maxItems 100
+ */
+id?: IdParamParameter;
+/**
+ * Resource identifier
+ * @minLength 1
+ * @maxLength 64
+ * @pattern ^[0-9A-Za-z_-]+$
+ */
+userId?: UserIdParamParameter;
+/**
+ * Resource identifier
+ * @minLength 1
+ * @maxLength 64
+ * @pattern ^[0-9A-Za-z_-]+$
+ */
+productId?: ProductIdParamParameter;
+email?: Email;
+/**
+ * The order's number as the customer quotes it (`2026-000041`); a leading `#`, spaces and an unpadded sequence (`#2026-41`) are tolerated. Exact and indexed. Anything that is not an order number finds nothing: an empty page, not an error. A caller holding `read:Order` alone still sees only their own orders.
+ * @maxLength 32
+ */
+orderNumber?: OrderNumberParamParameter;
+status?: OrderStatus;
+/**
+ * Filter to orders whose goods stand here — any value `Order.fulfillmentStatus` carries, so `on_hold` and `partially_fulfilled` can be listed, or the one filter-only aggregate `awaiting_shipment`.
+ */
+fulfillmentStatus?: OrderFulfillmentFilter;
+/**
+ * Filter to orders placed with this method — the admin "awaiting transfer" view combines this with `status=pending`.
+ */
+paymentMethod?: PaymentMethodId;
+/**
+ * `true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.
+ */
+deleted?: boolean;
+createdFrom?: string;
+createdTo?: string;
+/**
+ * Orders paid at or after this instant. Unpaid orders never match.
+ */
+paidFrom?: string;
+paidTo?: string;
+paymentStatus?: OrderPaymentStatus;
+returnStatus?: OrderReturnStatus;
 };
 
 export type DeleteOrderByIdParams = {
-    /**
-     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path, a `true` from either wins.
-     */
-    hardDelete?: HardDeleteParamParameter;
+/**
+ * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path, a `true` from either wins.
+ */
+hardDelete?: HardDeleteParamParameter;
 };
 
 export type ListPreorderFulfillmentOrdersParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    /**
-     * Why it waits: `preorder` (not released yet), `backorder` (out of stock), or `any` wait that carries a promised date; absent keeps all.
-     */
-    cause?: ListPreorderFulfillmentOrdersCause;
-    state?: PreorderFulfillmentState;
-    /**
-     * Only fulfillment orders carrying this product.
-     */
-    productId?: Id;
-    /**
-     * `true` keeps those whose expected date has passed with units remaining.
-     */
-    late?: boolean;
-    /**
-     * Only those still waiting for stock whose expected date falls within this many days.
-     * @minimum 1
-     * @maximum 365
-     */
-    dueWithin?: number;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+/**
+ * Why it waits: `preorder` (not released yet), `backorder` (out of stock), or `any` wait that carries a promised date; absent keeps all.
+ */
+cause?: ListPreorderFulfillmentOrdersCause;
+state?: PreorderFulfillmentState;
+/**
+ * Only fulfillment orders carrying this product.
+ */
+productId?: Id;
+/**
+ * `true` keeps those whose expected date has passed with units remaining.
+ */
+late?: boolean;
+/**
+ * Only those still waiting for stock whose expected date falls within this many days.
+ * @minimum 1
+ * @maximum 365
+ */
+dueWithin?: number;
 };
 
-export type ListPreorderFulfillmentOrdersCause =
-    (typeof ListPreorderFulfillmentOrdersCause)[keyof typeof ListPreorderFulfillmentOrdersCause];
+export type ListPreorderFulfillmentOrdersCause = typeof ListPreorderFulfillmentOrdersCause[keyof typeof ListPreorderFulfillmentOrdersCause];
+
 
 export const ListPreorderFulfillmentOrdersCause = {
-    preorder: 'preorder',
-    backorder: 'backorder',
-    any: 'any'
+  preorder: 'preorder',
+  backorder: 'backorder',
+  any: 'any',
 } as const;
 
 export type SummarizePreorderFulfillmentOrdersParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    /**
-     * Only this product.
-     */
-    productId?: Id;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+/**
+ * Only this product.
+ */
+productId?: Id;
 };
 
 export type ListReturnsParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    orderId?: Id;
-    status?: ReturnStatus;
-    reason?: ReturnReason;
-    sort?: ReturnSort;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+orderId?: Id;
+status?: ReturnStatus;
+reason?: ReturnReason;
+sort?: ReturnSort;
 };
 
 export type GetReturnOptionsParams = {
-    orderId: Id;
+orderId: Id;
 };
 
 export type ListInventoryLevelsParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    /**
-     * Only products at or under the deployment's low-availability threshold.
-     */
-    lowOnly?: boolean;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+/**
+ * Only products at or under the deployment's low-availability threshold.
+ */
+lowOnly?: boolean;
 };
 
 export type ListPreorderLevelsParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
 };
 
 export type ListStockMovementsParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    /**
-     * Narrow to one product's movements
-     */
-    productId?: Id;
-    /**
-     * Narrow to one kind of transition
-     */
-    reason?: StockMovementReason;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+/**
+ * Narrow to one product's movements
+ */
+productId?: Id;
+/**
+ * Narrow to one kind of transition
+ */
+reason?: StockMovementReason;
 };
 
 export type ListWebhookSubscriptionsParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    sort?: WebhookSubscriptionSort;
-    /**
-     * Filter by whether the subscription is currently enabled (`true`) or switched off for any reason (`false`).
-     */
-    enabled?: boolean;
-    /**
-     * Filter by who switched it off. `true` keeps only the subscriptions the failure guard disabled (`autoDisabledAt` set); `false` keeps the rest, enabled ones and pauses by hand. Combine with `enabled=false` to list the pauses by hand.
-     */
-    autoDisabled?: boolean;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+sort?: WebhookSubscriptionSort;
+/**
+ * Filter by whether the subscription is currently enabled (`true`) or switched off for any reason (`false`).
+ */
+enabled?: boolean;
+/**
+ * Filter by who switched it off. `true` keeps only the subscriptions the failure guard disabled (`autoDisabledAt` set); `false` keeps the rest, enabled ones and pauses by hand. Combine with `enabled=false` to list the pauses by hand.
+ */
+autoDisabled?: boolean;
 };
 
 export type ListWebhookDeliveriesParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    subscriptionId?: Id;
-    status?: WebhookDeliveryStatus;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+subscriptionId?: Id;
+status?: WebhookDeliveryStatus;
 };
 
 export type ListApiKeysParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    sort?: ApiKeySort;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+sort?: ApiKeySort;
 };
 
 export type ExportOrdersParams = {
-    sort?: OrderSort;
-    /**
-     * @minItems 1
-     * @maxItems 100
-     */
-    id?: IdParamParameter;
-    /**
-     * Resource identifier
-     * @minLength 1
-     * @maxLength 64
-     * @pattern ^[0-9A-Za-z_-]+$
-     */
-    userId?: UserIdParamParameter;
-    /**
-     * Resource identifier
-     * @minLength 1
-     * @maxLength 64
-     * @pattern ^[0-9A-Za-z_-]+$
-     */
-    productId?: ProductIdParamParameter;
-    email?: Email;
-    /**
-     * The order's number as the customer quotes it (`2026-000041`); a leading `#`, spaces and an unpadded sequence (`#2026-41`) are tolerated. Exact and indexed. Anything that is not an order number finds nothing: an empty page, not an error. A caller holding `read:Order` alone still sees only their own orders.
-     * @maxLength 32
-     */
-    orderNumber?: OrderNumberParamParameter;
-    status?: OrderStatus;
-    fulfillmentStatus?: OrderFulfillmentFilter;
-    paymentMethod?: PaymentMethodId;
-    deleted?: boolean;
-    createdFrom?: string;
-    createdTo?: string;
-    paidFrom?: string;
-    paidTo?: string;
-    paymentStatus?: OrderPaymentStatus;
-    returnStatus?: OrderReturnStatus;
+sort?: OrderSort;
+/**
+ * @minItems 1
+ * @maxItems 100
+ */
+id?: IdParamParameter;
+/**
+ * Resource identifier
+ * @minLength 1
+ * @maxLength 64
+ * @pattern ^[0-9A-Za-z_-]+$
+ */
+userId?: UserIdParamParameter;
+/**
+ * Resource identifier
+ * @minLength 1
+ * @maxLength 64
+ * @pattern ^[0-9A-Za-z_-]+$
+ */
+productId?: ProductIdParamParameter;
+email?: Email;
+/**
+ * The order's number as the customer quotes it (`2026-000041`); a leading `#`, spaces and an unpadded sequence (`#2026-41`) are tolerated. Exact and indexed. Anything that is not an order number finds nothing: an empty page, not an error. A caller holding `read:Order` alone still sees only their own orders.
+ * @maxLength 32
+ */
+orderNumber?: OrderNumberParamParameter;
+status?: OrderStatus;
+fulfillmentStatus?: OrderFulfillmentFilter;
+paymentMethod?: PaymentMethodId;
+deleted?: boolean;
+createdFrom?: string;
+createdTo?: string;
+paidFrom?: string;
+paidTo?: string;
+paymentStatus?: OrderPaymentStatus;
+returnStatus?: OrderReturnStatus;
 };
 
 export type GetOrderTimelineParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
 };
 
 export type ListPaymentsParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    sort?: PaymentSort;
-    displayStatus?: PaymentDisplayStatus;
-    method?: PaymentMethodKind;
-    /**
-     * @maxLength 64
-     */
-    provider?: string;
-    createdFrom?: string;
-    createdTo?: string;
-    /**
-     * Offline payments only — when the money arrived.
-     */
-    receivedFrom?: string;
-    receivedTo?: string;
-    amountMin?: NonNegativeDecimalAmount;
-    amountMax?: NonNegativeDecimalAmount;
-    orderId?: Id;
-    /**
-     * `true` keeps only payments with a dispute still open (an inquiry or a chargeback the shop has not answered or the bank has not decided). `false` or absent is no filter.
-     */
-    disputed?: boolean;
-    /**
-     * @maxLength 120
-     */
-    reference?: string;
-    /**
-     * The RF creditor reference of a bank transfer, spaces and case tolerated exactly as a customer might type it (`RF13 2EY8 H44V JAVZ KX80 JRL`). Matched in its canonical form; a code that is not a valid RF reference finds nothing, so the page is empty rather than an error and nothing says an almost-right code was close. Answers with the payment, whose `orderId` is the order it pays.
-     * @maxLength 64
-     */
-    transferReference?: string;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+sort?: PaymentSort;
+displayStatus?: PaymentDisplayStatus;
+method?: PaymentMethodKind;
+/**
+ * @maxLength 64
+ */
+provider?: string;
+createdFrom?: string;
+createdTo?: string;
+/**
+ * Offline payments only — when the money arrived.
+ */
+receivedFrom?: string;
+receivedTo?: string;
+amountMin?: NonNegativeDecimalAmount;
+amountMax?: NonNegativeDecimalAmount;
+orderId?: Id;
+/**
+ * `true` keeps only payments with a dispute still open (an inquiry or a chargeback the shop has not answered or the bank has not decided). `false` or absent is no filter.
+ */
+disputed?: boolean;
+/**
+ * @maxLength 120
+ */
+reference?: string;
+/**
+ * The RF creditor reference of a bank transfer, spaces and case tolerated exactly as a customer might type it (`RF13 2EY8 H44V JAVZ KX80 JRL`). Matched in its canonical form; a code that is not a valid RF reference finds nothing, so the page is empty rather than an error and nothing says an almost-right code was close. Answers with the payment, whose `orderId` is the order it pays.
+ * @maxLength 64
+ */
+transferReference?: string;
 };
 
 export type ListRefundsParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    status?: RefundStatus;
-    reason?: RefundReason;
-    orderId?: Id;
-    createdFrom?: string;
-    createdTo?: string;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+status?: RefundStatus;
+reason?: RefundReason;
+orderId?: Id;
+createdFrom?: string;
+createdTo?: string;
 };
 
 export type PreviewReleaseDateImpactParams = {
-    /**
-     * The product whose release date would move.
-     */
-    productId: Id;
-    /**
-     * The day to preview, a day on the shop's calendar as `YYYY-MM-DD`. Absent or blank means cleared.
-     */
-    releaseDate?: string;
+/**
+ * The product whose release date would move.
+ */
+productId: Id;
+/**
+ * The day to preview, a day on the shop's calendar as `YYYY-MM-DD`. Absent or blank means cleared.
+ */
+releaseDate?: string;
 };
 
 export type PreviewRestockDateImpactParams = {
-    /**
-     * The product whose restock date would move.
-     */
-    productId: Id;
-    /**
-     * The day to preview, a day on the shop's calendar as `YYYY-MM-DD`. Absent or blank means cleared.
-     */
-    restockDate?: string;
+/**
+ * The product whose restock date would move.
+ */
+productId: Id;
+/**
+ * The day to preview, a day on the shop's calendar as `YYYY-MM-DD`. Absent or blank means cleared.
+ */
+restockDate?: string;
 };
 
 export type GetSalesStatsParams = {
-    /**
-     * First shop-local calendar day of the period, inclusive.
-     */
-    from: StatsFromParamParameter;
-    /**
-     * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
-     */
-    to: StatsToParamParameter;
-    /**
-     * The bucket size. A week starts on Monday.
-     */
-    interval?: StatsIntervalParamParameter;
+/**
+ * First shop-local calendar day of the period, inclusive.
+ */
+from: StatsFromParamParameter;
+/**
+ * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
+ */
+to: StatsToParamParameter;
+/**
+ * The bucket size. A week starts on Monday.
+ */
+interval?: StatsIntervalParamParameter;
 };
 
 export type GetProductStatsParams = {
-    /**
-     * First shop-local calendar day of the period, inclusive.
-     */
-    from: StatsFromParamParameter;
-    /**
-     * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
-     */
-    to: StatsToParamParameter;
-    /**
-     * How many products to return.
-     * @minimum 1
-     * @maximum 100
-     */
-    limit?: number;
+/**
+ * First shop-local calendar day of the period, inclusive.
+ */
+from: StatsFromParamParameter;
+/**
+ * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
+ */
+to: StatsToParamParameter;
+/**
+ * How many products to return.
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
 };
 
 export type GetProductSalesSeriesParams = {
-    /**
-     * First shop-local calendar day of the period, inclusive.
-     */
-    from: StatsFromParamParameter;
-    /**
-     * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
-     */
-    to: StatsToParamParameter;
-    /**
-     * The bucket size. A week starts on Monday.
-     */
-    interval?: StatsIntervalParamParameter;
+/**
+ * First shop-local calendar day of the period, inclusive.
+ */
+from: StatsFromParamParameter;
+/**
+ * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
+ */
+to: StatsToParamParameter;
+/**
+ * The bucket size. A week starts on Monday.
+ */
+interval?: StatsIntervalParamParameter;
 };
 
 export type GetCategoryStatsParams = {
-    /**
-     * First shop-local calendar day of the period, inclusive.
-     */
-    from: StatsFromParamParameter;
-    /**
-     * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
-     */
-    to: StatsToParamParameter;
+/**
+ * First shop-local calendar day of the period, inclusive.
+ */
+from: StatsFromParamParameter;
+/**
+ * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
+ */
+to: StatsToParamParameter;
 };
 
 export type GetPaymentMixStatsParams = {
-    /**
-     * First shop-local calendar day of the period, inclusive.
-     */
-    from: StatsFromParamParameter;
-    /**
-     * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
-     */
-    to: StatsToParamParameter;
+/**
+ * First shop-local calendar day of the period, inclusive.
+ */
+from: StatsFromParamParameter;
+/**
+ * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
+ */
+to: StatsToParamParameter;
 };
 
 export type GetOperationsStatsParams = {
-    /**
-     * First shop-local calendar day of the period, inclusive.
-     */
-    from: StatsFromParamParameter;
-    /**
-     * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
-     */
-    to: StatsToParamParameter;
+/**
+ * First shop-local calendar day of the period, inclusive.
+ */
+from: StatsFromParamParameter;
+/**
+ * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
+ */
+to: StatsToParamParameter;
 };
 
 export type GetCustomerStatsParams = {
-    /**
-     * First shop-local calendar day of the period, inclusive.
-     */
-    from: StatsFromParamParameter;
-    /**
-     * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
-     */
-    to: StatsToParamParameter;
+/**
+ * First shop-local calendar day of the period, inclusive.
+ */
+from: StatsFromParamParameter;
+/**
+ * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
+ */
+to: StatsToParamParameter;
 };
 
 export type ListExamplesParams = {
-    /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
-     * @minimum 1
-     * @maximum 10000
-     */
-    page?: PageParamParameter;
-    /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
-     * @minimum 1
-     * @maximum 100
-     */
-    pageSize?: PageSizeParamParameter;
-    sort?: ExampleSort;
-    /**
-     * Free-text search string
-     * @minLength 1
-     * @maxLength 200
-     */
-    text?: TextParamParameter;
-    status?: ExampleStatus;
+/**
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: PageParamParameter;
+/**
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParamParameter;
+sort?: ExampleSort;
+/**
+ * Free-text search string
+ * @minLength 1
+ * @maxLength 200
+ */
+text?: TextParamParameter;
+status?: ExampleStatus;
 };
 
 export type DismissAllNotificationsParams = {
-    /**
-     * Delete only this group of the caller's notifications.
-     */
-    audience?: NotificationAudience;
+/**
+ * Delete only this group of the caller's notifications.
+ */
+audience?: NotificationAudience;
 };
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-/**
+
+  /**
  * Public ping for clients (the frontend's API-down banner), rate-limited like any
  * browser call. Not an orchestrator probe: `/livez` is liveness, `/readyz` readiness.
  * @summary API health check
  */
-export const getHealth = (options?: SecondParameter<typeof orvalMutator<HealthPing>>) => {
-    return orvalMutator<HealthPing>({ url: `/`, method: 'GET' }, options);
-};
+export const getHealth = (
+
+ options?: SecondParameter<typeof orvalMutator<HealthPing>>,) => {
+      return orvalMutator<HealthPing>(
+      {url: `/`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * One public answer for what a client reads before anyone has signed in: how the
@@ -8964,9 +8950,14 @@ export const getHealth = (options?: SecondParameter<typeof orvalMutator<HealthPi
  * this answer must exist without it, which is why the legal identity is here.
  * @summary What a client needs to boot, before it has a session
  */
-export const getConfig = (options?: SecondParameter<typeof orvalMutator<Config>>) => {
-    return orvalMutator<Config>({ url: `/config`, method: 'GET' }, options);
-};
+export const getConfig = (
+
+ options?: SecondParameter<typeof orvalMutator<Config>>,) => {
+      return orvalMutator<Config>(
+      {url: `/config`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Is the process up. For an orchestrator (Kubernetes' own `/livez` + `/readyz`
@@ -8975,9 +8966,14 @@ export const getConfig = (options?: SecondParameter<typeof orvalMutator<Config>>
  * a restart does not bring a downed database back.
  * @summary Liveness check
  */
-export const getLivez = (options?: SecondParameter<typeof orvalMutator<void>>) => {
-    return orvalMutator<void>({ url: `/livez`, method: 'GET' }, options);
-};
+export const getLivez = (
+
+ options?: SecondParameter<typeof orvalMutator<void>>,) => {
+      return orvalMutator<void>(
+      {url: `/livez`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Public readiness probe, for a load balancer's own probe (a Kubernetes
@@ -8990,9 +8986,14 @@ export const getLivez = (options?: SecondParameter<typeof orvalMutator<void>>) =
  * `GET /livez` is that probe.
  * @summary Readiness check
  */
-export const getReadyz = (options?: SecondParameter<typeof orvalMutator<void>>) => {
-    return orvalMutator<void>({ url: `/readyz`, method: 'GET' }, options);
-};
+export const getReadyz = (
+
+ options?: SecondParameter<typeof orvalMutator<void>>,) => {
+      return orvalMutator<void>(
+      {url: `/readyz`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * RFC 9116 `security.txt`: where an outside reporter sends a vulnerability.
@@ -9001,9 +9002,14 @@ export const getReadyz = (options?: SecondParameter<typeof orvalMutator<void>>) 
  * nothing. Plain text, not JSON, because the format is fixed by the RFC.
  * @summary Vulnerability disclosure contact
  */
-export const getSecurityTxt = (options?: SecondParameter<typeof orvalMutator<string>>) => {
-    return orvalMutator<string>({ url: `/.well-known/security.txt`, method: 'GET' }, options);
-};
+export const getSecurityTxt = (
+
+ options?: SecondParameter<typeof orvalMutator<string>>,) => {
+      return orvalMutator<string>(
+      {url: `/.well-known/security.txt`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Every language this deployment offers, from both tiers, each stating what it can
@@ -9038,9 +9044,14 @@ export const getSecurityTxt = (options?: SecondParameter<typeof orvalMutator<str
  * Unpaged: one row per language this deployment offers.
  * @summary Supported languages
  */
-export const listLocales = (options?: SecondParameter<typeof orvalMutator<LocaleCapabilities>>) => {
-    return orvalMutator<LocaleCapabilities>({ url: `/locales`, method: 'GET' }, options);
-};
+export const listLocales = (
+
+ options?: SecondParameter<typeof orvalMutator<LocaleCapabilities>>,) => {
+      return orvalMutator<LocaleCapabilities>(
+      {url: `/locales`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Registers a language in the dynamic tier so entries can be translated into it.
@@ -9053,18 +9064,14 @@ export const listLocales = (options?: SecondParameter<typeof orvalMutator<Locale
  */
 export const createLocale = (
     createLocaleRequest: CreateLocaleRequest,
-    options?: SecondParameter<typeof orvalMutator<Language>>
-) => {
-    return orvalMutator<Language>(
-        {
-            url: `/locales`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createLocaleRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Language>>,) => {
+      return orvalMutator<Language>(
+      {url: `/locales`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createLocaleRequest
+    },
+      options);
+    }
 
 /**
  * Every app this deployment holds words for — the keyspaces an entry can belong
@@ -9081,9 +9088,14 @@ export const createLocale = (
  * Unpaged: the apps come from the API's configuration.
  * @summary Translation apps
  */
-export const listLocaleApps = (options?: SecondParameter<typeof orvalMutator<LocaleApps>>) => {
-    return orvalMutator<LocaleApps>({ url: `/locales/apps`, method: 'GET' }, options);
-};
+export const listLocaleApps = (
+
+ options?: SecondParameter<typeof orvalMutator<LocaleApps>>,) => {
+      return orvalMutator<LocaleApps>(
+      {url: `/locales/apps`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * One language, in the shape `GET /locales` lists it and every write on this URL
@@ -9100,10 +9112,12 @@ export const listLocaleApps = (options?: SecondParameter<typeof orvalMutator<Loc
  */
 export const getLocale = (
     locale: string,
-    options?: SecondParameter<typeof orvalMutator<Language>>
-) => {
-    return orvalMutator<Language>({ url: `/locales/${locale}`, method: 'GET' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<Language>>,) => {
+      return orvalMutator<Language>(
+      {url: `/locales/${locale}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Replaces a language's display names and writing direction (RFC 9110 §9.3.4 — every
@@ -9118,18 +9132,14 @@ export const getLocale = (
 export const replaceLocale = (
     locale: string,
     replaceLocaleRequest: ReplaceLocaleRequest,
-    options?: SecondParameter<typeof orvalMutator<Language>>
-) => {
-    return orvalMutator<Language>(
-        {
-            url: `/locales/${locale}`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: replaceLocaleRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Language>>,) => {
+      return orvalMutator<Language>(
+      {url: `/locales/${locale}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: replaceLocaleRequest
+    },
+      options);
+    }
 
 /**
  * Merges a language's display names or writing direction (RFC 7396, an omitted field is
@@ -9144,18 +9154,14 @@ export const replaceLocale = (
 export const updateLocale = (
     locale: string,
     updateLocaleRequest: UpdateLocaleRequest,
-    options?: SecondParameter<typeof orvalMutator<Language>>
-) => {
-    return orvalMutator<Language>(
-        {
-            url: `/locales/${locale}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateLocaleRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Language>>,) => {
+      return orvalMutator<Language>(
+      {url: `/locales/${locale}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateLocaleRequest
+    },
+      options);
+    }
 
 /**
  * Merges a language's display names or writing direction (RFC 7396, an omitted field is
@@ -9170,18 +9176,14 @@ export const updateLocale = (
 export const updateLocaleWithMergePatchJson = (
     locale: string,
     updateLocaleRequest: UpdateLocaleRequest,
-    options?: SecondParameter<typeof orvalMutator<Language>>
-) => {
-    return orvalMutator<Language>(
-        {
-            url: `/locales/${locale}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: updateLocaleRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Language>>,) => {
+      return orvalMutator<Language>(
+      {url: `/locales/${locale}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/merge-patch+json', },
+      data: updateLocaleRequest
+    },
+      options);
+    }
 
 /**
  * Removes the language AND every entry translated into it.
@@ -9194,13 +9196,12 @@ export const updateLocaleWithMergePatchJson = (
  */
 export const deleteLocale = (
     locale: string,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/locales/${locale}`, method: 'DELETE' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/locales/${locale}`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * This API's own dictionary for one language — tier 1, the deployed files.
@@ -9215,13 +9216,12 @@ export const deleteLocale = (
  */
 export const getLocaleDictionary = (
     locale: Locale,
-    options?: SecondParameter<typeof orvalMutator<LocaleDictionary>>
-) => {
-    return orvalMutator<LocaleDictionary>(
-        { url: `/locales/${locale}/dictionary`, method: 'GET' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<LocaleDictionary>>,) => {
+      return orvalMutator<LocaleDictionary>(
+      {url: `/locales/${locale}/dictionary`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * The dynamic dictionary for one language, built from its stored entries into the
@@ -9254,13 +9254,13 @@ export const getLocaleDictionary = (
 export const getLocaleMessages = (
     locale: string,
     params?: GetLocaleMessagesParams,
-    options?: SecondParameter<typeof orvalMutator<LocaleMessages>>
-) => {
-    return orvalMutator<LocaleMessages>(
-        { url: `/locales/${locale}/messages`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<LocaleMessages>>,) => {
+      return orvalMutator<LocaleMessages>(
+      {url: `/locales/${locale}/messages`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * The rows behind one language's dictionary, paginated and searchable — what a
@@ -9278,13 +9278,13 @@ export const getLocaleMessages = (
 export const listLocaleEntries = (
     locale: string,
     params?: ListLocaleEntriesParams,
-    options?: SecondParameter<typeof orvalMutator<LocaleEntriesResponse>>
-) => {
-    return orvalMutator<LocaleEntriesResponse>(
-        { url: `/locales/${locale}/entries`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<LocaleEntriesResponse>>,) => {
+      return orvalMutator<LocaleEntriesResponse>(
+      {url: `/locales/${locale}/entries`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * The rows behind one language's dictionary, paginated and searchable — what a
@@ -9303,13 +9303,13 @@ export const listAppLocaleEntries = (
     locale: string,
     app: string,
     params?: ListAppLocaleEntriesParams,
-    options?: SecondParameter<typeof orvalMutator<LocaleEntriesResponse>>
-) => {
-    return orvalMutator<LocaleEntriesResponse>(
-        { url: `/locales/${locale}/apps/${app}/entries`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<LocaleEntriesResponse>>,) => {
+      return orvalMutator<LocaleEntriesResponse>(
+      {url: `/locales/${locale}/apps/${app}/entries`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Adds a key to this app's dictionary. 409 if the key already exists in this language, and equally if it COLLIDES with one
@@ -9321,18 +9321,14 @@ export const createLocaleEntry = (
     locale: string,
     app: string,
     createLocaleEntryRequest: CreateLocaleEntryRequest,
-    options?: SecondParameter<typeof orvalMutator<LocaleEntry>>
-) => {
-    return orvalMutator<LocaleEntry>(
-        {
-            url: `/locales/${locale}/apps/${app}/entries`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createLocaleEntryRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<LocaleEntry>>,) => {
+      return orvalMutator<LocaleEntry>(
+      {url: `/locales/${locale}/apps/${app}/entries`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createLocaleEntryRequest
+    },
+      options);
+    }
 
 /**
  * Bulk import, REPLACING semantics: what is not sent is DELETED. The whole set of
@@ -9357,18 +9353,14 @@ export const replaceLocaleEntries = (
     locale: string,
     app: string,
     replaceLocaleEntriesRequest: ReplaceLocaleEntriesRequest,
-    options?: SecondParameter<typeof orvalMutator<LocaleImportResult>>
-) => {
-    return orvalMutator<LocaleImportResult>(
-        {
-            url: `/locales/${locale}/apps/${app}/entries`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: replaceLocaleEntriesRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<LocaleImportResult>>,) => {
+      return orvalMutator<LocaleImportResult>(
+      {url: `/locales/${locale}/apps/${app}/entries`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: replaceLocaleEntriesRequest
+    },
+      options);
+    }
 
 /**
  * Bulk import, MERGING semantics (RFC 7396): a string upserts its key, `null` deletes
@@ -9386,18 +9378,14 @@ export const updateLocaleEntries = (
     locale: string,
     app: string,
     updateLocaleEntriesRequest: UpdateLocaleEntriesRequest,
-    options?: SecondParameter<typeof orvalMutator<LocaleImportResult>>
-) => {
-    return orvalMutator<LocaleImportResult>(
-        {
-            url: `/locales/${locale}/apps/${app}/entries`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateLocaleEntriesRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<LocaleImportResult>>,) => {
+      return orvalMutator<LocaleImportResult>(
+      {url: `/locales/${locale}/apps/${app}/entries`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateLocaleEntriesRequest
+    },
+      options);
+    }
 
 /**
  * Bulk import, MERGING semantics (RFC 7396): a string upserts its key, `null` deletes
@@ -9415,18 +9403,14 @@ export const updateLocaleEntriesWithMergePatchJson = (
     locale: string,
     app: string,
     updateLocaleEntriesRequest: UpdateLocaleEntriesRequest,
-    options?: SecondParameter<typeof orvalMutator<LocaleImportResult>>
-) => {
-    return orvalMutator<LocaleImportResult>(
-        {
-            url: `/locales/${locale}/apps/${app}/entries`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: updateLocaleEntriesRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<LocaleImportResult>>,) => {
+      return orvalMutator<LocaleImportResult>(
+      {url: `/locales/${locale}/apps/${app}/entries`, method: 'PATCH',
+      headers: {'Content-Type': 'application/merge-patch+json', },
+      data: updateLocaleEntriesRequest
+    },
+      options);
+    }
 
 /**
  * One entry of one app's slice of a language, at the address the single-entry writes
@@ -9439,13 +9423,12 @@ export const getLocaleEntry = (
     locale: string,
     app: string,
     entryId: string,
-    options?: SecondParameter<typeof orvalMutator<LocaleEntry>>
-) => {
-    return orvalMutator<LocaleEntry>(
-        { url: `/locales/${locale}/apps/${app}/entries/${entryId}`, method: 'GET' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<LocaleEntry>>,) => {
+      return orvalMutator<LocaleEntry>(
+      {url: `/locales/${locale}/apps/${app}/entries/${entryId}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Updates the value of one entry. The key is not editable — a key is the identity a
@@ -9458,18 +9441,14 @@ export const replaceLocaleEntry = (
     app: string,
     entryId: string,
     replaceLocaleEntryRequest: ReplaceLocaleEntryRequest,
-    options?: SecondParameter<typeof orvalMutator<LocaleEntry>>
-) => {
-    return orvalMutator<LocaleEntry>(
-        {
-            url: `/locales/${locale}/apps/${app}/entries/${entryId}`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: replaceLocaleEntryRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<LocaleEntry>>,) => {
+      return orvalMutator<LocaleEntry>(
+      {url: `/locales/${locale}/apps/${app}/entries/${entryId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: replaceLocaleEntryRequest
+    },
+      options);
+    }
 
 /**
  * Removes a single key from one language. The other languages keep theirs.
@@ -9479,13 +9458,12 @@ export const deleteLocaleEntry = (
     locale: string,
     app: string,
     entryId: string,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/locales/${locale}/apps/${app}/entries/${entryId}`, method: 'DELETE' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/locales/${locale}/apps/${app}/entries/${entryId}`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * Every locale this entity has a row for, in one response — the admin shape a
@@ -9496,13 +9474,12 @@ export const deleteLocaleEntry = (
 export const getEntityTranslations = (
     entityType: string,
     id: string,
-    options?: SecondParameter<typeof orvalMutator<EntityTranslations>>
-) => {
-    return orvalMutator<EntityTranslations>(
-        { url: `/locales/translations/${entityType}/${id}`, method: 'GET' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<EntityTranslations>>,) => {
+      return orvalMutator<EntityTranslations>(
+      {url: `/locales/translations/${entityType}/${id}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * REPLACING semantics: a locale currently stored but absent from the body is deleted
@@ -9527,18 +9504,14 @@ export const replaceEntityTranslations = (
     entityType: string,
     id: string,
     replaceEntityTranslationsRequest: ReplaceEntityTranslationsRequest,
-    options?: SecondParameter<typeof orvalMutator<EntityTranslations>>
-) => {
-    return orvalMutator<EntityTranslations>(
-        {
-            url: `/locales/translations/${entityType}/${id}`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: replaceEntityTranslationsRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<EntityTranslations>>,) => {
+      return orvalMutator<EntityTranslations>(
+      {url: `/locales/translations/${entityType}/${id}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: replaceEntityTranslationsRequest
+    },
+      options);
+    }
 
 /**
  * MERGING semantics: a locale key absent from the body is left exactly as it is. Three
@@ -9572,18 +9545,14 @@ export const updateEntityTranslations = (
     entityType: string,
     id: string,
     updateEntityTranslationsRequest: UpdateEntityTranslationsRequest,
-    options?: SecondParameter<typeof orvalMutator<EntityTranslations>>
-) => {
-    return orvalMutator<EntityTranslations>(
-        {
-            url: `/locales/translations/${entityType}/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateEntityTranslationsRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<EntityTranslations>>,) => {
+      return orvalMutator<EntityTranslations>(
+      {url: `/locales/translations/${entityType}/${id}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateEntityTranslationsRequest
+    },
+      options);
+    }
 
 /**
  * MERGING semantics: a locale key absent from the body is left exactly as it is. Three
@@ -9617,27 +9586,28 @@ export const updateEntityTranslationsWithMergePatchJson = (
     entityType: string,
     id: string,
     updateEntityTranslationsRequest: UpdateEntityTranslationsRequest,
-    options?: SecondParameter<typeof orvalMutator<EntityTranslations>>
-) => {
-    return orvalMutator<EntityTranslations>(
-        {
-            url: `/locales/translations/${entityType}/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: updateEntityTranslationsRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<EntityTranslations>>,) => {
+      return orvalMutator<EntityTranslations>(
+      {url: `/locales/translations/${entityType}/${id}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/merge-patch+json', },
+      data: updateEntityTranslationsRequest
+    },
+      options);
+    }
 
 /**
  * Live Server-Sent Events stream for demo dashboards.
  * Sends `metrics.snapshot` on connect, followed by periodic `metrics.updated` and `heartbeat` events.
  * @summary Observability SSE stream
  */
-export const getObservabilityEvents = (options?: SecondParameter<typeof orvalMutator<string>>) => {
-    return orvalMutator<string>({ url: `/observability/events`, method: 'GET' }, options);
-};
+export const getObservabilityEvents = (
+
+ options?: SecondParameter<typeof orvalMutator<string>>,) => {
+      return orvalMutator<string>(
+      {url: `/observability/events`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Readiness snapshot: whether this instance can serve what it promises, and which
@@ -9653,13 +9623,13 @@ export const getObservabilityEvents = (options?: SecondParameter<typeof orvalMut
  * @summary Health snapshot
  */
 export const getObservabilityHealth = (
-    options?: SecondParameter<typeof orvalMutator<ObservabilityHealth>>
-) => {
-    return orvalMutator<ObservabilityHealth>(
-        { url: `/observability/health`, method: 'GET' },
-        options
-    );
-};
+
+ options?: SecondParameter<typeof orvalMutator<ObservabilityHealth>>,) => {
+      return orvalMutator<ObservabilityHealth>(
+      {url: `/observability/health`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Raw Prometheus text (exposition format 0.0.4).
@@ -9667,9 +9637,14 @@ export const getObservabilityHealth = (
  * Use `GET /observability/metrics/overview` for a JSON summary suitable for dashboards.
  * @summary Prometheus metrics
  */
-export const getObservabilityMetrics = (options?: SecondParameter<typeof orvalMutator<string>>) => {
-    return orvalMutator<string>({ url: `/observability/metrics`, method: 'GET' }, options);
-};
+export const getObservabilityMetrics = (
+
+ options?: SecondParameter<typeof orvalMutator<string>>,) => {
+      return orvalMutator<string>(
+      {url: `/observability/metrics`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Key operational metrics derived from Prometheus counters/histograms,
@@ -9678,13 +9653,13 @@ export const getObservabilityMetrics = (options?: SecondParameter<typeof orvalMu
  * @summary Metrics overview (JSON)
  */
 export const getObservabilityMetricsOverview = (
-    options?: SecondParameter<typeof orvalMutator<ObservabilityMetricsSummary>>
-) => {
-    return orvalMutator<ObservabilityMetricsSummary>(
-        { url: `/observability/metrics/overview`, method: 'GET' },
-        options
-    );
-};
+
+ options?: SecondParameter<typeof orvalMutator<ObservabilityMetricsSummary>>,) => {
+      return orvalMutator<ObservabilityMetricsSummary>(
+      {url: `/observability/metrics/overview`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Returns the most recent INCIDENT events, newest first, from the persisted audit trail:
@@ -9701,13 +9676,13 @@ export const getObservabilityMetricsOverview = (
  */
 export const listObservabilityAuditEntries = (
     params?: ListObservabilityAuditEntriesParams,
-    options?: SecondParameter<typeof orvalMutator<AuditLogsResponse>>
-) => {
-    return orvalMutator<AuditLogsResponse>(
-        { url: `/observability/audit`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<AuditLogsResponse>>,) => {
+      return orvalMutator<AuditLogsResponse>(
+      {url: `/observability/audit`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * A filtered, paged read over the same trail `GET /observability/audit` serves — but
@@ -9720,20 +9695,26 @@ export const listObservabilityAuditEntries = (
  */
 export const listAuditEntries = (
     params?: ListAuditEntriesParams,
-    options?: SecondParameter<typeof orvalMutator<AuditEntriesResponse>>
-) => {
-    return orvalMutator<AuditEntriesResponse>({ url: `/audit`, method: 'GET', params }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<AuditEntriesResponse>>,) => {
+      return orvalMutator<AuditEntriesResponse>(
+      {url: `/audit`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Only a provider this server hosts itself (`altcha`) issues a challenge here; the default `none` and any vendor-hosted provider answer 404, which is a truthful statement about the deployment rather than an error. The shape is the provider's own — pass it to its widget verbatim.
  * @summary Fetch work from a self-hosted human-challenge provider
  */
 export const getAntibotChallenge = (
-    options?: SecondParameter<typeof orvalMutator<AntibotChallenge>>
-) => {
-    return orvalMutator<AntibotChallenge>({ url: `/antibot/challenge`, method: 'GET' }, options);
-};
+
+ options?: SecondParameter<typeof orvalMutator<AntibotChallenge>>,) => {
+      return orvalMutator<AntibotChallenge>(
+      {url: `/antibot/challenge`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * The relay for events a browser sees and the server cannot: the response cache answers most reads without reaching the application. The set is closed: the events the deployed modules declare (today `product_viewed`, `products_searched`); a business fact (cart, checkout, order, payment, signup, login) is never accepted here, it is emitted by the service that makes it true. A visitor who has not agreed to analytics is not measured: the answer is the same `204`, and nothing is recorded or forwarded. A page should not call this before the visitor has agreed.
@@ -9741,18 +9722,14 @@ export const getAntibotChallenge = (
  */
 export const createAnalyticsEvent = (
     analyticsEventRequest: AnalyticsEventRequest,
-    options?: SecondParameter<typeof orvalMutator<void>>
-) => {
-    return orvalMutator<void>(
-        {
-            url: `/analytics/events`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: analyticsEventRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<void>>,) => {
+      return orvalMutator<void>(
+      {url: `/analytics/events`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: analyticsEventRequest
+    },
+      options);
+    }
 
 /**
  * Returns the full profile of the currently authenticated user, plus two read-only
@@ -9770,9 +9747,14 @@ export const createAnalyticsEvent = (
  * moves on every read (`lastActiveAt`).
  * @summary Current user info
  */
-export const getAccount = (options?: SecondParameter<typeof orvalMutator<AccountView>>) => {
-    return orvalMutator<AccountView>({ url: `/account`, method: 'GET' }, options);
-};
+export const getAccount = (
+
+ options?: SecondParameter<typeof orvalMutator<AccountView>>,) => {
+      return orvalMutator<AccountView>(
+      {url: `/account`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Replaces every writable field of the authenticated user's own profile — username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state, email and password are out of scope — the first two belong to the admin `/users` endpoints, the email to `POST /account/email-change`, the password to `POST /account/password`. An `email` in the body is refused with 422 like any unknown field.
@@ -9780,18 +9762,14 @@ export const getAccount = (options?: SecondParameter<typeof orvalMutator<Account
  */
 export const replaceAccount = (
     replaceAccountRequest: ReplaceAccountRequest,
-    options?: SecondParameter<typeof orvalMutator<Account>>
-) => {
-    return orvalMutator<Account>(
-        {
-            url: `/account`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: replaceAccountRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Account>>,) => {
+      return orvalMutator<Account>(
+      {url: `/account`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: replaceAccountRequest
+    },
+      options);
+    }
 
 /**
  * Replaces every writable field of the authenticated user's own profile — username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state, email and password are out of scope — the first two belong to the admin `/users` endpoints, the email to `POST /account/email-change`, the password to `POST /account/password`. An `email` in the body is refused with 422 like any unknown field.
@@ -9799,34 +9777,29 @@ export const replaceAccount = (
  */
 export const replaceAccountWithMultipart = (
     replaceAccountRequestMultipart: ReplaceAccountRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<Account>>
-) => {
-    const formData = new FormData();
-    formData.append(`username`, replaceAccountRequestMultipart.username);
-    if (replaceAccountRequestMultipart.locale !== undefined) {
-        formData.append(`locale`, replaceAccountRequestMultipart.locale);
-    }
-    if (replaceAccountRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, replaceAccountRequestMultipart.imageUpload);
-    }
-    if (replaceAccountRequestMultipart.phone !== undefined) {
-        formData.append(`phone`, replaceAccountRequestMultipart.phone);
-    }
-    if (replaceAccountRequestMultipart.website !== undefined) {
-        formData.append(`website`, replaceAccountRequestMultipart.website);
-    }
-    formData.append(`analyticsConsent`, replaceAccountRequestMultipart.analyticsConsent.toString());
+ options?: SecondParameter<typeof orvalMutator<Account>>,) => {const formData = new FormData();
+formData.append(`username`, replaceAccountRequestMultipart.username);
+if(replaceAccountRequestMultipart.locale !== undefined) {
+ formData.append(`locale`, replaceAccountRequestMultipart.locale);
+ }
+if(replaceAccountRequestMultipart.imageUpload !== undefined) {
+ formData.append(`imageUpload`, replaceAccountRequestMultipart.imageUpload);
+ }
+if(replaceAccountRequestMultipart.phone !== undefined) {
+ formData.append(`phone`, replaceAccountRequestMultipart.phone);
+ }
+if(replaceAccountRequestMultipart.website !== undefined) {
+ formData.append(`website`, replaceAccountRequestMultipart.website);
+ }
+formData.append(`analyticsConsent`, replaceAccountRequestMultipart.analyticsConsent.toString())
 
-    return orvalMutator<Account>(
-        {
-            url: `/account`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'multipart/form-data' },
-            data: formData
-        },
-        options
-    );
-};
+      return orvalMutator<Account>(
+      {url: `/account`, method: 'PUT',
+      headers: {'Content-Type': 'multipart/form-data', },
+       data: formData
+    },
+      options);
+    }
 
 /**
  * Merges the given fields into the authenticated user's own profile — username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state, email and password are out of scope — the first two belong to the admin `/users` endpoints, the email to `POST /account/email-change`, the password to `POST /account/password`. An `email` in the body is refused with 422 like any unknown field.
@@ -9834,18 +9807,14 @@ export const replaceAccountWithMultipart = (
  */
 export const updateAccount = (
     updateAccountRequest: UpdateAccountRequest,
-    options?: SecondParameter<typeof orvalMutator<Account>>
-) => {
-    return orvalMutator<Account>(
-        {
-            url: `/account`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateAccountRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Account>>,) => {
+      return orvalMutator<Account>(
+      {url: `/account`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateAccountRequest
+    },
+      options);
+    }
 
 /**
  * Merges the given fields into the authenticated user's own profile — username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state, email and password are out of scope — the first two belong to the admin `/users` endpoints, the email to `POST /account/email-change`, the password to `POST /account/password`. An `email` in the body is refused with 422 like any unknown field.
@@ -9853,18 +9822,14 @@ export const updateAccount = (
  */
 export const updateAccountWithMergePatchJson = (
     updateAccountRequest: UpdateAccountRequest,
-    options?: SecondParameter<typeof orvalMutator<Account>>
-) => {
-    return orvalMutator<Account>(
-        {
-            url: `/account`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: updateAccountRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Account>>,) => {
+      return orvalMutator<Account>(
+      {url: `/account`, method: 'PATCH',
+      headers: {'Content-Type': 'application/merge-patch+json', },
+      data: updateAccountRequest
+    },
+      options);
+    }
 
 /**
  * Merges the given fields into the authenticated user's own profile — username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state, email and password are out of scope — the first two belong to the admin `/users` endpoints, the email to `POST /account/email-change`, the password to `POST /account/password`. An `email` in the body is refused with 422 like any unknown field.
@@ -9872,51 +9837,46 @@ export const updateAccountWithMergePatchJson = (
  */
 export const updateAccountWithMultipart = (
     updateAccountRequestMultipart: UpdateAccountRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<Account>>
-) => {
-    const formData = new FormData();
-    if (updateAccountRequestMultipart.username !== undefined) {
-        formData.append(`username`, updateAccountRequestMultipart.username);
-    }
-    if (updateAccountRequestMultipart.locale !== undefined) {
-        formData.append(`locale`, updateAccountRequestMultipart.locale);
-    }
-    if (updateAccountRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, updateAccountRequestMultipart.imageUpload);
-    }
-    if (updateAccountRequestMultipart.phone !== undefined) {
-        formData.append(`phone`, updateAccountRequestMultipart.phone);
-    }
-    if (updateAccountRequestMultipart.website !== undefined) {
-        formData.append(`website`, updateAccountRequestMultipart.website);
-    }
-    if (updateAccountRequestMultipart.analyticsConsent !== undefined) {
-        formData.append(
-            `analyticsConsent`,
-            updateAccountRequestMultipart.analyticsConsent.toString()
-        );
-    }
+ options?: SecondParameter<typeof orvalMutator<Account>>,) => {const formData = new FormData();
+if(updateAccountRequestMultipart.username !== undefined) {
+ formData.append(`username`, updateAccountRequestMultipart.username);
+ }
+if(updateAccountRequestMultipart.locale !== undefined) {
+ formData.append(`locale`, updateAccountRequestMultipart.locale);
+ }
+if(updateAccountRequestMultipart.imageUpload !== undefined) {
+ formData.append(`imageUpload`, updateAccountRequestMultipart.imageUpload);
+ }
+if(updateAccountRequestMultipart.phone !== undefined) {
+ formData.append(`phone`, updateAccountRequestMultipart.phone);
+ }
+if(updateAccountRequestMultipart.website !== undefined) {
+ formData.append(`website`, updateAccountRequestMultipart.website);
+ }
+if(updateAccountRequestMultipart.analyticsConsent !== undefined) {
+ formData.append(`analyticsConsent`, updateAccountRequestMultipart.analyticsConsent.toString())
+ }
 
-    return orvalMutator<Account>(
-        {
-            url: `/account`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'multipart/form-data' },
-            data: formData
-        },
-        options
-    );
-};
+      return orvalMutator<Account>(
+      {url: `/account`, method: 'PATCH',
+      headers: {'Content-Type': 'multipart/form-data', },
+       data: formData
+    },
+      options);
+    }
 
 /**
  * Locks the authenticated user's account at once and schedules its erasure. Every session dies with the call (the session cookie is cleared) and the account can no longer sign in, so the answer is the last thing the caller sees. The account is erased `NODE_ACCOUNT_DELETION_GRACE_DAYS` days later (30 by default, never more than one calendar month: GDPR Art. 12(3)), at `purgeAt`. Until then it can be brought back by the link in the mail this call sends (`POST /account/restore`), by signing in (`POST /account/login` offers the restore), or by staff (`POST /users/{id}/restore`). Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
  * @summary Delete the account (locked at once, erased after a grace)
  */
 export const requestAccountDelete = (
-    options?: SecondParameter<typeof orvalMutator<AccountDeletion>>
-) => {
-    return orvalMutator<AccountDeletion>({ url: `/account`, method: 'DELETE' }, options);
-};
+
+ options?: SecondParameter<typeof orvalMutator<AccountDeletion>>,) => {
+      return orvalMutator<AccountDeletion>(
+      {url: `/account`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * Starts a change of the account's sign-in and recovery address. The new address is held as `pendingEmail` until `POST /account/email-change/confirm` proves it, and a notice carrying a 7-day one-time undo link (`POST /account/email-change/undo`) is sent to the OLD address the moment the change is requested. A different address while one is already pending replaces it, revokes the earlier link and mails both addresses again. Needs a fresh session, always; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Answers 409 `EMAIL_ALREADY_CURRENT` for the address the account already has and `EMAIL_CHANGE_ALREADY_PENDING` for the one already pending (nothing is mailed; `POST /account/email-change/resend` mails it again), and 409 `EMAIL_ALREADY_USED` when another account holds it. Answers 429 `EMAIL_CHANGE_TOO_SOON` inside the minute after the previous request. Cancel a pending change with `DELETE /account/email-change`.
@@ -9924,44 +9884,40 @@ export const requestAccountDelete = (
  */
 export const requestEmailChange = (
     requestEmailChangeRequest: RequestEmailChangeRequest,
-    options?: SecondParameter<typeof orvalMutator<AccountView>>
-) => {
-    return orvalMutator<AccountView>(
-        {
-            url: `/account/email-change`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: requestEmailChangeRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<AccountView>>,) => {
+      return orvalMutator<AccountView>(
+      {url: `/account/email-change`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: requestEmailChangeRequest
+    },
+      options);
+    }
 
 /**
  * Discards a pending `pendingEmail` change started by `POST /account/email-change`, without proving it. A no-op when nothing is pending — a client does not need to check `GET /account` first.
  * @summary Cancel a pending email change
  */
 export const cancelPendingEmailChange = (
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/account/email-change`, method: 'DELETE' },
-        options
-    );
-};
+
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/account/email-change`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * Mails the NEW (pending) address a fresh confirmation link — and only that address; the old one is not told again. The previous link stops working, since only the newest one counts. Answers 200 with `resendAfter`, the seconds a client counts down before offering the button again — the same shape as `POST /account/email-verification/resend`. A no-op, answering 200 with `resendAfter` 0 and mailing nothing, when nothing is pending, so a client does not need to check `GET /account` first. Sending the pending address again through `POST /account/email-change` is refused with 409, which is why this route exists. Answers 429 inside the previous send's cooldown (the same 60 seconds as `POST /account/email-verification/resend`, with `details.retryAfter` naming the wait) and spends the same per-account budget on a failure, so a client that waits never sees one. No fresh-auth guard — it mails an address the caller already asked for and changes nothing about the account.
  * @summary Resend the pending email confirmation
  */
 export const resendPendingEmail = (
-    options?: SecondParameter<typeof orvalMutator<EmailVerificationRequested>>
-) => {
-    return orvalMutator<EmailVerificationRequested>(
-        { url: `/account/email-change/resend`, method: 'POST' },
-        options
-    );
-};
+
+ options?: SecondParameter<typeof orvalMutator<EmailVerificationRequested>>,) => {
+      return orvalMutator<EmailVerificationRequested>(
+      {url: `/account/email-change/resend`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Changes the authenticated user's password. Unlike the reset flow this proves possession of the current password rather than of the mailbox, so it needs no email round-trip. Every session is revoked and every pending one-time link and login challenge is purged; the response carries a fresh access token for the calling session, and sets fresh session cookies. An account with a second factor armed also needs a fresh session that proved an `otp` (`401 REAUTH_REQUIRED` with `details.methods`); an account without one is asked nothing new.
@@ -9969,18 +9925,14 @@ export const resendPendingEmail = (
  */
 export const changePassword = (
     changePasswordRequest: ChangePasswordRequest,
-    options?: SecondParameter<typeof orvalMutator<AuthTokens>>
-) => {
-    return orvalMutator<AuthTokens>(
-        {
-            url: `/account/password`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: changePasswordRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<AuthTokens>>,) => {
+      return orvalMutator<AuthTokens>(
+      {url: `/account/password`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: changePasswordRequest
+    },
+      options);
+    }
 
 /**
  * Advisory only — never blocks anything itself. Reports whether a CANDIDATE password (not yet required to satisfy `PasswordNew`) matches a known-breached password, so a signup or password-change form can warn before submission. Unauthenticated, since signup needs it before an account exists. The four password-SET paths remain the actual gate, checked again server-side regardless of what this endpoint answered.
@@ -9988,26 +9940,27 @@ export const changePassword = (
  */
 export const checkPasswordBreached = (
     passwordCheckRequest: PasswordCheckRequest,
-    options?: SecondParameter<typeof orvalMutator<PasswordCheck>>
-) => {
-    return orvalMutator<PasswordCheck>(
-        {
-            url: `/account/password/check`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: passwordCheckRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<PasswordCheck>>,) => {
+      return orvalMutator<PasswordCheck>(
+      {url: `/account/password/check`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: passwordCheckRequest
+    },
+      options);
+    }
 
 /**
  * The ways THIS account can answer a `401 REAUTH_REQUIRED` challenge, in the order a client should offer them. An account with a password gets `password`; an account with none (it signed up through an OAuth provider) gets `email`, a code mailed to its verified address. Empty when the account has no password and this deployment cannot deliver mail, so a client shows a dead end instead of a form nobody can pass. The list is a server fact, not a client guess: the kernel that raises the challenge cannot see account data.
  * @summary How this account can re-authenticate
  */
-export const getReauthMethods = (options?: SecondParameter<typeof orvalMutator<ReauthMethods>>) => {
-    return orvalMutator<ReauthMethods>({ url: `/account/reauth`, method: 'GET' }, options);
-};
+export const getReauthMethods = (
+
+ options?: SecondParameter<typeof orvalMutator<ReauthMethods>>,) => {
+      return orvalMutator<ReauthMethods>(
+      {url: `/account/reauth`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Re-proves who the caller is to refresh how recently they authenticated, without ending the session — the answer to a `401 REAUTH_REQUIRED` challenge from a route gated by freshness (checkout, payments, deleting the account, changing the email, session management). The body is tagged by `method`, one of those `GET /account/reauth` lists, and may carry an `otp` code from an armed second factor. Re-mints the session and returns a fresh access token, same as `POST /account/password`. The new session carries ONLY what this call proved (`pwd` or `email`, plus `otp` when a code was given and verified). Proofs from the login are not carried over, so a password-only re-authentication no longer passes a route that demands `otp`. The refresh token the call was made with is retired.
@@ -10015,43 +9968,54 @@ export const getReauthMethods = (options?: SecondParameter<typeof orvalMutator<R
  */
 export const reauth = (
     reauthRequest: ReauthRequest,
-    options?: SecondParameter<typeof orvalMutator<AuthTokens>>
-) => {
-    return orvalMutator<AuthTokens>(
-        {
-            url: `/account/reauth`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: reauthRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<AuthTokens>>,) => {
+      return orvalMutator<AuthTokens>(
+      {url: `/account/reauth`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: reauthRequest
+    },
+      options);
+    }
 
 /**
  * Logs out the CURRENT session only — deletes the session the `__Host-session` cookie (or, in `cookie` mode, a `ses_…` bearer) names, and clears the authentication cookies. Refused with 403 when the request names an `Origin` that is not an allowed frontend origin. Other devices stay signed in; `DELETE /account/sessions` is the one that revokes everything. Answers 204 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
  * @summary Logout this session
  */
-export const logout = (options?: SecondParameter<typeof orvalMutator<NoContentResponse>>) => {
-    return orvalMutator<NoContentResponse>({ url: `/account/logout`, method: 'POST' }, options);
-};
+export const logout = (
+
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/account/logout`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Lists the authenticated user's live sessions, one per sign-in, newest first. Each carries an id that stays the same for as long as the sign-in lasts (a `jwt` refresh or a `cookie` re-proof does not change it), when the sign-in happened, when it ends, and a `current` marker; never a credential. The session the caller's own cookie (or `ses_…` bearer) belongs to is flagged `current`. In `cookie` mode each also carries a coarse `device` label such as "Firefox on Linux", read from the User-Agent at the sign-in. A staff session that has idled out is not listed: it no longer signs anyone in.
  * Unpaged: only live sign-ins are listed, and each ends when it expires.
  * @summary List active sessions
  */
-export const listSessions = (options?: SecondParameter<typeof orvalMutator<SessionsResponse>>) => {
-    return orvalMutator<SessionsResponse>({ url: `/account/sessions`, method: 'GET' }, options);
-};
+export const listSessions = (
+
+ options?: SecondParameter<typeof orvalMutator<SessionsResponse>>,) => {
+      return orvalMutator<SessionsResponse>(
+      {url: `/account/sessions`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Logs out the authenticated user from ALL devices by deleting every session the account holds and clearing authentication cookies. Needs a fresh session (sensitive tier, `401 REAUTH_REQUIRED` when stale).
  * @summary Logout from all devices
  */
-export const logoutAll = (options?: SecondParameter<typeof orvalMutator<NoContentResponse>>) => {
-    return orvalMutator<NoContentResponse>({ url: `/account/sessions`, method: 'DELETE' }, options);
-};
+export const logoutAll = (
+
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/account/sessions`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * One of the caller's own live sessions, by the id `GET /account/sessions` gave out. Scoped like the list: another account's session, a session that has ended, an invented id and a malformed one are the same 404. The `current` marker is judged against the credential this request carries.
@@ -10059,10 +10023,12 @@ export const logoutAll = (options?: SecondParameter<typeof orvalMutator<NoConten
  */
 export const getSession = (
     sessionId: Id,
-    options?: SecondParameter<typeof orvalMutator<Session>>
-) => {
-    return orvalMutator<Session>({ url: `/account/sessions/${sessionId}`, method: 'GET' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<Session>>,) => {
+      return orvalMutator<Session>(
+      {url: `/account/sessions/${sessionId}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Ends one sign-in by its session id — "log out that device". In `jwt` mode that is the whole family of refresh tokens the sign-in rotated through, so a revoke after a refresh still ends the device; in `cookie` mode it is the one session. Revoking the current session is allowed and equivalent to `POST /account/logout`, except that the cookies of OTHER clients cannot be cleared from here; their next request simply fails. Needs a fresh session (sensitive tier, `401 REAUTH_REQUIRED` when stale).
@@ -10070,23 +10036,25 @@ export const getSession = (
  */
 export const revokeSession = (
     sessionId: Id,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/account/sessions/${sessionId}`, method: 'DELETE' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/account/sessions/${sessionId}`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * The authenticated user's address book. Whenever it is non-empty, exactly one entry carries `default` — the one checkout ships to when no `addressId` is named. Unpaged: the book holds at most `NODE_ADDRESS_BOOK_MAX` entries.
  * @summary List saved addresses
  */
 export const listAddresses = (
-    options?: SecondParameter<typeof orvalMutator<AddressesResponse>>
-) => {
-    return orvalMutator<AddressesResponse>({ url: `/account/addresses`, method: 'GET' }, options);
-};
+
+ options?: SecondParameter<typeof orvalMutator<AddressesResponse>>,) => {
+      return orvalMutator<AddressesResponse>(
+      {url: `/account/addresses`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Adds an entry to the authenticated user's address book and answers the entry it created, with its `Location`. The first entry becomes the default automatically; a later entry claims the default slot only by sending `default true`, which demotes the previous holder — a different row, so a client showing the book refetches it.
@@ -10094,18 +10062,14 @@ export const listAddresses = (
  */
 export const createAddress = (
     createAddressRequest: CreateAddressRequest,
-    options?: SecondParameter<typeof orvalMutator<Address>>
-) => {
-    return orvalMutator<Address>(
-        {
-            url: `/account/addresses`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createAddressRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Address>>,) => {
+      return orvalMutator<Address>(
+      {url: `/account/addresses`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createAddressRequest
+    },
+      options);
+    }
 
 /**
  * One entry of the caller's own book. Someone else's entry, an unknown id and a malformed one are the same 404.
@@ -10113,13 +10077,12 @@ export const createAddress = (
  */
 export const getAddress = (
     addressId: Id,
-    options?: SecondParameter<typeof orvalMutator<Address>>
-) => {
-    return orvalMutator<Address>(
-        { url: `/account/addresses/${addressId}`, method: 'GET' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Address>>,) => {
+      return orvalMutator<Address>(
+      {url: `/account/addresses/${addressId}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Replaces every writable field of one entry of the caller's own book (RFC 9110 §9.3.4, an omitted optional field is cleared). The default assignment is not part of the address — it is the book's pointer, moved by `PUT /account/addresses/{addressId}/default`, so `default` is not accepted here.
@@ -10128,18 +10091,14 @@ export const getAddress = (
 export const replaceAddress = (
     addressId: Id,
     replaceAddressRequest: ReplaceAddressRequest,
-    options?: SecondParameter<typeof orvalMutator<Address>>
-) => {
-    return orvalMutator<Address>(
-        {
-            url: `/account/addresses/${addressId}`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: replaceAddressRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Address>>,) => {
+      return orvalMutator<Address>(
+      {url: `/account/addresses/${addressId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: replaceAddressRequest
+    },
+      options);
+    }
 
 /**
  * Merges the given fields into one entry of the caller's own book (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). The default assignment is not part of the address — it is the book's pointer, moved by `PUT /account/addresses/{addressId}/default`, so `default` is not accepted here.
@@ -10148,18 +10107,14 @@ export const replaceAddress = (
 export const updateAddress = (
     addressId: Id,
     updateAddressRequest: UpdateAddressRequest,
-    options?: SecondParameter<typeof orvalMutator<Address>>
-) => {
-    return orvalMutator<Address>(
-        {
-            url: `/account/addresses/${addressId}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateAddressRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Address>>,) => {
+      return orvalMutator<Address>(
+      {url: `/account/addresses/${addressId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateAddressRequest
+    },
+      options);
+    }
 
 /**
  * Merges the given fields into one entry of the caller's own book (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). The default assignment is not part of the address — it is the book's pointer, moved by `PUT /account/addresses/{addressId}/default`, so `default` is not accepted here.
@@ -10168,18 +10123,14 @@ export const updateAddress = (
 export const updateAddressWithMergePatchJson = (
     addressId: Id,
     updateAddressRequest: UpdateAddressRequest,
-    options?: SecondParameter<typeof orvalMutator<Address>>
-) => {
-    return orvalMutator<Address>(
-        {
-            url: `/account/addresses/${addressId}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: updateAddressRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Address>>,) => {
+      return orvalMutator<Address>(
+      {url: `/account/addresses/${addressId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/merge-patch+json', },
+      data: updateAddressRequest
+    },
+      options);
+    }
 
 /**
  * Removes one entry of the caller's own book. Removing the default promotes the oldest remaining entry, so a non-empty book always has exactly one default; a client showing the book refetches it.
@@ -10187,13 +10138,12 @@ export const updateAddressWithMergePatchJson = (
  */
 export const deleteAddress = (
     addressId: Id,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/account/addresses/${addressId}`, method: 'DELETE' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/account/addresses/${addressId}`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * Makes one entry of the caller's own book the default — the one checkout ships to when no `addressId` is named — and demotes the previous holder in the same write. The URI is the whole statement, so there is no body and repeating it changes nothing (RFC 9110 §9.3.4). Answers the entry, now `default true`; the demoted entry is another row, so a client showing the book refetches it. Shopify's `PUT /customers/{id}/addresses/{address_id}/default` is the same shape.
@@ -10201,26 +10151,25 @@ export const deleteAddress = (
  */
 export const setDefaultAddress = (
     addressId: Id,
-    options?: SecondParameter<typeof orvalMutator<Address>>
-) => {
-    return orvalMutator<Address>(
-        { url: `/account/addresses/${addressId}/default`, method: 'PUT' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Address>>,) => {
+      return orvalMutator<Address>(
+      {url: `/account/addresses/${addressId}/default`, method: 'PUT'
+    },
+      options);
+    }
 
 /**
  * Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/email-verification/confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived. Answers 429 inside the previous send's cooldown, so a client that respects `resendAfter` never sees one — unlike a login guess, a SUCCESSFUL call here is the expensive one, since each publishes mail.
  * @summary Request email verification
  */
 export const resendEmailVerification = (
-    options?: SecondParameter<typeof orvalMutator<EmailVerificationRequested>>
-) => {
-    return orvalMutator<EmailVerificationRequested>(
-        { url: `/account/email-verification/resend`, method: 'POST' },
-        options
-    );
-};
+
+ options?: SecondParameter<typeof orvalMutator<EmailVerificationRequested>>,) => {
+      return orvalMutator<EmailVerificationRequested>(
+      {url: `/account/email-verification/resend`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Completes the email-verification flow. Validates the one-time token issued at signup or by `/account/email-verification/resend` and, if valid, marks the account's email address as verified.
@@ -10228,18 +10177,14 @@ export const resendEmailVerification = (
  */
 export const confirmEmailVerification = (
     verifyEmailConfirmRequest: VerifyEmailConfirmRequest,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        {
-            url: `/account/email-verification/confirm`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: verifyEmailConfirmRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/account/email-verification/confirm`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: verifyEmailConfirmRequest
+    },
+      options);
+    }
 
 /**
  * Completes the email-change flow started by `POST /account/email-change`. Validates the one-time `email-change` token sent to the NEW address and, if valid, swaps `pendingEmail` into `email`, marks the account verified, and revokes every refresh token — the same treatment `POST /account/password` gives a password change, since an email change is the stronger takeover primitive of the two. A `verify` token from the signup flow is refused here, and this token is refused by `/account/email-verification/confirm` — the two prove different things.
@@ -10247,18 +10192,14 @@ export const confirmEmailVerification = (
  */
 export const confirmEmailChange = (
     verifyEmailConfirmRequest: VerifyEmailConfirmRequest,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        {
-            url: `/account/email-change/confirm`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: verifyEmailConfirmRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/account/email-change/confirm`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: verifyEmailConfirmRequest
+    },
+      options);
+    }
 
 /**
  * Reverts an email change from the one-time link in the notice mailed to the OLD address when the change was requested. Valid for 7 days from that request, and untouched by a password change, so a person who reads mail weekly can still use it. While the change is only pending it is canceled; once the new address was confirmed the previous one is restored, and every session is ended (a refresh token cannot outlive the address it was issued under). Public, like `POST /account/email-change/confirm`, the token in the body is the credential. Answers 409 when the previous address was meanwhile claimed by another account.
@@ -10266,18 +10207,14 @@ export const confirmEmailChange = (
  */
 export const undoEmailChange = (
     verifyEmailConfirmRequest: VerifyEmailConfirmRequest,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        {
-            url: `/account/email-change/undo`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: verifyEmailConfirmRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/account/email-change/undo`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: verifyEmailConfirmRequest
+    },
+      options);
+    }
 
 /**
  * Spends the one-time restore token mailed by `DELETE /account` and brings the account back, provided its `purgeAt` has not passed. Public: the token is the credential. Restoring does NOT sign the person in: holding the mailbox is not a login, the same rule as a password reset. Unknown, expired and already-spent tokens answer alike (`422`). Answers 429 once an address (or its network block) has sent too many wrong tokens, like the other one-time-token confirms.
@@ -10285,18 +10222,14 @@ export const undoEmailChange = (
  */
 export const restoreAccount = (
     accountRestoreRequest: AccountRestoreRequest,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        {
-            url: `/account/restore`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: accountRestoreRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/account/restore`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: accountRestoreRequest
+    },
+      options);
+    }
 
 /**
  * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`session.mode` of `GET /config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no session cookie (the `__Host-device` cookie is still set) and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
@@ -10304,18 +10237,14 @@ export const restoreAccount = (
  */
 export const login = (
     loginRequest: LoginRequest,
-    options?: SecondParameter<typeof orvalMutator<LoginOutcome>>
-) => {
-    return orvalMutator<LoginOutcome>(
-        {
-            url: `/account/login`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: loginRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<LoginOutcome>>,) => {
+      return orvalMutator<LoginOutcome>(
+      {url: `/account/login`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: loginRequest
+    },
+      options);
+    }
 
 /**
  * The last step of a sign-in by an account whose owner asked to delete it (`DELETE /account`) and whose `purgeAt` has not passed. Submits the `DeletionPending` claim check that `POST /account/login` (or `POST /account/login/2fa`) answered: it cancels the deletion, then starts the session exactly as `POST /account/login` does, `remember` and `transport` included. A client that does not want the account back simply never calls it, and the account is erased at `purgeAt`. Omit `challenge` for an OAuth-originated sign-in: that claim check never reached the client and is read from the httpOnly cookie the callback set. An unknown, expired or spent challenge answers 401.
@@ -10323,18 +10252,14 @@ export const login = (
  */
 export const loginRestore = (
     loginRestoreRequest: LoginRestoreRequest,
-    options?: SecondParameter<typeof orvalMutator<AuthTokens>>
-) => {
-    return orvalMutator<AuthTokens>(
-        {
-            url: `/account/login/restore`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: loginRestoreRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<AuthTokens>>,) => {
+      return orvalMutator<AuthTokens>(
+      {url: `/account/login/restore`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: loginRestoreRequest
+    },
+      options);
+    }
 
 /**
  * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account is an `unverified` audience until `POST /account/email-verification/confirm` proves the address — it browses freely and is stopped only at `checkout:Cart`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards.
@@ -10342,18 +10267,14 @@ export const loginRestore = (
  */
 export const signup = (
     signupRequest: SignupRequest,
-    options?: SecondParameter<typeof orvalMutator<Account>>
-) => {
-    return orvalMutator<Account>(
-        {
-            url: `/account/signup`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: signupRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Account>>,) => {
+      return orvalMutator<Account>(
+      {url: `/account/signup`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: signupRequest
+    },
+      options);
+    }
 
 /**
  * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/password/reset/confirm`.
@@ -10361,18 +10282,14 @@ export const signup = (
  */
 export const requestPasswordReset = (
     passwordResetRequest: PasswordResetRequest,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        {
-            url: `/account/password/reset`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: passwordResetRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/account/password/reset`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: passwordResetRequest
+    },
+      options);
+    }
 
 /**
  * Completes the password-reset flow. Validates the one-time reset token issued by `/account/password/reset` and, if valid, updates the user's password to the supplied value.
@@ -10380,28 +10297,27 @@ export const requestPasswordReset = (
  */
 export const confirmPasswordReset = (
     passwordResetConfirmRequest: PasswordResetConfirmRequest,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        {
-            url: `/account/password/reset/confirm`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: passwordResetConfirmRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/account/password/reset/confirm`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: passwordResetConfirmRequest
+    },
+      options);
+    }
 
 /**
  * `jwt` mode only — answers 404 in `cookie` mode, whose one session id never rotates. Creates a new short-lived access token from the refresh token in the `__Host-session` cookie, and rotates that token. A POST because it changes state, and refused with 403 when the request names an `Origin` that is not an allowed frontend origin — the cookie alone authenticates it. The cookie is `HttpOnly`, `Secure` in every environment and host-locked (no `Domain`, `Path=/`), so the token is never readable by page scripts, never appears in a URL, a proxy log or a `Referer` header, and a sibling subdomain cannot overwrite it. A refresh is passive: it never counts as activity. A staff family idle past `NODE_SESSION_IDLE_TIME_STAFF` answers 401 `SESSION_IDLE` and the family is removed, so the next call starts at the sign-in screen. A staff family signed in longer ago than `NODE_SESSION_LIFETIME_STAFF` answers an ordinary 401 and is removed the same way.
  * @summary Refresh access token
  */
 export const refreshToken = (
-    options?: SecondParameter<typeof orvalMutator<RefreshTokenResponse>>
-) => {
-    return orvalMutator<RefreshTokenResponse>({ url: `/account/refresh`, method: 'POST' }, options);
-};
+
+ options?: SecondParameter<typeof orvalMutator<RefreshTokenResponse>>,) => {
+      return orvalMutator<RefreshTokenResponse>(
+      {url: `/account/refresh`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Starts "give me my data" (Art. 15, 20) and answers at once with `202`, the export's status (`AccountExport`) and `Location: /account/export`, the status monitor to poll (RFC 9110 §15.3.3). The file is built in the background from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail — and a LINK to it is mailed to the account's address when it is ready, never the data itself. Check on it with `GET /account/export`, fetch it with `GET /account/export/file`.
@@ -10412,32 +10328,40 @@ export const refreshToken = (
  * @summary Request an export of the caller's own data
  */
 export const requestAccountExport = (
-    options?: SecondParameter<typeof orvalMutator<AccountExport>>
-) => {
-    return orvalMutator<AccountExport>({ url: `/account/export`, method: 'POST' }, options);
-};
+
+ options?: SecondParameter<typeof orvalMutator<AccountExport>>,) => {
+      return orvalMutator<AccountExport>(
+      {url: `/account/export`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * The status of the caller's export: `building`, `ready` or `failed`, with `createdAt`, and `expiresAt` once it is `ready`. Reading it is not a download, so it needs a session but not a fresh one: it carries dates and a state, no personal data.
  * An account has one export, so there is no id to name. `404` only when there is none: never asked for, already deleted, or past its retention and not yet swept (that last one counts as none). A `building` export older than the build limit reads as `failed`. The file itself is at `GET /account/export/file`.
  * @summary Check on the caller's own data export
  */
-export const getAccountExport = (options?: SecondParameter<typeof orvalMutator<AccountExport>>) => {
-    return orvalMutator<AccountExport>({ url: `/account/export`, method: 'GET' }, options);
-};
+export const getAccountExport = (
+
+ options?: SecondParameter<typeof orvalMutator<AccountExport>>,) => {
+      return orvalMutator<AccountExport>(
+      {url: `/account/export`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. An account has one export, so there is no id to name: the caller's own is the one served. A FRESH session (`requireFreshAuth`), same as the request. `404` unless the export is `ready` and within its retention. A `ready` export whose file is missing from the store answers `404` too: the file honestly does not exist.
  * @summary Download an export of the caller's own data
  */
 export const downloadAccountExport = (
-    options?: SecondParameter<typeof orvalMutator<AccountExportResponse>>
-) => {
-    return orvalMutator<AccountExportResponse>(
-        { url: `/account/export/file`, method: 'GET' },
-        options
-    );
-};
+
+ options?: SecondParameter<typeof orvalMutator<AccountExportResponse>>,) => {
+      return orvalMutator<AccountExportResponse>(
+      {url: `/account/export/file`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, starts the session exactly as `POST /account/login` does for an account with no second factor, `transport` included. For an account inside the grace of its own deletion the second factor passing answers a `DeletionPending` claim check instead of a session, so two-factor is asked once and `POST /account/login/restore` finishes.
@@ -10445,18 +10369,14 @@ export const downloadAccountExport = (
  */
 export const loginTwoFactor = (
     loginTwoFactorRequest: LoginTwoFactorRequest,
-    options?: SecondParameter<typeof orvalMutator<LoginTwoFactorOutcome>>
-) => {
-    return orvalMutator<LoginTwoFactorOutcome>(
-        {
-            url: `/account/login/2fa`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: loginTwoFactorRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<LoginTwoFactorOutcome>>,) => {
+      return orvalMutator<LoginTwoFactorOutcome>(
+      {url: `/account/login/2fa`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: loginTwoFactorRequest
+    },
+      options);
+    }
 
 /**
  * Delivers a fresh code for one armed delivered method, against a live challenge. Public like the rest of the login flow — the challenge token is the credential. Answers 429 while the previous code is still inside its cooldown, so a client that respects `resendAfter` never sees one; the cooldown exists because this endpoint sends mail on an unauthenticated caller's say-so.
@@ -10464,28 +10384,27 @@ export const loginTwoFactor = (
  */
 export const sendTwoFactorCode = (
     twoFactorSendRequest: TwoFactorSendRequest,
-    options?: SecondParameter<typeof orvalMutator<TwoFactorDelivery>>
-) => {
-    return orvalMutator<TwoFactorDelivery>(
-        {
-            url: `/account/login/2fa/send`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: twoFactorSendRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<TwoFactorDelivery>>,) => {
+      return orvalMutator<TwoFactorDelivery>(
+      {url: `/account/login/2fa/send`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: twoFactorSendRequest
+    },
+      options);
+    }
 
 /**
  * What second factors this account has armed, and what it could still add. `available` crosses a deployment fact with an account fact — a method this deployment cannot reach at all (no SMTP configured) is absent entirely, while one the account is not yet eligible for (an unverified email address) is listed with `enrollable: false`.
  * @summary Two-factor status
  */
 export const getTwoFactorStatus = (
-    options?: SecondParameter<typeof orvalMutator<TwoFactorStatus>>
-) => {
-    return orvalMutator<TwoFactorStatus>({ url: `/account/2fa`, method: 'GET' }, options);
-};
+
+ options?: SecondParameter<typeof orvalMutator<TwoFactorStatus>>,) => {
+      return orvalMutator<TwoFactorStatus>(
+      {url: `/account/2fa`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed. The FIRST factor an account arms needs only the fresh critical auth the route already demands. Once any factor is armed, every setup — a replace or a second method — also needs `code`, from an armed factor or an unused backup code, because a stolen-but-fresh session must not be able to swap the factor it would otherwise have to pass (OWASP MFA Cheat Sheet, "Changing MFA Factors"; NIST SP 800-63B). A caller whose only factor is delivered gets that code from POST /account/2fa/methods/{method}/send.
@@ -10494,18 +10413,14 @@ export const getTwoFactorStatus = (
 export const setupTwoFactorMethod = (
     method: string,
     twoFactorSetupRequest?: TwoFactorSetupRequest,
-    options?: SecondParameter<typeof orvalMutator<TwoFactorSetup>>
-) => {
-    return orvalMutator<TwoFactorSetup>(
-        {
-            url: `/account/2fa/methods/${method}/setup`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: twoFactorSetupRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<TwoFactorSetup>>,) => {
+      return orvalMutator<TwoFactorSetup>(
+      {url: `/account/2fa/methods/${method}/setup`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: twoFactorSetupRequest
+    },
+      options);
+    }
 
 /**
  * Delivers a fresh code for one ARMED delivered method to a signed-in caller, so an account whose only factor is delivered (email) can satisfy the code that removing, replacing or disabling a factor asks for without spending a backup code. Answers 422 for a method that is not armed or does not deliver, and 429 inside the per-code cooldown or once the account's hourly delivery budget is spent. Needs fresh critical auth, like the calls it serves.
@@ -10513,13 +10428,12 @@ export const setupTwoFactorMethod = (
  */
 export const sendTwoFactorMethodCode = (
     method: string,
-    options?: SecondParameter<typeof orvalMutator<TwoFactorDelivery>>
-) => {
-    return orvalMutator<TwoFactorDelivery>(
-        { url: `/account/2fa/methods/${method}/send`, method: 'POST' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<TwoFactorDelivery>>,) => {
+      return orvalMutator<TwoFactorDelivery>(
+      {url: `/account/2fa/methods/${method}/send`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Arms the method pending from its setup call, against a code the caller has demonstrably received. Backup codes are minted here — but only by the FIRST factor an account arms, since they recover the account, not the method.
@@ -10528,18 +10442,14 @@ export const sendTwoFactorMethodCode = (
 export const confirmTwoFactorMethod = (
     method: string,
     twoFactorConfirmRequest: TwoFactorConfirmRequest,
-    options?: SecondParameter<typeof orvalMutator<TwoFactorConfirmed>>
-) => {
-    return orvalMutator<TwoFactorConfirmed>(
-        {
-            url: `/account/2fa/methods/${method}/confirm`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: twoFactorConfirmRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<TwoFactorConfirmed>>,) => {
+      return orvalMutator<TwoFactorConfirmed>(
+      {url: `/account/2fa/methods/${method}/confirm`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: twoFactorConfirmRequest
+    },
+      options);
+    }
 
 /**
  * Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is POST /account/2fa/methods/{method}/remove.
@@ -10547,18 +10457,14 @@ export const confirmTwoFactorMethod = (
  */
 export const disableTwoFactor = (
     twoFactorCodeRequest: TwoFactorCodeRequest,
-    options?: SecondParameter<typeof orvalMutator<AuthTokens>>
-) => {
-    return orvalMutator<AuthTokens>(
-        {
-            url: `/account/2fa/disable`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: twoFactorCodeRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<AuthTokens>>,) => {
+      return orvalMutator<AuthTokens>(
+      {url: `/account/2fa/disable`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: twoFactorCodeRequest
+    },
+      options);
+    }
 
 /**
  * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as POST /account/2fa/disable would.
@@ -10567,18 +10473,14 @@ export const disableTwoFactor = (
 export const removeTwoFactorMethod = (
     method: string,
     twoFactorCodeRequest: TwoFactorCodeRequest,
-    options?: SecondParameter<typeof orvalMutator<AuthTokens>>
-) => {
-    return orvalMutator<AuthTokens>(
-        {
-            url: `/account/2fa/methods/${method}/remove`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: twoFactorCodeRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<AuthTokens>>,) => {
+      return orvalMutator<AuthTokens>(
+      {url: `/account/2fa/methods/${method}/remove`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: twoFactorCodeRequest
+    },
+      options);
+    }
 
 /**
  * Mints a fresh set of ten one-time backup codes and discards whatever was left of the old set — the answer to burning through them with no way back in short of admin-assisted recovery. Requires a valid code from any armed method, or an unused backup code, on top of the route's own fresh-auth requirement, same reasoning as disabling a factor.
@@ -10586,26 +10488,27 @@ export const removeTwoFactorMethod = (
  */
 export const regenerateBackupCodes = (
     twoFactorCodeRequest: TwoFactorCodeRequest,
-    options?: SecondParameter<typeof orvalMutator<TwoFactorBackupCodesRegenerated>>
-) => {
-    return orvalMutator<TwoFactorBackupCodesRegenerated>(
-        {
-            url: `/account/2fa/backup-codes`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: twoFactorCodeRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<TwoFactorBackupCodesRegenerated>>,) => {
+      return orvalMutator<TwoFactorBackupCodesRegenerated>(
+      {url: `/account/2fa/backup-codes`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: twoFactorCodeRequest
+    },
+      options);
+    }
 
 /**
  * The sign-in providers linked to the authenticated account (Google, GitHub), with when each was connected. Never carries a provider's own identifier. An empty list means the account signs in with a password alone. Unpaged: at most one per provider.
  * @summary List the caller's connected accounts
  */
-export const listOAuthLinks = (options?: SecondParameter<typeof orvalMutator<OAuthLinks>>) => {
-    return orvalMutator<OAuthLinks>({ url: `/account/oauth/links`, method: 'GET' }, options);
-};
+export const listOAuthLinks = (
+
+ options?: SecondParameter<typeof orvalMutator<OAuthLinks>>,) => {
+      return orvalMutator<OAuthLinks>(
+      {url: `/account/oauth/links`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * The only way to add a provider to an account that already exists: a sign-in with a provider whose email matches an account links nothing (`?error=account_exists` on the callback), because linking needs an authenticated session with the account (NIST SP 800-63C-4 §3.8.1). Needs a fresh session (`401 REAUTH_REQUIRED`). Sets the short-lived state, verifier and connect cookies and answers the provider's consent URL, which the client navigates the browser to; the callback then links the identity to THIS account and redirects to the frontend with `?linked=<provider>`. The owner is mailed that a sign-in method was added. `continue` and `locale` ride the same cookies as a login. Answers 404 for a provider this deployment never configured. A provider account that already belongs to another account is refused at the callback (`?error=already_linked`).
@@ -10614,13 +10517,13 @@ export const listOAuthLinks = (options?: SecondParameter<typeof orvalMutator<OAu
 export const startOAuthLink = (
     provider: string,
     params?: StartOAuthLinkParams,
-    options?: SecondParameter<typeof orvalMutator<OAuthLinkStart>>
-) => {
-    return orvalMutator<OAuthLinkStart>(
-        { url: `/account/oauth/links/${provider}`, method: 'POST', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<OAuthLinkStart>>,) => {
+      return orvalMutator<OAuthLinkStart>(
+      {url: `/account/oauth/links/${provider}`, method: 'POST',
+        params
+    },
+      options);
+    }
 
 /**
  * Removes the link between the account and `provider`, so that provider can no longer sign in to it, and mails the owner that a sign-in method was removed. Nothing re-links it by email match, so reconnecting is `POST /account/oauth/links/{provider}` from a signed-in session. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, on purpose (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked. A link is a line of the caller's links list, so the answer is that list as it now stands (200 + the links left).
@@ -10628,13 +10531,12 @@ export const startOAuthLink = (
  */
 export const unlinkOAuthProvider = (
     provider: string,
-    options?: SecondParameter<typeof orvalMutator<OAuthLinks>>
-) => {
-    return orvalMutator<OAuthLinks>(
-        { url: `/account/oauth/links/${provider}`, method: 'DELETE' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<OAuthLinks>>,) => {
+      return orvalMutator<OAuthLinks>(
+      {url: `/account/oauth/links/${provider}`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * Browser-navigated only: redirects to `provider`'s consent screen, having minted the CSRF `state` as a cookie. Not called programmatically — the frontend points a plain `<a href>` at this URL.
@@ -10643,13 +10545,13 @@ export const unlinkOAuthProvider = (
 export const startOAuthLogin = (
     provider: string,
     params?: StartOAuthLoginParams,
-    options?: SecondParameter<typeof orvalMutator<unknown>>
-) => {
-    return orvalMutator<unknown>(
-        { url: `/account/oauth/${provider}`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<unknown>>,) => {
+      return orvalMutator<unknown>(
+      {url: `/account/oauth/${provider}`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. When the account is inside the grace of its own deletion and has no second factor, no session is minted either: the redirect carries `?deletionPending=1&purgeAt=...&expiresAt=...` and the claim check travels in a short-lived httpOnly cookie that `POST /account/login/restore` reads when its body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise. A provider whose verified email matches an existing account links nothing and signs nobody in: the redirect carries `?error=account_exists`, and the owner connects the provider from a signed-in session (`POST /account/oauth/links/{provider}`). When that existing account never proved its own address, the redirect carries `?error=account_unverified` instead: the owner resets the password, which proves the mailbox, and signs in the way the account allows. That signed-in connect round trip comes back to this same callback, mints no session and redirects with `?linked=<provider>`, or `?error=already_linked` (the provider account belongs to another account) or `?error=link_expired` (the minutes the attempt lives ran out).
@@ -10658,13 +10560,13 @@ export const startOAuthLogin = (
 export const completeOAuthLogin = (
     provider: string,
     params?: CompleteOAuthLoginParams,
-    options?: SecondParameter<typeof orvalMutator<unknown>>
-) => {
-    return orvalMutator<unknown>(
-        { url: `/account/oauth/${provider}/callback`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<unknown>>,) => {
+      return orvalMutator<unknown>(
+      {url: `/account/oauth/${provider}/callback`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Returns a paginated list of user accounts.
@@ -10672,10 +10574,13 @@ export const completeOAuthLogin = (
  */
 export const listUsers = (
     params?: ListUsersParams,
-    options?: SecondParameter<typeof orvalMutator<UsersResponse>>
-) => {
-    return orvalMutator<UsersResponse>({ url: `/users`, method: 'GET', params }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<UsersResponse>>,) => {
+      return orvalMutator<UsersResponse>(
+      {url: `/users`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Creates a new user account with the supplied email and username, and mails the owner a link to choose their own password (the same email as "forgot your password", worded for "you have no password yet"). No caller can set another person's password, so the body has no password field. Optional image can be uploaded.
@@ -10683,18 +10588,14 @@ export const listUsers = (
  */
 export const createUser = (
     createUserRequest: CreateUserRequest,
-    options?: SecondParameter<typeof orvalMutator<User>>
-) => {
-    return orvalMutator<User>(
-        {
-            url: `/users`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createUserRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<User>>,) => {
+      return orvalMutator<User>(
+      {url: `/users`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createUserRequest
+    },
+      options);
+    }
 
 /**
  * Creates a new user account with the supplied email and username, and mails the owner a link to choose their own password (the same email as "forgot your password", worded for "you have no password yet"). No caller can set another person's password, so the body has no password field. Optional image can be uploaded.
@@ -10702,42 +10603,42 @@ export const createUser = (
  */
 export const createUserWithMultipart = (
     createUserRequestMultipart: CreateUserRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<User>>
-) => {
-    const formData = new FormData();
-    formData.append(`email`, createUserRequestMultipart.email);
-    formData.append(`username`, createUserRequestMultipart.username);
-    if (createUserRequestMultipart.role !== undefined) {
-        formData.append(`role`, createUserRequestMultipart.role);
-    }
-    if (createUserRequestMultipart.active !== undefined) {
-        formData.append(`active`, createUserRequestMultipart.active.toString());
-    }
-    if (createUserRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, createUserRequestMultipart.imageUpload);
-    }
-    if (createUserRequestMultipart.locale !== undefined) {
-        formData.append(`locale`, createUserRequestMultipart.locale);
-    }
+ options?: SecondParameter<typeof orvalMutator<User>>,) => {const formData = new FormData();
+formData.append(`email`, createUserRequestMultipart.email);
+formData.append(`username`, createUserRequestMultipart.username);
+if(createUserRequestMultipart.role !== undefined) {
+ formData.append(`role`, createUserRequestMultipart.role);
+ }
+if(createUserRequestMultipart.active !== undefined) {
+ formData.append(`active`, createUserRequestMultipart.active.toString())
+ }
+if(createUserRequestMultipart.imageUpload !== undefined) {
+ formData.append(`imageUpload`, createUserRequestMultipart.imageUpload);
+ }
+if(createUserRequestMultipart.locale !== undefined) {
+ formData.append(`locale`, createUserRequestMultipart.locale);
+ }
 
-    return orvalMutator<User>(
-        {
-            url: `/users`,
-            method: 'POST',
-            headers: { 'Content-Type': 'multipart/form-data' },
-            data: formData
-        },
-        options
-    );
-};
+      return orvalMutator<User>(
+      {url: `/users`, method: 'POST',
+      headers: {'Content-Type': 'multipart/form-data', },
+       data: formData
+    },
+      options);
+    }
 
 /**
  * Returns the full profile of the user identified by `{id}`. Functionally equivalent to `GET /users?id={id}`.
  * @summary User details
  */
-export const getUserById = (id: string, options?: SecondParameter<typeof orvalMutator<User>>) => {
-    return orvalMutator<User>({ url: `/users/${id}`, method: 'GET' }, options);
-};
+export const getUserById = (
+    id: string,
+ options?: SecondParameter<typeof orvalMutator<User>>,) => {
+      return orvalMutator<User>(
+      {url: `/users/${id}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. The credentials (`email`, `password`) are outside the representation, since only their owner changes them, through `/account`. The image is outside it too — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it.
@@ -10746,18 +10647,14 @@ export const getUserById = (id: string, options?: SecondParameter<typeof orvalMu
 export const replaceUserById = (
     id: string,
     replaceUserByIdRequest: ReplaceUserByIdRequest,
-    options?: SecondParameter<typeof orvalMutator<User>>
-) => {
-    return orvalMutator<User>(
-        {
-            url: `/users/${id}`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: replaceUserByIdRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<User>>,) => {
+      return orvalMutator<User>(
+      {url: `/users/${id}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: replaceUserByIdRequest
+    },
+      options);
+    }
 
 /**
  * Replaces every writable field of the user identified by `{id}` in the path — RFC 9110 §9.3.4, an omitted optional field is cleared. The credentials (`email`, `password`) are outside the representation, since only their owner changes them, through `/account`. The image is outside it too — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it.
@@ -10766,33 +10663,28 @@ export const replaceUserById = (
 export const replaceUserByIdWithMultipart = (
     id: string,
     replaceUserByIdRequestMultipart: ReplaceUserByIdRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<User>>
-) => {
-    const formData = new FormData();
-    formData.append(`username`, replaceUserByIdRequestMultipart.username);
-    if (replaceUserByIdRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, replaceUserByIdRequestMultipart.imageUpload);
-    }
-    if (replaceUserByIdRequestMultipart.locale !== undefined) {
-        formData.append(`locale`, replaceUserByIdRequestMultipart.locale);
-    }
-    if (replaceUserByIdRequestMultipart.phone !== undefined) {
-        formData.append(`phone`, replaceUserByIdRequestMultipart.phone);
-    }
-    if (replaceUserByIdRequestMultipart.website !== undefined) {
-        formData.append(`website`, replaceUserByIdRequestMultipart.website);
-    }
+ options?: SecondParameter<typeof orvalMutator<User>>,) => {const formData = new FormData();
+formData.append(`username`, replaceUserByIdRequestMultipart.username);
+if(replaceUserByIdRequestMultipart.imageUpload !== undefined) {
+ formData.append(`imageUpload`, replaceUserByIdRequestMultipart.imageUpload);
+ }
+if(replaceUserByIdRequestMultipart.locale !== undefined) {
+ formData.append(`locale`, replaceUserByIdRequestMultipart.locale);
+ }
+if(replaceUserByIdRequestMultipart.phone !== undefined) {
+ formData.append(`phone`, replaceUserByIdRequestMultipart.phone);
+ }
+if(replaceUserByIdRequestMultipart.website !== undefined) {
+ formData.append(`website`, replaceUserByIdRequestMultipart.website);
+ }
 
-    return orvalMutator<User>(
-        {
-            url: `/users/${id}`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'multipart/form-data' },
-            data: formData
-        },
-        options
-    );
-};
+      return orvalMutator<User>(
+      {url: `/users/${id}`, method: 'PUT',
+      headers: {'Content-Type': 'multipart/form-data', },
+       data: formData
+    },
+      options);
+    }
 
 /**
  * Merges the given fields into the user identified by `{id}` in the path — RFC 7396, an omitted field is left unchanged, `null` clears an optional one. Optional image can be uploaded.
@@ -10801,18 +10693,14 @@ export const replaceUserByIdWithMultipart = (
 export const updateUserById = (
     id: string,
     updateUserByIdRequest: UpdateUserByIdRequest,
-    options?: SecondParameter<typeof orvalMutator<User>>
-) => {
-    return orvalMutator<User>(
-        {
-            url: `/users/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateUserByIdRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<User>>,) => {
+      return orvalMutator<User>(
+      {url: `/users/${id}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateUserByIdRequest
+    },
+      options);
+    }
 
 /**
  * Merges the given fields into the user identified by `{id}` in the path — RFC 7396, an omitted field is left unchanged, `null` clears an optional one. Optional image can be uploaded.
@@ -10821,18 +10709,14 @@ export const updateUserById = (
 export const updateUserByIdWithMergePatchJson = (
     id: string,
     updateUserByIdRequest: UpdateUserByIdRequest,
-    options?: SecondParameter<typeof orvalMutator<User>>
-) => {
-    return orvalMutator<User>(
-        {
-            url: `/users/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: updateUserByIdRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<User>>,) => {
+      return orvalMutator<User>(
+      {url: `/users/${id}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/merge-patch+json', },
+      data: updateUserByIdRequest
+    },
+      options);
+    }
 
 /**
  * Merges the given fields into the user identified by `{id}` in the path — RFC 7396, an omitted field is left unchanged, `null` clears an optional one. Optional image can be uploaded.
@@ -10841,35 +10725,30 @@ export const updateUserByIdWithMergePatchJson = (
 export const updateUserByIdWithMultipart = (
     id: string,
     updateUserByIdRequestMultipart: UpdateUserByIdRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<User>>
-) => {
-    const formData = new FormData();
-    if (updateUserByIdRequestMultipart.username !== undefined) {
-        formData.append(`username`, updateUserByIdRequestMultipart.username);
-    }
-    if (updateUserByIdRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, updateUserByIdRequestMultipart.imageUpload);
-    }
-    if (updateUserByIdRequestMultipart.locale !== undefined) {
-        formData.append(`locale`, updateUserByIdRequestMultipart.locale);
-    }
-    if (updateUserByIdRequestMultipart.phone !== undefined) {
-        formData.append(`phone`, updateUserByIdRequestMultipart.phone);
-    }
-    if (updateUserByIdRequestMultipart.website !== undefined) {
-        formData.append(`website`, updateUserByIdRequestMultipart.website);
-    }
+ options?: SecondParameter<typeof orvalMutator<User>>,) => {const formData = new FormData();
+if(updateUserByIdRequestMultipart.username !== undefined) {
+ formData.append(`username`, updateUserByIdRequestMultipart.username);
+ }
+if(updateUserByIdRequestMultipart.imageUpload !== undefined) {
+ formData.append(`imageUpload`, updateUserByIdRequestMultipart.imageUpload);
+ }
+if(updateUserByIdRequestMultipart.locale !== undefined) {
+ formData.append(`locale`, updateUserByIdRequestMultipart.locale);
+ }
+if(updateUserByIdRequestMultipart.phone !== undefined) {
+ formData.append(`phone`, updateUserByIdRequestMultipart.phone);
+ }
+if(updateUserByIdRequestMultipart.website !== undefined) {
+ formData.append(`website`, updateUserByIdRequestMultipart.website);
+ }
 
-    return orvalMutator<User>(
-        {
-            url: `/users/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'multipart/form-data' },
-            data: formData
-        },
-        options
-    );
-};
+      return orvalMutator<User>(
+      {url: `/users/${id}`, method: 'PATCH',
+      headers: {'Content-Type': 'multipart/form-data', },
+       data: formData
+    },
+      options);
+    }
 
 /**
  * Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /users/{id}/restore`.
@@ -10878,13 +10757,13 @@ export const updateUserByIdWithMultipart = (
 export const deleteUserById = (
     id: string,
     params?: DeleteUserByIdParams,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/users/${id}`, method: 'DELETE', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/users/${id}`, method: 'DELETE',
+        params
+    },
+      options);
+    }
 
 /**
  * Undoes the soft delete of the user identified by `{id}`, which includes an account whose owner asked to delete it and whose `purgeAt` has not passed (the owner is told by mail; the account is then no longer scheduled for erasure). Answers 409 `USER_NOT_DELETED` when the user is not soft-deleted, so a restore can never be mistaken for an ordinary read, and 409 `USER_ERASURE_DUE` past `purgeAt`.
@@ -10892,10 +10771,12 @@ export const deleteUserById = (
  */
 export const restoreUserById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<User>>
-) => {
-    return orvalMutator<User>({ url: `/users/${id}/restore`, method: 'POST' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<User>>,) => {
+      return orvalMutator<User>(
+      {url: `/users/${id}/restore`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Permanently removes the user identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /users/{id}?hardDelete=true`.
@@ -10903,10 +10784,12 @@ export const restoreUserById = (
  */
 export const hardDeleteUserById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>({ url: `/users/${id}/hard`, method: 'DELETE' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/users/${id}/hard`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * Searches and filters users via a JSON request body. Functionally equivalent to `GET /users` with query parameters
@@ -10914,18 +10797,14 @@ export const hardDeleteUserById = (
  */
 export const searchUsers = (
     searchUsersRequest: SearchUsersRequest,
-    options?: SecondParameter<typeof orvalMutator<UsersResponse>>
-) => {
-    return orvalMutator<UsersResponse>(
-        {
-            url: `/users/search`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: searchUsersRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<UsersResponse>>,) => {
+      return orvalMutator<UsersResponse>(
+      {url: `/users/search`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: searchUsersRequest
+    },
+      options);
+    }
 
 /**
  * Creates a contact task and notifies the support mailbox by email. Open to anyone. A valid session bearer token, when one is sent, records the sender's account on the task (`subjectId`), so the account's data export and erasure include it. No token files it as anonymous; a token that names no live session is refused `401`, so the client refreshes and sends it again as the person.
@@ -10933,18 +10812,14 @@ export const searchUsers = (
  */
 export const createContactTask = (
     createContactTaskRequest: CreateContactTaskRequest,
-    options?: SecondParameter<typeof orvalMutator<void>>
-) => {
-    return orvalMutator<void>(
-        {
-            url: `/tasks`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createContactTaskRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<void>>,) => {
+      return orvalMutator<void>(
+      {url: `/tasks`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createContactTaskRequest
+    },
+      options);
+    }
 
 /**
  * Returns the tasks the caller may work: every visitor message, and the system tasks whose route set the caller holds (an administrator holds them all). Open work first when sorted by `dueAt`.
@@ -10952,10 +10827,13 @@ export const createContactTask = (
  */
 export const listTasks = (
     params?: ListTasksParams,
-    options?: SecondParameter<typeof orvalMutator<TasksResponse>>
-) => {
-    return orvalMutator<TasksResponse>({ url: `/tasks`, method: 'GET', params }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<TasksResponse>>,) => {
+      return orvalMutator<TasksResponse>(
+      {url: `/tasks`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Searches and filters tasks via a JSON request body. Functionally equivalent to `GET /tasks` with query parameters.
@@ -10963,34 +10841,40 @@ export const listTasks = (
  */
 export const searchTasks = (
     searchTasksRequest: SearchTasksRequest,
-    options?: SecondParameter<typeof orvalMutator<TasksResponse>>
-) => {
-    return orvalMutator<TasksResponse>(
-        {
-            url: `/tasks/search`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: searchTasksRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<TasksResponse>>,) => {
+      return orvalMutator<TasksResponse>(
+      {url: `/tasks/search`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: searchTasksRequest
+    },
+      options);
+    }
 
 /**
  * How much work the caller's jurisdiction holds: open tasks, the caller's own, the overdue ones and the unassigned ones. Never cached: it is one person's view.
  * @summary Counts for the staff badge
  */
-export const getTaskSummary = (options?: SecondParameter<typeof orvalMutator<TaskSummary>>) => {
-    return orvalMutator<TaskSummary>({ url: `/tasks/summary`, method: 'GET' }, options);
-};
+export const getTaskSummary = (
+
+ options?: SecondParameter<typeof orvalMutator<TaskSummary>>,) => {
+      return orvalMutator<TaskSummary>(
+      {url: `/tasks/summary`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * One task with its notes, assignee and the earlier tasks about the same record. A visitor task names a person, so staff reading it is audited. An unknown, malformed or out-of-jurisdiction id is a 404.
  * @summary Get a task
  */
-export const getTask = (id: string, options?: SecondParameter<typeof orvalMutator<Task>>) => {
-    return orvalMutator<Task>({ url: `/tasks/${id}`, method: 'GET' }, options);
-};
+export const getTask = (
+    id: string,
+ options?: SecondParameter<typeof orvalMutator<Task>>,) => {
+      return orvalMutator<Task>(
+      {url: `/tasks/${id}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Permanently removes the task identified by `{id}`. Needs `delete:Task` and, for a system task, the task's route set.
@@ -10998,34 +10882,51 @@ export const getTask = (id: string, options?: SecondParameter<typeof orvalMutato
  */
 export const deleteTask = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>({ url: `/tasks/${id}`, method: 'DELETE' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/tasks/${id}`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * From `new`, `in_progress` or `spam` to `resolved`, with `resolution: staff`. Stamps `closedAt` (kept when it was already closed) and `respondedAt` (once), and releases the dedup key. No body. Needs `update:Task` and, for a system task, its route set. The move is conditional on the status read, so a repeat answers 409.
  * @summary Resolve a task
  */
-export const resolveTask = (id: string, options?: SecondParameter<typeof orvalMutator<Task>>) => {
-    return orvalMutator<Task>({ url: `/tasks/${id}/resolve`, method: 'POST' }, options);
-};
+export const resolveTask = (
+    id: string,
+ options?: SecondParameter<typeof orvalMutator<Task>>,) => {
+      return orvalMutator<Task>(
+      {url: `/tasks/${id}/resolve`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * From `new`, `in_progress` or `resolved` to `spam`, with `resolution: spam`. Same stamps as a resolve, without `respondedAt`. Also undoes a false resolve. No body. Needs `update:Task` and, for a system task, its route set.
  * @summary Mark a task as spam
  */
-export const markTaskSpam = (id: string, options?: SecondParameter<typeof orvalMutator<Task>>) => {
-    return orvalMutator<Task>({ url: `/tasks/${id}/mark-spam`, method: 'POST' }, options);
-};
+export const markTaskSpam = (
+    id: string,
+ options?: SecondParameter<typeof orvalMutator<Task>>,) => {
+      return orvalMutator<Task>(
+      {url: `/tasks/${id}/mark-spam`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * From `resolved` or `spam` to `in_progress` when it has an assignee, else `new`. Clears `closedAt` and `resolution` (the retention clock stops) and restores the dedup key of a linked task. `dueAt` is kept: the deadline belongs to the situation, not to the reopen. When a newer open task already covers the same situation the answer is 409 `TASK_SUPERSEDED` with `details.taskId`. No body. Needs `update:Task` and, for a system task, its route set.
  * @summary Reopen a task
  */
-export const reopenTask = (id: string, options?: SecondParameter<typeof orvalMutator<Task>>) => {
-    return orvalMutator<Task>({ url: `/tasks/${id}/reopen`, method: 'POST' }, options);
-};
+export const reopenTask = (
+    id: string,
+ options?: SecondParameter<typeof orvalMutator<Task>>,) => {
+      return orvalMutator<Task>(
+      {url: `/tasks/${id}/reopen`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Hands the task to one person (taking it is assigning yourself). A `new` task becomes `in_progress`. The person must hold the permission set that works the task and `update:Task`, so they can open, note and close it. Replaces any earlier assignee. A closed task answers 409 `TASK_NOT_OPEN`; assigning it to the person who holds it already answers 409 `TASK_ALREADY_ASSIGNED` and writes nothing.
@@ -11034,26 +10935,27 @@ export const reopenTask = (id: string, options?: SecondParameter<typeof orvalMut
 export const assignTask = (
     id: string,
     assignTaskRequest: AssignTaskRequest,
-    options?: SecondParameter<typeof orvalMutator<Task>>
-) => {
-    return orvalMutator<Task>(
-        {
-            url: `/tasks/${id}/assign`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: assignTaskRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Task>>,) => {
+      return orvalMutator<Task>(
+      {url: `/tasks/${id}/assign`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: assignTaskRequest
+    },
+      options);
+    }
 
 /**
  * Clears the assignee, whatever the task's status. An `in_progress` task goes back to `new`. A task nobody holds answers 409 `TASK_NOT_ASSIGNED` and writes nothing.
  * @summary Give a task back
  */
-export const unassignTask = (id: string, options?: SecondParameter<typeof orvalMutator<Task>>) => {
-    return orvalMutator<Task>({ url: `/tasks/${id}/unassign`, method: 'POST' }, options);
-};
+export const unassignTask = (
+    id: string,
+ options?: SecondParameter<typeof orvalMutator<Task>>,) => {
+      return orvalMutator<Task>(
+      {url: `/tasks/${id}/unassign`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Appends a note to the staff thread: append-only, with its author and time. Notes are written and read by staff, and the data subject's export carries them without the author. Write each one as if the customer will read it.
@@ -11062,18 +10964,14 @@ export const unassignTask = (id: string, options?: SecondParameter<typeof orvalM
 export const createTaskNote = (
     id: string,
     createTaskNoteRequest: CreateTaskNoteRequest,
-    options?: SecondParameter<typeof orvalMutator<Task>>
-) => {
-    return orvalMutator<Task>(
-        {
-            url: `/tasks/${id}/notes`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createTaskNoteRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Task>>,) => {
+      return orvalMutator<Task>(
+      {url: `/tasks/${id}/notes`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createTaskNoteRequest
+    },
+      options);
+    }
 
 /**
  * Returns a paginated list of products. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached. Each row's `actions` is all `false` for a caller answered from the shared cache; only a caller who sees more than a guest gets a `true`.
@@ -11081,10 +10979,13 @@ export const createTaskNote = (
  */
 export const listProducts = (
     params?: ListProductsParams,
-    options?: SecondParameter<typeof orvalMutator<ProductsResponse>>
-) => {
-    return orvalMutator<ProductsResponse>({ url: `/products`, method: 'GET', params }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<ProductsResponse>>,) => {
+      return orvalMutator<ProductsResponse>(
+      {url: `/products`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/levels/{productId}/receive`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it.
@@ -11092,18 +10993,14 @@ export const listProducts = (
  */
 export const createProduct = (
     createProductRequest: CreateProductRequest,
-    options?: SecondParameter<typeof orvalMutator<Product>>
-) => {
-    return orvalMutator<Product>(
-        {
-            url: `/products`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createProductRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Product>>,) => {
+      return orvalMutator<Product>(
+      {url: `/products`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createProductRequest
+    },
+      options);
+    }
 
 /**
  * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/levels/{productId}/receive`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it.
@@ -11111,79 +11008,72 @@ export const createProduct = (
  */
 export const createProductWithMultipart = (
     createProductRequestMultipart: CreateProductRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<Product>>
-) => {
-    const formData = new FormData();
-    formData.append(`translations`, createProductRequestMultipart.translations);
-    formData.append(`price`, createProductRequestMultipart.price);
-    if (createProductRequestMultipart.taxClass !== undefined) {
-        formData.append(`taxClass`, createProductRequestMultipart.taxClass);
-    }
-    if (createProductRequestMultipart.rateType !== undefined) {
-        formData.append(`rateType`, createProductRequestMultipart.rateType);
-    }
-    if (createProductRequestMultipart.sku !== undefined) {
-        formData.append(`sku`, createProductRequestMultipart.sku);
-    }
-    if (createProductRequestMultipart.active !== undefined) {
-        formData.append(`active`, createProductRequestMultipart.active.toString());
-    }
-    if (createProductRequestMultipart.purchasable !== undefined) {
-        formData.append(`purchasable`, createProductRequestMultipart.purchasable.toString());
-    }
-    if (createProductRequestMultipart.releaseDate !== undefined) {
-        formData.append(`releaseDate`, createProductRequestMultipart.releaseDate);
-    }
-    if (createProductRequestMultipart.allowBackorder !== undefined) {
-        formData.append(`allowBackorder`, createProductRequestMultipart.allowBackorder.toString());
-    }
-    if (createProductRequestMultipart.restockDate !== undefined) {
-        formData.append(`restockDate`, createProductRequestMultipart.restockDate);
-    }
-    if (createProductRequestMultipart.requiresShipping !== undefined) {
-        formData.append(
-            `requiresShipping`,
-            createProductRequestMultipart.requiresShipping.toString()
-        );
-    }
-    if (createProductRequestMultipart.noWithdrawal !== undefined) {
-        formData.append(`noWithdrawal`, createProductRequestMultipart.noWithdrawal.toString());
-    }
-    if (createProductRequestMultipart.weight !== undefined) {
-        formData.append(`weight`, createProductRequestMultipart.weight.toString());
-    }
-    if (createProductRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, createProductRequestMultipart.imageUpload);
-    }
-    if (createProductRequestMultipart.categories !== undefined) {
-        createProductRequestMultipart.categories.forEach((value) =>
-            formData.append(`categories`, value)
-        );
-    }
-    if (createProductRequestMultipart.tags !== undefined) {
-        createProductRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
-    }
+ options?: SecondParameter<typeof orvalMutator<Product>>,) => {const formData = new FormData();
+formData.append(`translations`, createProductRequestMultipart.translations);
+formData.append(`price`, createProductRequestMultipart.price);
+if(createProductRequestMultipart.taxClass !== undefined) {
+ formData.append(`taxClass`, createProductRequestMultipart.taxClass);
+ }
+if(createProductRequestMultipart.rateType !== undefined) {
+ formData.append(`rateType`, createProductRequestMultipart.rateType);
+ }
+if(createProductRequestMultipart.sku !== undefined) {
+ formData.append(`sku`, createProductRequestMultipart.sku);
+ }
+if(createProductRequestMultipart.active !== undefined) {
+ formData.append(`active`, createProductRequestMultipart.active.toString())
+ }
+if(createProductRequestMultipart.purchasable !== undefined) {
+ formData.append(`purchasable`, createProductRequestMultipart.purchasable.toString())
+ }
+if(createProductRequestMultipart.releaseDate !== undefined) {
+ formData.append(`releaseDate`, createProductRequestMultipart.releaseDate);
+ }
+if(createProductRequestMultipart.allowBackorder !== undefined) {
+ formData.append(`allowBackorder`, createProductRequestMultipart.allowBackorder.toString())
+ }
+if(createProductRequestMultipart.restockDate !== undefined) {
+ formData.append(`restockDate`, createProductRequestMultipart.restockDate);
+ }
+if(createProductRequestMultipart.requiresShipping !== undefined) {
+ formData.append(`requiresShipping`, createProductRequestMultipart.requiresShipping.toString())
+ }
+if(createProductRequestMultipart.noWithdrawal !== undefined) {
+ formData.append(`noWithdrawal`, createProductRequestMultipart.noWithdrawal.toString())
+ }
+if(createProductRequestMultipart.weight !== undefined) {
+ formData.append(`weight`, createProductRequestMultipart.weight.toString())
+ }
+if(createProductRequestMultipart.imageUpload !== undefined) {
+ formData.append(`imageUpload`, createProductRequestMultipart.imageUpload);
+ }
+if(createProductRequestMultipart.categories !== undefined) {
+ createProductRequestMultipart.categories.forEach(value => formData.append(`categories`, value));
+ }
+if(createProductRequestMultipart.tags !== undefined) {
+ createProductRequestMultipart.tags.forEach(value => formData.append(`tags`, value));
+ }
 
-    return orvalMutator<Product>(
-        {
-            url: `/products`,
-            method: 'POST',
-            headers: { 'Content-Type': 'multipart/form-data' },
-            data: formData
-        },
-        options
-    );
-};
+      return orvalMutator<Product>(
+      {url: `/products`, method: 'POST',
+      headers: {'Content-Type': 'multipart/form-data', },
+       data: formData
+    },
+      options);
+    }
 
 /**
  * Every category and tag the PUBLIC catalogue carries, each with how many visible products hold it — what a storefront renders as filter chips. Sorted by count descending, then name. Counts follow the same visibility rule the listing does, so one chip alone never leads to an empty page. Counts are catalogue-wide: they do not follow the filters already chosen.
  * @summary Catalogue facets
  */
 export const getCatalogFacets = (
-    options?: SecondParameter<typeof orvalMutator<CatalogFacetsResponse>>
-) => {
-    return orvalMutator<CatalogFacetsResponse>({ url: `/products/facets`, method: 'GET' }, options);
-};
+
+ options?: SecondParameter<typeof orvalMutator<CatalogFacetsResponse>>,) => {
+      return orvalMutator<CatalogFacetsResponse>(
+      {url: `/products/facets`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`. `title` and `description` are always resolved to one language. A caller holding `read:Translation` also gets `translations`, every language the product has a row for (drafts included), for the editor's tabs: what the caller may see shapes the body, there is no separate staff URL. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph). A body that differs by caller is never served from, or stored in, the shared cache.
@@ -11191,10 +11081,12 @@ export const getCatalogFacets = (
  */
 export const getProductById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Product>>
-) => {
-    return orvalMutator<Product>({ url: `/products/${id}`, method: 'GET' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<Product>>,) => {
+      return orvalMutator<Product>(
+      {url: `/products/${id}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
@@ -11210,18 +11102,14 @@ export const getProductById = (
 export const replaceProductById = (
     id: string,
     replaceProductRequest: ReplaceProductRequest,
-    options?: SecondParameter<typeof orvalMutator<Product>>
-) => {
-    return orvalMutator<Product>(
-        {
-            url: `/products/${id}`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: replaceProductRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Product>>,) => {
+      return orvalMutator<Product>(
+      {url: `/products/${id}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: replaceProductRequest
+    },
+      options);
+    }
 
 /**
  * Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
@@ -11237,52 +11125,45 @@ export const replaceProductById = (
 export const replaceProductByIdWithMultipart = (
     id: string,
     replaceProductRequestMultipart: ReplaceProductRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<Product>>
-) => {
-    const formData = new FormData();
-    formData.append(`translations`, replaceProductRequestMultipart.translations);
-    formData.append(`price`, replaceProductRequestMultipart.price);
-    if (replaceProductRequestMultipart.taxClass !== undefined) {
-        formData.append(`taxClass`, replaceProductRequestMultipart.taxClass);
-    }
-    if (replaceProductRequestMultipart.rateType !== undefined) {
-        formData.append(`rateType`, replaceProductRequestMultipart.rateType);
-    }
-    if (replaceProductRequestMultipart.sku !== undefined) {
-        formData.append(`sku`, replaceProductRequestMultipart.sku);
-    }
-    formData.append(`active`, replaceProductRequestMultipart.active.toString());
-    formData.append(`purchasable`, replaceProductRequestMultipart.purchasable.toString());
-    if (replaceProductRequestMultipart.releaseDate !== undefined) {
-        formData.append(`releaseDate`, replaceProductRequestMultipart.releaseDate);
-    }
-    formData.append(`allowBackorder`, replaceProductRequestMultipart.allowBackorder.toString());
-    if (replaceProductRequestMultipart.restockDate !== undefined) {
-        formData.append(`restockDate`, replaceProductRequestMultipart.restockDate);
-    }
-    formData.append(`requiresShipping`, replaceProductRequestMultipart.requiresShipping.toString());
-    formData.append(`noWithdrawal`, replaceProductRequestMultipart.noWithdrawal.toString());
-    if (replaceProductRequestMultipart.weight !== undefined) {
-        formData.append(`weight`, replaceProductRequestMultipart.weight.toString());
-    }
-    if (replaceProductRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, replaceProductRequestMultipart.imageUpload);
-    }
-    replaceProductRequestMultipart.categories.forEach((value) =>
-        formData.append(`categories`, value)
-    );
-    replaceProductRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
+ options?: SecondParameter<typeof orvalMutator<Product>>,) => {const formData = new FormData();
+formData.append(`translations`, replaceProductRequestMultipart.translations);
+formData.append(`price`, replaceProductRequestMultipart.price);
+if(replaceProductRequestMultipart.taxClass !== undefined) {
+ formData.append(`taxClass`, replaceProductRequestMultipart.taxClass);
+ }
+if(replaceProductRequestMultipart.rateType !== undefined) {
+ formData.append(`rateType`, replaceProductRequestMultipart.rateType);
+ }
+if(replaceProductRequestMultipart.sku !== undefined) {
+ formData.append(`sku`, replaceProductRequestMultipart.sku);
+ }
+formData.append(`active`, replaceProductRequestMultipart.active.toString())
+formData.append(`purchasable`, replaceProductRequestMultipart.purchasable.toString())
+if(replaceProductRequestMultipart.releaseDate !== undefined) {
+ formData.append(`releaseDate`, replaceProductRequestMultipart.releaseDate);
+ }
+formData.append(`allowBackorder`, replaceProductRequestMultipart.allowBackorder.toString())
+if(replaceProductRequestMultipart.restockDate !== undefined) {
+ formData.append(`restockDate`, replaceProductRequestMultipart.restockDate);
+ }
+formData.append(`requiresShipping`, replaceProductRequestMultipart.requiresShipping.toString())
+formData.append(`noWithdrawal`, replaceProductRequestMultipart.noWithdrawal.toString())
+if(replaceProductRequestMultipart.weight !== undefined) {
+ formData.append(`weight`, replaceProductRequestMultipart.weight.toString())
+ }
+if(replaceProductRequestMultipart.imageUpload !== undefined) {
+ formData.append(`imageUpload`, replaceProductRequestMultipart.imageUpload);
+ }
+replaceProductRequestMultipart.categories.forEach(value => formData.append(`categories`, value));
+replaceProductRequestMultipart.tags.forEach(value => formData.append(`tags`, value));
 
-    return orvalMutator<Product>(
-        {
-            url: `/products/${id}`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'multipart/form-data' },
-            data: formData
-        },
-        options
-    );
-};
+      return orvalMutator<Product>(
+      {url: `/products/${id}`, method: 'PUT',
+      headers: {'Content-Type': 'multipart/form-data', },
+       data: formData
+    },
+      options);
+    }
 
 /**
  * Updates the product identified by `{id}` in the path, merging. Every field but
@@ -11307,18 +11188,14 @@ export const replaceProductByIdWithMultipart = (
 export const updateProductById = (
     id: string,
     updateProductRequest: UpdateProductRequest,
-    options?: SecondParameter<typeof orvalMutator<Product>>
-) => {
-    return orvalMutator<Product>(
-        {
-            url: `/products/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateProductRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Product>>,) => {
+      return orvalMutator<Product>(
+      {url: `/products/${id}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateProductRequest
+    },
+      options);
+    }
 
 /**
  * Updates the product identified by `{id}` in the path, merging. Every field but
@@ -11343,18 +11220,14 @@ export const updateProductById = (
 export const updateProductByIdWithMergePatchJson = (
     id: string,
     updateProductRequest: UpdateProductRequest,
-    options?: SecondParameter<typeof orvalMutator<Product>>
-) => {
-    return orvalMutator<Product>(
-        {
-            url: `/products/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: updateProductRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Product>>,) => {
+      return orvalMutator<Product>(
+      {url: `/products/${id}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/merge-patch+json', },
+      data: updateProductRequest
+    },
+      options);
+    }
 
 /**
  * Updates the product identified by `{id}` in the path, merging. Every field but
@@ -11379,73 +11252,63 @@ export const updateProductByIdWithMergePatchJson = (
 export const updateProductByIdWithMultipart = (
     id: string,
     updateProductRequestMultipart: UpdateProductRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<Product>>
-) => {
-    const formData = new FormData();
-    if (updateProductRequestMultipart.translations !== undefined) {
-        formData.append(`translations`, updateProductRequestMultipart.translations);
-    }
-    if (updateProductRequestMultipart.price !== undefined) {
-        formData.append(`price`, updateProductRequestMultipart.price);
-    }
-    if (updateProductRequestMultipart.taxClass !== undefined) {
-        formData.append(`taxClass`, updateProductRequestMultipart.taxClass);
-    }
-    if (updateProductRequestMultipart.rateType !== undefined) {
-        formData.append(`rateType`, updateProductRequestMultipart.rateType);
-    }
-    if (updateProductRequestMultipart.sku !== undefined) {
-        formData.append(`sku`, updateProductRequestMultipart.sku);
-    }
-    if (updateProductRequestMultipart.active !== undefined) {
-        formData.append(`active`, updateProductRequestMultipart.active.toString());
-    }
-    if (updateProductRequestMultipart.purchasable !== undefined) {
-        formData.append(`purchasable`, updateProductRequestMultipart.purchasable.toString());
-    }
-    if (updateProductRequestMultipart.releaseDate !== undefined) {
-        formData.append(`releaseDate`, updateProductRequestMultipart.releaseDate);
-    }
-    if (updateProductRequestMultipart.allowBackorder !== undefined) {
-        formData.append(`allowBackorder`, updateProductRequestMultipart.allowBackorder.toString());
-    }
-    if (updateProductRequestMultipart.restockDate !== undefined) {
-        formData.append(`restockDate`, updateProductRequestMultipart.restockDate);
-    }
-    if (updateProductRequestMultipart.requiresShipping !== undefined) {
-        formData.append(
-            `requiresShipping`,
-            updateProductRequestMultipart.requiresShipping.toString()
-        );
-    }
-    if (updateProductRequestMultipart.noWithdrawal !== undefined) {
-        formData.append(`noWithdrawal`, updateProductRequestMultipart.noWithdrawal.toString());
-    }
-    if (updateProductRequestMultipart.weight !== undefined) {
-        formData.append(`weight`, updateProductRequestMultipart.weight.toString());
-    }
-    if (updateProductRequestMultipart.imageUpload !== undefined) {
-        formData.append(`imageUpload`, updateProductRequestMultipart.imageUpload);
-    }
-    if (updateProductRequestMultipart.categories !== undefined) {
-        updateProductRequestMultipart.categories.forEach((value) =>
-            formData.append(`categories`, value)
-        );
-    }
-    if (updateProductRequestMultipart.tags !== undefined) {
-        updateProductRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
-    }
+ options?: SecondParameter<typeof orvalMutator<Product>>,) => {const formData = new FormData();
+if(updateProductRequestMultipart.translations !== undefined) {
+ formData.append(`translations`, updateProductRequestMultipart.translations);
+ }
+if(updateProductRequestMultipart.price !== undefined) {
+ formData.append(`price`, updateProductRequestMultipart.price);
+ }
+if(updateProductRequestMultipart.taxClass !== undefined) {
+ formData.append(`taxClass`, updateProductRequestMultipart.taxClass);
+ }
+if(updateProductRequestMultipart.rateType !== undefined) {
+ formData.append(`rateType`, updateProductRequestMultipart.rateType);
+ }
+if(updateProductRequestMultipart.sku !== undefined) {
+ formData.append(`sku`, updateProductRequestMultipart.sku);
+ }
+if(updateProductRequestMultipart.active !== undefined) {
+ formData.append(`active`, updateProductRequestMultipart.active.toString())
+ }
+if(updateProductRequestMultipart.purchasable !== undefined) {
+ formData.append(`purchasable`, updateProductRequestMultipart.purchasable.toString())
+ }
+if(updateProductRequestMultipart.releaseDate !== undefined) {
+ formData.append(`releaseDate`, updateProductRequestMultipart.releaseDate);
+ }
+if(updateProductRequestMultipart.allowBackorder !== undefined) {
+ formData.append(`allowBackorder`, updateProductRequestMultipart.allowBackorder.toString())
+ }
+if(updateProductRequestMultipart.restockDate !== undefined) {
+ formData.append(`restockDate`, updateProductRequestMultipart.restockDate);
+ }
+if(updateProductRequestMultipart.requiresShipping !== undefined) {
+ formData.append(`requiresShipping`, updateProductRequestMultipart.requiresShipping.toString())
+ }
+if(updateProductRequestMultipart.noWithdrawal !== undefined) {
+ formData.append(`noWithdrawal`, updateProductRequestMultipart.noWithdrawal.toString())
+ }
+if(updateProductRequestMultipart.weight !== undefined) {
+ formData.append(`weight`, updateProductRequestMultipart.weight.toString())
+ }
+if(updateProductRequestMultipart.imageUpload !== undefined) {
+ formData.append(`imageUpload`, updateProductRequestMultipart.imageUpload);
+ }
+if(updateProductRequestMultipart.categories !== undefined) {
+ updateProductRequestMultipart.categories.forEach(value => formData.append(`categories`, value));
+ }
+if(updateProductRequestMultipart.tags !== undefined) {
+ updateProductRequestMultipart.tags.forEach(value => formData.append(`tags`, value));
+ }
 
-    return orvalMutator<Product>(
-        {
-            url: `/products/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'multipart/form-data' },
-            data: formData
-        },
-        options
-    );
-};
+      return orvalMutator<Product>(
+      {url: `/products/${id}`, method: 'PATCH',
+      headers: {'Content-Type': 'multipart/form-data', },
+       data: formData
+    },
+      options);
+    }
 
 /**
  * Deletes the product identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. A soft delete is one-way and safe to repeat — undo it with `POST /products/{id}/restore`.
@@ -11454,13 +11317,13 @@ export const updateProductByIdWithMultipart = (
 export const deleteProductById = (
     id: string,
     params?: DeleteProductByIdParams,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/products/${id}`, method: 'DELETE', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/products/${id}`, method: 'DELETE',
+        params
+    },
+      options);
+    }
 
 /**
  * Undoes the soft delete of the product identified by `{id}`. Answers 409 when the product is not soft-deleted, so a restore can never be mistaken for an ordinary read.
@@ -11468,10 +11331,12 @@ export const deleteProductById = (
  */
 export const restoreProductById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Product>>
-) => {
-    return orvalMutator<Product>({ url: `/products/${id}/restore`, method: 'POST' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<Product>>,) => {
+      return orvalMutator<Product>(
+      {url: `/products/${id}/restore`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Permanently removes the product identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /products/{id}?hardDelete=true`.
@@ -11479,13 +11344,12 @@ export const restoreProductById = (
  */
 export const hardDeleteProductById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/products/${id}/hard`, method: 'DELETE' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/products/${id}/hard`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * Searches and filters products via a JSON request body. Functionally equivalent to `GET /products` with query parameters. Staff holding `display:Locale` may preview a draft language here (see the API description's Language paragraph); that answer is never cached.
@@ -11493,26 +11357,27 @@ export const hardDeleteProductById = (
  */
 export const searchProducts = (
     searchProductsRequest: SearchProductsRequest,
-    options?: SecondParameter<typeof orvalMutator<ProductsResponse>>
-) => {
-    return orvalMutator<ProductsResponse>(
-        {
-            url: `/products/search`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: searchProductsRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<ProductsResponse>>,) => {
+      return orvalMutator<ProductsResponse>(
+      {url: `/products/search`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: searchProductsRequest
+    },
+      options);
+    }
 
 /**
  * Returns all items currently in the authenticated user's cart along with a computed summary. Never paginated, a cart holds at most `NODE_CART_MAX_LINES` lines (100 by default), so the read stays small.
  * @summary Get cart
  */
-export const getCart = (options?: SecondParameter<typeof orvalMutator<CartResponse>>) => {
-    return orvalMutator<CartResponse>({ url: `/cart`, method: 'GET' }, options);
-};
+export const getCart = (
+
+ options?: SecondParameter<typeof orvalMutator<CartResponse>>,) => {
+      return orvalMutator<CartResponse>(
+      {url: `/cart`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * "Add to cart": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). A line is written through its parent, so the answer is always 200 with the whole cart: no `Location`, no read of a line. The line may not pass the per-line cap (422), and a NEW product is refused (409 `CART_LINE_LIMIT_REACHED`) once the cart holds `NODE_CART_MAX_LINES` lines. A retry after a lost answer carries the SAME `Idempotency-Key` and gets the first answer back; a deliberate second click is a new intent with a new key, and adds again. To SET a quantity, `PATCH /cart/items/{productId}`.
@@ -11520,26 +11385,27 @@ export const getCart = (options?: SecondParameter<typeof orvalMutator<CartRespon
  */
 export const addCartItem = (
     addCartItemRequest: AddCartItemRequest,
-    options?: SecondParameter<typeof orvalMutator<CartResponse>>
-) => {
-    return orvalMutator<CartResponse>(
-        {
-            url: `/cart/items`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: addCartItemRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<CartResponse>>,) => {
+      return orvalMutator<CartResponse>(
+      {url: `/cart/items`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: addCartItemRequest
+    },
+      options);
+    }
 
 /**
  * Empties the authenticated user's cart entirely. Bodyless on purpose — the destructive spelling gets its own URL, and any body on it is refused (415), so a body can never turn a one-line delete into this. Returns the (empty) cart; clearing an already-empty cart is the state the caller asked for, so also 200.
  * @summary Clear cart
  */
-export const clearCart = (options?: SecondParameter<typeof orvalMutator<CartResponse>>) => {
-    return orvalMutator<CartResponse>({ url: `/cart/items`, method: 'DELETE' }, options);
-};
+export const clearCart = (
+
+ options?: SecondParameter<typeof orvalMutator<CartResponse>>,) => {
+      return orvalMutator<CartResponse>(
+      {url: `/cart/items`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart/items` is the door that adds. A change never creates, so a product the cart holds no line for is 404 `cart.item-not-found`, and a held line whose product the storefront no longer shows is 404 `products.not-found`. Repeating it changes nothing. Returns the updated cart.
@@ -11548,18 +11414,14 @@ export const clearCart = (options?: SecondParameter<typeof orvalMutator<CartResp
 export const updateCartItemByProductId = (
     productId: string,
     updateCartItemByProductIdRequest: UpdateCartItemByProductIdRequest,
-    options?: SecondParameter<typeof orvalMutator<CartResponse>>
-) => {
-    return orvalMutator<CartResponse>(
-        {
-            url: `/cart/items/${productId}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateCartItemByProductIdRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<CartResponse>>,) => {
+      return orvalMutator<CartResponse>(
+      {url: `/cart/items/${productId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateCartItemByProductIdRequest
+    },
+      options);
+    }
 
 /**
  * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart/items` is the door that adds. A change never creates, so a product the cart holds no line for is 404 `cart.item-not-found`, and a held line whose product the storefront no longer shows is 404 `products.not-found`. Repeating it changes nothing. Returns the updated cart.
@@ -11568,18 +11430,14 @@ export const updateCartItemByProductId = (
 export const updateCartItemByProductIdWithMergePatchJson = (
     productId: string,
     updateCartItemByProductIdRequest: UpdateCartItemByProductIdRequest,
-    options?: SecondParameter<typeof orvalMutator<CartResponse>>
-) => {
-    return orvalMutator<CartResponse>(
-        {
-            url: `/cart/items/${productId}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: updateCartItemByProductIdRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<CartResponse>>,) => {
+      return orvalMutator<CartResponse>(
+      {url: `/cart/items/${productId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/merge-patch+json', },
+      data: updateCartItemByProductIdRequest
+    },
+      options);
+    }
 
 /**
  * Removes the cart line for the product identified by `{productId}` in the path from the authenticated user's cart. Returns the updated cart.
@@ -11587,13 +11445,12 @@ export const updateCartItemByProductIdWithMergePatchJson = (
  */
 export const deleteCartItemByProductId = (
     productId: string,
-    options?: SecondParameter<typeof orvalMutator<CartResponse>>
-) => {
-    return orvalMutator<CartResponse>(
-        { url: `/cart/items/${productId}`, method: 'DELETE' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<CartResponse>>,) => {
+      return orvalMutator<CartResponse>(
+      {url: `/cart/items/${productId}`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * Sets which shipping method (see `GET /delivery/methods`) the cart plans to ship by, ahead of checkout — priced and validated against the basket as it stands right now. `null` clears the choice. Checkout re-validates from scratch regardless of what this endpoint accepted, since the basket may change afterward. Returns the updated cart, including the priced `summary.shippingCost`/`summary.totalPrice`.
@@ -11601,28 +11458,27 @@ export const deleteCartItemByProductId = (
  */
 export const setCartShippingMethod = (
     setCartShippingMethodRequest: SetCartShippingMethodRequest,
-    options?: SecondParameter<typeof orvalMutator<CartResponse>>
-) => {
-    return orvalMutator<CartResponse>(
-        {
-            url: `/cart/shipping-method`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: setCartShippingMethodRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<CartResponse>>,) => {
+      return orvalMutator<CartResponse>(
+      {url: `/cart/shipping-method`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: setCartShippingMethodRequest
+    },
+      options);
+    }
 
 /**
  * Returns a lightweight summary of the authenticated user's cart.
  * @summary Get cart summary
  */
 export const getCartSummary = (
-    options?: SecondParameter<typeof orvalMutator<CartSummaryResponse>>
-) => {
-    return orvalMutator<CartSummaryResponse>({ url: `/cart/summary`, method: 'GET' }, options);
-};
+
+ options?: SecondParameter<typeof orvalMutator<CartSummaryResponse>>,) => {
+      return orvalMutator<CartSummaryResponse>(
+      {url: `/cart/summary`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Converts the authenticated user's current cart into a new order. Needs a critically fresh session (`401 REAUTH_REQUIRED`), asked after the verified-address key, so a caller who can never pass is refused first. The cart is cleared upon success. The request names the total the buyer was shown (`expectedTotal`); a checkout that would charge anything else is refused with 409 `CART_TOTAL_CHANGED` and the new total, before any stock is held. Optional order notes can be supplied in the request body. Answers 201 with the created order itself as the body — the same shape `POST /orders` answers — and its `Location`. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
@@ -11630,18 +11486,14 @@ export const getCartSummary = (
  */
 export const checkout = (
     checkoutRequest: CheckoutRequest,
-    options?: SecondParameter<typeof orvalMutator<Order>>
-) => {
-    return orvalMutator<Order>(
-        {
-            url: `/cart/checkout`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: checkoutRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Order>>,) => {
+      return orvalMutator<Order>(
+      {url: `/cart/checkout`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: checkoutRequest
+    },
+      options);
+    }
 
 /**
  * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the answer holds the cart as it now stands and ONE RESULT PER ORDER LINE, in the order's own order, by the same rule and in the same shape as `POST /cart/merge` (`requested`, `resulting`, `reason`, `availability`). A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX_QUANTITY`) is clamped to what room is left (`capped`), and adds nothing once there is none; an unavailable product is `removed`. Neither is a failure. Any signed-in account, staff included, reorders only its own orders — the cart being filled is the caller's.
@@ -11649,26 +11501,27 @@ export const checkout = (
  */
 export const reorder = (
     reorderRequest: ReorderRequest,
-    options?: SecondParameter<typeof orvalMutator<ReorderResponse>>
-) => {
-    return orvalMutator<ReorderResponse>(
-        {
-            url: `/cart/reorder`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: reorderRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<ReorderResponse>>,) => {
+      return orvalMutator<ReorderResponse>(
+      {url: `/cart/reorder`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: reorderRequest
+    },
+      options);
+    }
 
 /**
  * Returns the authenticated user's saved products — ids only, like the cart's lines; clients render them from their own product store. Absence and emptiness are the same state, so this never answers 404. Never paginated, a wishlist holds at most `NODE_WISHLIST_MAX` products (250 by default).
  * @summary Get wishlist
  */
-export const getWishlist = (options?: SecondParameter<typeof orvalMutator<WishlistResponse>>) => {
-    return orvalMutator<WishlistResponse>({ url: `/wishlist`, method: 'GET' }, options);
-};
+export const getWishlist = (
+
+ options?: SecondParameter<typeof orvalMutator<WishlistResponse>>,) => {
+      return orvalMutator<WishlistResponse>(
+      {url: `/wishlist`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Saves the product named in the body to the authenticated user's wishlist. A saved product is a line of the wishlist, written through its parent: the answer is 200 with the whole wishlist, no `Location`, and no read of a line. Saving what is already saved answers the same 200 and fires nothing a second time, because a double-clicked heart icon is not an error. The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other. A NEW product is refused (409 `WISHLIST_LIMIT_REACHED`) once the list holds `NODE_WISHLIST_MAX` products.
@@ -11676,18 +11529,14 @@ export const getWishlist = (options?: SecondParameter<typeof orvalMutator<Wishli
  */
 export const createWishlistItem = (
     createWishlistItemRequest: CreateWishlistItemRequest,
-    options?: SecondParameter<typeof orvalMutator<WishlistResponse>>
-) => {
-    return orvalMutator<WishlistResponse>(
-        {
-            url: `/wishlist/items`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createWishlistItemRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<WishlistResponse>>,) => {
+      return orvalMutator<WishlistResponse>(
+      {url: `/wishlist/items`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createWishlistItemRequest
+    },
+      options);
+    }
 
 /**
  * Removes the line for the product identified by `{productId}` from the authenticated user's wishlist. A line the caller does not hold is a 404 — the client's view is stale and it needs to know.
@@ -11695,13 +11544,12 @@ export const createWishlistItem = (
  */
 export const deleteWishlistItem = (
     productId: string,
-    options?: SecondParameter<typeof orvalMutator<WishlistResponse>>
-) => {
-    return orvalMutator<WishlistResponse>(
-        { url: `/wishlist/items/${productId}`, method: 'DELETE' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<WishlistResponse>>,) => {
+      return orvalMutator<WishlistResponse>(
+      {url: `/wishlist/items/${productId}`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * The wishlist's exit — the saved line becomes one cart line (quantity 1, incremented if the cart already holds the product) and leaves the wishlist. The cart is written before the wishlist line is removed, so a failure part-way leaves the product SAVED rather than lost. Any signed-in account may move it, staff included. Returns the updated wishlist; read the cart for its own new state.
@@ -11709,13 +11557,12 @@ export const deleteWishlistItem = (
  */
 export const moveWishlistItemToCart = (
     productId: string,
-    options?: SecondParameter<typeof orvalMutator<WishlistResponse>>
-) => {
-    return orvalMutator<WishlistResponse>(
-        { url: `/wishlist/items/${productId}/move-to-cart`, method: 'POST' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<WishlistResponse>>,) => {
+      return orvalMutator<WishlistResponse>(
+      {url: `/wishlist/items/${productId}/move-to-cart`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Returns a paginated list of orders.
@@ -11724,10 +11571,13 @@ export const moveWishlistItemToCart = (
  */
 export const listOrders = (
     params?: ListOrdersParams,
-    options?: SecondParameter<typeof orvalMutator<OrdersResponse>>
-) => {
-    return orvalMutator<OrdersResponse>({ url: `/orders`, method: 'GET', params }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<OrdersResponse>>,) => {
+      return orvalMutator<OrdersResponse>(
+      {url: `/orders`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Creates a new order directly from the supplied payload, for the account named in `userId`. Raising one for oneself is allowed.
@@ -11737,18 +11587,14 @@ export const listOrders = (
  */
 export const createOrder = (
     createOrderRequest: CreateOrderRequest,
-    options?: SecondParameter<typeof orvalMutator<Order>>
-) => {
-    return orvalMutator<Order>(
-        {
-            url: `/orders`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createOrderRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Order>>,) => {
+      return orvalMutator<Order>(
+      {url: `/orders`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createOrderRequest
+    },
+      options);
+    }
 
 /**
  * Searches and filters orders via a JSON request body. Functionally equivalent to `GET /orders`.
@@ -11757,26 +11603,27 @@ export const createOrder = (
  */
 export const searchOrders = (
     searchOrdersRequest: SearchOrdersRequest,
-    options?: SecondParameter<typeof orvalMutator<OrdersResponse>>
-) => {
-    return orvalMutator<OrdersResponse>(
-        {
-            url: `/orders/search`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: searchOrdersRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<OrdersResponse>>,) => {
+      return orvalMutator<OrdersResponse>(
+      {url: `/orders/search`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: searchOrdersRequest
+    },
+      options);
+    }
 
 /**
  * Returns the full details of the order identified by `{id}`. Functionally equivalent to `GET /orders?id={id}`.
  * @summary Order details
  */
-export const getOrderById = (id: string, options?: SecondParameter<typeof orvalMutator<Order>>) => {
-    return orvalMutator<Order>({ url: `/orders/${id}`, method: 'GET' }, options);
-};
+export const getOrderById = (
+    id: string,
+ options?: SecondParameter<typeof orvalMutator<Order>>,) => {
+      return orvalMutator<Order>(
+      {url: `/orders/${id}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Replaces the order identified by `{id}` in the path (RFC 9110 §9.3.4). `email` is the only writable field — `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/override-status`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
@@ -11785,18 +11632,14 @@ export const getOrderById = (id: string, options?: SecondParameter<typeof orvalM
 export const replaceOrderById = (
     id: string,
     replaceOrderByIdRequest: ReplaceOrderByIdRequest,
-    options?: SecondParameter<typeof orvalMutator<Order>>
-) => {
-    return orvalMutator<Order>(
-        {
-            url: `/orders/${id}`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: replaceOrderByIdRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Order>>,) => {
+      return orvalMutator<Order>(
+      {url: `/orders/${id}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: replaceOrderByIdRequest
+    },
+      options);
+    }
 
 /**
  * Updates the order identified by `{id}` in the path, merging — an omitted `email` leaves the stored one untouched. `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/override-status`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
@@ -11805,18 +11648,14 @@ export const replaceOrderById = (
 export const updateOrderById = (
     id: string,
     updateOrderByIdRequest: UpdateOrderByIdRequest,
-    options?: SecondParameter<typeof orvalMutator<Order>>
-) => {
-    return orvalMutator<Order>(
-        {
-            url: `/orders/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateOrderByIdRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Order>>,) => {
+      return orvalMutator<Order>(
+      {url: `/orders/${id}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateOrderByIdRequest
+    },
+      options);
+    }
 
 /**
  * Updates the order identified by `{id}` in the path, merging — an omitted `email` leaves the stored one untouched. `status` moves only through an action endpoint (`POST /orders/{id}/cancel`, `POST /orders/{id}/override-status`), never a field on this body. See `docs/theory/tactical-ddd.md#who-writes-the-status`.
@@ -11825,18 +11664,14 @@ export const updateOrderById = (
 export const updateOrderByIdWithMergePatchJson = (
     id: string,
     updateOrderByIdRequest: UpdateOrderByIdRequest,
-    options?: SecondParameter<typeof orvalMutator<Order>>
-) => {
-    return orvalMutator<Order>(
-        {
-            url: `/orders/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: updateOrderByIdRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Order>>,) => {
+      return orvalMutator<Order>(
+      {url: `/orders/${id}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/merge-patch+json', },
+      data: updateOrderByIdRequest
+    },
+      options);
+    }
 
 /**
  * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record, which is only allowed for an order that is canceled and was never paid (409 `ORDER_NOT_CANCELED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel). A soft delete hides a canceled order from its buyer (409 `ORDER_NOT_CANCELED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`.
@@ -11845,13 +11680,13 @@ export const updateOrderByIdWithMergePatchJson = (
 export const deleteOrderById = (
     id: string,
     params?: DeleteOrderByIdParams,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/orders/${id}`, method: 'DELETE', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/orders/${id}`, method: 'DELETE',
+        params
+    },
+      options);
+    }
 
 /**
  * Undoes the soft delete of the order identified by `{id}`. Answers 409 `ORDER_NOT_DELETED` when the order is not soft-deleted, so a restore can never be mistaken for an ordinary read.
@@ -11859,10 +11694,12 @@ export const deleteOrderById = (
  */
 export const restoreOrderById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Order>>
-) => {
-    return orvalMutator<Order>({ url: `/orders/${id}/restore`, method: 'POST' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<Order>>,) => {
+      return orvalMutator<Order>(
+      {url: `/orders/${id}/restore`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Permanently removes the order identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /orders/{id}?hardDelete=true`, and only for an order that is canceled and was never paid (409 `ORDER_NOT_CANCELED` while it is open, 409 `ORDER_INVOICED` once paid).
@@ -11870,13 +11707,12 @@ export const restoreOrderById = (
  */
 export const hardDeleteOrderById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/orders/${id}/hard`, method: 'DELETE' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/orders/${id}/hard`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return). A customer can cancel only their own orders; an operator (a caller holding `update:Order`) can cancel anyone's, and must have proved themselves recently: a stale session answers `401 REAUTH_REQUIRED`, while the buyer's own cancel is never prompted. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
@@ -11886,18 +11722,14 @@ export const hardDeleteOrderById = (
 export const cancelOrderById = (
     id: string,
     cancelOrderRequest?: CancelOrderRequest,
-    options?: SecondParameter<typeof orvalMutator<Order>>
-) => {
-    return orvalMutator<Order>(
-        {
-            url: `/orders/${id}/cancel`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: cancelOrderRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Order>>,) => {
+      return orvalMutator<Order>(
+      {url: `/orders/${id}/cancel`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: cancelOrderRequest
+    },
+      options);
+    }
 
 /**
  * Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. A forward move to `shipped` or `delivered` is refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`); a move to `processing` ships nothing and is allowed. Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `canceled` (`POST /orders/{id}/cancel` is that door). Requires `override:Order`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does.
@@ -11906,18 +11738,14 @@ export const cancelOrderById = (
 export const overrideOrderStatus = (
     id: string,
     statusOverrideRequest: StatusOverrideRequest,
-    options?: SecondParameter<typeof orvalMutator<Order>>
-) => {
-    return orvalMutator<Order>(
-        {
-            url: `/orders/${id}/override-status`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: statusOverrideRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Order>>,) => {
+      return orvalMutator<Order>(
+      {url: `/orders/${id}/override-status`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: statusOverrideRequest
+    },
+      options);
+    }
 
 /**
  * The frozen tax invoice for the order identified by `{id}`, as a binary PDF — numbered and issued once, the moment the order moved `pending → paid`, never re-rendered from today's config. Refuses with `404` for an order that has not been invoiced yet (never paid, or paid while its invoice listener failed: such an order is not invoiced yet, and takes no number from the gap-free series). The server names the file: `Content-Disposition` carries `invoice-<invoice number>.pdf`, so a client saves it under that name rather than inventing one.
@@ -11925,13 +11753,13 @@ export const overrideOrderStatus = (
  */
 export const getOrderInvoice = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Blob>>
-) => {
-    return orvalMutator<Blob>(
-        { url: `/orders/${id}/invoice`, method: 'GET', responseType: 'blob' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Blob>>,) => {
+      return orvalMutator<Blob>(
+      {url: `/orders/${id}/invoice`, method: 'GET',
+        responseType: 'blob'
+    },
+      options);
+    }
 
 /**
  * One entry per refund that has settled on this order's payment, oldest first — a full refund and each part of a partial one each have their own credit note. Empty for an order never refunded, with no invoice to reverse, or whose money the caller may not read: the buyer sees their own, and staff need the payments staff read (`display:Payment`), so the warehouse that packs the order sees none. `id` is what `GET /orders/{id}/credit-notes/{creditNoteId}` downloads.
@@ -11940,13 +11768,12 @@ export const getOrderInvoice = (
  */
 export const listOrderCreditNotes = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<CreditNotesResponse>>
-) => {
-    return orvalMutator<CreditNotesResponse>(
-        { url: `/orders/${id}/credit-notes`, method: 'GET' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<CreditNotesResponse>>,) => {
+      return orvalMutator<CreditNotesResponse>(
+      {url: `/orders/${id}/credit-notes`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * The frozen credit note `{creditNoteId}` of the order `{id}`, as a binary PDF. Refuses with `404` for a credit note that does not exist, belongs to another order, or sits on an order whose money the caller may not read (staff without `display:Payment`) — all indistinguishable on purpose.
@@ -11955,13 +11782,13 @@ export const listOrderCreditNotes = (
 export const getOrderCreditNote = (
     id: string,
     creditNoteId: Id,
-    options?: SecondParameter<typeof orvalMutator<Blob>>
-) => {
-    return orvalMutator<Blob>(
-        { url: `/orders/${id}/credit-notes/${creditNoteId}`, method: 'GET', responseType: 'blob' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Blob>>,) => {
+      return orvalMutator<Blob>(
+      {url: `/orders/${id}/credit-notes/${creditNoteId}`, method: 'GET',
+        responseType: 'blob'
+    },
+      options);
+    }
 
 /**
  * The payment record of one of the caller's orders, so a reload mid-flow finds the intent and its status again. Unpaged: an order has one payment row, so `items` holds none or one, like `GET /orders/{id}/credit-notes`. No payment started yet is `{ "items": [] }`, not a 404: absence is an answer, and the client starts the flow with `POST /payments`. `404` only for an order the caller cannot see. A caller holding `display:Payment` reads anyone's.
@@ -11969,13 +11796,12 @@ export const getOrderCreditNote = (
  */
 export const listOrderPayments = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<OrderPaymentsResponse>>
-) => {
-    return orvalMutator<OrderPaymentsResponse>(
-        { url: `/orders/${id}/payments`, method: 'GET' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<OrderPaymentsResponse>>,) => {
+      return orvalMutator<OrderPaymentsResponse>(
+      {url: `/orders/${id}/payments`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * The payment is a child of the order: Solidus' `POST /api/orders/{number}/payments`. An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted a row that already existed: a card intent nobody paid, or the open payment of a `bank_transfer` order (the very payment being recorded).
@@ -11986,26 +11812,27 @@ export const listOrderPayments = (
 export const recordOrderPayment = (
     id: string,
     recordOfflinePaymentRequest: RecordOfflinePaymentRequest,
-    options?: SecondParameter<typeof orvalMutator<Payment>>
-) => {
-    return orvalMutator<Payment>(
-        {
-            url: `/orders/${id}/payments`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: recordOfflinePaymentRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Payment>>,) => {
+      return orvalMutator<Payment>(
+      {url: `/orders/${id}/payments`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: recordOfflinePaymentRequest
+    },
+      options);
+    }
 
 /**
  * Reports that fulfillment has started — the order moves `paid → processing`. The verb names the status it reaches, as `cancel` does; the module behind it is `delivery`'s. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
  * @summary Process a paid order
  */
-export const processOrder = (id: string, options?: SecondParameter<typeof orvalMutator<Order>>) => {
-    return orvalMutator<Order>({ url: `/orders/${id}/process`, method: 'POST' }, options);
-};
+export const processOrder = (
+    id: string,
+ options?: SecondParameter<typeof orvalMutator<Order>>,) => {
+      return orvalMutator<Order>(
+      {url: `/orders/${id}/process`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * The plan for an order's goods: its fulfillment orders, the groups of lines that leave together, made by rule when the order is paid. Each carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers `items: []` — absence is the answer, never a 404. A hold reads to the buyer as `holdNotice` and staff's `holdMessage`; `holdReason` and `holdNote` are staff's own and are left out for anyone else. Unpaged: one order holds a handful. Each item has its own read at `GET /delivery/fulfillment-orders/{id}`.
@@ -12013,13 +11840,12 @@ export const processOrder = (id: string, options?: SecondParameter<typeof orvalM
  */
 export const listOrderFulfillmentOrders = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<OrderFulfillmentOrdersResponse>>
-) => {
-    return orvalMutator<OrderFulfillmentOrdersResponse>(
-        { url: `/orders/${id}/fulfillment-orders`, method: 'GET' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<OrderFulfillmentOrdersResponse>>,) => {
+      return orvalMutator<OrderFulfillmentOrdersResponse>(
+      {url: `/orders/${id}/fulfillment-orders`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * What actually left for an order: the shipments cut from its fulfillment orders, oldest first, with tracking code and delivered date. Each carries its own `actions`, decided per caller. Scoped like the order: a buyer reads their own, staff holding `display:Order` read any; someone else's order is a 404, and an order with nothing shipped is `items: []`. Unpaged. Each item has its own read at `GET /delivery/shipments/{id}`, which is also where the `Location` of a newly cut shipment points.
@@ -12027,26 +11853,25 @@ export const listOrderFulfillmentOrders = (
  */
 export const listOrderShipments = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<OrderShipmentsResponse>>
-) => {
-    return orvalMutator<OrderShipmentsResponse>(
-        { url: `/orders/${id}/shipments`, method: 'GET' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<OrderShipmentsResponse>>,) => {
+      return orvalMutator<OrderShipmentsResponse>(
+      {url: `/orders/${id}/shipments`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Which methods this deployment offers, so the frontend hard-codes none. `card` is present only when a card payment provider is configured; `bank_transfer` only once its beneficiary and IBAN are configured. With neither the list is empty, and checkout is off until a method is configured. Public — like `GET /delivery/methods`, this is pre-purchase information. Unpaged: at most one per payment method kind.
  * @summary List payment methods
  */
 export const listPaymentMethods = (
-    options?: SecondParameter<typeof orvalMutator<PaymentMethodsResponse>>
-) => {
-    return orvalMutator<PaymentMethodsResponse>(
-        { url: `/payments/methods`, method: 'GET' },
-        options
-    );
-};
+
+ options?: SecondParameter<typeof orvalMutator<PaymentMethodsResponse>>,) => {
+      return orvalMutator<PaymentMethodsResponse>(
+      {url: `/payments/methods`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 201 with the new `Refund` record and its address in `Location`; read the payment again (`GET /payments/{id}`) for the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left to refund) or 422 (asks for more than is left). A refund still open counts against what is left, so a second partial refund beside it is allowed while money remains.
@@ -12059,18 +11884,14 @@ export const listPaymentMethods = (
 export const createRefund = (
     id: string,
     refundPaymentRequest?: RefundPaymentRequest,
-    options?: SecondParameter<typeof orvalMutator<Refund>>
-) => {
-    return orvalMutator<Refund>(
-        {
-            url: `/payments/${id}/refunds`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: refundPaymentRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Refund>>,) => {
+      return orvalMutator<Refund>(
+      {url: `/payments/${id}/refunds`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: refundPaymentRequest
+    },
+      options);
+    }
 
 /**
  * One refund record of a payment, which is where `Location` points after `POST /payments/{id}/refunds`. Scoped like `GET /payments/{id}`: the payer's own, or any with `display:Payment`; another account's payment, or a record the payment does not hold, is the same 404. The provider's refund id and a failed refund's `failureReason` are sent to `display:Payment` callers only.
@@ -12079,21 +11900,25 @@ export const createRefund = (
 export const getRefund = (
     id: string,
     refundId: Id,
-    options?: SecondParameter<typeof orvalMutator<Refund>>
-) => {
-    return orvalMutator<Refund>(
-        { url: `/payments/${id}/refunds/${refundId}`, method: 'GET' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Refund>>,) => {
+      return orvalMutator<Refund>(
+      {url: `/payments/${id}/refunds/${refundId}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * One payment by its own id, which is where `Location` points after `POST /payments`. The payer reads their own; a caller holding `display:Payment` reads anyone's. Another account's payment is the same 404 as a missing one. The provider's `clientSecret` is never part of a read, only of the answer to `POST /payments`.
  * @summary Get a payment
  */
-export const getPayment = (id: string, options?: SecondParameter<typeof orvalMutator<Payment>>) => {
-    return orvalMutator<Payment>({ url: `/payments/${id}`, method: 'GET' }, options);
-};
+export const getPayment = (
+    id: string,
+ options?: SecondParameter<typeof orvalMutator<Payment>>,) => {
+      return orvalMutator<Payment>(
+      {url: `/payments/${id}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Attaches a payment method the browser tokenised and asks the provider to take the money. The answer is not always final: a card that needs a 3-D Secure challenge comes back `requires_action` and one that settles asynchronously `processing`, both as a 200 — the browser finishes the challenge against the provider and then calls `POST /payments/{id}/sync`. Only `succeeded` moves the order to `paid`, and the webhook remains the authority for that even when this endpoint saw it first. A decline answers 409 with `errors[].code` `PAYMENT_DECLINED` and is retryable — submit the same payment again with another method. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
@@ -12102,18 +11927,14 @@ export const getPayment = (id: string, options?: SecondParameter<typeof orvalMut
 export const confirmPayment = (
     id: string,
     confirmPaymentRequest: ConfirmPaymentRequest,
-    options?: SecondParameter<typeof orvalMutator<Payment>>
-) => {
-    return orvalMutator<Payment>(
-        {
-            url: `/payments/${id}/confirm`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: confirmPaymentRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Payment>>,) => {
+      return orvalMutator<Payment>(
+      {url: `/payments/${id}/confirm`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: confirmPaymentRequest
+    },
+      options);
+    }
 
 /**
  * The browser saying "I have finished at the provider". Re-reads the provider's own record and applies whatever it says, which is what makes the happy path feel synchronous while the webhook stays the source of truth. Idempotent and safe to call repeatedly: a payment already settled answers itself unchanged. Answers 409 `PAYMENT_DECLINED` when the provider's answer is a refusal, exactly as the confirm does. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
@@ -12121,10 +11942,12 @@ export const confirmPayment = (
  */
 export const syncPayment = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Payment>>
-) => {
-    return orvalMutator<Payment>({ url: `/payments/${id}/sync`, method: 'POST' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<Payment>>,) => {
+      return orvalMutator<Payment>(
+      {url: `/payments/${id}/sync`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Where the provider says a payment changed — a thin event naming the intent. The server then asks the provider for the payment's state and settles that answer, so the authority is the provider's own, never the browser's and never this body's. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. A provider retrying for days settles once: the delivery is a pointer, the provider is re-read, and every write of the settlement is conditional.
@@ -12135,31 +11958,27 @@ export const syncPayment = (
 export const receivePaymentWebhook = (
     provider: string,
     paymentWebhookEvent: PaymentWebhookEvent,
-    options?: SecondParameter<typeof orvalMutator<void>>
-) => {
-    return orvalMutator<void>(
-        {
-            url: `/payments/webhook/${provider}`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: paymentWebhookEvent
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<void>>,) => {
+      return orvalMutator<void>(
+      {url: `/payments/webhook/${provider}`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: paymentWebhookEvent
+    },
+      options);
+    }
 
 /**
  * Every shipping method this shop offers — flat rates and free-above thresholds, unfiltered. Public, because what shipping costs is pre-purchase information; the authoritative pricing and weight-fit check happen server-side, against the caller's real basket, at `PUT /cart/shipping-method` and again at checkout — this list is a catalogue, not a quote. Unpaged: the shop's configured catalogue.
  * @summary List shipping methods
  */
 export const listShippingMethods = (
-    options?: SecondParameter<typeof orvalMutator<ShippingMethodsResponse>>
-) => {
-    return orvalMutator<ShippingMethodsResponse>(
-        { url: `/delivery/methods`, method: 'GET' },
-        options
-    );
-};
+
+ options?: SecondParameter<typeof orvalMutator<ShippingMethodsResponse>>,) => {
+      return orvalMutator<ShippingMethodsResponse>(
+      {url: `/delivery/methods`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * One row per fulfillment order, with the buyer and when the order was paid, for the admin's preorder
@@ -12176,13 +11995,13 @@ export const listShippingMethods = (
  */
 export const listPreorderFulfillmentOrders = (
     params?: ListPreorderFulfillmentOrdersParams,
-    options?: SecondParameter<typeof orvalMutator<PreorderFulfillmentOrdersResponse>>
-) => {
-    return orvalMutator<PreorderFulfillmentOrdersResponse>(
-        { url: `/delivery/fulfillment-orders`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<PreorderFulfillmentOrdersResponse>>,) => {
+      return orvalMutator<PreorderFulfillmentOrdersResponse>(
+      {url: `/delivery/fulfillment-orders`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * For each product sold as a preorder, how its units stand across every fulfillment order made from it:
@@ -12193,13 +12012,13 @@ export const listPreorderFulfillmentOrders = (
  */
 export const summarizePreorderFulfillmentOrders = (
     params?: SummarizePreorderFulfillmentOrdersParams,
-    options?: SecondParameter<typeof orvalMutator<PreorderProductSummariesResponse>>
-) => {
-    return orvalMutator<PreorderProductSummariesResponse>(
-        { url: `/delivery/fulfillment-orders/summary`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<PreorderProductSummariesResponse>>,) => {
+      return orvalMutator<PreorderProductSummariesResponse>(
+      {url: `/delivery/fulfillment-orders/summary`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is optional: a `tracked` method may get its code later, with `PATCH /delivery/shipments/{id}` (`Shipment.awaitingTracking` says who is still waiting). Refuses a fulfillment order that is on hold, closed or canceled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is neither `processing` nor `paid` (`ORDER_NOT_PROCESSING`). From `paid` it moves the order to `processing` itself, in the same transaction, so it also needs `start:Shipment` (403 without it); `POST /orders/{id}/process` stays as an optional "mark in progress". Never ships from `on_hold`.
@@ -12211,18 +12030,14 @@ export const summarizePreorderFulfillmentOrders = (
 export const shipFulfillmentOrder = (
     id: string,
     shipFulfillmentOrderRequest?: ShipFulfillmentOrderRequest,
-    options?: SecondParameter<typeof orvalMutator<Shipment>>
-) => {
-    return orvalMutator<Shipment>(
-        {
-            url: `/delivery/fulfillment-orders/${id}/shipments`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: shipFulfillmentOrderRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Shipment>>,) => {
+      return orvalMutator<Shipment>(
+      {url: `/delivery/fulfillment-orders/${id}/shipments`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: shipFulfillmentOrderRequest
+    },
+      options);
+    }
 
 /**
  * The digital act: a shipment with no tracking, born and delivered in the same write. A `digital` fulfillment order has nothing to carry, so this is its only door. Refuses a physical one with `DELIVERY_NOT_DIGITAL` (ship it instead). When it leaves nothing remaining and nothing undelivered the order moves to `delivered`, its withdrawal clock counted from payment (digital content, Art. 9(2)(c)). Works from `paid` too: it moves the order to `processing` itself, so it also needs `start:Shipment` (403 without it). Answers like the create it is: 201 with `Location` pointing at the new shipment. Send an `Idempotency-Key`, as for shipping (a 409 is the first request still running, a 422 the key reused with another body).
@@ -12230,13 +12045,12 @@ export const shipFulfillmentOrder = (
  */
 export const fulfillFulfillmentOrder = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Shipment>>
-) => {
-    return orvalMutator<Shipment>(
-        { url: `/delivery/fulfillment-orders/${id}/fulfill`, method: 'POST' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Shipment>>,) => {
+      return orvalMutator<Shipment>(
+      {url: `/delivery/fulfillment-orders/${id}/fulfill`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Staff stops a fulfillment order from shipping, with a reason. Only an open or in-progress one can be held (`DELIVERY_NOT_HOLDABLE`). `awaiting_stock` is never a reason staff can give: only the allocation of stock sets it.
@@ -12245,18 +12059,14 @@ export const fulfillFulfillmentOrder = (
 export const holdFulfillmentOrder = (
     id: string,
     holdFulfillmentOrderRequest: HoldFulfillmentOrderRequest,
-    options?: SecondParameter<typeof orvalMutator<FulfillmentOrder>>
-) => {
-    return orvalMutator<FulfillmentOrder>(
-        {
-            url: `/delivery/fulfillment-orders/${id}/hold`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: holdFulfillmentOrderRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<FulfillmentOrder>>,) => {
+      return orvalMutator<FulfillmentOrder>(
+      {url: `/delivery/fulfillment-orders/${id}/hold`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: holdFulfillmentOrderRequest
+    },
+      options);
+    }
 
 /**
  * Staff lets a held fulfillment order ship again. A hold for `awaiting_stock` is refused (`DELIVERY_NOT_RELEASABLE`): a hand release would ship goods the ledger never counted out, so only the stock arriving releases it.
@@ -12264,13 +12074,12 @@ export const holdFulfillmentOrder = (
  */
 export const releaseFulfillmentOrder = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<FulfillmentOrder>>
-) => {
-    return orvalMutator<FulfillmentOrder>(
-        { url: `/delivery/fulfillment-orders/${id}/release`, method: 'POST' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<FulfillmentOrder>>,) => {
+      return orvalMutator<FulfillmentOrder>(
+      {url: `/delivery/fulfillment-orders/${id}/release`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * One shipment by its own id, at the address `PATCH` corrects it. Scoped like the order it belongs to (`read:Order`): a buyer reads their own, staff holding `display:Order` read any. Someone else's shipment, an unknown id and a malformed one are the same 404.
@@ -12278,10 +12087,12 @@ export const releaseFulfillmentOrder = (
  */
 export const getShipment = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Shipment>>
-) => {
-    return orvalMutator<Shipment>({ url: `/delivery/shipments/${id}`, method: 'GET' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<Shipment>>,) => {
+      return orvalMutator<Shipment>(
+      {url: `/delivery/shipments/${id}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped`, `delivered` or `lost`; a digital fulfillment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.
@@ -12290,18 +12101,14 @@ export const getShipment = (
 export const updateShipment = (
     id: string,
     updateShipmentRequest: UpdateShipmentRequest,
-    options?: SecondParameter<typeof orvalMutator<Shipment>>
-) => {
-    return orvalMutator<Shipment>(
-        {
-            url: `/delivery/shipments/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateShipmentRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Shipment>>,) => {
+      return orvalMutator<Shipment>(
+      {url: `/delivery/shipments/${id}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateShipmentRequest
+    },
+      options);
+    }
 
 /**
  * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change: added when the parcel left without one, or corrected. Allowed at any time after the shipment left, `shipped`, `delivered` or `lost`; a digital fulfillment never had a carrier and answers `DELIVERY_NOT_PHYSICAL` (409). The buyer is mailed only when the code really changed — an "added" notice for the first code, a "corrected" one for a replacement. The audit row records the code before and after.
@@ -12310,18 +12117,14 @@ export const updateShipment = (
 export const updateShipmentWithMergePatchJson = (
     id: string,
     updateShipmentRequest: UpdateShipmentRequest,
-    options?: SecondParameter<typeof orvalMutator<Shipment>>
-) => {
-    return orvalMutator<Shipment>(
-        {
-            url: `/delivery/shipments/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: updateShipmentRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Shipment>>,) => {
+      return orvalMutator<Shipment>(
+      {url: `/delivery/shipments/${id}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/merge-patch+json', },
+      data: updateShipmentRequest
+    },
+      options);
+    }
 
 /**
  * Stamps the shipment delivered. The order moves `shipped → delivered` when this was the last undelivered shipment and nothing remains to ship; its withdrawal clock then starts from the LAST delivery (CRD Art. 9(2)(b)(i)). Only a `shipped` shipment can be delivered, or a `lost` one that turns up (below): any other answers `DELIVERY_NOT_DELIVERABLE`.
@@ -12331,13 +12134,12 @@ export const updateShipmentWithMergePatchJson = (
  */
 export const deliverShipment = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Shipment>>
-) => {
-    return orvalMutator<Shipment>(
-        { url: `/delivery/shipments/${id}/deliver`, method: 'POST' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Shipment>>,) => {
+      return orvalMutator<Shipment>(
+      {url: `/delivery/shipments/${id}/deliver`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Staff (`read:Return`) see every return; anyone else sees the returns on their own orders. Filter by `orderId` to see one order's, which is how an order page shows what has happened to a withdrawal.
@@ -12345,10 +12147,13 @@ export const deliverShipment = (
  */
 export const listReturns = (
     params?: ListReturnsParams,
-    options?: SecondParameter<typeof orvalMutator<ReturnsResponse>>
-) => {
-    return orvalMutator<ReturnsResponse>({ url: `/returns`, method: 'GET', params }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<ReturnsResponse>>,) => {
+      return orvalMutator<ReturnsResponse>(
+      {url: `/returns`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * The customer's one door for sending goods back — and the EU "withdraw from contract here" button (Consumer Rights Directive Art. 11a): a withdrawal is a return with `reason: withdrawal`, not a separate endpoint.
@@ -12360,18 +12165,14 @@ export const listReturns = (
  */
 export const createReturn = (
     createReturnRequest: CreateReturnRequest,
-    options?: SecondParameter<typeof orvalMutator<Return>>
-) => {
-    return orvalMutator<Return>(
-        {
-            url: `/returns`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createReturnRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Return>>,) => {
+      return orvalMutator<Return>(
+      {url: `/returns`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createReturnRequest
+    },
+      options);
+    }
 
 /**
  * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned, offered while a reason in `reasons` is open: the buyer's `reasons` are the ones whose deadline is open (none past every deadline), and staff holding `update:Return` get every reason, since they may open a return or record a withdrawal on a buyer's behalf. `exceptions` lists, for staff, the reasons that are past their deadline now, so a client can label what opening one would waive. `cancelable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancelable` is empty while nothing has shipped — the whole order is canceled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`.
@@ -12379,10 +12180,13 @@ export const createReturn = (
  */
 export const getReturnOptions = (
     params: GetReturnOptionsParams,
-    options?: SecondParameter<typeof orvalMutator<ReturnOptions>>
-) => {
-    return orvalMutator<ReturnOptions>({ url: `/returns/options`, method: 'GET', params }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<ReturnOptions>>,) => {
+      return orvalMutator<ReturnOptions>(
+      {url: `/returns/options`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * One return with the caller's `actions`. A return on someone else's order answers 404, the same as one that does not exist.
@@ -12390,10 +12194,12 @@ export const getReturnOptions = (
  */
 export const getReturnById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Return>>
-) => {
-    return orvalMutator<Return>({ url: `/returns/${id}`, method: 'GET' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<Return>>,) => {
+      return orvalMutator<Return>(
+      {url: `/returns/${id}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Staff accept a `requested` return; the customer is told they may send the goods back. The write is conditional on the return still being `requested`, so two staff members deciding at once cannot both win — the second answers 409.
@@ -12401,10 +12207,12 @@ export const getReturnById = (
  */
 export const approveReturn = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Return>>
-) => {
-    return orvalMutator<Return>({ url: `/returns/${id}/approve`, method: 'POST' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<Return>>,) => {
+      return orvalMutator<Return>(
+      {url: `/returns/${id}/approve`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Staff refuse a `requested` return with a reason code, and a message to the buyer that `other` requires — the customer is mailed the code's sentence, in their own language, and the message. Same conditional write as `approve`. A decline is final: a mistaken one is fixed by opening a new return for the same lines. A decline is a complaint the shop does not settle, so the mail does not carry the ADR information Directive 2013/11 Art. 13(3) asks for; that is the shop's to add.
@@ -12413,18 +12221,14 @@ export const approveReturn = (
 export const declineReturn = (
     id: string,
     declineReturnRequest: DeclineReturnRequest,
-    options?: SecondParameter<typeof orvalMutator<Return>>
-) => {
-    return orvalMutator<Return>(
-        {
-            url: `/returns/${id}/decline`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: declineReturnRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Return>>,) => {
+      return orvalMutator<Return>(
+      {url: `/returns/${id}/decline`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: declineReturnRequest
+    },
+      options);
+    }
 
 /**
  * The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409.
@@ -12434,18 +12238,14 @@ export const declineReturn = (
 export const receiveReturn = (
     id: string,
     receiveReturnRequest?: ReceiveReturnRequest,
-    options?: SecondParameter<typeof orvalMutator<Return>>
-) => {
-    return orvalMutator<Return>(
-        {
-            url: `/returns/${id}/receive`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: receiveReturnRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Return>>,) => {
+      return orvalMutator<Return>(
+      {url: `/returns/${id}/receive`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: receiveReturnRequest
+    },
+      options);
+    }
 
 /**
  * The stock board — every product with its three counters and the availability derived from them. Admin; a customer sees `available` on the product itself. Answers the question a catalogue listing cannot, which is WHY something is unbuyable — nothing on the shelf, or everything on it already spoken for.
@@ -12453,13 +12253,13 @@ export const receiveReturn = (
  */
 export const listInventoryLevels = (
     params?: ListInventoryLevelsParams,
-    options?: SecondParameter<typeof orvalMutator<InventoryLevelsResponse>>
-) => {
-    return orvalMutator<InventoryLevelsResponse>(
-        { url: `/inventory/levels`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<InventoryLevelsResponse>>,) => {
+      return orvalMutator<InventoryLevelsResponse>(
+      {url: `/inventory/levels`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Every product with a preorder allowance or an outstanding preorder, for the admin's preorder board: the cap, what is outstanding against it and how that splits between orders still unpaid and orders already paid. `backordered` is OUTSTANDING units, not units ever sold: it falls when stock arrives and is allocated, and when an order is canceled or expires. `ordered` is the lifetime count, read off the ledger.
@@ -12469,13 +12269,13 @@ export const listInventoryLevels = (
  */
 export const listPreorderLevels = (
     params?: ListPreorderLevelsParams,
-    options?: SecondParameter<typeof orvalMutator<PreorderLevelsResponse>>
-) => {
-    return orvalMutator<PreorderLevelsResponse>(
-        { url: `/inventory/preorders`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<PreorderLevelsResponse>>,) => {
+      return orvalMutator<PreorderLevelsResponse>(
+      {url: `/inventory/preorders`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * A page of the ledger, newest first — one row per counter change, with every counter delta and the reason attached. Every row was written by the same call that moved the counter, so the ledger cannot have gaps. Paged rather than capped, and `meta.totalItems` counts everything matching the filters — this is the record an audit works through, and a read that returned only the newest rows would misreport history as complete.
@@ -12483,13 +12283,13 @@ export const listPreorderLevels = (
  */
 export const listStockMovements = (
     params?: ListStockMovementsParams,
-    options?: SecondParameter<typeof orvalMutator<StockMovementsResponse>>
-) => {
-    return orvalMutator<StockMovementsResponse>(
-        { url: `/inventory/movements`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<StockMovementsResponse>>,) => {
+      return orvalMutator<StockMovementsResponse>(
+      {url: `/inventory/movements`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Units arrive from a supplier — `onHand` rises, `reserved` does not, so the delivery becomes available immediately. The only transition that can create units, and the reason a shop that has sold out can sell again. Requires an `Idempotency-Key` header — a retried receipt with the same key replays the first answer instead of counting the delivery twice, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. If the first attempt never reported an outcome, the same key answers 409 `IDEMPOTENCY_OUTCOME_UNKNOWN` and runs nothing; read the stock level back before receiving again with a new key.
@@ -12498,18 +12298,14 @@ export const listStockMovements = (
 export const receiveStock = (
     productId: Id,
     receiptRequest: ReceiptRequest,
-    options?: SecondParameter<typeof orvalMutator<InventoryLevel>>
-) => {
-    return orvalMutator<InventoryLevel>(
-        {
-            url: `/inventory/levels/${productId}/receive`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: receiptRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<InventoryLevel>>,) => {
+      return orvalMutator<InventoryLevel>(
+      {url: `/inventory/levels/${productId}/receive`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: receiptRequest
+    },
+      options);
+    }
 
 /**
  * A stocktake correction — signed, because shrinkage is the common case and it is negative. Refuses to take `onHand` below what is already reserved, because those units are promised to orders that exist — the fix for finding fewer units than were sold is to cancel orders, not to make availability negative. Requires an `Idempotency-Key` header — a retried correction with the same key replays the first answer instead of applying the delta twice, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. If the first attempt never reported an outcome, the same key answers 409 `IDEMPOTENCY_OUTCOME_UNKNOWN` and runs nothing; read the stock level back before adjusting again with a new key.
@@ -12518,18 +12314,14 @@ export const receiveStock = (
 export const adjustStock = (
     productId: Id,
     adjustmentRequest: AdjustmentRequest,
-    options?: SecondParameter<typeof orvalMutator<InventoryLevel>>
-) => {
-    return orvalMutator<InventoryLevel>(
-        {
-            url: `/inventory/levels/${productId}/adjust`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: adjustmentRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<InventoryLevel>>,) => {
+      return orvalMutator<InventoryLevel>(
+      {url: `/inventory/levels/${productId}/adjust`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: adjustmentRequest
+    },
+      options);
+    }
 
 /**
  * Releases every hold whose window has closed and announces each one, so the orders behind them get canceled.
@@ -12538,13 +12330,13 @@ export const adjustStock = (
  * @summary Expire stale reservations
  */
 export const sweepReservations = (
-    options?: SecondParameter<typeof orvalMutator<ReservationSweepResponse>>
-) => {
-    return orvalMutator<ReservationSweepResponse>(
-        { url: `/inventory/reservations/sweep`, method: 'POST' },
-        options
-    );
-};
+
+ options?: SecondParameter<typeof orvalMutator<ReservationSweepResponse>>,) => {
+      return orvalMutator<ReservationSweepResponse>(
+      {url: `/inventory/reservations/sweep`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Newest first unless `sort` says otherwise. Never returns a secret — the ring's
@@ -12554,13 +12346,13 @@ export const sweepReservations = (
  */
 export const listWebhookSubscriptions = (
     params?: ListWebhookSubscriptionsParams,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionsResponse>>
-) => {
-    return orvalMutator<WebhookSubscriptionsResponse>(
-        { url: `/webhooks/subscriptions`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionsResponse>>,) => {
+      return orvalMutator<WebhookSubscriptionsResponse>(
+      {url: `/webhooks/subscriptions`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Mints the ring's first secret and returns it in plaintext, once — the only
@@ -12579,18 +12371,14 @@ export const listWebhookSubscriptions = (
  */
 export const createWebhookSubscription = (
     createWebhookSubscriptionRequest: CreateWebhookSubscriptionRequest,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionCreated>>
-) => {
-    return orvalMutator<WebhookSubscriptionCreated>(
-        {
-            url: `/webhooks/subscriptions`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createWebhookSubscriptionRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionCreated>>,) => {
+      return orvalMutator<WebhookSubscriptionCreated>(
+      {url: `/webhooks/subscriptions`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createWebhookSubscriptionRequest
+    },
+      options);
+    }
 
 /**
  * The same shape the list rows carry (and never a secret). 404 for an id outside this
@@ -12599,13 +12387,12 @@ export const createWebhookSubscription = (
  */
 export const getWebhookSubscription = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>
-) => {
-    return orvalMutator<WebhookSubscription>(
-        { url: `/webhooks/subscriptions/${id}`, method: 'GET' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>,) => {
+      return orvalMutator<WebhookSubscription>(
+      {url: `/webhooks/subscriptions/${id}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Full replace of url/description/eventTypes — an omitted `description` is cleared.
@@ -12621,18 +12408,14 @@ export const getWebhookSubscription = (
 export const replaceWebhookSubscription = (
     id: string,
     replaceWebhookSubscriptionRequest: ReplaceWebhookSubscriptionRequest,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>
-) => {
-    return orvalMutator<WebhookSubscription>(
-        {
-            url: `/webhooks/subscriptions/${id}`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: replaceWebhookSubscriptionRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>,) => {
+      return orvalMutator<WebhookSubscription>(
+      {url: `/webhooks/subscriptions/${id}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: replaceWebhookSubscriptionRequest
+    },
+      options);
+    }
 
 /**
  * Partial update of url/description/eventTypes. Never touches the secret ring or
@@ -12647,18 +12430,14 @@ export const replaceWebhookSubscription = (
 export const updateWebhookSubscription = (
     id: string,
     updateWebhookSubscriptionRequest: UpdateWebhookSubscriptionRequest,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>
-) => {
-    return orvalMutator<WebhookSubscription>(
-        {
-            url: `/webhooks/subscriptions/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateWebhookSubscriptionRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>,) => {
+      return orvalMutator<WebhookSubscription>(
+      {url: `/webhooks/subscriptions/${id}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateWebhookSubscriptionRequest
+    },
+      options);
+    }
 
 /**
  * Partial update of url/description/eventTypes. Never touches the secret ring or
@@ -12673,18 +12452,14 @@ export const updateWebhookSubscription = (
 export const updateWebhookSubscriptionWithMergePatchJson = (
     id: string,
     updateWebhookSubscriptionRequest: UpdateWebhookSubscriptionRequest,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>
-) => {
-    return orvalMutator<WebhookSubscription>(
-        {
-            url: `/webhooks/subscriptions/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: updateWebhookSubscriptionRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>,) => {
+      return orvalMutator<WebhookSubscription>(
+      {url: `/webhooks/subscriptions/${id}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/merge-patch+json', },
+      data: updateWebhookSubscriptionRequest
+    },
+      options);
+    }
 
 /**
  * Permanently removes the subscription. Its delivery log is left in place, so past attempts stay auditable.
@@ -12692,13 +12467,12 @@ export const updateWebhookSubscriptionWithMergePatchJson = (
  */
 export const deleteWebhookSubscription = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/webhooks/subscriptions/${id}`, method: 'DELETE' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/webhooks/subscriptions/${id}`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * The other half of a rotation, once every consumer has switched. Refuses to empty
@@ -12710,13 +12484,12 @@ export const deleteWebhookSubscription = (
 export const deleteWebhookSubscriptionSecret = (
     id: string,
     secretId: string,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/webhooks/subscriptions/${id}/secrets/${secretId}`, method: 'DELETE' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/webhooks/subscriptions/${id}/secrets/${secretId}`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * Every attempt, newest first, optionally filtered by subscription and status. The order is fixed - this is a log.
@@ -12724,13 +12497,13 @@ export const deleteWebhookSubscriptionSecret = (
  */
 export const listWebhookDeliveries = (
     params?: ListWebhookDeliveriesParams,
-    options?: SecondParameter<typeof orvalMutator<WebhookDeliveriesResponse>>
-) => {
-    return orvalMutator<WebhookDeliveriesResponse>(
-        { url: `/webhooks/deliveries`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<WebhookDeliveriesResponse>>,) => {
+      return orvalMutator<WebhookDeliveriesResponse>(
+      {url: `/webhooks/deliveries`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Signs and POSTs again, synchronously, against the subscription's CURRENT url and
@@ -12745,13 +12518,12 @@ export const listWebhookDeliveries = (
  */
 export const replayWebhookDelivery = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<WebhookDelivery>>
-) => {
-    return orvalMutator<WebhookDelivery>(
-        { url: `/webhooks/deliveries/${id}/replay`, method: 'POST' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<WebhookDelivery>>,) => {
+      return orvalMutator<WebhookDelivery>(
+      {url: `/webhooks/deliveries/${id}/replay`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * The events of the modules this deployment runs, read from each one's own
@@ -12764,13 +12536,13 @@ export const replayWebhookDelivery = (
  * @summary The public event catalogue
  */
 export const listWebhookEvents = (
-    options?: SecondParameter<typeof orvalMutator<WebhookEventCatalogResponse>>
-) => {
-    return orvalMutator<WebhookEventCatalogResponse>(
-        { url: `/webhooks/events`, method: 'GET' },
-        options
-    );
-};
+
+ options?: SecondParameter<typeof orvalMutator<WebhookEventCatalogResponse>>,) => {
+      return orvalMutator<WebhookEventCatalogResponse>(
+      {url: `/webhooks/events`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Newest first unless `sort` says otherwise. Never returns a credential's secret — that exists only in the response of the call that minted it.
@@ -12778,10 +12550,13 @@ export const listWebhookEvents = (
  */
 export const listApiKeys = (
     params?: ListApiKeysParams,
-    options?: SecondParameter<typeof orvalMutator<ApiKeysResponse>>
-) => {
-    return orvalMutator<ApiKeysResponse>({ url: `/api-keys`, method: 'GET', params }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<ApiKeysResponse>>,) => {
+      return orvalMutator<ApiKeysResponse>(
+      {url: `/api-keys`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Mints `sk_<prefix>_<secret>` and returns it in plaintext, once — the only response
@@ -12805,26 +12580,27 @@ export const listApiKeys = (
  */
 export const createApiKey = (
     createApiKeyRequest: CreateApiKeyRequest,
-    options?: SecondParameter<typeof orvalMutator<ApiKeyCreated>>
-) => {
-    return orvalMutator<ApiKeyCreated>(
-        {
-            url: `/api-keys`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createApiKeyRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<ApiKeyCreated>>,) => {
+      return orvalMutator<ApiKeyCreated>(
+      {url: `/api-keys`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createApiKeyRequest
+    },
+      options);
+    }
 
 /**
  * One credential of this shop, with the same `status` the list gives it. Never its secret — that exists only in the response of the call that minted it. Another shop's credential, an unknown id and a malformed one are the same 404.
  * @summary Get a machine-to-machine credential
  */
-export const getApiKey = (id: string, options?: SecondParameter<typeof orvalMutator<ApiKey>>) => {
-    return orvalMutator<ApiKey>({ url: `/api-keys/${id}`, method: 'GET' }, options);
-};
+export const getApiKey = (
+    id: string,
+ options?: SecondParameter<typeof orvalMutator<ApiKey>>,) => {
+      return orvalMutator<ApiKey>(
+      {url: `/api-keys/${id}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * A soft state change, not a delete: `revokedAt` is stamped and every future
@@ -12834,10 +12610,12 @@ export const getApiKey = (id: string, options?: SecondParameter<typeof orvalMuta
  */
 export const revokeApiKey = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>({ url: `/api-keys/${id}`, method: 'DELETE' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/api-keys/${id}`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * Switches a registered language on: a visitor may now select it, requests in it are
@@ -12851,10 +12629,12 @@ export const revokeApiKey = (
  */
 export const activateLocale = (
     locale: string,
-    options?: SecondParameter<typeof orvalMutator<Language>>
-) => {
-    return orvalMutator<Language>({ url: `/locales/${locale}/activate`, method: 'POST' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<Language>>,) => {
+      return orvalMutator<Language>(
+      {url: `/locales/${locale}/activate`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Switches a registered language off: it becomes invisible to every public route
@@ -12870,13 +12650,12 @@ export const activateLocale = (
  */
 export const deactivateLocale = (
     locale: string,
-    options?: SecondParameter<typeof orvalMutator<Language>>
-) => {
-    return orvalMutator<Language>(
-        { url: `/locales/${locale}/deactivate`, method: 'POST' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Language>>,) => {
+      return orvalMutator<Language>(
+      {url: `/locales/${locale}/deactivate`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Mails the caller a one-time code for step-up, for an account that has no password to prove instead. Answers 422 for an account that has a password, or that has no verified address or no way to deliver mail, and 429 inside the per-code cooldown or once the account's hourly delivery budget is spent (shared with `POST /account/2fa/methods/{method}/send`, since both spend the same mailbox). Needs no fresh auth — it is what earns one.
@@ -12884,24 +12663,25 @@ export const deactivateLocale = (
  */
 export const sendReauthCode = (
     method: 'email',
-    options?: SecondParameter<typeof orvalMutator<TwoFactorDelivery>>
-) => {
-    return orvalMutator<TwoFactorDelivery>(
-        { url: `/account/reauth/methods/${method}/send`, method: 'POST' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<TwoFactorDelivery>>,) => {
+      return orvalMutator<TwoFactorDelivery>(
+      {url: `/account/reauth/methods/${method}/send`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Marks the session as having seen a real request now, and answers its idle clock. A staff or admin session that sees none for `idleTimeoutSeconds` ends (`401 SESSION_IDLE`); a client shows a "still there?" prompt before then and calls this when the person answers. A shopper's session never idles out, so the field is absent. Every other request counts as activity too, except one sent with the `Session-Passive: true` header: a poll or a keep-alive that is not the person acting.
  * @summary Count the caller's own session as active, and read its idle clock
  */
-export const touchSession = (options?: SecondParameter<typeof orvalMutator<SessionActivity>>) => {
-    return orvalMutator<SessionActivity>(
-        { url: `/account/sessions/current/touch`, method: 'POST' },
-        options
-    );
-};
+export const touchSession = (
+
+ options?: SecondParameter<typeof orvalMutator<SessionActivity>>,) => {
+      return orvalMutator<SessionActivity>(
+      {url: `/account/sessions/current/touch`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Gives the account the staff role named, replacing the one it holds (an account holds at most one). Naming the role it holds already answers 409 `USER_ROLE_ALREADY_ASSIGNED` and writes and audits nothing; two callers naming different roles both succeed, the last write wins. The only way a role is handed to an existing account. Needs `assign:Role`, with a critically fresh session, and only a session: an API key is refused 401. A name nobody can be given is a 422 naming `role`. Audited as `access.role.assigned`.
@@ -12910,18 +12690,14 @@ export const touchSession = (options?: SecondParameter<typeof orvalMutator<Sessi
 export const assignUserRole = (
     id: string,
     assignUserRoleRequest: AssignUserRoleRequest,
-    options?: SecondParameter<typeof orvalMutator<User>>
-) => {
-    return orvalMutator<User>(
-        {
-            url: `/users/${id}/assign-role`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: assignUserRoleRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<User>>,) => {
+      return orvalMutator<User>(
+      {url: `/users/${id}/assign-role`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: assignUserRoleRequest
+    },
+      options);
+    }
 
 /**
  * Takes the account's staff role away, leaving a plain customer. An account that holds none answers 409 `USER_ROLE_NOT_ASSIGNED`. Needs `assign:Role`, with a critically fresh session, and only a session: an API key is refused 401. Audited as `access.role.revoked`.
@@ -12929,10 +12705,12 @@ export const assignUserRole = (
  */
 export const revokeUserRole = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<User>>
-) => {
-    return orvalMutator<User>({ url: `/users/${id}/revoke-role`, method: 'POST' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<User>>,) => {
+      return orvalMutator<User>(
+      {url: `/users/${id}/revoke-role`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `lift-purchase-hold` ends it. Clears the account's review flag: placing a hold is acting on it. Placing the staff hold already in force, with the same `until` and the same `note`, answers 409 `USER_PURCHASE_HOLD_ALREADY_SET` and writes, mails and audits nothing; any other body replaces the hold. Audited as `admin.user.purchase_hold_set`.
@@ -12941,18 +12719,14 @@ export const revokeUserRole = (
 export const placeUserPurchaseHold = (
     id: string,
     placePurchaseHoldRequest: PlacePurchaseHoldRequest,
-    options?: SecondParameter<typeof orvalMutator<User>>
-) => {
-    return orvalMutator<User>(
-        {
-            url: `/users/${id}/place-purchase-hold`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: placePurchaseHoldRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<User>>,) => {
+      return orvalMutator<User>(
+      {url: `/users/${id}/place-purchase-hold`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: placePurchaseHoldRequest
+    },
+      options);
+    }
 
 /**
  * Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call, and it clears the account's review flag. An account with neither a hold nor a review flag answers 409 `USER_PURCHASE_HOLD_NOT_SET`. Audited as `admin.user.purchase_hold_lifted` (`inForce` says whether the hold was still running).
@@ -12960,10 +12734,12 @@ export const placeUserPurchaseHold = (
  */
 export const liftUserPurchaseHold = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<User>>
-) => {
-    return orvalMutator<User>({ url: `/users/${id}/lift-purchase-hold`, method: 'POST' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<User>>,) => {
+      return orvalMutator<User>(
+      {url: `/users/${id}/lift-purchase-hold`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Lets a deactivated account sign in again. Answers 409 `USER_ALREADY_ACTIVE` when it is active already. Needs `ban:User`, the key deactivating takes. Audited as `admin.user.unbanned`.
@@ -12971,10 +12747,12 @@ export const liftUserPurchaseHold = (
  */
 export const activateUserById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<User>>
-) => {
-    return orvalMutator<User>({ url: `/users/${id}/activate`, method: 'POST' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<User>>,) => {
+      return orvalMutator<User>(
+      {url: `/users/${id}/activate`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Locks the account out and ends every session it holds in the same save, so activating it later does not bring the old tokens back. Answers 409 `USER_ALREADY_INACTIVE` when it is deactivated already. Needs `ban:User`. Audited as `admin.user.banned`.
@@ -12982,10 +12760,12 @@ export const activateUserById = (
  */
 export const deactivateUserById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<User>>
-) => {
-    return orvalMutator<User>({ url: `/users/${id}/deactivate`, method: 'POST' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<User>>,) => {
+      return orvalMutator<User>(
+      {url: `/users/${id}/deactivate`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart/items`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden; `cart_full`: no line is left for it) are also written as ONE notification (`shop-tasks.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
@@ -12993,18 +12773,14 @@ export const deactivateUserById = (
  */
 export const mergeCart = (
     mergeCartRequest: MergeCartRequest,
-    options?: SecondParameter<typeof orvalMutator<MergeCartResponse>>
-) => {
-    return orvalMutator<MergeCartResponse>(
-        {
-            url: `/cart/merge`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: mergeCartRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<MergeCartResponse>>,) => {
+      return orvalMutator<MergeCartResponse>(
+      {url: `/cart/merge`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: mergeCartRequest
+    },
+      options);
+    }
 
 /**
  * The list's filters, answered as one `text/csv` file: every matching order in the list's own
@@ -13026,13 +12802,14 @@ export const mergeCart = (
  */
 export const exportOrders = (
     params?: ExportOrdersParams,
-    options?: SecondParameter<typeof orvalMutator<Blob>>
-) => {
-    return orvalMutator<Blob>(
-        { url: `/orders/export`, method: 'GET', params, responseType: 'blob' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Blob>>,) => {
+      return orvalMutator<Blob>(
+      {url: `/orders/export`, method: 'GET',
+        params,
+        responseType: 'blob'
+    },
+      options);
+    }
 
 /**
  * What happened to the order, a page at a time, newest first (a log, so no `sort`): status moves, payments and refunds, shipments, returns, documents, staff notes. Paged rather than capped: staff notes make a history grow without limit, and `meta.totalItems` counts the rows this caller may read. Every caller who may read the order may read this, but not the same rows. A caller holding `display:Order` sees every row, with the `actor` who made it and any `text` staff wrote. The buyer sees only the buyer-visible types and never an `actor`: a manual correction, a hold and a failed refund stay with staff.
@@ -13041,13 +12818,13 @@ export const exportOrders = (
 export const getOrderTimeline = (
     id: string,
     params?: GetOrderTimelineParams,
-    options?: SecondParameter<typeof orvalMutator<OrderTimelineResponse>>
-) => {
-    return orvalMutator<OrderTimelineResponse>(
-        { url: `/orders/${id}/timeline`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<OrderTimelineResponse>>,) => {
+      return orvalMutator<OrderTimelineResponse>(
+      {url: `/orders/${id}/timeline`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Appends a `note_added` row to the order's timeline: a call, an agreement, anything staff want the next person to know. Needs `update:Order`. The row is staff-only (`audience: staff`): the buyer's timeline never shows it, but it is the buyer's data and so it is in their `POST /account/export`. The text is stored encrypted, unset when the order's personal data is erased and after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`, and never written to the audit log (only its length is). Answers the entry, with the `Location` of its `DELETE`.
@@ -13056,18 +12833,14 @@ export const getOrderTimeline = (
 export const addOrderNote = (
     id: string,
     createOrderNoteRequest: CreateOrderNoteRequest,
-    options?: SecondParameter<typeof orvalMutator<OrderTimelineEntry>>
-) => {
-    return orvalMutator<OrderTimelineEntry>(
-        {
-            url: `/orders/${id}/timeline/notes`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createOrderNoteRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<OrderTimelineEntry>>,) => {
+      return orvalMutator<OrderTimelineEntry>(
+      {url: `/orders/${id}/timeline/notes`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createOrderNoteRequest
+    },
+      options);
+    }
 
 /**
  * Unsets the text of one `note_added` row: the row stays in the timeline, without its text, so the history still shows that a note was written and withdrawn (GDPR Art. 16 and 17). Needs `update:Order`. An id that is not a note of this order is a 404. Writes an audit row with the note's length, never its text. A second call on the same note is a 404.
@@ -13076,13 +12849,12 @@ export const addOrderNote = (
 export const deleteOrderNote = (
     id: string,
     eventId: Id,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/orders/${id}/timeline/notes/${eventId}`, method: 'DELETE' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/orders/${id}/timeline/notes/${eventId}`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * Replaces the order's shipping address, as staff do when a fulfillment order was held for `incorrect_address` and the buyer wrote back. Needs `update:Order`. Allowed while units remain to send (held and awaiting-stock ones included) and the order has a shipping address at all (`409 ORDER_ADDRESS_LOCKED` otherwise). A parcel already cut keeps the address it went to: each shipment stores its own `destination`. The country must be on the shop's ship-to list (`422 ORDER_SHIP_TO_COUNTRY_NOT_SUPPORTED`). Leaves a staff-only timeline row, `address_corrected`, and an audit row naming who changed it, never what it says. `OrderActions.correctAddress` says whether this would be accepted.
@@ -13091,18 +12863,14 @@ export const deleteOrderNote = (
 export const correctOrderShippingAddress = (
     id: string,
     replaceShippingAddressRequest: ReplaceShippingAddressRequest,
-    options?: SecondParameter<typeof orvalMutator<Order>>
-) => {
-    return orvalMutator<Order>(
-        {
-            url: `/orders/${id}/shipping-address`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: replaceShippingAddressRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Order>>,) => {
+      return orvalMutator<Order>(
+      {url: `/orders/${id}/shipping-address`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: replaceShippingAddressRequest
+    },
+      options);
+    }
 
 /**
  * Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /orders/{id}/payments`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. Each row carries `actions` for the caller, so a client never decides `refund` from the status; `actions.pay` is false on a list row (paying is the payer's own step, read on the order page). The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
@@ -13110,10 +12878,13 @@ export const correctOrderShippingAddress = (
  */
 export const listPayments = (
     params?: ListPaymentsParams,
-    options?: SecondParameter<typeof orvalMutator<PaymentsResponse>>
-) => {
-    return orvalMutator<PaymentsResponse>({ url: `/payments`, method: 'GET', params }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<PaymentsResponse>>,) => {
+      return orvalMutator<PaymentsResponse>(
+      {url: `/payments`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200, so a retry needs no `Idempotency-Key` (a stored replay would hand back the first answer's `clientSecret` for as long as the ledger keeps it). The caller's intents and syncs share one budget per hour (429) — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
@@ -13121,18 +12892,14 @@ export const listPayments = (
  */
 export const createPayment = (
     createPaymentRequest: CreatePaymentRequest,
-    options?: SecondParameter<typeof orvalMutator<Payment>>
-) => {
-    return orvalMutator<Payment>(
-        {
-            url: `/payments`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createPaymentRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Payment>>,) => {
+      return orvalMutator<Payment>(
+      {url: `/payments`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createPaymentRequest
+    },
+      options);
+    }
 
 /**
  * Same as `GET /payments`, with the filters in a JSON body.
@@ -13140,18 +12907,14 @@ export const createPayment = (
  */
 export const searchPayments = (
     searchPaymentsRequest: SearchPaymentsRequest,
-    options?: SecondParameter<typeof orvalMutator<PaymentsResponse>>
-) => {
-    return orvalMutator<PaymentsResponse>(
-        {
-            url: `/payments/search`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: searchPaymentsRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<PaymentsResponse>>,) => {
+      return orvalMutator<PaymentsResponse>(
+      {url: `/payments/search`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: searchPaymentsRequest
+    },
+      options);
+    }
 
 /**
  * One row per refund across every payment, newest first, for the Refunds tab. Read only: a refund is opened and settled through `POST /payments/{id}/refunds` and the cancel path. Needs `display:Payment`.
@@ -13159,26 +12922,26 @@ export const searchPayments = (
  */
 export const listRefunds = (
     params?: ListRefundsParams,
-    options?: SecondParameter<typeof orvalMutator<RefundsResponse>>
-) => {
-    return orvalMutator<RefundsResponse>(
-        { url: `/payments/refunds`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<RefundsResponse>>,) => {
+      return orvalMutator<RefundsResponse>(
+      {url: `/payments/refunds`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Only problems still recorded on a document, so a fixed one disappears. Six kinds, each source capped at 100 rows: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`); card refunds the provider refused for good (`refused_refund`: shown at once, the money has to go back another way); refunds the provider took back after settling them (`reversed_refund`); an open refund an outside refund left no room for (`refund_exceeds_remaining`); refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age); and disputes the shop has to answer (`dispute_needs_response`, with its deadline). A canceled order's refund is one of them, because its record opens before the provider is asked. Oldest first. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`.
  * @summary Payments that need a person (staff)
  */
 export const listPaymentAttention = (
-    options?: SecondParameter<typeof orvalMutator<PaymentAttentionResponse>>
-) => {
-    return orvalMutator<PaymentAttentionResponse>(
-        { url: `/payments/attention`, method: 'GET' },
-        options
-    );
-};
+
+ options?: SecondParameter<typeof orvalMutator<PaymentAttentionResponse>>,) => {
+      return orvalMutator<PaymentAttentionResponse>(
+      {url: `/payments/attention`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * An operator confirming that money was handed back outside the application (cash given back, a bank transfer sent). Nothing is sent anywhere: the refund record settles with `settledByHand`, `payment.refunded` fires as for any refund (the credit note is issued, a return waiting on it closes), and the audit row is `admin.payment.refund_settled_by_hand`. The refund is named by its own id, so one payment carrying several open refunds settles each separately.
@@ -13188,13 +12951,12 @@ export const listPaymentAttention = (
 export const settleRefundByHand = (
     id: string,
     refundId: Id,
-    options?: SecondParameter<typeof orvalMutator<Refund>>
-) => {
-    return orvalMutator<Refund>(
-        { url: `/payments/${id}/refunds/${refundId}/settle`, method: 'POST' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Refund>>,) => {
+      return orvalMutator<Refund>(
+      {url: `/payments/${id}/refunds/${refundId}/settle`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * A local void for a refund the shop will not pay: a duplicate opened by mistake, or one the provider's dashboard already covered. The record goes `failed` with `failureReason: canceled` and the amount it held returns to what is refundable. Nothing is sent to the provider, no credit note is issued and the buyer is not mailed: the money never moved, so there is nothing to report. The sweep never sends a canceled refund. The note says why, and is kept in the audit row `admin.payment.refund_canceled` with the order's timeline row `refund_canceled` (staff only) and the `payment.refund_canceled` event.
@@ -13205,18 +12967,14 @@ export const cancelRefund = (
     id: string,
     refundId: Id,
     cancelRefundRequest: CancelRefundRequest,
-    options?: SecondParameter<typeof orvalMutator<Refund>>
-) => {
-    return orvalMutator<Refund>(
-        {
-            url: `/payments/${id}/refunds/${refundId}/cancel`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: cancelRefundRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Refund>>,) => {
+      return orvalMutator<Refund>(
+      {url: `/payments/${id}/refunds/${refundId}/cancel`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: cancelRefundRequest
+    },
+      options);
+    }
 
 /**
  * A preview for staff about to save a release date, so the save is never a surprise. Counts the
@@ -13232,13 +12990,13 @@ export const cancelRefund = (
  */
 export const previewReleaseDateImpact = (
     params: PreviewReleaseDateImpactParams,
-    options?: SecondParameter<typeof orvalMutator<ReleaseDateImpact>>
-) => {
-    return orvalMutator<ReleaseDateImpact>(
-        { url: `/delivery/fulfillment-orders/release-date-impact`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<ReleaseDateImpact>>,) => {
+      return orvalMutator<ReleaseDateImpact>(
+      {url: `/delivery/fulfillment-orders/release-date-impact`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * A preview for staff about to save a restock date, so the save is never a surprise. Counts the
@@ -13254,13 +13012,13 @@ export const previewReleaseDateImpact = (
  */
 export const previewRestockDateImpact = (
     params: PreviewRestockDateImpactParams,
-    options?: SecondParameter<typeof orvalMutator<ReleaseDateImpact>>
-) => {
-    return orvalMutator<ReleaseDateImpact>(
-        { url: `/delivery/fulfillment-orders/restock-date-impact`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<ReleaseDateImpact>>,) => {
+      return orvalMutator<ReleaseDateImpact>(
+      {url: `/delivery/fulfillment-orders/restock-date-impact`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * One fulfillment order by its own id, the record `ship`, `fulfill`, `hold` and `release` act on, with the same `actions` they answer. Scoped like the order it belongs to (`read:Order`): a buyer reads their own, staff holding `display:Order` read any. Someone else's, an unknown id and a malformed one are the same 404.
@@ -13268,13 +13026,12 @@ export const previewRestockDateImpact = (
  */
 export const getFulfillmentOrder = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<FulfillmentOrder>>
-) => {
-    return orvalMutator<FulfillmentOrder>(
-        { url: `/delivery/fulfillment-orders/${id}`, method: 'GET' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<FulfillmentOrder>>,) => {
+      return orvalMutator<FulfillmentOrder>(
+      {url: `/delivery/fulfillment-orders/${id}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Staff reports a parcel that left but will not arrive (`lost`), or arrived unusable before its arrival was recorded (`damaged`, in transit and never handed over; damage found after the buyer has the goods is a return). Needs `update:Shipment`; no step-up. Only a `shipped` physical shipment on an order that is `processing` or `shipped` can be reported (`DELIVERY_NOT_LOSABLE`).
@@ -13285,18 +13042,14 @@ export const getFulfillmentOrder = (
 export const markShipmentLost = (
     id: string,
     markShipmentLostRequest: MarkShipmentLostRequest,
-    options?: SecondParameter<typeof orvalMutator<Shipment>>
-) => {
-    return orvalMutator<Shipment>(
-        {
-            url: `/delivery/shipments/${id}/mark-lost`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: markShipmentLostRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Shipment>>,) => {
+      return orvalMutator<Shipment>(
+      {url: `/delivery/shipments/${id}/mark-lost`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: markShipmentLostRequest
+    },
+      options);
+    }
 
 /**
  * Staff finish a `received` return whose refund will not follow the usual way: it was canceled, or the money went back outside the application. The return becomes `closed` and the order's timeline and the audit row `admin.return.closed` say so, with the note in the audit row only. No money moves, no stock moves (the units went back on sale when the goods were received), no credit note is issued and the customer is not mailed that their money went back: closing is bookkeeping, not a refund. A return that is not `received` (a `requested` one is declined, an `approved` one whose goods never came is canceled, not closed) answers 409 `RETURN_NOT_CLOSABLE`. Needs `receive:Return`, the key that receives the goods, which carries a fresh-session requirement.
@@ -13305,18 +13058,14 @@ export const markShipmentLost = (
 export const closeReturn = (
     id: string,
     closeReturnRequest?: CloseReturnRequest,
-    options?: SecondParameter<typeof orvalMutator<Return>>
-) => {
-    return orvalMutator<Return>(
-        {
-            url: `/returns/${id}/close`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: closeReturnRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Return>>,) => {
+      return orvalMutator<Return>(
+      {url: `/returns/${id}/close`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: closeReturnRequest
+    },
+      options);
+    }
 
 /**
  * Staff end an `approved` return whose goods will never arrive: the buyer never sent them, or changed their mind. The return becomes `canceled`, a final state that is not `closed`: it holds no units (the same lines can be returned again) and counts as no goods back, so the order's return status leaves `in_progress` and the delivery refund is not taken by it. A withdrawal, born `approved`, can be canceled too.
@@ -13327,18 +13076,14 @@ export const closeReturn = (
 export const cancelReturn = (
     id: string,
     cancelReturnRequest?: CancelReturnRequest,
-    options?: SecondParameter<typeof orvalMutator<Return>>
-) => {
-    return orvalMutator<Return>(
-        {
-            url: `/returns/${id}/cancel`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: cancelReturnRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Return>>,) => {
+      return orvalMutator<Return>(
+      {url: `/returns/${id}/cancel`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: cancelReturnRequest
+    },
+      options);
+    }
 
 /**
  * Staff note the carrier document the buyer showed for the parcel they sent back: the date it was handed over, the carrier and the reference. Requires an `approved` return (409 `RETURN_NOT_RECEIVABLE` otherwise) and is one-time: a second call answers 409 `RETURN_PROOF_ALREADY_RECORDED`. A `sentAt` in the future answers 422 `RETURN_PROOF_DATE_INVALID`.
@@ -13348,18 +13093,14 @@ export const cancelReturn = (
 export const recordProofOfSending = (
     id: string,
     recordProofOfSendingRequest: RecordProofOfSendingRequest,
-    options?: SecondParameter<typeof orvalMutator<Return>>
-) => {
-    return orvalMutator<Return>(
-        {
-            url: `/returns/${id}/proof-of-sending`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: recordProofOfSendingRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Return>>,) => {
+      return orvalMutator<Return>(
+      {url: `/returns/${id}/proof-of-sending`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: recordProofOfSendingRequest
+    },
+      options);
+    }
 
 /**
  * Headline totals, the same totals for the equal-length period before, and one bucket per day, week (Monday) or month, per currency. Every figure is net of VAT unless it says otherwise; money is grouped by currency and never converted. A sale is dated by `paidAt`, a reversal by the credit note's `issuedAt`, and days are the shop's (`NODE_SHOP_TIMEZONE`), so a bucket edge is shop-local midnight. `from` and `to` are shop-local calendar days, both inclusive; the range may not pass 731 days or 400 buckets. Needs `read:Stats`. Never cached: it is the shop's money.
@@ -13367,10 +13108,13 @@ export const recordProofOfSending = (
  */
 export const getSalesStats = (
     params: GetSalesStatsParams,
-    options?: SecondParameter<typeof orvalMutator<SalesStats>>
-) => {
-    return orvalMutator<SalesStats>({ url: `/stats/sales`, method: 'GET', params }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<SalesStats>>,) => {
+      return orvalMutator<SalesStats>(
+      {url: `/stats/sales`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * The products that sold most in the period, by net sales: units ordered, units reversed by returns received in the period, net units and net sales (VAT out). Reads the order lines as they were frozen, so a deleted order drops out. Needs `read:Stats`.
@@ -13378,10 +13122,13 @@ export const getSalesStats = (
  */
 export const getProductStats = (
     params: GetProductStatsParams,
-    options?: SecondParameter<typeof orvalMutator<ProductStats>>
-) => {
-    return orvalMutator<ProductStats>({ url: `/stats/products`, method: 'GET', params }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<ProductStats>>,) => {
+      return orvalMutator<ProductStats>(
+      {url: `/stats/products`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Units ordered and units reversed for one product, per bucket, plus its title as the orders froze it. The orders behind it are `GET /orders?productId=…&paidFrom=…`. Needs `read:Stats`.
@@ -13390,13 +13137,13 @@ export const getProductStats = (
 export const getProductSalesSeries = (
     productId: Id,
     params: GetProductSalesSeriesParams,
-    options?: SecondParameter<typeof orvalMutator<ProductSeries>>
-) => {
-    return orvalMutator<ProductSeries>(
-        { url: `/stats/products/${productId}`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<ProductSeries>>,) => {
+      return orvalMutator<ProductSeries>(
+      {url: `/stats/products/${productId}`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Net sales and units per category, from the categories each order line froze. A product in two categories counts in both, so the rows do not add up to the total. Needs `read:Stats`.
@@ -13404,13 +13151,13 @@ export const getProductSalesSeries = (
  */
 export const getCategoryStats = (
     params: GetCategoryStatsParams,
-    options?: SecondParameter<typeof orvalMutator<CategoryStats>>
-) => {
-    return orvalMutator<CategoryStats>(
-        { url: `/stats/categories`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<CategoryStats>>,) => {
+      return orvalMutator<CategoryStats>(
+      {url: `/stats/categories`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Payments that took money in the period (`succeeded`, refunded or not), by method and provider, with their count and amount. Needs `read:Stats`.
@@ -13418,10 +13165,13 @@ export const getCategoryStats = (
  */
 export const getPaymentMixStats = (
     params: GetPaymentMixStatsParams,
-    options?: SecondParameter<typeof orvalMutator<PaymentMix>>
-) => {
-    return orvalMutator<PaymentMix>({ url: `/stats/payments`, method: 'GET', params }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<PaymentMix>>,) => {
+      return orvalMutator<PaymentMix>(
+      {url: `/stats/payments`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Cancellation rate as a cohort (orders placed in the period that ended canceled, including an order whose every parcel was lost and refunded), return rate (units returned ÷ units ordered, Shopify's `returned_quantity_rate`) and refund rate (credit notes ÷ invoices, VAT included). Needs `read:Stats`.
@@ -13429,13 +13179,13 @@ export const getPaymentMixStats = (
  */
 export const getOperationsStats = (
     params: GetOperationsStatsParams,
-    options?: SecondParameter<typeof orvalMutator<OperationsStats>>
-) => {
-    return orvalMutator<OperationsStats>(
-        { url: `/stats/operations`, method: 'GET', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<OperationsStats>>,) => {
+      return orvalMutator<OperationsStats>(
+      {url: `/stats/operations`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Customers who paid in the period, split into new (their first paid order falls in the period) and returning. Matched by account only, never by email: every erased account shares one placeholder address. Needs `read:Stats`.
@@ -13443,18 +13193,26 @@ export const getOperationsStats = (
  */
 export const getCustomerStats = (
     params: GetCustomerStatsParams,
-    options?: SecondParameter<typeof orvalMutator<CustomerStats>>
-) => {
-    return orvalMutator<CustomerStats>({ url: `/stats/customers`, method: 'GET', params }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<CustomerStats>>,) => {
+      return orvalMutator<CustomerStats>(
+      {url: `/stats/customers`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * A snapshot, not a period: bank transfers awaiting money (count, amount incl. VAT, the nearest `payBy`) and paid orders not yet shipped. Needs `read:Stats`.
  * @summary What is waiting right now (staff)
  */
-export const getPipelineStats = (options?: SecondParameter<typeof orvalMutator<PipelineStats>>) => {
-    return orvalMutator<PipelineStats>({ url: `/stats/pipeline`, method: 'GET' }, options);
-};
+export const getPipelineStats = (
+
+ options?: SecondParameter<typeof orvalMutator<PipelineStats>>,) => {
+      return orvalMutator<PipelineStats>(
+      {url: `/stats/pipeline`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * One row of the stock board by product, with its counters and availability — the record `receive`, `adjust` and the `PATCH` act on. Same audience as the board (`read:StockLevel`). An unknown product, one with no level row and a malformed id are the same 404.
@@ -13462,13 +13220,12 @@ export const getPipelineStats = (options?: SecondParameter<typeof orvalMutator<P
  */
 export const getInventoryLevel = (
     productId: Id,
-    options?: SecondParameter<typeof orvalMutator<InventoryLevel>>
-) => {
-    return orvalMutator<InventoryLevel>(
-        { url: `/inventory/levels/${productId}`, method: 'GET' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<InventoryLevel>>,) => {
+      return orvalMutator<InventoryLevel>(
+      {url: `/inventory/levels/${productId}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Merges the given fields into the level (RFC 7396). Only the preorder limit is editable; the counters move through `receive` and `adjust`. `backorderLimit` is how many units of the product may be backordered at once: the allowance an order claims when it is placed. `0` closes it; `null` removes the cap, so the shop keeps selling whatever the date promises. Lowering it below what is already outstanding is allowed and leaves those orders alone; only new ones are refused. A body that names no field changes nothing and answers the level as it is. Absolute and idempotent, so a retry is safe.
@@ -13479,18 +13236,14 @@ export const getInventoryLevel = (
 export const updateInventoryLevel = (
     productId: Id,
     updateInventoryLevelRequest: UpdateInventoryLevelRequest,
-    options?: SecondParameter<typeof orvalMutator<InventoryLevel>>
-) => {
-    return orvalMutator<InventoryLevel>(
-        {
-            url: `/inventory/levels/${productId}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateInventoryLevelRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<InventoryLevel>>,) => {
+      return orvalMutator<InventoryLevel>(
+      {url: `/inventory/levels/${productId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateInventoryLevelRequest
+    },
+      options);
+    }
 
 /**
  * Merges the given fields into the level (RFC 7396). Only the preorder limit is editable; the counters move through `receive` and `adjust`. `backorderLimit` is how many units of the product may be backordered at once: the allowance an order claims when it is placed. `0` closes it; `null` removes the cap, so the shop keeps selling whatever the date promises. Lowering it below what is already outstanding is allowed and leaves those orders alone; only new ones are refused. A body that names no field changes nothing and answers the level as it is. Absolute and idempotent, so a retry is safe.
@@ -13501,18 +13254,14 @@ export const updateInventoryLevel = (
 export const updateInventoryLevelWithMergePatchJson = (
     productId: Id,
     updateInventoryLevelRequest: UpdateInventoryLevelRequest,
-    options?: SecondParameter<typeof orvalMutator<InventoryLevel>>
-) => {
-    return orvalMutator<InventoryLevel>(
-        {
-            url: `/inventory/levels/${productId}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: updateInventoryLevelRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<InventoryLevel>>,) => {
+      return orvalMutator<InventoryLevel>(
+      {url: `/inventory/levels/${productId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/merge-patch+json', },
+      data: updateInventoryLevelRequest
+    },
+      options);
+    }
 
 /**
  * Turns a subscription back on, whether it was switched off by hand or by the
@@ -13524,13 +13273,12 @@ export const updateInventoryLevelWithMergePatchJson = (
  */
 export const enableWebhookSubscription = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>
-) => {
-    return orvalMutator<WebhookSubscription>(
-        { url: `/webhooks/subscriptions/${id}/enable`, method: 'POST' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>,) => {
+      return orvalMutator<WebhookSubscription>(
+      {url: `/webhooks/subscriptions/${id}/enable`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Pauses a subscription by hand: sets `disabledAt` (and leaves `autoDisabledAt`
@@ -13541,13 +13289,12 @@ export const enableWebhookSubscription = (
  */
 export const disableWebhookSubscription = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>
-) => {
-    return orvalMutator<WebhookSubscription>(
-        { url: `/webhooks/subscriptions/${id}/disable`, method: 'POST' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>,) => {
+      return orvalMutator<WebhookSubscription>(
+      {url: `/webhooks/subscriptions/${id}/disable`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Adds a new secret to the ring and returns its plaintext once, in `newSecret` — the
@@ -13567,13 +13314,12 @@ export const disableWebhookSubscription = (
  */
 export const createWebhookSubscriptionSecret = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionCreated>>
-) => {
-    return orvalMutator<WebhookSubscriptionCreated>(
-        { url: `/webhooks/subscriptions/${id}/secrets`, method: 'POST' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionCreated>>,) => {
+      return orvalMutator<WebhookSubscriptionCreated>(
+      {url: `/webhooks/subscriptions/${id}/secrets`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * One row of this shop's delivery log, the same shape the list gives it, with `actions.replay`. Another shop's delivery, an unknown id and a malformed one are the same 404.
@@ -13581,13 +13327,12 @@ export const createWebhookSubscriptionSecret = (
  */
 export const getWebhookDelivery = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<WebhookDelivery>>
-) => {
-    return orvalMutator<WebhookDelivery>(
-        { url: `/webhooks/deliveries/${id}`, method: 'GET' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<WebhookDelivery>>,) => {
+      return orvalMutator<WebhookDelivery>(
+      {url: `/webhooks/deliveries/${id}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Returns the caller's own examples, newest first by default. A caller holding `display:Example` sees everyone's.
@@ -13595,10 +13340,13 @@ export const getWebhookDelivery = (
  */
 export const listExamples = (
     params?: ListExamplesParams,
-    options?: SecondParameter<typeof orvalMutator<ExamplesResponse>>
-) => {
-    return orvalMutator<ExamplesResponse>({ url: `/examples`, method: 'GET', params }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<ExamplesResponse>>,) => {
+      return orvalMutator<ExamplesResponse>(
+      {url: `/examples`, method: 'GET',
+        params
+    },
+      options);
+    }
 
 /**
  * Creates a draft example owned by the caller. Sending `Idempotency-Key` makes a retry safe, since the same key replays the first answer.
@@ -13606,18 +13354,14 @@ export const listExamples = (
  */
 export const createExample = (
     createExampleRequest: CreateExampleRequest,
-    options?: SecondParameter<typeof orvalMutator<Example>>
-) => {
-    return orvalMutator<Example>(
-        {
-            url: `/examples`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createExampleRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Example>>,) => {
+      return orvalMutator<Example>(
+      {url: `/examples`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createExampleRequest
+    },
+      options);
+    }
 
 /**
  * Searches and filters examples via a JSON request body. Functionally equivalent to `GET /examples` with query parameters.
@@ -13625,18 +13369,14 @@ export const createExample = (
  */
 export const searchExamples = (
     searchExamplesRequest: SearchExamplesRequest,
-    options?: SecondParameter<typeof orvalMutator<ExamplesResponse>>
-) => {
-    return orvalMutator<ExamplesResponse>(
-        {
-            url: `/examples/search`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: searchExamplesRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<ExamplesResponse>>,) => {
+      return orvalMutator<ExamplesResponse>(
+      {url: `/examples/search`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: searchExamplesRequest
+    },
+      options);
+    }
 
 /**
  * Returns one example, scoped by the caller as `GET /products/{id}` is. A `published` example is open to anyone, signed in or not. The owner also reads their own drafts and archived ones, and a caller holding `display:Example` reads any. Everything else answers `404`, never `403`, so an id reveals nothing about who owns it or whether a draft exists. The answer varies by caller and language, so it is never shared-cached.
@@ -13644,10 +13384,12 @@ export const searchExamples = (
  */
 export const getExampleById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Example>>
-) => {
-    return orvalMutator<Example>({ url: `/examples/${id}`, method: 'GET' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<Example>>,) => {
+      return orvalMutator<Example>(
+      {url: `/examples/${id}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Replaces the example's writable fields (RFC 9110 §9.3.4). `title` and `body` are required, since a PUT names the whole representation. The status moves through `POST /examples/{id}/publish|archive|unarchive`.
@@ -13656,18 +13398,14 @@ export const getExampleById = (
 export const replaceExampleById = (
     id: string,
     replaceExampleRequest: ReplaceExampleRequest,
-    options?: SecondParameter<typeof orvalMutator<Example>>
-) => {
-    return orvalMutator<Example>(
-        {
-            url: `/examples/${id}`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: replaceExampleRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Example>>,) => {
+      return orvalMutator<Example>(
+      {url: `/examples/${id}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: replaceExampleRequest
+    },
+      options);
+    }
 
 /**
  * Merges a change into the example (RFC 7396, an omitted field is left unchanged).
@@ -13676,18 +13414,14 @@ export const replaceExampleById = (
 export const updateExampleById = (
     id: string,
     updateExampleRequest: UpdateExampleRequest,
-    options?: SecondParameter<typeof orvalMutator<Example>>
-) => {
-    return orvalMutator<Example>(
-        {
-            url: `/examples/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateExampleRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Example>>,) => {
+      return orvalMutator<Example>(
+      {url: `/examples/${id}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateExampleRequest
+    },
+      options);
+    }
 
 /**
  * Merges a change into the example (RFC 7396, an omitted field is left unchanged).
@@ -13696,18 +13430,14 @@ export const updateExampleById = (
 export const updateExampleByIdWithMergePatchJson = (
     id: string,
     updateExampleRequest: UpdateExampleRequest,
-    options?: SecondParameter<typeof orvalMutator<Example>>
-) => {
-    return orvalMutator<Example>(
-        {
-            url: `/examples/${id}`,
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: updateExampleRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<Example>>,) => {
+      return orvalMutator<Example>(
+      {url: `/examples/${id}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/merge-patch+json', },
+      data: updateExampleRequest
+    },
+      options);
+    }
 
 /**
  * Permanently removes the example identified by `{id}`, and its cover image with it.
@@ -13715,10 +13445,12 @@ export const updateExampleByIdWithMergePatchJson = (
  */
 export const deleteExampleById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>({ url: `/examples/${id}`, method: 'DELETE' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/examples/${id}`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * Moves a draft to `published`. Stamps `publishedAt` the first time, announces `example.published` and mails the owner. Whether the door is open is the caller's `Example.actions.publish`. Another person's example answers `404`, as every write here does. Answers `409` `EXAMPLE_NOT_PUBLISHABLE` from any other status.
@@ -13726,10 +13458,12 @@ export const deleteExampleById = (
  */
 export const publishExample = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Example>>
-) => {
-    return orvalMutator<Example>({ url: `/examples/${id}/publish`, method: 'POST' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<Example>>,) => {
+      return orvalMutator<Example>(
+      {url: `/examples/${id}/publish`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Moves a draft or a published example to `archived`. Whether the door is open is the caller's `Example.actions.archive`. Another person's example answers `404`. Answers `409` `EXAMPLE_NOT_ARCHIVABLE` from any other status.
@@ -13737,10 +13471,12 @@ export const publishExample = (
  */
 export const archiveExample = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Example>>
-) => {
-    return orvalMutator<Example>({ url: `/examples/${id}/archive`, method: 'POST' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<Example>>,) => {
+      return orvalMutator<Example>(
+      {url: `/examples/${id}/archive`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Moves an archived example back to `draft`; publishing it again keeps the original `publishedAt`. Whether the door is open is the caller's `Example.actions.unarchive`. Another person's example answers `404`. Answers `409` `EXAMPLE_NOT_UNARCHIVABLE` from any other status.
@@ -13748,10 +13484,12 @@ export const archiveExample = (
  */
 export const unarchiveExample = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Example>>
-) => {
-    return orvalMutator<Example>({ url: `/examples/${id}/unarchive`, method: 'POST' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<Example>>,) => {
+      return orvalMutator<Example>(
+      {url: `/examples/${id}/unarchive`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * Replaces the cover image of the example identified by `{id}`. The image is digested in the background; until it is, `imageUrl` is a placeholder.
@@ -13760,31 +13498,29 @@ export const unarchiveExample = (
 export const replaceExampleCover = (
     id: string,
     replaceExampleCoverRequestMultipart: ReplaceExampleCoverRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<Example>>
-) => {
-    const formData = new FormData();
-    formData.append(`imageUpload`, replaceExampleCoverRequestMultipart.imageUpload);
+ options?: SecondParameter<typeof orvalMutator<Example>>,) => {const formData = new FormData();
+formData.append(`imageUpload`, replaceExampleCoverRequestMultipart.imageUpload);
 
-    return orvalMutator<Example>(
-        {
-            url: `/examples/${id}/cover`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'multipart/form-data' },
-            data: formData
-        },
-        options
-    );
-};
+      return orvalMutator<Example>(
+      {url: `/examples/${id}/cover`, method: 'PUT',
+      headers: {'Content-Type': 'multipart/form-data', },
+       data: formData
+    },
+      options);
+    }
 
 /**
  * The caller's own inbox, newest first, plus the work notices (`audience: staff`) of their shop whose permission sets they hold right now: a staff member who loses a role stops seeing the notices that role earned, and a member promoted later sees only those written after. A notification stays until its owner deletes it (`DELETE /notifications/{id}`, `DELETE /notifications`), the per-user cap trims it, or the account goes. Never paginated: the inbox is bounded by that cap, so one read is the whole of it. Empty and absent are the same state — this never answers 404. A client keeps the list live with `GET /notifications/stream`; the stream carries only what is written while it is open, so this read is what a login, a reload or a dropped connection starts from.
  * @summary List notifications
  */
 export const listNotifications = (
-    options?: SecondParameter<typeof orvalMutator<NotificationsResponse>>
-) => {
-    return orvalMutator<NotificationsResponse>({ url: `/notifications`, method: 'GET' }, options);
-};
+
+ options?: SecondParameter<typeof orvalMutator<NotificationsResponse>>,) => {
+      return orvalMutator<NotificationsResponse>(
+      {url: `/notifications`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Permanently deletes every notification of the caller — a hard delete, like `DELETE /notifications/{id}`, on the collection itself (as `DELETE /account/sessions` and `DELETE /cart/items` are). With `audience` it deletes only that group: a bell with a Mine and a Work tab clears one tab in one call (the staff cap is 200 rows, more than the global rate limit allows as single deletes). Without it, everything. Emptying an empty inbox, or an empty group, is the state the caller asked for, so it answers 204 too. `POST /notifications/read-all` stays an action: it moves `readAt`, not membership.
@@ -13792,34 +13528,39 @@ export const listNotifications = (
  */
 export const dismissAllNotifications = (
     params?: DismissAllNotificationsParams,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/notifications`, method: 'DELETE', params },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/notifications`, method: 'DELETE',
+        params
+    },
+      options);
+    }
 
 /**
  * Server-Sent Events: a notification written, deleted or marked read for the caller reaches an open tab as it happens. The channels and their payloads are in `asyncapi.yaml` (`notifications.created`, `notifications.deleted`, `notifications.read`). Per process, like the observability stream: a message written by another worker process arrives at the next `GET /notifications` instead.
  * @summary Live notifications stream
  */
-export const getNotificationsStream = (options?: SecondParameter<typeof orvalMutator<string>>) => {
-    return orvalMutator<string>({ url: `/notifications/stream`, method: 'GET' }, options);
-};
+export const getNotificationsStream = (
+
+ options?: SecondParameter<typeof orvalMutator<string>>,) => {
+      return orvalMutator<string>(
+      {url: `/notifications/stream`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Sets `readAt` on every unread notification of the caller. The bell calls it when it opens, so the badge (unread count) goes to zero while the messages stay. Repeating it is a no-op.
  * @summary Mark every notification read
  */
 export const readAllNotifications = (
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/notifications/read-all`, method: 'POST' },
-        options
-    );
-};
+
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/notifications/read-all`, method: 'POST'
+    },
+      options);
+    }
 
 /**
  * One of the caller's own notifications, the same shape the list carries (a work notice only while the caller still holds its permission sets). Someone else's, an unknown id and a malformed one are the same 404, so a probe cannot tell them apart.
@@ -13827,10 +13568,12 @@ export const readAllNotifications = (
  */
 export const getNotificationById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<Notification>>
-) => {
-    return orvalMutator<Notification>({ url: `/notifications/${id}`, method: 'GET' }, options);
-};
+ options?: SecondParameter<typeof orvalMutator<Notification>>,) => {
+      return orvalMutator<Notification>(
+      {url: `/notifications/${id}`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Permanently deletes the notification identified by `{id}`. Only the caller's own: an id that belongs to someone else answers the same 404 as one that does not exist, so a probe cannot tell the two apart.
@@ -13838,51 +13581,64 @@ export const getNotificationById = (
  */
 export const deleteNotificationById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
-) => {
-    return orvalMutator<NoContentResponse>(
-        { url: `/notifications/${id}`, method: 'DELETE' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<NoContentResponse>>,) => {
+      return orvalMutator<NoContentResponse>(
+      {url: `/notifications/${id}`, method: 'DELETE'
+    },
+      options);
+    }
 
 /**
  * The shop's commerce settings: the one currency every price is quoted in, the countries the shop ships to, where returned goods go, who pays the postage and the backorder promise in days. The shop's time zone (an IANA name) is published so a screen can name the calendar a promised day belongs to. Who runs the site (the legal identity) and the Terms version are on `GET /config`. Public and cheap to read; it never changes without a redeploy. Not published: the bank-transfer details, which travel on each order.
  * @summary The shop's commerce settings (currency, ship-to countries, return address)
  */
-export const getShop = (options?: SecondParameter<typeof orvalMutator<Shop>>) => {
-    return orvalMutator<Shop>({ url: `/shop`, method: 'GET' }, options);
-};
+export const getShop = (
+
+ options?: SecondParameter<typeof orvalMutator<Shop>>,) => {
+      return orvalMutator<Shop>(
+      {url: `/shop`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * One count per staff screen that has a badge: the same number the screen's own list shows, so a badge and its screen never disagree. A count is present only when the caller may open that screen; zero is sent as `0`, never left out. Every count is read as the caller (a person's session, never an API key), so it is the caller's own jurisdiction. Never cached: it is one person's view.
  * @summary Open work behind the staff navigation badges
  */
 export const getShopWorkSummary = (
-    options?: SecondParameter<typeof orvalMutator<ShopWorkSummary>>
-) => {
-    return orvalMutator<ShopWorkSummary>({ url: `/shop-tasks/summary`, method: 'GET' }, options);
-};
+
+ options?: SecondParameter<typeof orvalMutator<ShopWorkSummary>>,) => {
+      return orvalMutator<ShopWorkSummary>(
+      {url: `/shop-tasks/summary`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * The one address a search engine needs: it lists `pages.xml` and one `products-{page}.xml` per run of public products. Always an index, so the address the frontend's `robots.txt` names never changes as the catalogue grows. Public; built from the live catalogue on each request and cacheable for an hour.
  * @summary Sitemap index
  */
 export const getSitemapIndex = (
-    options?: SecondParameter<typeof orvalMutator<SitemapDocument>>
-) => {
-    return orvalMutator<SitemapDocument>({ url: `/sitemap/index.xml`, method: 'GET' }, options);
-};
+
+ options?: SecondParameter<typeof orvalMutator<SitemapDocument>>,) => {
+      return orvalMutator<SitemapDocument>(
+      {url: `/sitemap/index.xml`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * The static pages (`staticPages` in `shared/rules/frontend-links.yaml`), one `url` per active language, each with `xhtml:link` alternates for every language and `x-default`. No `lastmod`: nothing dates a prose page.
  * @summary Sitemap of the shop pages
  */
 export const getSitemapPages = (
-    options?: SecondParameter<typeof orvalMutator<SitemapDocument>>
-) => {
-    return orvalMutator<SitemapDocument>({ url: `/sitemap/pages.xml`, method: 'GET' }, options);
-};
+
+ options?: SecondParameter<typeof orvalMutator<SitemapDocument>>,) => {
+      return orvalMutator<SitemapDocument>(
+      {url: `/sitemap/pages.xml`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * One run of the public catalogue (active and not deleted), oldest id first, one `url` per active language with alternates and `x-default`. `lastmod` is the product's `updatedAt`, which a translation edit also moves and a sale does not. A run holds as many products as keep the file at or under 50,000 `url` entries. A number the index does not list answers `404`.
@@ -13890,23 +13646,25 @@ export const getSitemapPages = (
  */
 export const getSitemapProducts = (
     page: number,
-    options?: SecondParameter<typeof orvalMutator<SitemapDocument>>
-) => {
-    return orvalMutator<SitemapDocument>(
-        { url: `/sitemap/products-${page}.xml`, method: 'GET' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<SitemapDocument>>,) => {
+      return orvalMutator<SitemapDocument>(
+      {url: `/sitemap/products-${page}.xml`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Returns the authenticated user's open requests, newest first. A request is used once: when it is answered it is deleted, so an answered one never appears here. Absence and emptiness are the same state, so this never answers 404. Never paginated: an account holds at most `NODE_STOCK_ALERTS_MAX` requests (100 by default).
  * @summary List my back-in-stock requests
  */
 export const listStockAlerts = (
-    options?: SecondParameter<typeof orvalMutator<StockAlertsResponse>>
-) => {
-    return orvalMutator<StockAlertsResponse>({ url: `/stock-alerts`, method: 'GET' }, options);
-};
+
+ options?: SecondParameter<typeof orvalMutator<StockAlertsResponse>>,) => {
+      return orvalMutator<StockAlertsResponse>(
+      {url: `/stock-alerts`, method: 'GET'
+    },
+      options);
+    }
 
 /**
  * Records that the authenticated user wants one mail, and one inbox message, when the product named in the body can be ordered again (shelf units, an open backorder, a preorder with allowance left, or back on sale). The click is the consent for that single mail, so nothing else is ever sent on it and the request is deleted when it is answered. Asking twice is the same request and answers the same 200; the answer is always the whole list (the list is the parent, a request has no URL of its own). Refused with `409 STOCK_ALERT_PRODUCT_BUYABLE` while the product can be ordered now, and with `409 STOCK_ALERT_LIMIT_REACHED` once the account already holds `NODE_STOCK_ALERTS_MAX` requests for other products; a hidden or deleted product answers 404.
@@ -13914,18 +13672,14 @@ export const listStockAlerts = (
  */
 export const createStockAlert = (
     createStockAlertRequest: CreateStockAlertRequest,
-    options?: SecondParameter<typeof orvalMutator<StockAlertsResponse>>
-) => {
-    return orvalMutator<StockAlertsResponse>(
-        {
-            url: `/stock-alerts`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createStockAlertRequest
-        },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<StockAlertsResponse>>,) => {
+      return orvalMutator<StockAlertsResponse>(
+      {url: `/stock-alerts`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createStockAlertRequest
+    },
+      options);
+    }
 
 /**
  * Cancels the caller's own request before it is answered. A request the caller does not hold is a 404, because the client's view is stale and it needs to know.
@@ -13933,484 +13687,291 @@ export const createStockAlert = (
  */
 export const deleteStockAlert = (
     productId: string,
-    options?: SecondParameter<typeof orvalMutator<StockAlertsResponse>>
-) => {
-    return orvalMutator<StockAlertsResponse>(
-        { url: `/stock-alerts/${productId}`, method: 'DELETE' },
-        options
-    );
-};
+ options?: SecondParameter<typeof orvalMutator<StockAlertsResponse>>,) => {
+      return orvalMutator<StockAlertsResponse>(
+      {url: `/stock-alerts/${productId}`, method: 'DELETE'
+    },
+      options);
+    }
 
-export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;
-export type GetConfigResult = NonNullable<Awaited<ReturnType<typeof getConfig>>>;
-export type GetLivezResult = NonNullable<Awaited<ReturnType<typeof getLivez>>>;
-export type GetReadyzResult = NonNullable<Awaited<ReturnType<typeof getReadyz>>>;
-export type GetSecurityTxtResult = NonNullable<Awaited<ReturnType<typeof getSecurityTxt>>>;
-export type ListLocalesResult = NonNullable<Awaited<ReturnType<typeof listLocales>>>;
-export type CreateLocaleResult = NonNullable<Awaited<ReturnType<typeof createLocale>>>;
-export type ListLocaleAppsResult = NonNullable<Awaited<ReturnType<typeof listLocaleApps>>>;
-export type GetLocaleResult = NonNullable<Awaited<ReturnType<typeof getLocale>>>;
-export type ReplaceLocaleResult = NonNullable<Awaited<ReturnType<typeof replaceLocale>>>;
-export type UpdateLocaleResult = NonNullable<Awaited<ReturnType<typeof updateLocale>>>;
-export type UpdateLocaleWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof updateLocaleWithMergePatchJson>>
->;
-export type DeleteLocaleResult = NonNullable<Awaited<ReturnType<typeof deleteLocale>>>;
-export type GetLocaleDictionaryResult = NonNullable<
-    Awaited<ReturnType<typeof getLocaleDictionary>>
->;
-export type GetLocaleMessagesResult = NonNullable<Awaited<ReturnType<typeof getLocaleMessages>>>;
-export type ListLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof listLocaleEntries>>>;
-export type ListAppLocaleEntriesResult = NonNullable<
-    Awaited<ReturnType<typeof listAppLocaleEntries>>
->;
-export type CreateLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof createLocaleEntry>>>;
-export type ReplaceLocaleEntriesResult = NonNullable<
-    Awaited<ReturnType<typeof replaceLocaleEntries>>
->;
-export type UpdateLocaleEntriesResult = NonNullable<
-    Awaited<ReturnType<typeof updateLocaleEntries>>
->;
-export type UpdateLocaleEntriesWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof updateLocaleEntriesWithMergePatchJson>>
->;
-export type GetLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof getLocaleEntry>>>;
-export type ReplaceLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof replaceLocaleEntry>>>;
-export type DeleteLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof deleteLocaleEntry>>>;
-export type GetEntityTranslationsResult = NonNullable<
-    Awaited<ReturnType<typeof getEntityTranslations>>
->;
-export type ReplaceEntityTranslationsResult = NonNullable<
-    Awaited<ReturnType<typeof replaceEntityTranslations>>
->;
-export type UpdateEntityTranslationsResult = NonNullable<
-    Awaited<ReturnType<typeof updateEntityTranslations>>
->;
-export type UpdateEntityTranslationsWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof updateEntityTranslationsWithMergePatchJson>>
->;
-export type GetObservabilityEventsResult = NonNullable<
-    Awaited<ReturnType<typeof getObservabilityEvents>>
->;
-export type GetObservabilityHealthResult = NonNullable<
-    Awaited<ReturnType<typeof getObservabilityHealth>>
->;
-export type GetObservabilityMetricsResult = NonNullable<
-    Awaited<ReturnType<typeof getObservabilityMetrics>>
->;
-export type GetObservabilityMetricsOverviewResult = NonNullable<
-    Awaited<ReturnType<typeof getObservabilityMetricsOverview>>
->;
-export type ListObservabilityAuditEntriesResult = NonNullable<
-    Awaited<ReturnType<typeof listObservabilityAuditEntries>>
->;
-export type ListAuditEntriesResult = NonNullable<Awaited<ReturnType<typeof listAuditEntries>>>;
-export type GetAntibotChallengeResult = NonNullable<
-    Awaited<ReturnType<typeof getAntibotChallenge>>
->;
-export type CreateAnalyticsEventResult = NonNullable<
-    Awaited<ReturnType<typeof createAnalyticsEvent>>
->;
-export type GetAccountResult = NonNullable<Awaited<ReturnType<typeof getAccount>>>;
-export type ReplaceAccountResult = NonNullable<Awaited<ReturnType<typeof replaceAccount>>>;
-export type ReplaceAccountWithMultipartResult = NonNullable<
-    Awaited<ReturnType<typeof replaceAccountWithMultipart>>
->;
-export type UpdateAccountResult = NonNullable<Awaited<ReturnType<typeof updateAccount>>>;
-export type UpdateAccountWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof updateAccountWithMergePatchJson>>
->;
-export type UpdateAccountWithMultipartResult = NonNullable<
-    Awaited<ReturnType<typeof updateAccountWithMultipart>>
->;
-export type RequestAccountDeleteResult = NonNullable<
-    Awaited<ReturnType<typeof requestAccountDelete>>
->;
-export type RequestEmailChangeResult = NonNullable<Awaited<ReturnType<typeof requestEmailChange>>>;
-export type CancelPendingEmailChangeResult = NonNullable<
-    Awaited<ReturnType<typeof cancelPendingEmailChange>>
->;
-export type ResendPendingEmailResult = NonNullable<Awaited<ReturnType<typeof resendPendingEmail>>>;
-export type ChangePasswordResult = NonNullable<Awaited<ReturnType<typeof changePassword>>>;
-export type CheckPasswordBreachedResult = NonNullable<
-    Awaited<ReturnType<typeof checkPasswordBreached>>
->;
-export type GetReauthMethodsResult = NonNullable<Awaited<ReturnType<typeof getReauthMethods>>>;
-export type ReauthResult = NonNullable<Awaited<ReturnType<typeof reauth>>>;
-export type LogoutResult = NonNullable<Awaited<ReturnType<typeof logout>>>;
-export type ListSessionsResult = NonNullable<Awaited<ReturnType<typeof listSessions>>>;
-export type LogoutAllResult = NonNullable<Awaited<ReturnType<typeof logoutAll>>>;
-export type GetSessionResult = NonNullable<Awaited<ReturnType<typeof getSession>>>;
-export type RevokeSessionResult = NonNullable<Awaited<ReturnType<typeof revokeSession>>>;
-export type ListAddressesResult = NonNullable<Awaited<ReturnType<typeof listAddresses>>>;
-export type CreateAddressResult = NonNullable<Awaited<ReturnType<typeof createAddress>>>;
-export type GetAddressResult = NonNullable<Awaited<ReturnType<typeof getAddress>>>;
-export type ReplaceAddressResult = NonNullable<Awaited<ReturnType<typeof replaceAddress>>>;
-export type UpdateAddressResult = NonNullable<Awaited<ReturnType<typeof updateAddress>>>;
-export type UpdateAddressWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof updateAddressWithMergePatchJson>>
->;
-export type DeleteAddressResult = NonNullable<Awaited<ReturnType<typeof deleteAddress>>>;
-export type SetDefaultAddressResult = NonNullable<Awaited<ReturnType<typeof setDefaultAddress>>>;
-export type ResendEmailVerificationResult = NonNullable<
-    Awaited<ReturnType<typeof resendEmailVerification>>
->;
-export type ConfirmEmailVerificationResult = NonNullable<
-    Awaited<ReturnType<typeof confirmEmailVerification>>
->;
-export type ConfirmEmailChangeResult = NonNullable<Awaited<ReturnType<typeof confirmEmailChange>>>;
-export type UndoEmailChangeResult = NonNullable<Awaited<ReturnType<typeof undoEmailChange>>>;
-export type RestoreAccountResult = NonNullable<Awaited<ReturnType<typeof restoreAccount>>>;
-export type LoginResult = NonNullable<Awaited<ReturnType<typeof login>>>;
-export type LoginRestoreResult = NonNullable<Awaited<ReturnType<typeof loginRestore>>>;
-export type SignupResult = NonNullable<Awaited<ReturnType<typeof signup>>>;
-export type RequestPasswordResetResult = NonNullable<
-    Awaited<ReturnType<typeof requestPasswordReset>>
->;
-export type ConfirmPasswordResetResult = NonNullable<
-    Awaited<ReturnType<typeof confirmPasswordReset>>
->;
-export type RefreshTokenResult = NonNullable<Awaited<ReturnType<typeof refreshToken>>>;
-export type RequestAccountExportResult = NonNullable<
-    Awaited<ReturnType<typeof requestAccountExport>>
->;
-export type GetAccountExportResult = NonNullable<Awaited<ReturnType<typeof getAccountExport>>>;
-export type DownloadAccountExportResult = NonNullable<
-    Awaited<ReturnType<typeof downloadAccountExport>>
->;
-export type LoginTwoFactorResult = NonNullable<Awaited<ReturnType<typeof loginTwoFactor>>>;
-export type SendTwoFactorCodeResult = NonNullable<Awaited<ReturnType<typeof sendTwoFactorCode>>>;
-export type GetTwoFactorStatusResult = NonNullable<Awaited<ReturnType<typeof getTwoFactorStatus>>>;
-export type SetupTwoFactorMethodResult = NonNullable<
-    Awaited<ReturnType<typeof setupTwoFactorMethod>>
->;
-export type SendTwoFactorMethodCodeResult = NonNullable<
-    Awaited<ReturnType<typeof sendTwoFactorMethodCode>>
->;
-export type ConfirmTwoFactorMethodResult = NonNullable<
-    Awaited<ReturnType<typeof confirmTwoFactorMethod>>
->;
-export type DisableTwoFactorResult = NonNullable<Awaited<ReturnType<typeof disableTwoFactor>>>;
-export type RemoveTwoFactorMethodResult = NonNullable<
-    Awaited<ReturnType<typeof removeTwoFactorMethod>>
->;
-export type RegenerateBackupCodesResult = NonNullable<
-    Awaited<ReturnType<typeof regenerateBackupCodes>>
->;
-export type ListOAuthLinksResult = NonNullable<Awaited<ReturnType<typeof listOAuthLinks>>>;
-export type StartOAuthLinkResult = NonNullable<Awaited<ReturnType<typeof startOAuthLink>>>;
-export type UnlinkOAuthProviderResult = NonNullable<
-    Awaited<ReturnType<typeof unlinkOAuthProvider>>
->;
-export type StartOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof startOAuthLogin>>>;
-export type CompleteOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof completeOAuthLogin>>>;
-export type ListUsersResult = NonNullable<Awaited<ReturnType<typeof listUsers>>>;
-export type CreateUserResult = NonNullable<Awaited<ReturnType<typeof createUser>>>;
-export type CreateUserWithMultipartResult = NonNullable<
-    Awaited<ReturnType<typeof createUserWithMultipart>>
->;
-export type GetUserByIdResult = NonNullable<Awaited<ReturnType<typeof getUserById>>>;
-export type ReplaceUserByIdResult = NonNullable<Awaited<ReturnType<typeof replaceUserById>>>;
-export type ReplaceUserByIdWithMultipartResult = NonNullable<
-    Awaited<ReturnType<typeof replaceUserByIdWithMultipart>>
->;
-export type UpdateUserByIdResult = NonNullable<Awaited<ReturnType<typeof updateUserById>>>;
-export type UpdateUserByIdWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof updateUserByIdWithMergePatchJson>>
->;
-export type UpdateUserByIdWithMultipartResult = NonNullable<
-    Awaited<ReturnType<typeof updateUserByIdWithMultipart>>
->;
-export type DeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof deleteUserById>>>;
-export type RestoreUserByIdResult = NonNullable<Awaited<ReturnType<typeof restoreUserById>>>;
-export type HardDeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof hardDeleteUserById>>>;
-export type SearchUsersResult = NonNullable<Awaited<ReturnType<typeof searchUsers>>>;
-export type CreateContactTaskResult = NonNullable<Awaited<ReturnType<typeof createContactTask>>>;
-export type ListTasksResult = NonNullable<Awaited<ReturnType<typeof listTasks>>>;
-export type SearchTasksResult = NonNullable<Awaited<ReturnType<typeof searchTasks>>>;
-export type GetTaskSummaryResult = NonNullable<Awaited<ReturnType<typeof getTaskSummary>>>;
-export type GetTaskResult = NonNullable<Awaited<ReturnType<typeof getTask>>>;
-export type DeleteTaskResult = NonNullable<Awaited<ReturnType<typeof deleteTask>>>;
-export type ResolveTaskResult = NonNullable<Awaited<ReturnType<typeof resolveTask>>>;
-export type MarkTaskSpamResult = NonNullable<Awaited<ReturnType<typeof markTaskSpam>>>;
-export type ReopenTaskResult = NonNullable<Awaited<ReturnType<typeof reopenTask>>>;
-export type AssignTaskResult = NonNullable<Awaited<ReturnType<typeof assignTask>>>;
-export type UnassignTaskResult = NonNullable<Awaited<ReturnType<typeof unassignTask>>>;
-export type CreateTaskNoteResult = NonNullable<Awaited<ReturnType<typeof createTaskNote>>>;
-export type ListProductsResult = NonNullable<Awaited<ReturnType<typeof listProducts>>>;
-export type CreateProductResult = NonNullable<Awaited<ReturnType<typeof createProduct>>>;
-export type CreateProductWithMultipartResult = NonNullable<
-    Awaited<ReturnType<typeof createProductWithMultipart>>
->;
-export type GetCatalogFacetsResult = NonNullable<Awaited<ReturnType<typeof getCatalogFacets>>>;
-export type GetProductByIdResult = NonNullable<Awaited<ReturnType<typeof getProductById>>>;
-export type ReplaceProductByIdResult = NonNullable<Awaited<ReturnType<typeof replaceProductById>>>;
-export type ReplaceProductByIdWithMultipartResult = NonNullable<
-    Awaited<ReturnType<typeof replaceProductByIdWithMultipart>>
->;
-export type UpdateProductByIdResult = NonNullable<Awaited<ReturnType<typeof updateProductById>>>;
-export type UpdateProductByIdWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof updateProductByIdWithMergePatchJson>>
->;
-export type UpdateProductByIdWithMultipartResult = NonNullable<
-    Awaited<ReturnType<typeof updateProductByIdWithMultipart>>
->;
-export type DeleteProductByIdResult = NonNullable<Awaited<ReturnType<typeof deleteProductById>>>;
-export type RestoreProductByIdResult = NonNullable<Awaited<ReturnType<typeof restoreProductById>>>;
-export type HardDeleteProductByIdResult = NonNullable<
-    Awaited<ReturnType<typeof hardDeleteProductById>>
->;
-export type SearchProductsResult = NonNullable<Awaited<ReturnType<typeof searchProducts>>>;
-export type GetCartResult = NonNullable<Awaited<ReturnType<typeof getCart>>>;
-export type AddCartItemResult = NonNullable<Awaited<ReturnType<typeof addCartItem>>>;
-export type ClearCartResult = NonNullable<Awaited<ReturnType<typeof clearCart>>>;
-export type UpdateCartItemByProductIdResult = NonNullable<
-    Awaited<ReturnType<typeof updateCartItemByProductId>>
->;
-export type UpdateCartItemByProductIdWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof updateCartItemByProductIdWithMergePatchJson>>
->;
-export type DeleteCartItemByProductIdResult = NonNullable<
-    Awaited<ReturnType<typeof deleteCartItemByProductId>>
->;
-export type SetCartShippingMethodResult = NonNullable<
-    Awaited<ReturnType<typeof setCartShippingMethod>>
->;
-export type GetCartSummaryResult = NonNullable<Awaited<ReturnType<typeof getCartSummary>>>;
-export type CheckoutResult = NonNullable<Awaited<ReturnType<typeof checkout>>>;
-export type ReorderResult = NonNullable<Awaited<ReturnType<typeof reorder>>>;
-export type GetWishlistResult = NonNullable<Awaited<ReturnType<typeof getWishlist>>>;
-export type CreateWishlistItemResult = NonNullable<Awaited<ReturnType<typeof createWishlistItem>>>;
-export type DeleteWishlistItemResult = NonNullable<Awaited<ReturnType<typeof deleteWishlistItem>>>;
-export type MoveWishlistItemToCartResult = NonNullable<
-    Awaited<ReturnType<typeof moveWishlistItemToCart>>
->;
-export type ListOrdersResult = NonNullable<Awaited<ReturnType<typeof listOrders>>>;
-export type CreateOrderResult = NonNullable<Awaited<ReturnType<typeof createOrder>>>;
-export type SearchOrdersResult = NonNullable<Awaited<ReturnType<typeof searchOrders>>>;
-export type GetOrderByIdResult = NonNullable<Awaited<ReturnType<typeof getOrderById>>>;
-export type ReplaceOrderByIdResult = NonNullable<Awaited<ReturnType<typeof replaceOrderById>>>;
-export type UpdateOrderByIdResult = NonNullable<Awaited<ReturnType<typeof updateOrderById>>>;
-export type UpdateOrderByIdWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof updateOrderByIdWithMergePatchJson>>
->;
-export type DeleteOrderByIdResult = NonNullable<Awaited<ReturnType<typeof deleteOrderById>>>;
-export type RestoreOrderByIdResult = NonNullable<Awaited<ReturnType<typeof restoreOrderById>>>;
-export type HardDeleteOrderByIdResult = NonNullable<
-    Awaited<ReturnType<typeof hardDeleteOrderById>>
->;
-export type CancelOrderByIdResult = NonNullable<Awaited<ReturnType<typeof cancelOrderById>>>;
-export type OverrideOrderStatusResult = NonNullable<
-    Awaited<ReturnType<typeof overrideOrderStatus>>
->;
-export type GetOrderInvoiceResult = NonNullable<Awaited<ReturnType<typeof getOrderInvoice>>>;
-export type ListOrderCreditNotesResult = NonNullable<
-    Awaited<ReturnType<typeof listOrderCreditNotes>>
->;
-export type GetOrderCreditNoteResult = NonNullable<Awaited<ReturnType<typeof getOrderCreditNote>>>;
-export type ListOrderPaymentsResult = NonNullable<Awaited<ReturnType<typeof listOrderPayments>>>;
-export type RecordOrderPaymentResult = NonNullable<Awaited<ReturnType<typeof recordOrderPayment>>>;
-export type ProcessOrderResult = NonNullable<Awaited<ReturnType<typeof processOrder>>>;
-export type ListOrderFulfillmentOrdersResult = NonNullable<
-    Awaited<ReturnType<typeof listOrderFulfillmentOrders>>
->;
-export type ListOrderShipmentsResult = NonNullable<Awaited<ReturnType<typeof listOrderShipments>>>;
-export type ListPaymentMethodsResult = NonNullable<Awaited<ReturnType<typeof listPaymentMethods>>>;
-export type CreateRefundResult = NonNullable<Awaited<ReturnType<typeof createRefund>>>;
-export type GetRefundResult = NonNullable<Awaited<ReturnType<typeof getRefund>>>;
-export type GetPaymentResult = NonNullable<Awaited<ReturnType<typeof getPayment>>>;
-export type ConfirmPaymentResult = NonNullable<Awaited<ReturnType<typeof confirmPayment>>>;
-export type SyncPaymentResult = NonNullable<Awaited<ReturnType<typeof syncPayment>>>;
-export type ReceivePaymentWebhookResult = NonNullable<
-    Awaited<ReturnType<typeof receivePaymentWebhook>>
->;
-export type ListShippingMethodsResult = NonNullable<
-    Awaited<ReturnType<typeof listShippingMethods>>
->;
-export type ListPreorderFulfillmentOrdersResult = NonNullable<
-    Awaited<ReturnType<typeof listPreorderFulfillmentOrders>>
->;
-export type SummarizePreorderFulfillmentOrdersResult = NonNullable<
-    Awaited<ReturnType<typeof summarizePreorderFulfillmentOrders>>
->;
-export type ShipFulfillmentOrderResult = NonNullable<
-    Awaited<ReturnType<typeof shipFulfillmentOrder>>
->;
-export type FulfillFulfillmentOrderResult = NonNullable<
-    Awaited<ReturnType<typeof fulfillFulfillmentOrder>>
->;
-export type HoldFulfillmentOrderResult = NonNullable<
-    Awaited<ReturnType<typeof holdFulfillmentOrder>>
->;
-export type ReleaseFulfillmentOrderResult = NonNullable<
-    Awaited<ReturnType<typeof releaseFulfillmentOrder>>
->;
-export type GetShipmentResult = NonNullable<Awaited<ReturnType<typeof getShipment>>>;
-export type UpdateShipmentResult = NonNullable<Awaited<ReturnType<typeof updateShipment>>>;
-export type UpdateShipmentWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof updateShipmentWithMergePatchJson>>
->;
-export type DeliverShipmentResult = NonNullable<Awaited<ReturnType<typeof deliverShipment>>>;
-export type ListReturnsResult = NonNullable<Awaited<ReturnType<typeof listReturns>>>;
-export type CreateReturnResult = NonNullable<Awaited<ReturnType<typeof createReturn>>>;
-export type GetReturnOptionsResult = NonNullable<Awaited<ReturnType<typeof getReturnOptions>>>;
-export type GetReturnByIdResult = NonNullable<Awaited<ReturnType<typeof getReturnById>>>;
-export type ApproveReturnResult = NonNullable<Awaited<ReturnType<typeof approveReturn>>>;
-export type DeclineReturnResult = NonNullable<Awaited<ReturnType<typeof declineReturn>>>;
-export type ReceiveReturnResult = NonNullable<Awaited<ReturnType<typeof receiveReturn>>>;
-export type ListInventoryLevelsResult = NonNullable<
-    Awaited<ReturnType<typeof listInventoryLevels>>
->;
-export type ListPreorderLevelsResult = NonNullable<Awaited<ReturnType<typeof listPreorderLevels>>>;
-export type ListStockMovementsResult = NonNullable<Awaited<ReturnType<typeof listStockMovements>>>;
-export type ReceiveStockResult = NonNullable<Awaited<ReturnType<typeof receiveStock>>>;
-export type AdjustStockResult = NonNullable<Awaited<ReturnType<typeof adjustStock>>>;
-export type SweepReservationsResult = NonNullable<Awaited<ReturnType<typeof sweepReservations>>>;
-export type ListWebhookSubscriptionsResult = NonNullable<
-    Awaited<ReturnType<typeof listWebhookSubscriptions>>
->;
-export type CreateWebhookSubscriptionResult = NonNullable<
-    Awaited<ReturnType<typeof createWebhookSubscription>>
->;
-export type GetWebhookSubscriptionResult = NonNullable<
-    Awaited<ReturnType<typeof getWebhookSubscription>>
->;
-export type ReplaceWebhookSubscriptionResult = NonNullable<
-    Awaited<ReturnType<typeof replaceWebhookSubscription>>
->;
-export type UpdateWebhookSubscriptionResult = NonNullable<
-    Awaited<ReturnType<typeof updateWebhookSubscription>>
->;
-export type UpdateWebhookSubscriptionWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof updateWebhookSubscriptionWithMergePatchJson>>
->;
-export type DeleteWebhookSubscriptionResult = NonNullable<
-    Awaited<ReturnType<typeof deleteWebhookSubscription>>
->;
-export type DeleteWebhookSubscriptionSecretResult = NonNullable<
-    Awaited<ReturnType<typeof deleteWebhookSubscriptionSecret>>
->;
-export type ListWebhookDeliveriesResult = NonNullable<
-    Awaited<ReturnType<typeof listWebhookDeliveries>>
->;
-export type ReplayWebhookDeliveryResult = NonNullable<
-    Awaited<ReturnType<typeof replayWebhookDelivery>>
->;
-export type ListWebhookEventsResult = NonNullable<Awaited<ReturnType<typeof listWebhookEvents>>>;
-export type ListApiKeysResult = NonNullable<Awaited<ReturnType<typeof listApiKeys>>>;
-export type CreateApiKeyResult = NonNullable<Awaited<ReturnType<typeof createApiKey>>>;
-export type GetApiKeyResult = NonNullable<Awaited<ReturnType<typeof getApiKey>>>;
-export type RevokeApiKeyResult = NonNullable<Awaited<ReturnType<typeof revokeApiKey>>>;
-export type ActivateLocaleResult = NonNullable<Awaited<ReturnType<typeof activateLocale>>>;
-export type DeactivateLocaleResult = NonNullable<Awaited<ReturnType<typeof deactivateLocale>>>;
-export type SendReauthCodeResult = NonNullable<Awaited<ReturnType<typeof sendReauthCode>>>;
-export type TouchSessionResult = NonNullable<Awaited<ReturnType<typeof touchSession>>>;
-export type AssignUserRoleResult = NonNullable<Awaited<ReturnType<typeof assignUserRole>>>;
-export type RevokeUserRoleResult = NonNullable<Awaited<ReturnType<typeof revokeUserRole>>>;
-export type PlaceUserPurchaseHoldResult = NonNullable<
-    Awaited<ReturnType<typeof placeUserPurchaseHold>>
->;
-export type LiftUserPurchaseHoldResult = NonNullable<
-    Awaited<ReturnType<typeof liftUserPurchaseHold>>
->;
-export type ActivateUserByIdResult = NonNullable<Awaited<ReturnType<typeof activateUserById>>>;
-export type DeactivateUserByIdResult = NonNullable<Awaited<ReturnType<typeof deactivateUserById>>>;
-export type MergeCartResult = NonNullable<Awaited<ReturnType<typeof mergeCart>>>;
-export type ExportOrdersResult = NonNullable<Awaited<ReturnType<typeof exportOrders>>>;
-export type GetOrderTimelineResult = NonNullable<Awaited<ReturnType<typeof getOrderTimeline>>>;
-export type AddOrderNoteResult = NonNullable<Awaited<ReturnType<typeof addOrderNote>>>;
-export type DeleteOrderNoteResult = NonNullable<Awaited<ReturnType<typeof deleteOrderNote>>>;
-export type CorrectOrderShippingAddressResult = NonNullable<
-    Awaited<ReturnType<typeof correctOrderShippingAddress>>
->;
-export type ListPaymentsResult = NonNullable<Awaited<ReturnType<typeof listPayments>>>;
-export type CreatePaymentResult = NonNullable<Awaited<ReturnType<typeof createPayment>>>;
-export type SearchPaymentsResult = NonNullable<Awaited<ReturnType<typeof searchPayments>>>;
-export type ListRefundsResult = NonNullable<Awaited<ReturnType<typeof listRefunds>>>;
-export type ListPaymentAttentionResult = NonNullable<
-    Awaited<ReturnType<typeof listPaymentAttention>>
->;
-export type SettleRefundByHandResult = NonNullable<Awaited<ReturnType<typeof settleRefundByHand>>>;
-export type CancelRefundResult = NonNullable<Awaited<ReturnType<typeof cancelRefund>>>;
-export type PreviewReleaseDateImpactResult = NonNullable<
-    Awaited<ReturnType<typeof previewReleaseDateImpact>>
->;
-export type PreviewRestockDateImpactResult = NonNullable<
-    Awaited<ReturnType<typeof previewRestockDateImpact>>
->;
-export type GetFulfillmentOrderResult = NonNullable<
-    Awaited<ReturnType<typeof getFulfillmentOrder>>
->;
-export type MarkShipmentLostResult = NonNullable<Awaited<ReturnType<typeof markShipmentLost>>>;
-export type CloseReturnResult = NonNullable<Awaited<ReturnType<typeof closeReturn>>>;
-export type CancelReturnResult = NonNullable<Awaited<ReturnType<typeof cancelReturn>>>;
-export type RecordProofOfSendingResult = NonNullable<
-    Awaited<ReturnType<typeof recordProofOfSending>>
->;
-export type GetSalesStatsResult = NonNullable<Awaited<ReturnType<typeof getSalesStats>>>;
-export type GetProductStatsResult = NonNullable<Awaited<ReturnType<typeof getProductStats>>>;
-export type GetProductSalesSeriesResult = NonNullable<
-    Awaited<ReturnType<typeof getProductSalesSeries>>
->;
-export type GetCategoryStatsResult = NonNullable<Awaited<ReturnType<typeof getCategoryStats>>>;
-export type GetPaymentMixStatsResult = NonNullable<Awaited<ReturnType<typeof getPaymentMixStats>>>;
-export type GetOperationsStatsResult = NonNullable<Awaited<ReturnType<typeof getOperationsStats>>>;
-export type GetCustomerStatsResult = NonNullable<Awaited<ReturnType<typeof getCustomerStats>>>;
-export type GetPipelineStatsResult = NonNullable<Awaited<ReturnType<typeof getPipelineStats>>>;
-export type GetInventoryLevelResult = NonNullable<Awaited<ReturnType<typeof getInventoryLevel>>>;
-export type UpdateInventoryLevelResult = NonNullable<
-    Awaited<ReturnType<typeof updateInventoryLevel>>
->;
-export type UpdateInventoryLevelWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof updateInventoryLevelWithMergePatchJson>>
->;
-export type EnableWebhookSubscriptionResult = NonNullable<
-    Awaited<ReturnType<typeof enableWebhookSubscription>>
->;
-export type DisableWebhookSubscriptionResult = NonNullable<
-    Awaited<ReturnType<typeof disableWebhookSubscription>>
->;
-export type CreateWebhookSubscriptionSecretResult = NonNullable<
-    Awaited<ReturnType<typeof createWebhookSubscriptionSecret>>
->;
-export type GetWebhookDeliveryResult = NonNullable<Awaited<ReturnType<typeof getWebhookDelivery>>>;
-export type ListExamplesResult = NonNullable<Awaited<ReturnType<typeof listExamples>>>;
-export type CreateExampleResult = NonNullable<Awaited<ReturnType<typeof createExample>>>;
-export type SearchExamplesResult = NonNullable<Awaited<ReturnType<typeof searchExamples>>>;
-export type GetExampleByIdResult = NonNullable<Awaited<ReturnType<typeof getExampleById>>>;
-export type ReplaceExampleByIdResult = NonNullable<Awaited<ReturnType<typeof replaceExampleById>>>;
-export type UpdateExampleByIdResult = NonNullable<Awaited<ReturnType<typeof updateExampleById>>>;
-export type UpdateExampleByIdWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof updateExampleByIdWithMergePatchJson>>
->;
-export type DeleteExampleByIdResult = NonNullable<Awaited<ReturnType<typeof deleteExampleById>>>;
-export type PublishExampleResult = NonNullable<Awaited<ReturnType<typeof publishExample>>>;
-export type ArchiveExampleResult = NonNullable<Awaited<ReturnType<typeof archiveExample>>>;
-export type UnarchiveExampleResult = NonNullable<Awaited<ReturnType<typeof unarchiveExample>>>;
-export type ReplaceExampleCoverResult = NonNullable<
-    Awaited<ReturnType<typeof replaceExampleCover>>
->;
-export type ListNotificationsResult = NonNullable<Awaited<ReturnType<typeof listNotifications>>>;
-export type DismissAllNotificationsResult = NonNullable<
-    Awaited<ReturnType<typeof dismissAllNotifications>>
->;
-export type GetNotificationsStreamResult = NonNullable<
-    Awaited<ReturnType<typeof getNotificationsStream>>
->;
-export type ReadAllNotificationsResult = NonNullable<
-    Awaited<ReturnType<typeof readAllNotifications>>
->;
-export type GetNotificationByIdResult = NonNullable<
-    Awaited<ReturnType<typeof getNotificationById>>
->;
-export type DeleteNotificationByIdResult = NonNullable<
-    Awaited<ReturnType<typeof deleteNotificationById>>
->;
-export type GetShopResult = NonNullable<Awaited<ReturnType<typeof getShop>>>;
-export type GetShopWorkSummaryResult = NonNullable<Awaited<ReturnType<typeof getShopWorkSummary>>>;
-export type GetSitemapIndexResult = NonNullable<Awaited<ReturnType<typeof getSitemapIndex>>>;
-export type GetSitemapPagesResult = NonNullable<Awaited<ReturnType<typeof getSitemapPages>>>;
-export type GetSitemapProductsResult = NonNullable<Awaited<ReturnType<typeof getSitemapProducts>>>;
-export type ListStockAlertsResult = NonNullable<Awaited<ReturnType<typeof listStockAlerts>>>;
-export type CreateStockAlertResult = NonNullable<Awaited<ReturnType<typeof createStockAlert>>>;
-export type DeleteStockAlertResult = NonNullable<Awaited<ReturnType<typeof deleteStockAlert>>>;
+export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>
+export type GetConfigResult = NonNullable<Awaited<ReturnType<typeof getConfig>>>
+export type GetLivezResult = NonNullable<Awaited<ReturnType<typeof getLivez>>>
+export type GetReadyzResult = NonNullable<Awaited<ReturnType<typeof getReadyz>>>
+export type GetSecurityTxtResult = NonNullable<Awaited<ReturnType<typeof getSecurityTxt>>>
+export type ListLocalesResult = NonNullable<Awaited<ReturnType<typeof listLocales>>>
+export type CreateLocaleResult = NonNullable<Awaited<ReturnType<typeof createLocale>>>
+export type ListLocaleAppsResult = NonNullable<Awaited<ReturnType<typeof listLocaleApps>>>
+export type GetLocaleResult = NonNullable<Awaited<ReturnType<typeof getLocale>>>
+export type ReplaceLocaleResult = NonNullable<Awaited<ReturnType<typeof replaceLocale>>>
+export type UpdateLocaleResult = NonNullable<Awaited<ReturnType<typeof updateLocale>>>
+export type UpdateLocaleWithMergePatchJsonResult = NonNullable<Awaited<ReturnType<typeof updateLocaleWithMergePatchJson>>>
+export type DeleteLocaleResult = NonNullable<Awaited<ReturnType<typeof deleteLocale>>>
+export type GetLocaleDictionaryResult = NonNullable<Awaited<ReturnType<typeof getLocaleDictionary>>>
+export type GetLocaleMessagesResult = NonNullable<Awaited<ReturnType<typeof getLocaleMessages>>>
+export type ListLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof listLocaleEntries>>>
+export type ListAppLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof listAppLocaleEntries>>>
+export type CreateLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof createLocaleEntry>>>
+export type ReplaceLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof replaceLocaleEntries>>>
+export type UpdateLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof updateLocaleEntries>>>
+export type UpdateLocaleEntriesWithMergePatchJsonResult = NonNullable<Awaited<ReturnType<typeof updateLocaleEntriesWithMergePatchJson>>>
+export type GetLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof getLocaleEntry>>>
+export type ReplaceLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof replaceLocaleEntry>>>
+export type DeleteLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof deleteLocaleEntry>>>
+export type GetEntityTranslationsResult = NonNullable<Awaited<ReturnType<typeof getEntityTranslations>>>
+export type ReplaceEntityTranslationsResult = NonNullable<Awaited<ReturnType<typeof replaceEntityTranslations>>>
+export type UpdateEntityTranslationsResult = NonNullable<Awaited<ReturnType<typeof updateEntityTranslations>>>
+export type UpdateEntityTranslationsWithMergePatchJsonResult = NonNullable<Awaited<ReturnType<typeof updateEntityTranslationsWithMergePatchJson>>>
+export type GetObservabilityEventsResult = NonNullable<Awaited<ReturnType<typeof getObservabilityEvents>>>
+export type GetObservabilityHealthResult = NonNullable<Awaited<ReturnType<typeof getObservabilityHealth>>>
+export type GetObservabilityMetricsResult = NonNullable<Awaited<ReturnType<typeof getObservabilityMetrics>>>
+export type GetObservabilityMetricsOverviewResult = NonNullable<Awaited<ReturnType<typeof getObservabilityMetricsOverview>>>
+export type ListObservabilityAuditEntriesResult = NonNullable<Awaited<ReturnType<typeof listObservabilityAuditEntries>>>
+export type ListAuditEntriesResult = NonNullable<Awaited<ReturnType<typeof listAuditEntries>>>
+export type GetAntibotChallengeResult = NonNullable<Awaited<ReturnType<typeof getAntibotChallenge>>>
+export type CreateAnalyticsEventResult = NonNullable<Awaited<ReturnType<typeof createAnalyticsEvent>>>
+export type GetAccountResult = NonNullable<Awaited<ReturnType<typeof getAccount>>>
+export type ReplaceAccountResult = NonNullable<Awaited<ReturnType<typeof replaceAccount>>>
+export type ReplaceAccountWithMultipartResult = NonNullable<Awaited<ReturnType<typeof replaceAccountWithMultipart>>>
+export type UpdateAccountResult = NonNullable<Awaited<ReturnType<typeof updateAccount>>>
+export type UpdateAccountWithMergePatchJsonResult = NonNullable<Awaited<ReturnType<typeof updateAccountWithMergePatchJson>>>
+export type UpdateAccountWithMultipartResult = NonNullable<Awaited<ReturnType<typeof updateAccountWithMultipart>>>
+export type RequestAccountDeleteResult = NonNullable<Awaited<ReturnType<typeof requestAccountDelete>>>
+export type RequestEmailChangeResult = NonNullable<Awaited<ReturnType<typeof requestEmailChange>>>
+export type CancelPendingEmailChangeResult = NonNullable<Awaited<ReturnType<typeof cancelPendingEmailChange>>>
+export type ResendPendingEmailResult = NonNullable<Awaited<ReturnType<typeof resendPendingEmail>>>
+export type ChangePasswordResult = NonNullable<Awaited<ReturnType<typeof changePassword>>>
+export type CheckPasswordBreachedResult = NonNullable<Awaited<ReturnType<typeof checkPasswordBreached>>>
+export type GetReauthMethodsResult = NonNullable<Awaited<ReturnType<typeof getReauthMethods>>>
+export type ReauthResult = NonNullable<Awaited<ReturnType<typeof reauth>>>
+export type LogoutResult = NonNullable<Awaited<ReturnType<typeof logout>>>
+export type ListSessionsResult = NonNullable<Awaited<ReturnType<typeof listSessions>>>
+export type LogoutAllResult = NonNullable<Awaited<ReturnType<typeof logoutAll>>>
+export type GetSessionResult = NonNullable<Awaited<ReturnType<typeof getSession>>>
+export type RevokeSessionResult = NonNullable<Awaited<ReturnType<typeof revokeSession>>>
+export type ListAddressesResult = NonNullable<Awaited<ReturnType<typeof listAddresses>>>
+export type CreateAddressResult = NonNullable<Awaited<ReturnType<typeof createAddress>>>
+export type GetAddressResult = NonNullable<Awaited<ReturnType<typeof getAddress>>>
+export type ReplaceAddressResult = NonNullable<Awaited<ReturnType<typeof replaceAddress>>>
+export type UpdateAddressResult = NonNullable<Awaited<ReturnType<typeof updateAddress>>>
+export type UpdateAddressWithMergePatchJsonResult = NonNullable<Awaited<ReturnType<typeof updateAddressWithMergePatchJson>>>
+export type DeleteAddressResult = NonNullable<Awaited<ReturnType<typeof deleteAddress>>>
+export type SetDefaultAddressResult = NonNullable<Awaited<ReturnType<typeof setDefaultAddress>>>
+export type ResendEmailVerificationResult = NonNullable<Awaited<ReturnType<typeof resendEmailVerification>>>
+export type ConfirmEmailVerificationResult = NonNullable<Awaited<ReturnType<typeof confirmEmailVerification>>>
+export type ConfirmEmailChangeResult = NonNullable<Awaited<ReturnType<typeof confirmEmailChange>>>
+export type UndoEmailChangeResult = NonNullable<Awaited<ReturnType<typeof undoEmailChange>>>
+export type RestoreAccountResult = NonNullable<Awaited<ReturnType<typeof restoreAccount>>>
+export type LoginResult = NonNullable<Awaited<ReturnType<typeof login>>>
+export type LoginRestoreResult = NonNullable<Awaited<ReturnType<typeof loginRestore>>>
+export type SignupResult = NonNullable<Awaited<ReturnType<typeof signup>>>
+export type RequestPasswordResetResult = NonNullable<Awaited<ReturnType<typeof requestPasswordReset>>>
+export type ConfirmPasswordResetResult = NonNullable<Awaited<ReturnType<typeof confirmPasswordReset>>>
+export type RefreshTokenResult = NonNullable<Awaited<ReturnType<typeof refreshToken>>>
+export type RequestAccountExportResult = NonNullable<Awaited<ReturnType<typeof requestAccountExport>>>
+export type GetAccountExportResult = NonNullable<Awaited<ReturnType<typeof getAccountExport>>>
+export type DownloadAccountExportResult = NonNullable<Awaited<ReturnType<typeof downloadAccountExport>>>
+export type LoginTwoFactorResult = NonNullable<Awaited<ReturnType<typeof loginTwoFactor>>>
+export type SendTwoFactorCodeResult = NonNullable<Awaited<ReturnType<typeof sendTwoFactorCode>>>
+export type GetTwoFactorStatusResult = NonNullable<Awaited<ReturnType<typeof getTwoFactorStatus>>>
+export type SetupTwoFactorMethodResult = NonNullable<Awaited<ReturnType<typeof setupTwoFactorMethod>>>
+export type SendTwoFactorMethodCodeResult = NonNullable<Awaited<ReturnType<typeof sendTwoFactorMethodCode>>>
+export type ConfirmTwoFactorMethodResult = NonNullable<Awaited<ReturnType<typeof confirmTwoFactorMethod>>>
+export type DisableTwoFactorResult = NonNullable<Awaited<ReturnType<typeof disableTwoFactor>>>
+export type RemoveTwoFactorMethodResult = NonNullable<Awaited<ReturnType<typeof removeTwoFactorMethod>>>
+export type RegenerateBackupCodesResult = NonNullable<Awaited<ReturnType<typeof regenerateBackupCodes>>>
+export type ListOAuthLinksResult = NonNullable<Awaited<ReturnType<typeof listOAuthLinks>>>
+export type StartOAuthLinkResult = NonNullable<Awaited<ReturnType<typeof startOAuthLink>>>
+export type UnlinkOAuthProviderResult = NonNullable<Awaited<ReturnType<typeof unlinkOAuthProvider>>>
+export type StartOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof startOAuthLogin>>>
+export type CompleteOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof completeOAuthLogin>>>
+export type ListUsersResult = NonNullable<Awaited<ReturnType<typeof listUsers>>>
+export type CreateUserResult = NonNullable<Awaited<ReturnType<typeof createUser>>>
+export type CreateUserWithMultipartResult = NonNullable<Awaited<ReturnType<typeof createUserWithMultipart>>>
+export type GetUserByIdResult = NonNullable<Awaited<ReturnType<typeof getUserById>>>
+export type ReplaceUserByIdResult = NonNullable<Awaited<ReturnType<typeof replaceUserById>>>
+export type ReplaceUserByIdWithMultipartResult = NonNullable<Awaited<ReturnType<typeof replaceUserByIdWithMultipart>>>
+export type UpdateUserByIdResult = NonNullable<Awaited<ReturnType<typeof updateUserById>>>
+export type UpdateUserByIdWithMergePatchJsonResult = NonNullable<Awaited<ReturnType<typeof updateUserByIdWithMergePatchJson>>>
+export type UpdateUserByIdWithMultipartResult = NonNullable<Awaited<ReturnType<typeof updateUserByIdWithMultipart>>>
+export type DeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof deleteUserById>>>
+export type RestoreUserByIdResult = NonNullable<Awaited<ReturnType<typeof restoreUserById>>>
+export type HardDeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof hardDeleteUserById>>>
+export type SearchUsersResult = NonNullable<Awaited<ReturnType<typeof searchUsers>>>
+export type CreateContactTaskResult = NonNullable<Awaited<ReturnType<typeof createContactTask>>>
+export type ListTasksResult = NonNullable<Awaited<ReturnType<typeof listTasks>>>
+export type SearchTasksResult = NonNullable<Awaited<ReturnType<typeof searchTasks>>>
+export type GetTaskSummaryResult = NonNullable<Awaited<ReturnType<typeof getTaskSummary>>>
+export type GetTaskResult = NonNullable<Awaited<ReturnType<typeof getTask>>>
+export type DeleteTaskResult = NonNullable<Awaited<ReturnType<typeof deleteTask>>>
+export type ResolveTaskResult = NonNullable<Awaited<ReturnType<typeof resolveTask>>>
+export type MarkTaskSpamResult = NonNullable<Awaited<ReturnType<typeof markTaskSpam>>>
+export type ReopenTaskResult = NonNullable<Awaited<ReturnType<typeof reopenTask>>>
+export type AssignTaskResult = NonNullable<Awaited<ReturnType<typeof assignTask>>>
+export type UnassignTaskResult = NonNullable<Awaited<ReturnType<typeof unassignTask>>>
+export type CreateTaskNoteResult = NonNullable<Awaited<ReturnType<typeof createTaskNote>>>
+export type ListProductsResult = NonNullable<Awaited<ReturnType<typeof listProducts>>>
+export type CreateProductResult = NonNullable<Awaited<ReturnType<typeof createProduct>>>
+export type CreateProductWithMultipartResult = NonNullable<Awaited<ReturnType<typeof createProductWithMultipart>>>
+export type GetCatalogFacetsResult = NonNullable<Awaited<ReturnType<typeof getCatalogFacets>>>
+export type GetProductByIdResult = NonNullable<Awaited<ReturnType<typeof getProductById>>>
+export type ReplaceProductByIdResult = NonNullable<Awaited<ReturnType<typeof replaceProductById>>>
+export type ReplaceProductByIdWithMultipartResult = NonNullable<Awaited<ReturnType<typeof replaceProductByIdWithMultipart>>>
+export type UpdateProductByIdResult = NonNullable<Awaited<ReturnType<typeof updateProductById>>>
+export type UpdateProductByIdWithMergePatchJsonResult = NonNullable<Awaited<ReturnType<typeof updateProductByIdWithMergePatchJson>>>
+export type UpdateProductByIdWithMultipartResult = NonNullable<Awaited<ReturnType<typeof updateProductByIdWithMultipart>>>
+export type DeleteProductByIdResult = NonNullable<Awaited<ReturnType<typeof deleteProductById>>>
+export type RestoreProductByIdResult = NonNullable<Awaited<ReturnType<typeof restoreProductById>>>
+export type HardDeleteProductByIdResult = NonNullable<Awaited<ReturnType<typeof hardDeleteProductById>>>
+export type SearchProductsResult = NonNullable<Awaited<ReturnType<typeof searchProducts>>>
+export type GetCartResult = NonNullable<Awaited<ReturnType<typeof getCart>>>
+export type AddCartItemResult = NonNullable<Awaited<ReturnType<typeof addCartItem>>>
+export type ClearCartResult = NonNullable<Awaited<ReturnType<typeof clearCart>>>
+export type UpdateCartItemByProductIdResult = NonNullable<Awaited<ReturnType<typeof updateCartItemByProductId>>>
+export type UpdateCartItemByProductIdWithMergePatchJsonResult = NonNullable<Awaited<ReturnType<typeof updateCartItemByProductIdWithMergePatchJson>>>
+export type DeleteCartItemByProductIdResult = NonNullable<Awaited<ReturnType<typeof deleteCartItemByProductId>>>
+export type SetCartShippingMethodResult = NonNullable<Awaited<ReturnType<typeof setCartShippingMethod>>>
+export type GetCartSummaryResult = NonNullable<Awaited<ReturnType<typeof getCartSummary>>>
+export type CheckoutResult = NonNullable<Awaited<ReturnType<typeof checkout>>>
+export type ReorderResult = NonNullable<Awaited<ReturnType<typeof reorder>>>
+export type GetWishlistResult = NonNullable<Awaited<ReturnType<typeof getWishlist>>>
+export type CreateWishlistItemResult = NonNullable<Awaited<ReturnType<typeof createWishlistItem>>>
+export type DeleteWishlistItemResult = NonNullable<Awaited<ReturnType<typeof deleteWishlistItem>>>
+export type MoveWishlistItemToCartResult = NonNullable<Awaited<ReturnType<typeof moveWishlistItemToCart>>>
+export type ListOrdersResult = NonNullable<Awaited<ReturnType<typeof listOrders>>>
+export type CreateOrderResult = NonNullable<Awaited<ReturnType<typeof createOrder>>>
+export type SearchOrdersResult = NonNullable<Awaited<ReturnType<typeof searchOrders>>>
+export type GetOrderByIdResult = NonNullable<Awaited<ReturnType<typeof getOrderById>>>
+export type ReplaceOrderByIdResult = NonNullable<Awaited<ReturnType<typeof replaceOrderById>>>
+export type UpdateOrderByIdResult = NonNullable<Awaited<ReturnType<typeof updateOrderById>>>
+export type UpdateOrderByIdWithMergePatchJsonResult = NonNullable<Awaited<ReturnType<typeof updateOrderByIdWithMergePatchJson>>>
+export type DeleteOrderByIdResult = NonNullable<Awaited<ReturnType<typeof deleteOrderById>>>
+export type RestoreOrderByIdResult = NonNullable<Awaited<ReturnType<typeof restoreOrderById>>>
+export type HardDeleteOrderByIdResult = NonNullable<Awaited<ReturnType<typeof hardDeleteOrderById>>>
+export type CancelOrderByIdResult = NonNullable<Awaited<ReturnType<typeof cancelOrderById>>>
+export type OverrideOrderStatusResult = NonNullable<Awaited<ReturnType<typeof overrideOrderStatus>>>
+export type GetOrderInvoiceResult = NonNullable<Awaited<ReturnType<typeof getOrderInvoice>>>
+export type ListOrderCreditNotesResult = NonNullable<Awaited<ReturnType<typeof listOrderCreditNotes>>>
+export type GetOrderCreditNoteResult = NonNullable<Awaited<ReturnType<typeof getOrderCreditNote>>>
+export type ListOrderPaymentsResult = NonNullable<Awaited<ReturnType<typeof listOrderPayments>>>
+export type RecordOrderPaymentResult = NonNullable<Awaited<ReturnType<typeof recordOrderPayment>>>
+export type ProcessOrderResult = NonNullable<Awaited<ReturnType<typeof processOrder>>>
+export type ListOrderFulfillmentOrdersResult = NonNullable<Awaited<ReturnType<typeof listOrderFulfillmentOrders>>>
+export type ListOrderShipmentsResult = NonNullable<Awaited<ReturnType<typeof listOrderShipments>>>
+export type ListPaymentMethodsResult = NonNullable<Awaited<ReturnType<typeof listPaymentMethods>>>
+export type CreateRefundResult = NonNullable<Awaited<ReturnType<typeof createRefund>>>
+export type GetRefundResult = NonNullable<Awaited<ReturnType<typeof getRefund>>>
+export type GetPaymentResult = NonNullable<Awaited<ReturnType<typeof getPayment>>>
+export type ConfirmPaymentResult = NonNullable<Awaited<ReturnType<typeof confirmPayment>>>
+export type SyncPaymentResult = NonNullable<Awaited<ReturnType<typeof syncPayment>>>
+export type ReceivePaymentWebhookResult = NonNullable<Awaited<ReturnType<typeof receivePaymentWebhook>>>
+export type ListShippingMethodsResult = NonNullable<Awaited<ReturnType<typeof listShippingMethods>>>
+export type ListPreorderFulfillmentOrdersResult = NonNullable<Awaited<ReturnType<typeof listPreorderFulfillmentOrders>>>
+export type SummarizePreorderFulfillmentOrdersResult = NonNullable<Awaited<ReturnType<typeof summarizePreorderFulfillmentOrders>>>
+export type ShipFulfillmentOrderResult = NonNullable<Awaited<ReturnType<typeof shipFulfillmentOrder>>>
+export type FulfillFulfillmentOrderResult = NonNullable<Awaited<ReturnType<typeof fulfillFulfillmentOrder>>>
+export type HoldFulfillmentOrderResult = NonNullable<Awaited<ReturnType<typeof holdFulfillmentOrder>>>
+export type ReleaseFulfillmentOrderResult = NonNullable<Awaited<ReturnType<typeof releaseFulfillmentOrder>>>
+export type GetShipmentResult = NonNullable<Awaited<ReturnType<typeof getShipment>>>
+export type UpdateShipmentResult = NonNullable<Awaited<ReturnType<typeof updateShipment>>>
+export type UpdateShipmentWithMergePatchJsonResult = NonNullable<Awaited<ReturnType<typeof updateShipmentWithMergePatchJson>>>
+export type DeliverShipmentResult = NonNullable<Awaited<ReturnType<typeof deliverShipment>>>
+export type ListReturnsResult = NonNullable<Awaited<ReturnType<typeof listReturns>>>
+export type CreateReturnResult = NonNullable<Awaited<ReturnType<typeof createReturn>>>
+export type GetReturnOptionsResult = NonNullable<Awaited<ReturnType<typeof getReturnOptions>>>
+export type GetReturnByIdResult = NonNullable<Awaited<ReturnType<typeof getReturnById>>>
+export type ApproveReturnResult = NonNullable<Awaited<ReturnType<typeof approveReturn>>>
+export type DeclineReturnResult = NonNullable<Awaited<ReturnType<typeof declineReturn>>>
+export type ReceiveReturnResult = NonNullable<Awaited<ReturnType<typeof receiveReturn>>>
+export type ListInventoryLevelsResult = NonNullable<Awaited<ReturnType<typeof listInventoryLevels>>>
+export type ListPreorderLevelsResult = NonNullable<Awaited<ReturnType<typeof listPreorderLevels>>>
+export type ListStockMovementsResult = NonNullable<Awaited<ReturnType<typeof listStockMovements>>>
+export type ReceiveStockResult = NonNullable<Awaited<ReturnType<typeof receiveStock>>>
+export type AdjustStockResult = NonNullable<Awaited<ReturnType<typeof adjustStock>>>
+export type SweepReservationsResult = NonNullable<Awaited<ReturnType<typeof sweepReservations>>>
+export type ListWebhookSubscriptionsResult = NonNullable<Awaited<ReturnType<typeof listWebhookSubscriptions>>>
+export type CreateWebhookSubscriptionResult = NonNullable<Awaited<ReturnType<typeof createWebhookSubscription>>>
+export type GetWebhookSubscriptionResult = NonNullable<Awaited<ReturnType<typeof getWebhookSubscription>>>
+export type ReplaceWebhookSubscriptionResult = NonNullable<Awaited<ReturnType<typeof replaceWebhookSubscription>>>
+export type UpdateWebhookSubscriptionResult = NonNullable<Awaited<ReturnType<typeof updateWebhookSubscription>>>
+export type UpdateWebhookSubscriptionWithMergePatchJsonResult = NonNullable<Awaited<ReturnType<typeof updateWebhookSubscriptionWithMergePatchJson>>>
+export type DeleteWebhookSubscriptionResult = NonNullable<Awaited<ReturnType<typeof deleteWebhookSubscription>>>
+export type DeleteWebhookSubscriptionSecretResult = NonNullable<Awaited<ReturnType<typeof deleteWebhookSubscriptionSecret>>>
+export type ListWebhookDeliveriesResult = NonNullable<Awaited<ReturnType<typeof listWebhookDeliveries>>>
+export type ReplayWebhookDeliveryResult = NonNullable<Awaited<ReturnType<typeof replayWebhookDelivery>>>
+export type ListWebhookEventsResult = NonNullable<Awaited<ReturnType<typeof listWebhookEvents>>>
+export type ListApiKeysResult = NonNullable<Awaited<ReturnType<typeof listApiKeys>>>
+export type CreateApiKeyResult = NonNullable<Awaited<ReturnType<typeof createApiKey>>>
+export type GetApiKeyResult = NonNullable<Awaited<ReturnType<typeof getApiKey>>>
+export type RevokeApiKeyResult = NonNullable<Awaited<ReturnType<typeof revokeApiKey>>>
+export type ActivateLocaleResult = NonNullable<Awaited<ReturnType<typeof activateLocale>>>
+export type DeactivateLocaleResult = NonNullable<Awaited<ReturnType<typeof deactivateLocale>>>
+export type SendReauthCodeResult = NonNullable<Awaited<ReturnType<typeof sendReauthCode>>>
+export type TouchSessionResult = NonNullable<Awaited<ReturnType<typeof touchSession>>>
+export type AssignUserRoleResult = NonNullable<Awaited<ReturnType<typeof assignUserRole>>>
+export type RevokeUserRoleResult = NonNullable<Awaited<ReturnType<typeof revokeUserRole>>>
+export type PlaceUserPurchaseHoldResult = NonNullable<Awaited<ReturnType<typeof placeUserPurchaseHold>>>
+export type LiftUserPurchaseHoldResult = NonNullable<Awaited<ReturnType<typeof liftUserPurchaseHold>>>
+export type ActivateUserByIdResult = NonNullable<Awaited<ReturnType<typeof activateUserById>>>
+export type DeactivateUserByIdResult = NonNullable<Awaited<ReturnType<typeof deactivateUserById>>>
+export type MergeCartResult = NonNullable<Awaited<ReturnType<typeof mergeCart>>>
+export type ExportOrdersResult = NonNullable<Awaited<ReturnType<typeof exportOrders>>>
+export type GetOrderTimelineResult = NonNullable<Awaited<ReturnType<typeof getOrderTimeline>>>
+export type AddOrderNoteResult = NonNullable<Awaited<ReturnType<typeof addOrderNote>>>
+export type DeleteOrderNoteResult = NonNullable<Awaited<ReturnType<typeof deleteOrderNote>>>
+export type CorrectOrderShippingAddressResult = NonNullable<Awaited<ReturnType<typeof correctOrderShippingAddress>>>
+export type ListPaymentsResult = NonNullable<Awaited<ReturnType<typeof listPayments>>>
+export type CreatePaymentResult = NonNullable<Awaited<ReturnType<typeof createPayment>>>
+export type SearchPaymentsResult = NonNullable<Awaited<ReturnType<typeof searchPayments>>>
+export type ListRefundsResult = NonNullable<Awaited<ReturnType<typeof listRefunds>>>
+export type ListPaymentAttentionResult = NonNullable<Awaited<ReturnType<typeof listPaymentAttention>>>
+export type SettleRefundByHandResult = NonNullable<Awaited<ReturnType<typeof settleRefundByHand>>>
+export type CancelRefundResult = NonNullable<Awaited<ReturnType<typeof cancelRefund>>>
+export type PreviewReleaseDateImpactResult = NonNullable<Awaited<ReturnType<typeof previewReleaseDateImpact>>>
+export type PreviewRestockDateImpactResult = NonNullable<Awaited<ReturnType<typeof previewRestockDateImpact>>>
+export type GetFulfillmentOrderResult = NonNullable<Awaited<ReturnType<typeof getFulfillmentOrder>>>
+export type MarkShipmentLostResult = NonNullable<Awaited<ReturnType<typeof markShipmentLost>>>
+export type CloseReturnResult = NonNullable<Awaited<ReturnType<typeof closeReturn>>>
+export type CancelReturnResult = NonNullable<Awaited<ReturnType<typeof cancelReturn>>>
+export type RecordProofOfSendingResult = NonNullable<Awaited<ReturnType<typeof recordProofOfSending>>>
+export type GetSalesStatsResult = NonNullable<Awaited<ReturnType<typeof getSalesStats>>>
+export type GetProductStatsResult = NonNullable<Awaited<ReturnType<typeof getProductStats>>>
+export type GetProductSalesSeriesResult = NonNullable<Awaited<ReturnType<typeof getProductSalesSeries>>>
+export type GetCategoryStatsResult = NonNullable<Awaited<ReturnType<typeof getCategoryStats>>>
+export type GetPaymentMixStatsResult = NonNullable<Awaited<ReturnType<typeof getPaymentMixStats>>>
+export type GetOperationsStatsResult = NonNullable<Awaited<ReturnType<typeof getOperationsStats>>>
+export type GetCustomerStatsResult = NonNullable<Awaited<ReturnType<typeof getCustomerStats>>>
+export type GetPipelineStatsResult = NonNullable<Awaited<ReturnType<typeof getPipelineStats>>>
+export type GetInventoryLevelResult = NonNullable<Awaited<ReturnType<typeof getInventoryLevel>>>
+export type UpdateInventoryLevelResult = NonNullable<Awaited<ReturnType<typeof updateInventoryLevel>>>
+export type UpdateInventoryLevelWithMergePatchJsonResult = NonNullable<Awaited<ReturnType<typeof updateInventoryLevelWithMergePatchJson>>>
+export type EnableWebhookSubscriptionResult = NonNullable<Awaited<ReturnType<typeof enableWebhookSubscription>>>
+export type DisableWebhookSubscriptionResult = NonNullable<Awaited<ReturnType<typeof disableWebhookSubscription>>>
+export type CreateWebhookSubscriptionSecretResult = NonNullable<Awaited<ReturnType<typeof createWebhookSubscriptionSecret>>>
+export type GetWebhookDeliveryResult = NonNullable<Awaited<ReturnType<typeof getWebhookDelivery>>>
+export type ListExamplesResult = NonNullable<Awaited<ReturnType<typeof listExamples>>>
+export type CreateExampleResult = NonNullable<Awaited<ReturnType<typeof createExample>>>
+export type SearchExamplesResult = NonNullable<Awaited<ReturnType<typeof searchExamples>>>
+export type GetExampleByIdResult = NonNullable<Awaited<ReturnType<typeof getExampleById>>>
+export type ReplaceExampleByIdResult = NonNullable<Awaited<ReturnType<typeof replaceExampleById>>>
+export type UpdateExampleByIdResult = NonNullable<Awaited<ReturnType<typeof updateExampleById>>>
+export type UpdateExampleByIdWithMergePatchJsonResult = NonNullable<Awaited<ReturnType<typeof updateExampleByIdWithMergePatchJson>>>
+export type DeleteExampleByIdResult = NonNullable<Awaited<ReturnType<typeof deleteExampleById>>>
+export type PublishExampleResult = NonNullable<Awaited<ReturnType<typeof publishExample>>>
+export type ArchiveExampleResult = NonNullable<Awaited<ReturnType<typeof archiveExample>>>
+export type UnarchiveExampleResult = NonNullable<Awaited<ReturnType<typeof unarchiveExample>>>
+export type ReplaceExampleCoverResult = NonNullable<Awaited<ReturnType<typeof replaceExampleCover>>>
+export type ListNotificationsResult = NonNullable<Awaited<ReturnType<typeof listNotifications>>>
+export type DismissAllNotificationsResult = NonNullable<Awaited<ReturnType<typeof dismissAllNotifications>>>
+export type GetNotificationsStreamResult = NonNullable<Awaited<ReturnType<typeof getNotificationsStream>>>
+export type ReadAllNotificationsResult = NonNullable<Awaited<ReturnType<typeof readAllNotifications>>>
+export type GetNotificationByIdResult = NonNullable<Awaited<ReturnType<typeof getNotificationById>>>
+export type DeleteNotificationByIdResult = NonNullable<Awaited<ReturnType<typeof deleteNotificationById>>>
+export type GetShopResult = NonNullable<Awaited<ReturnType<typeof getShop>>>
+export type GetShopWorkSummaryResult = NonNullable<Awaited<ReturnType<typeof getShopWorkSummary>>>
+export type GetSitemapIndexResult = NonNullable<Awaited<ReturnType<typeof getSitemapIndex>>>
+export type GetSitemapPagesResult = NonNullable<Awaited<ReturnType<typeof getSitemapPages>>>
+export type GetSitemapProductsResult = NonNullable<Awaited<ReturnType<typeof getSitemapProducts>>>
+export type ListStockAlertsResult = NonNullable<Awaited<ReturnType<typeof listStockAlerts>>>
+export type CreateStockAlertResult = NonNullable<Awaited<ReturnType<typeof createStockAlert>>>
+export type DeleteStockAlertResult = NonNullable<Awaited<ReturnType<typeof deleteStockAlert>>>

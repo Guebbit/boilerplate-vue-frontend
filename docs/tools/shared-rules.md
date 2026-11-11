@@ -1,7 +1,7 @@
 # Shared rules
 
 A rule that is only **data** (a list, a map, a few names) lives in a YAML file under
-`shared/rules/`, checked by a Zod schema, and `npm run regenerate` turns it into a committed
+`shared/rules/`, checked by a Zod schema, and `npm run regenerate` turns it into a gitignored
 `as const` TypeScript file the code imports. The point is a second reader: another frontend, or a
 doc, can take the YAML without taking the code.
 
@@ -20,7 +20,8 @@ flowchart LR
   T --> C["application code"]
 ```
 
-- `npm run check` runs the generator with `--check`: a stale generated file or schema fails it.
+- `npm run check` runs the generator with `--check`: a stale committed schema fails it. The `.generated.ts`
+  files are gitignored and rebuilt by `postinstall`, so `--check` finds them fresh after any install.
 - The generator writes only what the registry lists. A YAML nobody lists is dead data.
 - Two shapes, the backend's: `verbatim` (dump the parsed data) and `keyed-list`
   (`{ value, description }` rows become `{ KEY: 'value' }`). Nothing here uses `keyed-list` yet.

@@ -47,9 +47,6 @@ const contentTypeOperationNames = (verb: GeneratorVerbOptions): GeneratorVerbOpt
  * a checkout with no sibling repo), the clean wiring is `mode: 'split'` + `mock: true` here,
  * which emits the handlers into a separate `index.msw.ts` that only a flag-guarded dynamic
  * import would ever pull into a bundle.
- *
- * NOTE: every target below must also appear in the `api-freshness` job's pathspec in
- * .github/workflows/ci.yml, or changes to it ship unguarded.
  */
 export default defineConfig({
     api: {

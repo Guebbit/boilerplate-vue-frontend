@@ -40,26 +40,29 @@ fatal under CI (the `check` job, which runs `npm run check`).
 sync:frontend`; here you regenerate and read the diff:
 
 ```bash
-npm run regenerate     # gen:api + gen:asyncapi, then Prettier over contracts/rest
+npm run regenerate     # gen:api + gen:asyncapi + gen:permission-vocabulary + gen:shared-rules
 npm run check
 ```
 
 Reading the diff is the human step: a spec change may require store or view updates. To confirm parity by hand,
 `diff openapi.yaml ../boilerplate-node-backend/openapi.yaml` should print nothing.
 
-CI catches both kinds of drift: a spec edited **within this repo** without regenerating (see
-below) and a copy that has fallen behind the backend (`spec-identity`).
+CI catches a copy that has fallen behind the backend (`spec-identity`). The generated code cannot
+drift from the spec: every install rebuilds it.
 
-## Freshness enforcement in CI
+## The generated code is not committed
 
-The `api-freshness` job regenerates the client and fails if the committed output differs. Two details matter when editing it:
+`contracts/rest/` and the other generated files are gitignored, so there is no freshness check to
+run and nothing to commit after a spec change. `npm install` and `npm ci` run `postinstall`, which
+is `npm run regenerate`; the container images run it once after `COPY . .`
+(`npm ci --ignore-scripts` skips `postinstall`).
 
-- **The pathspec must list every orval output.** A pathspec naming a directory that does not exist matches nothing: `git diff` exits 0 and the job passes without checking anything. If you add or retarget an output block in `orval.config.ts`, update the pathspec in the same commit.
-- **Formatting must be normalised before diffing.** Orval emits 2-space indentation while this repo's Prettier config uses 4, and the committed output is formatted. Without `npx prettier --write` before the diff, the job reports thousands of lines of pure indentation churn on every run.
-
-The AsyncAPI side is a step of `npm run check`, which the `check` CI job runs.
-
-If you change this job, verify it can actually fail: edit `openapi.yaml` without regenerating and confirm the job goes red. A freshness guard nobody has seen fail is indistinguishable from one that does nothing.
+- **After a pull that changed `openapi.yaml`, `asyncapi.yaml` or `shared/rules/`:** run `npm install`
+  (or `npm run regenerate`). A stale `contracts/rest/` makes `vue-tsc` fail, not the app misbehave.
+- **The pre-commit hook** regenerates when `openapi.yaml` or `asyncapi.yaml` is staged, so the
+  type-check and unit run on the new contract. It stages nothing.
+- **What `npm run check` still guards:** `openapi.yaml` and `asyncapi.yaml` are the backend's bytes
+  (`spec-identity`), and the committed shared-rules JSON Schemas are what the generator writes.
 
 ## OpenAPI vs AsyncAPI in this repository
 
@@ -75,7 +78,7 @@ If you change this job, verify it can actually fail: edit `openapi.yaml` without
 
 ## Generated output (`contracts/rest/`)
 
-Running `npm run gen:api` regenerates the entire `contracts/rest/` directory. **Never edit files inside `contracts/rest/` manually** — they are overwritten.
+Running `npm run gen:api` regenerates the entire `contracts/rest/` directory. It is gitignored and rebuilt on `npm install`. **Never edit files inside `contracts/rest/` manually** — they are overwritten.
 
 ```
 contracts/rest/
@@ -116,8 +119,6 @@ Naming convention: schema name + property name, PascalCase. Example: `RecordOffl
 | ------------ | --------------------------------- | ---------------------------------------------------- |
 | `api`        | `./contracts/rest/index.ts`       | typed axios functions, routed through `orvalMutator` |
 | `zodSchemas` | `./contracts/rest/schemas.zod.ts` | Zod schema per request/response shape                |
-
-Every target listed here must also appear in the `api-freshness` CI job's pathspec, or changes to it go unguarded.
 
 ### Multipart operations generate two functions
 

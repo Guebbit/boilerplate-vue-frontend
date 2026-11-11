@@ -14,15 +14,11 @@
  * `ERROR_CODES.CART_EMPTY` instead of retyping the string — the compiler catches a typo or a
  * removed code, but nothing here REJECTS a code the contract doesn't (yet) know about.
  *
- * `--check` writes nothing and exits 1 on a mismatch — the same contract every generator in this
- * family keeps.
- *
- * Usage: tsx scripts/contracts/generate-error-codes.ts --out <path> [--check]
+ * Usage: tsx scripts/contracts/generate-error-codes.ts --out <path>
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { writeOrCheck } from './generated-file';
 import { parse } from 'yaml';
 
 /** One error code's declaration, as `x-error-codes` holds it. Only `status`/`description` are read; both already carry the WHY in the contract, so neither is repeated in a comment here. */
@@ -106,5 +102,5 @@ const output =
     "/** Any code `errors[].code` may carry. NOT exhaustive at the type level — the contract's own `enum`-free `code: string` is the reason this exists. */\n" +
     'export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];\n';
 
-// Write the file, or under `--check` compare it with what is on disk.
-writeOrCheck(OUTPUT, output, 'openapi.yaml');
+writeFileSync(OUTPUT, output, 'utf8');
+console.log(`✓ Generated ${OUTPUT}`);

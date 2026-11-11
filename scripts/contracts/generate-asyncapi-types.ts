@@ -23,10 +23,7 @@
  * `fromJSONSchema` to validate a frame. An export a repo happens not to use is harmless —
  * tree-shaken there, type-only here.
  *
- * `--check` writes nothing and exits 1 on a mismatch: the gate that stops a repo shipping types
- * for a contract it no longer has.
- *
- * Usage: tsx scripts/contracts/generate-asyncapi-types.ts --out <path> [--check]
+ * Usage: tsx scripts/contracts/generate-asyncapi-types.ts --out <path>
  *
  * See: docs/api/asyncapi-workflow.md#generated-typescript-types
  */
@@ -35,7 +32,7 @@ import {
     typeScriptDefaultModelNameConstraints,
     type OutputModel
 } from '@asyncapi/modelina';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
@@ -104,9 +101,6 @@ const resolveOutputPath = (): string => {
 
 /** Absolute path of the file to generate, from `--out`. */
 const OUTPUT = resolveOutputPath();
-
-/** `--check` compares and reports; without it the file is written. */
-const checkOnly = process.argv.includes('--check');
 
 /*
  * Converts source names into `PascalCase`.
@@ -499,24 +493,8 @@ generator
             );
         const output = buildOutput(modelBlocks, restModels);
 
-        if (!checkOnly) {
-            writeFileSync(OUTPUT, output, 'utf8');
-            console.log(`✓ Generated ${OUTPUT}`);
-            return;
-        }
-
-        if (existsSync(OUTPUT) && readFileSync(OUTPUT, 'utf8') === output) {
-            console.log(`✓ ${OUTPUT} is current with asyncapi.yaml`);
-            return;
-        }
-
-        // Names the one command that fixes it: the file is an output, so there is nothing to decide.
-        console.error(
-            `${OUTPUT} is not what asyncapi.yaml generates.\n` +
-                `  Run: npm run gen:asyncapi\n` +
-                `  Then commit the result.`
-        );
-        process.exit(1);
+        writeFileSync(OUTPUT, output, 'utf8');
+        console.log(`✓ Generated ${OUTPUT}`);
     })
     .catch((error: unknown) => {
         console.error(error);

@@ -10,10 +10,14 @@ WORKDIR /app
 COPY package*.json .npmrc ./
 
 # Install all dependencies (including devDependencies for Vite dev server)
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 # Copy all the project files
 COPY . .
+
+# The generated contract code is gitignored, so it is not in the copy: rebuild it here, because
+# `--ignore-scripts` above skipped `postinstall`.
+RUN npm run regenerate
 
 # 8080 is THIS repo's port, not Vite's — Vite's own default is 5173. It is set in vite.config.ts
 # from VITE_APP_PORT, which compose also uses for the published mapping, so the two cannot drift.

@@ -5,7 +5,7 @@
  */
 
 /** The media types every `imageUpload` part accepts, as the contract declares them. */
-export const ACCEPTED_UPLOAD_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;
+export const ACCEPTED_UPLOAD_TYPES = ["image/png","image/jpeg","image/webp"] as const;
 
 /** One accepted upload media type. */
 export type AcceptedUploadType = (typeof ACCEPTED_UPLOAD_TYPES)[number];

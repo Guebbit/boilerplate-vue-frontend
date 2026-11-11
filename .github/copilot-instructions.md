@@ -65,7 +65,7 @@ one line from `src/modules.ts`.** See [docs/theory/modules.md](../docs/theory/mo
 
 - Boilerplate is example-focused: keep changes small but complete.
 - Do not break API contract without updating `openapi.yaml`.
-- After contract edits, regenerate `contracts/rest` with `npm run gen:api`.
+- After contract edits, regenerate `contracts/rest` with `npm run regenerate` (gitignored, rebuilt on install).
 - Keep auth, i18n, and error-handling flows consistent across stores/composables.
 - **Never** create backward-compatibility shims, legacy aliases, or transitional code unless explicitly requested. Fix forward; remove old code immediately.
 

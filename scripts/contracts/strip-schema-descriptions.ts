@@ -9,17 +9,16 @@
  * nothing at runtime reads: the schemas are only ever `.safeParse()`d
  * (`infrastructure/http/validate.ts`), never introspected for `.description`.
  *
- * Runs as the last step of `gen:api`, right after orval, so both `contracts/rest/schemas.zod.ts`
- * as committed and the `api-freshness` CI job (which re-runs `gen:api`) see it already stripped.
+ * Runs as the last step of `gen:api`, right after orval, so `contracts/rest/schemas.zod.ts`
+ * is always written already stripped.
  *
  * AST-based, via the `typescript` package this repo already depends on — no new dependency for
  * one transform. A regex risks matching a `.describe(` that turns up INSIDE one of the
  * description strings themselves; `X.describe(args)` is always the outermost call of its chain,
  * so removing it is just "replace the CallExpression with its own `.expression`", printed back
- * with `ts.createPrinter`. `regenerate`'s `prettier --write contracts/rest` re-formats the result
- * the same way it already reformats orval's own output.
+ * with `ts.createPrinter`.
  *
- * Usage: tsx scripts/contracts/strip-schema-descriptions.ts --target <path> [--check]
+ * Usage: tsx scripts/contracts/strip-schema-descriptions.ts --target <path>
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -46,9 +45,6 @@ const resolveTargetPath = (): string => {
 
 /** The generated Zod file to strip, from `--target`. */
 const TARGET = resolveTargetPath();
-
-/** `--check` compares and reports; without it the file is rewritten in place. */
-const checkOnly = process.argv.includes('--check');
 
 // Refuse to run before orval has produced the file.
 if (!existsSync(TARGET)) {
@@ -111,19 +107,5 @@ const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
 const output = printer.printFile(result.transformed[0] as ts.SourceFile);
 result.dispose();
 
-// Under `--check` report whether stripping would change anything; otherwise rewrite in place.
-if (checkOnly) {
-    if (source === output) {
-        console.log(`✓ ${TARGET} has no generated .describe() calls left to strip`);
-    } else {
-        console.error(
-            `${TARGET} still carries generated .describe() calls.\n` +
-                `  Run: npm run gen:api\n` +
-                `  Then commit the result.`
-        );
-        process.exit(1);
-    }
-} else {
-    writeFileSync(TARGET, output, 'utf8');
-    console.log(`✓ Stripped .describe() calls from ${TARGET}`);
-}
+writeFileSync(TARGET, output, 'utf8');
+console.log(`✓ Stripped .describe() calls from ${TARGET}`);

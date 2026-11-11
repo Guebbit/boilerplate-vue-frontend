@@ -7,323 +7,323 @@
 /** Every error code the contract declares. Open-ended: a new one is additive, never a breaking change. */
 export const ERROR_CODES = {
     /** 409 — The address book already holds `NODE_ADDRESS_BOOK_MAX` entries (20 by default) — remove one before adding another. */
-    ADDRESS_BOOK_LIMIT_REACHED: 'ADDRESS_BOOK_LIMIT_REACHED',
+    "ADDRESS_BOOK_LIMIT_REACHED": "ADDRESS_BOOK_LIMIT_REACHED",
     /** 404 — No challenge is currently active for this session. */
-    ANTIBOT_NO_CHALLENGE: 'ANTIBOT_NO_CHALLENGE',
+    "ANTIBOT_NO_CHALLENGE": "ANTIBOT_NO_CHALLENGE",
     /** 403 — The human-challenge token is missing, expired, or the provider rejected it. */
-    ANTIBOT_VERIFICATION_FAILED: 'ANTIBOT_VERIFICATION_FAILED',
+    "ANTIBOT_VERIFICATION_FAILED": "ANTIBOT_VERIFICATION_FAILED",
     /** 400 — A malformed request the body parser or a library refused before any route ran. */
-    BAD_REQUEST: 'BAD_REQUEST',
+    "BAD_REQUEST": "BAD_REQUEST",
     /** 409 — Nothing in this checkout ships to an address (all-digital, or a method that ships to none), so a shipping `addressId` cannot apply. */
-    CART_ADDRESS_NOT_APPLICABLE: 'CART_ADDRESS_NOT_APPLICABLE',
+    "CART_ADDRESS_NOT_APPLICABLE": "CART_ADDRESS_NOT_APPLICABLE",
     /** 404 — The named address does not exist, or does not belong to the caller. */
-    CART_ADDRESS_NOT_FOUND: 'CART_ADDRESS_NOT_FOUND',
+    "CART_ADDRESS_NOT_FOUND": "CART_ADDRESS_NOT_FOUND",
     /** 422 — A shipping address is required and none was supplied or found on file. */
-    CART_ADDRESS_REQUIRED: 'CART_ADDRESS_REQUIRED',
+    "CART_ADDRESS_REQUIRED": "CART_ADDRESS_REQUIRED",
     /** 422 — No billing address could be resolved — none was named, nothing ships, and the address book has no default. */
-    CART_BILLING_ADDRESS_REQUIRED: 'CART_BILLING_ADDRESS_REQUIRED',
+    "CART_BILLING_ADDRESS_REQUIRED": "CART_BILLING_ADDRESS_REQUIRED",
     /** 409 — The cart changed between the request that read it and this write — reload and retry. */
-    CART_CHANGED: 'CART_CHANGED',
+    "CART_CHANGED": "CART_CHANGED",
     /** 409 — Checkout was attempted on a cart with no lines. */
-    CART_EMPTY: 'CART_EMPTY',
+    "CART_EMPTY": "CART_EMPTY",
     /** 409 — One or more lines cannot be bought as they stand — see `errors[].details.lines`, one entry per refused line with its `productId`, `title`, the `requested` quantity and its `availability` (`insufficient_stock`, `out_of_stock` or `unavailable`, so the client picks the message). The number left is not part of the answer: exact stock is for callers who read it (`read:StockLevel`). */
-    CART_INSUFFICIENT_STOCK: 'CART_INSUFFICIENT_STOCK',
+    "CART_INSUFFICIENT_STOCK": "CART_INSUFFICIENT_STOCK",
     /** 409 — The cart already holds `NODE_CART_MAX_LINES` lines (100 by default), so a NEW product cannot be added — remove one first. Raising a line already there is never refused. */
-    CART_LINE_LIMIT_REACHED: 'CART_LINE_LIMIT_REACHED',
+    "CART_LINE_LIMIT_REACHED": "CART_LINE_LIMIT_REACHED",
     /** 409 — The account already holds `NODE_MAX_OPEN_UNPAID_ORDERS_PER_ACCOUNT` unpaid orders, whatever their payment method — each holds stock. `errors[].details.orderIds` names them: pay one (`POST /payments`) or cancel one (`POST /orders/{id}/cancel`), then check out again. */
-    CART_OPEN_ORDER_LIMIT_REACHED: 'CART_OPEN_ORDER_LIMIT_REACHED',
+    "CART_OPEN_ORDER_LIMIT_REACHED": "CART_OPEN_ORDER_LIMIT_REACHED",
     /** 409 — The chosen payment method is not enabled for this deployment or this cart. */
-    CART_PAYMENT_METHOD_NOT_AVAILABLE: 'CART_PAYMENT_METHOD_NOT_AVAILABLE',
+    "CART_PAYMENT_METHOD_NOT_AVAILABLE": "CART_PAYMENT_METHOD_NOT_AVAILABLE",
     /** 409 — A line references a product that was deleted or hidden (`active: false`) since it was added: its `availability` is `removed`. A product merely taken off sale is `unavailable` and refused as `CART_INSUFFICIENT_STOCK`. */
-    CART_PRODUCT_UNAVAILABLE: 'CART_PRODUCT_UNAVAILABLE',
+    "CART_PRODUCT_UNAVAILABLE": "CART_PRODUCT_UNAVAILABLE",
     /** 409 — The account is under a purchase hold: a protective pause after repeated cancellations, or one set by staff. `errors[].details` carries `until` (when checkout opens again), `reason` (`repeated_cancellations` or `staff`) and, for a staff hold, the `note` written for the buyer. Paying an existing order, cancelling, a withdrawal and a return are never blocked; the buyer can contest it through the contact form. */
-    CART_PURCHASE_HOLD: 'CART_PURCHASE_HOLD',
+    "CART_PURCHASE_HOLD": "CART_PURCHASE_HOLD",
     /** 422 — The requested quantity exceeds the per-line limit. */
-    CART_QUANTITY_LIMIT: 'CART_QUANTITY_LIMIT',
+    "CART_QUANTITY_LIMIT": "CART_QUANTITY_LIMIT",
     /** 404 — The named shipping method does not exist or is not offered. */
-    CART_SHIPPING_METHOD_NOT_FOUND: 'CART_SHIPPING_METHOD_NOT_FOUND',
+    "CART_SHIPPING_METHOD_NOT_FOUND": "CART_SHIPPING_METHOD_NOT_FOUND",
     /** 422 — A shipping method is required and none is set on the cart. */
-    CART_SHIPPING_METHOD_REQUIRED: 'CART_SHIPPING_METHOD_REQUIRED',
+    "CART_SHIPPING_METHOD_REQUIRED": "CART_SHIPPING_METHOD_REQUIRED",
     /** 409 — The cart's total weight falls outside the chosen shipping method's configured range. */
-    CART_SHIPPING_METHOD_WEIGHT: 'CART_SHIPPING_METHOD_WEIGHT',
+    "CART_SHIPPING_METHOD_WEIGHT": "CART_SHIPPING_METHOD_WEIGHT",
     /** 409 — The chosen shipping method does not apply to an all-digital cart. */
-    CART_SHIPPING_NOT_APPLICABLE: 'CART_SHIPPING_NOT_APPLICABLE',
+    "CART_SHIPPING_NOT_APPLICABLE": "CART_SHIPPING_NOT_APPLICABLE",
     /** 422 — The address's country is outside this deployment's configured ship-to list. */
-    CART_SHIP_TO_COUNTRY_NOT_SUPPORTED: 'CART_SHIP_TO_COUNTRY_NOT_SUPPORTED',
+    "CART_SHIP_TO_COUNTRY_NOT_SUPPORTED": "CART_SHIP_TO_COUNTRY_NOT_SUPPORTED",
     /** 409 — The total the buyer was shown is not the total this checkout would charge — a price, a shipping cost or the cart itself changed. `errors[].details` carries `expected` (what the request named) and `actual` (what the order would cost now), each `{ amount, currency }` with the amount as a decimal string; show the new total and let the buyer confirm. */
-    CART_TOTAL_CHANGED: 'CART_TOTAL_CHANGED',
+    "CART_TOTAL_CHANGED": "CART_TOTAL_CHANGED",
     /** 400 — A 4xx whose status has no code of its own in this catalogue (the derived name is not listed here), so no wording is invented for it. Never a 5xx. */
-    CLIENT_ERROR: 'CLIENT_ERROR',
+    "CLIENT_ERROR": "CLIENT_ERROR",
     /** 409 — The request is well-formed but conflicts with the resource's current state. */
-    CONFLICT: 'CONFLICT',
+    "CONFLICT": "CONFLICT",
     /** 413 — The request body exceeds this deployment's size limit. */
-    CONTENT_TOO_LARGE: 'CONTENT_TOO_LARGE',
+    "CONTENT_TOO_LARGE": "CONTENT_TOO_LARGE",
     /** 422 — A shipment line names a product that is not on the fulfillment order, asks for more than remains of it, or names the same product twice. */
-    DELIVERY_LINES_INVALID: 'DELIVERY_LINES_INVALID',
+    "DELIVERY_LINES_INVALID": "DELIVERY_LINES_INVALID",
     /** 409 — A `lost` shipment cannot be recorded as arrived because its units were already shipped again or canceled: taking them back would count the goods twice. */
-    DELIVERY_LOST_SUPERSEDED: 'DELIVERY_LOST_SUPERSEDED',
+    "DELIVERY_LOST_SUPERSEDED": "DELIVERY_LOST_SUPERSEDED",
     /** 409 — The shipment has already been delivered, or its order is no longer in a state this can run from. */
-    DELIVERY_NOT_DELIVERABLE: 'DELIVERY_NOT_DELIVERABLE',
+    "DELIVERY_NOT_DELIVERABLE": "DELIVERY_NOT_DELIVERABLE",
     /** 409 — A physical fulfillment order cannot be fulfilled without a shipment; ship it instead. */
-    DELIVERY_NOT_DIGITAL: 'DELIVERY_NOT_DIGITAL',
+    "DELIVERY_NOT_DIGITAL": "DELIVERY_NOT_DIGITAL",
     /** 409 — Only an open or in-progress fulfillment order can be put on hold. */
-    DELIVERY_NOT_HOLDABLE: 'DELIVERY_NOT_HOLDABLE',
+    "DELIVERY_NOT_HOLDABLE": "DELIVERY_NOT_HOLDABLE",
     /** 409 — Only a `shipped` parcel can be reported lost or damaged, and only while its order is `processing` or `shipped`. A parcel already `delivered` or `lost`, a digital fulfillment and a canceled order are refused. */
-    DELIVERY_NOT_LOSABLE: 'DELIVERY_NOT_LOSABLE',
+    "DELIVERY_NOT_LOSABLE": "DELIVERY_NOT_LOSABLE",
     /** 409 — A digital fulfillment order has nothing to ship (fulfill it instead), and a digital shipment has no tracking code to set. */
-    DELIVERY_NOT_PHYSICAL: 'DELIVERY_NOT_PHYSICAL',
+    "DELIVERY_NOT_PHYSICAL": "DELIVERY_NOT_PHYSICAL",
     /** 409 — The fulfillment order is not on hold, or waits for stock and is released only by the stock arriving. */
-    DELIVERY_NOT_RELEASABLE: 'DELIVERY_NOT_RELEASABLE',
+    "DELIVERY_NOT_RELEASABLE": "DELIVERY_NOT_RELEASABLE",
     /** 409 — The units of a replacement under the guarantee cannot be sent again: the order shipped fewer physical units than come back, or is canceled or unpaid. */
-    DELIVERY_NOT_REOPENABLE: 'DELIVERY_NOT_REOPENABLE',
+    "DELIVERY_NOT_REOPENABLE": "DELIVERY_NOT_REOPENABLE",
     /** 409 — The fulfillment order cannot ship now: it is on hold, closed or canceled, or the order is canceled, or still `pending` (never paid: start or pay it first). */
-    DELIVERY_NOT_SHIPPABLE: 'DELIVERY_NOT_SHIPPABLE',
+    "DELIVERY_NOT_SHIPPABLE": "DELIVERY_NOT_SHIPPABLE",
     /** 409 — The requested address is the one the account already has, so there is nothing to change. */
-    EMAIL_ALREADY_CURRENT: 'EMAIL_ALREADY_CURRENT',
+    "EMAIL_ALREADY_CURRENT": "EMAIL_ALREADY_CURRENT",
     /** 409 — Another account already holds this email address — on signup, or on an email change. */
-    EMAIL_ALREADY_USED: 'EMAIL_ALREADY_USED',
+    "EMAIL_ALREADY_USED": "EMAIL_ALREADY_USED",
     /** 409 — The account's email address is verified already, so there is nothing to resend. */
-    EMAIL_ALREADY_VERIFIED: 'EMAIL_ALREADY_VERIFIED',
+    "EMAIL_ALREADY_VERIFIED": "EMAIL_ALREADY_VERIFIED",
     /** 409 — This address is already the pending one, and its link is on the way — `POST /account/email-change/resend` mails it again. */
-    EMAIL_CHANGE_ALREADY_PENDING: 'EMAIL_CHANGE_ALREADY_PENDING',
+    "EMAIL_CHANGE_ALREADY_PENDING": "EMAIL_CHANGE_ALREADY_PENDING",
     /** 429 — An email change was already requested for this account in the last minute — carries `details.retryAfter`. */
-    EMAIL_CHANGE_TOO_SOON: 'EMAIL_CHANGE_TOO_SOON',
+    "EMAIL_CHANGE_TOO_SOON": "EMAIL_CHANGE_TOO_SOON",
     /** 403 — Checkout requires a verified email address — see `POST /account/email-verification/resend`. */
-    EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
+    "EMAIL_NOT_VERIFIED": "EMAIL_NOT_VERIFIED",
     /** 429 — A verification email was already sent recently — carries `details.retryAfter`. */
-    EMAIL_VERIFY_RESEND_TOO_SOON: 'EMAIL_VERIFY_RESEND_TOO_SOON',
+    "EMAIL_VERIFY_RESEND_TOO_SOON": "EMAIL_VERIFY_RESEND_TOO_SOON",
     /** 409 — Only a draft or a published example can be archived, or another request moved it first. `errors[].details` is `{ status }`; `Example.actions.archive` says whether the door is open. */
-    EXAMPLE_NOT_ARCHIVABLE: 'EXAMPLE_NOT_ARCHIVABLE',
+    "EXAMPLE_NOT_ARCHIVABLE": "EXAMPLE_NOT_ARCHIVABLE",
     /** 409 — Only a draft can be published, or another request moved the example first. `errors[].details` is `{ status }`, the status it holds now; `Example.actions.publish` says whether the door is open. */
-    EXAMPLE_NOT_PUBLISHABLE: 'EXAMPLE_NOT_PUBLISHABLE',
+    "EXAMPLE_NOT_PUBLISHABLE": "EXAMPLE_NOT_PUBLISHABLE",
     /** 409 — Only an archived example can go back to draft, or another request moved it first. `errors[].details` is `{ status }`; `Example.actions.unarchive` says whether the door is open. */
-    EXAMPLE_NOT_UNARCHIVABLE: 'EXAMPLE_NOT_UNARCHIVABLE',
+    "EXAMPLE_NOT_UNARCHIVABLE": "EXAMPLE_NOT_UNARCHIVABLE",
     /** 403 — The server understood the request and refuses it, whoever the caller is: the caller lacks the permission this route requires (a key's own `deniedCode` can replace this default with a more specific one), or a human-challenge token is missing or refused (`ANTIBOT_VERIFICATION_FAILED`). */
-    FORBIDDEN: 'FORBIDDEN',
+    "FORBIDDEN": "FORBIDDEN",
     /** 409 — Another request already carries this `Idempotency-Key` and has not finished yet. */
-    IDEMPOTENCY_IN_FLIGHT: 'IDEMPOTENCY_IN_FLIGHT',
+    "IDEMPOTENCY_IN_FLIGHT": "IDEMPOTENCY_IN_FLIGHT",
     /** 422 — This `Idempotency-Key` was already used with a different request body. */
-    IDEMPOTENCY_KEY_MISMATCH: 'IDEMPOTENCY_KEY_MISMATCH',
+    "IDEMPOTENCY_KEY_MISMATCH": "IDEMPOTENCY_KEY_MISMATCH",
     /** 400 — This route requires an `Idempotency-Key` header and the request carries none. */
-    IDEMPOTENCY_KEY_REQUIRED: 'IDEMPOTENCY_KEY_REQUIRED',
+    "IDEMPOTENCY_KEY_REQUIRED": "IDEMPOTENCY_KEY_REQUIRED",
     /** 409 — A do-not-retry operation under this `Idempotency-Key` began and never reported an outcome, so whether it took effect is unknown. Nothing was run again; read the subject back before trying again with a new key. */
-    IDEMPOTENCY_OUTCOME_UNKNOWN: 'IDEMPOTENCY_OUTCOME_UNKNOWN',
+    "IDEMPOTENCY_OUTCOME_UNKNOWN": "IDEMPOTENCY_OUTCOME_UNKNOWN",
     /** 500 — An unexpected server-side failure. Never carries library or stack detail. */
-    INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
+    "INTERNAL_SERVER_ERROR": "INTERNAL_SERVER_ERROR",
     /** 409 — The requested on-hand count is below what is already reserved by open orders. */
-    INVENTORY_BELOW_RESERVED: 'INVENTORY_BELOW_RESERVED',
+    "INVENTORY_BELOW_RESERVED": "INVENTORY_BELOW_RESERVED",
     /** 400 — A multipart upload carries too many non-file fields (multer). */
-    LIMIT_FIELD_COUNT: 'LIMIT_FIELD_COUNT',
+    "LIMIT_FIELD_COUNT": "LIMIT_FIELD_COUNT",
     /** 400 — A multipart field name is too long (multer). */
-    LIMIT_FIELD_KEY: 'LIMIT_FIELD_KEY',
+    "LIMIT_FIELD_KEY": "LIMIT_FIELD_KEY",
     /** 413 — A multipart field value is too long (multer). */
-    LIMIT_FIELD_VALUE: 'LIMIT_FIELD_VALUE',
+    "LIMIT_FIELD_VALUE": "LIMIT_FIELD_VALUE",
     /** 400 — A multipart upload carries too many files (multer). */
-    LIMIT_FILE_COUNT: 'LIMIT_FILE_COUNT',
+    "LIMIT_FILE_COUNT": "LIMIT_FILE_COUNT",
     /** 413 — An uploaded file exceeds this deployment's size limit (multer). */
-    LIMIT_FILE_SIZE: 'LIMIT_FILE_SIZE',
+    "LIMIT_FILE_SIZE": "LIMIT_FILE_SIZE",
     /** 400 — A multipart upload carries too many parts (multer). */
-    LIMIT_PART_COUNT: 'LIMIT_PART_COUNT',
+    "LIMIT_PART_COUNT": "LIMIT_PART_COUNT",
     /** 400 — A multipart upload carries a file under a field name this operation does not accept (multer). */
-    LIMIT_UNEXPECTED_FILE: 'LIMIT_UNEXPECTED_FILE',
+    "LIMIT_UNEXPECTED_FILE": "LIMIT_UNEXPECTED_FILE",
     /** 422 — No app with that id is configured on this deployment — see `GET /locales/apps`. */
-    LOCALE_APP_UNKNOWN: 'LOCALE_APP_UNKNOWN',
+    "LOCALE_APP_UNKNOWN": "LOCALE_APP_UNKNOWN",
     /** 404 — The module that owns the entity type holds no entity with that id. */
-    LOCALE_ENTITY_NOT_FOUND: 'LOCALE_ENTITY_NOT_FOUND',
+    "LOCALE_ENTITY_NOT_FOUND": "LOCALE_ENTITY_NOT_FOUND",
     /** 404 — The entity type is not a registered translatable. */
-    LOCALE_ENTITY_TYPE_UNKNOWN: 'LOCALE_ENTITY_TYPE_UNKNOWN',
+    "LOCALE_ENTITY_TYPE_UNKNOWN": "LOCALE_ENTITY_TYPE_UNKNOWN",
     /** 409 — The key is a strict dotted prefix of another key, or has one as a prefix: no dictionary tree can hold both. */
-    LOCALE_ENTRY_KEY_COLLISION: 'LOCALE_ENTRY_KEY_COLLISION',
+    "LOCALE_ENTRY_KEY_COLLISION": "LOCALE_ENTRY_KEY_COLLISION",
     /** 409 — The key is already translated in this language and app, or a batch names it twice. */
-    LOCALE_ENTRY_KEY_EXISTS: 'LOCALE_ENTRY_KEY_EXISTS',
+    "LOCALE_ENTRY_KEY_EXISTS": "LOCALE_ENTRY_KEY_EXISTS",
     /** 422 — The key is empty, longer than 200 characters, or has an empty or reserved segment. */
-    LOCALE_ENTRY_KEY_INVALID: 'LOCALE_ENTRY_KEY_INVALID',
+    "LOCALE_ENTRY_KEY_INVALID": "LOCALE_ENTRY_KEY_INVALID",
     /** 409 — The language is already switched on. */
-    LOCALE_LANGUAGE_ALREADY_ACTIVE: 'LOCALE_LANGUAGE_ALREADY_ACTIVE',
+    "LOCALE_LANGUAGE_ALREADY_ACTIVE": "LOCALE_LANGUAGE_ALREADY_ACTIVE",
     /** 409 — The language is already switched off. */
-    LOCALE_LANGUAGE_ALREADY_INACTIVE: 'LOCALE_LANGUAGE_ALREADY_INACTIVE',
+    "LOCALE_LANGUAGE_ALREADY_INACTIVE": "LOCALE_LANGUAGE_ALREADY_INACTIVE",
     /** 409 — A language is already registered under that tag. */
-    LOCALE_LANGUAGE_EXISTS: 'LOCALE_LANGUAGE_EXISTS',
+    "LOCALE_LANGUAGE_EXISTS": "LOCALE_LANGUAGE_EXISTS",
     /** 409 — The deployment's fallback language cannot be deactivated or deleted: every translatable row's source lives there. */
-    LOCALE_LANGUAGE_IS_FALLBACK: 'LOCALE_LANGUAGE_IS_FALLBACK',
+    "LOCALE_LANGUAGE_IS_FALLBACK": "LOCALE_LANGUAGE_IS_FALLBACK",
     /** 404 — No language is registered under that tag. */
-    LOCALE_LANGUAGE_NOT_FOUND: 'LOCALE_LANGUAGE_NOT_FOUND',
+    "LOCALE_LANGUAGE_NOT_FOUND": "LOCALE_LANGUAGE_NOT_FOUND",
     /** 405 — The path exists, but not with this method. The `Allow` header lists the methods it does answer. */
-    METHOD_NOT_ALLOWED: 'METHOD_NOT_ALLOWED',
+    "METHOD_NOT_ALLOWED": "METHOD_NOT_ALLOWED",
     /** 400 — A multipart file part carries no field name (multer). */
-    MISSING_FIELD_NAME: 'MISSING_FIELD_NAME',
+    "MISSING_FIELD_NAME": "MISSING_FIELD_NAME",
     /** 404 — The addressed resource does not exist, or the caller may not be told that it does. */
-    NOT_FOUND: 'NOT_FOUND',
+    "NOT_FOUND": "NOT_FOUND",
     /** 409 — The order cannot be redirected: nothing is left to send (every unit has shipped or been canceled), it is over, or it has no shipping address (a pickup, a digital order). */
-    ORDER_ADDRESS_LOCKED: 'ORDER_ADDRESS_LOCKED',
+    "ORDER_ADDRESS_LOCKED": "ORDER_ADDRESS_LOCKED",
     /** 404 — The order exists but has no such credit note. */
-    ORDER_CREDIT_NOTE_NOT_ISSUED: 'ORDER_CREDIT_NOTE_NOT_ISSUED',
+    "ORDER_CREDIT_NOTE_NOT_ISSUED": "ORDER_CREDIT_NOTE_NOT_ISSUED",
     /** 422 — The export would carry more orders than `NODE_ORDER_EXPORT_MAX_ROWS` allows. The message names the cap; narrow the filters and ask again. */
-    ORDER_EXPORT_TOO_LARGE: 'ORDER_EXPORT_TOO_LARGE',
+    "ORDER_EXPORT_TOO_LARGE": "ORDER_EXPORT_TOO_LARGE",
     /** 409 — A hard delete is refused: money was recorded on the order after it was canceled (a late payment and its refund still point at it). Soft delete it instead. */
-    ORDER_HAS_MONEY_HISTORY: 'ORDER_HAS_MONEY_HISTORY',
+    "ORDER_HAS_MONEY_HISTORY": "ORDER_HAS_MONEY_HISTORY",
     /** 409 — An admin-created order references a quantity beyond the product's available stock. `errors[].details.lines` names each short line with its `productId`, `title` and `requested` quantity; `available` is added only for a caller who reads stock (`read:StockLevel`). */
-    ORDER_INSUFFICIENT_STOCK: 'ORDER_INSUFFICIENT_STOCK',
+    "ORDER_INSUFFICIENT_STOCK": "ORDER_INSUFFICIENT_STOCK",
     /** 409 — This action is not allowed once an order has been invoiced. */
-    ORDER_INVOICED: 'ORDER_INVOICED',
+    "ORDER_INVOICED": "ORDER_INVOICED",
     /** 404 — The order exists but no invoice has been issued for it yet. */
-    ORDER_INVOICE_NOT_ISSUED: 'ORDER_INVOICE_NOT_ISSUED',
+    "ORDER_INVOICE_NOT_ISSUED": "ORDER_INVOICE_NOT_ISSUED",
     /** 422 — An admin-created order has more lines, or a larger quantity on one line, than this deployment allows (`NODE_ADMIN_ORDER_MAX_LINES`, `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`). The message names the limit. */
-    ORDER_LINE_LIMIT_EXCEEDED: 'ORDER_LINE_LIMIT_EXCEEDED',
+    "ORDER_LINE_LIMIT_EXCEEDED": "ORDER_LINE_LIMIT_EXCEEDED",
     /** 409 — The order is not in a state that can still be canceled. */
-    ORDER_NOT_CANCELABLE: 'ORDER_NOT_CANCELABLE',
+    "ORDER_NOT_CANCELABLE": "ORDER_NOT_CANCELABLE",
     /** 409 — A delete, soft or hard, needs a canceled order: this one is still open. Cancel it first (`POST /orders/{id}/cancel`), which refunds a paid one. */
-    ORDER_NOT_CANCELED: 'ORDER_NOT_CANCELED',
+    "ORDER_NOT_CANCELED": "ORDER_NOT_CANCELED",
     /** 409 — A restore is refused: the order is not soft-deleted. */
-    ORDER_NOT_DELETED: 'ORDER_NOT_DELETED',
+    "ORDER_NOT_DELETED": "ORDER_NOT_DELETED",
     /** 409 — The order must be paid before this delivery action. */
-    ORDER_NOT_PAID: 'ORDER_NOT_PAID',
+    "ORDER_NOT_PAID": "ORDER_NOT_PAID",
     /** 409 — The order is not in a state this delivery action can run from. */
-    ORDER_NOT_PROCESSING: 'ORDER_NOT_PROCESSING',
+    "ORDER_NOT_PROCESSING": "ORDER_NOT_PROCESSING",
     /** 409 — The order still has units awaiting stock; overriding it forward to `shipped` or `delivered` would ship goods the stock ledger never counted out. */
-    ORDER_OVERRIDE_AWAITING_STOCK: 'ORDER_OVERRIDE_AWAITING_STOCK',
+    "ORDER_OVERRIDE_AWAITING_STOCK": "ORDER_OVERRIDE_AWAITING_STOCK",
     /** 409 — This status transition is not on the admin override's allowed list. */
-    ORDER_OVERRIDE_NOT_ALLOWED: 'ORDER_OVERRIDE_NOT_ALLOWED',
+    "ORDER_OVERRIDE_NOT_ALLOWED": "ORDER_OVERRIDE_NOT_ALLOWED",
     /** 409 — An admin-created order names a product that has been removed (soft-deleted). Hidden and off-sale products can be sold by hand, so only a removed one is refused. `errors[].details.productIds` names each one. */
-    ORDER_PRODUCT_UNAVAILABLE: 'ORDER_PRODUCT_UNAVAILABLE',
+    "ORDER_PRODUCT_UNAVAILABLE": "ORDER_PRODUCT_UNAVAILABLE",
     /** 422 — The corrected shipping address names a country outside the shop's ship-to list (`Shop.shipToCountries`), the list checkout refuses by; VAT is charged at the shop's own rates. */
-    ORDER_SHIP_TO_COUNTRY_NOT_SUPPORTED: 'ORDER_SHIP_TO_COUNTRY_NOT_SUPPORTED',
+    "ORDER_SHIP_TO_COUNTRY_NOT_SUPPORTED": "ORDER_SHIP_TO_COUNTRY_NOT_SUPPORTED",
     /** 409 — This deployment has no card payment provider, so a card payment cannot be started. */
-    PAYMENT_CARD_NOT_AVAILABLE: 'PAYMENT_CARD_NOT_AVAILABLE',
+    "PAYMENT_CARD_NOT_AVAILABLE": "PAYMENT_CARD_NOT_AVAILABLE",
     /** 409 — The card issuer or gateway declined the charge. */
-    PAYMENT_DECLINED: 'PAYMENT_DECLINED',
+    "PAYMENT_DECLINED": "PAYMENT_DECLINED",
     /** 409 — The buyer disputed the card payment (a chargeback is open), so the shop cannot refund it: the bank has taken the money back already and the answer goes to the provider as evidence. */
-    PAYMENT_DISPUTED: 'PAYMENT_DISPUTED',
+    "PAYMENT_DISPUTED": "PAYMENT_DISPUTED",
     /** 409 — Another payment attempt for this order is already being recorded. */
-    PAYMENT_IN_FLIGHT: 'PAYMENT_IN_FLIGHT',
+    "PAYMENT_IN_FLIGHT": "PAYMENT_IN_FLIGHT",
     /** 409 — The payment is not in a state this confirmation can apply to. */
-    PAYMENT_NOT_CONFIRMABLE: 'PAYMENT_NOT_CONFIRMABLE',
+    "PAYMENT_NOT_CONFIRMABLE": "PAYMENT_NOT_CONFIRMABLE",
     /** 409 — The payment is not in a state that can still be refunded, or nothing of it is left to refund. */
-    PAYMENT_NOT_REFUNDABLE: 'PAYMENT_NOT_REFUNDABLE',
+    "PAYMENT_NOT_REFUNDABLE": "PAYMENT_NOT_REFUNDABLE",
     /** 409 — The order is not in a state that can still accept a payment. */
-    PAYMENT_ORDER_NOT_PAYABLE: 'PAYMENT_ORDER_NOT_PAYABLE',
+    "PAYMENT_ORDER_NOT_PAYABLE": "PAYMENT_ORDER_NOT_PAYABLE",
     /** 422 — The refund asks for more than the payment still has left to give back. */
-    PAYMENT_REFUND_EXCEEDS_REMAINING: 'PAYMENT_REFUND_EXCEEDS_REMAINING',
+    "PAYMENT_REFUND_EXCEEDS_REMAINING": "PAYMENT_REFUND_EXCEEDS_REMAINING",
     /** 409 — The card refund has no final answer yet (an attempt is running, or the provider did not say whether the money moved), so it cannot be marked returned by hand. */
-    PAYMENT_REFUND_IN_FLIGHT: 'PAYMENT_REFUND_IN_FLIGHT',
+    "PAYMENT_REFUND_IN_FLIGHT": "PAYMENT_REFUND_IN_FLIGHT",
     /** 409 — The refund was already settled (another operator confirmed it first). */
-    PAYMENT_REFUND_NOT_OPEN: 'PAYMENT_REFUND_NOT_OPEN',
+    "PAYMENT_REFUND_NOT_OPEN": "PAYMENT_REFUND_NOT_OPEN",
     /** 412 — The write's `If-Match` no longer describes the stored resource — someone changed or removed it since the caller read it. Re-read, reapply the edit, resend. */
-    PRECONDITION_FAILED: 'PRECONDITION_FAILED',
+    "PRECONDITION_FAILED": "PRECONDITION_FAILED",
     /** 409 — A restore named a product that is not soft-deleted, so there is nothing to undo. */
-    PRODUCT_NOT_DELETED: 'PRODUCT_NOT_DELETED',
+    "PRODUCT_NOT_DELETED": "PRODUCT_NOT_DELETED",
     /** 503 — A database query ran past the server's time limit and was stopped. The server is busy, not broken. Carries a `Retry-After` hint. */
-    QUERY_TIMEOUT: 'QUERY_TIMEOUT',
+    "QUERY_TIMEOUT": "QUERY_TIMEOUT",
     /** 429 — The caller spent a rate-limit budget: a request limiter, a mailbox's send budget, an account's wrong-code budget (the 2FA lock), or an account's cap on open live streams. Carries `Retry-After`, and `details.retryAfter` with the same seconds; `details.policy` names the budget when there is one. */
-    RATE_LIMITED: 'RATE_LIMITED',
+    "RATE_LIMITED": "RATE_LIMITED",
     /** 401 — This action requires a session fresher than the caller's current one — see `POST /account/reauth`. `details.maxAge` is the freshness asked for; `details.methods`, when present, lists what the re-authentication must also prove (`otp`: a code from an armed second factor). */
-    REAUTH_REQUIRED: 'REAUTH_REQUIRED',
+    "REAUTH_REQUIRED": "REAUTH_REQUIRED",
     /** 409 — The past order named for reorder has no line left to add: every one was removed from the catalogue. An order with lines merely off sale answers 200, by the merge rule. */
-    REORDER_UNAVAILABLE: 'REORDER_UNAVAILABLE',
+    "REORDER_UNAVAILABLE": "REORDER_UNAVAILABLE",
     /** 422 — A cancellation names no fulfillment order of this order, or sends `lines` (the remainder is its lines), or a return names a fulfillment order. Also the reason does not fit the caller: the order's buyer cancels only as a `withdrawal`. */
-    RETURN_CANCELLATION_INVALID: 'RETURN_CANCELLATION_INVALID',
+    "RETURN_CANCELLATION_INVALID": "RETURN_CANCELLATION_INVALID",
     /** 422 — The handling deduction is more than the refund is worth, or is kept back on a defect or a wrong item (a guarantee remedy is free of charge, Directive 2019/771 Art. 14(1)). */
-    RETURN_DEDUCTION_INVALID: 'RETURN_DEDUCTION_INVALID',
+    "RETURN_DEDUCTION_INVALID": "RETURN_DEDUCTION_INVALID",
     /** 422 — A line names a product that is not on the order, asks for more than is left of it, is excluded from the right of withdrawal (Art. 16), or nothing on the order is left to return. */
-    RETURN_LINES_INVALID: 'RETURN_LINES_INVALID',
+    "RETURN_LINES_INVALID": "RETURN_LINES_INVALID",
     /** 409 — The fulfillment order has nothing left to cancel, is not part of this order, or nothing has shipped from the order yet (cancel the whole order instead). */
-    RETURN_NOTHING_TO_CANCEL: 'RETURN_NOTHING_TO_CANCEL',
+    "RETURN_NOTHING_TO_CANCEL": "RETURN_NOTHING_TO_CANCEL",
     /** 409 — The return is not an approved one awaiting goods that never came, so it cannot be canceled. */
-    RETURN_NOT_CANCELABLE: 'RETURN_NOT_CANCELABLE',
+    "RETURN_NOT_CANCELABLE": "RETURN_NOT_CANCELABLE",
     /** 409 — The return is not one that was received and still awaits its money, so it cannot be closed by hand. */
-    RETURN_NOT_CLOSABLE: 'RETURN_NOT_CLOSABLE',
+    "RETURN_NOT_CLOSABLE": "RETURN_NOT_CLOSABLE",
     /** 409 — The return has already been decided. */
-    RETURN_NOT_DECIDABLE: 'RETURN_NOT_DECIDABLE',
+    "RETURN_NOT_DECIDABLE": "RETURN_NOT_DECIDABLE",
     /** 409 — The return is not an approved one awaiting its goods. */
-    RETURN_NOT_RECEIVABLE: 'RETURN_NOT_RECEIVABLE',
+    "RETURN_NOT_RECEIVABLE": "RETURN_NOT_RECEIVABLE",
     /** 409 — The order is not in a state a return can be opened on — canceled, or (for a reason other than withdrawal) still in the shop's hands. */
-    RETURN_ORDER_NOT_RETURNABLE: 'RETURN_ORDER_NOT_RETURNABLE',
+    "RETURN_ORDER_NOT_RETURNABLE": "RETURN_ORDER_NOT_RETURNABLE",
     /** 409 — A proof of sending is already on this return; it is recorded once. */
-    RETURN_PROOF_ALREADY_RECORDED: 'RETURN_PROOF_ALREADY_RECORDED',
+    "RETURN_PROOF_ALREADY_RECORDED": "RETURN_PROOF_ALREADY_RECORDED",
     /** 422 — The date on the proof of sending is in the future. */
-    RETURN_PROOF_DATE_INVALID: 'RETURN_PROOF_DATE_INVALID',
+    "RETURN_PROOF_DATE_INVALID": "RETURN_PROOF_DATE_INVALID",
     /** 409 — The return cannot be canceled: the proof of sending already opened its refund, which is owed and open, so a canceled return would no longer add up. Receive the goods (with 0 on every line if the parcel was lost) instead. */
-    RETURN_REFUND_OPEN: 'RETURN_REFUND_OPEN',
+    "RETURN_REFUND_OPEN": "RETURN_REFUND_OPEN",
     /** 409 — The refund was opened when the proof of sending was recorded, so a handling deduction can no longer come out of it (Directive 2011/83/EU Art. 13(3)); claim it from the buyer separately. */
-    RETURN_REFUND_OPENED_ON_PROOF: 'RETURN_REFUND_OPENED_ON_PROOF',
+    "RETURN_REFUND_OPENED_ON_PROOF": "RETURN_REFUND_OPENED_ON_PROOF",
     /** 422 — A remedy other than a refund is named for a reason that has no guarantee behind it (only a `defective` or `wrong_item` return can be repaired or replaced), or a preferred remedy is named for such a reason. */
-    RETURN_REMEDY_INVALID: 'RETURN_REMEDY_INVALID',
+    "RETURN_REMEDY_INVALID": "RETURN_REMEDY_INVALID",
     /** 422 — A restock count names a product that is not on the return, names one twice, or is more than the line holds. */
-    RETURN_RESTOCK_INVALID: 'RETURN_RESTOCK_INVALID',
+    "RETURN_RESTOCK_INVALID": "RETURN_RESTOCK_INVALID",
     /** 422 — The date or the channel of what the buyer stated is missing where staff must give it (a withdrawal recorded for the buyer), given where it does not belong (by the buyer, or on a reason that is not a withdrawal), in the future, or before the order was made. */
-    RETURN_STATEMENT_INVALID: 'RETURN_STATEMENT_INVALID',
+    "RETURN_STATEMENT_INVALID": "RETURN_STATEMENT_INVALID",
     /** 409 — The period for the reason named has ended: the withdrawal period for a withdrawal or other, two years from delivery for a defect or a wrong item. */
-    RETURN_WINDOW_CLOSED: 'RETURN_WINDOW_CLOSED',
+    "RETURN_WINDOW_CLOSED": "RETURN_WINDOW_CLOSED",
     /** 403 — The caller holds the permission this route requires, but the change needs `assign:Role`, which they do not hold: it would hand out a staff role, or it would change an account that holds one. Staff without it change customers only, and a role they may not give is refused here before any role name is judged. The caller's own account is judged like any other, and an API key never acts on the account that minted it. */
-    ROLE_MANAGEMENT_REQUIRED: 'ROLE_MANAGEMENT_REQUIRED',
+    "ROLE_MANAGEMENT_REQUIRED": "ROLE_MANAGEMENT_REQUIRED",
     /** 403 — The caller's staff role grants nothing until an authenticator app is armed, and this action needs it. Enrol at `POST /account/2fa/methods/totp/setup`; the account keeps its customer powers meanwhile. */
-    SECOND_FACTOR_ENROLLMENT_REQUIRED: 'SECOND_FACTOR_ENROLLMENT_REQUIRED',
+    "SECOND_FACTOR_ENROLLMENT_REQUIRED": "SECOND_FACTOR_ENROLLMENT_REQUIRED",
     /** 503 — A dependency (database, broker) is unreachable, or the server is at a capacity limit (a full queue, the process ceiling on open live streams). Carries a `Retry-After` hint. */
-    SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
+    "SERVICE_UNAVAILABLE": "SERVICE_UNAVAILABLE",
     /** 401 — A staff or admin session saw no real request for longer than `NODE_SESSION_IDLE_TIME_STAFF`, and ended. Sign in again. A shopper never gets this. */
-    SESSION_IDLE: 'SESSION_IDLE',
+    "SESSION_IDLE": "SESSION_IDLE",
     /** 409 — The account already waits for `NODE_STOCK_ALERTS_MAX` products (100 by default) — cancel one request before adding another. Asking again for a product already waited for is never refused. */
-    STOCK_ALERT_LIMIT_REACHED: 'STOCK_ALERT_LIMIT_REACHED',
+    "STOCK_ALERT_LIMIT_REACHED": "STOCK_ALERT_LIMIT_REACHED",
     /** 409 — The product can be ordered now, so there is nothing to wait for. The button is only offered while it cannot. */
-    STOCK_ALERT_PRODUCT_BUYABLE: 'STOCK_ALERT_PRODUCT_BUYABLE',
+    "STOCK_ALERT_PRODUCT_BUYABLE": "STOCK_ALERT_PRODUCT_BUYABLE",
     /** 409 — The task is assigned to that person already, so there is nothing to change. */
-    TASK_ALREADY_ASSIGNED: 'TASK_ALREADY_ASSIGNED',
+    "TASK_ALREADY_ASSIGNED": "TASK_ALREADY_ASSIGNED",
     /** 409 — The task is already open (new or in progress), so there is nothing to reopen. */
-    TASK_ALREADY_OPEN: 'TASK_ALREADY_OPEN',
+    "TASK_ALREADY_OPEN": "TASK_ALREADY_OPEN",
     /** 409 — The task is already resolved. */
-    TASK_ALREADY_RESOLVED: 'TASK_ALREADY_RESOLVED',
+    "TASK_ALREADY_RESOLVED": "TASK_ALREADY_RESOLVED",
     /** 409 — The task is already marked as spam. */
-    TASK_ALREADY_SPAM: 'TASK_ALREADY_SPAM',
+    "TASK_ALREADY_SPAM": "TASK_ALREADY_SPAM",
     /** 422 — The person does not exist, or does not hold both the permission set that works this task and `update:Task`. */
-    TASK_ASSIGNEE_INVALID: 'TASK_ASSIGNEE_INVALID',
+    "TASK_ASSIGNEE_INVALID": "TASK_ASSIGNEE_INVALID",
     /** 409 — Nobody holds the task, so there is nothing to take back. */
-    TASK_NOT_ASSIGNED: 'TASK_NOT_ASSIGNED',
+    "TASK_NOT_ASSIGNED": "TASK_NOT_ASSIGNED",
     /** 409 — The task is closed; reopen it before assigning it. */
-    TASK_NOT_OPEN: 'TASK_NOT_OPEN',
+    "TASK_NOT_OPEN": "TASK_NOT_OPEN",
     /** 409 — A newer open task already covers the same situation, so this one cannot be reopened. `details.taskId` names the newer one. */
-    TASK_SUPERSEDED: 'TASK_SUPERSEDED',
+    "TASK_SUPERSEDED": "TASK_SUPERSEDED",
     /** 429 — The derived code of a status-only 429, one no budget named. Nothing sends it today; it keeps the status-to-code rule total. */
-    TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
+    "TOO_MANY_REQUESTS": "TOO_MANY_REQUESTS",
     /** 429 — A two-factor code was already sent recently — carries `details.retryAfter`. */
-    TWO_FACTOR_RESEND_TOO_SOON: 'TWO_FACTOR_RESEND_TOO_SOON',
+    "TWO_FACTOR_RESEND_TOO_SOON": "TWO_FACTOR_RESEND_TOO_SOON",
     /** 401 — No valid session — log in and retry. */
-    UNAUTHORIZED: 'UNAUTHORIZED',
+    "UNAUTHORIZED": "UNAUTHORIZED",
     /** 422 — A 422 with no more specific code of its own: refused for a reason that is not one field (a field-level failure is `VALIDATION_ERROR`). The derived code of a status-only 422. */
-    UNPROCESSABLE_CONTENT: 'UNPROCESSABLE_CONTENT',
+    "UNPROCESSABLE_CONTENT": "UNPROCESSABLE_CONTENT",
     /** 415 — The request's `Content-Type` is not one this operation accepts. */
-    UNSUPPORTED_MEDIA_TYPE: 'UNSUPPORTED_MEDIA_TYPE',
+    "UNSUPPORTED_MEDIA_TYPE": "UNSUPPORTED_MEDIA_TYPE",
     /** 409 — The account is active already: `POST /users/{id}/activate` has nothing to do. */
-    USER_ALREADY_ACTIVE: 'USER_ALREADY_ACTIVE',
+    "USER_ALREADY_ACTIVE": "USER_ALREADY_ACTIVE",
     /** 409 — The account is deactivated already: `POST /users/{id}/deactivate` has nothing to do. */
-    USER_ALREADY_INACTIVE: 'USER_ALREADY_INACTIVE',
+    "USER_ALREADY_INACTIVE": "USER_ALREADY_INACTIVE",
     /** 409 — The account owner asked for its deletion and the grace has run out, so it is erased by the next purge run and can no longer be restored. */
-    USER_ERASURE_DUE: 'USER_ERASURE_DUE',
+    "USER_ERASURE_DUE": "USER_ERASURE_DUE",
     /** 409 — The account is not soft-deleted, so there is nothing to restore. */
-    USER_NOT_DELETED: 'USER_NOT_DELETED',
+    "USER_NOT_DELETED": "USER_NOT_DELETED",
     /** 409 — The account already holds a staff purchase hold with this end date and note, so placing it again changes nothing. */
-    USER_PURCHASE_HOLD_ALREADY_SET: 'USER_PURCHASE_HOLD_ALREADY_SET',
+    "USER_PURCHASE_HOLD_ALREADY_SET": "USER_PURCHASE_HOLD_ALREADY_SET",
     /** 409 — The account has no purchase hold and no review flag, so there is nothing to lift. */
-    USER_PURCHASE_HOLD_NOT_SET: 'USER_PURCHASE_HOLD_NOT_SET',
+    "USER_PURCHASE_HOLD_NOT_SET": "USER_PURCHASE_HOLD_NOT_SET",
     /** 409 — The account already holds the role named, so `POST /users/{id}/assign-role` has nothing to do. */
-    USER_ROLE_ALREADY_ASSIGNED: 'USER_ROLE_ALREADY_ASSIGNED',
+    "USER_ROLE_ALREADY_ASSIGNED": "USER_ROLE_ALREADY_ASSIGNED",
     /** 409 — The account holds no staff role, so `POST /users/{id}/revoke-role` has nothing to take away. */
-    USER_ROLE_NOT_ASSIGNED: 'USER_ROLE_NOT_ASSIGNED',
+    "USER_ROLE_NOT_ASSIGNED": "USER_ROLE_NOT_ASSIGNED",
     /** 422 — One or more fields failed schema validation — see `errors[].details.field`. */
-    VALIDATION_ERROR: 'VALIDATION_ERROR',
+    "VALIDATION_ERROR": "VALIDATION_ERROR",
     /** 409 — A retry of this delivery is already in flight. */
-    WEBHOOK_DELIVERY_IN_PROGRESS: 'WEBHOOK_DELIVERY_IN_PROGRESS',
+    "WEBHOOK_DELIVERY_IN_PROGRESS": "WEBHOOK_DELIVERY_IN_PROGRESS",
     /** 403 — The filter names an event the caller may not read, so a stream of it cannot be handed to a receiver. Each event declares the rule that reads it (`x-read-rule` in `asyncapi.public.yaml`). */
-    WEBHOOK_EVENT_READ_REQUIRED: 'WEBHOOK_EVENT_READ_REQUIRED',
+    "WEBHOOK_EVENT_READ_REQUIRED": "WEBHOOK_EVENT_READ_REQUIRED",
     /** 409 — The subscription is already disabled. */
-    WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED: 'WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED',
+    "WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED": "WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED",
     /** 409 — The subscription is already enabled. */
-    WEBHOOK_SUBSCRIPTION_ALREADY_ENABLED: 'WEBHOOK_SUBSCRIPTION_ALREADY_ENABLED',
+    "WEBHOOK_SUBSCRIPTION_ALREADY_ENABLED": "WEBHOOK_SUBSCRIPTION_ALREADY_ENABLED",
     /** 409 — The delivery belongs to a subscription that is disabled, so nothing can be sent until it is enabled. */
-    WEBHOOK_SUBSCRIPTION_DISABLED: 'WEBHOOK_SUBSCRIPTION_DISABLED',
+    "WEBHOOK_SUBSCRIPTION_DISABLED": "WEBHOOK_SUBSCRIPTION_DISABLED",
     /** 409 — This shop already holds the most webhook subscriptions it may; delete one first. */
-    WEBHOOK_SUBSCRIPTION_LIMIT_REACHED: 'WEBHOOK_SUBSCRIPTION_LIMIT_REACHED',
+    "WEBHOOK_SUBSCRIPTION_LIMIT_REACHED": "WEBHOOK_SUBSCRIPTION_LIMIT_REACHED",
     /** 409 — The wishlist already holds `NODE_WISHLIST_MAX` products (250 by default) — remove one before saving another. Saving a product already there is never refused. */
-    WISHLIST_LIMIT_REACHED: 'WISHLIST_LIMIT_REACHED'
+    "WISHLIST_LIMIT_REACHED": "WISHLIST_LIMIT_REACHED",
 } as const;
 
 /** Any code `errors[].code` may carry. NOT exhaustive at the type level — the contract's own `enum`-free `code: string` is the reason this exists. */

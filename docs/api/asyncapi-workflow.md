@@ -51,7 +51,8 @@ client's own generated output:
 npm run gen:asyncapi
 ```
 
-The file is named after the spec it comes from, which is also what the backend calls its own.
+The file is named after the spec it comes from, which is also what the backend calls its own. It is
+gitignored and rebuilt by `postinstall`.
 
 Import from `@types` — `src/types/index.ts` re-exports the generated file. The shapes the
 contract does not describe (`RealtimeMetricsEntry`, `RealtimeConnectionStatus`) are the
@@ -75,7 +76,7 @@ import { OBSERVABILITY_CHANNELS } from '@types';
 
 ```bash
 npm run gen:asyncapi          # regenerate contracts/asyncapi.generated.ts
-npm run check                 # among its checks: fail if the committed types are not what asyncapi.yaml generates
+npm run check                 # among its checks: the spec is the backend's bytes (the types are gitignored)
 ```
 
 ## Shared with the backend
@@ -145,7 +146,7 @@ flowchart LR
 The contract changes in the backend, not here. After it arrives (`npm run sync:frontend` over there,
 or a hand copy):
 
-1. `npm run gen:asyncapi` — regenerate types (commit the diff).
+1. `npm install` (or `npm run gen:asyncapi`) — regenerate types; they are gitignored, so there is no diff to commit.
 2. Update realtime clients/stores if channel names or payload shapes changed.
 3. Validate in the `RealtimePlayground` view before broader integration.
 
