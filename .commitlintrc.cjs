@@ -1,29 +1,9 @@
 'use strict';
 
+// Stock Conventional Commits types. release-please titles are `chore: release …`, so no extra
+// type is needed for them.
 module.exports = {
     extends: [
         '@commitlint/config-conventional' // scoped packages are not prefixed
-    ],
-    rules: {
-        'type-enum': [
-            2,
-            'always',
-            [
-                'build',
-                'chore',
-                'ci',
-                'docs',
-                'feat',
-                'fix',
-                'perf',
-                'proposal',
-                'refactor',
-                'release',
-                'revert',
-                'style',
-                'test',
-                'wip'
-            ]
-        ]
-    }
+    ]
 };
