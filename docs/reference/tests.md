@@ -65,7 +65,6 @@ reconciled against a manifest field here. See
 | `tests/cross-cutting/utility-collisions.spec.ts`      | The class names Vuetify and Tailwind both generate mean the same, except the listed ones; no radius name collides; Tailwind scans `src/` only.                                 |
 | `tests/cross-cutting/design-arbitrary-values.spec.ts` | No arbitrary Tailwind class repeats beyond the limit: a repeated value is a token.                                                                                             |
 | `tests/cross-cutting/pinned-browser-image.spec.ts`    | Every nightly that measures a browser (visual, Lighthouse) runs in the same `cypress/included` tag and digest; a bump in one workflow that leaves the other behind fails.      | [Lighthouse](../tools/lighthouse.md)                       |
-| `tests/cross-cutting/page-window-density.spec.ts`     | The toolkit's paged window is dense, so nothing that binds it filters it.                                                                                                      | [State & Routing](../tools/state-and-routing.md)           |
 
 ## `tests/unit/`
 
