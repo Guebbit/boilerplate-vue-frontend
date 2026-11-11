@@ -1,14 +1,14 @@
 /**
  * @module
- * Shop — public barrel. The shop's commerce settings (currency, ship-to countries, backorder
- * promise), read from `GET /shop`. `cart`, `delivery`, `orders` and `products` read
- * them through here; the module's own files reach `./shop` directly.
+ * Shop — public barrel: everything this module offers a sibling to import.
+ *
+ * Unused exports are allowed on purpose: an export nobody imports yet costs nothing, and a missing
+ * one makes the next author copy the logic.
+ *
+ * Never published: views, routes, the manifest, `response-schemas.ts` and locales, plus
+ * `schemas.ts` unless a sibling imports it (it pulls the generated Zod contract into the entry
+ * chunk, which `tests/cross-cutting/entry-chunk-budget.spec.ts` budgets).
+ * The rule: `docs/theory/strategic-ddd.md` §5.
  */
 
-export {
-    backorderPromiseDays,
-    loadShop,
-    shipToCountries,
-    shopCurrency,
-    shopMinorUnits
-} from './shop';
+export * from './shop';

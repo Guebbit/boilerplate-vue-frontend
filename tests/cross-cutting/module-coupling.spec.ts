@@ -8,8 +8,7 @@
  * `openapi.yaml`'s `x-module` stamps) closes that gap: this sweep reads it, and flags a call to a
  * module the caller neither is nor has declared.
  *
- * A module's own specs deliberately do not count as callers, the same exemption
- * `published-language.spec.ts` makes for its own barrel check — a spec importing `@api` directly
+ * A module's own specs deliberately do not count as callers: a spec importing `@api` directly
  * is exercising the contract, not the module reaching for another domain at runtime.
  */
 

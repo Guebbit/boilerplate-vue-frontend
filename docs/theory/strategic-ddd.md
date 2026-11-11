@@ -195,34 +195,25 @@ what the button would do, the rule is in the wrong repository.**
 
 A permission alone (`session.can`) may gate a control (see Security); a state rule may not.
 
-## 5. Published language — the barrel, held to a size
+## 5. Published language — the barrel, published whole
 
-**A module publishes exactly what a sibling imports. No sibling, no barrel.**
+**Every module publishes a barrel, and the barrel exports everything the module offers a sibling.**
+Unused exports are allowed on purpose. An export nobody imports yet costs nothing; a missing one
+makes the next author, or an AI, copy the logic, redeclare the type or reach around the barrel. It
+is the paired backend's rule (`CLAUDE.md` § Module barrels there), held here too.
 
-So `orders` and `wishlist` publish no barrel: no sibling imports them, and `wishlist`'s heart reaches
-the product page through a slot contribution, not an import.
+What goes in: the module's stores, composables, components (as named default re-exports) and `domain/` rules. What never does: `views/`, `routes.ts`, `module.ts`, locales and `provided.ts`, and two files that would pull the generated Zod contract into the entry chunk (`entry-chunk-budget.spec.ts` budgets it): `response-schemas.ts`, wired lazily, and `schemas.ts`, published only where a sibling imports it (`users`).
+Siblings still import only through `index.ts`; lint refuses a reach past it and a module importing
+its own barrel.
 
-What remains says something specific about a client. The modules that publish **state access** are
-the ones siblings read or ask to change state: `cart` publishes its store (asked to refetch by
-`wishlist`, to refill by `orders`), and `products` publishes narrow handles on its store — read by
-`cart`, `wishlist`, `inventory` and `stock-alerts` through `useProductLines` and `shelfStateOf`, and
-asked to drop its cached catalogue by `cart` and `inventory` through `invalidateProductsCache`. The
-ones that publish a **component** or a **schema** are answering a narrower question, and are the
-better shape — `PaymentPanel` renders a payment without its caller learning what a provider is.
-`delivery` publishes four components and one read-only composable (`usePreorderSummaries`, for
-`inventory`'s preorder board) and deliberately not its store, because offering both would mean
-offering a wider way to do the same thing, and the wider one always wins.
-
-### Why the backend's rule is the opposite
-
-The paired backend requires a convenience barrel from **every** module, and this repo forbids the
-ones nobody imports. Both are right for their own tier. A backend module's barrel is a stable,
-documented surface for an AI or a newcomer to extend without copying logic; deleting a module there
-is an infrastructure decision. Here, deleting a module is `rm -rf` plus one line, so a barrel with no
-importer is dead weight that also promises a sibling something it cannot keep — and
-`tests/cross-cutting/published-language.spec.ts` fails on it. The client's other way to let one
-module serve another without a barrel is the slot (`src/kernel/slots.ts`): the contributor's manifest
-puts a component where the owner asked for one, and the owner imports nothing.
+The modules that offer **state access** are the ones siblings read or ask to change state: `cart`
+(asked to refetch by `wishlist`, to refill by `orders`) and `products` (read by `cart`, `wishlist`,
+`inventory` and `stock-alerts` through `useProductLines` and `shelfStateOf`). The ones whose siblings
+use a **component** or a **schema** are answering a narrower question, and are the better shape for
+a caller to reach for first: `PaymentPanel` renders a payment without its caller learning what a
+provider is. The client's other way to let one module serve another without a barrel is the slot
+(`src/kernel/slots.ts`): the contributor's manifest puts a component where the owner asked for one,
+and the owner imports nothing.
 
 ---
 

@@ -1,5 +1,6 @@
-# The LIGHT gate, `complete:light`. It keeps every static check (lint, format, both spec lints,
+# The LIGHT gate, `complete:light`. It keeps every static check (lint, format,
 # generated-types freshness, spec identity, docs references, `vue-tsc`) plus the unit suite.
+# The backend lints the contract; the frontend only verifies its copy is identical.
 #
 # Left out, so run the full `npm run complete` by hand before merging a lane and once on main after
 # each merge (CI still runs all of it):

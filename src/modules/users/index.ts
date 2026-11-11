@@ -1,15 +1,22 @@
 /**
  * @module
- * Users — public barrel: this module's only surface for sibling modules to import. See any
- * sibling's barrel for the rule.
+ * Users — public barrel: everything this module offers a sibling to import.
  *
- * Deliberately not the store: the two schemas are here because account's login, signup and
- * password-reset forms validate against the same field rules this module's own forms do.
- * Exporting them is what stops that agreement being re-typed — and re-diverging — in the other
- * domain.
+ * Unused exports are allowed on purpose: an export nobody imports yet costs nothing, and a missing
+ * one makes the next author copy the logic.
  *
- * What the two modules share is vocabulary, not a store: neither writes anything — the API does.
- * `docs/modules/users.md` § "The map" names the relationship.
+ * Never published: views, routes, the manifest, `response-schemas.ts` and locales, plus
+ * `schemas.ts` unless a sibling imports it (it pulls the generated Zod contract into the entry
+ * chunk, which `tests/cross-cutting/entry-chunk-budget.spec.ts` budgets).
+ * The rule: `docs/theory/strategic-ddd.md` §5.
  */
 
-export { usersSchema, usersPasswordSchema } from './schemas';
+export * from './badge-store';
+export * from './schemas';
+export * from './store';
+export * from './composables/use-review-badge';
+export * from './composables/use-role-options';
+export * from './composables/use-user-access-dialog';
+export * from './composables/use-user-summary';
+export { default as UserAccessDialog } from './components/UserAccessDialog.vue';
+export { default as UserPurchaseHoldDialog } from './components/UserPurchaseHoldDialog.vue';

@@ -33,7 +33,7 @@ What it publishes for them is `fetchProductsByIds`, behind `useProductLines`: on
 page reads.
 
 ::: tip What it publishes
-The barrel offers narrow handles on the store, never the store: `useProductLines` joins id-only
+The barrel exports the whole module; the narrow handles on the store are the ones siblings use: `useProductLines` joins id-only
 lines to their records, `shelfStateOf` ranks the flags the API sent into one badge, and
 `invalidateProductsCache` drops the cached catalogue after a stock-moving write. Specs seed the
 dictionary through `src/modules/products/tests/products-store.ts`, so no production sibling holds the store.

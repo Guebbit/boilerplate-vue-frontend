@@ -1,0 +1,22 @@
+/**
+ * @module
+ * Inventory — public barrel: everything this module offers a sibling to import.
+ *
+ * Unused exports are allowed on purpose: an export nobody imports yet costs nothing, and a missing
+ * one makes the next author copy the logic.
+ *
+ * Never published: views, routes, the manifest, `response-schemas.ts` and locales, plus
+ * `schemas.ts` unless a sibling imports it (it pulls the generated Zod contract into the entry
+ * chunk, which `tests/cross-cutting/entry-chunk-budget.spec.ts` budgets).
+ * The rule: `docs/theory/strategic-ddd.md` §5.
+ */
+
+export * from './store';
+export * from './composables/use-product-picker';
+export * from './domain';
+export { default as BackorderLimitDialog } from './components/BackorderLimitDialog.vue';
+export { default as MovementLedger } from './components/MovementLedger.vue';
+export { default as OpeningStockField } from './components/OpeningStockField.vue';
+export { default as PreorderProductsTable } from './components/PreorderProductsTable.vue';
+export { default as StockBoard } from './components/StockBoard.vue';
+export { default as StockMovementForm } from './components/StockMovementForm.vue';

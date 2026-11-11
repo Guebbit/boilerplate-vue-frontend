@@ -125,8 +125,6 @@ one line exactly.
 It cannot rot:
 
 - An **unused** disable is an error (`reportUnusedDisableDirectives`), in scripts and in templates.
-- A second use of the same arbitrary class is an error (`arbitraryRepeatLimit`, checked by
-  `tests/cross-cutting/design-arbitrary-values.spec.ts`): a repeated value is a token.
 - A disable with **no reason** is an error: `@eslint-community/eslint-comments/require-description`
   for scripts, `local/template-directive-description` for `<!-- eslint-disable… -->`.
 

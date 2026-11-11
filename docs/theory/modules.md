@@ -215,20 +215,20 @@ to delete once you have your own. Every non-test file opens with the same header
 `Delete it if:`, an optional `Instead see:` and a closing `See:` — and a spec holds them to it.
 Its backend twin, `../boilerplate-node-backend/src/modules/example`, shows the same patterns.
 
-| Pattern                                 | Show / point | Where                                                       |
-| --------------------------------------- | ------------ | ----------------------------------------------------------- |
-| Manifest, routes, loading keys, locales | show         | `module.ts`, `routes.ts`, `locales/`                        |
-| Store over the generated client         | show         | `store.ts`                                                  |
-| Server-decided controls (`actions`)     | show         | list rows, detail, `components/ExampleStatusActions.vue`    |
-| An action door and its 409              | show         | `composables/use-example-transition.ts`                     |
-| A stale edit (412, "reload latest")     | show         | `views/ExampleEdit.vue`                                     |
-| An idempotent create                    | show         | `store.ts` (`useIdempotencyKey`)                            |
-| A reading rule in `domain/`             | show         | `domain/publication.ts`                                     |
-| Upload with progress                    | show         | `views/ExampleEdit.vue`                                     |
-| Typed provide/inject                    | show         | `provided.ts`                                               |
-| A barrel                                | point        | `cart/index.ts` (forbidden here: nothing imports `example`) |
-| A slot contribution                     | point        | `wishlist/module.ts`                                        |
-| Step-up, antibot, realtime              | point        | `infrastructure/http/step-up.ts`, `tasks`, `observability`  |
+| Pattern                                 | Show / point | Where                                                      |
+| --------------------------------------- | ------------ | ---------------------------------------------------------- |
+| Manifest, routes, loading keys, locales | show         | `module.ts`, `routes.ts`, `locales/`                       |
+| Store over the generated client         | show         | `store.ts`                                                 |
+| Server-decided controls (`actions`)     | show         | list rows, detail, `components/ExampleStatusActions.vue`   |
+| An action door and its 409              | show         | `composables/use-example-transition.ts`                    |
+| A stale edit (412, "reload latest")     | show         | `views/ExampleEdit.vue`                                    |
+| An idempotent create                    | show         | `store.ts` (`useIdempotencyKey`)                           |
+| A reading rule in `domain/`             | show         | `domain/publication.ts`                                    |
+| Upload with progress                    | show         | `views/ExampleEdit.vue`                                    |
+| Typed provide/inject                    | show         | `provided.ts`                                              |
+| A barrel                                | point        | `example/index.ts`                                         |
+| A slot contribution                     | point        | `wishlist/module.ts`                                       |
+| Step-up, antibot, realtime              | point        | `infrastructure/http/step-up.ts`, `tasks`, `observability` |
 
 ```mermaid
 flowchart LR
@@ -264,8 +264,7 @@ what the exercise taught.
 The template to copy is `src/modules/example` ([The module template](#the-module-template)): a small note domain with a list, a detail, a create
 form, an edit form (with a cover upload) and one public screen, a store over the generated client,
 the Zod schemas, the response-schema rows, a provide/inject pair and both
-languages. It has no page of its own and no barrel (nothing imports it, and a barrel is published
-only for what a sibling imports); `demo:remove` deletes it with the shop, so copy it first. Copy
+languages. It has no page of its own and a barrel exporting all of it (unused on purpose); `demo:remove` deletes it with the shop, so copy it first. Copy
 the folder, rename it, and delete the screens you do not need; delete the folder, and its line in
 `src/modules.ts`, once you have your own domain.
 

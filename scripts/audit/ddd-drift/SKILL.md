@@ -36,7 +36,7 @@ Copy the exclusion list from "Out of scope" below into the report header.
 | F1 doc claim                    | a count, list or "only X" in `docs/` or a `module.ts` docblock disagrees with `ls` / `rg`                                                                                                         | the claim is generated and checked (the sitemap block)                                                                                                                                                                   | high                                      |
 | F2 client decides a server rule | a button or option is gated on status literals, or a `domain/` table keyed by a `*Status`, or a hard-coded limit or duration, that the server should answer through an `*Actions` flag or a field | the literal only labels, colours or picks a notice, and gates no write; or the refusal is about the caller's account, not the resource (a purchase hold, the open-order limit), and the client renders the door's answer | high (the fix is a backend contract flag) |
 | F3 context-map label wrong      | a module page's relationship label disagrees with what the import does (the table in `strategic-ddd.md`)                                                                                          | the label matches the import                                                                                                                                                                                             | med                                       |
-| F4 barrel wider than needed     | a barrel publishes a store or composable where a component or schema would serve the sibling                                                                                                      | the sibling must read the state                                                                                                                                                                                          | med                                       |
+| F4 barrel narrower than module  | a module has no `index.ts`, or its barrel leaves out a store, composable, component or domain rule a sibling could need                                                                           | the file is a view, route, manifest, locale or generated-Zod schema file: never published                                                                                                                                | med                                       |
 | F5 `domain/` floor, both ways   | a rule with 2+ callers, or a trap, lives in a view or store; or `domain/` holds formatting or `Intl`                                                                                              | one caller, no trap: inline is right                                                                                                                                                                                     | low                                       |
 | F6 label vs depth               | a `generic` module grows a `domain/`; the subdomain table names gone modules or misses real ones                                                                                                  | `core` with no `domain/`                                                                                                                                                                                                 | low                                       |
 | F7 enum restated                | a `.ts` union or literal array copies a generated enum                                                                                                                                            | the values are client-only state                                                                                                                                                                                         | low                                       |
@@ -94,9 +94,10 @@ They go in the report and in RULES.md rule 3's plan suggestion; this audit write
 
 ### 3 — F3 and F4: edges and barrels
 
-For each edge label on a module page and each barrel export, check what the sibling does with it: reads state, asks
-for a write, or mounts a component. A swapped label is F3. A store or composable published where a component
-or schema would do is F4.
+For each edge label on a module page, check what the sibling does with it: reads state, asks for a write, or
+mounts a component. A swapped label is F3. For each module, compare its barrel with its files: no barrel, or a
+barrel narrower than the store, composables, components and domain rules it holds, is F4. An export no
+sibling imports is NOT a finding: unused exports are allowed on purpose (`docs/theory/strategic-ddd.md` §5).
 
 ### 4 — F5 and F6: the `domain/` floor and the labels
 
@@ -138,7 +139,7 @@ Already guarded elsewhere — do not report these:
 
 - Lint: `index.ts`-only reach and `dependsOn`, foundation → shop, the tier ladder, `domain/` purity, a
   module importing its own barrel, a `.vue` calling `@api` or runtime `@types`.
-- Specs: `published-language`, `module-coupling`, `route-name-coupling`,
+- Specs: `module-coupling`, `route-name-coupling`,
   `module-file-shapes`, `module-groups`, `registry`, `module-map`, and the sitemap block.
 - Neighbouring audits: spec-drift, spec-gaps, test-honesty, suite-bloat (tests), design-manual (styling),
   and compliance (run from the backend).

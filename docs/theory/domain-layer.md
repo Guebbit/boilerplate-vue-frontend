@@ -228,7 +228,7 @@ map and subdomain distillation — why the enforcement moved off a manifest fiel
 | Concept                | Where                                                                                                                         |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Bounded context        | one folder per module; `rm -rf` deletes the domain                                                                            |
-| Published language     | the module barrel, `index.ts` — and a spec forbids widening it past what a sibling imports                                    |
+| Published language     | the module barrel, `index.ts` — everything a module offers a sibling, unused exports allowed on purpose                       |
 | Context map            | the module pages under `docs/modules/`, next to each module's imports; which siblings it may reach is a generated ESLint rule |
 | Ubiquitous language    | the code's own identifiers, per context — and often deliberately different from the server's word for the same thing          |
 | Subdomain distillation | the table in `strategic-ddd.md` §4; a `generic` module carrying a `domain/` folder is a review question, not a spec           |
