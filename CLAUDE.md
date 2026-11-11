@@ -51,10 +51,16 @@ can offer a sibling. See `docs/theory/strategic-ddd.md` §5.
 
 ## Scope
 
-- MUST NOT preserve backward compatibility (old field names, deprecated endpoints, legacy code
-  paths, dual-write transitions) unless the user explicitly asks for it. Replace, don't shim.
-- MUST NOT leave deprecated code in place — no `@deprecated` tag kept "for later." When a change
-  supersedes something, remove it in the same change.
+- **Backward compatibility is the default.** A change keeps working for what the previous release
+  left behind:
+  - The backend it talks to may be one release older or newer for a while: read new fields as
+    optional, and tolerate an unknown enum value.
+  - Stored client state (`localStorage`, cookies, cached query data, a service worker): expand →
+    contract. Read the old shape for one release, then remove it in the next.
+- MUST NOT keep compatibility code past that one release: no permanent field aliases, no
+  `@deprecated` tags left "for later".
+- **Pre-release opt-out:** when the project's `HANDOFF.md` or the user's prompt says "pre-release:
+  no backward compatibility", replace instead. No shims, no bridges, no deprecation period.
 
 ## Async and error handling
 
