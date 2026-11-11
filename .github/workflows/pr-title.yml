@@ -29,6 +29,9 @@ jobs:
 
             - name: Setup Node and install
               uses: ./.github/actions/setup-node-and-install
+              with:
+                  # commitlint needs no generated file or binary, so no install script has to run.
+                  ignore-scripts: 'true'
 
             - name: Lint the PR title
               env:
