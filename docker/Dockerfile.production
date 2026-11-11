@@ -37,7 +37,9 @@ WORKDIR /app
 # without it `npm ci` reports optional peers (search-insights) as missing from the lock.
 COPY package.json package-lock.json .npmrc ./
 
-RUN npm ci
+# `--ignore-scripts`: no dependency script runs in the stage that writes `dist/`.
+# esbuild still works: its binary arrives through an optional dependency, not a script.
+RUN npm ci --ignore-scripts
 
 COPY . .
 

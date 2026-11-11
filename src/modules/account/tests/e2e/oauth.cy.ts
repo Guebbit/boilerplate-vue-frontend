@@ -4,7 +4,7 @@
  * actual click-through Google/GitHub cannot get in CI. `fake` skips the consent screen but still
  * round-trips the real `state` cookie, so the button click exercises the genuine redirect chain:
  * BE start route → BE callback → cookies set → FE `/oauth/callback`.
- * Demo-only, since `fake` is gated behind `isDemoMode()` on the backend.
+ * Demo-only, since `fake` is registered only by the backend's dev preload.
  */
 
 /**
