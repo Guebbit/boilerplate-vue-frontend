@@ -27873,10 +27873,14 @@ components:
         - fulfillmentOrderId
         - titles
         - agreedAt
+        - orderNumber
       description: "What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised and the date now expected (absent when there is none)."
       properties:
         orderId:
           $ref: "#/components/schemas/Id"
+        orderNumber:
+          type: string
+          description: The order's number as the buyer knows it (`2026-000041`), shown as `#…`.
         fulfillmentOrderId:
           $ref: "#/components/schemas/Id"
         titles:
@@ -27899,10 +27903,14 @@ components:
         - orderId
         - shipmentId
         - reason
+        - orderNumber
       description: "What the buyer needs to read a lost-parcel notice: which order and shipment, whether it was lost or damaged in transit, the sentence staff wrote for them if any, and the units the shelf could not cover again with the date they are now expected (absent when everything is being sent again from the shelf)."
       properties:
         orderId:
           $ref: "#/components/schemas/Id"
+        orderNumber:
+          type: string
+          description: The order's number as the buyer knows it (`2026-000041`), shown as `#…`.
         shipmentId:
           $ref: "#/components/schemas/Id"
         reason:
@@ -27929,10 +27937,14 @@ components:
         - orderId
         - fulfillmentOrderId
         - notice
+        - orderNumber
       description: "What the buyer needs to read a hold notice: which order and fulfillment order, whether the address needs a look (`check_address`) or the order is only `delayed`, and the sentence staff wrote for them, if any. Never staff's reason."
       properties:
         orderId:
           $ref: "#/components/schemas/Id"
+        orderNumber:
+          type: string
+          description: The order's number as the buyer knows it (`2026-000041`), shown as `#…`.
         fulfillmentOrderId:
           $ref: "#/components/schemas/Id"
         notice:
@@ -28211,12 +28223,16 @@ components:
       required:
         - returnId
         - orderId
+        - orderNumber
       description: A return request is waiting for a decision. Ids only, the return's page has the rest.
       properties:
         returnId:
           $ref: "#/components/schemas/Id"
         orderId:
           $ref: "#/components/schemas/Id"
+        orderNumber:
+          type: string
+          description: The order's number as the buyer knows it (`2026-000041`), shown as `#…`.
     NotificationStaffReturnRequested:
       type: object
       additionalProperties: false

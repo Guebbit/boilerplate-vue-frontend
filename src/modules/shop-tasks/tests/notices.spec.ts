@@ -80,6 +80,7 @@ const describeOf = (facts: Facts, preferred: readonly string[] = ['en']) =>
  */
 const base = {
     orderId: 'o1',
+    orderNumber: '2026-000041',
     fulfillmentOrderId: 'fo1',
     titles: ['Vinyl', 'Poster'],
     agreedAt: 'A'
@@ -99,7 +100,7 @@ const delayed = (extra: Record<string, unknown> = {}) => ({
 const lost = (extra: Record<string, unknown> = {}, reason: 'lost' | 'damaged' = 'lost') =>
     describeOf({
         code: 'shop-tasks.shipment-lost',
-        params: { orderId: 'o1', shipmentId: 's1', reason, ...extra }
+        params: { orderId: 'o1', orderNumber: '2026-000041', shipmentId: 's1', reason, ...extra }
     });
 
 /** A fulfillment-held notice's sentence. */
@@ -108,6 +109,7 @@ const held = (notice: 'check_address' | 'delayed', message?: string) =>
         code: 'shop-tasks.fulfillment-held',
         params: {
             orderId: 'o1',
+            orderNumber: '2026-000041',
             fulfillmentOrderId: 'fo1',
             notice,
             ...(message ? { message } : {})
@@ -229,7 +231,7 @@ describe('a buyer notice', () => {
     describe('a late preorder', () => {
         it('says the new date when the delay has one', () => {
             expect(describeOf(delayed({ expectedAt: 'E' }))).toBe(
-                'shop-tasks.fulfillment-delayed|titles=Vinyl, Poster|agreed=A#|expected=E#'
+                'shop-tasks.fulfillment-delayed|order=2026-000041|titles=Vinyl, Poster|agreed=A#|expected=E#'
             );
         });
 
@@ -247,20 +249,27 @@ describe('a buyer notice', () => {
 
     describe('a hold the buyer can act on', () => {
         it('says what the notice means, in its own sentence', () => {
-            expect(held('check_address')).toBe('shop-tasks.fulfillment-held-check_address');
-            expect(held('delayed')).toBe('shop-tasks.fulfillment-held-delayed');
+            expect(held('check_address')).toBe(
+                'shop-tasks.fulfillment-held-check_address|order=2026-000041'
+            );
+            expect(held('delayed')).toBe('shop-tasks.fulfillment-held-delayed|order=2026-000041');
         });
 
         it('adds what the shop wrote for the buyer after it', () => {
             expect(held('delayed', 'Back soon.')).toBe(
-                'shop-tasks.fulfillment-held-delayed shop-tasks.fulfillment-held-message|message=Back soon.'
+                'shop-tasks.fulfillment-held-delayed|order=2026-000041 shop-tasks.fulfillment-held-message|message=Back soon.'
             );
         });
 
         it('opens the order it is about', () => {
             const notice = {
                 code: 'shop-tasks.fulfillment-held',
-                params: { orderId: 'o9', fulfillmentOrderId: 'f', notice: 'delayed' }
+                params: {
+                    orderId: 'o9',
+                    orderNumber: '2026-000042',
+                    fulfillmentOrderId: 'f',
+                    notice: 'delayed'
+                }
             } as const;
 
             expect(entryOf(notice).target?.(full(notice))).toEqual({
@@ -272,24 +281,31 @@ describe('a buyer notice', () => {
 
     describe('a parcel reported lost', () => {
         it('says what happened, once per reason', () => {
-            expect(lost()).toBe('shop-tasks.shipment-lost-lost');
-            expect(lost({}, 'damaged')).toBe('shop-tasks.shipment-lost-damaged');
+            expect(lost()).toBe('shop-tasks.shipment-lost-lost|order=2026-000041');
+            expect(lost({}, 'damaged')).toBe('shop-tasks.shipment-lost-damaged|order=2026-000041');
         });
 
         it('adds what is owed only with its date, then the shop’s message', () => {
             expect(lost({ owed: ['Vinyl', 'Poster'], expectedAt: 'D' })).toBe(
-                'shop-tasks.shipment-lost-lost shop-tasks.shipment-lost-owed|titles=Vinyl, Poster|expected=D#'
+                'shop-tasks.shipment-lost-lost|order=2026-000041 shop-tasks.shipment-lost-owed|titles=Vinyl, Poster|expected=D#'
             );
-            expect(lost({ owed: ['Vinyl'] })).toBe('shop-tasks.shipment-lost-lost');
+            expect(lost({ owed: ['Vinyl'] })).toBe(
+                'shop-tasks.shipment-lost-lost|order=2026-000041'
+            );
             expect(lost({ message: 'Monday.' })).toBe(
-                'shop-tasks.shipment-lost-lost shop-tasks.shipment-lost-message|message=Monday.'
+                'shop-tasks.shipment-lost-lost|order=2026-000041 shop-tasks.shipment-lost-message|message=Monday.'
             );
         });
 
         it('opens the order it is about', () => {
             const notice = {
                 code: 'shop-tasks.shipment-lost',
-                params: { orderId: 'o7', shipmentId: 's1', reason: 'lost' }
+                params: {
+                    orderId: 'o7',
+                    orderNumber: '2026-000042',
+                    shipmentId: 's1',
+                    reason: 'lost'
+                }
             } as const;
 
             expect(entryOf(notice).target?.(full(notice))).toEqual({
@@ -320,10 +336,10 @@ describe('a work notice for staff', () => {
     it('needs no facts to say a return waits for a decision, and opens the return', () => {
         const requested = {
             code: 'shop-tasks.staff.return-requested',
-            params: { returnId: 'r1', orderId: 'o1' }
+            params: { returnId: 'r1', orderId: 'o1', orderNumber: '2026-000041' }
         } as const;
 
-        expect(describeOf(requested)).toBe('shop-tasks.staff.return-requested');
+        expect(describeOf(requested)).toBe('shop-tasks.staff.return-requested|order=2026-000041');
         expect(entryOf(requested).target?.(full(requested))).toEqual({
             route: 'ReturnTarget',
             params: { id: 'r1' }

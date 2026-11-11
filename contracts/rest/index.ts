@@ -3381,6 +3381,8 @@ export const FulfillmentHeldParamsNotice = {
  */
 export interface FulfillmentHeldParams {
     orderId: Id;
+    /** The order's number as the buyer knows it (`2026-000041`), shown as `#…`. */
+    orderNumber: string;
     fulfillmentOrderId: Id;
     notice: FulfillmentHeldParamsNotice;
     /** @maxLength 500 */
@@ -3421,6 +3423,8 @@ export const ShipmentLostParamsReason = {
  */
 export interface ShipmentLostParams {
     orderId: Id;
+    /** The order's number as the buyer knows it (`2026-000041`), shown as `#…`. */
+    orderNumber: string;
     shipmentId: Id;
     reason: ShipmentLostParamsReason;
     /** @maxLength 500 */
@@ -3487,6 +3491,8 @@ export const NotificationFulfillmentDelayedCode = {
  */
 export interface FulfillmentDelayedParams {
     orderId: Id;
+    /** The order's number as the buyer knows it (`2026-000041`), shown as `#…`. */
+    orderNumber: string;
     fulfillmentOrderId: Id;
     /** The waiting products' titles, as the order froze them. */
     titles: string[];
@@ -3628,6 +3634,8 @@ export const NotificationStaffReturnRequestedCode = {
 export interface ReturnRequestedParams {
     returnId: Id;
     orderId: Id;
+    /** The order's number as the buyer knows it (`2026-000041`), shown as `#…`. */
+    orderNumber: string;
 }
 
 /**

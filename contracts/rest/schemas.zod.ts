@@ -5845,6 +5845,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .regex(
                             downloadAccountExportResponseNotificationsItemSevenParamsOrderIdRegExp
                         ),
+                    orderNumber: zod.string(),
                     fulfillmentOrderId: zod
                         .string()
                         .min(1)
@@ -5880,6 +5881,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .regex(
                             downloadAccountExportResponseNotificationsItemEightParamsOrderIdRegExp
                         ),
+                    orderNumber: zod.string(),
                     shipmentId: zod
                         .string()
                         .min(1)
@@ -5937,6 +5939,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .regex(
                             downloadAccountExportResponseNotificationsItemOnezeroParamsOrderIdRegExp
                         ),
+                    orderNumber: zod.string(),
                     fulfillmentOrderId: zod
                         .string()
                         .min(1)
@@ -6071,7 +6074,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .max(downloadAccountExportResponseNotificationsItemOnefiveParamsOrderIdMax)
                         .regex(
                             downloadAccountExportResponseNotificationsItemOnefiveParamsOrderIdRegExp
-                        )
+                        ),
+                    orderNumber: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -24412,6 +24416,7 @@ export const ListNotificationsResponse = zod.strictObject({
                         .min(1)
                         .max(listNotificationsResponseItemsItemSevenParamsOrderIdMax)
                         .regex(listNotificationsResponseItemsItemSevenParamsOrderIdRegExp),
+                    orderNumber: zod.string(),
                     fulfillmentOrderId: zod
                         .string()
                         .min(1)
@@ -24443,6 +24448,7 @@ export const ListNotificationsResponse = zod.strictObject({
                         .min(1)
                         .max(listNotificationsResponseItemsItemEightParamsOrderIdMax)
                         .regex(listNotificationsResponseItemsItemEightParamsOrderIdRegExp),
+                    orderNumber: zod.string(),
                     shipmentId: zod
                         .string()
                         .min(1)
@@ -24494,6 +24500,7 @@ export const ListNotificationsResponse = zod.strictObject({
                         .min(1)
                         .max(listNotificationsResponseItemsItemOnezeroParamsOrderIdMax)
                         .regex(listNotificationsResponseItemsItemOnezeroParamsOrderIdRegExp),
+                    orderNumber: zod.string(),
                     fulfillmentOrderId: zod
                         .string()
                         .min(1)
@@ -24616,7 +24623,8 @@ export const ListNotificationsResponse = zod.strictObject({
                         .string()
                         .min(1)
                         .max(listNotificationsResponseItemsItemOnefiveParamsOrderIdMax)
-                        .regex(listNotificationsResponseItemsItemOnefiveParamsOrderIdRegExp)
+                        .regex(listNotificationsResponseItemsItemOnefiveParamsOrderIdRegExp),
+                    orderNumber: zod.string()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -25052,6 +25060,7 @@ export const GetNotificationByIdResponse = zod.union([
                 .min(1)
                 .max(getNotificationByIdResponseSevenParamsOrderIdMax)
                 .regex(getNotificationByIdResponseSevenParamsOrderIdRegExp),
+            orderNumber: zod.string(),
             fulfillmentOrderId: zod
                 .string()
                 .min(1)
@@ -25078,6 +25087,7 @@ export const GetNotificationByIdResponse = zod.union([
                 .min(1)
                 .max(getNotificationByIdResponseEightParamsOrderIdMax)
                 .regex(getNotificationByIdResponseEightParamsOrderIdRegExp),
+            orderNumber: zod.string(),
             shipmentId: zod
                 .string()
                 .min(1)
@@ -25126,6 +25136,7 @@ export const GetNotificationByIdResponse = zod.union([
                 .min(1)
                 .max(getNotificationByIdResponseOnezeroParamsOrderIdMax)
                 .regex(getNotificationByIdResponseOnezeroParamsOrderIdRegExp),
+            orderNumber: zod.string(),
             fulfillmentOrderId: zod
                 .string()
                 .min(1)
@@ -25242,7 +25253,8 @@ export const GetNotificationByIdResponse = zod.union([
                 .string()
                 .min(1)
                 .max(getNotificationByIdResponseOnefiveParamsOrderIdMax)
-                .regex(getNotificationByIdResponseOnefiveParamsOrderIdRegExp)
+                .regex(getNotificationByIdResponseOnefiveParamsOrderIdRegExp),
+            orderNumber: zod.string()
         }),
         severity: zod.enum(['info', 'success', 'warning', 'error']),
         readAt: zod.iso.datetime({ offset: true }).optional(),
