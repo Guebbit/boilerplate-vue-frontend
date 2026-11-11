@@ -106,7 +106,7 @@ Only the `[Vue warn]` prefix counts. Not every `console.warn`: the app's logger 
 
 **Generated payloads and depth knobs.** `tests/support/unit/contract-data.ts` builds a valid body, and one body per broken field, from a generated Zod schema in `contracts/rest/schemas.zod.ts`. `TEST_PROPERTY_RUNS` and `RANDOM_DATA_SEED` (`.env`, or the shell, which wins) set the fast-check depth and the seed: see [Property-Based Testing](./property-testing.md#running-budget).
 
-**Declared forks.** `contract-data.ts`, `pattern-samples.ts`, `knobs.ts`, `expect-warning.ts` and `tests/cross-cutting/ci-covers-the-gate.spec.ts` are forks of backend files. Each header says so; nothing keeps them in step.
+**Declared forks.** `contract-data.ts`, `pattern-samples.ts`, `knobs.ts` and `expect-warning.ts` are forks of backend files. Each header says so; nothing keeps them in step.
 
 ## File map
 

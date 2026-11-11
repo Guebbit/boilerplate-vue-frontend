@@ -34,7 +34,7 @@ The two repos stay independently clonable, so each carries its own copy of the c
 keeps the copies identical is `npm run check`: it compares this repo's `openapi.yaml`
 and `asyncapi.yaml` with the backend's `boilerplate-node-backend/openapi.yaml` and `boilerplate-node-backend/asyncapi.public.yaml` (the async contract
 minus the internal queues no API client can reach), skips when the backend is not on disk, and is
-fatal under CI (the `spec-identity` job).
+fatal under CI (the `check` job, which runs `npm run check`).
 
 **Whenever the backend's spec changes**, the backend copies both files over with `npm run
 sync:frontend`; here you regenerate and read the diff:
@@ -57,7 +57,7 @@ The `api-freshness` job regenerates the client and fails if the committed output
 - **The pathspec must list every orval output.** A pathspec naming a directory that does not exist matches nothing: `git diff` exits 0 and the job passes without checking anything. If you add or retarget an output block in `orval.config.ts`, update the pathspec in the same commit.
 - **Formatting must be normalised before diffing.** Orval emits 2-space indentation while this repo's Prettier config uses 4, and the committed output is formatted. Without `npx prettier --write` before the diff, the job reports thousands of lines of pure indentation churn on every run.
 
-The AsyncAPI side has the matching job, `asyncapi-types-freshness`.
+The AsyncAPI side is a step of `npm run check`, which the `check` CI job runs.
 
 If you change this job, verify it can actually fail: edit `openapi.yaml` without regenerating and confirm the job goes red. A freshness guard nobody has seen fail is indistinguishable from one that does nothing.
 
