@@ -28899,7 +28899,7 @@ x-error-codes:
   RATE_LIMITED:
     scope: app
     status: 429
-    description: "The caller spent a rate-limit budget: a request limiter, a mailbox's send budget, or an account's wrong-code budget (the 2FA lock). Carries `Retry-After`, and `details.retryAfter` with the same seconds; `details.policy` names the budget when there is one."
+    description: "The caller spent a rate-limit budget: a request limiter, a mailbox's send budget, an account's wrong-code budget (the 2FA lock), or an account's cap on open live streams. Carries `Retry-After`, and `details.retryAfter` with the same seconds; `details.policy` names the budget when there is one."
   REAUTH_REQUIRED:
     status: 401
     description: "This action requires a session fresher than the caller's current one — see `POST /account/reauth`. `details.maxAge` is the freshness asked for; `details.methods`, when present, lists what the re-authentication must also prove (`otp`: a code from an armed second factor)."
@@ -28966,7 +28966,7 @@ x-error-codes:
   SERVICE_UNAVAILABLE:
     scope: app
     status: 503
-    description: A dependency (database, broker) is unreachable. Carries a `Retry-After` hint.
+    description: A dependency (database, broker) is unreachable, or the server is at a capacity limit (a full queue, the process ceiling on open live streams). Carries a `Retry-After` hint.
   SESSION_IDLE:
     status: 401
     description: A staff or admin session saw no real request for longer than `NODE_SESSION_IDLE_TIME_STAFF`, and ended. Sign in again. A shopper never gets this.
