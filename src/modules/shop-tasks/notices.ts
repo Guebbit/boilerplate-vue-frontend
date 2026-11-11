@@ -106,7 +106,8 @@ export const shopNotices: Record<string, AppNotice> = {
         })
     },
     'shop-tasks.staff.return-requested': {
-        describe: (notice, { translate }) => translate(notice.code),
+        describe: (notice: ShopNotice<'shop-tasks.staff.return-requested'>, { translate }) =>
+            translate(notice.code, { order: notice.params.orderNumber }),
         target: (notice: ShopNotice<'shop-tasks.staff.return-requested'>) => ({
             route: 'ReturnTarget',
             params: { id: notice.params.returnId }
