@@ -365,6 +365,24 @@ describe('a work notice for staff', () => {
         expect(link?.getAttribute('href')).toBe('/en/webhooks/subscriptions/s9');
     });
 
+    it('is itself the link: its own sentence is the link text, with no separate "open" label', async () => {
+        signIn();
+        useSessionStore().tenantAbility = createMongoAbility([
+            { action: 'read', subject: 'WebhookSubscription' }
+        ]);
+        inboxOnServer = [holdNotice];
+        await mountBell();
+        await openPanel();
+        await openWorkTab();
+
+        const link = document.body.querySelector('[data-test=notification-target-link]');
+        const row = document.body.querySelector('[data-test=notification-w1]');
+
+        expect(link?.textContent.trim()).toContain('webhook subscription');
+        expect(row?.querySelectorAll('a')).toHaveLength(1);
+        expect(await axeViolations()).toEqual([]);
+    });
+
     it('offers no link where the reader would be refused', async () => {
         signIn();
         inboxOnServer = [holdNotice];

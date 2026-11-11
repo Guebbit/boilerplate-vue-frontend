@@ -279,9 +279,18 @@ const focusPanel = () => {
                             />
                         </template>
 
-                        <v-list-item-title class="whitespace-normal">{{
-                            item.text
-                        }}</v-list-item-title>
+                        <!-- The sentence is the link when there is a target: its own words say where it goes. -->
+                        <v-list-item-title class="whitespace-normal">
+                            <router-link
+                                v-if="targetLink(item.target)"
+                                :to="targetLink(item.target)!"
+                                class="underline"
+                                data-test="notification-target-link"
+                            >
+                                {{ item.text }}
+                            </router-link>
+                            <template v-else>{{ item.text }}</template>
+                        </v-list-item-title>
                         <v-list-item-subtitle>
                             <time :datetime="item.createdAt">{{
                                 formatDateTime(item.createdAt)
@@ -296,14 +305,6 @@ const focusPanel = () => {
                                 {{ t('notifications.unread') }}
                             </v-chip>
                         </v-list-item-subtitle>
-                        <router-link
-                            v-if="targetLink(item.target)"
-                            :to="targetLink(item.target)!"
-                            class="text-sm underline"
-                            data-test="notification-target-link"
-                        >
-                            {{ t('notifications.link-target') }}
-                        </router-link>
 
                         <template #append>
                             <v-btn

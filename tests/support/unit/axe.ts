@@ -7,11 +7,17 @@
 import axe, { type RunOptions } from 'axe-core';
 
 /**
- * What jsdom cannot judge, switched off.
+ * What jsdom cannot judge, switched off; plus one AAA rule switched on.
  * `color-contrast` needs computed styles and layout. `region` wants a whole page, not a mounted part.
+ * `identical-links-same-purpose` (WCAG 2.4.9, AAA) is outside axe's default tags, so it is named here
+ * and in the Cypress rule set: same link text, same destination.
  */
 const JSDOM_OPTIONS: RunOptions = {
-    rules: { 'color-contrast': { enabled: false }, region: { enabled: false } }
+    rules: {
+        'color-contrast': { enabled: false },
+        region: { enabled: false },
+        'identical-links-same-purpose': { enabled: true }
+    }
 };
 
 /**
