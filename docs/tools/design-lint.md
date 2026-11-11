@@ -23,7 +23,6 @@ flowchart LR
     subgraph Specs["Vitest — commit hook, CI"]
         Tok["design-tokens.spec<br/>CSS colours · aliases · breakpoints · boot surfaces"]
         Col["utility-collisions.spec<br/>Vuetify vs Tailwind names"]
-        Arb["design-arbitrary-values.spec<br/>repeats · stale exemptions"]
         Cfg["design-lint-config.spec<br/>the Tailwind rules, run for real"]
         Inv["css-invasiveness.spec<br/>Vuetify internals · z-index · native title<br/>a pure gate: no hit, or a reasoned css-allow"]
     end
@@ -38,7 +37,6 @@ flowchart LR
     Policy --> BTW
     Policy --> Local
     Policy --> Col
-    Policy --> Arb
     Policy --> Inv
     Hatch["one-off: eslint-disable … -- reason"] -.->|"unused or no reason = error"| Lint
 
@@ -47,7 +45,7 @@ flowchart LR
     classDef spec fill:#fce7f3,stroke:#db2777,color:#111827;
     class CSS,Theme,Policy,Styles src;
     class BTW,Local lint;
-    class Tok,Col,Arb,Cfg,Inv spec;
+    class Tok,Col,Cfg,Inv spec;
 ```
 
 Four things are read live, never listed by hand:
@@ -134,20 +132,19 @@ flowchart LR
 
 All in `scripts/design-policy.ts`.
 
-| Field                  | What it sets                                                                            |
-| ---------------------- | --------------------------------------------------------------------------------------- |
-| `severity`             | Per check: `'error'` or `'off'`. A warning would only be an error in CI anyway          |
-| `rootFontSize`         | Rem to pixels for the canonicaliser (16)                                                |
-| `restrictedClasses`    | The refused class patterns, each with its message and way out                           |
-| `ambiguousUtilities`   | The names both libraries generate with different meanings; `restrict: true` refuses one |
-| `vuetifyOwnedClasses`  | Vuetify classes a template may use by name (`elevation-N`)                              |
-| `arbitraryRepeatLimit` | How many places one arbitrary class may appear in (1)                                   |
-| `mobileStrategy`       | The dialog binding, the table owner file and the scroll directive                       |
-| `tailwindEntryPoint`   | The stylesheet whose `@theme` the plugin reads                                          |
-| `colorProps`           | The Vuetify props that take a theme colour                                              |
-| `colorKeywords`        | Strings that name no fixed colour (`transparent`, `currentcolor`, `inherit`)            |
-| `cssInvasiveness`      | The invasive-CSS thresholds: local z-index up to 9, the disallowed units                |
-| `themeColorNames()`    | The colour names a template may use, derived from the theme                             |
+| Field                 | What it sets                                                                            |
+| --------------------- | --------------------------------------------------------------------------------------- |
+| `severity`            | Per check: `'error'` or `'off'`. A warning would only be an error in CI anyway          |
+| `rootFontSize`        | Rem to pixels for the canonicaliser (16)                                                |
+| `restrictedClasses`   | The refused class patterns, each with its message and way out                           |
+| `ambiguousUtilities`  | The names both libraries generate with different meanings; `restrict: true` refuses one |
+| `vuetifyOwnedClasses` | Vuetify classes a template may use by name (`elevation-N`)                              |
+| `mobileStrategy`      | The dialog binding, the table owner file and the scroll directive                       |
+| `tailwindEntryPoint`  | The stylesheet whose `@theme` the plugin reads                                          |
+| `colorProps`          | The Vuetify props that take a theme colour                                              |
+| `colorKeywords`       | Strings that name no fixed colour (`transparent`, `currentcolor`, `inherit`)            |
+| `cssInvasiveness`     | The invasive-CSS thresholds: local z-index up to 9, the disallowed units                |
+| `themeColorNames()`   | The colour names a template may use, derived from the theme                             |
 
 ## Commands
 
@@ -160,15 +157,14 @@ All in `scripts/design-policy.ts`.
 
 ## The specs
 
-| Spec                                                  | Guards                                                                                                                                          |
-| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tests/cross-cutting/design-tokens.spec.ts`           | CSS colours, `var(--v-theme-*)` references, Tailwind aliases, media-query breakpoints, the derived names against Vuetify, and the boot surfaces |
-| `tests/cross-cutting/utility-collisions.spec.ts`      | The real set of Vuetify/Tailwind name collisions equals `ambiguousUtilities`; no radius name collides; Tailwind scans `src/` only               |
-| `tests/cross-cutting/design-arbitrary-values.spec.ts` | No arbitrary class repeats; an exemption that matches no class is stale                                                                         |
-| `tests/cross-cutting/css-invasiveness.spec.ts`        | The invasive-CSS gate: the app has no hit; each check fires on a sample; the `css-allow` grammar                                                |
-| `tests/unit/scripts/design-lint-config.spec.ts`       | The plugin finds `main.css`, reaches a class map and a `*-class` prop; each refusal fires; an unused template disable fails                     |
-| `tests/unit/scripts/eslint/*.spec.ts`                 | Each local rule and the stylesheet reader, with `RuleTester`                                                                                    |
-| `tests/unit/ui/use-theme-color-meta.spec.ts`          | Switching the theme rewrites the browser's `theme-color` tags                                                                                   |
+| Spec                                             | Guards                                                                                                                                          |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/cross-cutting/design-tokens.spec.ts`      | CSS colours, `var(--v-theme-*)` references, Tailwind aliases, media-query breakpoints, the derived names against Vuetify, and the boot surfaces |
+| `tests/cross-cutting/utility-collisions.spec.ts` | The real set of Vuetify/Tailwind name collisions equals `ambiguousUtilities`; no radius name collides; Tailwind scans `src/` only               |
+| `tests/cross-cutting/css-invasiveness.spec.ts`   | The invasive-CSS gate: the app has no hit; each check fires on a sample; the `css-allow` grammar                                                |
+| `tests/unit/scripts/design-lint-config.spec.ts`  | The plugin finds `main.css`, reaches a class map and a `*-class` prop; each refusal fires; an unused template disable fails                     |
+| `tests/unit/scripts/eslint/*.spec.ts`            | Each local rule and the stylesheet reader, with `RuleTester`                                                                                    |
+| `tests/unit/ui/use-theme-color-meta.spec.ts`     | Switching the theme rewrites the browser's `theme-color` tags                                                                                   |
 
 ## Troubleshooting
 
