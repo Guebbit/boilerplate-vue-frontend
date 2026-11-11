@@ -45,7 +45,8 @@ export interface UnavailableCartLine {
  * What a checkout rejection means for the view, narrowed from the wire error code.
  *
  * `cart-empty` and `in-flight` are what a LOST answer leads to: the order exists, or is being made,
- * and the page still shows the basket. `server-error` is a bare 500: it may or may not have written
+ * and the page still shows the basket. `server-error` is a bare 500, or the API's own 503
+ * (`SERVICE_UNAVAILABLE`, `QUERY_TIMEOUT`): it may or may not have written
  * an order, so only a fresh read of the cart can tell. `other` covers every refusal without a
  * dedicated UI response (`CART_SHIPPING_METHOD_NOT_FOUND`, a transport failure) — the generic
  * toast is already the documented right answer for those.
@@ -239,7 +240,12 @@ const VERDICT_BY_CODE: ReadonlyMap<unknown, (details: unknown) => CheckoutErrorV
     // The reason, the date and the note are the buyer's own record's to show (`PurchaseHoldNotice`).
     [ERROR_CODES.CART_PURCHASE_HOLD, () => ({ kind: 'purchase-hold' })],
     [ERROR_CODES.CART_EMPTY, () => ({ kind: 'cart-empty' })],
-    [ERROR_CODES.IDEMPOTENCY_IN_FLIGHT, () => ({ kind: 'in-flight' })]
+    [ERROR_CODES.IDEMPOTENCY_IN_FLIGHT, () => ({ kind: 'in-flight' })],
+    // The API's own 503s: it answered, so a keyed checkout's 503 is STORED and replayed to the
+    // same key. Read like a bare 500: the cart is re-read, and the attempt ends if it is still full.
+    // A body-less 502/503/504 from a proxy has no code, so it still keeps the key.
+    [ERROR_CODES.SERVICE_UNAVAILABLE, () => ({ kind: 'server-error' })],
+    [ERROR_CODES.QUERY_TIMEOUT, () => ({ kind: 'server-error' })]
 ]);
 
 /**

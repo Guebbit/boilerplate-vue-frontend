@@ -7876,7 +7876,7 @@ export type UnsupportedMediaTypeResponse = Problem;
 export type TooManyRequestsResponse = Problem;
 
 /**
- * A dependency the request needed (Mongo, Redis) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from.
+ * A dependency the request needed (Mongo, Redis) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from. A query the server stopped at its time limit answers the same status with the code `QUERY_TIMEOUT` instead of `SERVICE_UNAVAILABLE`.
  */
 export type ServiceUnavailableResponse = Problem;
 
@@ -7926,7 +7926,7 @@ export type ValidationErrorReplayableResponse = Problem;
 export type InternalErrorReplayableResponse = Problem;
 
 /**
- * A dependency the request needed (Mongo, Redis) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from.
+ * A dependency the request needed (Mongo, Redis) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from. A query the server stopped at its time limit answers the same status with the code `QUERY_TIMEOUT` instead of `SERVICE_UNAVAILABLE`.
  */
 export type ServiceUnavailableReplayableResponse = Problem;
 

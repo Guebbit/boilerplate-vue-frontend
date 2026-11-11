@@ -563,12 +563,9 @@ describe('useCartStore', () => {
                     });
             });
 
-            it('reuses the same key across a retry after a 5xx', () => {
+            it('reuses the same key across a retry after a body-less 5xx from a proxy', () => {
                 const store = useCartStore();
-                vi.mocked(apiCheckout).mockRejectedValueOnce({
-                    status: 503,
-                    errors: [{ code: 'SERVICE_UNAVAILABLE' }]
-                });
+                vi.mocked(apiCheckout).mockRejectedValueOnce({ status: 503, errors: [] });
 
                 return store
                     .checkout()

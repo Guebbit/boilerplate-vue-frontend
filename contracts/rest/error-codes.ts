@@ -210,6 +210,8 @@ export const ERROR_CODES = {
     PRECONDITION_FAILED: 'PRECONDITION_FAILED',
     /** 409 — A restore named a product that is not soft-deleted, so there is nothing to undo. */
     PRODUCT_NOT_DELETED: 'PRODUCT_NOT_DELETED',
+    /** 503 — A database query ran past the server's time limit and was stopped. The server is busy, not broken. Carries a `Retry-After` hint. */
+    QUERY_TIMEOUT: 'QUERY_TIMEOUT',
     /** 429 — The caller spent a rate-limit budget: a request limiter, a mailbox's send budget, an account's wrong-code budget (the 2FA lock), or an account's cap on open live streams. Carries `Retry-After`, and `details.retryAfter` with the same seconds; `details.policy` names the budget when there is one. */
     RATE_LIMITED: 'RATE_LIMITED',
     /** 401 — This action requires a session fresher than the caller's current one — see `POST /account/reauth`. `details.maxAge` is the freshness asked for; `details.methods`, when present, lists what the re-authentication must also prove (`otp`: a code from an armed second factor). */

@@ -418,9 +418,11 @@ export const useCartStore = defineStore('cart', () => {
     /**
      * What a failed checkout does to the attempt, and to the cart the page shows.
      *
-     * - Nothing conclusive (no answer, 502/503/504, or the first attempt still running): the key is
-     *   kept, so the next press is the SAME call and replays whatever the server did.
-     * - A bare 500: the cart is read again. Still full means no order was written (the order and the
+     * - Nothing conclusive (no answer, a body-less 502/503/504 from a proxy, or the first attempt
+     *   still running): the key is kept, so the next press is the SAME call and replays whatever
+     *   the server did.
+     * - A bare 500, or the API's own 503 (it stores and replays that to the same key): the cart is
+     *   read again. Still full means no order was written (the order and the
      *   cart's clearing commit together), so the attempt ends; empty means the order exists.
      * - Anything else is a verdict on this order: the attempt ends.
      *
