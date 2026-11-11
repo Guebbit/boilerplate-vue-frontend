@@ -113,6 +113,7 @@ export const describePreorder = (
             ? 'shop-tasks.fulfillment-delayed-undated'
             : 'shop-tasks.fulfillment-delayed',
         {
+            order: params.orderNumber,
             titles: params.titles.join(NAME_SEPARATOR),
             agreed: formatDay(params.agreedAt),
             expected: params.expectedAt === undefined ? '' : formatDay(params.expectedAt)
@@ -143,7 +144,7 @@ export const describeHeld = (
     { translate }: NoticeContext
 ): string => {
     const { params } = notice;
-    const sentence = translate(HELD_KEYS[params.notice]);
+    const sentence = translate(HELD_KEYS[params.notice], { order: params.orderNumber });
     return params.message
         ? `${sentence} ${translate(HELD_KEYS.message, { message: params.message })}`
         : sentence;
@@ -174,7 +175,7 @@ export const describeLost = (
 ): string => {
     const { params } = notice;
     return [
-        translate(LOST_KEYS[params.reason]),
+        translate(LOST_KEYS[params.reason], { order: params.orderNumber }),
         params.owed && params.expectedAt
             ? translate(LOST_KEYS.owed, {
                   titles: params.owed.join(NAME_SEPARATOR),
