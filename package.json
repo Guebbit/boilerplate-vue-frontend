@@ -182,9 +182,9 @@
         "cypress": true,
         "esbuild": true,
         "fsevents": true,
-        "msw": true,
+        "msw": false,
         "unrs-resolver": true,
-        "vue-demi": true,
+        "vue-demi": false,
         "@parcel/watcher": false,
         "@scarf/scarf": false
     }
