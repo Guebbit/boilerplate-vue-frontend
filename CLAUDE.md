@@ -34,6 +34,21 @@
 - The shapes, their names and the legitimate reasons to keep one:
   `scripts/audit/code-shape/SKILL.md`. Run it to find them.
 
+## Module barrels
+
+Every module publishes a barrel (`src/modules/<name>/index.ts`) that exports everything the module
+can offer a sibling. See `docs/theory/strategic-ddd.md` §5.
+
+- MUST export the module's stores, composables, components and `domain/` rules, whether or not a
+  sibling imports them today. Unused exports are allowed on purpose: they are harmless, and a missing
+  one makes the next author, or an AI, copy the logic, redeclare the type or reach around the barrel.
+- MUST NOT remove an export because nothing imports it yet.
+- The one exception is size, not policy: `response-schemas.ts` and `schemas.ts` stay out, because
+  they pull the generated Zod contract into the entry chunk (`entry-chunk-budget.spec.ts`). A
+  `schemas.ts` is published only where a sibling imports it.
+- Never published: `views/`, `routes.ts`, `module.ts`, locales and `provided.ts`.
+- Siblings import only through `index.ts`; a module never imports its own barrel.
+
 ## Scope
 
 - MUST NOT preserve backward compatibility (old field names, deprecated endpoints, legacy code
