@@ -98,8 +98,6 @@ env:
     # among what it sets, so it is named here. As a full URL, because a `.env` in the checkout
     # would otherwise win with its own broker address.
     NODE_RABBITMQ_URL: amqp://guest:guest@127.0.0.1:5672
-    # One process. The default is one worker per core, all fighting over port 3000.
-    NODE_CLUSTER_WORKERS: '1'
     # A required key for the personal-data pseudonyms; throwaway, like the ones above.
     NODE_PSEUDONYM_KEY: c8e0d50d06a8d4990987b30b0ff4b4416d6655ed483352063abe5f43706c28de
     # Webhook deliveries go to the tester service through its TLS proxy (a webhook URL must be

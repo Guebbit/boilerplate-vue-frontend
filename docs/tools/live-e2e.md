@@ -196,7 +196,6 @@ cd boilerplate-node-backend
 
 # What the backend needs to boot without a .env; throwaway values.
 export NODE_ENV=development            # the seeder's public demo passwords, and the webhook sink, need it
-export NODE_CLUSTER_WORKERS=1          # else one worker per core, all fighting over port 3000
 export NODE_PSEUDONYM_KEY=any-throwaway-value
 export NODE_RABBITMQ_HOST=127.0.0.1    # `host` sets the database and Redis, not the broker
 export NODE_RABBITMQ_URL=amqp://guest:guest@127.0.0.1:5672   # the backend's .env may carry `amqp://rabbitmq:5672`, which shadows HOST/PORT: no broker, no webhook sends, no error
