@@ -10692,6 +10692,7 @@ export const ListOrdersQueryParams = zod.strictObject({
         .optional(),
     fulfillmentStatus: zod
         .enum([
+            'awaiting_shipment',
             'unfulfilled',
             'in_progress',
             'on_hold',
@@ -11131,6 +11132,7 @@ export const SearchOrdersBody = zod.strictObject({
         .optional(),
     fulfillmentStatus: zod
         .enum([
+            'awaiting_shipment',
             'unfulfilled',
             'in_progress',
             'on_hold',
@@ -18587,6 +18589,7 @@ export const ExportOrdersQueryParams = zod.strictObject({
         .optional(),
     fulfillmentStatus: zod
         .enum([
+            'awaiting_shipment',
             'unfulfilled',
             'in_progress',
             'on_hold',

@@ -475,6 +475,26 @@ describe('OrdersList — the fulfillment chip and filter', () => {
     });
 });
 
+it('opens the digest link: the URL fills the fulfillment select and the request', async () => {
+    vi.mocked(searchOrders).mockResolvedValue(
+        asStub<Awaited<ReturnType<typeof searchOrders>>>(
+            contractResponse(schemas.SearchOrdersResponse, {
+                items: [],
+                meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 1 }
+            })
+        )
+    );
+    await router.push('/en/orders?fulfillmentStatus=awaiting_shipment&deleted=false');
+
+    mount(OrdersList, { global: { plugins: [router, vuetify, i18n] } });
+    await flushPromises();
+
+    expect(useOrdersStore().filters.fulfillmentStatus).toBe('awaiting_shipment');
+    expect(searchOrders).toHaveBeenLastCalledWith(
+        expect.objectContaining({ fulfillmentStatus: 'awaiting_shipment', deleted: false })
+    );
+});
+
 /** Answers the search with one page of the given orders. */
 const answerSearchWith = (items: ReturnType<typeof order>[]) =>
     vi.mocked(searchOrders).mockResolvedValue(

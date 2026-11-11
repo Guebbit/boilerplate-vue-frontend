@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { parse } from 'yaml';
-import { OrderFulfillmentStatus, OrderStatus, ReturnStatus } from '@/types/enums.ts';
+import { OrderFulfillmentFilter, OrderStatus, ReturnStatus } from '@/types/enums.ts';
 
 // The router's guards are not under test: `resolve` never runs them, but importing the router
 // pulls the modules in, so the two it imports at load are stubbed as `router.spec.ts` stubs them.
@@ -97,7 +97,7 @@ const SUMMARY_READERS: Record<string, { file: string; declares: string[]; accept
     deliveryHoldsOpen: {
         file: 'orders/views/OrdersList.vue',
         declares: ['fulfillmentStatus:'],
-        accepts: [OrderFulfillmentStatus.on_hold]
+        accepts: [OrderFulfillmentFilter.on_hold]
     },
     returnsAwaitingGoods: {
         file: 'returns/views/ReturnsList.vue',
@@ -116,8 +116,8 @@ const SUMMARY_READERS: Record<string, { file: string; declares: string[]; accept
     },
     unshipped: {
         file: 'orders/views/OrdersList.vue',
-        declares: ['status:'],
-        accepts: [OrderStatus.paid]
+        declares: ['fulfillmentStatus:', 'deleted:'],
+        accepts: [OrderFulfillmentFilter.awaiting_shipment, 'false']
     },
     awaitingTracking: {
         file: 'orders/views/OrdersList.vue',

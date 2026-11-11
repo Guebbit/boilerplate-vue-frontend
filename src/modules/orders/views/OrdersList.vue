@@ -38,7 +38,7 @@ import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts
 import type { OrderListItem } from '@types';
 import { exportRefusalOf } from '../domain';
 import {
-    OrderFulfillmentStatus,
+    OrderFulfillmentFilter,
     OrderPaymentStatus,
     OrderReturnStatus,
     OrderStatus
@@ -179,7 +179,7 @@ const { sync: syncUrl } = useListUrlState({
         email: 'string',
         orderNumber: 'string',
         status: Object.values(OrderStatus),
-        fulfillmentStatus: Object.values(OrderFulfillmentStatus),
+        fulfillmentStatus: Object.values(OrderFulfillmentFilter),
         paymentMethod: 'string',
         paymentStatus: Object.values(OrderPaymentStatus),
         returnStatus: Object.values(OrderReturnStatus),
@@ -265,14 +265,18 @@ const statusChoice = useAnyFilterChoice(
 );
 
 /**
- * The fulfillment select's options: every `OrderFulfillmentStatus`, plus "any" (value `null`, for
- * the same reason as {@link statusOptions}).
+ * The fulfillment select's options: every `OrderFulfillmentFilter`, plus "any" (value `null`, for
+ * the same reason as {@link statusOptions}). The aggregate `awaiting_shipment` has its own label key:
+ * no row carries it, so it has no chip text. The carried values reuse the chip's.
  */
 const fulfillmentOptions = computed(() => [
     { value: null, label: t('orders-list-page.filter-status-any') },
-    ...Object.values(OrderFulfillmentStatus).map((status) => ({
-        value: status,
-        label: t(`order-target-page.fulfillment-status-${status}`)
+    ...Object.values(OrderFulfillmentFilter).map((value) => ({
+        value,
+        label:
+            value === OrderFulfillmentFilter.awaiting_shipment
+                ? t('orders-list-page.fulfillment-filter-awaiting_shipment')
+                : t(`order-target-page.fulfillment-status-${value}`)
     }))
 ]);
 

@@ -7827,9 +7827,9 @@ paths:
             $ref: "#/components/schemas/OrderStatus"
         - name: fulfillmentStatus
           in: query
-          description: Filter to orders whose goods stand here — the same derived value `Order.fulfillmentStatus` carries, so `on_hold` and `partially_fulfilled` can be listed.
+          description: Filter to orders whose goods stand here — any value `Order.fulfillmentStatus` carries, so `on_hold` and `partially_fulfilled` can be listed, or the one filter-only aggregate `awaiting_shipment`.
           schema:
-            $ref: "#/components/schemas/OrderFulfillmentStatus"
+            $ref: "#/components/schemas/OrderFulfillmentFilter"
         - name: paymentMethod
           in: query
           description: Filter to orders placed with this method — the admin "awaiting transfer" view combines this with `status=pending`.
@@ -12657,7 +12657,7 @@ paths:
         - name: fulfillmentStatus
           in: query
           schema:
-            $ref: "#/components/schemas/OrderFulfillmentStatus"
+            $ref: "#/components/schemas/OrderFulfillmentFilter"
         - name: paymentMethod
           in: query
           schema:
@@ -23934,6 +23934,17 @@ components:
           - -payBy
           - paidAt
           - -paidAt
+    OrderFulfillmentFilter:
+      type: string
+      enum:
+        - awaiting_shipment
+        - unfulfilled
+        - in_progress
+        - on_hold
+        - partially_fulfilled
+        - shipped
+        - fulfilled
+      description: "What `fulfillmentStatus` accepts: every `OrderFulfillmentStatus` value, plus the filter-only `awaiting_shipment` — paid or processing, so goods still owed, none or some already sent (Shopify's `unfulfilled` inside `status=open`). No order carries it, so responses keep `OrderFulfillmentStatus`."
     OrderListItem:
       type: object
       additionalProperties: false
@@ -24051,7 +24062,7 @@ components:
         status:
           $ref: "#/components/schemas/OrderStatus"
         fulfillmentStatus:
-          $ref: "#/components/schemas/OrderFulfillmentStatus"
+          $ref: "#/components/schemas/OrderFulfillmentFilter"
         paymentMethod:
           $ref: "#/components/schemas/PaymentMethodId"
         deleted:
@@ -27540,7 +27551,7 @@ components:
         paidNotShipped:
           type: integer
           minimum: 0
-          description: Orders `paid` or `processing`, so not yet handed to a carrier.
+          description: The orders `fulfillmentStatus=awaiting_shipment` lists, live.
     UpdateInventoryLevelRequest:
       type: object
       additionalProperties: false
@@ -27788,7 +27799,7 @@ components:
         salesOrders:
           type: integer
           minimum: 0
-          description: Orders paid and not yet with a carrier (`paid` or `processing`), held ones included. Needs `display:Order`.
+          description: Orders with `fulfillmentStatus=awaiting_shipment`, live — the list that value opens. Needs `display:Order`.
         salesPayments:
           type: integer
           minimum: 0

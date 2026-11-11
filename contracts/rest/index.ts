@@ -5240,6 +5240,22 @@ export const OrderSortItem = {
  */
 export type OrderSort = OrderSortItem[];
 
+/**
+ * What `fulfillmentStatus` accepts: every `OrderFulfillmentStatus` value, plus the filter-only `awaiting_shipment` — paid or processing, so goods still owed, none or some already sent (Shopify's `unfulfilled` inside `status=open`). No order carries it, so responses keep `OrderFulfillmentStatus`.
+ */
+export type OrderFulfillmentFilter =
+    (typeof OrderFulfillmentFilter)[keyof typeof OrderFulfillmentFilter];
+
+export const OrderFulfillmentFilter = {
+    awaiting_shipment: 'awaiting_shipment',
+    unfulfilled: 'unfulfilled',
+    in_progress: 'in_progress',
+    on_hold: 'on_hold',
+    partially_fulfilled: 'partially_fulfilled',
+    shipped: 'shipped',
+    fulfilled: 'fulfilled'
+} as const;
+
 export interface OrderListItem {
     id: Id;
     orderNumber: string;
@@ -5302,7 +5318,7 @@ export interface SearchOrdersRequest {
      */
     orderNumber?: string;
     status?: OrderStatus;
-    fulfillmentStatus?: OrderFulfillmentStatus;
+    fulfillmentStatus?: OrderFulfillmentFilter;
     paymentMethod?: PaymentMethodId;
     deleted?: boolean;
     createdFrom?: string;
@@ -7618,7 +7634,7 @@ export type PipelineStatsAwaitingTransfersItem = {
 export interface PipelineStats {
     awaitingTransfers: PipelineStatsAwaitingTransfersItem[];
     /**
-     * Orders `paid` or `processing`, so not yet handed to a carrier.
+     * The orders `fulfillmentStatus=awaiting_shipment` lists, live.
      * @minimum 0
      */
     paidNotShipped: number;
@@ -7784,7 +7800,7 @@ export interface Shop {
  */
 export interface ShopWorkSummary {
     /**
-     * Orders paid and not yet with a carrier (`paid` or `processing`), held ones included. Needs `display:Order`.
+     * Orders with `fulfillmentStatus=awaiting_shipment`, live — the list that value opens. Needs `display:Order`.
      * @minimum 0
      */
     salesOrders?: number;
@@ -8384,9 +8400,9 @@ export type ListOrdersParams = {
     orderNumber?: OrderNumberParamParameter;
     status?: OrderStatus;
     /**
-     * Filter to orders whose goods stand here — the same derived value `Order.fulfillmentStatus` carries, so `on_hold` and `partially_fulfilled` can be listed.
+     * Filter to orders whose goods stand here — any value `Order.fulfillmentStatus` carries, so `on_hold` and `partially_fulfilled` can be listed, or the one filter-only aggregate `awaiting_shipment`.
      */
-    fulfillmentStatus?: OrderFulfillmentStatus;
+    fulfillmentStatus?: OrderFulfillmentFilter;
     /**
      * Filter to orders placed with this method — the admin "awaiting transfer" view combines this with `status=pending`.
      */
@@ -8640,7 +8656,7 @@ export type ExportOrdersParams = {
      */
     orderNumber?: OrderNumberParamParameter;
     status?: OrderStatus;
-    fulfillmentStatus?: OrderFulfillmentStatus;
+    fulfillmentStatus?: OrderFulfillmentFilter;
     paymentMethod?: PaymentMethodId;
     deleted?: boolean;
     createdFrom?: string;

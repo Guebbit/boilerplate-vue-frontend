@@ -25,6 +25,7 @@
         "filter-status": "Stato",
         "filter-status-any": "Tutti",
         "filter-fulfillment-status": "Evasione",
+        "fulfillment-filter-awaiting_shipment": "Da spedire",
         "filter-awaiting-transfer": "In attesa di bonifico",
         "table-caption": "Ordini",
         "button-view-named": "Visualizza ordine {id}",

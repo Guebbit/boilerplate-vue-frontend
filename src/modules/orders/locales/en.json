@@ -25,6 +25,7 @@
         "filter-status": "Status",
         "filter-status-any": "All",
         "filter-fulfillment-status": "Fulfilment",
+        "fulfillment-filter-awaiting_shipment": "Awaiting shipment",
         "filter-awaiting-transfer": "Awaiting bank transfer",
         "table-caption": "Orders",
         "button-view-named": "View order {id}",
