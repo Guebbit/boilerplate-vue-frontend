@@ -56,7 +56,7 @@
         "gen:permission-vocabulary": "tsx scripts/contracts/generate-permission-vocabulary.ts --in contracts/authorization-keys.yaml --out contracts/permission-vocabulary.ts",
         "gen:shared-rules": "tsx scripts/contracts/generate-shared-rules.ts",
         "regenerate": "npm run gen:api && npm run gen:asyncapi && npm run gen:permission-vocabulary && npm run gen:shared-rules && prettier --write contracts/rest",
-        "complete:gates": "npm run check && npm run build && npm run test",
+        "complete:gates": "npm run check && npm run build && npm run docs:build && npm run test",
         "complete": "npm run lint && npm run prettier:check && npm run complete:gates",
         "complete:fix": "npm run lint:fix && npm run lint && npm run prettier:fix && npm run complete:gates",
         "complete:manual": "npm run test:e2e:live",
