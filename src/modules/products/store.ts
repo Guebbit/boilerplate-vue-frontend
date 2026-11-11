@@ -464,7 +464,7 @@ export const useProductsStore = defineStore('products', () => {
      * gets the draft languages on the next call.
      *
      * Calls `listLocales` from `@api` itself rather than reaching `useLocalesStore`: the `locales`
-     * module is optional and publishes no barrel, mirroring the paired backend's rule that
+     * module is optional, mirroring the paired backend's rule that
      * `products` never imports `locales`. `@api` is infrastructure, not a sibling module.
      *
      * A failed fetch (`locales` uninstalled, or unreachable) still leaves a WORKING form: one tab

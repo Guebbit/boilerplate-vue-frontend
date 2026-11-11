@@ -20,7 +20,7 @@ The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
 ## The story
 
-Admin screens over one collection, and a barrel that exists for one reason: the field rules.
+Admin screens over one collection, and a barrel whose one current reader wants the field rules.
 
 `usersSchema` and `usersPasswordSchema` are built on the **generated** request schemas rather than
 hand-written beside them, so _what makes a valid username_ comes from `openapi.yaml` and cannot

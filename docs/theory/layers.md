@@ -99,8 +99,7 @@ covers the registry's validation, not this paragraph — if the two disagree, th
 ### Adding a domain
 
 One folder under `src/modules/` with a `module.ts`, plus one line in `src/modules.ts`. Add an
-`index.ts` when another domain needs something from it: a barrel nobody imports is a promise nobody
-asked for.
+`index.ts` exporting everything it offers a sibling; unused exports are allowed on purpose.
 
 ### Removing a domain
 

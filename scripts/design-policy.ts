@@ -74,12 +74,6 @@ export interface RestrictedClass {
 
 /** The design policy object. */
 export const DESIGN_POLICY = {
-    /**
-     * How many places one arbitrary class may appear in, disabled or not. A second use is a
-     * token, so a copied disable cannot become a habit.
-     */
-    arbitraryRepeatLimit: 1,
-
     /** Rem to px for the canonicaliser, so `max-w-[1280px]` can map to `max-w-7xl`. */
     rootFontSize: 16,
 

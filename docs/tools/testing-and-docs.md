@@ -189,14 +189,14 @@ Measured 2026-08-14 on a 16-core / 30 GB machine. They are here so a number that
 as a regression rather than as "tests feel slow lately" — treat them as an order of magnitude, not a
 promise.
 
-| Command                   | Time       | What it runs                                                                             |
-| ------------------------- | ---------- | ---------------------------------------------------------------------------------------- |
-| `npm run test:unit`       | **~8s**    | 70 files, 1043 tests, jsdom                                                              |
-| `npm run test:e2e`        | **~3m30s** | 17 specs, 136 tests, sharded across `E2E_SHARDS` Cypress processes                       |
-| `npm run complete`        | **~5m**    | the gate: lint + both spec lints + format + contract identity + build + all of the above |
-| `npm run test:mutation`   | ~9m        | 2182 mutants, incremental; nightly in CI                                                 |
-| `npm run test:e2e:visual` | ~4m        | pixel diffs — pinned CI image, not the gate                                              |
-| `npm run test:e2e:live`   | ~13m       | the full suite against a real backend — `complete:manual`, sequential                    |
+| Command                   | Time       | What it runs                                                           |
+| ------------------------- | ---------- | ---------------------------------------------------------------------- |
+| `npm run test:unit`       | **~8s**    | 70 files, 1043 tests, jsdom                                            |
+| `npm run test:e2e`        | **~3m30s** | 17 specs, 136 tests, sharded across `E2E_SHARDS` Cypress processes     |
+| `npm run complete`        | **~5m**    | the gate: lint + format + contract identity + build + all of the above |
+| `npm run test:mutation`   | ~9m        | 2182 mutants, incremental; nightly in CI                               |
+| `npm run test:e2e:visual` | ~4m        | pixel diffs — pinned CI image, not the gate                            |
+| `npm run test:e2e:live`   | ~13m       | the full suite against a real backend — `complete:manual`, sequential  |
 
 **Cypress is the gate**, and the reason `test:e2e` is sharded. Sequentially those 17 specs take
 **12m54s** on one core; `scripts/e2e/run-shards.ts` splits them across processes sharing one preview server.

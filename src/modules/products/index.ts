@@ -1,16 +1,22 @@
 /**
  * @module
- * Products — public barrel: narrow handles on the products store, never the store itself. The
- * composable that joins id-only lines (cart, wishlist) to their product records, the shelf-state
- * rank, and the cache drop a stock-moving write calls. The only surface a sibling module may
- * import — lint enforces that reaching `./store` directly from another module is an error, not a
- * shortcut.
+ * Products — public barrel: everything this module offers a sibling to import.
  *
- * Keep the surface narrow. Each export here is a promise to every other module that this shape
- * will not move, so add one only when a sibling genuinely needs it. Specs reach the store through
- * `src/modules/products/tests/products-store.ts`.
+ * Unused exports are allowed on purpose: an export nobody imports yet costs nothing, and a missing
+ * one makes the next author copy the logic.
+ *
+ * Never published: views, routes, the manifest, `response-schemas.ts` and locales, plus
+ * `schemas.ts` unless a sibling imports it (it pulls the generated Zod contract into the entry
+ * chunk, which `tests/cross-cutting/entry-chunk-budget.spec.ts` budgets).
+ * The rule: `docs/theory/strategic-ddd.md` §5.
  */
 
-export { invalidateProductsCache } from './store';
-export { useProductLines } from './composables/use-product-lines';
-export { shelfStateOf } from './domain';
+export * from './release-date';
+export * from './store';
+export * from './translation-tab-errors';
+export * from './translations-body';
+export * from './composables/use-product-lines';
+export * from './composables/use-release-date-confirm';
+export * from './composables/use-translated-entity-form';
+export * from './domain';
+export { default as ProductCard } from './components/ProductCard.vue';
