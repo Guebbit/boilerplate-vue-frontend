@@ -50,9 +50,20 @@ let responses: Record<string, unknown>;
 /**
  * The reject envelope `onResponseReject` builds, which is the only shape a store ever catches.
  */
-const rejectWith = (status: number, message: string) =>
+const rejectWith = (status: number, message: string, code = 'STUB_ERROR') =>
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
-    Promise.reject(aProblem(status, [{ code: 'STUB_ERROR', message }]));
+    Promise.reject(aProblem(status, [{ code, message }]));
+
+/** A stubbed refusal that carries the API's own `errors[].code`, unlike a bare `Error` (a 500). */
+interface Declined {
+    status: number;
+    code: string;
+    message: string;
+}
+
+/** Whether a canned response is a {@link Declined} refusal. */
+const isDeclined = (value: unknown): value is Declined =>
+    typeof value === 'object' && value !== null && 'code' in value && 'status' in value;
 
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
@@ -60,6 +71,7 @@ vi.mock('@/infrastructure/http', () => ({
         const answer = responses[key];
         if (answer === undefined) return rejectWith(404, `Not found: ${key}`);
         if (answer instanceof Error) return rejectWith(500, answer.message);
+        if (isDeclined(answer)) return rejectWith(answer.status, answer.message, answer.code);
         return Promise.resolve(parseOrvalFixture(config.method, config.url, answer));
     })
 }));
@@ -286,6 +298,36 @@ describe('the Idempotency-Key on a shipment write', () => {
         vi.mocked(orvalMutator).mockClear();
 
         await expect(store.ship('fo1')).rejects.toBeDefined();
+        const first = await keyOfFirstCall();
+        const urls = vi.mocked(orvalMutator).mock.calls.map(([config]) => config.url);
+        vi.mocked(orvalMutator).mockClear();
+        responses['POST /delivery/fulfillment-orders/fo1/shipments'] = aShipment({ id: 's2' });
+        await store.ship('fo1');
+
+        expect(urls).toEqual([
+            '/delivery/fulfillment-orders/fo1/shipments',
+            '/orders/o1/fulfillment-orders',
+            '/orders/o1/shipments'
+        ]);
+        expect(await keyOfFirstCall()).not.toBe(first);
+    });
+});
+
+describe('ship, when the first attempt has an unknown outcome', () => {
+    it('re-reads the order, and sends again only with a new key', async () => {
+        const { orvalMutator } = await import('@/infrastructure/http');
+        const store = useDeliveryStore();
+        await store.fetchFulfillmentForOrder('o1');
+        responses['POST /delivery/fulfillment-orders/fo1/shipments'] = {
+            status: 409,
+            code: 'IDEMPOTENCY_OUTCOME_UNKNOWN',
+            message: 'Outcome unknown'
+        };
+        vi.mocked(orvalMutator).mockClear();
+
+        await expect(store.ship('fo1')).rejects.toMatchObject({
+            errors: [{ code: 'IDEMPOTENCY_OUTCOME_UNKNOWN' }]
+        });
         const first = await keyOfFirstCall();
         const urls = vi.mocked(orvalMutator).mock.calls.map(([config]) => config.url);
         vi.mocked(orvalMutator).mockClear();

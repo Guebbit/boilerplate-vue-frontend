@@ -75,7 +75,9 @@ shipment's. The one
 order-level control left is the optional "Mark in progress" (`Order.actions.process`): shipping a `paid`
 order starts it by itself. A shipment has one arrival button (`actions.deliver`); there is no forced
 variant. Ship and fulfil each keep one `Idempotency-Key` per fulfillment order: a lost connection or an
-in-flight 409 resends it, any other answer spends it and re-reads the order. A row shows a "Tracking code missing" chip while the server says
+in-flight 409 resends it, any other answer spends it and re-reads the order. Ship is a do-not-retry write, so
+`409 IDEMPOTENCY_OUTCOME_UNKNOWN` (the first attempt began and never reported; the server ran nothing
+again and told staff) re-reads the order and shows the server's message: only a human click sends again, with a new key. A row shows a "Tracking code missing" chip while the server says
 `awaitingTracking`, and "Sent to: …" when its `destination` differs from where the order ships now
 (the page hands the order's address line down).
 

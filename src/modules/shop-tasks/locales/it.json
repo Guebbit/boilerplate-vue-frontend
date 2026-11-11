@@ -3,6 +3,7 @@
         "staff": {
             "purchase-hold-placed": "Il checkout di un acquirente è sospeso fino al {until} dopo ripetuti annullamenti. Controlla l'account se sospetti un abuso.",
             "return-requested": "Un acquirente ha chiesto di restituire della merce dell'ordine #{order}. La richiesta attende una decisione.",
+            "outcome-unknown": "L'operazione {what} su {subject} è iniziata {since} e il server non ha mai riportato come è finita. Non è stata rieseguita. Controlla il risultato prima di agire di nuovo.",
             "transfers-due": "{n} bonifici sono in scadenza. Apri gli ordini per sollecitarli.",
             "preorders-late": "{n} preordini hanno superato la data prevista con unità ancora dovute.",
             "delivery-holds-open": "{n} ordini sono trattenuti da troppo tempo. Risolvi il motivo o sbloccali.",
@@ -13,6 +14,13 @@
             "awaiting-tracking": "{n} pacchi spediti non hanno ancora il codice di tracking.",
             "undelivered": "{n} pacchi sono stati spediti e mai segnati come arrivati. Finché non lo sono, il termine di recesso dell'acquirente non è iniziato.",
             "stale-refunds": "{n} rimborsi sono aperti da troppo tempo. Controllali con il provider."
+        },
+        "outcome-order": "ordine n. {number}",
+        "outcome-operation": {
+            "refund": "rimborso",
+            "ship": "spedizione",
+            "receive-stock": "carico di magazzino",
+            "adjust-stock": "rettifica di magazzino"
         },
         "cart-line-removed": "Rimosso dal carrello perché non più disponibile: {name}.",
         "wishlist-item-removed": "Rimosso dalla lista dei desideri perché non più disponibile: {name}.",

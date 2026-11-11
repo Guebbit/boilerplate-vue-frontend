@@ -688,6 +688,31 @@ describe('the refund key after a failure', () => {
             });
     });
 
+    it('re-reads the payment when the first attempt has an unknown outcome, and sends again only with a new key', () => {
+        responses['POST /payments/payment-1/refunds'] = {
+            status: 409,
+            code: 'IDEMPOTENCY_OUTCOME_UNKNOWN',
+            message: 'Outcome unknown'
+        };
+        const store = usePaymentsStore();
+
+        return expect(store.refundPayment(TARGET_1))
+            .rejects.toMatchObject({ errors: [{ code: 'IDEMPOTENCY_OUTCOME_UNKNOWN' }] })
+            .then(() => {
+                // The refund may or may not be there: the page reads the payment before anything else.
+                expect(requestedUrls()).toEqual([
+                    '/payments/payment-1/refunds',
+                    '/orders/order-1/payments'
+                ]);
+                // Nothing re-sent it: the next refund is a human click, with a new key.
+                return store.refundPayment(TARGET_1).catch(() => undefined);
+            })
+            .then(() => {
+                expect(refundKeyAt(1)).toEqual(expect.any(String));
+                expect(refundKeyAt(1)).not.toBe(refundKeyAt(0));
+            });
+    });
+
     it('keeps the key after a lost connection, so the retry replays the first attempt', () => {
         responses['POST /payments/payment-1/refunds'] = {
             status: 0,

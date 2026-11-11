@@ -53,6 +53,41 @@ const orderTarget = (
 ): NoticeTarget => ({ route: 'OrderTarget', params: { id: notice.params.orderId } });
 
 /**
+ * The notice of a do-not-retry write whose outcome nobody knows, as it reads: what the write was
+ * and what it was on (an order's number printed as "order no. …", a product's name), and when it began.
+ *
+ * @param notice - The notice.
+ * @param context - The bell's translate and date formatter.
+ */
+const describeOutcomeUnknown = (
+    notice: ShopNotice<'shop-tasks.staff.outcome-unknown'>,
+    { translate, formatDate }: NoticeContext
+): string => {
+    const { operation, subjectName, since } = notice.params;
+    return translate(notice.code, {
+        what: translate(`shop-tasks.outcome-operation.${operation}`),
+        subject:
+            operation === 'refund' || operation === 'ship'
+                ? translate('shop-tasks.outcome-order', { number: subjectName })
+                : subjectName,
+        since: formatDate(since)
+    });
+};
+
+/**
+ * Where an unknown-outcome notice links: the order a refund or a ship was about, the stock board for
+ * a stock write. Both are where the staff member reads the result back.
+ *
+ * @param notice - The notice.
+ */
+const outcomeUnknownTarget = (
+    notice: ShopNotice<'shop-tasks.staff.outcome-unknown'>
+): NoticeTarget =>
+    notice.params.operation === 'receive-stock' || notice.params.operation === 'adjust-stock'
+        ? { route: 'InventoryLedger' }
+        : { route: 'OrderTarget', params: { id: notice.params.subjectId } };
+
+/**
  * The entry of a summary row: "{n} things need you", linking to the filtered list the server named.
  */
 const summaryNotice: AppNotice = {
@@ -112,6 +147,10 @@ export const shopNotices: Record<string, AppNotice> = {
             route: 'ReturnTarget',
             params: { id: notice.params.returnId }
         })
+    },
+    'shop-tasks.staff.outcome-unknown': {
+        describe: describeOutcomeUnknown,
+        target: outcomeUnknownTarget
     },
     ...summaryNotices
 };

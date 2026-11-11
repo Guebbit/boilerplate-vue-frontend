@@ -10,6 +10,7 @@ import { listPreorderLevelsQueryPageSizeMax } from '@api/schemas';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
+import { isOutcomeUnknown, isTransportFailure } from '@/infrastructure/utils/errors.ts';
 import {
     adjustStock,
     listInventoryLevels,
@@ -186,6 +187,29 @@ export const useInventoryStore = defineStore('inventory', () => {
         );
 
     /**
+     * After a stock write that failed with a server fault or an unknown outcome, reloads what the
+     * write may have changed before rethrowing: the counter may have moved before the 500, or the
+     * first attempt may have committed and never reported, and either way the next click must start
+     * from what the server holds. A refusal that says nothing about the write is rethrown as it is.
+     * The reload is best effort: its own failure must not hide the error being reported.
+     *
+     * @param error - The rejected value, rethrown unchanged.
+     * @returns A promise that always rejects with `error`.
+     * @throws The original error, once the views have been reloaded.
+     */
+    const rereadAfterFault = (error: unknown): Promise<never> =>
+        (!isTransportFailure(error) &&
+        ((error as { status: number }).status >= 500 || isOutcomeUnknown(error))
+            ? reloadAfterWrite(undefined).then(
+                  () => undefined,
+                  () => undefined
+              )
+            : Promise.resolve()
+        ).then(() => {
+            throw error;
+        });
+
+    /**
      * Receives a delivery, then reloads what it changed.
      *
      * @param productId - The product the units arrived for.
@@ -203,7 +227,7 @@ export const useInventoryStore = defineStore('inventory', () => {
                 })
                 .catch((error: unknown) => {
                     keeper.settle(error);
-                    throw error;
+                    return rereadAfterFault(error);
                 })
         );
     };
@@ -226,7 +250,7 @@ export const useInventoryStore = defineStore('inventory', () => {
                 })
                 .catch((error: unknown) => {
                     keeper.settle(error);
-                    throw error;
+                    return rereadAfterFault(error);
                 })
         );
     };

@@ -97,7 +97,7 @@ is looking. `failureReason` is a closed set (declined, insufficient funds, expir
 card, lost or stolen card, provider unavailable, unknown), each worded in the locale files — the
 raw provider text stays in the server's logs. The drawer's refund button is the existing
 `POST /payments/{id}/refunds`, shown only while `actions.refund` is true; a partial refund
-and recording an offline payment stay on the order's page.
+and recording an offline payment stay on the order's page. A refund is a do-not-retry write: `409 IDEMPOTENCY_OUTCOME_UNKNOWN` (the first attempt began and never reported) re-reads the payment, since the refund may or may not be there, and shows the server's message; only a human click sends again, with a new key.
 
 **Hand-paid refunds are confirmed, not guessed.** Cash and transfers have no provider to ask, so a
 refund on them only opens a `pending` record (the panel says an operator has to hand the money back).

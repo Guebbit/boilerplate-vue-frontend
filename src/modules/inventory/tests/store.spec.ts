@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useInventoryStore } from '../store.ts';
 import { orvalMutator } from '@/infrastructure/http';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
@@ -296,6 +297,68 @@ describe('the Idempotency-Key on a stock write', () => {
             })
             .then((first) => {
                 expect(keyOfFirstCall()).toBe(first);
+            });
+    });
+});
+
+/**
+ * Rejects the next write with the API's error envelope, the shape a store's `catch` receives.
+ *
+ * @param status - The HTTP status answered.
+ * @param code - The `errors[].code`.
+ */
+const rejectNextWrite = (status: number, code: string) => {
+    vi.mocked(orvalMutator).mockRejectedValueOnce(aProblem(status, [{ code, message: code }]));
+};
+
+describe.each([
+    ['a receipt', (store: ReturnType<typeof useInventoryStore>) => store.receive('p1', 20)],
+    ['an adjustment', (store: ReturnType<typeof useInventoryStore>) => store.adjust('p1', -3)]
+])('%s that failed', (_label, write) => {
+    it.each([
+        ['a server fault', 500, 'INTERNAL_SERVER_ERROR'],
+        ['an unknown outcome', 409, 'IDEMPOTENCY_OUTCOME_UNKNOWN']
+    ])(
+        'after %s reloads the ledger and the board before the caller may press again',
+        (_case, status, code) => {
+            rejectNextWrite(status, code);
+            const store = useInventoryStore();
+
+            return expect(write(store))
+                .rejects.toMatchObject({ status })
+                .then(() => {
+                    expect(requestedUrls().slice(-2)).toEqual([
+                        '/inventory/movements',
+                        '/inventory/levels'
+                    ]);
+                });
+        }
+    );
+
+    it('after a refusal that says nothing about the write, reloads nothing', () => {
+        rejectNextWrite(422, 'VALIDATION_ERROR');
+        const store = useInventoryStore();
+
+        return expect(write(store))
+            .rejects.toMatchObject({ status: 422 })
+            .then(() => {
+                expect(requestedUrls()).toHaveLength(1);
+            });
+    });
+
+    it('after an unknown outcome sends again only with a new key', () => {
+        rejectNextWrite(409, 'IDEMPOTENCY_OUTCOME_UNKNOWN');
+        const store = useInventoryStore();
+
+        return write(store)
+            .catch(() => undefined)
+            .then(() => {
+                const first = keyOfFirstCall();
+                vi.mocked(orvalMutator).mockClear();
+                return write(store).then(() => first);
+            })
+            .then((first) => {
+                expect(keyOfFirstCall()).not.toBe(first);
             });
     });
 });
