@@ -10,9 +10,9 @@ name: CI
 #
 # The jobs fall into four groups:
 #   - style           commitlint, lint, prettier
-#   - contract        lint-openapi, lint-asyncapi, api-freshness, asyncapi-types-freshness,
-#                     spec-identity — the spec is valid, its generated output is committed and
-#                     current, and the paired backend still agrees with it
+#   - contract        api-freshness, asyncapi-types-freshness, spec-identity — the spec is a
+#                     copy of the backend's, its generated output is committed and current, and the
+#                     paired backend still agrees with it
 #   - correctness     typecheck, build, test-unit, test-e2e
 #   - supply chain    audit — report-only: it is not in the `ci` job's `needs:`
 #
@@ -104,43 +104,6 @@ jobs:
 
             - name: Check formatting
               run: npm run prettier:check
-
-    lint-openapi:
-        # Spectral lints openapi.yaml against spectral.yaml, the ruleset the paired backend lints
-        # its identical copy under.
-        runs-on: ubuntu-latest
-        timeout-minutes: 10
-        permissions:
-            contents: read
-        steps:
-            - name: Checkout
-              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-              with:
-                  persist-credentials: false # no step after the checkout needs the token on disk
-
-            - name: Setup Node and install
-              uses: ./.github/actions/setup-node-and-install
-
-            - name: Lint OpenAPI spec
-              run: npm run lint:openapi
-
-    lint-asyncapi:
-        # The same, for the realtime contract behind the SSE types.
-        runs-on: ubuntu-latest
-        timeout-minutes: 10
-        permissions:
-            contents: read
-        steps:
-            - name: Checkout
-              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-              with:
-                  persist-credentials: false # no step after the checkout needs the token on disk
-
-            - name: Setup Node and install
-              uses: ./.github/actions/setup-node-and-install
-
-            - name: Lint AsyncAPI spec
-              run: npm run lint:asyncapi
 
     asyncapi-types-freshness:
         # Verify the committed generated AsyncAPI types are up-to-date with asyncapi.yaml.
@@ -677,8 +640,6 @@ jobs:
             - commitlint
             - lint
             - prettier
-            - lint-openapi
-            - lint-asyncapi
             - asyncapi-types-freshness
             - docs-references
             - docker-image

@@ -28,7 +28,6 @@ flowchart TD
 
     subgraph CONTRACT["Contract"]
         ORVAL["Orval"]
-        SPECTRAL["Spectral"]
         MODELINA["Modelina"]
     end
 
@@ -59,7 +58,7 @@ flowchart TD
     classDef obs fill:#fce7f3,stroke:#db2777,color:#111827;
     class VITE,TS,TW build;
     class VUE,PINIA,ROUTER,I18N,VUETIFY,AXIOS,ZOD app;
-    class ORVAL,SPECTRAL,MODELINA contract;
+    class ORVAL,MODELINA contract;
     class VITEST,VTU,CY,MSW,AXE,FC,STRYKER test;
     class FARO,UMAMI obs;
 ```
@@ -180,18 +179,6 @@ this diagram exists to prevent.
 **In this repo.** Used only in the transport-layer unit specs (`msw/node` stands in for a server). Dev and e2e run against the paired backend's demo profile instead — see [The demo profile](./demo-profile.md).
 
 → [The demo profile](./demo-profile.md)
-
----
-
-### Spectral
-
-**What it is.** Spectral is a linter for OpenAPI documents. It applies a ruleset and reports violations — missing descriptions, inconsistent error codes, undefined refs.
-
-**Problem it solves.** A syntactically valid OpenAPI document can still be incomplete. Spectral catches these in CI before they cause runtime surprises.
-
-**In this repo.** `npm run lint:openapi` runs Spectral against `openapi.yaml` using `spectral.yaml`.
-
-→ [OpenAPI Workflow](../api/openapi-workflow.md)
 
 ---
 

@@ -57,7 +57,7 @@ The `api-freshness` job regenerates the client and fails if the committed output
 - **The pathspec must list every orval output.** A pathspec naming a directory that does not exist matches nothing: `git diff` exits 0 and the job passes without checking anything. If you add or retarget an output block in `orval.config.ts`, update the pathspec in the same commit.
 - **Formatting must be normalised before diffing.** Orval emits 2-space indentation while this repo's Prettier config uses 4, and the committed output is formatted. Without `npx prettier --write` before the diff, the job reports thousands of lines of pure indentation churn on every run.
 
-The AsyncAPI side has the matching pair of jobs, `lint-asyncapi` and `asyncapi-types-freshness`.
+The AsyncAPI side has the matching job, `asyncapi-types-freshness`.
 
 If you change this job, verify it can actually fail: edit `openapi.yaml` without regenerating and confirm the job goes red. A freshness guard nobody has seen fail is indistinguishable from one that does nothing.
 
@@ -71,7 +71,6 @@ If you change this job, verify it can actually fail: edit `openapi.yaml` without
 | Tool                                                        | Job                                                    |
 | ----------------------------------------------------------- | ------------------------------------------------------ |
 | [`openapi.yaml`](https://spec.openapis.org/oas/latest.html) | single contract file (OpenAPI 3.x)                     |
-| [Spectral](https://stoplight.io/open-source/spectral)       | lint the spec against `spectral.yaml` rules            |
 | [orval](https://orval.dev)                                  | generate `contracts/rest/` — axios client, Zod schemas |
 
 ## Generated output (`contracts/rest/`)
@@ -164,7 +163,6 @@ that call inconsistent with the other two dozen.
 ## Commands
 
 ```bash
-npm run lint:openapi   # lint openapi.yaml with Spectral
 npm run gen:api         # regenerate contracts/rest/ from openapi.yaml
 ```
 
@@ -177,7 +175,6 @@ There is no hand-written mock of the new endpoint to update: dev and e2e run aga
 ## Useful links
 
 - [OpenAPI 3.1 specification](https://spec.openapis.org/oas/v3.1.0)
-- [Spectral rulesets](https://docs.stoplight.io/docs/spectral/01baf06bdd05a-rulesets)
 - [orval documentation](https://orval.dev/guides/overview)
 - [orval configuration reference](https://orval.dev/reference/configuration/overview)
 

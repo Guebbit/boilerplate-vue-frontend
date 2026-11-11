@@ -133,7 +133,7 @@ describe('SHARED_FILES', () => {
         expect(frontendPaths).toContain('scripts/e2e/tls/webhook-sink-cert.pem');
         expect(frontendPaths).toContain('scripts/e2e/tls/webhook-sink-key.pem');
         // And nothing else. Eight files, all produced in the backend, which is what makes a fork
-        // answerable at all — `spectral.yaml` and the three shared scripts are gone, along with
+        // answerable at all — the three shared scripts are gone, along with
         // the Node backend's own copy of them.
         expect(frontendPaths.size).toBe(8);
     });

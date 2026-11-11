@@ -66,16 +66,14 @@ import { OBSERVABILITY_CHANNELS } from '@types';
 
 ## Tooling used here
 
-| Tool                                                  | Job                                                                                               |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `@asyncapi/parser`                                    | validates `asyncapi.yaml` (`npm run lint:asyncapi`, via `scripts/contracts/validate-asyncapi.ts`) |
-| `@asyncapi/modelina`                                  | generates TypeScript types from AsyncAPI schemas                                                  |
-| custom `scripts/contracts/generate-asyncapi-types.ts` | runs modelina + appends the channel constants and the SSE payload map                             |
+| Tool                                                  | Job                                                                   |
+| ----------------------------------------------------- | --------------------------------------------------------------------- |
+| `@asyncapi/modelina`                                  | generates TypeScript types from AsyncAPI schemas                      |
+| custom `scripts/contracts/generate-asyncapi-types.ts` | runs modelina + appends the channel constants and the SSE payload map |
 
 ## Commands
 
 ```bash
-npm run lint:asyncapi         # validate asyncapi.yaml
 npm run gen:asyncapi          # regenerate contracts/asyncapi.generated.ts
 npm run check                 # among its checks: fail if the committed types are not what asyncapi.yaml generates
 ```

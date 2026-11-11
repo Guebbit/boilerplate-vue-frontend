@@ -7,7 +7,6 @@ This section explains the API contracts and how the FE consumes them.
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 65}}}%%
 flowchart LR
-    Spec[openapi.yaml] --> Lint[Spectral\nnpm run lint:openapi]
     Spec --> Generate[Orval\nnpm run gen:api]
     Generate --> Client[contracts/rest/index.ts\ntyped axios functions]
     Generate --> Schemas[contracts/rest/schemas.zod.ts\nZod schemas]
@@ -19,13 +18,14 @@ flowchart LR
     classDef generated fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef app fill:#ede9fe,stroke:#7c3aed,color:#111827;
     class Spec contract;
-    class Lint,Generate tooling;
+    class Generate tooling;
     class Client,Schemas generated;
     class Stores app;
 ```
 
 ## What matters most here
 
+- The contract is produced and linted by the backend. This repo (which may pair with any backend) only verifies its copy is identical (`spec-identity`) and generates from it.
 - [`openapi.yaml`](./openapi-workflow.md) is the source of truth for REST — never hand-write what can be generated.
 - [`asyncapi.yaml`](./asyncapi-workflow.md) is the source of truth for SSE contracts.
 - The generated `contracts/rest/` folder is **read-only** — `npm run gen:api` overwrites it entirely.
