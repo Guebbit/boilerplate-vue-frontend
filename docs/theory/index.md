@@ -94,8 +94,8 @@ flowchart LR
     class S,V,D inner;
 ```
 
-A module nothing imports has no barrel at all — `orders` is that case, and the absence is the
-point.
+Every module has a barrel, including one nothing imports yet: unused exports are allowed on
+purpose, so the next author finds what they need there instead of copying it.
 
 ## Main strategies already present in the code
 

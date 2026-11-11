@@ -72,7 +72,7 @@ src/modules/<name>/
     routes.ts                  the domain's route records
     views/*.vue                the pages those routes render
     store.ts                   Pinia state, if it has any
-    index.ts                   ONLY if a sibling imports this module
+    index.ts                   the barrel: everything a sibling may import
     domain/                    pure business rules — lint-guaranteed framework-free
     response-schemas.ts         the response schemas for the endpoints it calls
     locales/{en,it}.json       its dictionaries
@@ -204,8 +204,8 @@ npm run build          # vue-tsc + vite build
 npm run test:unit
 ```
 
-Add an `index.ts` barrel **only** when another domain needs something from it. `orders` has none:
-no sibling imports it, and an empty barrel is a promise nobody asked for.
+Every module has an `index.ts` barrel exporting everything it offers a sibling: its stores,
+composables, components and `domain/` rules. Unused exports are allowed on purpose.
 
 ::: warning A spec that touches http or i18n must wire the modules itself
 `infrastructure` may not import `@/modules`, so `main.ts` hands the response schemas and the locale
