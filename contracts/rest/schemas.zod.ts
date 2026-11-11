@@ -33,10 +33,10 @@
  * answers no operation declares: a path that matches nothing (404) and a method a path does
  * not offer (405, with `Allow`). The few non-JSON answers (probes, the Prometheus text,
  * `security.txt`) are named on their own operations.
- * Node's HTTP server answers four statuses itself, outside Express, with no body: 400 and 431
- * for a malformed request line or headers (before any route), and 408 (request not received
- * within `NODE_HTTP_REQUEST_TIMEOUT_MS`), 413 (chunk extension over 16 KiB) and 400 (malformed
- * body framing) mid-request, after the route was reached.
+ * The HTTP server layer may answer a few statuses itself, outside the application, with no
+ * body: 400 and 431 for a malformed request line or headers (before any route), and 408
+ * (request not received in time), 413 (oversized chunk extension) and 400 (malformed body
+ * framing) mid-request, after the route was reached.
  *
  * The header is intentionally not declared per operation: it applies to all of them and
  * clients set it once in an interceptor, so declaring it on every operation would only add a
@@ -128,8 +128,8 @@ export const GetLivezResponse = zod.unknown();
 export const GetReadyzResponse = zod.unknown();
 /**
  * RFC 9116 `security.txt`: where an outside reporter sends a vulnerability.
- * Published only when the deployment sets `NODE_SECURITY_CONTACT` and
- * `NODE_SECURITY_EXPIRES`; a fork that has not opted in answers 404 and publishes
+ * Published only when the deployment configures a security contact and
+ * an expiry date; a fork that has not opted in answers 404 and publishes
  * nothing. Plain text, not JSON, because the format is fixed by the RFC.
  * @summary Vulnerability disclosure contact
  */

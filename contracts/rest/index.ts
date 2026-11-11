@@ -33,10 +33,10 @@
  * answers no operation declares: a path that matches nothing (404) and a method a path does
  * not offer (405, with `Allow`). The few non-JSON answers (probes, the Prometheus text,
  * `security.txt`) are named on their own operations.
- * Node's HTTP server answers four statuses itself, outside Express, with no body: 400 and 431
- * for a malformed request line or headers (before any route), and 408 (request not received
- * within `NODE_HTTP_REQUEST_TIMEOUT_MS`), 413 (chunk extension over 16 KiB) and 400 (malformed
- * body framing) mid-request, after the route was reached.
+ * The HTTP server layer may answer a few statuses itself, outside the application, with no
+ * body: 400 and 431 for a malformed request line or headers (before any route), and 408
+ * (request not received in time), 413 (oversized chunk extension) and 400 (malformed body
+ * framing) mid-request, after the route was reached.
  *
  * The header is intentionally not declared per operation: it applies to all of them and
  * clients set it once in an interceptor, so declaring it on every operation would only add a
@@ -46,14 +46,14 @@
  */
 import { orvalMutator } from '../../src/infrastructure/http/index.js';
 /**
- * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
  * @minimum 1
  * @maximum 10000
  */
 export type Page = number;
 
 /**
- * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+ * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
  * @minimum 1
  * @maximum 100
  */
@@ -361,10 +361,10 @@ export interface Config {
     /** Registry names this deployment holds OAuth credentials for, e.g. `["google", "github"]`. Empty when none are configured. */
     oauthProviders: string[];
     antibot: AntibotConfig;
-    /** The one customer-facing support address (`NODE_SUPPORT_EMAIL`). The contact form's mail goes there and customers' replies come back to it; show it as "write to us at". */
+    /** The one customer-facing support address. The contact form's mail goes there and customers' replies come back to it; show it as "write to us at". */
     supportEmail: string;
     operator: Operator;
-    /** Which text of the Terms is in force (`NODE_TERMS_VERSION`, `1` by default). An account stores the version it accepted beside the date (`User.termsVersion`). */
+    /** Which text of the Terms is in force (`1` by default). An account stores the version it accepted beside the date (`User.termsVersion`). */
     termsVersion: string;
 }
 
@@ -7869,7 +7869,7 @@ export type PreconditionFailedResponse = Problem;
 export type ValidationErrorResponse = Problem;
 
 /**
- * The request body is larger than this deployment accepts: a JSON body over `NODE_JSON_BODY_LIMIT` (100kb by default), an uploaded file over `NODE_MAX_UPLOAD_BYTES`, or a multipart field value over 100 KB. Refused by the body parser or the upload middleware, which is why it is declared for every body-accepting operation rather than by hand. The other multipart limits (counts, shapes) answer `400`.
+ * The request body is larger than this deployment accepts: a JSON body over the configured JSON body limit (100 KB by default), an uploaded file over the configured upload limit, or a multipart field value over 100 KB. Refused by the body parser or the upload middleware, which is why it is declared for every body-accepting operation rather than by hand. The other multipart limits (counts, shapes) answer `400`.
  */
 export type PayloadTooLargeResponse = Problem;
 
@@ -7884,7 +7884,7 @@ export type UnsupportedMediaTypeResponse = Problem;
 export type TooManyRequestsResponse = Problem;
 
 /**
- * A dependency the request needed (Mongo, Redis) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from.
+ * A dependency the request needed (the database, the cache) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from.
  */
 export type ServiceUnavailableResponse = Problem;
 
@@ -7914,7 +7914,7 @@ export type ForbiddenReplayableResponse = Problem;
 export type ConflictReplayableResponse = Problem;
 
 /**
- * The request body is larger than this deployment accepts: a JSON body over `NODE_JSON_BODY_LIMIT` (100kb by default), an uploaded file over `NODE_MAX_UPLOAD_BYTES`, or a multipart field value over 100 KB. Refused by the body parser or the upload middleware, which is why it is declared for every body-accepting operation rather than by hand. The other multipart limits (counts, shapes) answer `400`.
+ * The request body is larger than this deployment accepts: a JSON body over the configured JSON body limit (100 KB by default), an uploaded file over the configured upload limit, or a multipart field value over 100 KB. Refused by the body parser or the upload middleware, which is why it is declared for every body-accepting operation rather than by hand. The other multipart limits (counts, shapes) answer `400`.
  */
 export type PayloadTooLargeReplayableResponse = Problem;
 
@@ -7934,7 +7934,7 @@ export type ValidationErrorReplayableResponse = Problem;
 export type InternalErrorReplayableResponse = Problem;
 
 /**
- * A dependency the request needed (Mongo, Redis) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from.
+ * A dependency the request needed (the database, the cache) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from.
  */
 export type ServiceUnavailableReplayableResponse = Problem;
 
@@ -8021,13 +8021,13 @@ export type GetLocaleMessagesParams = {
 
 export type ListLocaleEntriesParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8042,13 +8042,13 @@ export type ListLocaleEntriesParams = {
 
 export type ListAppLocaleEntriesParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8081,13 +8081,13 @@ export type ListObservabilityAuditEntriesParams = {
      */
     since?: string;
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8136,13 +8136,13 @@ export type ListAuditEntriesParams = {
      */
     ownOrder?: boolean;
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8201,13 +8201,13 @@ export type CompleteOAuthLoginParams = {
 
 export type ListUsersParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8253,13 +8253,13 @@ export type DeleteUserByIdParams = {
 
 export type ListTasksParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8288,13 +8288,13 @@ export type ListTasksParams = {
 
 export type ListProductsParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8345,13 +8345,13 @@ export type DeleteProductByIdParams = {
 
 export type ListOrdersParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8415,13 +8415,13 @@ export type DeleteOrderByIdParams = {
 
 export type ListPreorderFulfillmentOrdersParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8458,13 +8458,13 @@ export const ListPreorderFulfillmentOrdersCause = {
 
 export type SummarizePreorderFulfillmentOrdersParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8477,13 +8477,13 @@ export type SummarizePreorderFulfillmentOrdersParams = {
 
 export type ListReturnsParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8500,13 +8500,13 @@ export type GetReturnOptionsParams = {
 
 export type ListInventoryLevelsParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8519,13 +8519,13 @@ export type ListInventoryLevelsParams = {
 
 export type ListPreorderLevelsParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8534,13 +8534,13 @@ export type ListPreorderLevelsParams = {
 
 export type ListStockMovementsParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8557,13 +8557,13 @@ export type ListStockMovementsParams = {
 
 export type ListWebhookSubscriptionsParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8581,13 +8581,13 @@ export type ListWebhookSubscriptionsParams = {
 
 export type ListWebhookDeliveriesParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8598,13 +8598,13 @@ export type ListWebhookDeliveriesParams = {
 
 export type ListApiKeysParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8653,13 +8653,13 @@ export type ExportOrdersParams = {
 
 export type GetOrderTimelineParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8668,13 +8668,13 @@ export type GetOrderTimelineParams = {
 
 export type ListPaymentsParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8713,13 +8713,13 @@ export type ListPaymentsParams = {
 
 export type ListRefundsParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8846,13 +8846,13 @@ export type GetCustomerStatsParams = {
 
 export type ListExamplesParams = {
     /**
-     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded database offset.
      * @minimum 1
      * @maximum 10000
      */
     page?: PageParamParameter;
     /**
-     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless `NODE_SETTINGS_PAGINATION_PAGE_SIZE` sets another). Anything else, 0 included, is a 422; nothing is clamped.
+     * Rows per page, a whole number from 1 to 100. Absent or empty: the deployment's default (10 unless the deployment configures another). Anything else, 0 included, is a 422; nothing is clamped.
      * @minimum 1
      * @maximum 100
      */
@@ -8931,8 +8931,8 @@ export const getReadyz = (options?: SecondParameter<typeof orvalMutator<void>>) 
 
 /**
  * RFC 9116 `security.txt`: where an outside reporter sends a vulnerability.
- * Published only when the deployment sets `NODE_SECURITY_CONTACT` and
- * `NODE_SECURITY_EXPIRES`; a fork that has not opted in answers 404 and publishes
+ * Published only when the deployment configures a security contact and
+ * an expiry date; a fork that has not opted in answers 404 and publishes
  * nothing. Plain text, not JSON, because the format is fixed by the RFC.
  * @summary Vulnerability disclosure contact
  */
