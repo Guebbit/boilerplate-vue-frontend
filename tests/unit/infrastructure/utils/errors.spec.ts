@@ -4,6 +4,7 @@ import {
     getErrorMessage,
     rethrowUnlessAbsent,
     absentIs,
+    isOutcomeUnknown,
     isPreconditionFailed,
     isTransportFailure,
     notifyErrorMessages
@@ -150,6 +151,25 @@ describe('isTransportFailure', () => {
      */
     it('treats a numeric zero status as a transport failure, not an answer', () => {
         expect(isTransportFailure({ status: 0 })).toBe(true);
+    });
+});
+
+describe('isOutcomeUnknown', () => {
+    it("is true for the API's 409 IDEMPOTENCY_OUTCOME_UNKNOWN", () => {
+        expect(
+            isOutcomeUnknown({ status: 409, errors: [{ code: 'IDEMPOTENCY_OUTCOME_UNKNOWN' }] })
+        ).toBe(true);
+    });
+
+    it.each([
+        ['an in-flight 409', { status: 409, errors: [{ code: 'IDEMPOTENCY_IN_FLIGHT' }] }],
+        ['another 409', { status: 409, errors: [{ code: 'PAYMENT_NOT_REFUNDABLE' }] }],
+        ['a 500', { status: 500, errors: [{ code: 'INTERNAL_SERVER_ERROR' }] }],
+        ['a 409 with no errors', { status: 409 }],
+        ['a lost connection', { status: 0 }],
+        ['no envelope at all', undefined]
+    ])('is false for %s', (_case, error) => {
+        expect(isOutcomeUnknown(error)).toBe(false);
     });
 });
 

@@ -3,6 +3,7 @@
         "staff": {
             "purchase-hold-placed": "A buyer's checkout was paused until {until} after repeated cancellations. Review the account if you suspect abuse.",
             "return-requested": "A buyer asked to return goods from order no. {order}. The request is waiting for a decision.",
+            "outcome-unknown": "The {what} on {subject} began {since} and the server never reported how it ended. It was not run again. Check the result before acting again.",
             "transfers-due": "{n} bank transfers are due soon. Open the orders to chase them.",
             "preorders-late": "{n} preorders are past their expected date with units still owed.",
             "delivery-holds-open": "{n} orders have been held for too long. Fix the reason or release them.",
@@ -13,6 +14,13 @@
             "awaiting-tracking": "{n} shipped parcels still have no tracking code.",
             "undelivered": "{n} parcels were shipped and never marked arrived. Until then the buyer's withdrawal window has not started.",
             "stale-refunds": "{n} refunds have been open too long. Check them against the provider."
+        },
+        "outcome-order": "order no. {number}",
+        "outcome-operation": {
+            "refund": "refund",
+            "ship": "shipment",
+            "receive-stock": "stock receipt",
+            "adjust-stock": "stock adjustment"
         },
         "cart-line-removed": "Removed from your cart because it is no longer available: {name}.",
         "wishlist-item-removed": "Removed from your wishlist because it is no longer available: {name}.",

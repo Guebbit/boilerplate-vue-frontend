@@ -130,6 +130,21 @@ export const keepsIdempotencyKey = (error: unknown): boolean => {
 };
 
 /**
+ * Whether the API answered `409 IDEMPOTENCY_OUTCOME_UNKNOWN`: a do-not-retry write (refund, ship,
+ * stock) whose first attempt began and never reported back. Nothing ran again. The caller re-reads
+ * what the call was about, says so, and only a human click sends again, with a new key (which
+ * {@link keepsIdempotencyKey} already mints, since this is not `IDEMPOTENCY_IN_FLIGHT`).
+ *
+ * @param error - Unknown rejected value, normally the envelope from `onResponseReject`.
+ * @returns `true` when the first attempt's outcome is unknown.
+ */
+export const isOutcomeUnknown = (error: unknown): boolean => {
+    if (isTransportFailure(error)) return false;
+    const { status, errors } = error as { status: number; errors?: { code?: unknown }[] };
+    return status === 409 && errors?.[0]?.code === ERROR_CODES.IDEMPOTENCY_OUTCOME_UNKNOWN;
+};
+
+/**
  * Whether a rejected API call carries one of the given error codes in its reject envelope.
  *
  * For a refusal that means "the record is not as you read it" (another operator settled the same

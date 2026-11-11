@@ -152,9 +152,9 @@ describe('productName', () => {
     });
 });
 
-describe('the shop declares exactly its nineteen codes', () => {
+describe('the shop declares exactly its twenty codes', () => {
     it('lists them', () => {
-        expect(Object.keys(shopNotices)).toHaveLength(19);
+        expect(Object.keys(shopNotices)).toHaveLength(20);
         expect(Object.keys(shopNotices).every((code) => code.startsWith('shop-tasks.'))).toBe(true);
     });
 });
@@ -344,6 +344,47 @@ describe('a work notice for staff', () => {
             route: 'ReturnTarget',
             params: { id: 'r1' }
         });
+    });
+});
+
+describe('a staff notice for a write whose outcome is unknown', () => {
+    const refund = {
+        code: 'shop-tasks.staff.outcome-unknown',
+        params: {
+            operation: 'refund',
+            subjectId: 'o1',
+            subjectName: '2026-000041',
+            since: 'S'
+        }
+    } as const;
+    const stock = {
+        code: 'shop-tasks.staff.outcome-unknown',
+        params: {
+            operation: 'receive-stock',
+            subjectId: 'p1',
+            subjectName: 'Cedar Toy',
+            since: 'S'
+        }
+    } as const;
+
+    it('names an order by its number ("order no.", no hash), so two notices for two orders never read the same', () => {
+        expect(describeOf(refund)).toBe(
+            'shop-tasks.staff.outcome-unknown|what=shop-tasks.outcome-operation.refund|subject=shop-tasks.outcome-order|number=2026-000041|since=S!'
+        );
+    });
+
+    it('names a product by its name, with no hash', () => {
+        expect(describeOf(stock)).toBe(
+            'shop-tasks.staff.outcome-unknown|what=shop-tasks.outcome-operation.receive-stock|subject=Cedar Toy|since=S!'
+        );
+    });
+
+    it('opens the order a refund or a ship was about, and the stock board for stock', () => {
+        expect(entryOf(refund).target?.(full(refund))).toEqual({
+            route: 'OrderTarget',
+            params: { id: 'o1' }
+        });
+        expect(entryOf(stock).target?.(full(stock))).toEqual({ route: 'InventoryLedger' });
     });
 });
 

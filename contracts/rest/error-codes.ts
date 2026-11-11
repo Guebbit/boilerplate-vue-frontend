@@ -106,6 +106,8 @@ export const ERROR_CODES = {
     IDEMPOTENCY_KEY_MISMATCH: 'IDEMPOTENCY_KEY_MISMATCH',
     /** 400 — This route requires an `Idempotency-Key` header and the request carries none. */
     IDEMPOTENCY_KEY_REQUIRED: 'IDEMPOTENCY_KEY_REQUIRED',
+    /** 409 — A do-not-retry operation under this `Idempotency-Key` began and never reported an outcome, so whether it took effect is unknown. Nothing was run again; read the subject back before trying again with a new key. */
+    IDEMPOTENCY_OUTCOME_UNKNOWN: 'IDEMPOTENCY_OUTCOME_UNKNOWN',
     /** 500 — An unexpected server-side failure. Never carries library or stack detail. */
     INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
     /** 409 — The requested on-hand count is below what is already reserved by open orders. */

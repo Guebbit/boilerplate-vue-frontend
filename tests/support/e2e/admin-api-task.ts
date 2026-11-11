@@ -12,6 +12,7 @@
  * more to keep honest than it saves.
  */
 
+import { randomUUID } from 'node:crypto';
 import { loginTotpCodeFor } from '../../../scripts/e2e/totp';
 
 export interface AdminApiRequest {
@@ -155,7 +156,13 @@ const sendWith = (
 ): Promise<Response> =>
     fetch(`${apiUrl}${path}`, {
         method,
-        headers: { ...jsonHeaders, Authorization: `Bearer ${token}` },
+        headers: {
+            ...jsonHeaders,
+            Authorization: `Bearer ${token}`,
+            // A fresh key on every write: the do-not-retry routes (refund, ship, stock receipt and
+            // adjustment) refuse a request without one, and any other route ignores it.
+            ...(method === 'GET' ? {} : { 'Idempotency-Key': randomUUID() })
+        },
         body: body === undefined ? undefined : JSON.stringify(body)
     });
 

@@ -3652,6 +3652,54 @@ export interface NotificationStaffReturnRequested {
     createdAt: string;
 }
 
+export type NotificationStaffOutcomeUnknownCode =
+    (typeof NotificationStaffOutcomeUnknownCode)[keyof typeof NotificationStaffOutcomeUnknownCode];
+
+export const NotificationStaffOutcomeUnknownCode = {
+    'shop-tasksstaffoutcome-unknown': 'shop-tasks.staff.outcome-unknown'
+} as const;
+
+/**
+ * Which write it was.
+ */
+export type OutcomeUnknownParamsOperation =
+    (typeof OutcomeUnknownParamsOperation)[keyof typeof OutcomeUnknownParamsOperation];
+
+export const OutcomeUnknownParamsOperation = {
+    refund: 'refund',
+    'receive-stock': 'receive-stock',
+    'adjust-stock': 'adjust-stock',
+    ship: 'ship'
+} as const;
+
+/**
+ * A do-not-retry write whose first attempt never reported an outcome. Nothing was run again; staff read the subject back and decide.
+ */
+export interface OutcomeUnknownParams {
+    /** Which write it was. */
+    operation: OutcomeUnknownParamsOperation;
+    /** The order's id for a refund or a ship, the product's id for a stock movement. */
+    subjectId: Id;
+    /** The order's number as the buyer knows it (`2026-000041`, shown as `#…`) for a refund or a ship, the product's name for a stock movement. */
+    subjectName: string;
+    /** When the first attempt began. */
+    since: string;
+}
+
+/**
+ * A refund, a ship or a stock movement began and never reported how it ended; staff who do that work check the result.
+ */
+export interface NotificationStaffOutcomeUnknown {
+    id: Id;
+    audience: NotificationAudience;
+    code: NotificationStaffOutcomeUnknownCode;
+    params: OutcomeUnknownParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
 export type NotificationStaffTransfersDueCode =
     (typeof NotificationStaffTransfersDueCode)[keyof typeof NotificationStaffTransfersDueCode];
 
@@ -3888,6 +3936,7 @@ export type Notification =
     | NotificationCartMergeRefused
     | NotificationStaffPurchaseHoldPlaced
     | NotificationStaffReturnRequested
+    | NotificationStaffOutcomeUnknown
     | NotificationStaffTransfersDue
     | NotificationStaffPreordersLate
     | NotificationStaffDeliveryHoldsOpen
@@ -7971,7 +8020,7 @@ export type TextParamParameter = Text;
 export type AntibotChallengeTokenHeaderParameter = string;
 
 /**
- * An opaque, client-generated value (a UUID by convention) that makes a retried write safe, and that this route REQUIRES: a request without it answers 400 (`IDEMPOTENCY_KEY_REQUIRED`) and nothing is written. Repeating the request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write); the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. A 429 is never stored: every budget refuses before the key is claimed, so a retry after `Retry-After` with the same key runs for real.
+ * An opaque, client-generated value (a UUID by convention) that makes a retried write safe, and that this do-not-retry operation (money or stock) REQUIRES: a request without it answers 400 (`IDEMPOTENCY_KEY_REQUIRED`) and nothing is written. Repeating the request with the SAME key and the SAME body replays the first response (`Idempotent-Replayed: true`, no repeated write); the same key with a DIFFERENT body answers 422; a key still being processed by another in-flight request answers 409. A 429 is never stored: every budget refuses before the key is claimed, so a retry after `Retry-After` with the same key runs for real. A key whose first attempt began and never reported an outcome (the server stopped mid-request) is never run again: it answers 409 `IDEMPOTENCY_OUTCOME_UNKNOWN`, stored like any other answer, and the caller reads the subject back before sending the operation again with a NEW key. A 5xx on this operation never carries `Retry-After`: the write may already have taken effect.
  */
 export type RequiredIdempotencyKeyHeaderParameter = string;
 
@@ -12004,7 +12053,7 @@ export const listPaymentMethods = (
  * The 201 is the answer for every outcome of the record the request wrote; its `status` carries the result. `succeeded`: the money is back. `failed`: the provider refused, the record is kept and counts against what is left, and it is either retried by the refund sweep or, when `actions.settleRefundByHand` lists it, final and waiting for the money to be returned another way. `pending`: hand-paid money waiting for an operator. A refusal is never a 5xx. The reason of a refusal (`failureReason`) is sent to `display:Payment` callers only.
  * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleRefundByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it.
  * There is no list at this path: a payment's refunds are listed by `GET /payments/{id}` (`refunds`), and one by `GET /payments/{id}/refunds/{refundId}`.
- * Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. If the first attempt never reported an outcome, the same key answers 409 `IDEMPOTENCY_OUTCOME_UNKNOWN` and runs nothing: read the payment back before refunding again with a new key. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund a payment
  */
 export const createRefund = (
@@ -12156,7 +12205,7 @@ export const summarizePreorderFulfillmentOrders = (
  * Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is optional: a `tracked` method may get its code later, with `PATCH /delivery/shipments/{id}` (`Shipment.awaitingTracking` says who is still waiting). Refuses a fulfillment order that is on hold, closed or canceled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is neither `processing` nor `paid` (`ORDER_NOT_PROCESSING`). From `paid` it moves the order to `processing` itself, in the same transaction, so it also needs `start:Shipment` (403 without it); `POST /orders/{id}/process` stays as an optional "mark in progress". Never ships from `on_hold`.
  * There is no list at this path: an order's shipments are listed by `GET /orders/{id}/shipments`, and one by `GET /delivery/shipments/{id}`.
  *
- * Send an `Idempotency-Key`: a partial ship creates a NEW shipment, so a retry without one (a dropped connection, a double click) would cut a second parcel and take the stock twice. The same key replays the first answer; a 409 means the first request is still running, a 422 means the key was reused with another body.
+ * Requires an `Idempotency-Key` header: a ship creates a NEW shipment, so a retry without one (a dropped connection, a double click) would cut a second parcel and take the stock twice, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. The same key replays the first answer; a 409 `IDEMPOTENCY_IN_FLIGHT` means the first request is still running, a 422 means the key was reused with another body. If the first attempt never reported an outcome, the same key answers 409 `IDEMPOTENCY_OUTCOME_UNKNOWN` and runs nothing: read the order's shipments back before shipping again with a new key.
  * @summary Ship some or all of a fulfillment order
  */
 export const shipFulfillmentOrder = (
@@ -12443,7 +12492,7 @@ export const listStockMovements = (
 };
 
 /**
- * Units arrive from a supplier — `onHand` rises, `reserved` does not, so the delivery becomes available immediately. The only transition that can create units, and the reason a shop that has sold out can sell again. Send an `Idempotency-Key` — a retried receipt with the same key replays the first answer instead of counting the delivery twice.
+ * Units arrive from a supplier — `onHand` rises, `reserved` does not, so the delivery becomes available immediately. The only transition that can create units, and the reason a shop that has sold out can sell again. Requires an `Idempotency-Key` header — a retried receipt with the same key replays the first answer instead of counting the delivery twice, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. If the first attempt never reported an outcome, the same key answers 409 `IDEMPOTENCY_OUTCOME_UNKNOWN` and runs nothing; read the stock level back before receiving again with a new key.
  * @summary Receive stock
  */
 export const receiveStock = (
@@ -12463,7 +12512,7 @@ export const receiveStock = (
 };
 
 /**
- * A stocktake correction — signed, because shrinkage is the common case and it is negative. Refuses to take `onHand` below what is already reserved, because those units are promised to orders that exist — the fix for finding fewer units than were sold is to cancel orders, not to make availability negative. Send an `Idempotency-Key` — a retried correction with the same key replays the first answer instead of applying the delta twice.
+ * A stocktake correction — signed, because shrinkage is the common case and it is negative. Refuses to take `onHand` below what is already reserved, because those units are promised to orders that exist — the fix for finding fewer units than were sold is to cancel orders, not to make availability negative. Requires an `Idempotency-Key` header — a retried correction with the same key replays the first answer instead of applying the delta twice, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. If the first attempt never reported an outcome, the same key answers 409 `IDEMPOTENCY_OUTCOME_UNKNOWN` and runs nothing; read the stock level back before adjusting again with a new key.
  * @summary Adjust stock
  */
 export const adjustStock = (

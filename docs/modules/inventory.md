@@ -66,6 +66,14 @@ flowchart LR
 - The ledger has a "Backordered" column for the third counter, and two reasons: `preorder` (units
   claimed) and `allocate` (stock arrived for a paid preorder).
 
+## A stock write whose outcome is unknown
+
+A receipt and an adjustment are do-not-retry writes: each carries a required `Idempotency-Key`, one per
+product. After a server fault (5xx) or `409 IDEMPOTENCY_OUTCOME_UNKNOWN` (the first attempt began and
+never reported; the server ran nothing again and told staff), the store reloads the board and the
+ledger before it rethrows, so the next click starts from what the server holds. The form shows the
+server's message; only a human click sends again, with a new key.
+
 ## The preorder board
 
 `/sales/preorders`, in the Sales menu group, for anyone holding `display:Order` (the same audience
