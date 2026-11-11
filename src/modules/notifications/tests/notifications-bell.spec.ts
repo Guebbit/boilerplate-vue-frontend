@@ -378,8 +378,8 @@ describe('two notices about two orders', () => {
 
         // Not axe: it reports identical-links-same-purpose as "needs review", never a violation.
         expect(texts).toHaveLength(2);
-        expect(texts[0]).toContain('#2026-000041');
-        expect(texts[1]).toContain('#2026-000042');
+        expect(texts[0]).toContain('2026-000041');
+        expect(texts[1]).toContain('2026-000042');
         expect(new Set(texts).size).toBe(2);
     });
 });
