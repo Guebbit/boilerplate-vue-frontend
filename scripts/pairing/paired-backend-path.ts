@@ -78,7 +78,7 @@ export const LIVE_SCENARIO_FILE = path.resolve('reports/e2e/scenario.json');
  * A command rather than a script name, because the two paired backends do not offer the reset
  * through the same runner: the TypeScript one is an npm script, and the PHP one refuses to put
  * anything that touches the database into its `package.json` at all (see that repo's
- * `docs/tools/why-node-is-still-here.md`) — there it is `composer host -- db:seed:reset`. Both
+ * docs on why it keeps Node) — there it is `composer host -- db:seed:reset`. Both
  * spellings live in `.env-example`, which is where the choice belongs; nothing is hardcoded here,
  * so a checkout that never set the variable cannot silently run one backend's reset against the
  * other's.
