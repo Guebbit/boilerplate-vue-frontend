@@ -210,7 +210,7 @@ export const ERROR_CODES = {
     PRECONDITION_FAILED: 'PRECONDITION_FAILED',
     /** 409 — A restore named a product that is not soft-deleted, so there is nothing to undo. */
     PRODUCT_NOT_DELETED: 'PRODUCT_NOT_DELETED',
-    /** 429 — The caller spent a rate-limit budget: a request limiter, a mailbox's send budget, or an account's wrong-code budget (the 2FA lock). Carries `Retry-After`, and `details.retryAfter` with the same seconds; `details.policy` names the budget when there is one. */
+    /** 429 — The caller spent a rate-limit budget: a request limiter, a mailbox's send budget, an account's wrong-code budget (the 2FA lock), or an account's cap on open live streams. Carries `Retry-After`, and `details.retryAfter` with the same seconds; `details.policy` names the budget when there is one. */
     RATE_LIMITED: 'RATE_LIMITED',
     /** 401 — This action requires a session fresher than the caller's current one — see `POST /account/reauth`. `details.maxAge` is the freshness asked for; `details.methods`, when present, lists what the re-authentication must also prove (`otp`: a code from an armed second factor). */
     REAUTH_REQUIRED: 'REAUTH_REQUIRED',
@@ -254,7 +254,7 @@ export const ERROR_CODES = {
     ROLE_MANAGEMENT_REQUIRED: 'ROLE_MANAGEMENT_REQUIRED',
     /** 403 — The caller's staff role grants nothing until an authenticator app is armed, and this action needs it. Enrol at `POST /account/2fa/methods/totp/setup`; the account keeps its customer powers meanwhile. */
     SECOND_FACTOR_ENROLLMENT_REQUIRED: 'SECOND_FACTOR_ENROLLMENT_REQUIRED',
-    /** 503 — A dependency (database, broker) is unreachable. Carries a `Retry-After` hint. */
+    /** 503 — A dependency (database, broker) is unreachable, or the server is at a capacity limit (a full queue, the process ceiling on open live streams). Carries a `Retry-After` hint. */
     SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
     /** 401 — A staff or admin session saw no real request for longer than `NODE_SESSION_IDLE_TIME_STAFF`, and ended. Sign in again. A shopper never gets this. */
     SESSION_IDLE: 'SESSION_IDLE',
