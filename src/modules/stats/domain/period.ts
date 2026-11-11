@@ -1,8 +1,8 @@
 /**
  * @module
  * The period a stats page asks about: two calendar days and a bucket size, plus the rules the API
- * enforces on them so the form can say no before a round trip does. The ceilings are the API's
- * (`GET /stats/limits`), passed in; none is kept here. Pure functions; "today" is always passed in.
+ * enforces on them so the form can say no before a round trip does. The ceilings are the API's,
+ * carried as `limits` on every period answer (the store keeps the last), passed in; none is kept here. Pure functions; "today" is always passed in.
  */
 import { StatsInterval } from '@/types/enums.ts';
 import type { StatsLimits } from '@types';

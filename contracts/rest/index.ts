@@ -7985,7 +7985,7 @@ export type OrderNumberParamParameter = string;
 export type StatsFromParamParameter = string;
 
 /**
- * Last shop-local calendar day of the period, inclusive. At most two years after `from`.
+ * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
  */
 export type StatsToParamParameter = string;
 
@@ -8751,7 +8751,7 @@ export type GetSalesStatsParams = {
      */
     from: StatsFromParamParameter;
     /**
-     * Last shop-local calendar day of the period, inclusive. At most two years after `from`.
+     * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
      */
     to: StatsToParamParameter;
     /**
@@ -8766,7 +8766,7 @@ export type GetProductStatsParams = {
      */
     from: StatsFromParamParameter;
     /**
-     * Last shop-local calendar day of the period, inclusive. At most two years after `from`.
+     * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
      */
     to: StatsToParamParameter;
     /**
@@ -8783,7 +8783,7 @@ export type GetProductSalesSeriesParams = {
      */
     from: StatsFromParamParameter;
     /**
-     * Last shop-local calendar day of the period, inclusive. At most two years after `from`.
+     * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
      */
     to: StatsToParamParameter;
     /**
@@ -8798,7 +8798,7 @@ export type GetCategoryStatsParams = {
      */
     from: StatsFromParamParameter;
     /**
-     * Last shop-local calendar day of the period, inclusive. At most two years after `from`.
+     * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
      */
     to: StatsToParamParameter;
 };
@@ -8809,7 +8809,7 @@ export type GetPaymentMixStatsParams = {
      */
     from: StatsFromParamParameter;
     /**
-     * Last shop-local calendar day of the period, inclusive. At most two years after `from`.
+     * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
      */
     to: StatsToParamParameter;
 };
@@ -8820,7 +8820,7 @@ export type GetOperationsStatsParams = {
      */
     from: StatsFromParamParameter;
     /**
-     * Last shop-local calendar day of the period, inclusive. At most two years after `from`.
+     * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
      */
     to: StatsToParamParameter;
 };
@@ -8831,7 +8831,7 @@ export type GetCustomerStatsParams = {
      */
     from: StatsFromParamParameter;
     /**
-     * Last shop-local calendar day of the period, inclusive. At most two years after `from`.
+     * Last shop-local calendar day of the period, inclusive. At most 731 days after `from` (two years), and the whole period at most 400 buckets.
      */
     to: StatsToParamParameter;
 };
@@ -13289,7 +13289,7 @@ export const recordProofOfSending = (
 };
 
 /**
- * Headline totals, the same totals for the equal-length period before, and one bucket per day, week (Monday) or month, per currency. Every figure is net of VAT unless it says otherwise; money is grouped by currency and never converted. A sale is dated by `paidAt`, a reversal by the credit note's `issuedAt`, and days are the shop's (`NODE_SHOP_TIMEZONE`), so a bucket edge is shop-local midnight. `from` and `to` are shop-local calendar days, both inclusive; the range may not pass two years or 400 buckets. Needs `read:Stats`. Never cached: it is the shop's money.
+ * Headline totals, the same totals for the equal-length period before, and one bucket per day, week (Monday) or month, per currency. Every figure is net of VAT unless it says otherwise; money is grouped by currency and never converted. A sale is dated by `paidAt`, a reversal by the credit note's `issuedAt`, and days are the shop's (`NODE_SHOP_TIMEZONE`), so a bucket edge is shop-local midnight. `from` and `to` are shop-local calendar days, both inclusive; the range may not pass 731 days or 400 buckets. Needs `read:Stats`. Never cached: it is the shop's money.
  * @summary Sales over time (staff)
  */
 export const getSalesStats = (
