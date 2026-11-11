@@ -17,7 +17,7 @@ export default {
  * a template ref once the visitor passes, and attaches it as `antibot-challenge-token` on its
  * own submit via `withAntibotToken` — this component never calls the route it protects.
  *
- * See the paired backend's `docs/modules/antibot.md` for the provider registry and the ladder
+ * See the paired backend's `boilerplate-node-backend/docs/modules/antibot.md` for the provider registry and the ladder
  * this is rung 3 of.
  */
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';

@@ -6,7 +6,7 @@
  * the same key, so resending a key after a fault would replay the fault. Mirrors the cart store's
  * own `checkoutIdempotencyKey` (a separate copy, not built on this helper) and `withAntibotToken`
  * (`infrastructure/http/antibot.ts`) for the header-merge shape.
- * See: docs/tools/idempotency.md in the backend, "What a failure stores".
+ * See: boilerplate-node-backend/docs/tools/idempotency.md, "What a failure stores".
  */
 import { ref } from 'vue';
 import type { AxiosRequestConfig } from 'axios';

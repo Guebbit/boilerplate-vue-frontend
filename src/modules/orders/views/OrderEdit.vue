@@ -335,7 +335,7 @@ const refundOnce = () => {
 
 /**
  * Order edit form model. `status` is not editable here — it moves only through the cancel and
- * override actions below, never a field on this form. See `docs/theory/tactical-ddd.md`.
+ * override actions below, never a field on this form. See `boilerplate-node-backend/docs/theory/tactical-ddd.md`.
  */
 interface OrderEditForm {
     email?: string;

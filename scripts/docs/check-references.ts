@@ -34,6 +34,10 @@
  *     that is deliberately gone — a rename table's left column, a paragraph explaining why a file
  *     was merged away. The marker says "this line names an absent path on purpose", which is an
  *     argument a reader can check, unlike silence.
+ *   - A `docs/…md#anchor` cited in `src/`, `scripts/`, YAML or `.env-example` must resolve too
+ *     (`code-citations.ts`): dead links only, nothing about wording or counts. A page of the
+ *     backend is cited by its directory name (`boilerplate-node-backend/docs/…`), which is also
+ *     what exempts it here.
  *
  * The floors below are the point. A sweep that silently reads zero pages reports a clean tree
  * forever, which is worse than no sweep.
@@ -43,8 +47,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { slugify } from '@mdit-vue/shared';
 import { DEFAULT_BACKEND_PATH, resolveBackendPath } from '../pairing/paired-backend-path';
+import { deadCodeCitations, headingSlugs } from './code-citations';
 import {
     exportedNames,
     missingScripts,
@@ -143,39 +147,6 @@ interface Finding {
     page: string;
     token: string;
 }
-
-/**
- * A page's heading slugs, VitePress's own way: its `slugify` (`@mdit-vue/shared`) over the
- * heading's plain text, a repeated heading de-duplicated with `-1`/`-2` as markdown-it-anchor
- * does, plus any explicit `{#custom-id}` a heading carries.
- * https://github.com/mdit-vue/mdit-vue/tree/main/packages/shared
- */
-const headingSlugs = (markdown: string): Set<string> => {
-    const slugs = new Set<string>();
-    let inFence = false;
-
-    for (const line of markdown.split('\n')) {
-        // A `#` line inside a fenced block is a code comment, not a heading.
-        if (/^\s*(```|~~~)/.test(line)) inFence = !inFence;
-        const heading = inFence ? undefined : /^#{1,6}\s+(.+)$/.exec(line)?.[1];
-        if (!heading) continue;
-
-        const explicit = /{#([\w-]+)}\s*$/.exec(heading)?.[1];
-        // The title VitePress slugs is the heading's text: link targets, code ticks and
-        // emphasis marks are not part of it.
-        const text = heading
-            .replace(/{#[\w-]+}\s*$/, '')
-            .replaceAll(/\[([^\]]*)]\([^)]*\)/g, '$1')
-            .replaceAll(/[*`]/g, '');
-        const base = explicit ?? slugify(text);
-
-        let slug = base;
-        for (let n = 1; slugs.has(slug); n++) slug = `${base}-${n}`;
-        slugs.add(slug);
-    }
-
-    return slugs;
-};
 
 /**
  * The `[text](page.md#anchor)` and `[text](#anchor)` links of one page whose anchor no heading of
@@ -588,6 +559,18 @@ const run = (): number => {
     }
 
     const facts = factFindings(documentPages);
+
+    // Citations written in code, YAML and `.env-example`: a page that moved or a heading that was
+    // renamed leaves them pointing at nothing, and no build opens them.
+    const tracked = execFileSync('git', ['ls-files'], {
+        cwd: ROOT,
+        encoding: 'utf8',
+        env: gitEnvironmentWithoutHookVariables()
+    })
+        .split('\n')
+        .filter(Boolean);
+    for (const citation of deadCodeCitations(ROOT, tracked))
+        findings.push({ page: 'outside docs/', token: citation });
 
     if (pages.length < MIN_PAGES || references < MIN_REFERENCES) {
         console.error(

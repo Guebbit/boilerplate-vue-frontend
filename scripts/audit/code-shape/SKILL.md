@@ -112,7 +112,7 @@ KEEP reason codes — one per row, never "seems fine":
 - `seam` — a test replaces it (`vi.mock`, an injected dependency) — cite the test.
 - `slot` — a self-registering extension point: `register*`, a registry entry.
 - `component` — a single-use SFC: a page is built from components, one importer is how that looks.
-- `layout` — the module layout asks for the file: `docs/theory/modules.md#what-a-module-contains`.
+- `layout` — the module layout asks for the file: `docs/theory/modules.md#the-module-template`.
 - `depth` — inlining would push nesting past `max-depth` or the caller past the comment caps.
 - `lookalike` — (jscpd) two blocks shaped alike by the contract or a test table, not by shared
   logic; changing one would not mean changing the other.

@@ -5,7 +5,7 @@
  * The purpose and lifetime cells are not text here but translation keys under
  * `browser-storage.rows.<id>`, so a shop edits the wording at runtime like any other text.
  * Cookies the backend sets are listed too: the visitor's browser holds them all the same.
- * See `docs/theory/data-protection.md` for the legal reading of the two `necessity` values.
+ * See `boilerplate-node-backend/docs/theory/data-protection.md` for the legal reading of the two `necessity` values.
  */
 import { BROWSER_STORAGE_DATA, BROWSER_STORAGE_NAMES } from './browser-storage.generated';
 

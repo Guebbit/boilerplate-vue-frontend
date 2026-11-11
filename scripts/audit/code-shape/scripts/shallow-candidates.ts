@@ -41,7 +41,7 @@ const NEVER_A_CANDIDATE =
 /**
  * Files the module layout itself asks for (one per role) and every SFC — never a lazy file; a
  * component with one importer is how a page is built.
- * The layout: `docs/theory/modules.md#what-a-module-contains`.
+ * The layout: `docs/theory/modules.md#the-module-template`.
  */
 const LAID_OUT_FILE = /^src\/modules(?:\/[^/]+){2}\.ts$|\.vue$/;
 
