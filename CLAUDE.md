@@ -1,6 +1,46 @@
+## Changing a contract
+
+The backend owns the contract. This repo never edits it.
+
+- NEVER hand-edit `openapi.yaml`, `asyncapi.yaml` or `contracts/{authorization-keys,cookies,frontend-links}.yaml`.
+  They arrive by the backend's `npm run sync:frontend`, and `npm run check` refuses a copy that
+  differs from the backend's.
+- NEVER hand-edit what is generated from them (`contracts/rest/*`, `contracts/asyncapi.generated.ts`,
+  `contracts/permission-vocabulary.ts`): `npm run regenerate` rebuilds them.
+- A contract change starts in the backend: edit its fragment, `npm run regenerate` there, then
+  `sync:frontend`, which also runs this repo's `regenerate`.
+- From a lane worktree, sync into the paired frontend worktree, never into this repo's main.
+
+See: `docs/api/openapi-workflow.md`, `docs/api/asyncapi-workflow.md`
+
+## Changing a shared rule
+
+A rule that is only data lives in `shared/rules/*.yaml`, checked by a Zod schema under
+`scripts/contracts/shared-rules/`.
+
+1. Edit the YAML.
+2. `npm run regenerate` (rewrites the `*.generated.ts` beside its reader, and `shared/rules/schemas/`).
+3. A backend-owned rule arrives under `contracts/`. Never edit it here.
+
+See: `docs/tools/shared-rules.md`
+
 ## TypeScript
 
-- MUST NOT use `any` — use `unknown` plus type narrowing.
+Every rule in this section is machine-checked: `strictTypeChecked` plus the project-local rules in
+`scripts/eslint/`. The reasoning is written out because it matters when you hit one.
+
+- MUST use `strict: true` in all TypeScript code.
+- MUST NOT use `any`. Use `unknown` plus type narrowing.
+- MUST NOT use `as unknown as X`, nor `as any as X`, tests included. A double cast launders `any`.
+  - Fix the type at its source: a typed factory, a type guard, or a parse through the generated
+    Zod schemas in `contracts/rest/`.
+  - One exception, for hand-built test stubs only: `asStub<T>()` from `tests/support/stub.ts`.
+- A single `as X` is fine where it narrows something the compiler cannot see into. Say why in a
+  comment. `!` likewise: never to quiet a type error.
+- MUST NOT use `@ts-ignore`. `@ts-expect-error` only where the type error is the thing under test,
+  always with a description.
+- Every `eslint-disable`, in a script or a template, carries ` -- <why>`. An unused one fails.
+- MUST use ESM imports only. The one exception is a tool's `.cjs` config file.
 
 ## Styling
 
@@ -12,7 +52,6 @@
   a value used twice is a token.
 - Every `v-dialog` binds `:fullscreen` from `useFullscreenDialog()`. No hover-only cue: `hover:` refines
   a visible resting state, never replaces it.
-- Every `eslint-disable`, in a script or a template, carries ` -- <why>`; an unused one fails.
 - Override Vuetify through a prop, `defaults` or the theme, never its classes;
   `tests/cross-cutting/css-invasiveness.spec.ts` refuses new invasive CSS (`npm run audit:css` lists it).
   The calls no check can make: `scripts/audit/css-invasive/SKILL.md`. Run it to find them.
@@ -33,6 +72,24 @@
 - MUST NOT add a parameter, option, generic or interface for a caller that does not exist yet.
 - The shapes, their names and the legitimate reasons to keep one:
   `scripts/audit/code-shape/SKILL.md`. Run it to find them.
+
+## Dependencies — look before you build
+
+Open source first:
+
+1. **Already in the repo.** Read `package.json` first, `@guebbit/*` toolkits included.
+2. **A maintained library.** Released in the last ~12 months, issues answered, typed, a usable
+   licence, a sane dependency tree.
+3. **Only then write it ourselves**, and say why in one line.
+
+- MUST NOT reimplement crypto, auth, parsing, date maths or validation by hand.
+- Prefer the platform (`Intl`, `URL`, `AbortSignal`, `crypto.subtle`) over a library.
+- A runtime dependency costs bundle. Load it with dynamic `import()` unless the boot path needs it:
+  `tests/cross-cutting/entry-chunk-budget.spec.ts` guards the entry chunk.
+- When a choice is close, present the options and the trade-off.
+- **Write it down in the same change:** its group and purpose in
+  `docs/tools/package-dependencies.md`. A library only one module imports goes in that module's
+  page under `docs/modules/`, in a `## Libraries` section. `example` has no page by design.
 
 ## Module barrels
 
@@ -57,10 +114,16 @@ can offer a sibling. See `docs/theory/strategic-ddd.md` §5.
     optional, and tolerate an unknown enum value.
   - Stored client state (`localStorage`, cookies, cached query data, a service worker): expand →
     contract. Read the old shape for one release, then remove it in the next.
+  - A route someone bookmarked, or the backend mails (`contracts/frontend-links.yaml`): rename
+    with a redirect for one release.
 - MUST NOT keep compatibility code past that one release: no permanent field aliases, no
   `@deprecated` tags left "for later".
-- **Pre-release opt-out:** when the project's `HANDOFF.md` or the user's prompt says "pre-release:
-  no backward compatibility", replace instead. No shims, no bridges, no deprecation period.
+- **Pre-release opt-out:** when the backend's `HANDOFF.md` (plans for both repos live there) or the
+  user's prompt says "pre-release: no backward compatibility", replace instead. No shims, no
+  bridges, no deprecation period.
+- MUST NOT build guardrails for staff against their own choices: no extra confirmations, no
+  two-step dialogs, no refusals for a lock-out or an odd set-up. Staff get the instrument and a
+  guide entry. Guard only what would break consistency.
 
 ## Async and error handling
 
@@ -90,15 +153,29 @@ can offer a sibling. See `docs/theory/strategic-ddd.md` §5.
   cross-cutting specs carry the repo's architectural invariants in theirs — but the tag is not
   required there and nothing checks for it.
 - Non-trivial internal helpers: a concise inline or JSDoc explanation.
-- Comments MUST be brief theory-level notes on what the code does and its role — ADHD friendly,
-  not line-by-line narration.
+- Every comment answers up to two questions, in this order, and nothing else:
+  1. **What does this do**, only if the name doesn't already say it.
+  2. **Why is it shaped this way**: the one non-obvious reason, or its place in the larger flow.
+- **The budget is prose; structure is nearly free.** A list item, a `Label:` row, a table, a fenced
+  block and a JSDoc tag barely count:
+
+  | | prose lines |
+  | --- | --- |
+  | `@module` header | 6 |
+  | any other declaration | 8 |
+  | total lines, whatever the form | 24 |
+
+  Over budget: change form, never delete the content. Past 24 lines it belongs in `docs/`, with a
+  link left behind. Never hand-maintain a row that restates something generated elsewhere.
+- One idea per comment. Never restate what the code or a good name already says.
 - Docs describing flow, architecture or process MUST include Mermaid diagrams.
 - Never narrate history — no "this used to...", "previously...", "was renamed from...". A comment
   describes the code as it is now; git log is where the past lives.
   The same holds for `docs/`: a page states why the design is what it is, in the present tense
   ("there is no X, because…"), never how it got there.
-- Never link to a `.md` file outside `docs/*` — a root-level plan, audit, or report doc is
-  ephemeral; only `docs/` is a stable target for a comment to point at.
+- Never reference an untracked `.md` file, by link or by name. Stable targets: `docs/*` and the
+  tracked root `CLAUDE.md`, `README.md`, `SECURITY.md`, `INSTALL.md`. Nothing enforces this
+  beyond `.gitignore`.
 
 Comments are **not** a replacement for the documentation. They are code-centric: they explain the
 code in front of you, and give a quick overview of what the docs already say in full. The
@@ -143,6 +220,7 @@ else's vocabulary, not ours.
 - Annotate the parameters that are not immediately clear — magic numbers, bare booleans,
   option objects, positional arguments whose meaning comes only from the library's docs. Skip the
   self-evident ones.
+- Link the relevant doc page, when one exists. Don't paraphrase the library's docs.
 - Prefer more comments over fewer. When in doubt, write it.
 
 All of it ADHD friendly: short lines, one idea per line, plain language, the "why" before the
@@ -162,6 +240,16 @@ sharp(buffer).resize(
 
 ## Tests
 
+- A test about **one module's rules** lives in `src/modules/<module>/tests/`. A test about the
+  **system** (infrastructure, kernel, app shell, a rule across every module) lives in `tests/`.
+  See `docs/reference/tests.md`.
+- Pick the suite by what the test needs: `unit` (Vitest, jsdom) · `cross-cutting` (a rule across
+  every module) · `e2e` (Cypress, real browser + demo backend) · live e2e (the paired backend).
+- MUST ship tests in the same change as the behaviour. New branch, new test.
+- Pass rate is 100%, always. Fix it or delete it. Lint refuses a committed `.only` or `.skip`.
+- Assert through the public door (the rendered page, the store, the composable), not private internals.
+- **Mutation score is the one test-quality number; coverage is not measured.**
+  See `docs/tools/mutation-testing.md`.
 - Visual baselines (`**/__snapshots__/*.png`) are recorded only inside the pinned image
   (`docs/tools/visual-regression.md`), never on a host.
 - **A run that finds failures: fix them all, then re-run only what the fixes can affect.** That is
@@ -182,6 +270,95 @@ sharp(buffer).resize(
   repeats a visible label or the accessible name; truncated data gets a tap route (an expansion row,
   a copy button). The touch scan gates it: `docs/tools/touch-testing.md`. What axe and the scan
   structurally cannot reach: `scripts/audit/accessibility-manual/SKILL.md`. Run it to find them.
+
+## Asking vs. deciding
+
+**Default to asking.** A short question costs a minute; a large wrong turn costs the afternoon.
+When two readings of a request would produce materially different work, ask — do not pick the
+likelier one and build it.
+
+- MUST ask before: adding a dependency, changing a contract or a schema, changing what a staff
+  screen allows, touching auth / security / payments / money, deleting anything, or choosing
+  between two designs that are genuinely close.
+- Ask **early** and **batched** — one message with the open questions, before the code is written,
+  not a drip-feed and not a post-mortem.
+- Decide alone on the mechanical half: naming, where a helper goes, test placement, formatting,
+  and anything the rules above already answer.
+- When proceeding without an answer, state the assumption in one line so it is cheap to correct.
+- **Exception:** an explicit "be autonomous" / "don't ask" / "just do it". Then run the whole task
+  end to end, and put the assumptions, the trade-offs and what *would* have been a question into
+  the summary at the end instead.
+
+## Researching an open question (`card it`)
+
+When the user says **"card it"** / **"card these"** about one question or a list of them, or a plan
+raises a design choice the rules above don't settle, run this procedure. Don't answer from memory.
+
+1. **One agent per question**, in parallel, read-only. Each one:
+   - re-checks the code on current `main` in both repos (cite `file:line` and the sha);
+   - looks the standard up on the web, in the house order: Solidus → Shopify → Stripe → RFCs / Google
+     AIP / Zalando → EU law. Every row is marked `verified: <url>` or `from memory`;
+   - writes one **card** (format below).
+2. **A skeptic agent per card** tries to break it: wrong facts, a better option, a clash with
+   another decision. The card is corrected, never just defended.
+3. **Decide or ask, by confidence after the skeptic:**
+
+   | Layer | Decided alone | Otherwise |
+   | --- | --- | --- |
+   | BE (or BE + FE) | ≥ 90 % | the card goes to the user |
+   | FE only | ≥ 70 % | the card goes to the user |
+
+4. **Where cards live:** the backend's root (gitignored), beside its `HANDOFF.md`. One home for
+   both repos:
+   - open cards in QUESTIONS_<MMDD>.md, with a quick table on top (id, what, suggestion, %, lane);
+   - decided and answered cards in DECIDED_<MMDD>.md: each card is its lane's build spec, so it
+     is moved there, never deleted;
+   - an answered card leaves QUESTIONS, and its lane row in the root HANDOFF file says so.
+5. **"Prune" or "refute"**: one refuter agent per decided card. A refuted card goes back to
+   QUESTIONS; a surviving one is permanent and gets its amendments appended to its card.
+
+**The card**, in this order. Short lines, plain words, no paragraphs:
+
+```md
+### <ID> · <the question, in plain words>
+
+**Summary:** 3-5 lines a non-specialist can answer from: what is being decided, what changes
+for whom, and what the suggestion is.
+
+**Background (from scratch):** the terms, one bullet each.
+**Today (main <sha>):** at most ~8 bullets: what the code does, with file:line.
+**Why it matters:** who is hurt, and how.
+**What others do:** | Who | What they do | Source (verified / from memory) |
+**Options:** | Option | What changes | For | Against | Cost (S/M/L · BE/FE · contract yes/no) |
+**Suggestion:** <letter>, <N> %. The one reason. What would lower it.
+**Answer with:** "<ID> <letter>" (or the alternatives).
+```
+
+- The suggested option carries a build list (files, contract, tests, docs), so a lane can build
+  it without coming back.
+- When the user answers "dumb it down", add a **Plain version** block under the Summary. Don't
+  rewrite the card.
+
+## Commits
+
+Conventional Commits, enforced by commitlint on the `commit-msg` hook.
+
+- `type(scope): subject`. Lowercase, imperative, no trailing full stop.
+- Types: `feat` `fix` `refactor` `perf` `test` `docs` `style` `build` `ci` `chore` `revert`.
+- Scope is the module or area. The subject says what the change does for the user or system.
+- One commit per work item, with its code, tests and docs. Split only unrelated pieces.
+- Breaking change: `!` after the scope plus a `BREAKING CHANGE:` footer.
+- MUST stage explicit pathspecs, never `git add -A` or `git add .`. Commit with
+  `git commit -m "…" -- <paths>`. After a failed hook, run `git status` before retrying.
+- The container engine is **podman** (rootless). `docker` here is the podman shim.
+- MUST NOT run subagents that implement concurrently in the same working tree.
+- The pre-commit hook runs `lint-staged` (eslint + prettier on staged files), runs
+  `npm run regenerate` when `openapi.yaml`/`asyncapi.yaml` is staged, then
+  `complete:light:gates` (`check`, `vue-tsc`, unit).
+- A lane merges on `complete:light`, plus every Cypress spec it adds or changes, run by file.
+  CI on push is authoritative.
+- **NEVER** use `--no-verify` unless a `complete` (regular or `:fix`) has just passed on the
+  current tree.
 
 <!-- 2brain:start — regenerate with: 2brain <repo-path> -->
 Use the repository context generated by 2brain before proposing changes.

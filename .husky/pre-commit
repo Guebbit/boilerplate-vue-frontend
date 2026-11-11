@@ -2,8 +2,8 @@
 # generated-types freshness, spec identity, docs references, `vue-tsc`) plus the unit suite.
 # The backend lints the contract; the frontend only verifies its copy is identical.
 #
-# Left out, so run the full `npm run complete` by hand before merging a lane and once on main after
-# each merge (CI still runs all of it):
+# Left out (CI on push runs all of it). A lane merges on `complete:light` plus every Cypress spec it
+# adds or changes, run by file; the full `npm run complete` runs on main at the checkpoints:
 #
 # - the Vite build and Cypress e2e against the demo dataset — most of the full gate's minutes;
 #
