@@ -20,7 +20,7 @@ import routes from './routes';
  * Taking money is not this shop’s differentiator, and the provider is the API's business.
  * What stays here is a panel that belongs to an order.
  *
- * Context map: `docs/modules/payments.md` § "The map".
+ * Context map: `docs/modules/payments.md` § "Its neighbourhood".
  *
  * Subdomain: `supporting`.
  */

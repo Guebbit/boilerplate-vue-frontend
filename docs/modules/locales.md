@@ -18,7 +18,7 @@ No module imports this one and it imports none. `products`' `ProductEdit` still 
 costs that one guarded link, checked rather than assumed.
 :::
 
-## The map
+## Its neighbourhood
 
 `locales` sits on no import edge of the context map — nothing imports it and it imports nothing;
 `products` reaches it only by route name, guarded through `router.hasRoute`.

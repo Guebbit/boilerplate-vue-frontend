@@ -10,8 +10,8 @@ name: CI
 #
 # The jobs fall into four groups:
 #   - style           commitlint, lint, prettier
-#   - contract        api-freshness, check — the spec is a copy of the backend's, its generated
-#                     output is committed and current, and the paired backend still agrees with it
+#   - contract        check — the spec is a copy of the backend's, and the paired backend still
+#                     agrees with it (the generated code is not committed: `npm ci` rebuilds it)
 #   - correctness     typecheck, build, test-unit, test-e2e
 #   - supply chain    audit — report-only: it is not in the `ci` job's `needs:`; the same audit
 #                     also runs weekly in audit.yml, which opens an issue when it goes red
@@ -233,46 +233,6 @@ jobs:
             - name: Audit production dependencies
               run: npm audit --omit=dev --audit-level=moderate
 
-    api-freshness:
-        # Verify the committed generated API client is up-to-date with openapi.yaml.
-        runs-on: ubuntu-latest
-        timeout-minutes: 10
-        permissions:
-            contents: read
-        steps:
-            - name: Checkout
-              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-              with:
-                  persist-credentials: false # no step after the checkout needs the token on disk
-
-            - name: Setup Node and install
-              uses: ./.github/actions/setup-node-and-install
-
-            - name: Check generated API client is fresh
-              # The pathspec must list every orval output in orval.config.ts. It previously
-              # read `api/` — a directory this repo has never had — so `git diff` matched
-              # nothing, exited 0, and the job passed without checking anything from the day
-              # it was written. If you add or retarget an output block in orval.config.ts,
-              # update this list in the same commit.
-              run: |
-                  npm run gen:api
-                  # orval emits 2-space indentation; this repo's prettier config uses 4, and
-                  # the committed output is formatted. Without this normalisation step the
-                  # diff below is thousands of lines of pure indentation on every run.
-                  npx prettier --write contracts/
-                  if ! git diff --exit-code -- contracts/; then
-                      echo "Generated API client is stale. Run 'npm run gen:api && npm run prettier:fix' and commit the changes."
-                      exit 1
-                  fi
-                  # `git diff` only sees tracked files, so a brand-new generated output would
-                  # slip through as untracked. Catch that too.
-                  if [ -n "$(git status --porcelain -- contracts/)" ]; then
-                      echo "Codegen produced untracked files under contracts/:"
-                      git status --porcelain -- contracts/
-                      echo "Run 'npm run gen:api' and commit the changes."
-                      exit 1
-                  fi
-
     typecheck:
         # `vue-tsc` — types across .ts and .vue alike. `build` below repeats it as part of its
         # own script; this job exists so a type error is reported as one, not as a build failure.
@@ -349,7 +309,7 @@ jobs:
                   if-no-files-found: ignore
 
     check:
-        # `npm run check`: the generated-file freshness checks, the docs-reference sweep and the
+        # `npm run check`: the shared-rules freshness check, the docs-reference sweep and the
         # cross-repo contract gate (spec-identity), in one step, because the last one needs the
         # paired backend checked out and the others cost seconds.
         #
@@ -601,7 +561,6 @@ jobs:
             - prettier
             - docs-build
             - docker-image
-            - api-freshness
             - typecheck
             - build
             - test-unit

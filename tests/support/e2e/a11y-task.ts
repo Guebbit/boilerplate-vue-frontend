@@ -33,6 +33,8 @@ export interface A11yRecordRequest {
     /** Where the page was when axe ran. */
     url: string;
     violations: A11yViolationRecord[];
+    /** What axe could not decide (its `incomplete` results): reported for a human, never gating. */
+    needsReview: A11yViolationRecord[];
 }
 
 /**
@@ -47,5 +49,6 @@ export const recordA11yViolations = (request: A11yRecordRequest, directory: stri
     recordSpecEntry(directory, request.spec, request.context, {
         url: request.url,
         recordedAt: new Date().toISOString(),
-        violations: request.violations
+        violations: request.violations,
+        needsReview: request.needsReview
     });

@@ -19,7 +19,7 @@ import { foundationNotices } from './notices';
  *
  * A courtesy surface. Deleting it costs the reader a message, never a capability.
  *
- * Context map: `docs/modules/notifications.md` § "The map".
+ * Context map: `docs/modules/notifications.md` § "Its neighbourhood".
  *
  * Subdomain: `supporting`.
  */

@@ -18,7 +18,7 @@ import type { AppModule } from '@/kernel/registry';
  * Shipping is specific to how this shop operates but is not what anyone buys. Two components
  * and a store — supporting, and deliberately page-less.
  *
- * Context map: `docs/modules/delivery.md` § "The map".
+ * Context map: `docs/modules/delivery.md` § "Its neighbourhood".
  */
 export default {
     name: 'delivery',

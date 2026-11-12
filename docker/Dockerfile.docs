@@ -10,10 +10,14 @@ WORKDIR /app
 COPY package*.json .npmrc ./
 
 # Install all dependencies (including devDeps needed by VitePress)
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 # Copy source + docs
 COPY . .
+
+# The generated contract code is gitignored: rebuild it here, so the docs build sees the tree a
+# normal install gives. `--ignore-scripts` above skipped `postinstall`.
+RUN npm run regenerate
 
 # Build the static VitePress site into docs/.vitepress/dist
 RUN npm run docs:build

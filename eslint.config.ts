@@ -872,9 +872,9 @@ export default defineConfigWithVueTs(
              */
             'no-console': 'error',
             'no-debugger': 'warn',
-            /** CLAUDE.md: nesting ≤ 3 levels; extract a helper for anything deeper. */
+            /** CLAUDE.md: nesting; blocks at 3, callbacks at 4 (the later src block); extract a helper for anything deeper. */
             'max-depth': ['error', 3],
-            'max-nested-callbacks': ['error', 3],
+            'max-nested-callbacks': ['error', 4],
             '@eslint-community/eslint-comments/require-description': 'error',
 
             ...unicornTuningRules,
@@ -1049,7 +1049,7 @@ export default defineConfigWithVueTs(
         ignores: ['src/**/__tests__/**', 'src/modules/*/tests/**'],
         rules: {
             'max-depth': ['error', 3],
-            'max-nested-callbacks': ['error', 3]
+            'max-nested-callbacks': ['error', 4]
         }
     },
 

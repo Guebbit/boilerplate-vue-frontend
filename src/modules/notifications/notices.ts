@@ -7,6 +7,7 @@
 import { TaskCategory, TaskKind } from '@/types/enums.ts';
 import type { AppNotice, NoticeContext, NoticeTarget } from '@/kernel/registry';
 import type { Notification } from '@types';
+import { shortRef } from '@/infrastructure/utils/formatters.ts';
 
 /**
  * The contract's variant for one code, so an entry's `params` are typed per code.
@@ -41,7 +42,7 @@ const describeTask = (
     { translate }: NoticeContext
 ): string => {
     const { code, params } = notice;
-    const { kind } = params;
+    const { kind, taskId } = params;
     // Only a contact task's opener can carry a category; the assigned notice never does.
     const category = 'category' in params ? params.category : undefined;
     const kindText = translate(
@@ -51,7 +52,9 @@ const describeTask = (
         `task-category.${isOneOf(Object.values(TaskCategory), category) ? category : 'none'}`
     );
     return translate(code, {
-        what: kind === TaskKind.contact ? `${kindText} · ${categoryText}` : kindText
+        what: kind === TaskKind.contact ? `${kindText} · ${categoryText}` : kindText,
+        // Two tasks of one kind read alike; the ref (as in the mail subject) tells them apart.
+        ref: shortRef(taskId)
     });
 };
 
@@ -121,7 +124,8 @@ export const foundationNotices: Record<string, AppNotice> = {
     'notifications.staff.task-due-soon': taskNotice,
     'notifications.staff.task-assigned': taskNotice,
     'notifications.staff.webhook-disabled': {
-        describe: (notice, { translate }) => translate(notice.code),
+        describe: (notice: Of<'notifications.staff.webhook-disabled'>, { translate }) =>
+            translate(notice.code, { ref: shortRef(notice.params.subscriptionId) }),
         target: (notice: Of<'notifications.staff.webhook-disabled'>) => ({
             route: 'WebhookTarget',
             params: { id: notice.params.subscriptionId }
@@ -129,7 +133,10 @@ export const foundationNotices: Record<string, AppNotice> = {
     },
     'notifications.staff.outbox-dead': {
         describe: (notice: Of<'notifications.staff.outbox-dead'>, { translate }) =>
-            translate(notice.code, { event: notice.params.eventName }),
+            translate(notice.code, {
+                event: notice.params.eventName,
+                ref: shortRef(notice.params.aggregateId)
+            }),
         target: (notice: Of<'notifications.staff.outbox-dead'>) =>
             outboxDeadTarget(notice.params.eventName, notice.params.aggregateId)
     }

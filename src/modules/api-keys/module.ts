@@ -16,7 +16,7 @@ import routes from './routes';
  * disappear for anyone else — `meta.can` is evaluated against the server's published rules, not a
  * role name.
  *
- * Context map: `docs/modules/api-keys.md` § "The map".
+ * Context map: `docs/modules/api-keys.md` § "Its neighbourhood".
  *
  * Subdomain: `generic`.
  */

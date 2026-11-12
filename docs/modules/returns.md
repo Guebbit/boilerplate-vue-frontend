@@ -13,7 +13,7 @@ the staff queue that approves and receives them, cancelling what has not shipped
 | **Subdomain** | `supporting`      |
 | **Publishes** | `WithdrawalPanel` |
 
-## The map
+## Its neighbourhood
 
 `orders` reaches this module through one `published-language` edge: its page mounts
 `WithdrawalPanel`, so the order never calls a returns operation itself. A return links back to its

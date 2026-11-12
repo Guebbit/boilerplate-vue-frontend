@@ -9,14 +9,11 @@
  * document in both: the backend reads its `shared/authorization-keys.generated.yaml`, the frontend the copy
  * `sync:frontend` hands it (`contracts/authorization-keys.yaml`).
  *
- * `--check` writes nothing and exits 1 on a mismatch — the contract every generator here keeps.
- *
- * Usage: tsx scripts/contracts/generate-permission-vocabulary.ts --in <yaml> --out <path> [--check]
+ * Usage: tsx scripts/contracts/generate-permission-vocabulary.ts --in <yaml> --out <path>
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { writeOrCheck } from './generated-file';
 import {
     readPermissionVocabulary,
     renderPermissionVocabulary
@@ -47,5 +44,5 @@ const OUTPUT = requiredPath('--out');
 /** The whole generated file's text. */
 const output = renderPermissionVocabulary(readPermissionVocabulary(readFileSync(INPUT, 'utf8')));
 
-// Write the file, or under `--check` compare it with what is on disk.
-writeOrCheck(OUTPUT, output, INPUT);
+writeFileSync(OUTPUT, output, 'utf8');
+console.log(`✓ Generated ${OUTPUT}`);

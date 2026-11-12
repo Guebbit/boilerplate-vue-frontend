@@ -20,7 +20,7 @@ import { useAutoDisabledBadge } from './composables/use-auto-disabled-badge';
  * (reading/replaying) are different jobs an operator reaches for at different times, same split
  * the `tasks` module uses for its public form vs. its admin tasks page.
  *
- * Context map: `docs/modules/webhooks.md` § "The map".
+ * Context map: `docs/modules/webhooks.md` § "Its neighbourhood".
  *
  * Subdomain: `generic`.
  */

@@ -43,7 +43,7 @@ flowchart TD
 > `boilerplate-node-backend` checkout beside this one.
 
 ```bash
-npm ci                                             # install exactly the lockfile
+npm ci                                             # install the lockfile; postinstall generates contracts/
 cp .env-example .env                               # create the local env file
 npm --prefix ../boilerplate-node-backend run demo  # the real API, in-memory, seeded — :3000
 npm run dev                                        # Vite dev server on :8080

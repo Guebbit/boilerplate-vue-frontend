@@ -15,12 +15,9 @@
  * generated for it. A path with no `x-module` (the handful of system endpoints the root document
  * declares directly) contributes no entry — there is no module to attribute it to.
  *
- * `--check` compares against the committed file and exits 1 on a mismatch — the same contract
- * `generate-asyncapi-types.ts` keeps.
- *
- * Usage: tsx scripts/contracts/generate-operation-modules.ts --out <path> [--check]
+ * Usage: tsx scripts/contracts/generate-operation-modules.ts --out <path>
  */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
@@ -60,9 +57,6 @@ const resolveOutputPath = (): string => {
 
 /** Absolute path of the file to generate, from `--out`. */
 const OUTPUT = resolveOutputPath();
-
-/** `--check` compares and reports; without it the file is written. */
-const checkOnly = process.argv.includes('--check');
 
 /** The HTTP methods an OpenAPI path item may hold. */
 const OPERATION_METHODS = ['get', 'put', 'post', 'patch', 'delete', 'head', 'options', 'trace'];
@@ -125,17 +119,5 @@ const output =
     '/** Every generated `@api` function, mapped to the backend module that owns its operation. */\n' +
     `export const OPERATION_MODULES: Record<string, string> = {\n${rows}\n};\n`;
 
-// Write the file, or under `--check` compare it with what is on disk.
-if (!checkOnly) {
-    writeFileSync(OUTPUT, output, 'utf8');
-    console.log(`✓ Generated ${OUTPUT}`);
-} else if (existsSync(OUTPUT) && readFileSync(OUTPUT, 'utf8') === output) {
-    console.log(`✓ ${OUTPUT} is current with openapi.yaml`);
-} else {
-    console.error(
-        `${OUTPUT} is not what openapi.yaml generates.\n` +
-            `  Run: npm run gen:api\n` +
-            `  Then commit the result.`
-    );
-    process.exit(1);
-}
+writeFileSync(OUTPUT, output, 'utf8');
+console.log(`✓ Generated ${OUTPUT}`);

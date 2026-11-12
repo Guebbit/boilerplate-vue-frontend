@@ -81,7 +81,7 @@ explanation; an inventory table says which modules have it. This is where the le
 `src/modules/` collapses to about a dozen entries.
 
 **Excluded.** Generated or vendored, stated once per directory so a reader knows it was a decision
-and not an oversight. `contracts/rest/` is the one — Orval writes it from `openapi.yaml`.
+and not an oversight. `contracts/rest/` is the one — Orval writes it from `openapi.yaml`, on install.
 
 Anything git does not track is out by definition: `dist/`, `node_modules/`,
 `.stryker-tmp/`, `docs/.vitepress/cache/`.

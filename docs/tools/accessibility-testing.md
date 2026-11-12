@@ -48,7 +48,7 @@ A retried test overwrites its own entry rather than appending; the four CI shard
 
 ### The rule set is pinned
 
-axe's default is "everything except experimental", and what "everything" means moves with every axe-core release: an `npm update` could add a rule and fail a page that had not changed. `cy.checkPageA11y()` therefore passes `runOnly` by tag — `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`, `best-practice`. One AAA rule is named on top of them, `identical-links-same-purpose` (same link text, same destination), in `checkPageA11y` and in the unit helper `tests/support/unit/axe.ts`. The contract is written down; widening it is an edit to one list.
+axe's default is "everything except experimental", and what "everything" means moves with every axe-core release: an `npm update` could add a rule and fail a page that had not changed. `cy.checkPageA11y()` therefore passes `runOnly` by tag — `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`, `best-practice`. One AAA rule, `identical-links-same-purpose` (same link text, same destination), is **reported, not gated**: axe can only answer "pass" or "incomplete" for it, so `checkPageA11y` runs it in its own pass and writes its `incomplete` nodes into the report as `needsReview`, for a person to read. Gating on `violations` only, with `incomplete` kept for manual review, is how GOV.UK, jest-axe, Playwright and Storybook use axe. The law asks AA (2.4.4, a link text that names its destination); that two notices of one code read differently is proven by `notifications-bell.spec.ts`. The contract is written down; widening it is an edit to one list.
 
 ## Waiting for content, not the shell
 

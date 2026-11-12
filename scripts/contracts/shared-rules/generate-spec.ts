@@ -29,7 +29,7 @@ export interface GeneratedExport {
 
 /** What a rules file generates. */
 export interface GenerateSpec {
-    /** Repo-relative path of the committed `.generated.ts`. */
+    /** Repo-relative path of the gitignored `.generated.ts`. */
     out: string;
     /** The constants it holds, in order. */
     exports: readonly GeneratedExport[];

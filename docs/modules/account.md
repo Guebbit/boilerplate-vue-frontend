@@ -17,7 +17,7 @@ management — is answered through that one prompt.
 | **Stores**    | `account-auth` · `account-profile` · `account-sessions` · `account-addresses` · `account-oauth-providers` · `account-oauth-links` · `account-two-factor` · `account-deletion-restore` |
 | **Publishes** | `AddressPicker` · `PurchaseHoldNotice`                                                                                                                                                |
 
-## The map
+## Its neighbourhood
 
 The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 

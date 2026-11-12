@@ -10,14 +10,11 @@
  * The backend keeps its own copy of this script, which writes `api/upload-types.ts`. The input is
  * the SAME `openapi.yaml` in both: it travels to the frontend as a shared file.
  *
- * `--check` writes nothing and exits 1 on a mismatch (the shared `writeOrCheck` helper).
- *
- * Usage: tsx scripts/contracts/generate-upload-types.ts --out <path> [--check]
+ * Usage: tsx scripts/contracts/generate-upload-types.ts --out <path>
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { writeOrCheck } from './generated-file';
 import { parse } from 'yaml';
 
 /** The slice of an OpenAPI media type this generator reads. */
@@ -105,5 +102,5 @@ const output =
     '/** One accepted upload media type. */\n' +
     'export type AcceptedUploadType = (typeof ACCEPTED_UPLOAD_TYPES)[number];\n';
 
-// Write the file, or under `--check` compare it with what is on disk.
-writeOrCheck(OUTPUT, output, 'openapi.yaml');
+writeFileSync(OUTPUT, output, 'utf8');
+console.log(`✓ Generated ${OUTPUT}`);

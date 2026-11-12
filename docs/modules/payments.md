@@ -11,7 +11,7 @@
 | **Subdomain** | `supporting` — Specific to this business but not a differentiator. Kept plain.                                    |
 | **Publishes** | `PaymentPanel` · `PaymentMethodSelector` · `RecordOfflinePaymentForm` · `OrderReferenceSearch` · `useOrderRefund` |
 
-## The map
+## Its neighbourhood
 
 The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
@@ -21,7 +21,7 @@ The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 ## The story
 
 **Paying has no route.** Paying happens _on_ the order, so this module contributes a component
-through its barrel and [`orders`](./orders.md) mounts it. The map above says how each
+through its barrel and [`orders`](./orders.md) mounts it. The neighbourhood above says how each
 sibling depends on this module; the order page learns nothing about payments by rendering one. The
 module's one route, `PaymentsList`, is for staff and is described [below](#the-staff-payments-page).
 

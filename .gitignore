@@ -26,6 +26,16 @@ tests_output/
 # would consume it does not exist. A local run still keeps and reuses its own copy on disk.
 reports/*
 
+# Generated contract code: rebuilt from the committed contracts and rules by `npm run regenerate`,
+# which `postinstall` runs. The inputs (`openapi.yaml`, `asyncapi.yaml`, `contracts/*.yaml`,
+# `shared/rules/**`) stay committed; nothing below is hand-edited or reviewed.
+/contracts/asyncapi.generated.ts
+/contracts/permission-vocabulary.ts
+/contracts/rest/
+/src/app/tours/tours.generated.ts
+/src/app/utils/static-pages.generated.ts
+/src/infrastructure/browser-storage.generated.ts
+
 # vitepress
 docs/.vitepress/dist
 docs/.vitepress/cache

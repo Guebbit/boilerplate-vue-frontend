@@ -186,7 +186,7 @@ reference: one public route, one `auth` route, one file.
 ### 5 · The page
 
 Write `docs/modules/<name>.md`. Copy the section order from a page of a domain the same size —
-**At a glance**, **The map**, **The story**, **State**, **Screens**, **Wiring**, **Files**,
+**At a glance**, **Its neighbourhood**, **The story**, **State**, **Screens**, **Wiring**, **Files**,
 **Working on it**, **Related pages** — and fill it from the manifest, the route records, the store
 and the response-schema rows. Every block is hand-written — nothing generates any part of this page
 from the code. The two sections worth the most care are the ones only you can write:

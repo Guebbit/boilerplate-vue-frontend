@@ -7,6 +7,7 @@ import { asStub } from '../stub';
 import { parseMailpitMessage, type MailedEmail } from '../../../scripts/e2e/mail-message';
 import { answerChallengePage } from './login-challenge';
 import { isContractMismatch } from '../../../scripts/e2e/contract-mismatch';
+import type axe from 'axe-core';
 
 /*
  * A demo restore empties the in-memory database and puts a scenario back inside the backend
@@ -1007,11 +1008,47 @@ const AXE_RULE_TAGS = [
 ] as const;
 
 /**
- * Rules switched on by name, outside the pinned tags.
+ * The one rule that is reported for manual review and never gates.
  * `identical-links-same-purpose` is WCAG 2.4.9 (AAA): two links with the same text must go to
- * the same place. It keeps a list of notices (or any list) from repeating one bare "Open it".
+ * the same place. axe can only answer "pass" or "incomplete" for it (it cannot know whether two
+ * destinations serve one purpose), so it never appears in `violations`. The law asks AA (2.4.4),
+ * which a link whose text names its record meets; that two notices read differently is proven by
+ * `notifications-bell.spec.ts`, not here.
  */
-const AXE_EXTRA_RULES = { 'identical-links-same-purpose': { enabled: true } } as const;
+const REVIEW_RULE = 'identical-links-same-purpose';
+
+/**
+ * The axe instance `cy.injectAxe()` put on the page.
+ *
+ * @param win - The app's window.
+ */
+// The cast names the global that injectAxe created; cypress-axe does not declare it on `Window`.
+const pageAxe = (win: Window): typeof axe => (win as Window & { axe: typeof axe }).axe;
+
+/**
+ * Runs {@link REVIEW_RULE} alone and keeps what axe could not decide ("incomplete").
+ *
+ * @param win - The app's window.
+ * @returns The nodes to look at by hand, in the shape the report stores.
+ */
+const nodesNeedingReview = (win: Window) =>
+    // axe.run(context, options): `runOnly` with `type: 'rule'` runs just the named rule.
+    // https://github.com/dequelabs/axe-core/blob/master/doc/API.md#options-parameter
+    pageAxe(win)
+        .run(win.document, {
+            runOnly: { type: 'rule', values: [REVIEW_RULE] },
+            resultTypes: ['incomplete']
+        })
+        .then(({ incomplete }) =>
+            incomplete.map(({ id, impact, help, helpUrl, tags, nodes }) => ({
+                id,
+                impact: impact ?? undefined,
+                help,
+                helpUrl,
+                tags,
+                nodes: nodes.map(({ target, html }) => ({ target: target.map(String), html }))
+            }))
+        );
 
 /** Where every finding lands, blocking or not — see `a11y-task.ts`. */
 const A11Y_REPORT_TASK = 'recordA11yViolations';
@@ -1057,8 +1094,7 @@ Cypress.Commands.add('checkPageA11y', (context?: string) => {
     cy.injectAxe();
     cy.checkA11y(
         undefined,
-        // `rules` wins over `runOnly`, so this one AAA rule runs beside the pinned tags.
-        { runOnly: { type: 'tag', values: [...AXE_RULE_TAGS] }, rules: AXE_EXTRA_RULES },
+        { runOnly: { type: 'tag', values: [...AXE_RULE_TAGS] } },
         (violations) => {
             for (const { id, impact, nodes, help } of violations)
                 cy.log(`${label} ${impact}: ${id} — ${help} (${nodes.length} node(s))`);
@@ -1068,30 +1104,35 @@ Cypress.Commands.add('checkPageA11y', (context?: string) => {
              * the moment the run ends, and the JSON is what CI uploads. Recorded BEFORE the gate
              * below throws, so a failing page's full picture is in the report too.
              */
-            cy.url({ log: false }).then((url) => {
-                cy.task(
-                    A11Y_REPORT_TASK,
-                    {
-                        spec: Cypress.spec.relative,
-                        context: context ?? url,
-                        url,
-                        violations: violations.map(
-                            ({ id, impact, help, helpUrl, tags, nodes }) => ({
-                                id,
-                                impact,
-                                help,
-                                helpUrl,
-                                tags,
-                                nodes: nodes.map(({ target, html }) => ({
-                                    target: target.map(String),
-                                    html
-                                }))
-                            })
-                        )
-                    },
-                    { log: false }
-                );
-            });
+            cy.window({ log: false })
+                .then((win) => nodesNeedingReview(win))
+                .then((needsReview) => {
+                    cy.url({ log: false }).then((url) => {
+                        cy.task(
+                            A11Y_REPORT_TASK,
+                            {
+                                spec: Cypress.spec.relative,
+                                context: context ?? url,
+                                url,
+                                needsReview,
+                                violations: violations.map(
+                                    ({ id, impact, help, helpUrl, tags, nodes }) => ({
+                                        id,
+                                        impact,
+                                        help,
+                                        helpUrl,
+                                        tags,
+                                        nodes: nodes.map(({ target, html }) => ({
+                                            target: target.map(String),
+                                            html
+                                        }))
+                                    })
+                                )
+                            },
+                            { log: false }
+                        );
+                    });
+                });
 
             const blocking = violations.filter(({ impact }) => BLOCKING_IMPACTS.has(impact ?? ''));
             if (blocking.length > 0)

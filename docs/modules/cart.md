@@ -12,7 +12,7 @@
 | **Shared parts** | `CartLineCard` (one line, both carts) · `CartEmptyState` (the empty basket, both carts) |
 | **Publishes**    | `useCartStore`                                                                          |
 
-## The map
+## Its neighbourhood
 
 The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 
@@ -26,7 +26,7 @@ The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 ## The story
 
 [`orders`](./orders.md) reaches the barrel for the reorder button and [`wishlist`](./wishlist.md)
-for its move-to-cart exit (kinds are on the map above): `orders` asks this store to write a line,
+for its move-to-cart exit (kinds are in the neighbourhood above): `orders` asks this store to write a line,
 while the move itself is a wishlist endpoint and this store is only asked to refetch.
 
 The product page's "add to cart" arrives the other way round. This module's manifest contributes

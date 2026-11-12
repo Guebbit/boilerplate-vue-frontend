@@ -11,7 +11,7 @@
 | **Subdomain** | `supporting` |
 | **Publishes** | —            |
 
-## The map
+## Its neighbourhood
 
 `shop-tasks` imports no sibling. Its links name sibling routes (`OrderTarget`, `UserTarget`,
 `ReturnTarget`, `SalesOrders`, `PaymentsList`, `SalesReturns`, `PreordersBoard`,

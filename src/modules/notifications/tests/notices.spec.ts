@@ -69,7 +69,7 @@ describe('a webhook switched off', () => {
 
     it('needs no facts to be said, and opens the subscription', () => {
         expect(entryOf(disabled).describe(disabled, context)).toBe(
-            'notifications.staff.webhook-disabled'
+            'notifications.staff.webhook-disabled|ref=s1'
         );
         expect(entryOf(disabled).target?.(disabled)).toEqual({
             route: 'WebhookTarget',
@@ -92,7 +92,7 @@ const dead = (eventName: string) =>
 describe('a dead event', () => {
     it('names the parked event, and opens the account it was about', () => {
         expect(entryOf(dead('user.registered')).describe(dead('user.registered'), context)).toBe(
-            'notifications.staff.outbox-dead|event=user.registered'
+            'notifications.staff.outbox-dead|event=user.registered|ref=x1'
         );
         expect(entryOf(dead('user.registered')).target?.(dead('user.registered'))).toEqual({
             route: 'UserTarget',
@@ -137,7 +137,7 @@ const said = (notice: Notification) => entryOf(notice).describe(notice, context)
 describe('a task notice', () => {
     it('names a contact message by its category', () => {
         expect(said(opened({ kind: 'contact', category: 'privacy' }))).toBe(
-            'notifications.staff.task-opened|what=task-kind.contact · task-category.privacy'
+            'notifications.staff.task-opened|what=task-kind.contact · task-category.privacy|ref=t1'
         );
     });
 
@@ -147,13 +147,13 @@ describe('a task notice', () => {
 
     it('names a system task by its kind alone, even when a category were sent', () => {
         expect(said(opened({ kind: 'dispute', category: 'privacy' }))).toBe(
-            'notifications.staff.task-opened|what=task-kind.dispute'
+            'notifications.staff.task-opened|what=task-kind.dispute|ref=t1'
         );
     });
 
     it('reads a kind from a newer backend as a plain task, never as its key', () => {
         expect(said(opened({ kind: 'from_the_future' }))).toBe(
-            'notifications.staff.task-opened|what=task-kind.unknown'
+            'notifications.staff.task-opened|what=task-kind.unknown|ref=t1'
         );
     });
 
@@ -173,7 +173,7 @@ describe('a task notice', () => {
             params: { taskId: 't2', kind: 'dispute' }
         } as Notification;
 
-        expect(said(notice)).toBe(`${code}|what=task-kind.dispute`);
+        expect(said(notice)).toBe(`${code}|what=task-kind.dispute|ref=t2`);
         expect(entryOf(notice).target?.(notice)).toEqual({
             route: 'TaskDetail',
             params: { id: 't2' }

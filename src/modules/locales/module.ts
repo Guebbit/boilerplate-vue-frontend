@@ -23,7 +23,7 @@ import routes from './routes';
  * Translation management is a solved problem — every CMS grows one of these screens and none
  * of them differ. The modelling effort lives server-side, where the rows are.
  *
- * Context map: `docs/modules/locales.md` § "The map".
+ * Context map: `docs/modules/locales.md` § "Its neighbourhood".
  *
  * Subdomain: `generic`.
  */

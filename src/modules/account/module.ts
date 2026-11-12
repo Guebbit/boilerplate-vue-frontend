@@ -27,7 +27,7 @@ import routes from './routes';
  * Login, signup, password reset. There is no version of this that is a competitive advantage,
  * and the client half is thinner still — it renders forms over rules the server owns.
  *
- * Context map: `docs/modules/account.md` § "The map".
+ * Context map: `docs/modules/account.md` § "Its neighbourhood".
  *
  * Subdomain: `generic`.
  */

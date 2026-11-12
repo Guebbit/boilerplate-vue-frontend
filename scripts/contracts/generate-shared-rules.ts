@@ -5,9 +5,9 @@
  *
  * - `shared/rules/schemas/<name>.schema.json`: each file's Zod schema as JSON Schema, so another
  *   frontend validates the same YAML without Zod.
- * - `<out>.generated.ts`: the data as a committed `as const` file the code imports.
+ * - `<out>.generated.ts`: the data as a gitignored `as const` file the code imports.
  *
- * `--check` writes nothing and exits 1 on a stale file. The backend runs the same renderer over
+ * `--check` writes nothing and exits 1 on a stale file; only the committed JSON Schemas can go stale, since the `.generated.ts` files are rebuilt on install. The backend runs the same renderer over
  * its own `shared/rules/`; the two never read each other's files except the synced ones.
  *
  * See: docs/tools/shared-rules.md
