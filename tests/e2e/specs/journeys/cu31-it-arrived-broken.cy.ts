@@ -30,11 +30,15 @@ interface PaymentLike {
     displayStatus: string;
 }
 
-/** The slice of a return this story reads. */
-interface ReturnLike {
+/** The slice of a list row (`GET /returns`) this story reads. */
+interface ReturnListItemLike {
     id: string;
-    status: string;
     reason: string;
+}
+
+/** The slice of a whole return (`POST /returns`, `GET /returns/:id`) this story reads. */
+interface ReturnLike extends ReturnListItemLike {
+    status: string;
     lines: { productId: string; quantity: number }[];
 }
 
@@ -107,22 +111,28 @@ describe('CU31 · It arrived broken', () => {
                 cy.get(`[data-test=return-line-quantity-${a.id}] input`).type('1');
                 cy.get('[data-test=return-note] textarea').type('The bowl arrived cracked.');
                 cy.get('[data-test=return-request-submit]').dblclick();
-                cy.wait('@openReturn').its('response.statusCode').should('equal', 201);
-                cy.get('@openReturn.all').should('have.length', 1);
-                cy.get('[data-test=order-return]').should('have.length', 1);
-                cy.apiAs<{ items: ReturnLike[] }>(
-                    'user',
-                    'GET',
-                    `/returns?orderId=${orderId}`
-                ).then((page) => {
-                    expect(page?.items).to.have.length(1);
-                    const [opened] = page?.items ?? [];
-                    expect(opened).to.include({ status: 'requested', reason: 'defective' });
+                cy.wait('@openReturn').then(({ request, response }) => {
+                    // what the customer asked for: one unit of A, defective, with the note
+                    // an intercepted body is `any`: it is the request the form built
+                    const sent = request.body as { lines: unknown[] };
+                    expect(sent).to.deep.include({
+                        orderId,
+                        reason: 'defective',
+                        note: 'The bowl arrived cracked.'
+                    });
+                    expect(sent.lines).to.deep.equal([{ productId: a.id, quantity: 1 }]);
+                    // what the server recorded
+                    expect(response?.statusCode).to.equal(201);
+                    const opened = response?.body as ReturnLike;
+                    expect(opened.status).to.equal('requested');
+                    expect(opened.reason).to.equal('defective');
                     expect(
-                        opened?.lines.map(({ productId, quantity }) => ({ productId, quantity }))
+                        opened.lines.map(({ productId, quantity }) => ({ productId, quantity }))
                     ).to.deep.equal([{ productId: a.id, quantity: 1 }]);
+                    cy.get('@openReturn.all').should('have.length', 1);
+                    cy.get('[data-test=order-return]').should('have.length', 1);
 
-                    const firstId = opened?.id;
+                    const firstId = opened.id;
                     cy.step('the customer is mailed that it was received');
                     orderMailTo('user', orderId, 'We received your return request');
 
@@ -212,7 +222,7 @@ describe('CU31 · It arrived broken', () => {
                             { productId: b.id, quantity: 1 }
                         ]
                     });
-                    cy.apiAs<{ items: ReturnLike[] }>(
+                    cy.apiAs<{ items: ReturnListItemLike[] }>(
                         'user',
                         'GET',
                         `/returns?orderId=${orderId}`

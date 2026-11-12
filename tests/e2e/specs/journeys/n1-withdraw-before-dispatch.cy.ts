@@ -97,15 +97,20 @@ describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
                 .should('have.length', 1)
                 .and('contain.text', 'Closed');
             cy.get('[data-test=order-return-status]').should('not.exist');
-            cy.apiAs<{ items: { reason: string; status: string; lines: unknown[] }[] }>(
+            cy.apiAs<{ items: { reason: string; status: string }[] }>(
                 'user',
                 'GET',
                 `/returns?orderId=${orderId}`
             ).should((page) => {
                 expect(page?.items).to.have.length(1);
                 expect(page?.items[0]).to.include({ reason: 'withdrawal', status: 'closed' });
-                expect(page?.items[0].lines).to.have.length(0);
             });
+            // what the customer sees on the return itself: nothing is expected back
+            cy.get('[data-test=order-return] a').click();
+            cy.get('[data-test=return-no-lines]').should(
+                'contain.text',
+                'No goods are expected back'
+            );
 
             cy.step('the stock is back on the shelf');
             cy.subjectId('product.barebones').then((productId) => {
