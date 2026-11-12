@@ -63,8 +63,9 @@ Every rule in this section is machine-checked: `strictTypeChecked` plus the proj
 
 - MUST apply SOLID principles.
 - MUST keep functions focused — one responsibility each.
-- MUST keep nesting ≤ 3 levels; extract a helper for anything deeper. `max-depth` and
-  `max-nested-callbacks` enforce it at 3 — chain, or name the step.
+- MUST keep nesting ≤ 3 levels; extract a helper for anything deeper. `max-depth` enforces the
+  block half at 3; `max-nested-callbacks` caps callbacks at 4 in production code — chain, or name
+  the step.
 - MUST prefer pure functions and shared abstractions over duplicated inline logic.
 - MUST NOT extract a function, file or wrapper unless it hides real complexity, names a domain
   rule, is a boundary (port, adapter, third-party call), or has ≥ 2 callers today. A three-line
@@ -350,6 +351,9 @@ Conventional Commits, enforced by commitlint on the `commit-msg` hook.
 - Breaking change: `!` after the scope plus a `BREAKING CHANGE:` footer.
 - MUST stage explicit pathspecs, never `git add -A` or `git add .`. Commit with
   `git commit -m "…" -- <paths>`. After a failed hook, run `git status` before retrying.
+  - Untracking a file (`git rm --cached`) is the one exception: a pathspec commit re-adds the
+    working-tree copy. Check `git diff --cached --name-status` shows only the deletions, then run a
+    plain `git commit`.
 - The container engine is **podman** (rootless). `docker` here is the podman shim.
 - MUST NOT run subagents that implement concurrently in the same working tree.
 - The pre-commit hook runs `lint-staged` (eslint + prettier on staged files), runs
