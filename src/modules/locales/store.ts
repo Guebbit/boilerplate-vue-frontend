@@ -113,14 +113,30 @@ const listEntriesOf = (
 
 /**
  * Re-reads the smallest page of the all-apps list, to hold that list's current `ETag`: the
- * tag an import's `If-Match` carries. For after an import (the page's own list may be one
- * app's, whose tag is another key), and for "reload latest".
+ * tag an import's `If-Match` carries. Runs after an import (the page's own list may be one
+ * app's, whose tag is another key), after an entry write, and on "reload latest".
  *
  * @param tag - Which language.
  * @returns A promise resolving once the tag is held.
  */
 const refreshDictionaryTag = (tag: string): Promise<void> =>
     listLocaleEntries(tag, { page: 1, pageSize: 1 }).then(() => undefined);
+
+/**
+ * Holds the dictionary's new tag after an entry write, then answers with the write's own result.
+ *
+ * A failed refresh still resolves: the write landed, and a stale tag only costs a 412 that
+ * "Reload latest" fixes, whereas a rejection would make a retry of the write collide (409).
+ *
+ * @param tag - Which language.
+ * @param result - What the write answered.
+ * @returns A promise resolving with `result`, whatever the refresh did.
+ */
+const resolveAfterTagRefresh = <T>(tag: string, result: T): Promise<T> =>
+    refreshDictionaryTag(tag).then(
+        () => result,
+        () => result
+    );
 
 /**
  * The translation admin surface: languages on one side, one language's entries on the other.
@@ -365,7 +381,9 @@ export const useLocalesStore = defineStore('locales', () => {
                 // The new row's page position is the server's call, so cached pages are stale.
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises -- invalidateQueries resolves even when a refetch fails (no throwOnError)
                 void invalidateEntrySearches();
-                return response;
+                // The write bumped the dictionary revision; hold the new tag so a later import's
+                // `If-Match` is not stale against our own write.
+                return resolveAfterTagRefresh(tag, response);
             })
         );
 
@@ -382,7 +400,8 @@ export const useLocalesStore = defineStore('locales', () => {
         fetchAny(() =>
             replaceLocaleEntry(tag, app, entryId, { value }).then((response) => {
                 addRecord(response);
-                return response;
+                // Same reason as `addEntry`: our own write moved the dictionary revision.
+                return resolveAfterTagRefresh(tag, response);
             })
         );
 
@@ -395,7 +414,10 @@ export const useLocalesStore = defineStore('locales', () => {
      * @returns A promise resolving once the row is gone locally as well.
      */
     const removeEntry = (tag: string, app: string, entryId: string) =>
-        deleteTarget(() => deleteLocaleEntry(tag, app, entryId), entryId);
+        deleteTarget(() => deleteLocaleEntry(tag, app, entryId), entryId).then((result) =>
+            // Same reason as `addEntry`: our own write moved the dictionary revision.
+            resolveAfterTagRefresh(tag, result)
+        );
 
     /**
      * Bulk import into ONE app, with the semantics spelled by the method it maps to.
@@ -403,6 +425,9 @@ export const useLocalesStore = defineStore('locales', () => {
      * `merge` upserts what is sent and deletes nothing; `replace` makes the app exactly what the
      * body carries — what is not sent is DELETED. The choice lives in the HTTP method on purpose,
      * so this wrapper keeps the two words rather than a boolean someone can pass inverted.
+     *
+     * The `If-Match` fence means "no dictionary write since this screen last read the list":
+     * the screen's own entry writes refresh the tag, so only someone else's write trips it.
      *
      * @param tag - Which language.
      * @param mode - `merge` or `replace`.

@@ -94,6 +94,8 @@ beforeEach(() => {
         },
         // Bodyless per the real contract — no `data` at all — unlike the write endpoints above.
         'DELETE /locales/es': undefined,
+        // The smallest all-apps page an entry write re-reads to hold the dictionary's new tag.
+        'GET /locales/es/entries': { items: [], meta: { totalItems: 0, totalPages: 0 } },
         'POST /locales/es/apps/demo-fe/entries': ENTRY,
         'PATCH /locales/es/apps/demo-be/entries': {
             created: 0,
@@ -194,7 +196,10 @@ describe('entry writes', () => {
             .addEntry('es', 'demo-fe', { key: 'generic.search', value: 'Buscar' })
             .then((entry) => {
                 expect(entry).toEqual(ENTRY);
-                expect(requestedUrls()).toEqual(['POST /locales/es/apps/demo-fe/entries']);
+                expect(requestedUrls()).toEqual([
+                    'POST /locales/es/apps/demo-fe/entries',
+                    'GET /locales/es/entries'
+                ]);
             });
     });
 
@@ -268,6 +273,85 @@ describe('importEntries If-Match', () => {
                 };
                 expect(call.headers?.['If-Match']).toBe('"4.abc"');
             });
+    });
+
+    it.each([
+        [
+            'an add',
+            (store: ReturnType<typeof useLocalesStore>) =>
+                store.addEntry('es', 'demo-fe', { key: 'a.b', value: 'c' })
+        ],
+        [
+            'an edit',
+            (store: ReturnType<typeof useLocalesStore>) =>
+                store.editEntry('es', 'demo-fe', ENTRY.id, 'Cercar')
+        ],
+        [
+            'a removal',
+            (store: ReturnType<typeof useLocalesStore>) =>
+                store.removeEntry('es', 'demo-fe', ENTRY.id)
+        ]
+    ])('sends the NEW tag after %s moved the revision', (_name, write) => {
+        readAllAppsList('"4.old"');
+        // The server's read of the all-apps list answers with the bumped revision's tag.
+        vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) => {
+            const key = `${config.method?.toUpperCase()} ${config.url}`;
+            if (key === 'GET /locales/es/entries') readAllAppsList('"5.new"');
+            return Promise.resolve(
+                parseOrvalFixture(config.method, config.url, responses[key]) as never
+            );
+        });
+        const store = useLocalesStore();
+        return write(store)
+            .then(() => store.importEntries('es', 'merge', 'demo-fe', [{ key: 'a', value: 'b' }]))
+            .then(() => {
+                const importCall = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.map((call) => call[1] as { headers?: Record<string, string> })
+                    .find((options) => options?.headers?.['If-Match']);
+                expect(importCall?.headers?.['If-Match']).toBe('"5.new"');
+            });
+    });
+
+    it('still resolves with the entry when the refresh read answers 500', () => {
+        vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) => {
+            const key = `${config.method?.toUpperCase()} ${config.url}`;
+            return key === 'GET /locales/es/entries'
+                ? Promise.reject(new Error('500'))
+                : Promise.resolve(
+                      parseOrvalFixture(config.method, config.url, responses[key]) as never
+                  );
+        });
+        const store = useLocalesStore();
+        return store
+            .addEntry('es', 'demo-fe', { key: 'a.b', value: 'c' })
+            .then((added) => {
+                expect(added).toEqual(ENTRY);
+                return store.editEntry('es', 'demo-fe', ENTRY.id, 'Cercar');
+            })
+            .then((edited) => {
+                expect(edited?.value).toBe('Cercar');
+            });
+    });
+
+    it('sends no refresh read when the write itself failed', () => {
+        vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) =>
+            config.method?.toUpperCase() === 'POST'
+                ? Promise.reject(new Error('409'))
+                : Promise.resolve(
+                      parseOrvalFixture(
+                          config.method,
+                          config.url,
+                          responses['GET /locales/es/entries']
+                      ) as never
+                  )
+        );
+        return useLocalesStore()
+            .addEntry('es', 'demo-fe', { key: 'a.b', value: 'c' })
+            .then(
+                () => expect.unreachable('the write should have rejected'),
+                () => expect(requestedUrls()).toEqual(['POST /locales/es/apps/demo-fe/entries'])
+            );
     });
 
     it('goes out unconditionally when no list was read', () =>
