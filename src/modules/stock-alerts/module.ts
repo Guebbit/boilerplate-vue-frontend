@@ -16,7 +16,7 @@ import routes from './routes';
  * The button is contributed to the `product-actions` slot by this manifest, so `products` never
  * imports it. Deleting the folder costs a convenience, not a capability.
  *
- * Context map: `docs/modules/stock-alerts.md` § "The map".
+ * Context map: `docs/modules/stock-alerts.md` § "Its neighbourhood".
  *
  * Subdomain: `supporting`.
  */

@@ -22,7 +22,7 @@ import routes from './routes';
  * What a shop sells is the shop, and the catalogue is the screen a visitor spends their time
  * on. The client half owns the browsing experience; the server owns the prices.
  *
- * Context map: `docs/modules/products.md` § "The map".
+ * Context map: `docs/modules/products.md` § "Its neighbourhood".
  *
  * Subdomain: `core`.
  */

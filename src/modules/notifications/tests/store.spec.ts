@@ -156,10 +156,10 @@ describe('sync', () => {
         return inbox.sync().then(() => {
             expect(inbox.items.map(({ id }) => id)).toEqual(['n2', 'n1']);
             expect(inbox.items[1]?.text).toBe(
-                'An event (event.n1) could not be delivered after every retry and was parked. Look at the record it was about.'
+                'An event (event.n1) could not be delivered after every retry and was parked. Look at the record it was about · #a1.'
             );
             expect(inbox.items[0]?.text).toBe(
-                'A webhook subscription was switched off after repeated delivery failures. Fix the endpoint, then re-enable it.'
+                'A webhook subscription was switched off after repeated delivery failures. Fix the endpoint, then re-enable it · #s1.'
             );
         });
     });
@@ -682,7 +682,7 @@ describe('retranslate', () => {
                 inbox.retranslate();
 
                 expect(inbox.items[0]?.text).toBe(
-                    'Un evento (event.n1) non è stato consegnato dopo tutti i tentativi ed è stato messo da parte. Controlla il record a cui si riferiva.'
+                    'Un evento (event.n1) non è stato consegnato dopo tutti i tentativi ed è stato messo da parte. Controlla il record a cui si riferiva · #a1.'
                 );
                 expect(toolkit().messages).toHaveLength(0);
             })

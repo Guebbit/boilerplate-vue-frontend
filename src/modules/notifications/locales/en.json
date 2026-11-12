@@ -13,12 +13,12 @@
         "button-delete-named": "Delete notification: {text}",
         "unread": "New",
         "staff": {
-            "webhook-disabled": "A webhook subscription was switched off after repeated delivery failures. Fix the endpoint, then re-enable it.",
-            "task-opened": "New task: {what}.",
-            "task-overdue": "Overdue task, still open: {what}.",
-            "task-due-soon": "Due in three days, still open: {what}.",
-            "task-assigned": "A task was given to you: {what}.",
-            "outbox-dead": "An event ({event}) could not be delivered after every retry and was parked. Look at the record it was about."
+            "webhook-disabled": "A webhook subscription was switched off after repeated delivery failures. Fix the endpoint, then re-enable it · #{ref}.",
+            "task-opened": "New task: {what} · #{ref}.",
+            "task-overdue": "Overdue task, still open: {what} · #{ref}.",
+            "task-due-soon": "Due in three days, still open: {what} · #{ref}.",
+            "task-assigned": "A task was given to you: {what} · #{ref}.",
+            "outbox-dead": "An event ({event}) could not be delivered after every retry and was parked. Look at the record it was about · #{ref}."
         }
     }
 }

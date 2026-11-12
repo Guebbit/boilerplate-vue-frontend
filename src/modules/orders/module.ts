@@ -16,7 +16,7 @@ import routes from './routes';
  * admin status screens. Where the shop's outcome becomes visible — but the invariants that decide a
  * status live behind the API, not here.
  *
- * Context map: `docs/modules/orders.md` § "The map".
+ * Context map: `docs/modules/orders.md` § "Its neighbourhood".
  *
  * Subdomain: `core`.
  */

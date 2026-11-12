@@ -23,7 +23,7 @@ import routes from './routes';
  * domain's store, so dropping it costs nothing anywhere else — which is the point, since it is
  * the first thing a downstream project without an ops dashboard deletes.
  *
- * Context map: `docs/modules/observability.md` § "The map".
+ * Context map: `docs/modules/observability.md` § "Its neighbourhood".
  *
  * Subdomain: `generic`.
  */

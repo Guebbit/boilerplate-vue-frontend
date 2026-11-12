@@ -10,7 +10,7 @@
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | **Subdomain** | `generic` — delivery, retries and signing are a solved problem; the events themselves belong to the modules that publish them. |
 
-## The map
+## Its neighbourhood
 
 `webhooks` sits on no edge of the context map — nothing imports it and it imports nothing.
 

@@ -15,7 +15,7 @@ shop's own audit trail, and the realtime SSE playground over the same metrics st
 No module depends on this one and it depends on none. Deleting the folder and its line in `src/modules.ts` costs nothing else.
 :::
 
-## The map
+## Its neighbourhood
 
 `observability` sits on no edge of the context map — nothing imports it and it imports nothing.
 

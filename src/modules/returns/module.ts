@@ -17,7 +17,7 @@ import routes from './routes';
  * separate endpoint. The order page mounts this module's `WithdrawalPanel`; a return links back to
  * its order by route name.
  *
- * Context map: `docs/modules/returns.md` § "The map".
+ * Context map: `docs/modules/returns.md` § "Its neighbourhood".
  *
  * Subdomain: `supporting`.
  */

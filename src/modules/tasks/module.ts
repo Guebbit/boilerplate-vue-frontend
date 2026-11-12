@@ -18,7 +18,7 @@ import { useTaskBadge } from './composables/use-task-badge';
  * A contact form and an inbox. Every application grows one, none of them differ, and this one
  * references no other domain’s records.
  *
- * Context map: `docs/modules/tasks.md` § "The map".
+ * Context map: `docs/modules/tasks.md` § "Its neighbourhood".
  *
  * Subdomain: `generic`.
  */
