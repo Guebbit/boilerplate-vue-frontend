@@ -43,6 +43,11 @@ RUN npm ci --ignore-scripts
 
 COPY . .
 
+# The contract code is gitignored, so the context never carries it: rebuild it from the committed
+# `openapi.yaml`, `asyncapi.yaml` and `shared/rules/`. This is `postinstall`, run by hand because
+# `npm ci --ignore-scripts` above skips it.
+RUN npm run regenerate
+
 # The one build-time value left: Vite bakes it into every emitted asset URL, so a running
 # container cannot change it. Everything else moved to `config.js` above.
 ARG VITE_APP_BASE_URL

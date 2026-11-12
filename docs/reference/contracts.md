@@ -48,6 +48,8 @@ regeneration, and the diff will look like the backend broke something.
 
 ## The generated client
 
+Gitignored: `postinstall` (`npm run regenerate`) rebuilds all of it on `npm install` and `npm ci`.
+
 | File                            | What it is                                                                                                                                                                                                                                                    | Read next                                                                                  |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `contracts/rest/index.ts`       | **Generated** by `npm run gen:api`. One typed function per operation, each routed through the shared axios instance rather than calling the network itself.                                                                                                   | [OpenAPI Workflow](../api/openapi-workflow.md) · [Infrastructure](./src-infrastructure.md) |

@@ -136,7 +136,7 @@ this diagram exists to prevent.
 
 ### Orval
 
-**What it is.** Orval is a code generator that reads `openapi.yaml` and outputs a typed axios client and Zod schemas. The generated `contracts/rest/` directory is a derived artifact — never edit it by hand.
+**What it is.** Orval is a code generator that reads `openapi.yaml` and outputs a typed axios client and Zod schemas. The generated `contracts/rest/` directory is a derived artifact, gitignored and rebuilt on install — never edit it by hand.
 
 **Problem it solves.** Maintaining a typed API client alongside the spec means they inevitably drift. Code generation makes the client an output of the spec.
 

@@ -2,8 +2,8 @@
 # generated-types freshness, spec identity, docs references, `vue-tsc`) plus the unit suite.
 # The backend lints the contract; the frontend only verifies its copy is identical.
 #
-# Left out, so run the full `npm run complete` by hand before merging a lane and once on main after
-# each merge (CI still runs all of it):
+# Left out (CI on push runs all of it). A lane merges on `complete:light` plus every Cypress spec it
+# adds or changes, run by file; the full `npm run complete` runs on main at the checkpoints:
 #
 # - the Vite build and Cypress e2e against the demo dataset — most of the full gate's minutes;
 #
@@ -30,25 +30,11 @@
 # into failing by an unrelated dirty file the way a tree-wide format check can.
 npx lint-staged
 
-# `contracts/` is generated FROM `openapi.yaml` and `asyncapi.yaml`, so regenerating it is only
-# ever needed when one of those two is staged. Running `regenerate` and `git add contracts` on
-# EVERY commit would sweep whatever a peer's unrelated, unstaged edit under `contracts/` happened to
-# be sitting there into the commit.
+# The generated contract code is gitignored and rebuilt from `openapi.yaml` / `asyncapi.yaml`, so
+# regenerating it is only needed when one of those two is staged: the checks below read the result.
+# Nothing here stages anything.
 if git diff --cached --name-only --diff-filter=ACMR | grep -qE '^(openapi|asyncapi)\.yaml$'; then
     npm run regenerate
-
-    # A regenerated `contracts/` that still differs from the working tree means the staged
-    # contract and the generated client disagree. Fail and say so, rather than silently
-    # `git add`-ing whatever `regenerate` produced, which is surprising and risky for anyone with
-    # unrelated uncommitted work sitting in the same checkout.
-    if ! git diff --quiet -- contracts; then
-        echo ""
-        echo "[pre-commit] contracts/ changed after \`npm run regenerate\` but isn't staged."
-        echo "  Review the diff below, then \`git add contracts\` and commit again."
-        echo ""
-        git status --short -- contracts
-        exit 1
-    fi
 fi
 
 npm run complete:light:gates

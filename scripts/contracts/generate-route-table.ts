@@ -20,17 +20,14 @@
  * (`/products/facets`, `/cart/shipping-method`, `/account/oauth/providers`,
  * `/locales/tenants`).
  *
- * `--check` compares against the committed file and exits 1 on a mismatch — the same contract
- * every generator in this family keeps.
- *
  * Two more hints ride along, both read off `x-` keys a backend fragment sets: `noRefresh`
  * (`x-no-refresh`: a 401 there is a real credential failure, so the interceptor never refreshes and
  * replays) and `REDIRECT_QUERY_ENUMS` (`x-redirect-query` on a redirect response: the closed set of
  * values a query parameter of that redirect takes, e.g. the OAuth callback's `error`).
  *
- * Usage: tsx scripts/contracts/generate-route-table.ts --out <path> [--check]
+ * Usage: tsx scripts/contracts/generate-route-table.ts --out <path>
  */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
@@ -72,9 +69,6 @@ const resolveOutputPath = (): string => {
 
 /** Absolute path of the file to generate, from `--out`. */
 const OUTPUT = resolveOutputPath();
-
-/** `--check` compares and reports; without it the file is written. */
-const checkOnly = process.argv.includes('--check');
 
 /** The HTTP methods an OpenAPI path item may hold. */
 const OPERATION_METHODS = ['get', 'put', 'post', 'patch', 'delete', 'head', 'options', 'trace'];
@@ -237,17 +231,5 @@ const output =
     ' */\n' +
     `export const REDIRECT_QUERY_ENUMS = ${JSON.stringify(redirectEnums, null, 4)} as const;\n`;
 
-// Write the file, or under `--check` compare it with what is on disk.
-if (!checkOnly) {
-    writeFileSync(OUTPUT, output, 'utf8');
-    console.log(`✓ Generated ${OUTPUT}`);
-} else if (existsSync(OUTPUT) && readFileSync(OUTPUT, 'utf8') === output) {
-    console.log(`✓ ${OUTPUT} is current with openapi.yaml`);
-} else {
-    console.error(
-        `${OUTPUT} is not what openapi.yaml generates.\n` +
-            `  Run: npm run gen:api\n` +
-            `  Then commit the result.`
-    );
-    process.exit(1);
-}
+writeFileSync(OUTPUT, output, 'utf8');
+console.log(`✓ Generated ${OUTPUT}`);
