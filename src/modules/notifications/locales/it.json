@@ -13,12 +13,12 @@
         "button-delete-named": "Elimina la notifica: {text}",
         "unread": "Nuova",
         "staff": {
-            "webhook-disabled": "Una sottoscrizione webhook è stata disattivata dopo ripetuti errori di consegna. Correggi l'endpoint, poi riattivala. · #{ref}",
-            "task-opened": "Nuovo task: {what}. · #{ref}",
-            "task-overdue": "Task in ritardo, ancora aperto: {what}. · #{ref}",
-            "task-due-soon": "Scade tra tre giorni, ancora aperto: {what}. · #{ref}",
-            "task-assigned": "Ti è stato assegnato un task: {what}. · #{ref}",
-            "outbox-dead": "Un evento ({event}) non è stato consegnato dopo tutti i tentativi ed è stato messo da parte. Controlla il record a cui si riferiva. · #{ref}"
+            "webhook-disabled": "Una sottoscrizione webhook è stata disattivata dopo ripetuti errori di consegna. Correggi l'endpoint, poi riattivala · #{ref}.",
+            "task-opened": "Nuovo task: {what} · #{ref}.",
+            "task-overdue": "Task in ritardo, ancora aperto: {what} · #{ref}.",
+            "task-due-soon": "Scade tra tre giorni, ancora aperto: {what} · #{ref}.",
+            "task-assigned": "Ti è stato assegnato un task: {what} · #{ref}.",
+            "outbox-dead": "Un evento ({event}) non è stato consegnato dopo tutti i tentativi ed è stato messo da parte. Controlla il record a cui si riferiva · #{ref}."
         }
     }
 }

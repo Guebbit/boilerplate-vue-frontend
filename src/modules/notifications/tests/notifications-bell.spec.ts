@@ -240,8 +240,8 @@ describe('opening the panel', () => {
             (element) => element.textContent
         );
         expect(texts).toEqual([
-            'An event (event.n2) could not be delivered after every retry and was parked. Look at the record it was about. · #a1',
-            'An event (event.n1) could not be delivered after every retry and was parked. Look at the record it was about. · #a1'
+            'An event (event.n2) could not be delivered after every retry and was parked. Look at the record it was about · #a1.',
+            'An event (event.n1) could not be delivered after every retry and was parked. Look at the record it was about · #a1.'
         ]);
     });
 
@@ -279,7 +279,7 @@ describe('inside the panel', () => {
             .getAttribute('aria-label');
 
         expect(label).toBe(
-            'Delete notification: An event (event.n1) could not be delivered after every retry and was parked. Look at the record it was about. · #a1'
+            'Delete notification: An event (event.n1) could not be delivered after every retry and was parked. Look at the record it was about · #a1.'
         );
     });
 
