@@ -11,7 +11,7 @@
 | **Subdomain** | `supporting` — Specific to this business but not a differentiator. Kept plain. |
 | **Publishes** | —                                                                              |
 
-## The map
+## Its neighbourhood
 
 `notifications` sits on no edge of the context map: nothing imports it and it imports nothing. Other
 modules reach it through the registry instead: they declare `AppModule.notices` entries, and the

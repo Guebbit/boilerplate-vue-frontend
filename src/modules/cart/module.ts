@@ -27,7 +27,7 @@ import { useAmbientError } from '@/infrastructure/utils/use-ambient-error.ts';
  * Checkout is the one screen where price, stock, address and shipping have to agree at once, and
  * the only place this client holds a multi-step flow of its own. Every other module points at it.
  *
- * Context map: `docs/modules/cart.md` § "The map".
+ * Context map: `docs/modules/cart.md` § "Its neighbourhood".
  *
  * Subdomain: `core`.
  */

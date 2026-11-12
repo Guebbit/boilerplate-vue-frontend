@@ -10,7 +10,7 @@
 | ------------- | ------------------------------------------------------------------------------ |
 | **Subdomain** | `supporting` — Specific to this business but not a differentiator. Kept plain. |
 
-## The map
+## Its neighbourhood
 
 `stats` imports no sibling. The one link out, from a product's page to the staff orders list
 (filtered by product and paid days), is resolved with `linkIfRouted`: a build with no `orders`

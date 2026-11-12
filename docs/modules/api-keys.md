@@ -11,7 +11,7 @@ detail page — a credential's fields are fixed at mint time.
 | ------------- | -------------------------------------------------------------------------------------------- |
 | **Subdomain** | `generic` — machine credential management is a solved problem, not a business differentiator |
 
-## The map
+## Its neighbourhood
 
 `api-keys` sits on no edge of the context map — nothing imports it and it imports nothing.
 

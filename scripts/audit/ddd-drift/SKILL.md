@@ -14,7 +14,7 @@ GOAL: Report every place where a claim about the module structure, or a rule the
 drifted from the code. BE strict, FE elastic: rules and state ownership, never styling.
 
 WHAT DDD MEANS HERE: strategic only. Modules are bounded contexts. The context map is each module's docs page
-(`docs/modules/<m>.md` § "The map"); `module.ts` docblocks point at it. A barrel is the published language. `domain/` is thin and pure. The server decides the
+(`docs/modules/<m>.md` § "Its neighbourhood"); `module.ts` docblocks point at it. A barrel is the published language. `domain/` is thin and pure. The server decides the
 rules; the client reads the `*Actions` flags (`docs/theory/strategic-ddd.md` §4). There is no tactical DDD
 on purpose (`docs/theory/domain-layer.md` §4). Do not ask for aggregates, entities or repositories.
 

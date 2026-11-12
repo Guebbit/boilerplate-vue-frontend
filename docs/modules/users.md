@@ -12,7 +12,7 @@
 | **Subdomain** | `generic` — A solved problem. Modelling effort here would be waste. |
 | **Publishes** | `usersPasswordSchema` · `usersSchema`                               |
 
-## The map
+## Its neighbourhood
 
 The context map is drawn once, in [the whole map](./index.md#the-whole-map).
 

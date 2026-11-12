@@ -22,7 +22,7 @@ import routes from './routes';
  * A ledger that explains stock without owning it — specific to running a shop, not the reason
  * anyone shops here.
  *
- * Context map: `docs/modules/inventory.md` § "The map".
+ * Context map: `docs/modules/inventory.md` § "Its neighbourhood".
  *
  * Subdomain: `supporting`.
  */
