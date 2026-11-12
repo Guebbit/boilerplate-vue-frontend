@@ -5,7 +5,7 @@
  * that wants a provider to nudge the server (a duplicate event id, a stale signature) has to sign
  * it itself. The event is thin: it names an intent, and the server asks the provider what became
  * of it, so a delivery cannot carry an outcome. The format is the backend's
- * `payments/providers/webhook-signature.ts`: `payment-signature: t=<unix seconds>,v1=<hex
+ * `<paired-backend>/src/modules/payments/providers/webhook-signature.ts`: `payment-signature: t=<unix seconds>,v1=<hex
  * HMAC-SHA256 of "<t>.<raw body>">`.
  *
  * Pure of Cypress, and outside `tests/support/e2e/`, so the unit suite can pin it. The `cy.task`
@@ -14,7 +14,7 @@
 import { createHmac } from 'node:crypto';
 
 /**
- * The demo backend's `NODE_PAYMENT_WEBHOOK_SECRET` (`scenarios/run-server.ts`). A live backend
+ * The demo backend's `NODE_PAYMENT_WEBHOOK_SECRET` (`<paired-backend>/scenarios/run-server.ts`). A live backend
  * sets its own, and a run points at it with `E2E_PAYMENT_WEBHOOK_SECRET`.
  */
 export const DEMO_PAYMENT_WEBHOOK_SECRET = 'demo-payment-webhook-secret';

@@ -1,5 +1,5 @@
 /**
- * The console boundary — `src/infrastructure/logger.ts`.
+ * The console boundary — `src/infrastructure/utils/logger.ts`.
  *
  * Worth its own cases because everything else in the app now routes through it: a level or scope
  * comparison that is wrong one way silences an error, and wrong the other way ships per-navigation

@@ -1,6 +1,6 @@
 /**
  * @module
- * Zod-schema-driven payload generator for request bodies: fork of BE `tests/support/contract-data.ts`,
+ * Zod-schema-driven payload generator for request bodies: fork of BE `<paired-backend>/tests/support/contract-data.ts`,
  * not kept in step. Pointed here at `contracts/rest/schemas.zod.ts` (Zod 4), and used by the form
  * property specs to ask "does this form accept every legal body, and refuse each one-field-broken one".
  *
@@ -245,7 +245,7 @@ const buildValue = (schema: ZodType): unknown => {
             // satisfies fields the OpenAPI spec declares `type: integer` — a constraint that
             // doesn't always survive into the generated zod schema as an explicit `.int()`
             // (e.g. CreateOrderBody's `items[].quantity` is `zod.number().min(1)` in
-            // `api/schemas.zod.ts`, but `integer` in `openapi.yaml`).
+            // `contracts/rest/schemas.zod.ts`, but `integer` in `openapi.yaml`).
             return Math.round(low + random() * (high - low));
         }
         case 'boolean': {
@@ -402,7 +402,7 @@ const violationsForField = (fieldSchema: ZodType): { violation: string; value: u
  * exactly one field mutated — missing (for a required field) or out of bounds / wrong format
  * (for a field carrying a min/max/format constraint). Object schemas are supported, and a union of
  * them (a tagged body, like `POST /account/reauth`'s) is walked branch by branch; every `*Body`
- * export in `api/schemas.zod.ts` is one of the two.
+ * export in `contracts/rest/schemas.zod.ts` is one of the two.
  */
 export const invalidPayloads = (schema: ZodType): InvalidPayloadCase[] => {
     ensureSeeded();

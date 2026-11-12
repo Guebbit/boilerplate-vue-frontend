@@ -10,7 +10,7 @@
  */
 import type { AxiosRequestConfig } from 'axios';
 
-/** The header the paired backend's session guard reads (`kernel/middlewares/authorizations.ts`). */
+/** The header the paired backend's session guard reads (`<paired-backend>/src/kernel/middlewares/authorizations.ts`). */
 export const SESSION_PASSIVE_HEADER = 'Session-Passive';
 
 /**

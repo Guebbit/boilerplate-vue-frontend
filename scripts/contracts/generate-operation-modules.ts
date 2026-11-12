@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /*
  * Emits a generated `@api` function name → owning BACKEND module map, from `openapi.yaml`'s
- * `x-module` stamps (the backend's `scripts/contracts/openapi-bundle.ts`).
+ * `x-module` stamps (the backend's `<paired-backend>/scripts/contracts/openapi-bundle.ts`).
  *
  * Nothing in the contract says which module owns an operation, so a lint or test
  * that wants to flag a module reaching for another domain's endpoint has nothing to check against.

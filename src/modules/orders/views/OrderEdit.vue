@@ -406,7 +406,7 @@ const { message: formError, report: reportFormError, clear: clearFormError } = u
  * Validates the form and persists the order changes.
  *
  * Sends `email` only when it actually differs from the loaded record — an unconditional resend
- * is a no-op on the server (`orders/services/crud.ts`'s `update` merges it either way), but it
+ * is a no-op on the server (`<paired-backend>/src/modules/orders/services/crud.ts`'s `update` merges it either way), but it
  * still writes the document and audits `ORDER_UPDATED` every time staff opens and saves the form
  * without touching anything, the same "diff against the hydrated record" rule the account form
  * follows.

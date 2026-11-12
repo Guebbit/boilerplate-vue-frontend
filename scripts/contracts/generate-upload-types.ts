@@ -7,7 +7,7 @@
  *
  * Refuses a contract whose upload bodies disagree, or declare none: one list for the whole API.
  *
- * The backend keeps its own copy of this script, which writes `api/upload-types.ts`. The input is
+ * The backend keeps its own copy of this script, which writes `<paired-backend>/api/upload-types.ts`. The input is
  * the SAME `openapi.yaml` in both: it travels to the frontend as a shared file.
  *
  * Usage: tsx scripts/contracts/generate-upload-types.ts --out <path>

@@ -25,7 +25,7 @@ import {
 } from '../../../support/e2e/integrator';
 import { eventually } from '../../../support/e2e/steps';
 
-/** The retry ladder's waits, in the order the attempts fail (`webhooks/domain/backoff.ts`). */
+/** The retry ladder's waits, in the order the attempts fail (`<paired-backend>/src/modules/webhooks/domain/backoff.ts`). */
 const LADDER_MS = [5000, 5 * 60_000, 30 * 60_000, 2 * 3_600_000, 10 * 3_600_000];
 
 /** The failure streak must be this old before the auto-disable counts (`WEBHOOK_MIN_FAILING_MS`). */

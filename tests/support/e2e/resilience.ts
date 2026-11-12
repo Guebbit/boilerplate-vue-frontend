@@ -16,7 +16,7 @@
  * Keep this list SHORT and keep it justified. Every entry is a thing this spec has stopped
  * watching, so an unexplained addition is how the whole file quietly stops working.
  *
- * - Grafana Faro (`stores/observability.ts`) logs its own `console.error` whenever it cannot reach
+ * - Grafana Faro (`src/infrastructure/observability/store.ts`) logs its own `console.error` whenever it cannot reach
  *   its collector. Its logger appends a newline, so `args[0]` is `'Faro\n'`. Fires on every page
  *   load here, because a plain `vite dev` has no Alloy collector beside it.
  * - `[intlify] Not found '<key>' key in '<locale>' locale messages.` — vue-i18n's lazy-loading

@@ -9,7 +9,7 @@
  * from inside Vue's own reactivity flush, not from this spec's call stack. `global.config.
  * errorHandler` is what makes that error observable instead of a silent aborted render.
  *
- * Mirrors `product-view.spec.ts`'s real-router mount, and `products/store.spec.ts`'s
+ * Mirrors `product-view.spec.ts`'s real-router mount, and `src/modules/products/tests/store.spec.ts`'s
  * `orvalMutator` mock — here driven by hand so each endpoint answers on its own schedule.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';

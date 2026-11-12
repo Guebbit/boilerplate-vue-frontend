@@ -1,6 +1,6 @@
 /**
  * @module
- * How hard the GENERATIVE unit specs push: fork of BE `tests/support/knobs.ts`, not kept in step.
+ * How hard the GENERATIVE unit specs push: fork of BE `<paired-backend>/tests/support/knobs.ts`, not kept in step.
  *
  * A depth knob trades rigour for time. Turning it down changes what a spec ASKS, never what the
  * code under test answers; nothing under `src/` reads it.

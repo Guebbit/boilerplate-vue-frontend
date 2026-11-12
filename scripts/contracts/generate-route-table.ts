@@ -3,7 +3,7 @@
  * Emits the response-schema ROUTE table from `openapi.yaml`: one row per operation, giving
  * `infrastructure/http/response-schema-map.ts` and every module's own `response-schemas.ts` the
  * method, an anchored URL pattern, the `@api/schemas` export name for its response body, and
- * the `x-module` owner (the backend's `scripts/contracts/openapi-bundle.ts`) — the same source
+ * the `x-module` owner (the backend's `<paired-backend>/scripts/contracts/openapi-bundle.ts`) — the same source
  * `generate-operation-modules.ts` already reads for `OPERATION_MODULES`.
  *
  * Carries NO import of `@api/schemas` itself, on purpose: `response-schema-map.ts` needs this

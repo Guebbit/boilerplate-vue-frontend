@@ -171,7 +171,7 @@ export const compareToBaseline = (
 /**
  * Whether a report covers enough of the baseline to be safe to record.
  *
- * A PARTIAL run — `stryker run --mutate 'src/one/file.ts'`, which is the normal way to check one
+ * A PARTIAL run — `stryker run --mutate 'src/one/file'`, which is the normal way to check one
  * file quickly — produces a report containing only that file. Recording it would drop every other
  * file from the baseline, because `nextBaseline` builds from the report's keys. The ratchet would
  * lose its memory silently, and the next full run would re-record today's scores as if they had

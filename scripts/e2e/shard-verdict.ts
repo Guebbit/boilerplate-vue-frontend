@@ -25,7 +25,7 @@ export interface ShardOutcome {
 /** A shard's verdict; `reason` says why it failed. */
 export type ShardVerdict = { ok: true } | { ok: false; reason: string };
 
-/** A row of Cypress' final summary table: `│ ✔  login.cy.ts   00:05   3   3   -   -   - │`. */
+/** A row of Cypress' final summary table: `│ ✔  login.cy   00:05   3   3   -   -   - │`. */
 const SUMMARY_ROW = /^\s*│\s*[✔✖−-]\s+\S+\s+(?:\d+:\d{2}|\d+ms)\s/gmu;
 
 /** The marker Cypress prints once, right before the final summary table. */

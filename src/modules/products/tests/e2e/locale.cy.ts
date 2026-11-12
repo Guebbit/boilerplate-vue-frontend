@@ -48,7 +48,7 @@ describe('switching language drops and refetches locale-sensitive stores', () =>
 /**
  * A language the API has and this app does not, watched through the ONE page the demo backend
  * seeds a Spanish translation OVERRIDE for (`products-list-page.page-title`, `generic.reset` —
- * `scenarios/locales.ts` in the backend repo). That data coupling, not just the route, is why
+ * `<paired-backend>/scenarios/locales.ts` in the backend repo). That data coupling, not just the route, is why
  * this case cannot move to a foundation page without also reseeding the backend's demo data.
  *
  * `es` is in no `.env` list and has no `src/locales/es.json`. It reaches the switcher because the

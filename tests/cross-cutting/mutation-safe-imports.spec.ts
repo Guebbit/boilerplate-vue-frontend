@@ -4,8 +4,8 @@
  *
  * ── What breaks ──────────────────────────────────────────────────────────────────────────────────
  * Stryker's `StringLiteral` mutator has two halves, and only one of them knows about imports.
- * `string-literal-mutator.ts` refuses to mutate a plain string whose parent is an `import()` call —
- * so `import('./register.ts')` is safe and needs nothing. The template-literal half runs with no
+ * Stryker's `string-literal-mutator` refuses to mutate a plain string whose parent is an `import()` call —
+ * so `import('./register')` is safe and needs nothing. The template-literal half runs with no
  * parent check at all, and `import.meta.glob`'s argument is parented by a member expression rather
  * than by `import`, so neither is excluded:
  *

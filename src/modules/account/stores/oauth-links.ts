@@ -2,7 +2,7 @@
  * @module
  * Pinia store (Composition API form) for the visitor's connected sign-in providers: the list,
  * connecting one and disconnecting one. A plain ref rather than the record structure — a link has no detail page and
- * is only ever read whole. Not `oauth.ts`: that store holds the deployment's provider list, a
+ * is only ever read whole. Not `oauth-providers.ts`: that store holds the deployment's provider list, a
  * public fact, where this one is the signed-in visitor's own.
  */
 import { ref } from 'vue';

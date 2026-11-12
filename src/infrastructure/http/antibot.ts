@@ -6,7 +6,7 @@
  * `withAntibotToken` attaches a solved token to a request's headers, and
  * `isAntibotVerificationFailed` detects the 403 that means "show the widget and let the visitor
  * retry the same submit." See the paired backend's
- * `src/infrastructure/http/middlewares/human-challenge.ts`.
+ * `<paired-backend>/src/infrastructure/http/middlewares/human-challenge.ts`.
  */
 import type { AxiosRequestConfig } from 'axios';
 import { getAntibotChallenge } from '@api';

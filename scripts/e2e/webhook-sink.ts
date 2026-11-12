@@ -3,7 +3,7 @@
  *
  * The demo backend has no message broker, so nothing delivers a webhook by itself — but an admin
  * can REPLAY a delivery, and that POSTs synchronously to the subscription's URL. The seeded
- * subscription points at `NODE_WEBHOOK_DEMO_SINK_URL` (the backend's `scenarios/webhooks.ts`), and
+ * subscription points at `NODE_WEBHOOK_DEMO_SINK_URL` (the backend's `<paired-backend>/scenarios/webhooks.ts`), and
  * the SSRF guard exempts exactly that host from its private-address check in development. This is
  * the listener behind the URL, so a spec can read what arrived and check its signature.
  *

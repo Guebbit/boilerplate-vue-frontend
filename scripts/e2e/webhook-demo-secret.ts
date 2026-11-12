@@ -1,6 +1,6 @@
 /**
  * The seeded demo subscription's signing secret — the backend's `WEBHOOK_DEMO_SECRET`
- * (`scenarios/webhooks.ts`), a fixed public demo value. The `whsec_` half decodes to
+ * (`<paired-backend>/scenarios/webhooks.ts`), a fixed public demo value. The `whsec_` half decodes to
  * "demo-webhook-secret-do-not-use-in-production".
  *
  * Alone in its file because a journey imports it, and a journey runs in the browser: the sink

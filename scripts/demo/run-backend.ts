@@ -36,7 +36,7 @@ export const SINGLE_PROCESS_DEMO_PORT = 3100;
 
 /*
  * `.env` into `process.env` before the command is resolved — Node's own loader, as
- * `run-e2e-shards.ts` and `cypress.config.ts` do it. An npm script sees no `.env` otherwise, and
+ * `run-shards.ts` and `cypress.config.ts` do it. An npm script sees no `.env` otherwise, and
  * `BACKEND_DEMO_COMMAND` lives there: without this, every `npm run backend:demo` on a developer's
  * machine would resolve to "unset" and boot nothing. A missing `.env` is not an error, because CI
  * passes the variable for real.
@@ -50,7 +50,7 @@ try {
 /** Spawns the backend demo command, forwarding signals and mirroring its exit code. */
 const boot = (argv: readonly string[]) => {
     // The backend's in-memory Mongo writes under this, not under the machine's `/tmp` — see
-    // `backend-demo-scratch-directory.ts` for the tmpfs it was filling.
+    // `scratch-directory.ts` for the tmpfs it was filling.
     const scratchDirectory = createDemoScratchDirectory();
 
     const [command, ...commandArguments] = argv;

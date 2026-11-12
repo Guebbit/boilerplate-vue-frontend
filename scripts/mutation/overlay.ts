@@ -4,7 +4,7 @@
  * already on disk, so `reports/mutation/` keeps one report of every file.
  *
  * Test and mutant ids are renumbered: Stryker numbers them per report, so two reports collide.
- * The backend's `scripts/mutation/ci/merge.ts` holds the same overlay beside its sweep merge.
+ * The backend's `<paired-backend>/scripts/mutation/ci/merge.ts` holds the same overlay beside its sweep merge.
  *
  * See: docs/tools/mutation-testing.md#which-file-is-what
  */

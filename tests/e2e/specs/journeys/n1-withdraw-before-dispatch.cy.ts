@@ -7,7 +7,7 @@
  * acknowledgement.
  *
  * Before dispatch there are no goods to send back, so the return that records the withdrawal is
- * born closed with no lines (BE `returns`' `create.ts`): the order page lists it as a closed
+ * born closed with no lines (BE `returns`' `create` service): the order page lists it as a closed
  * withdrawal and offers no button any more. After dispatch the return is approved instead (N2).
  */
 import {

@@ -462,8 +462,8 @@ const unicornTuningRules = {
     // unchecked (see below).
     //
     // `.spec.ts` / `.cy.ts` / `.visual.cy.ts` need no exemption: `multipleFileExtensions`
-    // defaults on, so only the part before the FIRST dot is checked — `use-async-action`
-    // in `use-async-action.spec.ts`. A spec is therefore named after the file it covers,
+    // defaults on, so only the part before the FIRST dot is checked — `use-audit-trail`
+    // in `use-audit-trail.spec.ts`. A spec is therefore named after the file it covers,
     // spelled identically, which is what makes the pair greppable.
     'unicorn/filename-case': [
         'error',
@@ -923,13 +923,17 @@ export default defineConfigWithVueTs(
             sourceType: 'module'
         },
 
+        plugins: { local: localPlugin },
+
         rules: {
+            // A comment naming a `.ts`/`.tsx` file must name one git tracks.
+            'local/comment-links': 'error',
             'no-restricted-syntax': ['error', ...bannedDoubleCasts],
             // `void p` is checked like `p`: `void` alone hides a rejection.
             // Handle it at the site, or opt out on the line with a reason.
             '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: false }],
             /**
-             * `src/infrastructure/logger.ts` is the single console boundary, and holds the only exemptions.
+             * `src/infrastructure/utils/logger.ts` is the single console boundary, and holds the only exemptions.
              * An error with one documented exception is a policy; a warning with a disable comment
              * per call site is not.
              */
@@ -1245,7 +1249,7 @@ export default defineConfigWithVueTs(
     {
         // Scripts and the Cypress config print deliberately — a build script's output IS its
         // interface, and the shard runner reports which backend a run is talking to so a failure
-        // can be reproduced. Same policy as `src/infrastructure/logger.ts`: exempt the boundary
+        // can be reproduced. Same policy as `src/infrastructure/utils/logger.ts`: exempt the boundary
         // that owns the output, rather than disabling the rule at each call.
         files: ['scripts/**/*.ts', 'cypress.config.ts'],
         rules: {

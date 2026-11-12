@@ -8,7 +8,7 @@
  * `use-audit-trail.spec.ts` instead — see that composable's own docs for why it is separate.
  *
  * The loading/error bookkeeping itself belongs to `useAsyncAction` and is covered in
- * `tests/unit/infrastructure/use-async-action.spec.ts`; only the parts this composable configures —
+ * `tests/unit/infrastructure/utils/errors.spec.ts`; only the parts this composable configures —
  * the fallback messages — are asserted here.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';

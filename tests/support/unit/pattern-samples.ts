@@ -5,7 +5,7 @@
  * registered once rather than once per generator — and a generator that finds no entry fails
  * loudly instead of emitting a value the contract forbids.
  *
- * Fork of BE `tests/support/pattern-samples.ts`, not kept in step.
+ * Fork of BE `<paired-backend>/tests/support/pattern-samples.ts`, not kept in step.
  */
 
 /**

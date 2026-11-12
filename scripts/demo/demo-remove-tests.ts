@@ -1,7 +1,7 @@
 /**
  * @module
  * The specs that go with a removed module — `demo-remove.ts`'s test step, the FE twin of the
- * backend's `scripts/ops/demo-remove-tests.ts`.
+ * backend's `<paired-backend>/scripts/ops/demo-remove-tests.ts`.
  *
  * A spec is deleted whole when it says it needs a removed module on a `// requires-module: a, b`
  * line, or imports one. A module-owned spec under `src/modules/<name>/tests/` already went with its

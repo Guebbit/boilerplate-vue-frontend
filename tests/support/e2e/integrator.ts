@@ -36,7 +36,7 @@ export interface DeliveryRow {
     responseCode?: number;
 }
 
-/** The description the backend's seed gives the receiver subscription (`scenarios/webhooks.ts`). */
+/** The description the backend's seed gives the receiver subscription (`<paired-backend>/scenarios/webhooks.ts`). */
 const SEEDED_RECEIVER_DESCRIPTION = 'Demo sink (webhook-tester)';
 
 /**

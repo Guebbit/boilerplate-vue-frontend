@@ -78,7 +78,7 @@ const errorMessage = computed(() => {
 
 /**
  * The 2FA step's own metadata, when the callback redirected here with `?mfaRequired=1` instead of
- * a session — `account/oauth/config.ts#oauthFrontendMfaCallbackUrl` on the backend is what wrote
+ * a session — `<paired-backend>/src/modules/account/oauth/config.ts#oauthFrontendMfaCallbackUrl` on the backend is what wrote
  * this query string. The challenge TOKEN itself is never in it: that travels in an httpOnly
  * cookie only the backend reads, one `POST /account/login/2fa[/send]` on `TwoFactorChallenge` can
  * submit with no token of its own — see `stores/two-factor.ts#beginOAuthChallenge`.
@@ -104,7 +104,7 @@ const oauthChallenge = computed(() => {
 
 /**
  * The restore offer's dates, when the callback redirected here with `?deletionPending=1` because
- * the account is in the grace of its own deletion: `account/oauth/config.ts#oauthFrontendDeletionCallbackUrl`
+ * the account is in the grace of its own deletion: `<paired-backend>/src/modules/account/oauth/config.ts#oauthFrontendDeletionCallbackUrl`
  * on the backend wrote this query string. The claim check itself rides an httpOnly cookie.
  *
  * `undefined` when either date is missing, treated as no offer at all.

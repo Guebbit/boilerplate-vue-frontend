@@ -11,7 +11,7 @@ import type axe from 'axe-core';
 
 /*
  * A demo restore empties the in-memory database and puts a scenario back inside the backend
- * process (`POST /__test/restore`, see the backend's `src/app/demo.ts`) — a replay of a copy that
+ * process (`POST /__test/restore`, see the backend's `<paired-backend>/src/app/demo.ts`) — a replay of a copy that
  * process built at boot, measured in milliseconds. Budgeted generously anyway for a CI box under
  * load, since the FIRST restore of a process may still be building it.
  */
@@ -286,7 +286,7 @@ export { byTemplate, inLocale } from '../../../scripts/e2e/mail-filters';
 /** Which of an address's emails a spec means — see `emailTo`'s `matches`. */
 export type MailFilter = (email: MailedEmail) => boolean;
 
-/** Mirrors `DemoOutboxEmail` in the backend's `scenarios/support/doubles/mail-outbox.ts`. */
+/** Mirrors `DemoOutboxEmail` in the backend's `<paired-backend>/scenarios/support/doubles/mail-outbox.ts`. */
 export interface DemoOutboxEmail {
     to: string;
     subject: string;

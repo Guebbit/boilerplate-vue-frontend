@@ -18,7 +18,7 @@
  * really does set `BACKEND_PATH` in this worktree — never leaks into a test that expects the
  * sibling default.
  *
- * Mirrors `tests/unit/scripts/pairing/paired-frontend-path.test.ts` in the backend.
+ * Mirrors `<paired-backend>/tests/unit/scripts/pairing/paired-frontend-path.test.ts` in the backend.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';

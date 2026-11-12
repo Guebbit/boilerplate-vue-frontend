@@ -9,7 +9,7 @@
  * it. Parsing the fixture through this before it resolves closes that gap without touching the
  * mock's dispatch logic.
  *
- * Fork of BE `tests/support/body-of.ts` (a response read through the schema the contract gives
+ * Fork of BE `<paired-backend>/tests/support/body-of.ts` (a response read through the schema the contract gives
  * it), not kept in step.
  */
 import type { ZodType } from 'zod';

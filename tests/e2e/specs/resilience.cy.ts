@@ -44,7 +44,7 @@ describe('Resilience', () => {
     describe('every route renders, quietly, inside the viewport', () => {
         it('public routes: home, a published example', () => {
             assertRouteIsHealthy('/en', '#home-page');
-            // Seeded by the backend's demo scenario (`scenarios/examples.ts`, `adminPublished`).
+            // Seeded by the backend's demo scenario (`<paired-backend>/scenarios/examples.ts`, `adminPublished`).
             assertRouteIsHealthy(
                 '/en/examples/published/65e1a0000000000000000e04',
                 '#example-published-page'

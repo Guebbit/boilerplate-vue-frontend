@@ -1,17 +1,17 @@
 /**
- * The pure half of `run-e2e-shards.ts`: the measured-duration table and the LPT (longest-
+ * The pure half of `run-shards.ts`: the measured-duration table and the LPT (longest-
  * processing-time) bin-packing that assigns specs to shards. Pulled out so the balancing logic —
  * genuine algorithmic content, unlike the rest of that file's process orchestration — can be unit
- * tested directly, the same shape `mutation-baseline.ts` uses for the ratchet's own pure logic.
+ * tested directly, the same shape `scripts/mutation/baseline.ts` uses for the ratchet's own pure logic.
  */
 
-/** One spec file, as `run-e2e-shards.ts` builds it from the glob. */
+/** One spec file, as `run-shards.ts` builds it from the glob. */
 export interface Spec {
     file: string;
     key: string;
 }
 
-/** A spec with its weight resolved, sorted descending by `run-e2e-shards.ts` before packing. */
+/** A spec with its weight resolved, sorted descending by `run-shards.ts` before packing. */
 export interface WeightedSpec {
     file: string;
     weight: number;

@@ -128,7 +128,7 @@ describe('Image upload', () => {
             cy.contains('Product updated successfully').should('exist');
 
             // The backend's image digest worker invalidates the collection's cache tag once its
-            // writeback matches (`settleWriteback` in `infrastructure/adapters/image.worker.ts`),
+            // writeback matches (`settleWriteback` in `<paired-backend>/src/infrastructure/adapters/image.worker.ts`),
             // so a re-fetch after the async digest lands sees the promoted url on both profiles —
             // the demo profile has no broker and digests inline; the live profile's queued digest
             // just takes longer to appear. With a broker the first answer is the pending

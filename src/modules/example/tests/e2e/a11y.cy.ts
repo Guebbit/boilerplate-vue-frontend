@@ -9,7 +9,7 @@
  * the split cannot quietly lose a domain.
  *
  * The detail and edit pages need an example id. The backend's demo scenario seeds the editor a
- * draft, a published and an archived example at pinned ids (its `scenarios/examples.ts`), so no
+ * draft, a published and an archived example at pinned ids (its `<paired-backend>/scenarios/examples.ts`), so no
  * example is created here; the public page reads the admin's published one.
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';

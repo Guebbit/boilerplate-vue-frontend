@@ -6,7 +6,7 @@
  * customer. Restoring brings it back. A hard delete is
  * offered only on a canceled, never-paid order: an open order must be canceled first (which
  * returns its held units to the shelf), and a PAID order never shows the action, because an
- * invoice was frozen from its payment (BE `orders/services/remove.ts`).
+ * invoice was frozen from its payment (BE `<paired-backend>/src/modules/orders/services/remove.ts`).
  *
  * The manager holds `delete:Order`; the moderator does not, since removing a customer's
  * order is a shop-running act and not a conduct one. Rows are found by their

@@ -61,7 +61,7 @@ const mountPanel = () => {
             plugins: [vuetify, i18n],
             stubs: {
                 // The confirmation gate under test is not the overlay Vuetify manages — same
-                // reasoning as `EntriesImportDialog.spec.ts`.
+                // reasoning as `entries-import-dialog.spec.ts`.
                 VDialog: { template: '<div><slot /></div>' },
                 VAutocomplete: V_COUNTRY_SELECT_STUB
             }

@@ -303,7 +303,7 @@ const bootDemoBackends = async (count: number, antibotIndex: number): Promise<()
         );
 
     // Every backend's in-memory Mongo writes under this, not under the machine's `/tmp` — see
-    // `demo-scratch.ts` for the tmpfs it was filling. The PHP twin ignores it; nothing there reads
+    // `scratch-directory.ts` for the tmpfs it was filling. The PHP twin ignores it; nothing there reads
     // TMPDIR for its own state.
     const scratchDirectory = demoCommand ? createDemoScratchDirectory() : undefined;
     const children = Array.from({ length: count }, (_, index) => {

@@ -21,7 +21,7 @@
  * to the check is covered by every case below without touching this file — and, more to the
  * point, cannot be added *without* being covered.
  *
- * Mirrors `tests/unit/scripts/pairing/spec-identity.test.ts` in the backend, apart from section 2.
+ * Mirrors `<paired-backend>/tests/unit/scripts/pairing/spec-identity.test.ts` in the backend, apart from section 2.
  */
 import { describe, it, expect, afterAll } from 'vitest';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';

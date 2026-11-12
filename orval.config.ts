@@ -45,7 +45,7 @@ const contentTypeOperationNames = (verb: GeneratorVerbOptions): GeneratorVerbOpt
  * real API, in-memory and seeded — so a generated imitation would cover nothing the real thing
  * does not. If a backend-less, render-only mode is ever wanted (spec ahead of implementation, or
  * a checkout with no sibling repo), the clean wiring is `mode: 'split'` + `mock: true` here,
- * which emits the handlers into a separate `index.msw.ts` that only a flag-guarded dynamic
+ * which emits the handlers into a separate `index.msw` file that only a flag-guarded dynamic
  * import would ever pull into a bundle.
  */
 export default defineConfig({
@@ -64,7 +64,7 @@ export default defineConfig({
             // framework-specific ones) all answer a question this axios + Pinia-store setup does
             // not ask.
             override: {
-                // Routes every generated call through our shared http.ts instance
+                // Routes every generated call through our shared `src/infrastructure/http/index.ts` instance
                 // instead of orval's default bare axios.request(config).
                 //
                 // orvalMutator takes a second `options` parameter, so every generated function

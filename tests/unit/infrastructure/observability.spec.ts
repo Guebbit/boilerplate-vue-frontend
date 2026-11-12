@@ -2,7 +2,7 @@
  * Unit tests for the observability store.
  *
  * This file exists because the telemetry surface was the single largest untested area in the
- * repo — `src/infrastructure/observability.ts` alone carried 123 mutants with NO COVERAGE, which
+ * repo — `src/infrastructure/observability/store.ts` alone carried 123 mutants with NO COVERAGE, which
  * is the standing statement that nothing here was ever exercised. See
  * `docs/tools/mutation-testing.md`.
  *

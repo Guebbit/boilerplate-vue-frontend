@@ -1,7 +1,7 @@
 /**
  * Unit tests for the client-side upload limits.
  *
- * These numbers are a hand-maintained copy of the backend's (`storage.ts`), which is the whole
+ * These numbers are a hand-maintained copy of the backend's (`<paired-backend>/storage.ts`), which is the whole
  * reason they deserve a test: nothing generated will announce a drift, so the shape of the rule
  * — which types pass, where exactly the size boundary sits — is pinned here instead.
  *

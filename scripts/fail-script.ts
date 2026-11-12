@@ -2,7 +2,7 @@
  * @module
  * The last-resort handler for a script's top-level promise: say what failed and exit non-zero.
  * Its own file, with no imports, so a docs generator can use it without loading the logger, the
- * config or Mongoose the way `run-script.ts` does.
+ * config or Mongoose the way `<paired-backend>/scripts/run-script.ts` does.
  */
 
 /**

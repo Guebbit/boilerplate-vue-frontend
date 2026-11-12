@@ -8,7 +8,7 @@
  * refuses fails at the factory, not in a mounted view. The result is the ORIGINAL object, never
  * the parse, so no `.default()` the test did not write appears.
  *
- * Fork of BE `tests/support/body-of.ts` (a body read through the contract's schema), not kept in
+ * Fork of BE `<paired-backend>/tests/support/body-of.ts` (a body read through the contract's schema), not kept in
  * step.
  */
 import { STATUS_CODES } from 'node:http';

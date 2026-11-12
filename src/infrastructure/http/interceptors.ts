@@ -94,7 +94,7 @@ export const onRequest = (config: InternalAxiosRequestConfig<AxiosRequestData>) 
         useAnalyticsConsentStore().choice === 'granted'
     ) {
         // The backend decodes this the way it decodes any other boolean-shaped header/query value
-        // (`parseFormBoolean`'s TRUTHY set) — verified against its own `request.test.ts`.
+        // (`parseFormBoolean`'s TRUTHY set) — verified against its own `request` test.
         config.headers['Analytics-Consent'] = 'true';
     }
 

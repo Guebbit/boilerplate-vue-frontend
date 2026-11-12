@@ -1,5 +1,5 @@
 /**
- * `tests/support/e2e/reset-command.ts` — what `cy.restore(scenario)` runs on the live profile.
+ * `scripts/e2e/reset-command.ts` — what `cy.restore(scenario)` runs on the live profile.
  *
  * The failure worth guarding is the silent one: a named scenario with a reset command that cannot
  * take it would reseed the default and let the spec assert against the wrong rows.

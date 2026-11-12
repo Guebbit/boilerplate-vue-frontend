@@ -17,7 +17,7 @@ import type { AppModule, AppNavigationEntry } from '@/kernel/registry';
  * misconfiguration that starts and then shows a blank page on one navigation is strictly worse
  * than one that refuses to start with the offending path named.
  *
- * Mirrors `tests/unit/kernel/registry.test.ts` in the backend boilerplate: same cases, same
+ * Mirrors `<paired-backend>/tests/unit/kernel/registry.test.ts` in the backend boilerplate: same cases, same
  * field names, different runtime.
  */
 

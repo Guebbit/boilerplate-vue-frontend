@@ -57,7 +57,7 @@ export const siblingRole = (role: RepoRole): RepoRole =>
  * this repo is concerned.
  *
  * That is the whole membership rule. Files the two repos keep identical FOR CONVENIENCE are out —
- * the shared scripts (`check-mutation-baseline.ts`, `report-test-results.ts`,
+ * the shared scripts (`check-mutation-baseline`, `report-test-results`,
  * `generate-asyncapi-types.ts`), hand-maintained on both sides, so a fork is a question no script
  * can answer and the gate could only report it. Nothing breaks silently when one repo holds a
  * newer test reporter — and, now that a second backend can be the paired one, those scripts have
