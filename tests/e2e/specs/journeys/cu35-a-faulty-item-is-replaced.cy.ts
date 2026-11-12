@@ -46,6 +46,7 @@ describe('CU35 · A faulty item is replaced', () => {
                 cy.step('the customer picks a line, a defect, and a replacement');
                 cy.loginAs('user');
                 cy.visit(`/en/orders/${orderId}`);
+                cy.intercept('POST', '**/returns').as('openReturn');
                 cy.get('[data-test=return-request-open]').click();
                 cy.get(`[data-test=return-line-pick-${productId}] input`).check({ force: true });
                 cy.get('[data-test=return-remedy]').should('not.exist');
@@ -58,14 +59,14 @@ describe('CU35 · A faulty item is replaced', () => {
                 cy.get('[data-test=return-request-submit]').click();
                 cy.get('[data-test=order-return]').should('have.length', 1);
 
-                cy.apiAs<{ items: ReturnLike[] }>(
-                    'user',
-                    'GET',
-                    `/returns?orderId=${orderId}`
-                ).then((page) => {
-                    const [opened] = page?.items ?? [];
-                    expect(opened?.preferredRemedy).to.equal('replace');
-                    const returnId = opened?.id;
+                cy.wait('@openReturn').then(({ request, response }) => {
+                    // the wish goes out, and the server records it
+                    // an intercepted body is `any`: it is the request the form built
+                    expect((request.body as ReturnLike).preferredRemedy).to.equal('replace');
+                    expect(response?.statusCode).to.equal(201);
+                    const opened = response?.body as ReturnLike;
+                    expect(opened.preferredRemedy).to.equal('replace');
+                    const returnId = opened.id;
 
                     cy.step('support approves; the warehouse sees the wish preselected');
                     cy.switchUser('support');
