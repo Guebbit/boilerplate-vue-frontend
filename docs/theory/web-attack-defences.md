@@ -158,20 +158,17 @@ Family: [supply chain][supply-chain].
 A separate dependency tree from the backend's, audited on its own: sharing a contract does not
 mean sharing a `node_modules`.
 
-| Advisory                                                         | Reachable?                                                                                                     | Status                                         |
-| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `nanoid` — non-secure/zero-size generators can loop indefinitely | **No** — a build-time dependency of the CSS toolchain; nothing in the shipped bundle calls `nanoid` at runtime | fix available (`npm audit fix`), not yet taken |
-| `postcss` — source-map path traversal when `from` is unset       | **No** — same tier: PostCSS runs during `vite build`, never in the browser                                     | fix available, not yet taken                   |
-
-Both are `high` in `npm audit --omit=dev`'s severity scoring but neither ships to a browser — the
-same shape of finding as the backend's own supply-chain table, and the same caveat applies:
-"unreachable" is a claim about today's build graph, re-provable rather than permanent.
+No advisory is open in the production tree. The last one, `vue-i18n` / `@intlify/*` up to 11.4.13
+(`escapeParameter` did not stop XSS through `srcdoc`, GHSA-83rm-6c8r-g728), was reached by the
+shipped bundle and is fixed by the bump to 11.4.18.
+The check is `npm audit --omit=dev --audit-level=moderate`.
 
 | Attack                                    | Control                                                                                                                                                                                                                                                                   | Where                                             |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
 | Third-party scripts — **open, see above** | the Umami tracker is a `<script src>` injected at runtime; it points at a self-hosted instance this deployment's own `docker-compose` provisions (never a third-party SaaS domain), which lowers the blast radius of a compromise but does not remove the missing-SRI gap | `infrastructure/observability/store.ts#initUmami` |
 | CDN compromise                            | no surface: fonts (`@fontsource/roboto`) are npm-installed and bundled, not loaded from a font CDN; there is no other remote `<script>`/`<link>` in `index.html`                                                                                                          | `index.html`, `package.json`                      |
-| Vulnerable dependencies                   | `npm audit --omit=dev` — see the table above; it runs on every push/PR outside the `ci` gate in both repos (an alert, not a gate)                                                                                                                                         | `package.json`                                    |
+| Vulnerable dependencies                   | `npm audit --omit=dev` on every push/PR outside the `ci` gate (an alert, not a gate), plus weekly with `npm audit signatures` in `audit.yml`, which opens an issue when it fails; the image scan (`image-scan.yml`) gates the base image weekly on a fixable `high`       | `package.json`                                    |
+| Base-image drift                          | the `FROM` lines in all three Dockerfiles are `tag@sha256:…`: the tag says what the image is, the digest says which bytes; a patch arrives as a Dependabot PR (`docker` ecosystem, `/docker`) that moves both, never silently on a rebuild                                | `docker/Dockerfile*`, `.github/dependabot.yml`    |
 | Install scripts / lockfile tampering      | all three Dockerfiles run `npm ci --ignore-scripts`, never `npm install`; `npm run regenerate` runs once after `COPY . .`                                                                                                                                                 | `docker/Dockerfile.production`                    |
 
 ## API consumption and anti-automation (shared)
@@ -218,10 +215,6 @@ Family: [business logic, money and payments][business-logic].
   CDN, which limits who could tamper with it, but the same reasoning that added `server_tokens
 off` and the Permissions-Policy line argues for closing this too once the script's build hash is
   stable enough to pin.
-- **Two `high` advisories in the production tree** ([supply chain][supply-chain]) (`nanoid`, `postcss`) — see
-  [Supply chain](#supply-chain-—-this-repo-s-own-tree). Both are build-time-only and a fix is
-  available; neither has been taken yet. `npm audit --omit=dev` runs on every push/PR outside
-  the `ci` gate in both repos: an alert on its own red square, not a gate.
 
 ## Shared with the backend
 

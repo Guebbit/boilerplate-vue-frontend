@@ -52,3 +52,21 @@ updates:
               update-types:
                   - minor
                   - patch
+
+    # Base images in the Dockerfiles (`tag@sha256:digest`): Dependabot moves the tag and digest together.
+    - package-ecosystem: docker
+      directory: /docker
+      schedule:
+          interval: weekly
+      # Dependabot's PR title becomes the squash commit subject, so it must be conventional.
+      commit-message:
+          prefix: build
+          include: scope
+      cooldown:
+          default-days: 7
+      groups:
+          base-images:
+              applies-to: version-updates
+              update-types:
+                  - minor
+                  - patch

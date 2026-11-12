@@ -9,6 +9,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
+import { gitEnvironment } from '../git-base';
 
 /** What git says about one repo at one moment. Each key is one `git` view, one entry per line. */
 export type RepoSnapshot = Record<'head' | 'refs' | 'stash' | 'status' | 'index', string[]>;
@@ -23,19 +24,6 @@ const VIEWS: Record<keyof RepoSnapshot, string[]> = {
     // `-s` adds the object hash of each staged file, so a restaged edit shows up.
     index: ['ls-files', '-s']
 };
-
-/**
- * `process.env` minus every `GIT_*` variable. A sandboxed nested `git` needs none of the outer
- * ones: a hook's `GIT_DIR`/`GIT_WORK_TREE`/`GIT_INDEX_FILE` (git's own `--local-env-vars` list)
- * override `cwd` and aim it at the hook's own repo, `GIT_AUTHOR_*`/`GIT_COMMITTER_*` change the
- * identity, and `GIT_CONFIG_*` inject settings. The same function lives in the BE's
- * `scripts/git-base.ts`.
- * https://git-scm.com/docs/git-rev-parse#Documentation/git-rev-parse.txt---local-env-vars
- *
- * @returns the cleaned environment
- */
-export const gitEnvironment = (): NodeJS.ProcessEnv =>
-    Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_')));
 
 /**
  * Runs git in `repo` and returns its non-empty output lines.

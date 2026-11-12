@@ -1,8 +1,8 @@
 name: PR title
 
 # A pull request is squash-merged, so its TITLE becomes the commit subject on main. This lints the
-# title with the same commitlint config the commit-msg hook uses (`.commitlintrc.cjs`, which adds
-# its own `type-enum`, hence commitlint rather than a stock action). A separate file, so editing a
+# title with the same commitlint config the commit-msg hook uses (`.commitlintrc.cjs`, hence
+# commitlint rather than a stock action). A separate file, so editing a
 # title does not rerun all of CI.
 #
 # The title goes through `env:`, never straight into the script: it is untrusted input.
@@ -29,6 +29,9 @@ jobs:
 
             - name: Setup Node and install
               uses: ./.github/actions/setup-node-and-install
+              with:
+                  # commitlint needs no generated file or binary, so no install script has to run.
+                  ignore-scripts: 'true'
 
             - name: Lint the PR title
               env:

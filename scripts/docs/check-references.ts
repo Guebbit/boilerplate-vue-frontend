@@ -48,6 +48,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_BACKEND_PATH, resolveBackendPath } from '../pairing/paired-backend-path';
+import { gitEnvironment } from '../git-base';
 import { deadCodeCitations, headingSlugs } from './code-citations';
 import {
     exportedNames,
@@ -250,23 +251,6 @@ const readAliases = (): { prefix: string; target: string }[] => {
 };
 
 /**
- * `process.env` with git's own hook-time exports stripped, for a nested `git` call that must
- * resolve against its `cwd` rather than whichever repo invoked the hook.
- *
- * A git hook (this repo's `pre-commit` included) exports `GIT_DIR`/`GIT_WORK_TREE`/
- * `GIT_INDEX_FILE` for its own children. `execFileSync` inherits `process.env` by default, so a
- * nested `git ls-files` aimed at the peer repo — or even this repo's own subdirectory — silently
- * answers for the hook's repo instead. https://git-scm.com/docs/githooks#_environment
- */
-const gitEnvironmentWithoutHookVariables = (): NodeJS.ProcessEnv => {
-    const environment = { ...process.env };
-    delete environment.GIT_DIR;
-    delete environment.GIT_WORK_TREE;
-    delete environment.GIT_INDEX_FILE;
-    return environment;
-};
-
-/**
  * Every tail of every path git tracks, plus every directory on the way to one and ITS tails.
  *
  * Precomputed rather than matched with `endsWith` per token: the sweep asks over a thousand
@@ -277,7 +261,7 @@ const trackedTargets = (root: string): { targets: Set<string>; roots: Set<string
     const files = execFileSync('git', ['ls-files'], {
         cwd: root,
         encoding: 'utf8',
-        env: gitEnvironmentWithoutHookVariables()
+        env: gitEnvironment()
     })
         .split('\n')
         .filter(Boolean);
@@ -545,7 +529,7 @@ const run = (): number => {
     const pages = execFileSync('git', ['ls-files', 'docs'], {
         cwd: ROOT,
         encoding: 'utf8',
-        env: gitEnvironmentWithoutHookVariables()
+        env: gitEnvironment()
     })
         .split('\n')
         .filter((file) => file.endsWith('.md'));
@@ -589,7 +573,7 @@ const run = (): number => {
     const tracked = execFileSync('git', ['ls-files'], {
         cwd: ROOT,
         encoding: 'utf8',
-        env: gitEnvironmentWithoutHookVariables()
+        env: gitEnvironment()
     })
         .split('\n')
         .filter(Boolean);

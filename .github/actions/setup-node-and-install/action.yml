@@ -5,6 +5,12 @@ description: >-
     itself: a local composite action can only be resolved once the repository running it is
     already checked out, so each job keeps its own explicit `actions/checkout` step first.
 
+inputs:
+    ignore-scripts:
+        description: Install with --ignore-scripts, for a job that runs no tool needing a generated file or built binary.
+        required: false
+        default: 'false'
+
 runs:
     using: composite
     steps:
@@ -17,4 +23,7 @@ runs:
 
         - name: Install dependencies
           shell: bash
-          run: npm ci
+          env:
+              IGNORE_SCRIPTS: ${{ inputs.ignore-scripts }}
+          run: |
+              if [ "$IGNORE_SCRIPTS" = 'true' ]; then npm ci --ignore-scripts; else npm ci; fi
