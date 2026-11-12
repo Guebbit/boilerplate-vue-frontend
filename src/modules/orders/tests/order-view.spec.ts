@@ -23,6 +23,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { anOrderListItem } from '../../../../tests/support/unit/fixtures.ts';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import { noopWatchHandle } from '../../../../tests/support/unit/watch-handle.ts';
 import type { Order as OrderType } from '@types';
@@ -711,6 +712,47 @@ describe('the shipping method', () => {
         });
 
         expect(wrapper.get('[data-test=order-shipping]').text()).toContain('drone');
+
+        wrapper.unmount();
+    });
+});
+
+describe('a list-seeded row has no detail yet', () => {
+    it('renders without an error and holds Reorder back, then fills in once the full order lands', async () => {
+        // the cache holds a list item: no items, no shipping, no email
+        const store = useOrdersStore();
+        vi.spyOn(store, 'watchOrder').mockImplementation(() => noopWatchHandle());
+        store.addOrder(anOrderListItem({ id: BASE_ORDER.id }));
+        store.selectedOrderId = BASE_ORDER.id;
+        const wrapper = mount(Order, {
+            props: { id: BASE_ORDER.id },
+            global: {
+                plugins: [router, vuetify, i18n],
+                stubs: {
+                    PaymentPanel: true,
+                    ShipmentPanel: true,
+                    WithdrawalPanel: true,
+                    OrderTimeline: true
+                }
+            }
+        });
+        await flushPromises();
+
+        const reorderButton = () => wrapper.get('[data-test=order-reorder]');
+        expect(reorderButton().attributes('disabled')).toBeDefined();
+        expect(wrapper.find('[data-test=order-shipping]').exists()).toBe(false);
+
+        // the detail read `watchOrder` makes in the real app lands in the cache
+        store.addOrder({
+            ...BASE_ORDER,
+            items: [lineWith()],
+            shippingMethod: 'express',
+            shippingCost: '5.00'
+        });
+        await flushPromises();
+
+        expect(reorderButton().attributes('disabled')).toBeUndefined();
+        expect(wrapper.find('[data-test=order-shipping]').exists()).toBe(true);
 
         wrapper.unmount();
     });
