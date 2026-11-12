@@ -64,7 +64,7 @@ export interface FunctionFacts {
     forwardsTo?: string;
     /** Optional parameters no call site supplies — reported only when every use is a direct call. */
     optionalNeverPassed: string[];
-    /** Exported from a file a module barrel re-exports, or carried by an object it publishes. */
+    /** Exported from a file a module barrel re-exports whole, re-exported by this name, or carried by a published object. */
     published: boolean;
 }
 
@@ -78,7 +78,7 @@ export interface FileFacts {
     exports: number;
     /** Files that import or re-export it, dynamic `import()` included. */
     importedBy: string[];
-    /** Re-exported, directly or through another file, by a module barrel. */
+    /** Re-exported whole, directly or through another file, by a module barrel; a name taken alone does not count. */
     published: boolean;
 }
 
@@ -459,21 +459,52 @@ const moduleFileOf = (
 };
 
 /**
- * Whether an `export … from` carries no runtime value: `export type * from`, `export type { A }`,
- * or a list whose every specifier is `type`. Such a re-export publishes nothing.
+ * What one `export … from` hands on: everything (`export *`, `export * as ns`), or only the
+ * named exports (`export { a, b as c } from`), by their name in the source file.
+ */
+type ReExported = 'all' | Set<string>;
+
+/**
+ * Re-export edges: file → the file it re-exports from → what it takes from it.
+ */
+type ReExportEdges = Map<string, Map<string, ReExported>>;
+
+/**
+ * The names an `export … from` declaration takes from its source file.
  *
  * @param declaration - the export declaration
- * @returns `true` when it is type-only
+ * @returns `'all'` for `export *` and `export * as ns`, else the source-side names; none for a
+ *          type-only declaration or specifier
  */
-const isTypeOnlyExport = (declaration: ts.ExportDeclaration): boolean => {
+const reExportedBy = (declaration: ts.ExportDeclaration): ReExported => {
+    // `export type * from` and `export type { A } from` carry no runtime value, so publish nothing.
+    if (declaration.isTypeOnly) return new Set();
     const clause = declaration.exportClause;
-    return (
-        declaration.isTypeOnly ||
-        (clause !== undefined &&
-            ts.isNamedExports(clause) &&
-            clause.elements.length > 0 &&
-            clause.elements.every((element) => element.isTypeOnly))
+    if (!clause || ts.isNamespaceExport(clause)) return 'all';
+    return new Set(
+        clause.elements
+            .filter((element) => !element.isTypeOnly)
+            // `propertyName` is the source-side name in `export { source as alias }`.
+            .map((element) => (element.propertyName ?? element.name).text)
     );
+};
+
+/**
+ * Adds an edge, merging with an earlier one between the same two files.
+ *
+ * @param edges - the edges so far
+ * @param from - the re-exporting file
+ * @param to - the file re-exported from
+ * @param taken - what the declaration takes
+ */
+const linkReExport = (edges: ReExportEdges, from: string, to: string, taken: ReExported): void => {
+    const targets = edges.get(from) ?? new Map<string, ReExported>();
+    const before = targets.get(to);
+    targets.set(
+        to,
+        before === 'all' || taken === 'all' ? 'all' : new Set([...(before ?? []), ...taken])
+    );
+    edges.set(from, targets);
 };
 
 /**
@@ -486,10 +517,10 @@ const isTypeOnlyExport = (declaration: ts.ExportDeclaration): boolean => {
 const collectImports = (
     program: ts.Program,
     relativeOf: (fileName: string) => string
-): { importers: Map<string, Set<string>>; reExports: Map<string, Set<string>> } => {
+): { importers: Map<string, Set<string>>; reExports: ReExportEdges } => {
     const checker = program.getTypeChecker();
     const importers = new Map<string, Set<string>>();
-    const reExports = new Map<string, Set<string>>();
+    const reExports: ReExportEdges = new Map();
     const link = (edges: Map<string, Set<string>>, from: string, to: string): void => {
         edges.set(from, (edges.get(from) ?? new Set<string>()).add(to));
     };
@@ -500,8 +531,8 @@ const collectImports = (
             if (target) {
                 const imported = relativeOf(target.fileName);
                 link(importers, imported, file);
-                if (ts.isExportDeclaration(node.parent) && !isTypeOnlyExport(node.parent))
-                    link(reExports, file, imported);
+                if (ts.isExportDeclaration(node.parent))
+                    linkReExport(reExports, file, imported, reExportedBy(node.parent));
             }
             ts.forEachChild(node, visit);
         };
@@ -511,23 +542,52 @@ const collectImports = (
 };
 
 /**
- * Every file a module barrel re-exports, directly or through an intermediate `index.ts`.
- *
- * @param reExports - re-export edges, file → files it re-exports
- * @returns the published files
+ * What module barrels publish: files re-exported whole, and the names taken from the others.
  */
-const publishedFiles = (reExports: Map<string, Set<string>>): Set<string> => {
-    const published = new Set<string>();
+interface Published {
+    /** Files a barrel re-exports with `export *`, directly or through an intermediate `index.ts`. */
+    whole: Set<string>;
+    /** File → the names a barrel re-exports from it by name, for files not published whole. */
+    named: Map<string, Set<string>>;
+}
+
+/**
+ * Follows re-exports from every module barrel. A file reached only by `export { a } from` is
+ * published for `a` alone, and the walk does not continue through it: the rest of that file
+ * is still a sibling-invisible file, which the alternative (widening to the whole file) would
+ * wrongly call published.
+ *
+ * @param reExports - re-export edges
+ * @returns the published files and names
+ */
+const publishedFiles = (reExports: ReExportEdges): Published => {
+    const whole = new Set<string>();
+    const named = new Map<string, Set<string>>();
     const queue = [...reExports.keys()].filter((file) => BARREL.test(file));
     for (let file = queue.shift(); file !== undefined; file = queue.shift()) {
-        for (const next of reExports.get(file) ?? []) {
-            if (published.has(next)) continue;
-            published.add(next);
-            queue.push(next);
+        for (const [next, taken] of reExports.get(file) ?? []) {
+            if (taken !== 'all') {
+                named.set(next, new Set([...(named.get(next) ?? []), ...taken]));
+            } else if (!whole.has(next)) {
+                whole.add(next);
+                queue.push(next);
+            }
         }
     }
-    return published;
+    for (const file of whole) named.delete(file);
+    return { whole, named };
 };
+
+/**
+ * Whether a barrel publishes one exported name of a file.
+ *
+ * @param published - what the barrels publish
+ * @param file - the repo-relative file
+ * @param name - the declaration's name
+ * @returns `true` when the file is published whole, or the name is re-exported by name
+ */
+const publishesName = (published: Published, file: string, name: string): boolean =>
+    published.whole.has(file) || (published.named.get(file)?.has(name) ?? false);
 
 /**
  * Whether a declaration is exported — on itself, or on the `const` statement holding it.
@@ -596,23 +656,28 @@ const collectCarried = (
  *
  * @param program - the program
  * @param relativeOf - maps an absolute file name to its repo-relative path
- * @param published - the files a barrel re-exports
+ * @param published - what the barrels publish
  * @returns the carried function symbols
  */
 const carriedFunctions = (
     program: ts.Program,
     relativeOf: (fileName: string) => string,
-    published: Set<string>
+    published: Published
 ): Set<ts.Symbol> => {
     const checker = program.getTypeChecker();
     const carried = new Set<ts.Symbol>();
     for (const sourceFile of projectFiles(program)) {
-        if (!published.has(relativeOf(sourceFile.fileName))) continue;
-        const declarations = sourceFile.statements
+        const file = relativeOf(sourceFile.fileName);
+        const objects = sourceFile.statements
             .filter((statement) => ts.isVariableStatement(statement))
             .flatMap((statement) => [...statement.declarationList.declarations])
-            .filter((declaration) => isExported(declaration));
-        for (const declaration of declarations) {
+            .filter(
+                (declaration) =>
+                    isExported(declaration) &&
+                    ts.isIdentifier(declaration.name) &&
+                    publishesName(published, file, declaration.name.text)
+            );
+        for (const declaration of objects) {
             const object = objectLiteralOf(declaration);
             if (object) collectCarried(checker, object, carried);
         }
@@ -705,7 +770,8 @@ export const findShallowCandidates = (
                         declared,
                         usage.get(symbol),
                         file,
-                        (published.has(file) && isExported(declared.declaration)) ||
+                        (publishesName(published, file, declared.name.text) &&
+                            isExported(declared.declaration)) ||
                             carried.has(symbol)
                     )
                 );
@@ -717,7 +783,7 @@ export const findShallowCandidates = (
             file,
             exports: moduleSymbol ? checker.getExportsOfModule(moduleSymbol).length : 0,
             importedBy: [...(importers.get(file) ?? [])].toSorted(),
-            published: published.has(file)
+            published: published.whole.has(file)
         });
     }
 

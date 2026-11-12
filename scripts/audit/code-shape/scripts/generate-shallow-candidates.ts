@@ -1,9 +1,11 @@
 #!/usr/bin/env tsx
 /**
  * @module
- * Writes the `code-shape` audit's shallow candidates to `reports/audit/code-shape/shallow.json`.
+ * Writes the `code-shape` audit's shallow candidates to `<out>/shallow.json`, `<out>` being this
+ * run's report folder (`scripts/audit/RULES.md` rule 4).
  *
- * Usage: `npm run audit:shallow -- [path...]` — repo-relative prefixes, `src` by default.
+ * Usage: `npm run audit:shallow -- --out <dir> [path...]` — repo-relative prefixes, `src scripts
+ * tests/support` by default.
  *
  * The program is the app's `.ts` plus the Vitest project's, and every `.vue` file's script block
  * as a virtual `<file>.vue.ts` source: line numbers are kept (everything outside the script is
@@ -20,11 +22,26 @@ import { findShallowCandidates } from './shallow-candidates';
 /** The repo root: the audit runs from it, like every script here. */
 const ROOT = process.cwd();
 
-/** Scanned when no path is given: the code that ships. */
-const DEFAULT_SCOPE = ['src'];
+/** Scanned when no path is given: the code that ships, builds what ships, or every suite shares. */
+const DEFAULT_SCOPE = ['src', 'scripts', 'tests/support'];
 
-/** Where the report lands — gitignored working evidence, like every audit report. */
-const OUTPUT = path.join(ROOT, 'reports', 'audit', 'code-shape', 'shallow.json');
+/** Position of `--out` on the command line, or -1. */
+const outIndex = process.argv.indexOf('--out');
+
+/** The report folder, from `--out <dir>`: the audit writes nowhere else (RULES.md rule 1). */
+const outDirectory: string | undefined = outIndex === -1 ? undefined : process.argv[outIndex + 1];
+
+if (outDirectory === undefined) {
+    throw new Error('usage: npm run audit:shallow -- --out <report-folder> [path...]');
+}
+
+/** The arguments with `--out <dir>` taken out: what is left is the scope paths. */
+const scopeArguments = process.argv
+    .slice(2)
+    .filter((_, index) => index + 2 !== outIndex && index + 2 !== outIndex + 1);
+
+/** Where the report lands. */
+const OUTPUT = path.resolve(ROOT, outDirectory, 'shallow.json');
 
 /**
  * One SFC as a TypeScript source: its script blocks where they were, blank lines elsewhere, and a
@@ -119,7 +136,7 @@ const program = ts.createProgram({
 });
 
 /** The scope asked for on the command line, or the default. */
-const scope = process.argv.length > 2 ? process.argv.slice(2) : DEFAULT_SCOPE;
+const scope = scopeArguments.length > 0 ? scopeArguments : DEFAULT_SCOPE;
 
 /** The candidate lists. */
 const report = findShallowCandidates(program, ROOT, scope);
