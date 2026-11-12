@@ -34,6 +34,7 @@ import { useOrderRefund, OrderDisputes, RecordOfflinePaymentForm } from '@/modul
 import ShippingAddressForm from '../components/ShippingAddressForm.vue';
 import { z } from 'zod';
 import type { OrderStatus } from '@types';
+import { isWholeOrder } from '../domain/whole-order.ts';
 import { Calendar, Clock, Package, Pencil, ShoppingCart } from 'lucide-vue-next';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
@@ -117,6 +118,14 @@ const runOverride = () => {
  * The order being displayed, and whether it is in flight.
  */
 const { currentOrder, loading } = storeToRefs(useOrdersStore());
+
+/**
+ * The order once the whole record is in. A list-seeded row is an `OrderListItem`, a preview with no
+ * items, addresses or email: detail-only parts read this and wait for the full read.
+ */
+const detail = computed(() =>
+    currentOrder.value && isWholeOrder(currentOrder.value) ? currentOrder.value : undefined
+);
 
 /**
  * The order's own `actions.overrideStatus` — every status `POST /orders/{id}/override-status` would
@@ -383,7 +392,7 @@ const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
  */
 activateAutoHydrate(
     holdWhileSubmitting(isSubmitting, () =>
-        currentOrder.value ? { email: currentOrder.value.email } : undefined
+        detail.value ? { email: detail.value.email } : undefined
     )
 );
 
@@ -419,7 +428,7 @@ const submitForm = () => {
     return handleSubmit(() => {
         if (!id) return;
         const email = form.value.email || undefined;
-        const changes = email === currentOrder.value?.email ? {} : { email };
+        const changes = email === detail.value?.email ? {} : { email };
 
         return updateOrder(id, changes).then(() => {
             markSaved();
@@ -453,12 +462,12 @@ const asideFields = computed<DetailFieldRow[]>(() => [
     },
     {
         label: t('order-target-page.label-updated-at'),
-        value: formatDateTime(currentOrder.value?.updatedAt),
+        value: formatDateTime(detail.value?.updatedAt),
         icon: Clock
     },
     {
         label: t('order-target-page.label-items'),
-        value: currentOrder.value?.items.length ?? 0,
+        value: detail.value?.items.length ?? 0,
         icon: Package
     }
 ]);
@@ -654,9 +663,9 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                         {{ t('order-edit-page.shipping-address-hint') }}
                     </p>
                     <ShippingAddressForm
-                        :key="JSON.stringify(currentOrder?.shippingAddress)"
+                        :key="JSON.stringify(detail?.shippingAddress)"
                         :order-id="id"
-                        :address="currentOrder?.shippingAddress"
+                        :address="detail?.shippingAddress"
                         @corrected="onAddressCorrected"
                     />
                 </div>

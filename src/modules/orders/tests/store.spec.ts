@@ -192,7 +192,7 @@ describe('useOrdersStore', () => {
             return store.fetchPaginationOrders(1, 10, { partial: true, forced: true }).then(() => {
                 expect(store.orders.o1?.paidAt).toBeUndefined();
                 // `userId` is not a list field, so the merge leaves it.
-                expect(store.orders.o1?.userId).toBe('u1');
+                expect(store.orders.o1).toMatchObject({ userId: 'u1' });
             });
         });
     });

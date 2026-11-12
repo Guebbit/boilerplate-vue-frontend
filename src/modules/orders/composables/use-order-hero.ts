@@ -6,7 +6,8 @@
 import { computed, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { EMPTY_VALUE, formatText } from '@/infrastructure/utils/formatters.ts';
-import type { Order } from '@types';
+import type { Order, OrderListItem } from '@types';
+import { isWholeOrder } from '../domain/whole-order.ts';
 
 /**
  * Hero heading, subheading and status label for one order.
@@ -17,7 +18,7 @@ import type { Order } from '@types';
  * @returns The three computed labels.
  */
 export const useOrderHero = (
-    currentOrder: Ref<Order | undefined>,
+    currentOrder: Ref<Order | OrderListItem | undefined>,
     targetId: () => string | undefined,
     pageTitleKey: string
 ) => {
@@ -35,9 +36,11 @@ export const useOrderHero = (
      * Hero subheading: the order notes, falling back to the customer email, then to the
      * empty-value glyph.
      */
-    const heroDescription = computed(() =>
-        formatText(currentOrder.value?.notes || currentOrder.value?.email)
-    );
+    const heroDescription = computed(() => {
+        // notes and email are detail-only: a list-seeded row shows the glyph until the full read
+        const order = currentOrder.value;
+        return formatText(order && isWholeOrder(order) ? order.notes || order.email : undefined);
+    });
 
     /**
      * Localized order status, or the empty-value glyph when the order carries none yet.

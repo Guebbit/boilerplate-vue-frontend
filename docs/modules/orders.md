@@ -168,7 +168,8 @@ State, getters and actions are exactly what the setup function of each store ret
 The list answers a `OrderListItem`, not the whole order: the table's fields, and the full record comes
 from the audited detail read. The list view reads with `partial: true`, so a row merges over a full
 order the store already holds instead of replacing it, and the detail page still reads the whole
-record.
+record. A list row is a preview: the store types its records `Order | OrderListItem`, and a
+detail-only part waits for `isWholeOrder` before it renders.
 
 ## Screens
 

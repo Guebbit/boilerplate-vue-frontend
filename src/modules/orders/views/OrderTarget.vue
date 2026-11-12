@@ -26,7 +26,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '../store.ts';
-import { reorderOutcome } from '../domain';
+import { isWholeOrder, reorderOutcome } from '../domain';
 import OrderTimeline from '../components/OrderTimeline.vue';
 import { useOrderDocuments } from '../composables/use-order-documents.ts';
 import { useOrderHero } from '../composables/use-order-hero.ts';
@@ -109,6 +109,14 @@ const session = useSessionStore();
 const { currentOrder, loading } = storeToRefs(useOrdersStore());
 
 /**
+ * The order once the whole record is in. A list-seeded row is an `OrderListItem`, a preview with no
+ * items, addresses or email: detail-only parts read this and wait for the full read.
+ */
+const detail = computed(() =>
+    currentOrder.value && isWholeOrder(currentOrder.value) ? currentOrder.value : undefined
+);
+
+/**
  * Refills the visitor's cart from this order — the reorder button.
  */
 const { reorder } = useCartStore();
@@ -164,7 +172,7 @@ const timelineRefreshKey = computed(() =>
         currentOrder.value?.paymentStatus,
         currentOrder.value?.fulfillmentStatus,
         currentOrder.value?.returnStatus,
-        currentOrder.value?.updatedAt,
+        detail.value?.updatedAt,
         reportCount.value
     ].join('|')
 );
@@ -239,7 +247,7 @@ const {
  *  the button in place ({@link reorderError}).
  */
 const handleReorder = () => {
-    const order = currentOrder.value;
+    const order = detail.value;
     if (!order) return;
     clearReorderError();
     reorder(order.id)
@@ -276,13 +284,13 @@ const { heroTitle, heroDescription, orderStatus } = useOrderHero(
  * opening the address book, which may since have changed or lost the entry this order was placed
  * against. Absent on an order with nothing to ship to an address (digital-only, or a pickup).
  */
-const shippingAddressText = computed(() => formatAddressLine(currentOrder.value?.shippingAddress));
+const shippingAddressText = computed(() => formatAddressLine(detail.value?.shippingAddress));
 
 /**
  * The frozen billing address, one line — the address the invoice is made out to. Every order a
  * checkout placed carries one, whether or not anything ships.
  */
-const billingAddressText = computed(() => formatAddressLine(currentOrder.value?.billingAddress));
+const billingAddressText = computed(() => formatAddressLine(detail.value?.billingAddress));
 
 /**
  * The invoice and its credit notes: whether they exist, the download/view actions, and each
@@ -341,7 +349,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                 />
                 <CardMaterialStat
                     :title="t('order-target-page.label-items')"
-                    :value="currentOrder?.items?.length ?? 0"
+                    :value="detail?.items?.length ?? 0"
                     accent="tertiary"
                 />
             </template>
@@ -396,19 +404,19 @@ watchOrder(() => id, { onError: onMissingRecord });
                     </ItemDetailField>
                     <ItemDetailField
                         :label="t('orders-list-page.filter-email')"
-                        :value="formatText(currentOrder.email)"
+                        :value="formatText(detail?.email)"
                         :icon="Mail"
                     />
                     <ItemDetailField
-                        v-if="currentOrder.paymentMethod"
+                        v-if="detail?.paymentMethod"
                         :label="t('order-target-page.label-payment-method')"
-                        :value="t(`payment-method-selector.method-${currentOrder.paymentMethod}`)"
+                        :value="t(`payment-method-selector.method-${detail?.paymentMethod}`)"
                         :icon="CreditCard"
                         data-test="order-payment-method"
                     />
                     <ItemDetailField
                         :label="t('order-target-page.label-notes')"
-                        :value="formatText(currentOrder.notes)"
+                        :value="formatText(detail?.notes)"
                         :icon="FileText"
                         full-width
                         data-test="order-notes"
@@ -421,7 +429,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                 <div data-tour="order-timeline">
                     <OrderTimeline
                         :order-id="currentOrder.id"
-                        :owner-id="currentOrder.userId"
+                        :owner-id="detail?.userId"
                         :refresh-key="timelineRefreshKey"
                     />
                 </div>
@@ -443,7 +451,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                         <PaymentPanel
                             :order-id="currentOrder.id"
                             :order-payable="currentOrder.actions?.pay"
-                            :pay-by="currentOrder.payBy"
+                            :pay-by="detail?.payBy"
                             @paid="reloadAfterReport(currentOrder.id)"
                         />
                     </div>
@@ -460,7 +468,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                         :order-id="currentOrder.id"
                         :can-withdraw="currentOrder.actions?.withdraw ?? false"
                         :withdraw-blocked="currentOrder.actions?.withdrawBlocked"
-                        :withdraw-until="currentOrder.withdrawUntil"
+                        :withdraw-until="detail?.withdrawUntil"
                         :order-number="currentOrder.orderNumber"
                         @opened="reloadAfterReport(currentOrder.id)"
                     />
@@ -470,14 +478,14 @@ watchOrder(() => id, { onError: onMissingRecord });
                         :icon="Calendar"
                     />
                     <ItemDetailField
-                        v-if="currentOrder?.shippingMethod"
+                        v-if="detail?.shippingMethod"
                         :label="t('order-target-page.label-shipping')"
                         :icon="Truck"
                         data-test="order-shipping"
                     >
-                        <ShippingMethodName :id="currentOrder.shippingMethod" />
+                        <ShippingMethodName :id="detail?.shippingMethod" />
                         —
-                        {{ formatCurrency(currentOrder.shippingCost, orderCurrency) }}
+                        {{ formatCurrency(detail?.shippingCost, orderCurrency) }}
                     </ItemDetailField>
                     <ItemDetailField
                         v-if="shippingAddressText"
@@ -497,7 +505,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                     />
                     <ItemDetailField
                         :label="t('order-target-page.label-updated-at')"
-                        :value="formatDateTime(currentOrder?.updatedAt)"
+                        :value="formatDateTime(detail?.updatedAt)"
                         :icon="Clock"
                     />
 
@@ -505,9 +513,9 @@ watchOrder(() => id, { onError: onMissingRecord });
                         <h3 class="m-0 text-base font-semibold">
                             {{ t('order-target-page.label-items') }}
                         </h3>
-                        <div v-if="currentOrder?.items?.length" class="mt-3 grid gap-3">
+                        <div v-if="detail?.items?.length" class="mt-3 grid gap-3">
                             <article
-                                v-for="item in currentOrder.items"
+                                v-for="item in detail?.items"
                                 :key="'order-item-' + item.product.id"
                                 data-test="order-item"
                                 class="rounded-2xl border border-on-surface/10 bg-on-surface/3 p-4"
@@ -635,13 +643,13 @@ watchOrder(() => id, { onError: onMissingRecord });
                         own description of `Order.taxSummary`) — the full per-line/per-rate/
                         shipping breakdown lives on the downloadable invoice PDF instead.
                     -->
-                    <div v-if="currentOrder?.taxSummary?.length" data-test="order-tax-summary">
+                    <div v-if="detail?.taxSummary?.length" data-test="order-tax-summary">
                         <h3 class="m-0 text-base font-semibold">
                             {{ t('order-target-page.label-vat-summary') }}
                         </h3>
                         <div class="mt-3 grid gap-2">
                             <div
-                                v-for="row in currentOrder.taxSummary"
+                                v-for="row in detail?.taxSummary"
                                 :key="'tax-rate-' + row.rate"
                                 class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-2xl border border-on-surface/10 bg-on-surface/3 p-3"
                                 data-test="order-tax-row"
@@ -667,7 +675,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                                     t('order-target-page.label-net-total')
                                 }}</span>
                                 <strong>{{
-                                    formatCurrency(currentOrder.netTotal, orderCurrency)
+                                    formatCurrency(detail?.netTotal, orderCurrency)
                                 }}</strong>
                             </div>
                             <div class="flex items-center justify-between gap-3 px-1 text-sm">
@@ -675,7 +683,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                                     t('order-target-page.label-tax-total')
                                 }}</span>
                                 <strong>{{
-                                    formatCurrency(currentOrder.taxTotal, orderCurrency)
+                                    formatCurrency(detail?.taxTotal, orderCurrency)
                                 }}</strong>
                             </div>
                         </div>
@@ -689,7 +697,7 @@ watchOrder(() => id, { onError: onMissingRecord });
                     color="primary"
                     variant="tonal"
                     data-test="order-reorder"
-                    :disabled="loading || reorderLoading"
+                    :disabled="loading || reorderLoading || !detail"
                     @click="handleReorder"
                 >
                     <ShoppingCart :size="16" class="mr-1" aria-hidden="true" />

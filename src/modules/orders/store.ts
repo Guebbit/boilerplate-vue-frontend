@@ -123,17 +123,14 @@ const ORDER_LIST_KEYS: Record<keyof OrderListItem, true> = {
 };
 
 /**
- * Order list rows as the records the store caches. A list item is the part of an `Order` a table
- * renders; the list reads are stored with `partial: true` (see `OrdersList.vue`), which merges them
- * over a full record already cached instead of replacing it. The one narrowing the compiler cannot
- * see: a list view reads list fields only. Each row also names the list fields it omits (as
- * `undefined`), so the merge clears a field someone else unset since the record was cached.
+ * Marks every list field a row omits as `undefined`, so the partial merge (see `OrdersList.vue`)
+ * clears a field someone else unset since the record was cached.
  *
  * @param items - the rows a list answered
- * @returns the same rows, typed as the records the dictionary holds
+ * @returns the same rows, each naming the list fields it omits
  */
-const asRecords = (items: OrderListItem[]): Order[] =>
-    items.map((row) => unsetOmitted(ORDER_LIST_KEYS, row)) as Order[];
+const withOmittedUnset = (items: OrderListItem[]): OrderListItem[] =>
+    items.map((row) => unsetOmitted(ORDER_LIST_KEYS, row));
 
 /**
  * Reads one page of an order's timeline, newest first (a log: no `sort`). A background read like
@@ -240,7 +237,7 @@ export const useOrdersStore = defineStore('orders', () => {
         updateTarget,
         fetchAny
     } = useStructureCrudApi<
-        Order,
+        Order | OrderListItem,
         string,
         OrdersFilters,
         CreateOrderRequest,
@@ -250,7 +247,7 @@ export const useOrdersStore = defineStore('orders', () => {
             list: () =>
                 listOrders().then((response) => {
                     listStale.note(response.items, (id) => orders.value[id]);
-                    return asRecords(response.items);
+                    return withOmittedUnset(response.items);
                 }),
 
             search: (filters, page, pageSize) =>
@@ -261,7 +258,7 @@ export const useOrdersStore = defineStore('orders', () => {
                 }).then((response) => {
                     listStale.note(response.items, (id) => orders.value[id]);
                     return {
-                        items: asRecords(response.items),
+                        items: withOmittedUnset(response.items),
                         totalItems: response.meta.totalItems
                     };
                 }),

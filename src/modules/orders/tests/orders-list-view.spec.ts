@@ -244,7 +244,7 @@ describe('OrdersList — a row over a full order already cached', () => {
         await flushPromises();
 
         expect(searchOrders).toHaveBeenCalled();
-        expect(orders.orders.o9?.email).toBe('mario@example.com');
+        expect(orders.orders.o9).toMatchObject({ email: 'mario@example.com' });
         expect(orders.orders.o9?.totalPrice).toBe('10.00');
     });
 });

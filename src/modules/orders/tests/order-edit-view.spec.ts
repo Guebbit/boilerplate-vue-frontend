@@ -13,7 +13,7 @@
  * would wire in `useRecordOfflinePayment` and a live payments store this suite never seeds.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { mount, type VueWrapper } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import { ref, nextTick } from 'vue';
@@ -25,6 +25,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { anOrderListItem } from '../../../../tests/support/unit/fixtures.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import { noopWatchHandle } from '../../../../tests/support/unit/watch-handle.ts';
 import { OrderStatus } from '@api';
@@ -659,5 +660,30 @@ describe('recording a payment by hand', () => {
                     wrapper.find('[data-test=order-edit-offline-payment-error]').text()
                 ).not.toBe('');
             });
+    });
+});
+
+describe('a list-seeded row has no detail yet', () => {
+    it('renders without an error, then fills the email once the full order lands', () => {
+        signInAsAdmin();
+        const whole = anOrder({ email: 'full@example.com', items: [] });
+        const orders = useOrdersStore();
+        vi.spyOn(orders, 'watchOrder').mockImplementation(() => noopWatchHandle());
+        // the cache holds a list item: no email, no items
+        orders.addOrder(anOrderListItem({ id: whole.id }));
+        orders.selectedOrderId = whole.id;
+        const wrapper = mount(OrderEdit, {
+            props: { id: whole.id },
+            global: { plugins: [router, vuetify, i18n] }
+        });
+
+        const email = () =>
+            wrapper.get<HTMLInputElement>('[data-test=order-edit-email] input').element.value;
+        expect(email()).toBe('');
+        // the detail read `watchOrder` makes in the real app lands in the cache
+        orders.addOrder(whole);
+        return flushPromises().then(() => {
+            expect(email()).toBe('full@example.com');
+        });
     });
 });

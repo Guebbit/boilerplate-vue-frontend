@@ -8,7 +8,7 @@ import { computed, ref, watch, type Ref } from 'vue';
 import { saveDownload } from '@/infrastructure/http/download.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useOrdersStore } from '../store.ts';
-import type { CreditNoteSummary, Order } from '@types';
+import type { CreditNoteSummary, Order, OrderListItem } from '@types';
 
 /**
  * Invoice and credit-note state and actions for one order.
@@ -18,7 +18,7 @@ import type { CreditNoteSummary, Order } from '@types';
  * @returns Whether an invoice exists, the invoice and credit-note actions, and their states.
  */
 export const useOrderDocuments = (
-    currentOrder: Ref<Order | undefined>,
+    currentOrder: Ref<Order | OrderListItem | undefined>,
     targetId: () => string | undefined
 ) => {
     /**
