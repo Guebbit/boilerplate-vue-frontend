@@ -321,6 +321,7 @@ So `mutation-baseline.json` records a score **per file**, and `scripts/mutation/
 
 - a file that drops below its recorded score **fails**;
 - a file that improves has its baseline **rewritten upward**, locking the gain in;
+- with no baseline file at all, a plain check records nothing and exits 0; only `--update` writes the first one, so a one-file run never becomes the ratchet;
 - a new file is recorded at whatever it first measures, **including `0`** — an honest zero in a diff beats a zero dissolved into a mean.
 
 ```mermaid
@@ -359,7 +360,7 @@ After that the rule is: raise `break` when a score **sustains** a higher band; n
 | ------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `stryker.config.json`                 | Scope (`mutate`), the Vitest runner config, thresholds, concurrency fallback, reporters   |
 | `scripts/mutation/run-tests.ts`       | Entry point for `npm run test:mutation`; reads `STRYKER_CONCURRENCY` from `.env`          |
-| `mutation-baseline.json`              | Per-file scores. Committed. The ratchet's memory. Absent until the first run.             |
+| `mutation-baseline.json`              | Per-file scores. Committed. The ratchet's memory. Absent until recorded with `--update`.  |
 | `scripts/mutation/baseline.ts`        | Ratchet logic — scoring, comparison, the "never lower" rule                               |
 | `scripts/mutation/check-baseline.ts`  | CLI for the two commands below                                                            |
 | `scripts/mutation/pull-report.ts`     | `npm run test:mutation:pull` — the newest nightly's report, the baseline recorded from it |

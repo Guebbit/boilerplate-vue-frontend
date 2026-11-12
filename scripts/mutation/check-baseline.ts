@@ -10,8 +10,8 @@
  * deliberately, so the check is cheap enough to run twice and so a CI job can split the run and
  * the gate across steps.
  *
- * Exit codes: 0 fine, 1 a file regressed or (without `--update`) has no baseline entry at all,
- * 2 no report to read.
+ * Exit codes: 0 fine (a plain check with no baseline file yet records nothing), 1 a file
+ * regressed or (without `--update`) has no baseline entry at all, 2 no report to read.
  */
 import {
     compareToBaseline,
@@ -44,8 +44,22 @@ const baseline = readBaseline();
 /** Every file's verdict against the baseline. */
 const comparisons = compareToBaseline(current, baseline);
 
-// No baseline yet: the first run records one and succeeds.
+/*
+ * A first baseline is only ever written on purpose. Writing on ANY invocation would let a
+ * one-file `--mutate` run, on a fresh clone or fork, record a one-file baseline that every later
+ * full run then fails against. With nothing to compare against, a plain check is a no-op, not a
+ * failure.
+ */
 if (!baseline) {
+    if (!update) {
+        console.log(
+            `[mutation-baseline] No ${MUTATION_BASELINE_PATH} yet — nothing to compare against, ` +
+                `and this run did not pass --update, so nothing is recorded. ` +
+                `Create the first one deliberately with \`npm run test:mutation:baseline\` after a full run.`
+        );
+        process.exit(0);
+    }
+
     console.log(
         `[mutation-baseline] No ${MUTATION_BASELINE_PATH} yet — recording ${
             Object.keys(current).length
